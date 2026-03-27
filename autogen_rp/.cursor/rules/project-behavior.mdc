@@ -1,0 +1,26 @@
+---
+description: Repo-wide working behavior and source-of-truth routing
+globs:
+alwaysApply: true
+---
+
+# Project Behavior
+
+Use repo files as the source of truth.
+
+Start with:
+
+- `AGENTS.md`
+- `docs/repo-map.md`
+- `docs/code-style.md`
+
+Follow these rules:
+
+- preserve existing architecture and patterns unless the user explicitly requests a redesign
+- prefer small, reviewable diffs over broad rewrites
+- focus on files relevant to the task
+- do not rely on tool memory as the only source of important behavior
+- prefer extending existing modules and workflows before inventing new ones
+- update shared docs when behavior, architecture constraints, or testing expectations materially change
+
+If the task is multi-file, architecture-sensitive, or workflow-sensitive, read the relevant shared docs before editing.

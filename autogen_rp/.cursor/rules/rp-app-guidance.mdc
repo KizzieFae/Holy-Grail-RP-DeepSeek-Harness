@@ -1,0 +1,29 @@
+---
+description: RP app runtime and audit guidance
+globs:
+  - "python/rp_app/**/*.py"
+  - "python/tests/test_rp_app*.py"
+  - "python/tests/test_orchestration_helpers.py"
+alwaysApply: false
+---
+
+# RP App Guidance
+
+When a task touches the RP app, read:
+
+- `docs/architecture.md`
+- `docs/audit-workflows.md`
+- `python/rp_app/README.md`
+- `python/rp_app/ARCHITECTURE.md`
+- `python/rp_app/AUDIT_DOCUMENTATION.md`
+- `python/RP_SETUP_TODO.md`
+
+Important RP app rules:
+
+- preserve the Director + Narrator + continuity-manager architecture
+- treat `must_remain` as structural presence, not a requirement to speak every beat
+- diagnose continuity and orchestration layers before changing Director prompts
+- prefer converting repeated audit findings into focused regression tests
+- keep fixes minimal and runtime-layer appropriate
+
+For session audits, use the artifact order in `docs/audit-workflows.md`.
