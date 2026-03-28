@@ -1,0 +1,91 @@
+# Architecture overview
+
+This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) for engineers and tools. Authoritative product intent remains in the PRD.
+
+## Three layers
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Ingestion (future)                                          │
+│  Source material → entities, relationships, events, stores   │
+└───────────────────────────────┬─────────────────────────────┘
+                                │ structured knowledge outputs
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Packaging (bridge — target integration seam)               │
+│  Knowledge + authoritative state → per-turn runtime inputs  │
+│  Outputs: RuntimeCharacterPacket, RuntimeScenePacket,       │
+│            RetrievedContextBundle (see PACKET_CONTRACTS.md)   │
+└───────────────────────────────┬─────────────────────────────┘
+                                │ bounded prompts / structured context
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│  RP execution (AutoGen runtime — current bulk: rp_app)        │
+│  Director, orchestration, characters, Narrator, validation,  │
+│  continuity engine, audit                                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Dependency direction
+
+- **Ingestion** does not call the live RP UI or turn loop. It produces **durable knowledge artifacts** consumable by packaging.
+- **Packaging** reads authoritative **runtime state** (from the continuity/orchestration side) and **retrieved** candidates; it does not replace continuity as source of truth for “what happened.”
+- **RP runtime** executes turns; it **updates** authoritative state and **logs** audits. Today it builds prompts largely from cards + continuity structures; tomorrow the same boundaries should consume **packets** at the packaging boundary.
+
+### System boundaries
+
+| Concern | Layer |
+|--------|--------|
+| Extracting lore from external sources, graph/vector stores | Ingestion (future) |
+| Selecting what enters a token-bounded turn context | Packaging |
+| Who speaks next, validation, scene/session persistence | RP runtime |
+| Authoritative scene/issue/knowledge-boundary state | RP runtime (continuity engine today) |
+
+PRD alignment: vector retrieval is for **similarity and suggestions**, not authoritative truth ([Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §7).
+
+---
+
+## Current system (working reality)
+
+- **Location:** `autogen_rp/python/rp_app/` (+ tests under `autogen_rp/python/tests/`, data under `autogen_rp/python/data/`, audits under `autogen_rp/python/rp_app/data/rp_audits/`).
+- **Characters:** JSON **cards** in `python/data/autogen_characters/`; loaded by `character_loader.py`; agents created via `model_client.py`.
+- **Scenes:** Streamlit-driven; **scene templates** in `python/data/scene_templates/`; openers optional via `scene_opener.py` / `scene_template.py`.
+- **State:** `ContinuityManager` and related types hold structured scene, issue, event, and interpretation state (see `continuity_manager.py`, `continuity_state.py`).
+- **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`).
+- **Orchestration:** Final speaker resolution combines address, continuation override, Director, validation/reconciliation (PRD §5.3); implemented in `orchestration_helpers.py` and turn pipeline.
+
+Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architecture.md`.
+
+---
+
+## Future system (direction, not a rewrite yet)
+
+- **Cards** remain the practical source until ingestion + packaging land; the **packet contracts** describe the intended **runtime-facing** shape ([PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)).
+- **Packaging** becomes the single place that merges: stable identity, dynamic state, relationships, **retrieved** snippets, and scene-facing summaries—so the runtime does not grow ad-hoc retrieval logic.
+- **Ingestion** supplies compiled profiles and retrievable corpora; **runtime** stays deterministic where possible for orchestration and validation.
+
+Roadmap tasks: `autogen_rp/python/RP_SETUP_TODO.md` (packet layer section).
+
+---
+
+## Where not to “fix” things
+
+- Do not move **long-horizon truth** into prompts or unbounded transcript growth (see `autogen_rp/docs/architecture.md`).
+- Do not treat **Director prompt tweaks** as the default fix for continuity or orchestration bugs.
+- Keep **`app.py`** a thin composition layer unless the task explicitly expands it.
+
+---
+
+## How to approach problems
+
+Prefer **continuity → orchestration → summaries → validation → Director → Narrator** before changing prompt copy. Use the **symptom → file** table in [MODULE_INDEX.md](./MODULE_INDEX.md) for a quick entry point, and [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for full rules, per-symptom notes, and persistence/audit pointers.
+
+---
+
+## Related docs
+
+- [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) — diagnosis order and symptom routing
+- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet intent and field groupings
+- [GLOSSARY.md](./GLOSSARY.md) — terms
+- [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md) — on-disk data
+- [MODULE_INDEX.md](./MODULE_INDEX.md) — code map (`autogen_rp/python/rp_app/`)

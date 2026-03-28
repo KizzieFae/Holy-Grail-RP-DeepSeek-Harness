@@ -223,11 +223,11 @@ def test_process_turn_updates_scene_presence_on_exit() -> None:
     manager.process_turn(
         acting_character="Mira",
         move={
-            "action": "storms out",
+            "action": "turned and left the room without another word",
             "dialogue": "",
             "motivation": {
                 "goal": "leave before the argument can continue",
-                "tactic": "end participation physically",
+                "tactic": "walk out and end participation physically",
                 "emotional_driver": "anger",
                 "risk_level": "medium",
             },
@@ -1032,3 +1032,188 @@ def test_twenty_four_turn_continuity_stability_preserves_template_and_prompt_con
         anchor.anchor_id == "canon_ayame_goals"
         for anchor in restored_context["canon_anchors"]
     )
+
+
+def test_reconcile_presence_lists_clears_overlap_and_dedupes() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=[
+            "Marlene_Fletcher",
+            "Marlene_Fletcher",
+            "Harley_Quinn",
+        ],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.absent_but_relevant = [
+        "Marlene_Fletcher",
+        "Willow_Reeves",
+        "Willow_Reeves",
+    ]
+    manager._reconcile_presence_lists()
+    assert manager.scene_state.present_characters == [
+        "Marlene_Fletcher",
+        "Harley_Quinn",
+    ]
+    overlap = set(manager.scene_state.present_characters) & set(
+        manager.scene_state.absent_but_relevant
+    )
+    assert overlap == set()
+    assert manager.scene_state.absent_but_relevant == ["Willow_Reeves"]
+
+
+def test_soft_exit_does_not_remove_actor_required_by_multi_party_issue() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Marlene_Fletcher", "Harley_Quinn"],
+    )
+    issue = IssueState(
+        issue_id="issue_multi",
+        description="Standoff",
+        participants=["Marlene_Fletcher", "Harley_Quinn"],
+        status=IssueStatus.ESCALATING,
+        created_at=datetime.fromisoformat("2026-03-27T12:00:00"),
+    )
+    manager.issues[issue.issue_id] = issue
+    assert manager.scene_state is not None
+    manager.scene_state.active_issue_ids.append(issue.issue_id)
+
+    manager._update_scene_state(
+        acting_character="Marlene_Fletcher",
+        move={
+            "action": "tilts her head",
+            "dialogue": "Hmm.",
+            "motivation": {
+                "goal": "wait",
+                "tactic": "observe",
+                "emotional_driver": "calm",
+                "risk_level": "low",
+            },
+        },
+        director_decision={},
+        event=None,
+        turn_consequences={
+            "tags": ["exit"],
+            "state_changes": [],
+            "actionable_implications": [],
+        },
+    )
+
+    assert "Marlene_Fletcher" in manager.scene_state.present_characters
+    assert "Marlene_Fletcher" not in manager.scene_state.absent_but_relevant
+
+
+def test_hard_exit_still_removes_despite_multi_party_issue() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Marlene_Fletcher", "Harley_Quinn"],
+    )
+    issue = IssueState(
+        issue_id="issue_multi",
+        description="Standoff",
+        participants=["Marlene_Fletcher", "Harley_Quinn"],
+        status=IssueStatus.ESCALATING,
+        created_at=datetime.fromisoformat("2026-03-27T12:00:00"),
+    )
+    manager.issues[issue.issue_id] = issue
+    assert manager.scene_state is not None
+    manager.scene_state.active_issue_ids.append(issue.issue_id)
+
+    manager._update_scene_state(
+        acting_character="Marlene_Fletcher",
+        move={
+            "action": "left the room without another word",
+            "dialogue": "",
+            "motivation": {
+                "goal": "leave",
+                "tactic": "walk out",
+                "emotional_driver": "done",
+                "risk_level": "medium",
+            },
+        },
+        director_decision={},
+        event=None,
+        turn_consequences={
+            "tags": ["exit"],
+            "state_changes": [],
+            "actionable_implications": [],
+        },
+    )
+
+    assert "Marlene_Fletcher" not in manager.scene_state.present_characters
+    assert "Marlene_Fletcher" in manager.scene_state.absent_but_relevant
+
+
+def test_soft_exit_removes_when_actor_not_protected() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Only_One"],
+    )
+    manager._update_scene_state(
+        acting_character="Only_One",
+        move={
+            "action": "blinks",
+            "dialogue": "",
+            "motivation": {
+                "goal": "idle",
+                "tactic": "wait",
+                "emotional_driver": "flat",
+                "risk_level": "low",
+            },
+        },
+        director_decision={},
+        event=None,
+        turn_consequences={
+            "tags": ["exit"],
+            "state_changes": [],
+            "actionable_implications": [],
+        },
+    )
+    assert manager.scene_state is not None
+    assert "Only_One" not in manager.scene_state.present_characters
+
+
+def test_process_turn_under_strict_presence_invariant_env(
+    monkeypatch: object,
+) -> None:
+    monkeypatch.setenv("RP_CONTINUITY_STRICT_INVARIANTS", "1")
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Ayame", "Celina"],
+    )
+    manager.process_turn(
+        acting_character="Ayame",
+        move={
+            "action": "points at Celina",
+            "dialogue": "Explain.",
+            "motivation": {
+                "goal": "press for truth",
+                "tactic": "confront",
+                "emotional_driver": "tension",
+                "risk_level": "high",
+            },
+        },
+        director_decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "escalate",
+            "reason": "Pressure beat.",
+        },
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-27T12:00:00"),
+    )
+    assert manager.scene_state is not None
+    overlap = set(manager.scene_state.present_characters) & set(
+        manager.scene_state.absent_but_relevant
+    )
+    assert overlap == set()
+

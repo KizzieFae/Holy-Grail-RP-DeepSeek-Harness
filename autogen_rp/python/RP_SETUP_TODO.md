@@ -1,8 +1,8 @@
-# RP App – Consolidated Step-by-Step Roadmap
+# RP App – PRD-Aligned Step-by-Step Roadmap
 
-**Goal**: Multi-agent RP system with persistent, resumable scenes, structured character output, continuity engine, and Director/Narrator orchestration.
+**Goal**: Multi-agent RP system with persistent, resumable scenes, structured character output, continuity engine, and Director/Narrator orchestration — evolving toward a knowledge-driven architecture with dynamic character packets.
 
-This checklist reflects the canonical plan. All items are actionable and structured to avoid circular testing loops.
+This roadmap preserves the current working system while introducing a **Packet Layer** to enable future integration with retrieval, graph storage, and knowledge extraction.
 
 ---
 
@@ -11,6 +11,25 @@ This checklist reflects the canonical plan. All items are actionable and structu
 - [x] Define scene and turn rules: user present, bots act, turn limits, must-remain characters  
 - [x] Character success criteria: in-character behavior, knowledge boundaries, voice preservation  
 - [x] Session termination rules: explicit end, scene replacement, or interrupted session finalization  
+
+---
+
+## 0.5 Packet Layer (NEW – CRITICAL)
+
+**Purpose**: Introduce a clean interface between data and runtime.
+
+- [ ] Define `RuntimeCharacterPacket` schema
+- [ ] Define `RuntimeScenePacket` schema
+- [ ] Define `RetrievedContextBundle`
+- [ ] Create `packet_builder` module
+- [ ] Route all character input through packet builder
+- [ ] Map existing character cards → packet format (no behavior change yet)
+- [ ] Ensure packet structure separates:
+  - identity (stable)
+  - state (dynamic)
+  - relationships
+  - context
+- [ ] Add tests for packet construction
 
 ---
 
@@ -24,31 +43,60 @@ This checklist reflects the canonical plan. All items are actionable and structu
 - [x] Track per-character private state and identity anchors  
 - [x] Add audit logging and repeatable Director scenario validation  
 
+### Adjustments
+
+- [ ] Ensure character agents consume **RuntimeCharacterPacket**, not raw cards  
+- [ ] Separate system prompt scaffolding from character data  
+
 ---
 
-## 2. Continuity & Memory Engine
+## 2. Continuity & State Engine (Reframed)
 
-- [x] Model durable structures: scene state, issue/pressure state, public events, character interpretations, canon anchors  
-- [x] Strengthen scene state: participants, environment, phase, recent delta  
-- [x] Track issue/pressure lifecycles: active, escalating, stalled, resolved  
+**Purpose**: Maintain authoritative structured state.  
+No longer responsible for direct prompt injection.
+
+- [x] Model durable structures:
+  - scene state
+  - issue/pressure state
+  - public events
+  - character interpretations
+  - canon anchors  
+
+- [x] Strengthen scene state:
+  - participants
+  - environment
+  - phase
+  - recent delta  
+
+- [x] Track issue/pressure lifecycles:
+  - active
+  - escalating
+  - stalled
+  - resolved  
+
 - [x] Canon anchors for stable character/world truths  
-- [x] Continuity manager responsibilities:
-  - [x] Promote key dialogue/actions to events
-  - [x] Update issue/pressure and scene state
-  - [x] Update character interpretation memory
-  - [x] Enforce knowledge boundaries  
-- [x] Separate persistent facts from temporary beat state  
-- [x] Layered prompt assembly:
-  - [x] Scene state
-  - [x] Issue/pressure
-  - [x] Recent moves
-  - [x] Dialogue window
-  - [x] Memory  
-- [x] Simple memory buckets:
-  - [x] Session summary
-  - [x] World facts
-  - [x] User preferences  
-- [x] Deterministic retrieval with filters (participant, issue, recency, location, significance)  
+
+### Continuity Manager Responsibilities
+
+- [x] Promote key dialogue/actions to events  
+- [x] Update issue/pressure and scene state  
+- [x] Update character interpretation memory  
+- [x] Enforce knowledge boundaries  
+
+---
+
+### New Additions
+
+- [ ] Distinguish:
+  - authoritative state (truth)
+  - retrievable context (candidate input)
+- [ ] Tag memory with:
+  - participants
+  - issue linkage
+  - recency
+  - emotional weight
+  - significance
+- [ ] Prepare memory for **selection by packet builder**, not direct prompt use  
 
 ---
 
@@ -58,13 +106,13 @@ This checklist reflects the canonical plan. All items are actionable and structu
 
 - [x] `app.py` reduced to composition/compatibility facade  
 - [x] Extract helpers by concern:
-  - [x] validation/parsing
-  - [x] summary/audit
-  - [x] Director/character prompts
-  - [x] orchestration
-  - [x] turn runner
-  - [x] scene lifecycle
-  - [x] UI rendering  
+  - validation/parsing
+  - summary/audit
+  - Director/character prompts
+  - orchestration
+  - turn runner
+  - scene lifecycle
+  - UI rendering  
 - [x] Keep helper files focused and reasonably sized  
 - [x] Re-run RP app tests after each extraction  
 
@@ -72,35 +120,39 @@ This checklist reflects the canonical plan. All items are actionable and structu
 
 - [x] Split major helper modules by responsibility  
 - [x] Re-evaluate cohesion for:
-  - [x] memory helpers
-  - [x] sidebar/UI
-  - [x] session lifecycle
-  - [x] response validation
-  - [x] character state  
+  - memory helpers
+  - sidebar/UI
+  - session lifecycle
+  - response validation
+  - character state  
+
 - [x] Refactor `continuity_manager.py` in phases:
-  - [x] scene bootstrap
-  - [x] issue lifecycle
-  - [x] summary/compression
-  - [x] knowledge propagation  
+  - scene bootstrap
+  - issue lifecycle
+  - summary/compression
+  - knowledge propagation  
+
 - [x] Refactor `audit_logger.py` in phases:
-  - [x] path/naming
-  - [x] serialization
-  - [x] artifact writers
-  - [x] summary aggregation  
+  - path/naming
+  - serialization
+  - artifact writers
+  - summary aggregation  
 
 ### 3C. Regression coverage
 
 - [x] Scenario coverage:
-  - [x] one-on-one
-  - [x] emotional
-  - [x] 3-character
+  - one-on-one
+  - emotional
+  - 3-character
   - [ ] long-session
   - [ ] reload-after-save  
+
 - [x] Track recurring failures:
-  - [x] character drift
-  - [x] memory drift
-  - [x] turn-selection mistakes
-  - [x] repetitive phrasing  
+  - character drift
+  - memory drift
+  - turn-selection mistakes
+  - repetitive phrasing  
+
 - [x] Convert audit findings into regression tests  
 - [x] Keep context bounded (token limits / buffered dialogue)  
 - [x] Use shadow/audit mode for new systems  
@@ -114,14 +166,25 @@ This checklist reflects the canonical plan. All items are actionable and structu
   - [x] 3-character confrontation
   - [x] long session (20+ turns)
   - [x] reload-after-save  
+
 - [ ] Review validator false positives and enforcement boundaries  
 - [ ] Validate summary blocks for prompt quality  
+
+### New Additions
+
+- [ ] Validate packet quality:
+  - completeness
+  - correctness
+  - token size
+  - relevance  
+
 - [ ] Tune:
-  - [ ] canon
-  - [ ] tone
-  - [ ] knowledge
-  - [ ] issue lifecycle
-  - [ ] summary retrieval  
+  - canon
+  - tone
+  - knowledge
+  - issue lifecycle
+  - packet composition  
+
 - [x] Implement persistent scene-priority hierarchy  
 - [ ] Add reconciliation rules for persistent vs local priorities  
 - [ ] Validate long-term behavior across turns and reloads  
@@ -141,11 +204,11 @@ This checklist reflects the canonical plan. All items are actionable and structu
 
 ---
 
-## 6. Narrative & Setting Enhancements
+## 6. Narrative & Setting Enhancements (Updated)
 
 - [ ] Evaluate reasoning models for multi-character scenes  
-- [ ] Add reusable setting/location-context assets  
-- [ ] Inject setting guidance into Director flow  
+- [ ] Add reusable **location/context assets**
+- [ ] Inject setting guidance into **scene packets**, not prompts  
 - [ ] Evaluate lightweight narrator bridge beats  
 - [ ] Improve repetitive phrasing detection  
 
@@ -160,37 +223,79 @@ This checklist reflects the canonical plan. All items are actionable and structu
 
 ---
 
-## 8. Post-Core Persistence Upgrade
+## 8. Graph Persistence (Reframed as Upstream Layer)
 
-- [ ] Evaluate need for graph persistence
+- [ ] Evaluate need for graph persistence  
 - [ ] Design graph model:
-  - [ ] event nodes
-  - [ ] issue nodes
-  - [ ] character nodes
-  - [ ] relationships  
+  - event nodes
+  - issue nodes
+  - character nodes
+  - relationships  
+
 - [ ] Prototype Neo4j-backed persistence  
 - [ ] Validate before migration  
 
 ---
 
-## 9. Post-Core Retrieval Upgrade
+## 9. Retrieval & Packaging Integration (Replaces Old Retrieval Section)
 
-- [ ] Evaluate embedding-based retrieval after deterministic system stabilizes  
-- [ ] Score memory candidates:
-  - [ ] relevance
-  - [ ] recency
-  - [ ] importance
-  - [ ] character alignment
-  - [ ] source confidence  
-- [ ] Use shadow mode before enabling  
-- [ ] Keep deterministic filters as hard gates  
+**Purpose**: Feed dynamic context into packet builder.
+
+- [ ] Add retrieval hooks to `packet_builder`  
+- [ ] Start with manual/static retrieval sources  
+- [ ] Add vector retrieval (shadow mode)  
+- [ ] Combine:
+  - deterministic filters
+  - semantic retrieval  
+
+- [ ] Score candidates:
+  - relevance
+  - recency
+  - importance
+  - character alignment
+  - confidence  
+
+- [ ] Limit retrieval per packet (strict token budget)  
+- [ ] Validate:
+  - relevance
+  - non-redundancy
+  - consistency  
 
 ---
 
-## Guiding Principles (Prevent Endless Testing Loops)
+## 10. Future: Knowledge Ingestion Pipeline (NEW)
+
+**Separate system feeding into packets**
+
+- [ ] Text ingestion (books, lore, etc.)
+- [ ] Entity extraction
+- [ ] Relationship extraction
+- [ ] Event extraction
+- [ ] Evidence linking
+- [ ] Trait inference (confidence-based)
+- [ ] Character compilation
+- [ ] Relationship profile generation
+- [ ] Voice modeling
+
+Output feeds:
+→ graph  
+→ vector store  
+→ compiled packet inputs  
+
+---
+
+## Guiding Principles (Updated)
 
 - Test after **changes**, not continuously  
 - Separate **refactor work** from **behavior changes**  
 - Use **audit/shadow mode** instead of blocking development  
 - Convert repeated failures into **regression tests**, not manual reruns  
 - Only move to later phases once core continuity + Director behavior is stable  
+
+### New Principles
+
+- **Runtime consumes packets, not raw data**
+- **State is authoritative; retrieval is advisory**
+- **Precompute where possible; retrieve where necessary**
+- **Avoid interpreting meaning from raw text repeatedly**
+- **Keep AutoGen as execution layer, not knowledge layer**

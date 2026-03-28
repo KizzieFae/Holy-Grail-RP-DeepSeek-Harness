@@ -28,7 +28,9 @@ Do not rely on tool memory as the only source of important project behavior.
 
 ## Where to start
 
+- For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
 - Read `docs/repo-map.md` for repo structure.
+- Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).
 - Read `docs/code-style.md` for change-scope and coding expectations.
 - Read `docs/testing.md` before changing Python code.
 - Read `docs/architecture.md` before touching `python/rp_app/` or other core workflow code.
@@ -41,6 +43,7 @@ area is usually `python/rp_app/`.
 
 If a task touches the RP app, also read:
 
+- `../MODULE_INDEX.md` (file-level map; canonical at repo root)
 - `python/rp_app/README.md`
 - `python/rp_app/ARCHITECTURE.md`
 - `python/rp_app/AUDIT_DOCUMENTATION.md`

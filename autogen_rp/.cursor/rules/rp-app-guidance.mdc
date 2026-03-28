@@ -11,6 +11,7 @@ alwaysApply: false
 
 When a task touches the RP app, read:
 
+- `../MODULE_INDEX.md` (repo root: symptom → module map)
 - `docs/architecture.md`
 - `docs/audit-workflows.md`
 - `python/rp_app/README.md`

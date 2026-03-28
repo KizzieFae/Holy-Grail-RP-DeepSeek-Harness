@@ -23,16 +23,19 @@ _BOUNDARY_LOCATION_TERMS = {
     "balcony",
     "roof",
 }
+# Single token "exit" removed: it matches doorway vocabulary and verb "exit" in soft
+# heuristics, producing false positives next to movement/boundary terms.
 _BOUNDARY_STRUCTURE_TERMS = {
     "door",
     "doorway",
     "threshold",
     "gate",
-    "exit",
     "entrance",
     "stairwell door",
     "front door",
     "back door",
+    "fire exit",
+    "emergency exit",
 }
 _MOVEMENT_TERMS = {
     "leave",
@@ -52,6 +55,7 @@ _MOVEMENT_TERMS = {
     "stepping",
     "storm",
     "stormed",
+    "storms",
     "stalk",
     "stalked",
     "headed",
@@ -66,6 +70,15 @@ _MOVEMENT_TERMS = {
     "descend",
     "descended",
     "descends",
+    "spin",
+    "spun",
+    "spins",
+    "rush",
+    "rushed",
+    "run",
+    "ran",
+    "race",
+    "raced",
 }
 _DEPARTURE_COMPLETION_TERMS = {
     "behind her",
@@ -96,6 +109,8 @@ _INTERNAL_REPOSITION_TERMS = {
     "stepped closer",
     "turned away",
     "turns away",
+    "spun away",
+    "spin away",
     "pacing",
     "paced",
     "repositioned",
@@ -106,6 +121,12 @@ _INTERNAL_REPOSITION_TERMS = {
     "backed toward the door",
     "to the doorway",
     "toward the door",
+    "toward the hallway",
+    "toward the hall",
+    "into the hallway",
+    "into the hall",
+    "skipped toward",
+    "bouncing toward",
 }
 _LOCATION_STOPWORDS = {
     "the",
@@ -121,45 +142,29 @@ _LOCATION_STOPWORDS = {
 }
 
 
-def _collect_text_parts(move: dict[str, Any] | None) -> tuple[str, str]:
+def _authored_text_parts(
+    move: dict[str, Any] | None,
+) -> tuple[str, str, str]:
+    """Action+dialogue (direct), goal+tactic (motivation), and combined — all lowercased.
+
+    Omits ``state_changes`` and ``presence_changes``: those may echo templated issue
+    text (e.g. 'must exit') and are not reliable departure signals.
+    """
     if not isinstance(move, dict):
-        return "", ""
+        return "", "", ""
     motivation = (
         move.get("motivation", {})
         if isinstance(move.get("motivation", {}), dict)
         else {}
     )
-    direct_parts: list[str] = [
-        str(move.get("action", "") or ""),
-        str(move.get("dialogue", "") or ""),
-    ]
-    evidence_parts = direct_parts + [
-        str(motivation.get("goal", "") or ""),
-        str(motivation.get("tactic", "") or ""),
-    ]
-    for item in (
-        move.get("state_changes", [])
-        if isinstance(move.get("state_changes", []), list)
-        else []
-    ):
-        evidence_parts.append(str(item or ""))
-    for item in (
-        move.get("presence_changes", [])
-        if isinstance(move.get("presence_changes", []), list)
-        else []
-    ):
-        if isinstance(item, dict):
-            evidence_parts.append(str(item.get("summary", "") or ""))
-            evidence_parts.append(str(item.get("change", "") or ""))
-        else:
-            evidence_parts.append(str(item or ""))
-    direct_text = " ".join(
-        part.strip() for part in direct_parts if str(part or "").strip()
-    ).lower()
-    evidence_text = " ".join(
-        part.strip() for part in evidence_parts if str(part or "").strip()
-    ).lower()
-    return direct_text, evidence_text
+    action = str(move.get("action", "") or "").strip()
+    dialogue = str(move.get("dialogue", "") or "").strip()
+    goal = str(motivation.get("goal", "") or "").strip()
+    tactic = str(motivation.get("tactic", "") or "").strip()
+    direct_raw = " ".join(part for part in (action, dialogue) if part)
+    motivation_raw = " ".join(part for part in (goal, tactic) if part)
+    combined_raw = " ".join(part for part in (direct_raw, motivation_raw) if part)
+    return direct_raw.lower(), motivation_raw.lower(), combined_raw.lower()
 
 
 def _extract_scene_anchor_terms(scene_state: dict[str, Any] | None) -> set[str]:
@@ -184,66 +189,146 @@ def _contains_any(text: str, terms: set[str]) -> bool:
     return False
 
 
-def detect_exit_from_scene(
+# Explicit departure in *embodied* prose: action and/or dialogue only (not motivation alone).
+_EXPLICIT_DEPARTURE_RE = re.compile(
+    r"\b(?:walk(?:ed|ing)?\s+out|storms?\s+out|stormed\s+out|storming\s+out|head(?:ed|ing)?\s+out|left\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors)|(?:leave|leaving|exit|exited|exiting|depart(?:ed|ing)?)\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors|here)|(?:i|i'm|im|we|we're|were|she|he|they)\s+(?:am\s+|are\s+|is\s+)?(?:leaving|exiting|departing))\b",
+)
+
+
+def has_hard_scene_departure_evidence(
     move: dict[str, Any] | None,
     scene_state: dict[str, Any] | None,
 ) -> bool:
-    direct_text, evidence_text = _collect_text_parts(move)
-    if not evidence_text:
+    """True only for clear, authored departure (action/dialogue), not heuristics.
+
+    Does **not** treat ``presence_changes`` or ``state_changes`` as hard evidence: those
+    can be model- or template-injected and are not more trustworthy than generic tags.
+
+    Explicit wording in action/dialogue always wins over in-room reposition cues in the
+    same line.
+
+    ``scene_state`` is reserved for future use (e.g. anchor phrases).
+    """
+    _ = scene_state
+    direct_text, _, combined_authored = _authored_text_parts(move)
+    if not direct_text and not combined_authored:
         return False
 
-    if (
-        "left the immediate scene" in evidence_text
-        or '"change": "exit"' in evidence_text
-    ):
+    if "left the immediate scene" in combined_authored:
         return True
 
-    explicit_exit = re.search(
-        r"\b(?:walk(?:ed|ing)?\s+out|storm(?:ed|ing)?\s+out|head(?:ed|ing)?\s+out|left\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors)|(?:leave|leaving|exit|exited|exiting|depart(?:ed|ing)?)\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors|here)|(?:i|i'm|im|we|we're|were|she|he|they)\s+(?:am\s+|are\s+|is\s+)?(?:leaving|exiting|departing))\b",
-        direct_text,
-    )
+    if _EXPLICIT_DEPARTURE_RE.search(direct_text):
+        return True
 
-    if _contains_any(direct_text, _INTERNAL_REPOSITION_TERMS) and explicit_exit is None:
+    if _contains_any(direct_text, _INTERNAL_REPOSITION_TERMS):
         return False
 
-    if explicit_exit is not None and not _contains_any(
-        direct_text, _INTERNAL_REPOSITION_TERMS
-    ):
-        return True
+    return False
 
-    has_movement = _contains_any(direct_text, _MOVEMENT_TERMS)
-    has_boundary_location = _contains_any(direct_text, _BOUNDARY_LOCATION_TERMS)
-    has_boundary_structure = _contains_any(direct_text, _BOUNDARY_STRUCTURE_TERMS)
-    has_departure_completion = _contains_any(direct_text, _DEPARTURE_COMPLETION_TERMS)
-    has_supporting_departure_intent = _contains_any(
-        evidence_text, {"leave", "exit", "depart", "withdraw", "walk out", "head out"}
+
+def _soft_departure_intent_in_authored(move: dict[str, Any] | None) -> bool:
+    """Intent phrases using only action, dialogue, goal, tactic — not structured lists."""
+    _, _, combined = _authored_text_parts(move)
+    if not combined:
+        return False
+    return _contains_any(
+        combined,
+        {
+            "leave",
+            "leaving",
+            "left ",
+            "exit",
+            "exiting",
+            "exited",
+            "depart",
+            "departing",
+            "departed",
+            "withdraw",
+            "walk out",
+            "head out",
+            "walked out",
+            "headed out",
+            "stormed out",
+            "storms out",
+            "storm out",
+        },
     )
 
+
+def _leaves_scene_anchor_authored(
+    *,
+    combined_authored: str,
+    scene_state: dict[str, Any] | None,
+) -> bool:
+    if not combined_authored:
+        return False
     scene_anchor_terms = _extract_scene_anchor_terms(scene_state)
-    leaves_scene_anchor = any(
+    return any(
         re.search(
             rf"\b(?:outside|out of|away from|beyond)\s+the\s+{re.escape(term)}\b",
-            evidence_text,
+            combined_authored,
         )
         for term in scene_anchor_terms
+    )
+
+
+def _detect_exit_soft_movement_boundary(
+    move: dict[str, Any] | None,
+    scene_state: dict[str, Any] | None,
+) -> bool:
+    """Tightened soft path: movement/setting cues require completion or anchor leave."""
+    direct_text, _, combined_authored = _authored_text_parts(move)
+    if not direct_text and not combined_authored:
+        return False
+    # Soft heuristics need an embodied beat; motivation-only intent is not a departure.
+    if not direct_text.strip():
+        return False
+
+    has_movement = _contains_any(combined_authored, _MOVEMENT_TERMS)
+    has_boundary_location = _contains_any(combined_authored, _BOUNDARY_LOCATION_TERMS)
+    has_boundary_structure = _contains_any(combined_authored, _BOUNDARY_STRUCTURE_TERMS)
+    has_departure_completion = _contains_any(
+        combined_authored, _DEPARTURE_COMPLETION_TERMS
+    )
+    has_soft_intent = _soft_departure_intent_in_authored(move)
+
+    if _contains_any(direct_text, _INTERNAL_REPOSITION_TERMS):
+        return False
+
+    leaves_anchor = _leaves_scene_anchor_authored(
+        combined_authored=combined_authored, scene_state=scene_state
     )
 
     if (
         has_movement
         and has_boundary_location
-        and not _contains_any(direct_text, _INTERNAL_REPOSITION_TERMS)
+        and has_departure_completion
     ):
         return True
 
-    if (has_boundary_structure and has_departure_completion) or leaves_scene_anchor:
+    if (has_boundary_structure and has_departure_completion) or leaves_anchor:
         if has_movement or has_boundary_location:
             return True
 
     if (
-        has_supporting_departure_intent
+        has_soft_intent
         and has_boundary_location
         and has_departure_completion
     ):
         return True
 
     return False
+
+
+def detect_exit_from_scene(
+    move: dict[str, Any] | None,
+    scene_state: dict[str, Any] | None,
+) -> bool:
+    """True if the turn describes actually leaving the immediate scene.
+
+    Hard evidence (explicit wording / system phrase in authored text) wins first; soft
+    path requires completion or clear anchor-leave, and ignores structured list echoes.
+    """
+    if has_hard_scene_departure_evidence(move, scene_state):
+        return True
+    return _detect_exit_soft_movement_boundary(move, scene_state)

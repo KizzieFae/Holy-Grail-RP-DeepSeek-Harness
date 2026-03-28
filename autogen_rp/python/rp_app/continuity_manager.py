@@ -5,8 +5,13 @@ Responsible for: promoting moves to events, updating issue state,
 updating scene state, managing character interpretations, enforcing knowledge boundaries.
 """
 
+import logging
+import os
+import re
 from datetime import datetime, timezone
 from typing import Any, Optional
+
+from scene_exit_detection import has_hard_scene_departure_evidence
 
 from continuity_issue_helpers import (
     event_tokens,
@@ -96,6 +101,8 @@ ISSUE_TOKEN_STOPWORDS = {
     "would",
     "your",
 }
+
+logger = logging.getLogger(__name__)
 
 
 class ContinuityManager:
@@ -810,13 +817,22 @@ class ContinuityManager:
             self.scene_state.environment_description = environment_event
 
         if "exit" in consequence_tags:
-            self.scene_state.present_characters = [
-                name
-                for name in self.scene_state.present_characters
-                if name != acting_character
-            ]
-            if acting_character not in self.scene_state.absent_but_relevant:
-                self.scene_state.absent_but_relevant.append(acting_character)
+            scene_for_exit = self.scene_state.to_dict()
+            hard_departure = has_hard_scene_departure_evidence(move, scene_for_exit)
+            skip_soft_removal = (
+                not hard_departure
+                and self._should_skip_soft_exit_presence_removal(
+                    acting_character, move
+                )
+            )
+            if not skip_soft_removal:
+                self.scene_state.present_characters = [
+                    name
+                    for name in self.scene_state.present_characters
+                    if name != acting_character
+                ]
+                if acting_character not in self.scene_state.absent_but_relevant:
+                    self.scene_state.absent_but_relevant.append(acting_character)
         if "entry" in consequence_tags:
             if acting_character not in self.scene_state.present_characters:
                 self.scene_state.present_characters.append(acting_character)
@@ -847,6 +863,121 @@ class ContinuityManager:
             or tension_shift
             or str(move.get("action", "character action"))
         )
+
+        self._reconcile_presence_lists()
+        self._assert_presence_invariant_after_reconcile()
+
+    def _reconcile_presence_lists(self) -> None:
+        """Drop absent entries that are still present; dedupe both lists."""
+        if self.scene_state is None:
+            return
+        seen_present: set[str] = set()
+        deduped_present: list[str] = []
+        for name in self.scene_state.present_characters:
+            n = str(name).strip()
+            if not n or n in seen_present:
+                continue
+            seen_present.add(n)
+            deduped_present.append(n)
+        self.scene_state.present_characters = deduped_present
+        present_set = set(self.scene_state.present_characters)
+        filtered_absent = [
+            str(n).strip()
+            for n in self.scene_state.absent_but_relevant
+            if str(n).strip() and str(n).strip() not in present_set
+        ]
+        seen_absent: set[str] = set()
+        deduped_absent: list[str] = []
+        for n in filtered_absent:
+            if n in seen_absent:
+                continue
+            seen_absent.add(n)
+            deduped_absent.append(n)
+        self.scene_state.absent_but_relevant = deduped_absent
+
+    def _assert_presence_invariant_after_reconcile(self) -> None:
+        if self.scene_state is None:
+            return
+        present = set(self.scene_state.present_characters)
+        absent = set(self.scene_state.absent_but_relevant)
+        overlap = present & absent
+        if not overlap:
+            return
+        message = (
+            "continuity presence invariant failed after reconcile: "
+            f"present ∩ absent_but_relevant = {overlap!r}"
+        )
+        if os.environ.get("RP_CONTINUITY_STRICT_INVARIANTS", "").strip() == "1":
+            raise AssertionError(message)
+        logger.warning(message)
+
+    def _acting_character_named_in_current_move(
+        self, acting_character: str, move: dict[str, Any]
+    ) -> bool:
+        """True if the actor's id tokens appear in this turn's authored text."""
+        tokens: list[str] = []
+        for segment in acting_character.replace("_", " ").split():
+            s = segment.strip()
+            if len(s) >= 3:
+                tokens.append(s.lower())
+        if not tokens:
+            return False
+        motivation = move.get("motivation", {})
+        if not isinstance(motivation, dict):
+            motivation = {}
+        chunks = [
+            str(move.get("action", "") or ""),
+            str(move.get("dialogue", "") or ""),
+            str(motivation.get("goal", "") or ""),
+            str(motivation.get("tactic", "") or ""),
+        ]
+        text = " ".join(chunks).lower()
+        for token in tokens:
+            if re.search(rf"\b{re.escape(token)}\b", text):
+                return True
+        return False
+
+    def _acting_character_required_by_active_confrontation(
+        self, acting_character: str
+    ) -> bool:
+        if not self.scene_state:
+            return False
+        issues = get_active_issues_helper(
+            manager=self,
+            limit=24,
+            participants=[acting_character],
+            statuses=[IssueStatus.ACTIVE, IssueStatus.ESCALATING],
+        )
+        for issue in issues:
+            if acting_character not in issue.participants:
+                continue
+            if len(issue.participants) >= 2:
+                return True
+            blocked = getattr(issue, "blocked_characters", None) or []
+            if acting_character in blocked:
+                return True
+            rn = (issue.required_next_step or "").lower()
+            if any(
+                needle in rn
+                for needle in (
+                    "targeted character",
+                    "must exit",
+                    "challenge back",
+                    "submit",
+                    "respond",
+                )
+            ):
+                return True
+        return False
+
+    def _should_skip_soft_exit_presence_removal(
+        self, acting_character: str, move: dict[str, Any]
+    ) -> bool:
+        if self._acting_character_named_in_current_move(acting_character, move):
+            return True
+        if self._acting_character_required_by_active_confrontation(acting_character):
+            return True
+        return False
 
     def _maybe_create_issue(
         self,

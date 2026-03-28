@@ -24,10 +24,12 @@ This file is a quick orientation guide for humans and AI tools.
 
 ## RP app docs and anchors
 
+- `../MODULE_INDEX.md` (repo root) - file-level responsibility map for `python/rp_app/`
 - `python/rp_app/README.md` - runtime overview and module layout
 - `python/rp_app/ARCHITECTURE.md` - authoritative RP architecture notes
 - `python/rp_app/AUDIT_DOCUMENTATION.md` - audit artifact meanings and review procedure
 - `python/rp_app/CHARACTER_MIGRATION_GUIDE.md` - character-card migration guidance
+- `docs/rp-data-layout.md` - character cards, templates, sessions, audit paths
 
 ## Most likely files for RP runtime work
 

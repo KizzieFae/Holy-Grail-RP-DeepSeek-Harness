@@ -366,6 +366,6 @@ Look for patterns across the tracking table, then do a calibration pass:
 ## Reference docs
 
 - See `Current module layout` above for the active `python/rp_app/` structure
-- `ARCHITECTURE.md` - Architecture notes and design direction
+- **[MODULE_INDEX.md](../../../MODULE_INDEX.md)** — full symptom → module map (canonical at Holy Grail repo root); this folder’s `MODULE_INDEX.md` is a pointer
 - `AUDIT_DOCUMENTATION.md` - Scene audit system documentation and analysis guide
 - `CHARACTER_MIGRATION_GUIDE.md` - Character conversion and format guidance
