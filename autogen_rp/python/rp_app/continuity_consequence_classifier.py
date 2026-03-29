@@ -200,7 +200,54 @@ class ConsequenceClassifier:
             )
         )
 
+        # Deterministic persistent scene-state signals (shared with scene_grounding)
+        consequences.extend(self._detect_persistent_scene_state(move))
+
         return consequences
+
+    def _detect_persistent_scene_state(
+        self, move: dict[str, Any]
+    ) -> list[DetectedConsequence]:
+        """Lexical scene-state signals; must match ``grounding_state_signals_from_move``."""
+        try:
+            from scene_grounding import (
+                SIGNAL_BANDAGE_APPLIED,
+                SIGNAL_PHONE_BROKEN,
+                SIGNAL_WEAPON_ON_TABLE,
+                grounding_state_signals_from_move,
+            )
+        except ImportError:
+            from python.rp_app.scene_grounding import (
+                SIGNAL_BANDAGE_APPLIED,
+                SIGNAL_PHONE_BROKEN,
+                SIGNAL_WEAPON_ON_TABLE,
+                grounding_state_signals_from_move,
+            )
+
+        signals = grounding_state_signals_from_move(move)
+        results: list[DetectedConsequence] = []
+        excerpt_src = f"{move.get('dialogue', '')} {move.get('action', '')}".strip()
+        excerpt = excerpt_src[:80] if excerpt_src else ""
+
+        if SIGNAL_PHONE_BROKEN in signals or SIGNAL_WEAPON_ON_TABLE in signals:
+            results.append(
+                DetectedConsequence(
+                    category=ConsequenceCategory.PHYSICAL_STATE_SET,
+                    confidence="strong",
+                    source_fields=["dialogue", "action"],
+                    excerpt=excerpt,
+                )
+            )
+        if SIGNAL_BANDAGE_APPLIED in signals:
+            results.append(
+                DetectedConsequence(
+                    category=ConsequenceCategory.MEDICAL_STATE_SET,
+                    confidence="strong",
+                    source_fields=["dialogue", "action"],
+                    excerpt=excerpt,
+                )
+            )
+        return results
 
     def _extract_intent_signals(self, goal: str, tactic: str) -> dict[str, bool]:
         """Extract intent categories from goal and tactic fields."""

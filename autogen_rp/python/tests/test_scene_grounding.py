@@ -15,6 +15,8 @@ from scene_grounding import (
     empty_grounding_dict,
     format_grounding_block_body,
     format_grounding_prompt_prefix,
+    grounding_markers_event_summary,
+    grounding_state_signals_from_move,
     rebuild_scene_grounding_from_continuity,
 )
 
@@ -59,6 +61,34 @@ def test_compute_grounding_markers_phone():
     }
     m = compute_grounding_markers("Willow", move, [])
     assert any("object_state:phone" in x for x in m)
+
+
+def test_compute_grounding_markers_bandage_and_weapon():
+    bandage_move = {
+        "dialogue": "The dressing is wrapped now.",
+        "action": "",
+        "motivation": {},
+    }
+    assert "bandage_applied" in grounding_state_signals_from_move(bandage_move)
+    mb = compute_grounding_markers("Nurse", bandage_move, [])
+    assert any("wound_dressing" in x for x in mb)
+
+    weapon_move = {
+        "dialogue": "",
+        "action": "placed the knife on the table",
+        "motivation": {},
+    }
+    assert "weapon_on_table" in grounding_state_signals_from_move(weapon_move)
+    mw = compute_grounding_markers("Guard", weapon_move, [])
+    assert any("object_state:weapon" in x and "on_table" in x for x in mw)
+
+
+def test_grounding_markers_event_summary_joins_facts():
+    s = grounding_markers_event_summary(
+        ["object_state:phone|status=broken", "medical_status:wound_dressing|status=applied"]
+    )
+    assert "Phone" in s
+    assert "dressing" in s.lower() or "Wound" in s
 
 
 def test_rebuild_and_supersede():

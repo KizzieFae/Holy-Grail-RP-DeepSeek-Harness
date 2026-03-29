@@ -22,6 +22,11 @@ _CATEGORY_PRIORITY: dict[str, int] = {
     "object_state": 70,
 }
 
+# Shared deterministic signals for classifier + marker emission (same predicates).
+SIGNAL_PHONE_BROKEN = "phone_broken"
+SIGNAL_BANDAGE_APPLIED = "bandage_applied"
+SIGNAL_WEAPON_ON_TABLE = "weapon_on_table"
+
 
 def empty_grounding_dict() -> dict[str, Any]:
     return {
@@ -43,6 +48,50 @@ def _move_text_blob(move: dict[str, Any]) -> str:
     return f"{dialogue} {action} {goal}"
 
 
+def grounding_state_signals_from_move(move: dict[str, Any]) -> frozenset[str]:
+    """Narrow, deterministic scene-state lexical signals (classifier + markers).
+
+    Same predicates must drive both consequence detection and marker emission.
+    """
+    text = _move_text_blob(move)
+    out: set[str] = set()
+    if ("phone" in text or "cell" in text) and (
+        "broke" in text
+        or "broken" in text
+        or "shattered" in text
+        or "smashed" in text
+    ):
+        out.add(SIGNAL_PHONE_BROKEN)
+    if ("bandage" in text or "dressing" in text) and (
+        "applied" in text
+        or "wrapped" in text
+        or "taped" in text
+        or "secured" in text
+    ):
+        out.add(SIGNAL_BANDAGE_APPLIED)
+    has_weapon_ref = "table" in text and (
+        "weapon" in text or "gun" in text or "knife" in text
+    )
+    padded = f" {text} "
+    has_placement_verb = (
+        "placed" in text
+        or "laid" in text
+        or "put down" in text
+        or "puts down" in text
+        or "set down" in text
+        or "sets down" in text
+        or "left on" in text
+        or "leaves on" in text
+        or (
+            "on the table" in text
+            and any(f" {v} " in padded for v in ("put", "set", "laid", "placed"))
+        )
+    )
+    if has_weapon_ref and has_placement_verb:
+        out.add(SIGNAL_WEAPON_ON_TABLE)
+    return frozenset(out)
+
+
 def compute_grounding_markers(
     acting_character: str,
     move: dict[str, Any],
@@ -54,6 +103,7 @@ def compute_grounding_markers(
     """
     cats = {d.category for d in detected}
     text = _move_text_blob(move)
+    signals = grounding_state_signals_from_move(move)
     markers: list[str] = []
 
     if ConsequenceCategory.REVELATION in cats:
@@ -77,10 +127,14 @@ def compute_grounding_markers(
                 f"assignment:sleeping_surface|surface=top_of_bunk_marlene|assignee={assignee}"
             )
 
-    if ("phone" in text or "cell" in text) and (
-        "broke" in text or "broken" in text or "shattered" in text or "smashed" in text
-    ):
+    if SIGNAL_PHONE_BROKEN in signals:
         markers.append("object_state:phone|status=broken")
+
+    if SIGNAL_BANDAGE_APPLIED in signals:
+        markers.append("medical_status:wound_dressing|status=applied")
+
+    if SIGNAL_WEAPON_ON_TABLE in signals:
+        markers.append("object_state:weapon|location=on_table")
 
     if ConsequenceCategory.COMMITMENT in cats or ConsequenceCategory.AGREEMENT in cats:
         if ("housing" in text or "res life" in text or "reslife" in text) and (
@@ -141,9 +195,32 @@ def _build_value_summary(category: str, key: str, kv: dict[str, str]) -> str:
         return f"{who}: suppressants ({form})"[:120]
     if category == "object_state" and key == "phone":
         return f"Phone: {kv.get('status', 'unknown')}"[:120]
+    if category == "object_state" and key == "weapon":
+        loc = kv.get("location", "")
+        loc_label = loc.replace("_", " ") if loc else "scene"
+        return f"Weapon: {loc_label}"[:120]
+    if category == "medical_status" and key == "wound_dressing":
+        return f"Wound dressing: {kv.get('status', 'unknown')}"[:120]
     if category == "communication_state" and key == "housing_call":
         return f"Housing call: {kv.get('status', 'unknown')}"[:120]
     return f"{category}/{key}"[:120]
+
+
+def grounding_markers_event_summary(markers: list[str]) -> str:
+    """Deterministic one-line audit/summary when an event is promoted for markers only."""
+    parts: list[str] = []
+    for m in markers:
+        p = _parse_marker(str(m))
+        if p:
+            cat, key, kv = p
+            parts.append(_build_value_summary(cat, key, kv))
+        else:
+            t = str(m).strip()
+            if t:
+                parts.append(t[:120])
+    if parts:
+        return "; ".join(parts)[:280]
+    return "Settled scene state updated."
 
 
 def _build_value_dict(category: str, key: str, kv: dict[str, str]) -> dict[str, str]:
@@ -225,8 +302,8 @@ def _marker_to_fact(
         return None
     allowed_keys = {
         "assignment": {"sleeping_surface"},
-        "medical_status": {"omega_suppressants"},
-        "object_state": {"phone"},
+        "medical_status": {"omega_suppressants", "wound_dressing"},
+        "object_state": {"phone", "weapon"},
         "communication_state": {"housing_call"},
     }
     if key not in allowed_keys.get(category, set()):

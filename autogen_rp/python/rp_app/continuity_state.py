@@ -85,6 +85,10 @@ class ConsequenceCategory(Enum):
     REVELATION = "revelation"
     CONCEALMENT = "concealment"
 
+    # Persistent scene reality (deterministic lexical signals; not issue pressure)
+    PHYSICAL_STATE_SET = "physical_state_set"
+    MEDICAL_STATE_SET = "medical_state_set"
+
     # Future pressure
     DECISION_MADE = "decision_made"
     PLAN_COMMITTED = "plan_committed"

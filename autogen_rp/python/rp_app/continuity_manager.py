@@ -52,7 +52,7 @@ from continuity_scene_helpers import (
     restore_manager_state,
     serialize_manager_state,
 )
-from scene_grounding import compute_grounding_markers
+from scene_grounding import compute_grounding_markers, grounding_markers_event_summary
 
 from continuity_state import (
     CanonAnchor,
@@ -195,6 +195,8 @@ class ContinuityManager:
             ConsequenceCategory.ACCESS_DENIED: f"{acting_character} denied access or blocked entry.",
             ConsequenceCategory.REVELATION: f"{acting_character} revealed significant information.",
             ConsequenceCategory.CONCEALMENT: f"{acting_character} concealed or hid information.",
+            ConsequenceCategory.PHYSICAL_STATE_SET: f"{acting_character} established or changed a concrete physical detail in the scene.",
+            ConsequenceCategory.MEDICAL_STATE_SET: f"{acting_character} applied or confirmed a hands-on medical or first-aid detail.",
         }
 
         # Category to actionable implication mapping
@@ -215,6 +217,8 @@ class ContinuityManager:
             ConsequenceCategory.ACCESS_GRANTED: "The granted access can be used immediately by the recipient.",
             ConsequenceCategory.ACCESS_DENIED: "The denied party must find leverage or alternate route.",
             ConsequenceCategory.REVELATION: "Others can now act on the newly revealed information.",
+            ConsequenceCategory.PHYSICAL_STATE_SET: "A physical object or placement detail is now part of shared scene reality.",
+            ConsequenceCategory.MEDICAL_STATE_SET: "A medical or stabilization detail is now part of shared scene reality.",
         }
 
         for consequence in detected:
@@ -273,11 +277,19 @@ class ContinuityManager:
             or risk_level in ["high", "extreme"]
             or tension_shift in ["escalate", "unsettle"]
         )
-        should_create_event = has_durable_change or has_scene_shift
+        base_promotion = has_durable_change or has_scene_shift
 
         grounding_markers = compute_grounding_markers(
             acting_character, move, detected
         )
+        should_create_event = base_promotion or bool(grounding_markers)
+
+        # Markers must persist on a PublicEvent; when they are the only promotion driver,
+        # use a compact deterministic summary and a stable event_type (PRD §5.8).
+        if should_create_event and not base_promotion and grounding_markers:
+            summary = grounding_markers_event_summary(grounding_markers)
+            event_type = "state"
+            significance = "minor"
 
         return {
             "should_create_event": should_create_event,
@@ -301,6 +313,10 @@ class ContinuityManager:
         """Determine event type from detected consequence categories."""
         categories = {c.category for c in detected}
 
+        if ConsequenceCategory.PHYSICAL_STATE_SET in categories:
+            return "state"
+        if ConsequenceCategory.MEDICAL_STATE_SET in categories:
+            return "state"
         if ConsequenceCategory.REVELATION in categories:
             return "revelation"
         if {

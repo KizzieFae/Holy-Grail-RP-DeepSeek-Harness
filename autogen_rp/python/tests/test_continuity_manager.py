@@ -8,6 +8,7 @@ from character_state import CharacterState
 from continuity_manager import ContinuityManager
 from continuity_summary_helpers import build_summary_block
 from continuity_state import IssueState, IssueStatus, PublicEvent
+from scene_grounding import rebuild_scene_grounding_from_continuity
 
 
 def _build_test_move(idx: int) -> dict:
@@ -1252,4 +1253,147 @@ def test_process_turn_under_strict_presence_invariant_env(
         manager.scene_state.absent_but_relevant
     )
     assert overlap == set()
+
+
+def test_phone_broken_persists_public_event_and_grounding_fact() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Quiet hallway.",
+        present_characters=["Willow", "Kizzie"],
+    )
+    manager.process_turn(
+        acting_character="Willow",
+        move={
+            "action": "",
+            "dialogue": "My phone is broken.",
+            "motivation": {
+                "goal": "explain",
+                "tactic": "state a fact",
+                "emotional_driver": "frustration",
+                "risk_level": "low",
+            },
+        },
+        director_decision={
+            "next_actor": "Kizzie",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Willow volunteered context.",
+        },
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-28T10:00:00"),
+    )
+    assert len(manager.public_events) == 1
+    ev = manager.public_events[0]
+    assert ev.event_type == "state"
+    assert any("object_state:phone" in m for m in ev.grounding_markers)
+    grounding = rebuild_scene_grounding_from_continuity(manager)
+    assert len(grounding["facts"]) >= 1
+    phone_facts = [f for f in grounding["facts"] if f.get("key") == "phone"]
+    assert phone_facts
+    assert "broken" in phone_facts[0].get("value_summary", "").lower()
+
+
+def test_marker_only_promotion_when_classifier_empty(monkeypatch: object) -> None:
+    """Phase 0: markers must persist even if consequence classifier returns nothing."""
+    manager = ContinuityManager()
+    monkeypatch.setattr(manager._consequence_classifier, "classify_turn", lambda *a, **k: [])
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Willow", "Kizzie"],
+    )
+    manager.process_turn(
+        acting_character="Willow",
+        move={
+            "action": "",
+            "dialogue": "My cell phone shattered.",
+            "motivation": {
+                "goal": "vent",
+                "tactic": "complain",
+                "emotional_driver": "annoyance",
+                "risk_level": "low",
+            },
+        },
+        director_decision={
+            "next_actor": "Kizzie",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Beat.",
+        },
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-28T10:05:00"),
+    )
+    assert len(manager.public_events) == 1
+    ev = manager.public_events[0]
+    assert ev.event_type == "state"
+    assert "Phone:" in ev.summary or "phone" in ev.summary.lower()
+    grounding = rebuild_scene_grounding_from_continuity(manager)
+    assert any(f.get("key") == "phone" for f in grounding["facts"])
+
+
+def test_bandage_applied_persists_grounding_fact() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Infirmary",
+        opening_description="First aid.",
+        present_characters=["Ayame", "Celina"],
+    )
+    manager.process_turn(
+        acting_character="Ayame",
+        move={
+            "action": "presses gauze gently",
+            "dialogue": "Hold still—the bandage is applied.",
+            "motivation": {
+                "goal": "stabilize",
+                "tactic": "first aid",
+                "emotional_driver": "focus",
+                "risk_level": "low",
+            },
+        },
+        director_decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Care beat.",
+        },
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-28T10:10:00"),
+    )
+    ev = manager.public_events[-1]
+    assert any("wound_dressing" in m for m in ev.grounding_markers)
+    grounding = rebuild_scene_grounding_from_continuity(manager)
+    dress = [f for f in grounding["facts"] if f.get("key") == "wound_dressing"]
+    assert dress
+
+
+def test_plain_greeting_does_not_create_noisy_public_event() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Lobby",
+        opening_description="Morning.",
+        present_characters=["Ayame", "Celina"],
+    )
+    manager.process_turn(
+        acting_character="Ayame",
+        move={
+            "action": "",
+            "dialogue": "Hello.",
+            "motivation": {
+                "goal": "greet",
+                "tactic": "small talk",
+                "emotional_driver": "neutral",
+                "risk_level": "low",
+            },
+        },
+        director_decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Social open.",
+        },
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-28T10:15:00"),
+    )
+    assert manager.public_events == []
 
