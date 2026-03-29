@@ -44,6 +44,10 @@ from continuity_knowledge_helpers import (
     share_event_knowledge as share_event_knowledge_helper,
     update_interpretations as update_interpretations_helper,
 )
+from continuity_resolved_outcomes import (
+    apply_sleeping_surface_outcome_updates,
+    build_sleeping_surface_state_change,
+)
 from continuity_scene_helpers import (
     build_character_context,
     build_orchestration_context,
@@ -131,6 +135,7 @@ class ContinuityManager:
         self.scene_state: Optional[SceneState] = None
         self.issues: dict[str, IssueState] = {}
         self.public_events: list[PublicEvent] = []
+        self.resolved_outcomes: list[Any] = []
         self.interpretations: dict[str, list[CharacterInterpretation]] = {}
         self.canon_anchors: list[CanonAnchor] = []
         self.summary_blocks: list[SummaryBlock] = []
@@ -231,6 +236,18 @@ class ContinuityManager:
             implication = category_implication.get(consequence.category)
             if implication and implication not in actionable_implications:
                 actionable_implications.append(implication)
+
+        sleeping_assignment_state_change = build_sleeping_surface_state_change(
+            move, self.scene_state
+        )
+        if (
+            sleeping_assignment_state_change
+            and sleeping_assignment_state_change not in state_changes
+        ):
+            state_changes.append(sleeping_assignment_state_change)
+            actionable_implications.append(
+                "Sleeping arrangement state may now be ready for continuity settlement."
+            )
 
         # Extract additional fields from move for significance calculation
         motivation = move.get("motivation", {})
@@ -716,6 +733,17 @@ class ContinuityManager:
             event,
             turn_consequences,
         )
+
+        resolved_outcome_debug = apply_sleeping_surface_outcome_updates(
+            manager=self,
+            move=move,
+            event=event,
+            turn_consequences=turn_consequences,
+            turn_index=turn_index,
+        )
+        turn_consequences.setdefault("resolved_outcomes", {})[
+            "sleeping_surface"
+        ] = resolved_outcome_debug
 
         self._update_interpretations(
             acting_character, move, director_decision, other_characters, timestamp

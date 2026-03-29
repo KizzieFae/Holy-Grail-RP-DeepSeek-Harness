@@ -51,9 +51,30 @@ CHARACTER_MOVE_SCHEMA = {
             "required": ["goal", "tactic", "emotional_driver", "risk_level"],
             "description": "Private structured motivation for this move.",
         },
+        "scene_state_updates": {
+            "type": "object",
+            "properties": {
+                "sleeping_surface_assignment": {
+                    "type": "object",
+                    "properties": {
+                        "assignee_id": {
+                            "type": "string",
+                            "description": "Who the acting speaker is establishing, actively enforcing against present resistance or dispute, or explicitly reassigning a sleeping surface for in this move.",
+                        },
+                        "surface_id": {
+                            "type": "string",
+                            "description": "Exactly one valid surface_id from the allowed set for the bounded sleeping surface the acting speaker is establishing for that assignee in this move.",
+                        },
+                    },
+                    "required": ["assignee_id", "surface_id"],
+                    "description": "Optional. Use only when the acting speaker's own move explicitly establishes, actively enforces against present resistance or dispute, or reassigns where someone will sleep, and only if this turn changes or newly settles that assignment.",
+                }
+            },
+            "description": "Optional scene-state update for a sleeping-surface assignment settled by this move.",
+        },
     },
     "required": ["action", "motivation"],
-    "description": "Character move: what you do, what you say, and your private structured motivation",
+    "description": "Character move: core action, dialogue, private structured motivation, and an optional sleeping-surface assignment update settled by this move.",
 }
 
 
@@ -286,15 +307,19 @@ class CharacterLoader:
                 "- Stay in character at all times.",
                 "",
                 "OUTPUT FORMAT:",
-                "You must respond with a JSON object containing exactly these fields:",
+                "You must respond with a JSON object using these core fields, plus one narrow optional field when needed:",
                 '  "action": "Brief description of YOUR visible action only (3rd person, past tense). What YOU do, not others.",',
                 '  "dialogue": "What you say out loud, if anything. Use first person inside quotes. (Optional, can be empty)",',
                 '  "motivation": {"goal": "What you want", "tactic": "How you are pursuing it", "emotional_driver": "What feeling drives you", "risk_level": "low|medium|high"},',
+                '  "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "character", "surface_id": "surface"}} (optional)',
+                "Only include scene_state_updates.sleeping_surface_assignment when your own move explicitly establishes, actively enforces against present resistance or dispute, or reassigns where someone will sleep in this turn.",
+                "Do not include it for offers, suggestions, negotiation, reactions, observations, reminders, restating prior state, or unresolved argument.",
+                "Do not include it if the sleeping assignment is already established and this move does not change it.",
+                "surface_id must be exactly one valid allowed surface_id value, not a list, blend, or descriptive phrase.",
                 "",
                 "EXAMPLES:",
-                'Good: {"action": "lifted her cup, eyes narrowing", "dialogue": "Who is she?", "motivation": {"goal": "assess the stranger", "tactic": "probe with a direct question", "emotional_driver": "suspicion", "risk_level": "low"}}',
-                'Good: {"action": "leaned back against the wall, arms crossed", "dialogue": "", "motivation": {"goal": "appear unconcerned", "tactic": "hold silence and watch", "emotional_driver": "guarded confidence", "risk_level": "medium"}}',
-                "Bad: Describes other characters or scene-wide narration",
+                'Positive: {"action": "pointed at the couch and squared her shoulders", "dialogue": "Take the couch tonight. That\'s final.", "motivation": {"goal": "settle the room", "tactic": "issue a firm instruction", "emotional_driver": "protective resolve", "risk_level": "medium"}, "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "Kizzie", "surface_id": "couch"}}}',
+                'Negative: {"action": "gestured between the couch and the floor", "dialogue": "You can take the couch if you want.", "motivation": {"goal": "offer an option", "tactic": "keep the decision open", "emotional_driver": "tentative concern", "risk_level": "low"}}',
                 "",
                 "RULE: Only output the JSON object. No other text.",
             ]

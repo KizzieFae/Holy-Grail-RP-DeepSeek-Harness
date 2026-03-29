@@ -75,6 +75,7 @@ def build_initial_scene_issues(scene_setup: dict[str, Any] | None) -> list[Issue
         return []
 
     role_assignments = scene_setup.get("role_assignments", {})
+    sleeping_surface_slots = scene_setup.get("sleeping_surface_slots", [])
     if not isinstance(role_assignments, dict) or not role_assignments:
         return []
 
@@ -87,6 +88,58 @@ def build_initial_scene_issues(scene_setup: dict[str, Any] | None) -> list[Issue
     character_names = [
         str(name).strip() for name in role_assignments if str(name or "").strip()
     ]
+
+    if isinstance(sleeping_surface_slots, list) and sleeping_surface_slots:
+        holder_names = [
+            name
+            for name in character_names
+            if _is_scene_holder_role(role_assignments.get(name, ""))
+        ]
+        protagonist_names = [
+            name
+            for name in character_names
+            if _is_scene_protagonist_role(role_assignments.get(name, ""))
+        ]
+        if holder_names and protagonist_names:
+            participants = sorted(set(holder_names + protagonist_names))
+            sleeping_issue = IssueState(
+                issue_id=_build_seed_issue_id(
+                    "sleeping_surface_assignment", participants
+                ),
+                description="Establish where each present character is expected to sleep in the current scene.",
+                participants=participants,
+                status=IssueStatus.ACTIVE,
+                created_at=created_at,
+                escalation_signals=[
+                    "sleep",
+                    "bunk",
+                    "bed",
+                    "couch",
+                    "cot",
+                    "floor",
+                    "roommate",
+                ],
+                resolution_signals=[
+                    *[
+                        str(item)
+                        for item in sleeping_surface_slots
+                        if str(item or "").strip()
+                    ],
+                    *[
+                        str(item).replace("_", " ")
+                        for item in sleeping_surface_slots
+                        if str(item or "").strip()
+                    ],
+                    "sleep here",
+                    "take the bed",
+                    "take the bunk",
+                    "stay here tonight",
+                ],
+                status_reason="Scene-start sleeping arrangement pressure for bounded sleeping-surface settlement.",
+            )
+            if sleeping_issue.issue_id not in seeded_ids:
+                seeded.append(sleeping_issue)
+                seeded_ids.add(sleeping_issue.issue_id)
 
     # Determine if this is an injury/recovery/rescue scene context
     injury_recovery_tokens = (
@@ -273,6 +326,11 @@ def apply_scene_setup_to_scene_state(
         for key, value in scene_setup.get("character_authority_labels", {}).items()
         if str(value or "").strip()
     }
+    scene_state.sleeping_surface_slots = [
+        str(item)
+        for item in scene_setup.get("sleeping_surface_slots", [])
+        if str(item or "").strip()
+    ]
     must_remain = get_must_remain_characters_fn(scene_state.to_dict())
     for character_name in must_remain:
         if character_name not in scene_state.present_characters:
@@ -364,4 +422,5 @@ def resolve_scene_template_setup(
         "role_assignments": role_assignments,
         "character_presence_constraints": character_presence_constraints,
         "character_authority_labels": character_authority_labels,
+        "sleeping_surface_slots": list(template.sleeping_surface_slots),
     }, ""

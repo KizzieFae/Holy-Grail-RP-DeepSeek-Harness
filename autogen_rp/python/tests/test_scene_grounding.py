@@ -8,7 +8,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 import pytest
 
-from continuity_state import ConsequenceCategory, DetectedConsequence, PublicEvent
+from continuity_state import (
+    ConsequenceCategory,
+    DetectedConsequence,
+    PublicEvent,
+    ResolvedOutcome,
+)
 from scene_grounding import (
     MAX_SCENE_FACTS,
     compute_grounding_markers,
@@ -42,7 +47,7 @@ def test_compute_grounding_markers_suppressants_revelation():
     assert any("wrong_for_physiology" in x for x in m)
 
 
-def test_compute_grounding_markers_bunk_agreement():
+def test_compute_grounding_markers_no_sleeping_surface_marker_from_bunk_agreement():
     move = {
         "dialogue": "Fine, you take the top bunk on Marlene's bed.",
         "action": "",
@@ -50,7 +55,7 @@ def test_compute_grounding_markers_bunk_agreement():
     }
     detected = [_det(ConsequenceCategory.AGREEMENT)]
     m = compute_grounding_markers("Kizzie", move, detected)
-    assert any("sleeping_surface" in x and "top_of_bunk_marlene" in x for x in m)
+    assert not any("sleeping_surface" in x for x in m)
 
 
 def test_compute_grounding_markers_phone():
@@ -94,6 +99,7 @@ def test_grounding_markers_event_summary_joins_facts():
 def test_rebuild_and_supersede():
     class M:
         public_events = []
+        resolved_outcomes = []
         turn_counter = 2
 
     m = M()
@@ -129,12 +135,84 @@ def test_rebuild_and_supersede():
     assert "top_of_bunk_marlene" in facts[0]["value"].get("surface", "")
 
 
+def test_rebuild_projects_active_resolved_outcome():
+    class M:
+        public_events = []
+        turn_counter = 3
+        resolved_outcomes = [
+            ResolvedOutcome(
+                outcome_id="resolved_assignment_sleeping_surface_kizzie_top_bunk_marlene_e3",
+                category="assignment",
+                key="sleeping_surface",
+                subject_id="Kizzie",
+                value={
+                    "assignee_id": "Kizzie",
+                    "surface_id": "top_bunk_marlene",
+                },
+                source_event_id="e3",
+                rule_id="assignment.sleeping_surface.consequence.v1",
+                created_turn_index=3,
+            )
+        ]
+
+    out = rebuild_scene_grounding_from_continuity(M())
+    assert len(out["facts"]) == 1
+    fact = out["facts"][0]
+    assert fact["category"] == "assignment"
+    assert fact["key"] == "sleeping_surface"
+    assert fact["value"]["assignee"] == "Kizzie"
+    assert fact["value"]["surface"] == "top_bunk_marlene"
+
+
+def test_rebuild_prefers_active_resolved_outcome_over_old_marker_for_same_assignee():
+    class M:
+        turn_counter = 4
+
+    ts = datetime.now(timezone.utc)
+    m = M()
+    m.public_events = [
+        PublicEvent(
+            event_id="e1",
+            timestamp=ts,
+            event_type="decision",
+            participants=["Marlene_Fletcher"],
+            summary="Old sleeping assignment",
+            turn_index=1,
+            grounding_markers=[
+                "assignment:sleeping_surface|surface=floor|assignee=Kizzie"
+            ],
+        )
+    ]
+    m.resolved_outcomes = [
+        ResolvedOutcome(
+            outcome_id="resolved_assignment_sleeping_surface_kizzie_couch_e4",
+            category="assignment",
+            key="sleeping_surface",
+            subject_id="Kizzie",
+            value={
+                "assignee_id": "Kizzie",
+                "surface_id": "couch",
+            },
+            source_event_id="e4",
+            rule_id="assignment.sleeping_surface.consequence.v1",
+            created_turn_index=4,
+        )
+    ]
+
+    out = rebuild_scene_grounding_from_continuity(m)
+    assert len(out["facts"]) == 1
+    fact = out["facts"][0]
+    assert fact["value"]["surface"] == "couch"
+    assert fact["supersedes"] == "e1:0"
+
+
 def test_cap_facts(monkeypatch):
     import scene_grounding as sg
 
     monkeypatch.setattr(sg, "MAX_SCENE_FACTS", 2)
     class M:
         turn_counter = 1
+        resolved_outcomes = []
 
     m = M()
     ts = datetime.now(timezone.utc)

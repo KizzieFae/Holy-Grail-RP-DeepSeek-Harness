@@ -7,6 +7,7 @@ from continuity_state import (
     ContinuitySnapshot,
     IssueState,
     PublicEvent,
+    ResolvedOutcome,
     ScenePhase,
     SceneState,
     SummaryBlock,
@@ -20,6 +21,9 @@ def serialize_manager_state(*, manager: Any) -> dict[str, Any]:
             issue_id: issue.to_dict() for issue_id, issue in manager.issues.items()
         },
         "public_events": [event.to_dict() for event in manager.public_events],
+        "resolved_outcomes": [
+            outcome.to_dict() for outcome in getattr(manager, "resolved_outcomes", [])
+        ],
         "interpretations": {
             name: [item.to_dict() for item in items]
             for name, items in manager.interpretations.items()
@@ -64,6 +68,11 @@ def restore_manager_state(
         PublicEvent.from_dict(event_data)
         for event_data in data.get("public_events", [])
         if isinstance(event_data, dict)
+    ]
+    manager.resolved_outcomes = [
+        ResolvedOutcome.from_dict(outcome_data)
+        for outcome_data in data.get("resolved_outcomes", [])
+        if isinstance(outcome_data, dict)
     ]
     manager.interpretations = {
         str(name): [
@@ -117,6 +126,7 @@ def initialize_scene_state(
     )
     manager.issues = {}
     manager.public_events = []
+    manager.resolved_outcomes = []
     manager.interpretations = {name: [] for name in present_characters}
     manager.event_counter = 0
     manager.summary_blocks = []

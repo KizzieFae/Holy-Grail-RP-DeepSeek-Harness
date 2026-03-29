@@ -58,10 +58,14 @@ Aligned with `autogen_rp/docs/architecture.md` RP audit order:
 
 ### Persistence / reload issues
 
-- **Save path** — `session_lifecycle_save.py` → `SessionManager.save_session`
-- **Load path** — `session_lifecycle_load.py`, `session_manager.py`
-- **Startup** — `app_bootstrap.py` (incomplete session recovery)
-- **Files** — `python/data/sessions/*.json`, `_session_index.json` — see [rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md)
+- **Session / continuity blobs** — `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py`
+- **Scene state fields** — check `SceneState` and `ContinuityManager.to_dict()` / `.from_dict()` paths before blaming prompt assembly.
+
+### Settled sleeping assignment re-litigation
+
+- **Continuity-owned resolved outcome first** — inspect `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["sleeping_surface"]` before editing prompt wording.
+- **Grounding projection second** — confirm `scene_grounding.py` reflects the active `assignment:sleeping_surface` outcome into SETTLED SCENE FACTS.
+- **Template slots / move field** — verify the scene exposes bounded `sleeping_surface_slots` and the structured move includes `scene_state_updates.sleeping_surface_assignment` only when the beat truly settles the assignment.
 
 ### Audit output / regression analysis
 

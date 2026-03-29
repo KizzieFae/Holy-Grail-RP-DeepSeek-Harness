@@ -228,7 +228,7 @@ the character prompt without being intentionally summarized away.
 
 ## Character Move Format
 
-Character agents are prompted to return JSON in this shape:
+Character agents are prompted to return JSON with core `action`, `dialogue`, and `motivation` fields, plus an optional sleeping-surface assignment update when the acting speaker settles that assignment in their own move:
 
 ```json
 {
@@ -239,9 +239,17 @@ Character agents are prompted to return JSON in this shape:
     "tactic": "provoke anger",
     "emotional_driver": "resentment",
     "risk_level": "high"
+  },
+  "scene_state_updates": {
+    "sleeping_surface_assignment": {
+      "assignee_id": "Kizzie",
+      "surface_id": "couch"
+    }
   }
 }
 ```
+
+Only emit `scene_state_updates.sleeping_surface_assignment` when the acting speaker is establishing, enforcing, or explicitly reassigning where someone will sleep in that turn. Do not emit it for offers, suggestions, negotiation, reactions, or restating prior state.
 
 Older `intent`-style outputs are still mapped into the new `motivation` structure for compatibility.
 

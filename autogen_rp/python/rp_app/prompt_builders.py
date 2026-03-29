@@ -123,6 +123,39 @@ def build_character_turn_prompt(
     grounding = str(scene_grounding_section or "").strip()
     grounding_block = f"{grounding}\n\n" if grounding else ""
 
+    positive_sleeping_assignment_example = json.dumps(
+        {
+            "action": "pointed at the couch",
+            "dialogue": "Take the couch tonight. That's final.",
+            "motivation": {
+                "goal": "settle the room",
+                "tactic": "issue a firm instruction",
+                "emotional_driver": "protective resolve",
+                "risk_level": "medium",
+            },
+            "scene_state_updates": {
+                "sleeping_surface_assignment": {
+                    "assignee_id": "Kizzie",
+                    "surface_id": "couch",
+                }
+            },
+        },
+        ensure_ascii=False,
+    )
+    negative_sleeping_assignment_example = json.dumps(
+        {
+            "action": "gestured between the couch and the floor",
+            "dialogue": "You can take the couch if you want.",
+            "motivation": {
+                "goal": "offer an option",
+                "tactic": "keep the decision open",
+                "emotional_driver": "tentative concern",
+                "risk_level": "low",
+            },
+        },
+        ensure_ascii=False,
+    )
+
     return f"""You are taking your next turn in an ongoing roleplay scene.
 
 {offstage_header}{grounding_block}CURRENT SCENE STATE:
@@ -239,9 +272,18 @@ YOUR PRIORITIES, IN ORDER:
 - Match your emotional reaction to how extraordinary the event would be in this setting. Rare, miraculous, or destabilizing events should not be flattened into routine logistics unless your character would truly take them in stride.
 
 OUTPUT RULES:
-- Only output a JSON object with action, dialogue, and motivation.
+- Only output a JSON object with action, dialogue, motivation, and optional scene_state_updates.
 - Keep action concrete and observable.
 - Let dialogue sound natural and in-character rather than explanatory.
+ - Only include scene_state_updates when your move deterministically settles a bounded scene fact already supported by the beat.
+ - For sleeping arrangement settlement, you may include only scene_state_updates.sleeping_surface_assignment with assignee_id and surface_id.
+ - surface_id must be exactly one valid allowed surface_id value already present in CURRENT SCENE STATE or SCENE TEMPLATE, or one generic fallback value: floor, couch, cot, or unassigned.
+ - Emit sleeping_surface_assignment only when you, as the acting speaker, are establishing, actively enforcing against present resistance or dispute, or explicitly reassigning where someone will sleep in this turn.
+ - Do not include sleeping_surface_assignment for suggestions, pressure, questions, negotiation, teasing, reactions, observations, reminders, restating prior state, or unresolved argument.
+ - Do not include sleeping_surface_assignment if the sleeping assignment is already established and this move does not change it.
+ - Positive example: {positive_sleeping_assignment_example}
+ - Negative example: {negative_sleeping_assignment_example}
+
 """
 
 

@@ -24,7 +24,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
 | **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py` |
 | Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py` |
-| **Settled facts** repeated / logistics reset in dialogue (after continuity looks correct) | `scene_grounding.py` (planned), `prompt_builders.py`, then continuity extraction if facts never promote |
+| **Settled facts** repeated / logistics reset in dialogue (after continuity looks correct) | `continuity_resolved_outcomes.py`, `scene_grounding.py`, `prompt_builders.py`, then continuity extraction if facts never promote |
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
 | **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py` |
@@ -86,10 +86,11 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `continuity_state.py` | Dataclasses: issues, events, interpretations, anchors, snapshots | — | Serialization shapes for sessions |
 | `continuity_issue_helpers.py` | Issue lifecycle, matching, summaries | `continuity_consequence_classifier` | |
 | `continuity_knowledge_helpers.py` | Knowledge propagation, boundaries, `told`/inference | events, interpretations | |
+| `continuity_resolved_outcomes.py` | Compile continuity-owned resolved outcomes from structured move fields + issue/consequence signals | `continuity_manager`, `continuity_state`, `scene_state` slot registry | V1: `assignment:sleeping_surface` only; no independent authority |
 | `continuity_scene_helpers.py` | Scene snapshots, orchestration context for prompts | scene state | |
 | `continuity_summary_helpers.py` | Summary blocks, retrieval ranking support | issues, events | |
 | `continuity_consequence_classifier.py` | Consequence / category signals for issues | text signals | |
-| `scene_grounding.py` | Derive **read-only** **scene facts** from continuity `PublicEvent.grounding_markers`; format Director/character prompt blocks; cap/prune | `continuity_manager`, `turn_runner_updates`, `prompt_builders`, `app_turn_director`, `app_turn_prompting` | **No** continuity or `CharacterState` writes; PRD §5.8; spec: `autogen_rp/docs/scene-grounding-layer.md` |
+| `scene_grounding.py` | Derive **read-only** **scene facts** from continuity `PublicEvent.grounding_markers` and active resolved outcomes; format Director/character prompt blocks; cap/prune | `continuity_manager`, `turn_runner_updates`, `prompt_builders`, `app_turn_director`, `app_turn_prompting` | **No** continuity or `CharacterState` writes; PRD §5.8; spec: `autogen_rp/docs/scene-grounding-layer.md` |
 
 ---
 

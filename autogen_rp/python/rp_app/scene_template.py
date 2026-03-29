@@ -72,6 +72,7 @@ class SceneTemplate:
     role_slots: list[SceneRoleSlot]
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
     progression_profile: dict[str, Any] | None = None
+    sleeping_surface_slots: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -80,6 +81,7 @@ class SceneTemplate:
             "opening_text": self.opening_text,
             "role_slots": [slot.to_dict() for slot in self.role_slots],
             "initial_messages": [msg.to_dict() for msg in self.initial_messages],
+            "sleeping_surface_slots": list(self.sleeping_surface_slots),
         }
         if self.progression_profile is not None:
             out["progression_profile"] = dict(self.progression_profile)
@@ -115,6 +117,11 @@ class SceneTemplate:
         progression_profile = (
             dict(raw_prog) if isinstance(raw_prog, dict) else None
         )
+        sleeping_surface_slots = [
+            str(item).strip()
+            for item in data.get("sleeping_surface_slots", [])
+            if str(item or "").strip()
+        ]
         return cls(
             template_id=template_id,
             premise=str(data.get("premise", "") or "").strip(),
@@ -122,6 +129,7 @@ class SceneTemplate:
             role_slots=role_slots,
             initial_messages=initial_messages,
             progression_profile=progression_profile,
+            sleeping_surface_slots=sleeping_surface_slots,
         )
 
 

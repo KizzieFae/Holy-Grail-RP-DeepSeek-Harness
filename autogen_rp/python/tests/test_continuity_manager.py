@@ -33,6 +33,37 @@ def _build_test_decision(next_actor: str) -> dict:
     }
 
 
+def _build_sleeping_assignment_move(
+    *,
+    dialogue: str,
+    action: str,
+    assignee_id: str,
+    surface_id: str,
+    goal: str = "settle sleeping arrangement",
+    tactic: str = "agree and commit",
+    extra_updates: dict | None = None,
+) -> dict:
+    updates = {
+        "sleeping_surface_assignment": {
+            "assignee_id": assignee_id,
+            "surface_id": surface_id,
+        }
+    }
+    if isinstance(extra_updates, dict):
+        updates.update(extra_updates)
+    return {
+        "action": action,
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": goal,
+            "tactic": tactic,
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+        "scene_state_updates": updates,
+    }
+
+
 def test_process_turn_creates_public_event_and_issue() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(
@@ -211,6 +242,255 @@ def test_issue_can_transition_to_stalled_when_not_reinforced() -> None:
     assert "did not materially change this pressure" in manager.issues[issue.issue_id].status_reason
     assert manager.scene_state.active_issue_ids == []
     assert manager.get_active_issues() == []
+
+
+def test_sleeping_surface_promotes_on_resolved_issue() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="A dorm room argument is already underway.",
+        present_characters=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
+    )
+    manager.scene_state.sleeping_surface_slots = [
+        "top_bunk_marlene",
+        "lower_bunk_marlene",
+    ]
+    issue = IssueState(
+        issue_id="seed_sleeping_surface_assignment_kizzie_marlene_fletcher_willow_reeves",
+        description="Establish where each present character is expected to sleep in the current scene.",
+        participants=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
+        status=IssueStatus.ACTIVE,
+        created_at=datetime.fromisoformat("2026-03-15T12:00:00"),
+        escalation_signals=["bunk", "bed", "floor"],
+        resolution_signals=["top_bunk_marlene", "top bunk", "sleep here"],
+    )
+    manager.issues[issue.issue_id] = issue
+    manager.scene_state.active_issue_ids.append(issue.issue_id)
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="Top bunk over mine. That's where Kizzie sleeps tonight.",
+            action="points to the top bunk above her bed and leaves Kizzie's bag there",
+            assignee_id="Kizzie",
+            surface_id="top_bunk_marlene",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie", "Willow_Reeves"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:01:00"),
+    )
+
+    assert manager.issues[issue.issue_id].status == IssueStatus.RESOLVED
+    assert len(manager.resolved_outcomes) == 1
+    outcome = manager.resolved_outcomes[0]
+    assert outcome.subject_id == "Kizzie"
+    assert outcome.value["surface_id"] == "top_bunk_marlene"
+    assert outcome.source_issue_id == issue.issue_id
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
+    assert debug["reason"] == "promoted_issue_resolution"
+
+
+def test_sleeping_surface_promotes_on_consequence_without_issue() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The room needs a concrete sleep plan.",
+        present_characters=["Kizzie", "Marlene_Fletcher"],
+    )
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="Fine. Take the couch tonight and we're done arguing about it.",
+            action="drops a blanket on the couch and nods once",
+            assignee_id="Kizzie",
+            surface_id="couch",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:02:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    outcome = manager.resolved_outcomes[0]
+    assert outcome.value["surface_id"] == "couch"
+    assert outcome.source_issue_id is None
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
+    assert debug["reason"] == "promoted_consequence"
+
+
+def test_sleeping_surface_rejects_competing_same_turn_assignments() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The roommates keep arguing over where Kizzie belongs.",
+        present_characters=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
+    )
+
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move={
+            "action": "gestures between the floor and the couch without settling on either",
+            "dialogue": "No, floor. Actually couch. Whatever.",
+            "motivation": {
+                "goal": "push sleeping logistics around without settling them",
+                "tactic": "argue",
+                "emotional_driver": "frustration",
+                "risk_level": "medium",
+            },
+            "scene_state_updates": {
+                "sleeping_surface_assignments": [
+                    {"assignee_id": "Kizzie", "surface_id": "floor"},
+                    {"assignee_id": "Kizzie", "surface_id": "couch"},
+                ]
+            },
+        },
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie", "Marlene_Fletcher"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:03:00"),
+    )
+
+    assert manager.resolved_outcomes == []
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
+    assert debug["reason"] == "competing_same_turn_assignment"
+
+
+def test_sleeping_surface_supersedes_on_reassignment() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The arrangement changes once Marlene relents.",
+        present_characters=["Kizzie", "Marlene_Fletcher"],
+    )
+    manager.scene_state.sleeping_surface_slots = ["top_bunk_marlene"]
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="Take the couch tonight.",
+            action="tosses Kizzie a pillow for the couch",
+            assignee_id="Kizzie",
+            surface_id="couch",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:04:00"),
+    )
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="No, top bunk over mine. That's the actual plan.",
+            action="moves Kizzie's bag up to the top bunk above her bed",
+            assignee_id="Kizzie",
+            surface_id="top_bunk_marlene",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:05:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 2
+    assert manager.resolved_outcomes[0].status == "superseded"
+    assert manager.resolved_outcomes[1].status == "active"
+    assert manager.resolved_outcomes[1].value["surface_id"] == "top_bunk_marlene"
+
+
+def test_sleeping_surface_not_revoked_by_argument_alone() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="A settled sleeping plan gets argued about again.",
+        present_characters=["Kizzie", "Marlene_Fletcher"],
+    )
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="Take the couch tonight.",
+            action="drops a blanket over the couch arm",
+            assignee_id="Kizzie",
+            surface_id="couch",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:06:00"),
+    )
+
+    manager.process_turn(
+        acting_character="Kizzie",
+        move={
+            "action": "stares at the couch without moving",
+            "dialogue": "I don't like that.",
+            "motivation": {
+                "goal": "object without changing the settled assignment",
+                "tactic": "complain",
+                "emotional_driver": "anxiety",
+                "risk_level": "low",
+            },
+        },
+        director_decision=_build_test_decision("Marlene_Fletcher"),
+        other_characters=["Marlene_Fletcher"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:07:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    assert manager.resolved_outcomes[0].status == "active"
+    assert manager.resolved_outcomes[0].value["surface_id"] == "couch"
+
+
+def test_sleeping_surface_allows_fallback_surface_without_template_slot() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Safehouse",
+        opening_description="Only the couch is realistically available.",
+        present_characters=["Ayame", "Celina"],
+    )
+
+    manager.process_turn(
+        acting_character="Ayame",
+        move=_build_sleeping_assignment_move(
+            dialogue="You take the cot tonight. We're not arguing this.",
+            action="unfolds the cot and sets it near the wall",
+            assignee_id="Celina",
+            surface_id="cot",
+        ),
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:08:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    assert manager.resolved_outcomes[0].value["surface_id"] == "cot"
+
+
+def test_sleeping_surface_does_not_promote_from_weak_conversational_movement() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The discussion keeps drifting without resolution.",
+        present_characters=["Kizzie", "Marlene_Fletcher"],
+    )
+    manager.scene_state.sleeping_surface_slots = ["top_bunk_marlene"]
+
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_sleeping_assignment_move(
+            dialogue="Maybe the top bunk, I guess.",
+            action="shrugs toward the bunk without committing to it",
+            assignee_id="Kizzie",
+            surface_id="top_bunk_marlene",
+            goal="float an option",
+            tactic="suggest",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:09:00"),
+    )
+
+    assert manager.resolved_outcomes == []
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
+    assert debug["reason"] == "weak_signal"
 
 
 def test_process_turn_updates_scene_presence_on_exit() -> None:

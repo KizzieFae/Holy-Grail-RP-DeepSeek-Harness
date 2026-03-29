@@ -99,6 +99,20 @@ def test_character_move_schema_requires_structured_motivation():
         "emotional_driver",
         "risk_level",
     ]
+    assert "scene_state_updates" in CHARACTER_MOVE_SCHEMA["properties"]
+    scene_state_updates = CHARACTER_MOVE_SCHEMA["properties"]["scene_state_updates"]
+    assert "sleeping_surface_assignment" in scene_state_updates["properties"]
+    sleeping_assignment = scene_state_updates["properties"]["sleeping_surface_assignment"]
+    assert sleeping_assignment["required"] == ["assignee_id", "surface_id"]
+    assert "actively enforces against present resistance or dispute" in sleeping_assignment[
+        "description"
+    ]
+    assert "changes or newly settles that assignment" in sleeping_assignment[
+        "description"
+    ]
+    assert "Exactly one valid surface_id" in sleeping_assignment["properties"][
+        "surface_id"
+    ]["description"]
 
 
 def test_character_state_preserves_identity_anchors_and_memory_summaries():

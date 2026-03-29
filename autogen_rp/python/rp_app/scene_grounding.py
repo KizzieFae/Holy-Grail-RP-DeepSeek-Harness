@@ -120,13 +120,6 @@ def compute_grounding_markers(
                 f"medical_status:omega_suppressants|formulation=wrong_for_physiology|subject={subj}"
             )
 
-    if ConsequenceCategory.AGREEMENT in cats or ConsequenceCategory.COMMITMENT in cats:
-        if "bunk" in text and "top" in text and ("marlene" in text or "mars" in text):
-            assignee = str(acting_character or "").strip() or "unknown"
-            markers.append(
-                f"assignment:sleeping_surface|surface=top_of_bunk_marlene|assignee={assignee}"
-            )
-
     if SIGNAL_PHONE_BROKEN in signals:
         markers.append("object_state:phone|status=broken")
 
@@ -230,6 +223,19 @@ def _build_value_dict(category: str, key: str, kv: dict[str, str]) -> dict[str, 
     return out
 
 
+def _fact_slot_identity(
+    category: str,
+    key: str,
+    kv: dict[str, str],
+) -> tuple[str, str, str | None]:
+    if category == "assignment" and key == "sleeping_surface":
+        assignee = str(
+            kv.get("assignee", kv.get("assignee_id", "")) or ""
+        ).strip()
+        return category, key, assignee or None
+    return category, key, None
+
+
 @dataclass
 class SceneFact:
     fact_id: str
@@ -329,10 +335,48 @@ def _marker_to_fact(
     )
 
 
+def _resolved_outcome_to_fact(
+    *,
+    outcome: Any,
+    previous_id: str | None,
+) -> SceneFact | None:
+    category = str(getattr(outcome, "category", "") or "")
+    key = str(getattr(outcome, "key", "") or "")
+    if category != "assignment" or key != "sleeping_surface":
+        return None
+    value = getattr(outcome, "value", {}) or {}
+    assignee = str(value.get("assignee_id", "") or "").strip()
+    surface = str(value.get("surface_id", "") or "").strip()
+    if not assignee or not surface:
+        return None
+    kv = {
+        "assignee": assignee,
+        "surface": surface,
+    }
+    return SceneFact(
+        fact_id=str(getattr(outcome, "outcome_id", "") or ""),
+        category=category,
+        key=key,
+        value=_build_value_dict(category, key, kv),
+        value_summary=_build_value_summary(category, key, kv),
+        source={
+            "kind": "resolved_outcome",
+            "ref": str(
+                getattr(outcome, "source_event_id", "")
+                or getattr(outcome, "outcome_id", "")
+                or ""
+            ),
+        },
+        priority=_CATEGORY_PRIORITY[category],
+        supersedes=previous_id,
+        source_turn_index=getattr(outcome, "created_turn_index", None),
+    )
+
+
 def rebuild_scene_grounding_from_continuity(manager: Any) -> dict[str, Any]:
     """Rebuild the full grounding snapshot from continuity public events (deterministic)."""
     events: list[PublicEvent] = getattr(manager, "public_events", []) or []
-    by_slot: dict[tuple[str, str], SceneFact] = {}
+    by_slot: dict[tuple[str, str, str | None], SceneFact] = {}
     for event in events:
         markers = getattr(event, "grounding_markers", None) or []
         if not isinstance(markers, list):
@@ -341,8 +385,8 @@ def rebuild_scene_grounding_from_continuity(manager: Any) -> dict[str, Any]:
             slot_key = _parse_marker(str(marker))
             if not slot_key:
                 continue
-            cat, k, _ = slot_key
-            slot = (cat, k)
+            cat, k, kv = slot_key
+            slot = _fact_slot_identity(cat, k, kv)
             prev = by_slot.get(slot)
             fact = _marker_to_fact(
                 event=event,
@@ -352,6 +396,22 @@ def rebuild_scene_grounding_from_continuity(manager: Any) -> dict[str, Any]:
             )
             if fact is not None:
                 by_slot[slot] = fact
+
+    resolved_outcomes = getattr(manager, "resolved_outcomes", []) or []
+    for outcome in resolved_outcomes:
+        if str(getattr(outcome, "status", "") or "") != "active":
+            continue
+        category = str(getattr(outcome, "category", "") or "")
+        key = str(getattr(outcome, "key", "") or "")
+        value = getattr(outcome, "value", {}) or {}
+        slot = _fact_slot_identity(category, key, value)
+        prev = by_slot.get(slot)
+        fact = _resolved_outcome_to_fact(
+            outcome=outcome,
+            previous_id=prev.fact_id if prev else None,
+        )
+        if fact is not None:
+            by_slot[slot] = fact
 
     facts = list(by_slot.values())
     facts.sort(

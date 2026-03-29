@@ -7,6 +7,13 @@ semantic consequence categories via intent + behavior pattern matching.
 from typing import Any
 
 try:
+    from continuity_resolved_outcomes import extract_sleeping_surface_candidates
+except ImportError:
+    from python.rp_app.continuity_resolved_outcomes import (
+        extract_sleeping_surface_candidates,
+    )
+
+try:
     from scene_exit_detection import detect_exit_from_scene
 except ImportError:
     from python.rp_app.scene_exit_detection import detect_exit_from_scene
@@ -186,6 +193,17 @@ class ConsequenceClassifier:
         # Agreement/refusal
         consequences.extend(
             self._detect_agreement(acting_character, intent, behavior, action, dialogue)
+        )
+
+        consequences.extend(
+            self._detect_structured_sleeping_assignment(
+                move=move,
+                scene_state=scene_state,
+                goal=goal,
+                tactic=tactic,
+                action=action,
+                dialogue=dialogue,
+            )
         )
 
         # Access patterns
@@ -577,6 +595,67 @@ class ConsequenceClassifier:
                 )
             )
 
+        return results
+
+    def _detect_structured_sleeping_assignment(
+        self,
+        *,
+        move: dict[str, Any],
+        scene_state: dict[str, Any] | None,
+        goal: str,
+        tactic: str,
+        action: str,
+        dialogue: str,
+    ) -> list[DetectedConsequence]:
+        candidates, _ = extract_sleeping_surface_candidates(move, scene_state)
+        if len(candidates) != 1:
+            return []
+
+        combined = f"{goal} {tactic} {action} {dialogue}".lower()
+        if any(token in combined for token in ("maybe", "might", "guess", "suggest", "option", "?")):
+            return []
+
+        results: list[DetectedConsequence] = []
+        if any(
+            token in combined
+            for token in (
+                "settle",
+                "assign",
+                "decide",
+                "plan",
+                "commit",
+                "take the",
+                "sleep tonight",
+                "sleeps tonight",
+                "that's the plan",
+                "actual plan",
+            )
+        ):
+            results.append(
+                DetectedConsequence(
+                    category=ConsequenceCategory.DECISION_MADE,
+                    confidence="strong",
+                    source_fields=[
+                        "scene_state_updates.sleeping_surface_assignment",
+                        "motivation.goal",
+                        "motivation.tactic",
+                    ],
+                    excerpt=dialogue[:80] or action[:80],
+                )
+            )
+        if any(token in combined for token in ("tonight", "will", "plan", "commit")):
+            results.append(
+                DetectedConsequence(
+                    category=ConsequenceCategory.PLAN_COMMITTED,
+                    confidence="moderate",
+                    source_fields=[
+                        "scene_state_updates.sleeping_surface_assignment",
+                        "motivation.goal",
+                        "motivation.tactic",
+                    ],
+                    excerpt=dialogue[:80] or action[:80],
+                )
+            )
         return results
 
     def _detect_information(

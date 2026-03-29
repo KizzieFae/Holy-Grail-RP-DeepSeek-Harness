@@ -341,6 +341,84 @@ class PublicEvent:
 
 
 @dataclass
+class ResolvedOutcome:
+    outcome_id: str
+    category: str
+    key: str
+    subject_id: str
+    value: dict[str, str]
+    status: str = "active"
+    source_event_id: str = ""
+    source_issue_id: str | None = None
+    rule_id: str = ""
+    supersedes_outcome_id: str | None = None
+    created_turn_index: int | None = None
+    superseded_turn_index: int | None = None
+    revoked_turn_index: int | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "outcome_id": self.outcome_id,
+            "category": self.category,
+            "key": self.key,
+            "subject_id": self.subject_id,
+            "value": dict(self.value),
+            "status": self.status,
+            "source_event_id": self.source_event_id,
+            "source_issue_id": self.source_issue_id,
+            "rule_id": self.rule_id,
+            "supersedes_outcome_id": self.supersedes_outcome_id,
+            "created_turn_index": self.created_turn_index,
+            "superseded_turn_index": self.superseded_turn_index,
+            "revoked_turn_index": self.revoked_turn_index,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ResolvedOutcome":
+        return cls(
+            outcome_id=str(data.get("outcome_id", "") or ""),
+            category=str(data.get("category", "") or ""),
+            key=str(data.get("key", "") or ""),
+            subject_id=str(data.get("subject_id", "") or ""),
+            value={
+                str(k): str(v)
+                for k, v in (data.get("value") or {}).items()
+                if isinstance(k, str)
+            },
+            status=str(data.get("status", "active") or "active"),
+            source_event_id=str(data.get("source_event_id", "") or ""),
+            source_issue_id=(
+                str(data.get("source_issue_id"))
+                if data.get("source_issue_id") is not None
+                and str(data.get("source_issue_id")).strip()
+                else None
+            ),
+            rule_id=str(data.get("rule_id", "") or ""),
+            supersedes_outcome_id=(
+                str(data.get("supersedes_outcome_id"))
+                if data.get("supersedes_outcome_id") is not None
+                and str(data.get("supersedes_outcome_id")).strip()
+                else None
+            ),
+            created_turn_index=(
+                int(data["created_turn_index"])
+                if data.get("created_turn_index") is not None
+                else None
+            ),
+            superseded_turn_index=(
+                int(data["superseded_turn_index"])
+                if data.get("superseded_turn_index") is not None
+                else None
+            ),
+            revoked_turn_index=(
+                int(data["revoked_turn_index"])
+                if data.get("revoked_turn_index") is not None
+                else None
+            ),
+        )
+
+
+@dataclass
 class CharacterInterpretation:
     """How a specific character understands an event or situation.
 
@@ -500,6 +578,7 @@ class SceneState:
     role_assignments: dict[str, str] = field(default_factory=dict)
     character_presence_constraints: dict[str, str] = field(default_factory=dict)
     character_authority_labels: dict[str, str] = field(default_factory=dict)
+    sleeping_surface_slots: list[str] = field(default_factory=list)
 
     # Participants
     present_characters: list[str] = field(default_factory=list)
@@ -531,6 +610,7 @@ class SceneState:
             "role_assignments": self.role_assignments,
             "character_presence_constraints": self.character_presence_constraints,
             "character_authority_labels": self.character_authority_labels,
+            "sleeping_surface_slots": self.sleeping_surface_slots,
             "present_characters": self.present_characters,
             "absent_but_relevant": self.absent_but_relevant,
             "offstage_characters": self.offstage_characters,
@@ -588,6 +668,9 @@ class SceneState:
                 if isinstance(data.get("character_authority_labels", {}), dict)
                 else {}
             ),
+            sleeping_surface_slots=[
+                str(item) for item in data.get("sleeping_surface_slots", []) if str(item or "").strip()
+            ],
             present_characters=[
                 str(item) for item in data.get("present_characters", [])
             ],

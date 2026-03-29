@@ -1,6 +1,6 @@
 # Scene Grounding Layer (MVP) — Technical Specification
 
-**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). Extend promotion rules as extraction improves.  
+**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). `assignment:sleeping_surface` may now project from a continuity-owned resolved outcome seam; other keys still rely on deterministic markers until extended.  
 **Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8.  
 **Placement:** Derived **after** continuity updates per turn, consumed **before** LLM calls in the packaging/prompt path.
 
@@ -85,7 +85,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 | `housing_call` | `{ "status": "not_started" \| "in_progress" \| "completed" \| "failed" }` | `Housing call: completed` |
 | `external_message` | `{ "channel": string_enum, "status": "sent" \| "received" \| "pending" }` | **MVP:** use only if continuity exposes it. |
 
-**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up.
+**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. **Current V1 resolved-outcome seam:** `assignment:sleeping_surface` only; do not treat it as a general second state system.
 
 ---
 
@@ -96,6 +96,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 1. **Structured continuity outputs** after `ContinuityManager` (or equivalent) processes a turn:
    - `PublicEvent` / event summaries with **typed** `event_type` or tags (existing or **new narrow types** — extraction improvement track).
    - **Issue** lifecycle transitions (e.g. resolved + linked template → promote “call completed”).
+   - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **V1:** `assignment:sleeping_surface` only.
 2. **`DetectedConsequence` + `ConsequenceCategory`** from `continuity_consequence_classifier` (deterministic):
    - e.g. `DECISION_MADE`, `AGREEMENT`, `COMMITMENT` **when** paired with **rule rows** that map (category + optional template_id + optional tag) → `SceneFact` patch.
 3. **Explicit system signals** (optional, rare):
