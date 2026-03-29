@@ -44,6 +44,21 @@ MEDICAL_STABILIZATION_CONTEXT_TERMS = {
     "stinging",
     "wound",
 }
+# If a long/medium-term anchor names a strong off-site setting absent from current scene
+# context, skip binding drift checks to that anchor (cross-session / canon bleed).
+_OFFSITE_SETTING_LEXEMES = frozenset(
+    {
+        "arkham",
+        "asylum",
+        "gotham",
+        "penitentiary",
+        "cellblock",
+        "straitjacket",
+        "jailhouse",
+        "blackgate",
+    }
+)
+
 TACTICAL_STABILIZATION_GOAL_TERMS = {
     "assist",
     "breathe",
@@ -137,6 +152,42 @@ def _is_temporary_tactical_goal(
     return bool(candidate_tokens.intersection(TACTICAL_STABILIZATION_GOAL_TERMS))
 
 
+def _scene_context_blob(scene_state: dict[str, Any] | None) -> str:
+    if not isinstance(scene_state, dict):
+        return ""
+    parts = [
+        scene_state.get("location", "") or "",
+        scene_state.get("environment_description", "") or "",
+        scene_state.get("scene_premise", "") or "",
+        scene_state.get("premise", "") or "",
+        scene_state.get("opening_situation", "") or "",
+        scene_state.get("scene_title", "") or "",
+    ]
+    return " ".join(parts).lower()
+
+
+def _offsite_lexemes_in_text(text: str) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[a-z]{4,}", str(text or "").lower())
+        if token in _OFFSITE_SETTING_LEXEMES
+    }
+
+
+def _anchor_goal_applies_to_scene(
+    anchor_goal: str, scene_state: dict[str, Any] | None
+) -> bool:
+    """False when anchor names an off-site setting not reflected in current scene text."""
+    blob = _scene_context_blob(scene_state)
+    if not blob.strip():
+        return True
+    anchor_offsites = _offsite_lexemes_in_text(anchor_goal)
+    if not anchor_offsites:
+        return True
+    scene_offsites = _offsite_lexemes_in_text(blob)
+    return bool(anchor_offsites.intersection(scene_offsites))
+
+
 def goal_conflicts_with_identity_anchor(candidate_goal: str, anchor_goal: str) -> bool:
     candidate_tokens, candidate_polarity = _extract_goal_terms(candidate_goal)
     anchor_tokens, anchor_polarity = _extract_goal_terms(anchor_goal)
@@ -215,6 +266,7 @@ def detect_character_drift(
     state: CharacterState | None = None,
     move: dict[str, Any] | None = None,
     canon_anchors: list[Any] | None = None,
+    scene_state: dict[str, Any] | None = None,
 ) -> tuple[bool, str]:
     wrong_pov, pov_reason = contains_wrong_character_pov(content, speaker)
     if wrong_pov:
@@ -225,10 +277,18 @@ def detect_character_drift(
 
     motivation = move.get("motivation", {}) if isinstance(move, dict) else {}
     candidate_goal = str(motivation.get("goal", "") or "")
-    anchor_goals = [goal for goal in state.core_goals if goal]
-    if state.long_term_goal:
+    anchor_goals = [
+        goal
+        for goal in state.core_goals
+        if goal and _anchor_goal_applies_to_scene(goal, scene_state)
+    ]
+    if state.long_term_goal and _anchor_goal_applies_to_scene(
+        state.long_term_goal, scene_state
+    ):
         anchor_goals.append(state.long_term_goal)
-    if state.medium_term_goal:
+    if state.medium_term_goal and _anchor_goal_applies_to_scene(
+        state.medium_term_goal, scene_state
+    ):
         anchor_goals.append(state.medium_term_goal)
 
     for anchor_goal in anchor_goals:

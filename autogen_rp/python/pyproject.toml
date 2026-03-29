@@ -37,6 +37,17 @@ dev = [
     "sphinx-autobuild",
 ]
 
+# Optional: `uv sync --group autogen-vendored-tests` so `pytest packages/...` can import
+# optional AutoGen test deps without ModuleNotFoundError (anthropic, mcp, ollama, etc.).
+autogen-vendored-tests = [
+    "autogen-test-utils",
+    "anthropic>=0.48",
+    "asyncio_atexit>=1.0.1",
+    "email-validator>=2.0",
+    "ollama>=0.4.7",
+    "mcp>=1.11.0",
+]
+
 [tool.uv]
 override-dependencies = [
     "tenacity>=9.0.0",
@@ -142,6 +153,10 @@ cmd = "python -m grpc_tools.protoc --python_out=./packages/autogen-core/tests/pr
 cmd = "python -m grpc_tools.protoc --python_out=./packages/autogen-ext/tests/protos --grpc_python_out=./packages/autogen-ext/tests/protos --mypy_out=./packages/autogen-ext/tests/protos --mypy_grpc_out=./packages/autogen-ext/tests/protos --proto_path ./packages/autogen-core/tests/protos serialization_test.proto"
 
 [tool.pytest.ini_options]
+# Default `pytest` from this tree runs Holy Grail RP app tests only; vendored `packages/*`
+# tests need optional deps (see dependency-group `autogen-vendored-tests`).
+testpaths = ["tests"]
+asyncio_mode = "auto"
 markers = [
     "grpc: tests invoking gRPC functionality",
 ]

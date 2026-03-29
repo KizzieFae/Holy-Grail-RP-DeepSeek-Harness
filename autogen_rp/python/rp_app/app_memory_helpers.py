@@ -4,7 +4,7 @@ from app_memory_basics import (
     resolve_bot_reply_limit,
 )
 from app_memory_cross_session import (
-    apply_cross_session_memories,
+    apply_cross_session_memories as _apply_cross_session_memories_impl,
     load_cross_session_memories,
 )
 from app_memory_recording import (
@@ -18,6 +18,21 @@ from app_memory_summary import (
     summarize_user_message,
 )
 from app_message_processing import process_user_message
+
+
+def apply_cross_session_memories(
+    char_states: dict,
+    cross_session_memories: dict,
+    user_name: str,
+    *,
+    st_module=None,
+) -> None:
+    _apply_cross_session_memories_impl(
+        char_states,
+        cross_session_memories,
+        user_name,
+        st_module=st_module,
+    )
 
 
 def record_user_memories(*, st_module, user_name: str, user_input: str) -> None:

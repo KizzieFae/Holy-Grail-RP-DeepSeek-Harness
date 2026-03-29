@@ -30,6 +30,8 @@ The RP app uses a Director + Narrator + continuity-manager architecture.
 - Keep `app.py` as a thin composition layer.
 - Preserve bounded-context strategies rather than reintroducing unbounded hidden chat state.
 - Preserve `must_remain` as structural presence, not a requirement to speak every beat.
+- **Progression advisory (MVP)** is **advisory only**: it may add short Director/character prompt text and feed a **single** deterministic **`stall_score`** into beat-shift eligibility. It must **not** write continuity truth, mutate `CharacterState`, or add a parallel progression authority.
+- **Scene Grounding (MVP)** is a **read-only, prompt-facing** projection of **settled scene facts** derived **only** from continuity outputs and deterministic rules. It lives **after** continuity commits and **before** LLM prompts. It must **not** write continuity or `CharacterState` or act as a second authority (see [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8, [scene-grounding-layer.md](./scene-grounding-layer.md)).
 
 ## Change strategy
 
@@ -45,10 +47,11 @@ Before making architecture-sensitive changes:
 When debugging scene quality or continuity behavior, prefer this order:
 
 1. continuity and state extraction
-2. issue lifecycle and orchestration state
-3. summary retrieval and compression
-4. validation and enforcement boundaries
-5. Director logic
-6. Narrator rendering polish
+2. **scene grounding** (prompt projection: are settled facts present, stale, or missing?)
+3. issue lifecycle and orchestration state
+4. summary retrieval and compression
+5. validation and enforcement boundaries
+6. Director logic
+7. Narrator rendering polish
 
 This order mirrors the existing RP audit workflow and helps avoid prompt-first misdiagnosis.

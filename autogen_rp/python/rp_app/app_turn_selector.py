@@ -76,9 +76,11 @@ def choose_fallback_actor(
     forced_speaker: str | None,
     spotlight_history: list[str],
     choose_fallback_actor_impl_fn,
+    prefer_continuing_spotlight: bool = False,
 ) -> str | None:
     return choose_fallback_actor_impl_fn(
         available_actors,
         forced_speaker,
         spotlight_history,
+        prefer_continuing_spotlight=prefer_continuing_spotlight,
     )

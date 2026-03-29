@@ -265,6 +265,8 @@ class PublicEvent:
     canon_impact: list[str] = field(default_factory=list)  # anchor_ids affected
     state_changes: list[str] = field(default_factory=list)
     actionable_implications: list[str] = field(default_factory=list)
+    # Deterministic scene-grounding markers (category:key|k=v|...); PRD §5.8
+    grounding_markers: list[str] = field(default_factory=list)
 
     def knowledge_level_for(self, character_name: str) -> str | None:
         """Return how the character knows this event, if known."""
@@ -297,6 +299,7 @@ class PublicEvent:
             "canon_impact": self.canon_impact,
             "state_changes": self.state_changes,
             "actionable_implications": self.actionable_implications,
+            "grounding_markers": list(self.grounding_markers),
         }
 
     @classmethod
@@ -324,6 +327,11 @@ class PublicEvent:
             state_changes=[str(item) for item in data.get("state_changes", [])],
             actionable_implications=[
                 str(item) for item in data.get("actionable_implications", [])
+            ],
+            grounding_markers=[
+                str(item)
+                for item in data.get("grounding_markers", [])
+                if str(item).strip()
             ],
         )
 
@@ -492,6 +500,8 @@ class SceneState:
     # Participants
     present_characters: list[str] = field(default_factory=list)
     absent_but_relevant: list[str] = field(default_factory=list)
+    # Still in cast / present_characters but not in the immediate shared space (hallway, garage, etc.)
+    offstage_characters: list[str] = field(default_factory=list)
 
     # Scene progression
     phase: ScenePhase = field(default=ScenePhase.OPENING)
@@ -519,6 +529,7 @@ class SceneState:
             "character_authority_labels": self.character_authority_labels,
             "present_characters": self.present_characters,
             "absent_but_relevant": self.absent_but_relevant,
+            "offstage_characters": self.offstage_characters,
             "phase": self.phase.value,
             "opening_description": self.opening_description,
             "recent_delta": self.recent_delta,
@@ -578,6 +589,9 @@ class SceneState:
             ],
             absent_but_relevant=[
                 str(item) for item in data.get("absent_but_relevant", [])
+            ],
+            offstage_characters=[
+                str(item) for item in data.get("offstage_characters", [])
             ],
             phase=ScenePhase(str(data.get("phase", ScenePhase.OPENING.value))),
             opening_description=str(data.get("opening_description", "")),

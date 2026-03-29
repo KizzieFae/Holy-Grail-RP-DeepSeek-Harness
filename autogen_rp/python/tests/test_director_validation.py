@@ -46,7 +46,7 @@ def test_director_prompt_includes_pressure_core_guidance():
         in DIRECTOR_SYSTEM_MESSAGE
     )
     assert (
-        "A character marked must_remain is structurally present in the scene"
+        "current_scene_state.offstage_characters"
         in DIRECTOR_SYSTEM_MESSAGE
     )
     assert (

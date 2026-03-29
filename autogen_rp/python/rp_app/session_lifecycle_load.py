@@ -13,6 +13,7 @@ async def load_existing_session(
     character_state_from_dict_fn: Callable[[dict[str, Any]], Any],
     make_agent_identifier_fn: Callable[[str], str],
     resolve_character_file_fn: Callable[[Any, str], str | None],
+    load_cross_session_memories_fn: Callable[[list[str], str], dict[str, Any]],
     apply_cross_session_memories_fn: Callable[
         [dict[str, Any], dict[str, Any], str], None
     ],
@@ -105,10 +106,9 @@ async def load_existing_session(
     st_module.session_state["selected_chars"] = resolved_files
     st_module.session_state.pop("npc_selection", None)
     st_module.session_state["character_states"] = char_states
-    cross_session_memories = session_manager.get_cross_session_memories(
-        character_names=[agent.name for agent in agents],
-        user_name=user_name,
-        exclude_session_id=session_id,
+    cross_session_memories = load_cross_session_memories_fn(
+        [agent.name for agent in agents],
+        user_name,
     )
     apply_cross_session_memories_fn(char_states, cross_session_memories, user_name)
     st_module.session_state["cross_session_memories"] = cross_session_memories
@@ -127,6 +127,17 @@ async def load_existing_session(
     continuity_manager = get_continuity_manager_fn()
     if continuity_manager is not None:
         continuity_manager.seed_character_canon_anchors(char_states)
+        from scene_grounding import rebuild_scene_grounding_from_continuity
+
+        st_module.session_state["scene_grounding"] = (
+            rebuild_scene_grounding_from_continuity(continuity_manager)
+        )
+    else:
+        from scene_grounding import grounding_dict_from_session_metadata
+
+        st_module.session_state["scene_grounding"] = grounding_dict_from_session_metadata(
+            session_data.get("metadata", {})
+        )
     st_module.session_state["session_id"] = session_id
     restored_scene_state = (
         continuity_manager.scene_state if continuity_manager is not None else None

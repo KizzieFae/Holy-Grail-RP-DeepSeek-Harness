@@ -66,6 +66,62 @@ def test_phase3_character_drift_detection_rejects_conflicting_goal() -> None:
     assert "stable goal anchor" in reason
 
 
+def test_phase3_character_drift_skips_offsite_anchor_when_scene_context_differs() -> None:
+    state = CharacterState(
+        name="Harley",
+        core_goals=["Protect the Arkham ward and keep the newcomers unstable"],
+    )
+    has_drift, reason = detect_character_drift(
+        content="leans in with a grin",
+        speaker="Harley",
+        state=state,
+        move={
+            "action": "leans in with a grin",
+            "dialogue": "",
+            "motivation": {
+                "goal": "abandon the Arkham ward entirely and burn the intake desk",
+                "tactic": "provoke chaos",
+                "emotional_driver": "glee",
+                "risk_level": "high",
+            },
+        },
+        scene_state={
+            "location": "SCUC Dorm 303",
+            "environment_description": "A standard double dorm room on campus.",
+        },
+    )
+    assert has_drift is False
+    assert reason == ""
+
+
+def test_phase3_character_drift_still_binds_when_scene_echoes_offsite_marker() -> None:
+    state = CharacterState(
+        name="Harley",
+        core_goals=["Protect the Arkham ward at all costs"],
+    )
+    has_drift, reason = detect_character_drift(
+        content="smirks",
+        speaker="Harley",
+        state=state,
+        move={
+            "action": "smirks",
+            "dialogue": "",
+            "motivation": {
+                "goal": "destroy the Arkham ward",
+                "tactic": "lash out",
+                "emotional_driver": "rage",
+                "risk_level": "high",
+            },
+        },
+        scene_state={
+            "location": "SCUC Dorm 303",
+            "environment_description": "Arkham transfer paperwork stacked on the desk.",
+        },
+    )
+    assert has_drift is True
+    assert "stable goal anchor" in reason
+
+
 def test_phase3_character_drift_detection_allows_temporary_stabilization_goal() -> None:
     state = CharacterState(
         name="Kizzie",

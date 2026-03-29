@@ -32,7 +32,7 @@ Do not rely on tool memory as the only source of important project behavior.
 - Read `docs/repo-map.md` for repo structure.
 - Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).
 - Read `docs/code-style.md` for change-scope and coding expectations.
-- Read `docs/testing.md` before changing Python code.
+- Read `docs/testing.md` before changing Python code (includes Holy Grail default `pytest` scope and optional vendored-package test deps).
 - Read `docs/architecture.md` before touching `python/rp_app/` or other core workflow code.
 - Read `docs/audit-workflows.md` before auditing RP sessions or diagnosing continuity issues.
 
@@ -44,10 +44,14 @@ area is usually `python/rp_app/`.
 If a task touches the RP app, also read:
 
 - `../MODULE_INDEX.md` (file-level map; canonical at repo root)
+- `../Holy Grail PRD.md` (product intent, including **Progression Advisory MVP** in §5.7 and **Scene Grounding MVP** in §5.8)
+- `docs/scene-grounding-layer.md` (Scene Grounding: facts contract, lifecycle, prompt integration — under `autogen_rp/`)
 - `python/rp_app/README.md`
 - `python/rp_app/ARCHITECTURE.md`
 - `python/rp_app/AUDIT_DOCUMENTATION.md`
 - `python/RP_SETUP_TODO.md`
+
+**Progression advisory (MVP):** deterministic, template-grounded prompt hints and a unified **`stall_score`** hook for beat-shift. Implemented under `python/rp_app/progression_advisory.py` with integration in `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, and audits. Does not write continuity or `CharacterState`.
 
 ## Tool-specific compatibility
 

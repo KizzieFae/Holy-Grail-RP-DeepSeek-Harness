@@ -1,6 +1,147 @@
 from typing import Any
 
 
+def _flatten_index_turns(index_rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for re in index_rounds or []:
+        for t in re.get("turns", []) or []:
+            if isinstance(t, dict):
+                out.append(t)
+    return out
+
+
+def count_indexed_turns(index_rounds: list[dict[str, Any]]) -> int:
+    return len(_flatten_index_turns(index_rounds))
+
+
+def index_rounds_non_empty(index_rounds: list[dict[str, Any]]) -> bool:
+    return count_indexed_turns(index_rounds) > 0
+
+
+def continuity_overview_from_narrative_turns(
+    turns: list[dict[str, Any]],
+) -> dict[str, Any]:
+    total_state_changes = sum(
+        len([item for item in turn.get("state_changes", []) if str(item).strip()])
+        for turn in turns
+    )
+    total_actionable_implications = sum(
+        len(
+            [
+                item
+                for item in turn.get("actionable_implications", [])
+                if str(item).strip()
+            ]
+        )
+        for turn in turns
+    )
+    turns_with_state_change = sum(
+        1
+        for turn in turns
+        if any(str(item).strip() for item in turn.get("state_changes", []))
+    )
+    turns_with_issue_update = sum(
+        1
+        for turn in turns
+        if any(isinstance(item, dict) for item in turn.get("issue_updates", []))
+    )
+    turns_without_material_change = sum(
+        1
+        for turn in turns
+        if not any(str(item).strip() for item in turn.get("state_changes", []))
+        and not any(isinstance(item, dict) for item in turn.get("issue_updates", []))
+        and not str(turn.get("environment_event", "") or "").strip()
+    )
+    presence_transitions = [
+        change
+        for turn in turns
+        for change in turn.get("presence_changes", [])
+        if isinstance(change, dict)
+    ]
+    issue_updates_flat = [
+        update
+        for turn in turns
+        for update in turn.get("issue_updates", [])
+        if isinstance(update, dict)
+    ]
+    return {
+        "turns_with_state_change": turns_with_state_change,
+        "turns_with_issue_update": turns_with_issue_update,
+        "turns_without_material_change": turns_without_material_change,
+        "total_state_changes": total_state_changes,
+        "total_actionable_implications": total_actionable_implications,
+        "presence_transition_count": len(presence_transitions),
+        "issue_update_count": len(issue_updates_flat),
+        "resolved_issue_updates": sum(
+            1
+            for update in issue_updates_flat
+            if str(update.get("status", "") or "").strip().lower() == "resolved"
+        ),
+        "stalled_issue_updates": sum(
+            1
+            for update in issue_updates_flat
+            if str(update.get("status", "") or "").strip().lower() == "stalled"
+        ),
+        "decision_or_revelation_turns": sum(
+            1
+            for turn in turns
+            if str(turn.get("continuity_event_type", "") or "").strip()
+            in {"decision", "revelation"}
+        ),
+    }
+
+
+def continuity_overview_from_round_index(
+    index_rounds: list[dict[str, Any]],
+) -> dict[str, Any]:
+    flat = _flatten_index_turns(index_rounds)
+    turns_with_state_change = sum(
+        1 for t in flat if int(t.get("state_change_count", 0) or 0) > 0
+    )
+    turns_with_issue_update = sum(
+        1 for t in flat if int(t.get("issue_update_count", 0) or 0) > 0
+    )
+    turns_without_material_change = sum(
+        1
+        for t in flat
+        if int(t.get("state_change_count", 0) or 0) == 0
+        and int(t.get("issue_update_count", 0) or 0) == 0
+        and int(t.get("presence_change_count", 0) or 0) == 0
+    )
+    total_state_changes = sum(int(t.get("state_change_count", 0) or 0) for t in flat)
+    presence_transition_count = sum(
+        int(t.get("presence_change_count", 0) or 0) for t in flat
+    )
+    issue_update_count = sum(int(t.get("issue_update_count", 0) or 0) for t in flat)
+    decision_or_revelation_turns = sum(
+        1
+        for t in flat
+        if str(t.get("continuity_event_type", "") or "").strip().lower()
+        in {"decision", "revelation"}
+    )
+    return {
+        "turns_with_state_change": turns_with_state_change,
+        "turns_with_issue_update": turns_with_issue_update,
+        "turns_without_material_change": turns_without_material_change,
+        "total_state_changes": total_state_changes,
+        "total_actionable_implications": 0,
+        "presence_transition_count": presence_transition_count,
+        "issue_update_count": issue_update_count,
+        "resolved_issue_updates": 0,
+        "stalled_issue_updates": 0,
+        "decision_or_revelation_turns": decision_or_revelation_turns,
+    }
+
+
+def continuity_overview_is_effectively_empty(cov: dict[str, Any]) -> bool:
+    return (
+        int(cov.get("total_state_changes", 0) or 0) == 0
+        and int(cov.get("turns_with_state_change", 0) or 0) == 0
+        and int(cov.get("turns_with_issue_update", 0) or 0) == 0
+        and int(cov.get("issue_update_count", 0) or 0) == 0
+    )
+
+
 def build_spotlight(character_stats: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(
         [
@@ -103,6 +244,7 @@ def build_report(
     heuristic_issue_categories: dict[str, dict[str, Any]],
     regression_checks: dict[str, bool],
     utc_timestamp,
+    index_rounds: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     must_remain_assigned_characters = [
         item["character"]
@@ -115,77 +257,45 @@ def build_report(
         if item.get("presence_constraint") == "must_remain"
         and int(item.get("turns", 0) or 0) == 0
     ]
-    turns = narrative.get("turns", [])
-    # Use manifest total_turns as primary source, fallback to counting turns
-    total_turns = manifest.get("total_turns", len(turns) if turns else 0)
-    total_state_changes = sum(
-        len([item for item in turn.get("state_changes", []) if str(item).strip()])
-        for turn in turns
+    turns = narrative.get("turns") or []
+    idx_rounds = index_rounds if index_rounds is not None else []
+    idx_turn_total = count_indexed_turns(idx_rounds)
+    idx_nonempty = index_rounds_non_empty(idx_rounds)
+
+    manifest_tt_raw = manifest.get("total_turns")
+    if manifest_tt_raw is None:
+        manifest_tt = len(turns) if turns else 0
+    else:
+        manifest_tt = int(manifest_tt_raw) if manifest_tt_raw else 0
+    total_turns = max(manifest_tt, len(turns), idx_turn_total)
+
+    cov_narr = continuity_overview_from_narrative_turns(turns)
+    cov_idx = (
+        continuity_overview_from_round_index(idx_rounds) if idx_nonempty else None
     )
-    total_actionable_implications = sum(
-        len(
-            [
-                item
-                for item in turn.get("actionable_implications", [])
-                if str(item).strip()
-            ]
-        )
-        for turn in turns
-    )
-    turns_with_state_change = sum(
-        1
-        for turn in turns
-        if any(str(item).strip() for item in turn.get("state_changes", []))
-    )
-    turns_with_issue_update = sum(
-        1
-        for turn in turns
-        if any(isinstance(item, dict) for item in turn.get("issue_updates", []))
-    )
-    turns_without_material_change = sum(
-        1
-        for turn in turns
-        if not any(str(item).strip() for item in turn.get("state_changes", []))
-        and not any(isinstance(item, dict) for item in turn.get("issue_updates", []))
-        and not str(turn.get("environment_event", "") or "").strip()
-    )
-    presence_transitions = [
-        change
-        for turn in turns
-        for change in turn.get("presence_changes", [])
-        if isinstance(change, dict)
-    ]
-    issue_updates_flat = [
-        update
-        for turn in turns
-        for update in turn.get("issue_updates", [])
-        if isinstance(update, dict)
-    ]
-    continuity_overview = {
-        "turns_with_state_change": turns_with_state_change,
-        "turns_with_issue_update": turns_with_issue_update,
-        "turns_without_material_change": turns_without_material_change,
-        "total_state_changes": total_state_changes,
-        "total_actionable_implications": total_actionable_implications,
-        "presence_transition_count": len(presence_transitions),
-        "issue_update_count": len(issue_updates_flat),
-        "resolved_issue_updates": sum(
-            1
-            for update in issue_updates_flat
-            if str(update.get("status", "") or "").strip().lower() == "resolved"
-        ),
-        "stalled_issue_updates": sum(
-            1
-            for update in issue_updates_flat
-            if str(update.get("status", "") or "").strip().lower() == "stalled"
-        ),
-        "decision_or_revelation_turns": sum(
-            1
-            for turn in turns
-            if str(turn.get("continuity_event_type", "") or "").strip()
-            in {"decision", "revelation"}
-        ),
-    }
+
+    if not turns and idx_nonempty and cov_idx is not None:
+        continuity_overview = cov_idx
+        continuity_overview_source = "index"
+    elif turns and idx_nonempty and cov_idx is not None:
+        if continuity_overview_is_effectively_empty(
+            cov_narr
+        ) and not continuity_overview_is_effectively_empty(cov_idx):
+            continuity_overview = cov_idx
+            continuity_overview_source = "mixed"
+        else:
+            continuity_overview = cov_narr
+            continuity_overview_source = "narrative"
+    else:
+        continuity_overview = cov_narr
+        continuity_overview_source = "narrative"
+
+    narrative_tr = narrative.get("total_rounds")
+    if narrative_tr is None:
+        narrative_tr_eff = 0
+    else:
+        narrative_tr_eff = int(narrative_tr) if narrative_tr else 0
+    total_rounds = max(len(round_summaries), narrative_tr_eff)
     prompt_evaluations = int(summary_block_visibility.get("prompt_evaluations", 0) or 0)
     summary_block_quality = {
         "prompt_evaluations": prompt_evaluations,
@@ -244,7 +354,8 @@ def build_report(
             "cast": manifest.get("cast", []),
             "user_name": manifest.get("user_name"),
             "opening_description": manifest.get("opening_description"),
-            "total_characters": manifest.get("total_characters", 0),
+            "total_characters": int(manifest.get("total_characters", 0) or 0)
+            or len(manifest.get("cast") or []),
             "scene_template": scene_template,
         },
         "scene_template": {
@@ -256,7 +367,7 @@ def build_report(
             },
         },
         "overview": {
-            "total_rounds": narrative.get("total_rounds", len(round_summaries)),
+            "total_rounds": total_rounds,
             "total_turns": total_turns,
             "total_logged_rounds": len(round_summaries),
             "latest_round": (
@@ -265,6 +376,7 @@ def build_report(
             "last_updated": narrative.get("last_updated") or manifest.get("timestamp"),
         },
         "continuity_overview": continuity_overview,
+        "continuity_overview_source": continuity_overview_source,
         "spotlight": spotlight,
         "recent_rounds": round_summaries[-5:],
         "round_summaries": round_summaries,

@@ -1,5 +1,37 @@
 from typing import Any
 
+from audit_instrumentation import log_audit_exception
+
+
+def _merge_character_audit_metadata(
+    *,
+    base: dict[str, Any],
+    progression_advisory: dict[str, Any] | None,
+    anti_regression_advisory: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    out = dict(base)
+    if progression_advisory:
+        out["progression_advisory"] = {
+            "stall_score": progression_advisory.get("stall_score"),
+            "progression_pressure": progression_advisory.get("progression_pressure"),
+            "recommended_channels": progression_advisory.get("recommended_channels"),
+            "stall_components": progression_advisory.get("stall_components"),
+        }
+    if anti_regression_advisory:
+        out["anti_regression_advisory"] = {
+            "active": anti_regression_advisory.get("active"),
+            "ping_pong_detected": anti_regression_advisory.get("ping_pong_detected"),
+            "post_break_window_active": anti_regression_advisory.get(
+                "post_break_window_active"
+            ),
+            "low_player_agency": anti_regression_advisory.get("low_player_agency"),
+            "ping_pong_actors": anti_regression_advisory.get("ping_pong_actors"),
+            "ticks_after_decrement": anti_regression_advisory.get(
+                "ticks_after_decrement"
+            ),
+        }
+    return out
+
 
 def _get_turn_continuity_payload(*, continuity_manager: Any, next_actor: str) -> tuple[
     dict[str, Any],
@@ -100,6 +132,8 @@ def log_character_turn_audit(
     turn_number: int,
     character_summary_block_audit: dict[str, Any],
     turn_execution_metadata: dict[str, Any] | None = None,
+    progression_advisory: dict[str, Any] | None = None,
+    anti_regression_advisory: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -146,21 +180,29 @@ def log_character_turn_audit(
                 "scene_state_after": scene_state_after,
                 **actor_scene_context,
             },
-            metadata={
-                "parse_error": "",
-                "action": move.get("action", ""),
-                "has_dialogue": bool(move.get("dialogue")),
-                "issue_updates": issue_updates,
-                "presence_changes": presence_changes,
-                "consequences": consequences,
-                "summary_blocks": character_summary_block_audit,
-                "turn_execution": turn_execution_metadata or {},
-            },
+            metadata=_merge_character_audit_metadata(
+                base={
+                    "parse_error": "",
+                    "action": move.get("action", ""),
+                    "has_dialogue": bool(move.get("dialogue")),
+                    "issue_updates": issue_updates,
+                    "presence_changes": presence_changes,
+                    "consequences": consequences,
+                    "summary_blocks": character_summary_block_audit,
+                    "turn_execution": turn_execution_metadata or {},
+                },
+                progression_advisory=progression_advisory,
+                anti_regression_advisory=anti_regression_advisory,
+            ),
             **scene_audit_kwargs,
         )
         audit_logger.log_bot_interaction(char_entry)
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception(
+            f"audit: character log_bot_interaction failed (round={round_number} "
+            f"turn={turn_number} actor={next_actor})",
+            exc,
+        )
 
 
 def log_narrator_render_audit(
@@ -176,6 +218,8 @@ def log_narrator_render_audit(
     narrator_semantic_assessment: dict[str, Any] | None,
     round_number: int,
     turn_number: int,
+    progression_advisory: dict[str, Any] | None = None,
+    anti_regression_advisory: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -228,20 +272,28 @@ def log_narrator_render_audit(
                 "scene_state_after": scene_state_after,
                 **actor_scene_context,
             },
-            metadata={
-                "rendered_length": len(rendered),
-                "word_count": len(rendered.split()),
-                "issue_updates": issue_updates,
-                "presence_changes": presence_changes,
-                "consequences": consequences,
-                "summary_blocks": narrator_summary_block_audit,
-                "semantic_validation": narrator_semantic_assessment or {},
-            },
+            metadata=_merge_character_audit_metadata(
+                base={
+                    "rendered_length": len(rendered),
+                    "word_count": len(rendered.split()),
+                    "issue_updates": issue_updates,
+                    "presence_changes": presence_changes,
+                    "consequences": consequences,
+                    "summary_blocks": narrator_summary_block_audit,
+                    "semantic_validation": narrator_semantic_assessment or {},
+                },
+                progression_advisory=progression_advisory,
+                anti_regression_advisory=anti_regression_advisory,
+            ),
             **scene_audit_kwargs,
         )
         audit_logger.log_bot_interaction(narrator_entry)
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception(
+            f"audit: narrator log_bot_interaction failed (round={round_number} "
+            f"turn={turn_number} character={next_actor})",
+            exc,
+        )
 
 
 def write_turn_audit_artifacts(
@@ -300,8 +352,12 @@ def write_turn_audit_artifacts(
             issue_update_count=len(issue_updates),
             presence_change_count=len(presence_changes),
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception(
+            f"audit: write_round_index failed (round={round_number} "
+            f"turn={turn_number} actor={next_actor})",
+            exc,
+        )
 
     try:
         audit_logger = get_audit_logger_fn()
@@ -338,8 +394,12 @@ def write_turn_audit_artifacts(
             session_number=session_num,
             total_turns=continuity_manager.turn_counter if continuity_manager else 0,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception(
+            f"audit: update_narrative_summary or manifest update failed "
+            f"(round={round_number} turn={turn_number} actor={next_actor})",
+            exc,
+        )
 
 
 def refresh_audit_summary_report_if_enabled(
@@ -350,5 +410,5 @@ def refresh_audit_summary_report_if_enabled(
 
     try:
         refresh_audit_summary_report_fn()
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception("audit: refresh_audit_summary_report failed", exc)

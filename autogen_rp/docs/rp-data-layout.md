@@ -74,7 +74,7 @@ Each `{session_id}.json` file is written by `SessionManager.save_session` and co
 | `chat_history` | Messages for replay in UI |
 | `metadata` | Extensible bag (see below) |
 
-**`metadata`** (populated from `session_lifecycle_save.py` among others) typically includes: `summary`, `character_states`, `memory_buckets`, `bot_reply_limit`, `continuity_state`, `player_control_mode`, `scene_status`, `scene_closed_reason`, audit counters (`audit_session_number`, `audit_round_number`, `audit_turn_number`), `audit_enabled`, `scene_owner` / `audit_session_owner`. **Trust the code** for the current full set.
+**`metadata`** (populated from `session_lifecycle_save.py` among others) typically includes: `summary`, `character_states`, `memory_buckets`, `bot_reply_limit`, `continuity_state`, `player_control_mode`, `scene_status`, `scene_closed_reason`, audit counters (`audit_session_number`, `audit_round_number`, `audit_turn_number`), `audit_enabled`, `scene_owner` / `audit_session_owner`. When the **Scene Grounding** MVP is implemented, expect a scene-scoped **`scene_grounding`** (or equivalent) blob: **prompt-facing derived facts**, not a second continuity authority — see [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8 and [scene-grounding-layer.md](./scene-grounding-layer.md). **Trust the code** for the current full set.
 
 ### When sessions are saved
 

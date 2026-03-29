@@ -11,7 +11,11 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from scene_exit_detection import has_hard_scene_departure_evidence
+from scene_exit_detection import (
+    detect_exit_from_scene,
+    has_hard_scene_departure_evidence,
+    has_scene_reentry_evidence,
+)
 
 from continuity_issue_helpers import (
     event_tokens,
@@ -48,6 +52,7 @@ from continuity_scene_helpers import (
     restore_manager_state,
     serialize_manager_state,
 )
+from scene_grounding import compute_grounding_markers
 
 from continuity_state import (
     CanonAnchor,
@@ -270,6 +275,10 @@ class ContinuityManager:
         )
         should_create_event = has_durable_change or has_scene_shift
 
+        grounding_markers = compute_grounding_markers(
+            acting_character, move, detected
+        )
+
         return {
             "should_create_event": should_create_event,
             "event_type": event_type,
@@ -279,6 +288,7 @@ class ContinuityManager:
             "actionable_implications": actionable_implications,
             "tags": sorted(tags),
             "consequences": [c.category.value for c in detected],  # For audit/debug
+            "grounding_markers": grounding_markers,
         }
 
     def _determine_event_type(
@@ -750,6 +760,11 @@ class ContinuityManager:
                 for item in turn_consequences.get("actionable_implications", [])
                 if str(item).strip()
             ],
+            grounding_markers=[
+                str(item)
+                for item in turn_consequences.get("grounding_markers", [])
+                if str(item).strip()
+            ],
         )
 
     def _maybe_generate_summary_block(self, timestamp: datetime) -> SummaryBlock | None:
@@ -817,22 +832,27 @@ class ContinuityManager:
             self.scene_state.environment_description = environment_event
 
         if "exit" in consequence_tags:
-            scene_for_exit = self.scene_state.to_dict()
-            hard_departure = has_hard_scene_departure_evidence(move, scene_for_exit)
-            skip_soft_removal = (
-                not hard_departure
-                and self._should_skip_soft_exit_presence_removal(
-                    acting_character, move
-                )
+            constraints = self.scene_state.character_presence_constraints or {}
+            must_remain_cast = (
+                str(constraints.get(acting_character, "") or "") == "must_remain"
             )
-            if not skip_soft_removal:
-                self.scene_state.present_characters = [
-                    name
-                    for name in self.scene_state.present_characters
-                    if name != acting_character
-                ]
-                if acting_character not in self.scene_state.absent_but_relevant:
-                    self.scene_state.absent_but_relevant.append(acting_character)
+            if not must_remain_cast:
+                scene_for_exit = self.scene_state.to_dict()
+                hard_departure = has_hard_scene_departure_evidence(move, scene_for_exit)
+                skip_soft_removal = (
+                    not hard_departure
+                    and self._should_skip_soft_exit_presence_removal(
+                        acting_character, move
+                    )
+                )
+                if not skip_soft_removal:
+                    self.scene_state.present_characters = [
+                        name
+                        for name in self.scene_state.present_characters
+                        if name != acting_character
+                    ]
+                    if acting_character not in self.scene_state.absent_but_relevant:
+                        self.scene_state.absent_but_relevant.append(acting_character)
         if "entry" in consequence_tags:
             if acting_character not in self.scene_state.present_characters:
                 self.scene_state.present_characters.append(acting_character)
@@ -841,6 +861,13 @@ class ContinuityManager:
                 for name in self.scene_state.absent_but_relevant
                 if name != acting_character
             ]
+            self.remove_from_offstage(acting_character)
+
+        scene_dict = self.scene_state.to_dict()
+        if detect_exit_from_scene(move, scene_dict):
+            self.mark_character_offstage(acting_character)
+        if has_scene_reentry_evidence(move):
+            self.remove_from_offstage(acting_character)
 
         self._update_scene_phase()
 
@@ -894,6 +921,32 @@ class ContinuityManager:
             seen_absent.add(n)
             deduped_absent.append(n)
         self.scene_state.absent_but_relevant = deduped_absent
+
+        present_off = set(self.scene_state.present_characters)
+        seen_off: set[str] = set()
+        deduped_off: list[str] = []
+        for n in self.scene_state.offstage_characters:
+            n = str(n).strip()
+            if not n or n not in present_off or n in seen_off:
+                continue
+            seen_off.add(n)
+            deduped_off.append(n)
+        self.scene_state.offstage_characters = deduped_off
+
+    def mark_character_offstage(self, character_name: str) -> None:
+        if self.scene_state is None:
+            return
+        if character_name not in self.scene_state.present_characters:
+            return
+        if character_name not in self.scene_state.offstage_characters:
+            self.scene_state.offstage_characters.append(character_name)
+
+    def remove_from_offstage(self, character_name: str) -> None:
+        if self.scene_state is None:
+            return
+        self.scene_state.offstage_characters = [
+            n for n in self.scene_state.offstage_characters if n != character_name
+        ]
 
     def _assert_presence_invariant_after_reconcile(self) -> None:
         if self.scene_state is None:

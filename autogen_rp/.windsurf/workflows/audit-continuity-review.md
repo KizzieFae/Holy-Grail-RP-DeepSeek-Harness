@@ -44,6 +44,30 @@ From the audit files, explicitly evaluate:
 - whether `issue_updates` show escalation, reinforcement, stalling, or resolution at the right times
 - whether `presence_changes` and scene presence state reflect exits, entries, and absences correctly
 - whether `summary_block_visibility` / `summary_block_quality` suggest prompt compression is helping or hiding important context
+
+### Offstage / membership / eligibility / perceptual scope (checklist)
+
+Treat **`present_characters` as cast membership** for orchestration, not literal sensory co-presence. **On-stage** for a beat means present and **not** listed in **`offstage_characters`**.
+
+When replaying a session or reading per-turn audits, verify:
+
+1. **Slot-filling / Director input**
+   - After a justified offstage transition, **`offstage_characters`** in structured scene state (or equivalent continuity snapshot) includes the expected name(s) while they remain in **`present_characters`** if `must_remain` or cast retention applies.
+   - **`available_next_actors`** (or the Director payload field that mirrors it) **does not** list offstage names unless the same round already cleared offstage (e.g. direct-address / forced speaker, Traveler re-entry wording, or embodied re-entry in the move).
+   - When only offstage characters would be left to speak and the beat does not require an offstage line, the Director or cycle should prefer **`end_round`** over inventing a third on-stage speaker.
+
+2. **User-authored exits and routing**
+   - Traveler text that clearly exits a character (left, garage, out of the room, etc.) should move **`offstage_characters`** **before** turn selection for that user message’s bot cycle, so the same cycle does not default-route that character without justification.
+   - **Audit caveat:** user-trigger exit matching is applied per mentioned cast name against **whole-message** exit/re-entry cues. A single line that names multiple characters and also contains exit-like wording for only one of them can produce **false offstage** for others; flag those for `user_presence_signals` tuning rather than Director-only fixes.
+
+3. **Knowledge / prompt assembly**
+   - For a character turn audit while offstage: character prompt (or redacted snapshot) should include the **OFFSTAGE / PERCEPTUAL SCOPE** block and **filtered** recent dialogue / structured moves (Traveler + self), not full in-room lines from other assistants—unless a separate mechanism explicitly granted remote perception.
+
+4. **Re-entry conservatism**
+   - Offstage clears only when evidence matches **user re-entry phrasing**, **embodied re-entry** in the character move, structured **entry** consequence, or **forced-speaker** release—not from vague proximity or motivation-only intent.
+
+5. **False exits**
+   - If **`detect_exit_from_scene`** misfires, expect a **wrong offstage** flag rather than silent removal from **`present_characters`**. Flag those cases as **continuity/state representation** or **exit-detection tuning**, not Director-only fixes.
 - whether rounds drift into low-change beats despite active unresolved pressure
 
 If the audit shows dialogue-heavy turns with weak material change signals, treat that as evidence against a Director-first diagnosis.
@@ -64,6 +88,11 @@ Inspect the moving parts that shape scene progression. At minimum, review the re
 - `python/rp_app/turn_runner_turn.py`
 - `python/rp_app/turn_runner_updates.py`
 - `python/rp_app/turn_runner_audit.py`
+- `python/rp_app/turn_runner.py`
+- `python/rp_app/user_presence_signals.py`
+- `python/rp_app/offstage_prompt_filter.py`
+- `python/rp_app/scene_exit_detection.py`
+- `python/rp_app/response_validation_selection.py`
 - `python/rp_app/prompt_builders.py`
 - `python/rp_app/model_client.py`
 - `python/rp_app/audit_logger.py`
@@ -81,6 +110,7 @@ For each observed failure, classify the most likely intervention layer:
    - Missing or weak state transitions
    - Consequences not being extracted
    - Presence or scene deltas not being updated
+   - Confusing **membership** (`present_characters`) with **literal on-stage presence**; missing or incorrect **`offstage_characters`** relative to the fiction
 
 2. `issue lifecycle / orchestration state`
    - Pressure not being created
@@ -150,13 +180,14 @@ Return the audit result using this structure:
 
 ### Validation plan
 
-- focused tests to run
+- focused tests to run (including `python/tests/test_offstage_presence.py` and offstage routing integration coverage)
 - audited scenario(s) to rerun
 - what success would look like in `_audit_summary.json` and `_narrative.json`
 - increased rate of meaningful non-empty `state_changes`
 - more outcome-focused `scene_recent_delta`
 - reduced dialogue-only `continuity_event_type` patterns
 - fewer stalled issues surfaced as actionable pressure when they should no longer drive the scene
+- **offstage-specific:** offstage characters do not appear in **`available_next_actors`** for the same user cycle after a clear Traveler exit unless re-entry or forced address applies; character-turn artifacts show **OFFSTAGE** scope text and **narrowed** dialogue/move context; no systematic **in-room omniscience** for offstage speakers across multiple replay rounds
 
 ## Important anti-patterns
 

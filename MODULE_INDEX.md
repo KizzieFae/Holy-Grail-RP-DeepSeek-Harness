@@ -22,7 +22,9 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Duplicate** dialogue or repeated line | `response_validation_content.py` (`is_duplicate_dialogue`), `turn_runner_turn.py` (retry path) |
 | **Presence** / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `semantic_validation.py` (override paths) |
 | **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
+| **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py` |
 | Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py` |
+| **Settled facts** repeated / logistics reset in dialogue (after continuity looks correct) | `scene_grounding.py` (planned), `prompt_builders.py`, then continuity extraction if facts never promote |
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
 | **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py` |
@@ -61,13 +63,16 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit | Main loop entry |
+| `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit, `beat_shift_state` | Passes active issues + recent moves into beat-shift; main loop entry |
 | `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation` | |
 | `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | |
 | `turn_runner_audit.py` | Audit summary refresh hooks | `audit_logger*` | |
-| `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders` | Policy is prompt-led |
+| `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Advisory only; no continuity writes |
+| `anti_regression_advisory.py` | Ping-pong + post-break / low player-agency → short Director ANTI-REGRESSION block | `progression_advisory` (stall read-only), `director_decisions`, `recent_structured_moves`, session `player_character` / `user_name` | Option A trigger: no `high_stall` OR; orchestration cache only |
+| `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
+| `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `anti_regression_advisory` | Optional progression + anti-regression Director prefixes |
 | `app_turn_selector.py` | Turn selection parsing / reconciliation | `response_validation_selection` | |
-| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state | |
+| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory` | Optional progression suffix when pressure + beat-shift rules match |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 
@@ -84,6 +89,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `continuity_scene_helpers.py` | Scene snapshots, orchestration context for prompts | scene state | |
 | `continuity_summary_helpers.py` | Summary blocks, retrieval ranking support | issues, events | |
 | `continuity_consequence_classifier.py` | Consequence / category signals for issues | text signals | |
+| `scene_grounding.py` | Derive **read-only** **scene facts** from continuity `PublicEvent.grounding_markers`; format Director/character prompt blocks; cap/prune | `continuity_manager`, `turn_runner_updates`, `prompt_builders`, `app_turn_director`, `app_turn_prompting` | **No** continuity or `CharacterState` writes; PRD §5.8; spec: `autogen_rp/docs/scene-grounding-layer.md` |
 
 ---
 
@@ -106,7 +112,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 |--------|----------------|----------------|-------|
 | `scene_lifecycle_start.py` | Start scene, team setup | `scene_template`, `scene_opener` | |
 | `scene_lifecycle_actions.py` | End scene, skip, close, recreate team | `session_lifecycle`, continuity | |
-| `scene_template.py` | Load/validate templates, role assignments | `data/scene_templates` | |
+| `scene_template.py` | Load/validate templates, role assignments | `data/scene_templates` | Optional `progression_profile` on JSON templates |
 | `scene_opener.py` | Opening text / initial message resolution | `autogen_characters` | |
 | `scene_exit_detection.py` | Hard departure signals for continuity | text / moves | |
 | `session_lifecycle_save.py` | Persist session + continuity + audit ids | `SessionManager` | |
@@ -164,5 +170,6 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 - [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — audit file meanings
 - [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md) — data directories
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future packet seam
+- [autogen_rp/docs/scene-grounding-layer.md](./autogen_rp/docs/scene-grounding-layer.md) — Scene Grounding MVP (facts contract, lifecycle)
 
 *A short pointer file remains at `autogen_rp/python/rp_app/MODULE_INDEX.md` so existing links into `rp_app/` still resolve.*

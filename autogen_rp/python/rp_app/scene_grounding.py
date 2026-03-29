@@ -1,0 +1,360 @@
+"""Scene Grounding (MVP): read-only settled facts derived from continuity, for prompts only.
+
+Facts are promoted from deterministic markers attached to public events (see PRD §5.8).
+This module does not write continuity or character state.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from continuity_state import ConsequenceCategory, DetectedConsequence, PublicEvent
+
+MAX_SCENE_FACTS = 16
+SCHEMA_VERSION = 1
+
+# Default priority by category (higher retained first under cap)
+_CATEGORY_PRIORITY: dict[str, int] = {
+    "medical_status": 85,
+    "assignment": 80,
+    "communication_state": 75,
+    "object_state": 70,
+}
+
+
+def empty_grounding_dict() -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "facts": [],
+        "last_rebuilt_turn": None,
+    }
+
+
+def _move_text_blob(move: dict[str, Any]) -> str:
+    dialogue = str(move.get("dialogue", "") or "").lower()
+    action = str(move.get("action", "") or "").lower()
+    motivation = move.get("motivation", {})
+    goal = (
+        str(motivation.get("goal", "") or "").lower()
+        if isinstance(motivation, dict)
+        else ""
+    )
+    return f"{dialogue} {action} {goal}"
+
+
+def compute_grounding_markers(
+    acting_character: str,
+    move: dict[str, Any],
+    detected: list[DetectedConsequence],
+) -> list[str]:
+    """Derive deterministic grounding markers for this turn (no LLM).
+
+    Markers are compact strings: ``category:key|k=v|...`` stored on PublicEvent.
+    """
+    cats = {d.category for d in detected}
+    text = _move_text_blob(move)
+    markers: list[str] = []
+
+    if ConsequenceCategory.REVELATION in cats:
+        if "suppress" in text and (
+            "wrong" in text
+            or "not a wolf" in text
+            or "not built" in text
+            or "physiology" in text
+            or "formulation" in text
+            or "non-wolf" in text
+        ):
+            subj = str(acting_character or "").strip() or "unknown"
+            markers.append(
+                f"medical_status:omega_suppressants|formulation=wrong_for_physiology|subject={subj}"
+            )
+
+    if ConsequenceCategory.AGREEMENT in cats or ConsequenceCategory.COMMITMENT in cats:
+        if "bunk" in text and "top" in text and ("marlene" in text or "mars" in text):
+            assignee = str(acting_character or "").strip() or "unknown"
+            markers.append(
+                f"assignment:sleeping_surface|surface=top_of_bunk_marlene|assignee={assignee}"
+            )
+
+    if ("phone" in text or "cell" in text) and (
+        "broke" in text or "broken" in text or "shattered" in text or "smashed" in text
+    ):
+        markers.append("object_state:phone|status=broken")
+
+    if ConsequenceCategory.COMMITMENT in cats or ConsequenceCategory.AGREEMENT in cats:
+        if ("housing" in text or "res life" in text or "reslife" in text) and (
+            "call" in text or "office" in text
+        ):
+            if (
+                "ended" in text
+                or "hung up" in text
+                or "done" in text
+                or "over" in text
+                or "finished" in text
+                or "completed" in text
+            ):
+                markers.append("communication_state:housing_call|status=completed")
+
+    return markers
+
+
+def _parse_marker(marker: str) -> tuple[str, str, dict[str, str]] | None:
+    marker = str(marker or "").strip()
+    if not marker or "|" not in marker and ":" not in marker:
+        return None
+    head, _, tail = marker.partition("|")
+    head = head.strip()
+    if ":" not in head:
+        return None
+    category, _, key = head.partition(":")
+    category = category.strip()
+    key = key.strip()
+    if not category or not key:
+        return None
+    kv: dict[str, str] = {}
+    if tail.strip():
+        for part in tail.split("|"):
+            part = part.strip()
+            if "=" in part:
+                k, _, v = part.partition("=")
+                kv[k.strip()] = v.strip()
+    return category, key, kv
+
+
+def _humanize_id(name: str) -> str:
+    return str(name or "").replace("_", " ").strip() or name
+
+
+def _build_value_summary(category: str, key: str, kv: dict[str, str]) -> str:
+    if category == "assignment" and key == "sleeping_surface":
+        who = _humanize_id(kv.get("assignee", "someone"))
+        surf = kv.get("surface", "")
+        surf_label = surf.replace("_", " ") if surf else surf
+        line = f"{who}: sleeping — {surf_label}"
+        return line[:120]
+    if category == "medical_status" and key == "omega_suppressants":
+        who = _humanize_id(kv.get("subject", "omega"))
+        form = kv.get("formulation", "")
+        if form == "wrong_for_physiology":
+            return f"{who}: suppressants wrong for physiology"[:120]
+        return f"{who}: suppressants ({form})"[:120]
+    if category == "object_state" and key == "phone":
+        return f"Phone: {kv.get('status', 'unknown')}"[:120]
+    if category == "communication_state" and key == "housing_call":
+        return f"Housing call: {kv.get('status', 'unknown')}"[:120]
+    return f"{category}/{key}"[:120]
+
+
+def _build_value_dict(category: str, key: str, kv: dict[str, str]) -> dict[str, str]:
+    out = dict(kv)
+    out["_category"] = category
+    out["_key"] = key
+    return out
+
+
+@dataclass
+class SceneFact:
+    fact_id: str
+    category: str
+    key: str
+    value: dict[str, str]
+    value_summary: str
+    source: dict[str, str]
+    priority: int
+    supersedes: str | None = None
+    source_turn_index: int | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "fact_id": self.fact_id,
+            "category": self.category,
+            "key": self.key,
+            "value": dict(self.value),
+            "value_summary": self.value_summary,
+            "source": dict(self.source),
+            "priority": self.priority,
+            "supersedes": self.supersedes,
+            "source_turn_index": self.source_turn_index,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SceneFact:
+        return cls(
+            fact_id=str(data.get("fact_id", "")),
+            category=str(data.get("category", "")),
+            key=str(data.get("key", "")),
+            value={
+                str(k): str(v)
+                for k, v in (data.get("value") or {}).items()
+                if isinstance(k, str)
+            },
+            value_summary=str(data.get("value_summary", "")),
+            source={
+                str(k): str(v)
+                for k, v in (data.get("source") or {}).items()
+                if isinstance(k, str)
+            },
+            priority=int(data.get("priority", 0)),
+            supersedes=(
+                str(data["supersedes"])
+                if data.get("supersedes") is not None
+                and str(data.get("supersedes")).strip()
+                else None
+            ),
+            source_turn_index=(
+                int(data["source_turn_index"])
+                if data.get("source_turn_index") is not None
+                else None
+            ),
+        )
+
+
+def _marker_to_fact(
+    *,
+    event: PublicEvent,
+    marker: str,
+    marker_index: int,
+    previous_id: str | None,
+) -> SceneFact | None:
+    parsed = _parse_marker(marker)
+    if not parsed:
+        return None
+    category, key, kv = parsed
+    if category not in _CATEGORY_PRIORITY:
+        return None
+    allowed_keys = {
+        "assignment": {"sleeping_surface"},
+        "medical_status": {"omega_suppressants"},
+        "object_state": {"phone"},
+        "communication_state": {"housing_call"},
+    }
+    if key not in allowed_keys.get(category, set()):
+        return None
+
+    fact_id = f"{event.event_id}:{marker_index}"
+    value = _build_value_dict(category, key, kv)
+    summary = _build_value_summary(category, key, kv)
+    priority = _CATEGORY_PRIORITY[category]
+    return SceneFact(
+        fact_id=fact_id,
+        category=category,
+        key=key,
+        value=value,
+        value_summary=summary,
+        source={
+            "kind": "continuity_event",
+            "ref": str(event.event_id or ""),
+        },
+        priority=priority,
+        supersedes=previous_id,
+        source_turn_index=event.turn_index,
+    )
+
+
+def rebuild_scene_grounding_from_continuity(manager: Any) -> dict[str, Any]:
+    """Rebuild the full grounding snapshot from continuity public events (deterministic)."""
+    events: list[PublicEvent] = getattr(manager, "public_events", []) or []
+    by_slot: dict[tuple[str, str], SceneFact] = {}
+    for event in events:
+        markers = getattr(event, "grounding_markers", None) or []
+        if not isinstance(markers, list):
+            continue
+        for i, marker in enumerate(markers):
+            slot_key = _parse_marker(str(marker))
+            if not slot_key:
+                continue
+            cat, k, _ = slot_key
+            slot = (cat, k)
+            prev = by_slot.get(slot)
+            fact = _marker_to_fact(
+                event=event,
+                marker=str(marker),
+                marker_index=i,
+                previous_id=prev.fact_id if prev else None,
+            )
+            if fact is not None:
+                by_slot[slot] = fact
+
+    facts = list(by_slot.values())
+    facts.sort(
+        key=lambda f: (
+            -f.priority,
+            -(f.source_turn_index if f.source_turn_index is not None else -1),
+            f.category,
+            f.key,
+            f.fact_id,
+        )
+    )
+    if len(facts) > MAX_SCENE_FACTS:
+        facts = facts[:MAX_SCENE_FACTS]
+
+    last_turn = getattr(manager, "turn_counter", None)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "facts": [f.to_dict() for f in facts],
+        "last_rebuilt_turn": int(last_turn) if last_turn is not None else None,
+    }
+
+
+def format_grounding_prompt_prefix(scene_grounding: Any) -> str:
+    """Director prefix fragment (plain text, empty if no facts)."""
+    block = format_grounding_block_body(scene_grounding)
+    if not block.strip():
+        return ""
+    return (
+        "SETTLED SCENE FACTS (established in this scene; do not contradict or "
+        "re-open without new in-fiction development):\n"
+        f"{block}\n"
+    )
+
+
+def format_grounding_block_body(scene_grounding: Any) -> str:
+    """Bullet lines only (no header)."""
+    raw = scene_grounding
+    if raw is None:
+        return ""
+    if isinstance(raw, dict):
+        facts_data = raw.get("facts", [])
+    else:
+        facts_data = []
+    if not isinstance(facts_data, list) or not facts_data:
+        return ""
+    lines: list[str] = []
+    for item in facts_data:
+        if not isinstance(item, dict):
+            continue
+        cat = str(item.get("category", "") or "")
+        summ = str(item.get("value_summary", "") or "").strip()
+        if not summ:
+            continue
+        lines.append(f"- [{cat}] {summ}")
+    return "\n".join(lines)
+
+
+def format_character_grounding_section(scene_grounding: Any) -> str:
+    body = format_grounding_block_body(scene_grounding)
+    if not body.strip():
+        return ""
+    return (
+        "SETTLED SCENE FACTS (established in this scene; do not contradict or "
+        "re-open without new in-fiction development):\n"
+        f"{body}\n\n"
+    )
+
+
+def grounding_dict_from_session_metadata(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    """Restore scene_grounding from saved session metadata (tolerant of missing/old keys)."""
+    if not isinstance(metadata, dict):
+        return empty_grounding_dict()
+    sg = metadata.get("scene_grounding")
+    if not isinstance(sg, dict):
+        return empty_grounding_dict()
+    facts = sg.get("facts", [])
+    if not isinstance(facts, list):
+        facts = []
+    return {
+        "schema_version": int(sg.get("schema_version", SCHEMA_VERSION)),
+        "facts": [f for f in facts if isinstance(f, dict)],
+        "last_rebuilt_turn": sg.get("last_rebuilt_turn"),
+    }

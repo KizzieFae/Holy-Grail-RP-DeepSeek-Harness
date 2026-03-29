@@ -60,6 +60,7 @@ def init_session_state(*, st_module: Any) -> None:
         "recovered_session_ids": [],
         "continuity_manager": None,
         "cross_session_memories": {},
+        "cross_session_injection_report": None,
     }
 
     for key, value in defaults.items():
@@ -78,6 +79,9 @@ def get_orchestration_state(
 def reset_state_for_new_scene(
     *, st_module: Any, get_audit_logger_fn, is_audit_enabled_fn
 ) -> None:
+    from scene_grounding import empty_grounding_dict
+
+    st_module.session_state["scene_grounding"] = empty_grounding_dict()
     st_module.session_state["chat_history"] = []
     st_module.session_state["team_state"] = None
     st_module.session_state["model_client"] = None
@@ -104,3 +108,5 @@ def reset_state_for_new_scene(
     st_module.session_state["audit_session_owner"] = None
     st_module.session_state["audit_summary_report_path"] = None
     st_module.session_state["continuity_manager"] = None
+    st_module.session_state["cross_session_memories"] = {}
+    st_module.session_state["cross_session_injection_report"] = None

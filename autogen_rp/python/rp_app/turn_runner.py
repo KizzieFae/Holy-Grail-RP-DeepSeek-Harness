@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable
 
+from beat_shift_state import maybe_activate_pending_beat_shift
 from turn_runner_audit import refresh_audit_summary_report_if_enabled
 from turn_runner_turn import execute_character_turn
 from turn_runner_updates import apply_successful_turn_updates
@@ -20,7 +21,7 @@ async def run_character_turns(
     resolve_bot_reply_limit_fn: Callable[[int, int | None], int],
     get_current_bot_reply_limit_fn: Callable[[int], int],
     get_available_actors_fn: Callable[
-        [list[str], list[str], list[str] | None], list[str]
+        [list[str], list[str], list[str] | None, list[str] | None], list[str]
     ],
     set_audit_turn_fn: Callable[[int], int],
     choose_next_actor_fn: Callable[..., Awaitable[dict[str, Any]]],
@@ -65,12 +66,33 @@ async def run_character_turns(
 ) -> None:
     from autogen_core import CancellationToken
 
+    from user_presence_signals import (
+        apply_user_trigger_to_offstage,
+        release_pending_forced_speaker_from_offstage,
+    )
+
     char_names = [agent.name for agent in char_agents]
     agent_lookup = {agent.name: agent for agent in char_agents}
     state_manager = st_module.session_state.get("character_state_manager")
     cancellation_token = CancellationToken()
     orchestration_state = get_orchestration_state_fn()
     round_number = start_audit_round_fn()
+    active_issue_dicts: list[dict[str, Any]] = []
+    cm_pre = get_continuity_manager_fn()
+    if cm_pre is not None:
+        for iss in cm_pre.get_active_issues(limit=24):
+            if hasattr(iss, "to_dict"):
+                active_issue_dicts.append(iss.to_dict())
+    recent_moves_for_stall = orchestration_state.get("recent_structured_moves")
+    if not isinstance(recent_moves_for_stall, list):
+        recent_moves_for_stall = []
+    maybe_activate_pending_beat_shift(
+        orchestration_state,
+        trigger_text=trigger_text,
+        source_turn_id=f"user_round_{round_number}",
+        active_issues=active_issue_dicts,
+        recent_structured_moves=list(recent_moves_for_stall),
+    )
     turn_limit = resolve_bot_reply_limit_fn(
         len(char_agents),
         (
@@ -85,6 +107,22 @@ async def run_character_turns(
     successful_turns = 0
     attempt_count = 0
     max_attempts = max(len(char_names), 1) * max(turn_limit, 1)
+
+    continuity_pre = get_continuity_manager_fn()
+    if continuity_pre is not None and continuity_pre.scene_state is not None:
+        apply_user_trigger_to_offstage(
+            scene_state=continuity_pre.scene_state,
+            trigger_text=trigger_text,
+            participant_names=char_names,
+            get_character_display_name_fn=get_character_display_name_fn,
+        )
+        release_pending_forced_speaker_from_offstage(
+            scene_state=continuity_pre.scene_state,
+            pending_forced_speaker=st_module.session_state.get(
+                "pending_forced_speaker"
+            ),
+            participant_names=char_names,
+        )
 
     try:
         with st_module.spinner("Characters are responding..."):
@@ -118,10 +156,17 @@ async def run_character_turns(
                         )
                         if name in char_names
                     ]
+                offstage_list: list[str] = []
+                if continuity_scene_state is not None:
+                    offstage_list = list(
+                        getattr(continuity_scene_state, "offstage_characters", [])
+                        or []
+                    )
                 available_actors = get_available_actors_fn(
                     char_names,
                     actors_used_this_round + actors_failed_this_round,
                     eligible_participants,
+                    offstage_list,
                 )
                 continuation_override_actor = resolve_continuation_override_actor(
                     orchestration_state=orchestration_state,

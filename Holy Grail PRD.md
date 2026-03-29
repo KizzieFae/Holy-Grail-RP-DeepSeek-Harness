@@ -223,6 +223,74 @@ Purpose:
 
 ---
 
+### 5.7 Progression Advisory Layer (MVP)
+
+A **minimal, deterministic, advisory-only** layer reduces **scene-level plateau / verbal stall** without becoming a second progression engine.
+
+**What it does**
+
+- Computes a bounded **`stall_score`** (0.0–1.0) from **existing** signals only: same-phase plateau snapshots, high or extreme tension, stable active issue statuses, and (optionally) low variety in recent structured-move consequence categories.
+- Emits **`progression_advisory`** metadata (stall score, pressure band, template-sourced **recommended_channels**, human-readable **note**) for observability and prompt hints.
+- **Template-grounded:** optional static **`progression_profile`** on scene templates (`advancement_channels`, `common_stall_pattern`); if absent, a small default profile is used. No runtime inference of channels.
+
+**What it does not do**
+
+- Does **not** add authoritative continuity or character state.
+- Does **not** use LLMs for classification or stall detection.
+- Does **not** enforce outcomes or override Director/orchestration decisions.
+
+**Integration (prompts and beat-shift)**
+
+- **Director:** when pressure is **high**, a short fixed **PROGRESSION ADVISORY** prefix is prepended to the Director selection prompt (JSON payload still omits hint keys; prefix is outside JSON).
+- **Character:** when pressure is **high**, or **medium** while beat-shift is active, a short advisory suffix nudges concrete state change (action, movement, consequence, commitment)—not a hard rule.
+- **Beat-shift:** a **single** unified stall path uses the same **`stall_score`** threshold (e.g. ≥ 0.6) alongside the existing short-user-message trigger; no separate duplicate plateau detector.
+
+**Observability**
+
+- Audit / debug output may include **`progression_advisory`** (scores, pressure, channels, **stall_components**) and logs when advisory text is injected or beat-shift sensitivity is engaged via stall score.
+
+---
+
+### 5.8 Scene Grounding Layer (MVP)
+
+A **minimal, deterministic, read-only** projection of **settled in-scene truths** into prompts. Also referred to as **scene facts** or **scene locks** in engineering docs.
+
+**Purpose**
+
+- Preserve **logistics, object states, medical facts, and communication outcomes** that the fiction has already **established**, so the runtime does not **repeat questions**, **reset assignments**, or **escalate incoherently** against settled reality.
+- **Anchor progression** (advisory + beat-shift) to **persistent scene reality** without creating a second narrative authority.
+
+**Constraints (non-negotiable)**
+
+- **Continuity remains the single source of truth.** Facts are **derived** from continuity outputs + **explicit deterministic rules** + optional **template/system seeds** — never from raw chat mining or LLM inference.
+- **Read-only with respect to authority:** the layer **does not** mutate continuity blobs, **does not** mutate `CharacterState`, and **does not** control orchestration (no Director override).
+- **Scene-local only:** facts are **cleared on scene end**; **capped** count; **allowlisted** keys per category.
+- **Determinism:** no LLM classification; no fuzzy extraction from prose.
+
+**Schema overview**
+
+- Small **typed** record set: categories such as **`assignment`**, **`object_state`**, **`medical_status`**, **`communication_state`**, each with **closed** `key` + `value` shapes and a **deterministic one-line** `value_summary` for prompts.
+- Full contract, promotion/invalidation rules, and prompt placement: **`autogen_rp/docs/scene-grounding-layer.md`**.
+
+**Lifecycle rules (summary)**
+
+- **Promotion:** after each continuity commit, structured signals (events, consequences, issue hooks) match **fixed promotion rules** → emit or update facts.
+- **Supersession:** same `(category, key)` → new fact replaces old; chain via `supersedes`.
+- **Invalidation:** **continuity wins** — if structured continuity contradicts a fact, **update or remove** the fact; on contradiction without structured signal, facts may lag until **extraction** improves (no LLM patch).
+- **Pruning:** hard **max fact count**; drop lowest priority / oldest when over cap.
+
+**Integration points**
+
+- **Prompts:** concise **SETTLED SCENE FACTS** block for **Director** and **character** (and **Narrator** when needed), assembled by packaging/prompt builders.
+- **Progression / anti-regression:** **orthogonal** — advisories suggest **change**; grounding states **what is already settled**. No shared writable state.
+- **Issues:** remain authoritative for **open** pressure; facts may **mirror** resolved outcomes when rules tie resolution → fact.
+
+**Non-goals (MVP)**
+
+- Not a full memory system, not cross-session graph/vector truth, not LLM-based extraction, not a redesign of continuity or character cards, not anti-regression expansion.
+
+---
+
 ## 6. Data Strategy
 
 ### 6.1 Current State (Phase 1)
@@ -318,6 +386,8 @@ The system succeeds when:
 - Characters remain consistently in-character across long sessions
 - Scenes maintain continuity after reload
 - Turn selection remains coherent and non-repetitive
+- Scenes recover from **structural stalls** (repeated high-tension verbal loops) via **advisory** pressure and beat-shift sensitivity without corrupting continuity truth
+- **Scene coherence over time:** **resolved facts** (logistics, medical agreements, object states, communication outcomes) **persist in prompts** via the **Scene Grounding** layer — **reduced repetition** and **fewer resets** of already-settled fiction, without a second authority competing with continuity
 - Validation catches and corrects invalid outputs
 - System scales to multi-character interactions
 - New knowledge sources can be integrated without rewriting runtime

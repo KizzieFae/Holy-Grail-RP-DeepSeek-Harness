@@ -1,5 +1,6 @@
 from typing import Any, Callable, Literal
 
+from beat_shift_state import default_pending_beat_shift, ensure_beat_shift_fields
 from summary_audit_helpers import build_summary_block_audit_metadata
 
 _CONTINUATION_SUPERSEDING_TAGS = {
@@ -33,10 +34,13 @@ def build_default_orchestration_state() -> dict[str, Any]:
             "role_assignments": {},
             "character_presence_constraints": {},
             "character_authority_labels": {},
+            "offstage_characters": [],
         },
         "spotlight_history": [],
         "recent_structured_moves": [],
         "director_decisions": [],
+        "pending_beat_shift": default_pending_beat_shift(),
+        "beat_shift_scene_snapshots": [],
     }
 
 
@@ -50,6 +54,7 @@ def ensure_orchestration_state(team_state: dict[str, Any] | None) -> dict[str, A
     state.setdefault("recent_structured_moves", [])
     state.setdefault("director_decisions", [])
     state.setdefault("scene_state", build_default_orchestration_state()["scene_state"])
+    ensure_beat_shift_fields(state)
     return state
 
 
@@ -89,6 +94,9 @@ def sync_orchestration_state_from_continuity(
         scene_state.character_authority_labels.copy()
     )
     orchestration_scene["present_characters"] = scene_state.present_characters[:]
+    orchestration_scene["offstage_characters"] = list(
+        getattr(scene_state, "offstage_characters", []) or []
+    )
     orchestration_scene["scene_phase"] = getattr(
         scene_state.phase, "value", str(scene_state.phase)
     )
@@ -124,12 +132,19 @@ def choose_fallback_actor(
     available_actors: list[str],
     forced_speaker: str | None,
     spotlight_history: list[str],
+    *,
+    prefer_continuing_spotlight: bool = False,
 ) -> str | None:
     if forced_speaker in available_actors:
         return str(forced_speaker)
 
     if not available_actors:
         return None
+
+    if prefer_continuing_spotlight and spotlight_history:
+        last = str(spotlight_history[-1] or "")
+        if last in available_actors:
+            return last
 
     last_actor = spotlight_history[-1] if spotlight_history else None
     for participant in available_actors:

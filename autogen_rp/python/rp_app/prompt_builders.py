@@ -38,12 +38,29 @@ def build_scene_role_prompt_context(
 
 
 def build_director_selection_prompt(director_payload: dict[str, Any]) -> str:
-    return (
+    payload = dict(director_payload)
+    prog = payload.pop("progression_director_hints", None)
+    prog_prefix = ""
+    if isinstance(prog, dict) and prog.get("active"):
+        prog_prefix = str(prog.get("prompt_prefix", "") or "")
+    hints = payload.pop("beat_shift_director_hints", None)
+    beat_prefix = ""
+    if isinstance(hints, dict) and hints.get("active"):
+        beat_prefix = str(hints.get("prompt_prefix", "") or "")
+    anti = payload.pop("anti_regression_director_hints", None)
+    anti_prefix = ""
+    if isinstance(anti, dict) and anti.get("active"):
+        anti_prefix = str(anti.get("prompt_prefix", "") or "")
+    settled = str(payload.pop("settled_scene_facts_prompt", "") or "")
+    settled_prefix = f"{settled}\n" if settled.strip() else ""
+    prefix = f"{prog_prefix}{beat_prefix}{anti_prefix}{settled_prefix}"
+    body = (
         "Decide who acts next using only the structured scene information below. Return JSON only. "
         "If it is best to end the response cycle early, return "
         '{\\"end_round\\": true} with next_actor omitted or empty.\n\n'
-        f"{json.dumps(director_payload, ensure_ascii=False, indent=2)}"
+        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
+    return f"{prefix}{body}"
 
 
 def build_character_turn_prompt(
@@ -69,6 +86,7 @@ def build_character_turn_prompt(
     canon_anchors: list[dict[str, Any]],
     state_context: str,
     cast: list[str],
+    scene_grounding_section: str = "",
 ) -> str:
     actionable_statuses = {"active", "escalating", ""}
     active_issue_payload: list[dict[str, Any]] = []
@@ -84,10 +102,30 @@ def build_character_turn_prompt(
             stalled_issue_payload.append(issue)
 
     absent_but_relevant = [str(item) for item in scene_state.get("absent_but_relevant", []) if str(item or "").strip()]
+    offstage_names = [
+        str(item)
+        for item in (scene_state.get("offstage_characters") or [])
+        if str(item or "").strip()
+    ]
+    offstage_header = ""
+    if char_name in offstage_names:
+        offstage_header = (
+            "OFFSTAGE / PERCEPTUAL SCOPE (CRITICAL):\n"
+            "You are not in the immediate shared space with on-stage characters unless the TRIGGER or "
+            "DIRECTOR DECISION explicitly establishes a channel (open door, shout, phone/video, etc.).\n"
+            "Do not write as if you heard in-room dialogue or saw in-room detail from others unless that "
+            "access is justified.\n"
+            "RECENT DIALOGUE HISTORY and RECENT STRUCTURED ACTIONS below are filtered to Traveler posts and "
+            "your own prior beats; treat other in-room developments as unknown unless clearly established "
+            "otherwise.\n\n"
+        )
+
+    grounding = str(scene_grounding_section or "").strip()
+    grounding_block = f"{grounding}\n\n" if grounding else ""
 
     return f"""You are taking your next turn in an ongoing roleplay scene.
 
-CURRENT SCENE STATE:
+{offstage_header}{grounding_block}CURRENT SCENE STATE:
 {json.dumps(scene_state, ensure_ascii=False, indent=2)}
 
 SCENE TEMPLATE:

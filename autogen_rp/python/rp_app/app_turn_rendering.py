@@ -34,6 +34,7 @@ async def render_character_move(
     cancellation_token,
     build_narrator_render_prompt_fn,
     fallback_render_move_fn,
+    beat_shift_narrator_suffix: str = "",
 ) -> tuple[str, str, str]:
     action = move.get("action", "")
     dialogue = move.get("dialogue", "")
@@ -46,6 +47,8 @@ async def render_character_move(
         environment_event=str(environment_event),
         scene_context=scene_context,
     )
+    if beat_shift_narrator_suffix:
+        render_prompt = f"{render_prompt}{beat_shift_narrator_suffix}"
 
     task = TextMessage(content=render_prompt, source="system")
     result = await narrator.on_messages([task], cancellation_token)

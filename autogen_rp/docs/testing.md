@@ -11,6 +11,16 @@ Primary references:
 - setup and environment: `python/README.md`
 - common checks: `python/README.md`
 
+### Default `pytest` scope (Holy Grail fork)
+
+From `python/` (workspace root), **`[tool.pytest.ini_options]`** sets **`testpaths = ["tests"]`** and **`asyncio_mode = "auto"`** in `python/pyproject.toml`.
+
+- **`python -m pytest`** or **`pytest`** with no paths runs **only** `python/tests/` (the Holy Grail RP app regression suite). It does **not** collect vendored `packages/*` tests, which avoids optional third-party import failures (e.g. `anthropic`, `mcp`, `ollama`) on a normal dev run.
+- To run **vendored AutoGen package** tests under `packages/`, install optional deps and pass explicit paths, for example:
+  - `uv sync --group dev --group autogen-vendored-tests`
+  - then `pytest packages/autogen-core/tests/...` (or the target package test dir).
+- Regression guard: `python/tests/test_pytest_root_collection.py` subprocess-collects with the default config and asserts only `tests/*` node IDs and no `ERROR collecting packages`.
+
 Common commands from the Python workspace:
 
 - `poe format`

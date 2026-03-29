@@ -144,6 +144,15 @@ If no scene template is selected, the legacy opener flow still works.
 - deterministic authority-based enforcement or hard routing
 - richer freeform role semantics beyond the current flat slot schema
 
+### Optional `progression_profile` (template metadata)
+
+Scene template JSON may include a static **`progression_profile`** block (human-authored, not inferred at runtime) used only by the **Progression Advisory** layer:
+
+- **`advancement_channels`**: list of string channel ids (e.g. `physical_action`, `spatial_shift`, `bureaucratic_followthrough`, `social_reconfiguration`, `consequence`).
+- **`common_stall_pattern`**: short description of the typical stall pattern for authoring context and advisory **note** text.
+
+If omitted, the app uses a small built-in default profile. This does **not** change continuity authority or character state; it only shapes **optional prompt hints** and **audit/debug** fields when stall pressure is computed from existing scene signals. See `../Holy Grail PRD.md` §5.7 and `progression_advisory.py`. **Scene Grounding (settled scene facts, read-only prompts)** is specified in PRD §5.8 and `../../docs/scene-grounding-layer.md`.
+
 ### Audit visibility
 
 When audit logging is enabled, scene-template metadata is captured in:
@@ -168,6 +177,8 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 - `response_validation.py` - Compatibility export layer over content, presence, drift, parsing, and turn-selection helpers
 - `character_state.py` - Compatibility export layer over `character_state_model.py` and `character_state_manager.py`
 - `turn_runner.py` - Round orchestration entrypoint paired with `turn_runner_turn.py`, `turn_runner_updates.py`, and `turn_runner_audit.py`
+- `progression_advisory.py` - Deterministic stall score and progression advisory for Director/character prompts and beat-shift hook (advisory only)
+- `beat_shift_state.py` - Beat-shift pending state; unified `stall_score` threshold with short-user-message activation
 - `character_loader.py` - Loads character JSON files and creates agents
 - `session_manager.py` - Handles session save/load plus session indexing
 - `continuity_manager.py` - Continuity engine for durable narrative state

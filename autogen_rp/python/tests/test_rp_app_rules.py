@@ -154,6 +154,15 @@ def test_get_available_actors_respects_authoritative_eligible_participants() -> 
     ) == ["Celina"]
 
 
+def test_get_available_actors_excludes_offstage_characters() -> None:
+    assert get_available_actors(
+        ["Ayame", "Celina", "Mira"],
+        [],
+        ["Ayame", "Celina", "Mira"],
+        ["Celina"],
+    ) == ["Ayame", "Mira"]
+
+
 def test_resolve_bot_reply_limit_defaults_to_active_bot_count() -> None:
     assert resolve_bot_reply_limit(3, None) == 3
 
@@ -443,7 +452,7 @@ def test_get_cross_session_memories_aggregates_memory_buckets_and_user_relations
     assert (tmp_path / SESSION_INDEX_FILE_NAME).exists()
 
 
-def test_validate_bot_response_rejects_must_remain_exit_action() -> None:
+def test_validate_bot_response_allows_must_remain_offstage_exit_move() -> None:
     is_valid, reason = validate_bot_response(
         content="turns toward the door",
         speaker="Celina",
@@ -468,8 +477,8 @@ def test_validate_bot_response_rejects_must_remain_exit_action() -> None:
         },
     )
 
-    assert is_valid is False
-    assert reason.startswith("[SCENE_PRESENCE]")
+    assert is_valid is True
+    assert reason == ""
 
 
 def test_detect_exit_from_scene_recognizes_descriptive_boundary_crossing() -> None:
@@ -595,7 +604,35 @@ def test_detect_exit_from_scene_recognizes_headed_out_exit_statement() -> None:
     )
 
 
-def test_validate_bot_response_rejects_descriptive_must_remain_exit() -> None:
+def test_validate_bot_response_allows_must_remain_ultimatum_walk_out() -> None:
+    is_valid, reason = validate_bot_response(
+        content='Willow plants herself in the doorway. "Walk out, or I carry you."',
+        speaker="Willow",
+        user_name="Marlene",
+        chat_history=[],
+        move={
+            "action": "plants herself in the doorway",
+            "dialogue": "Walk out, or I carry you.",
+            "motivation": {
+                "goal": "force a choice",
+                "tactic": "ultimatum",
+                "emotional_driver": "resolve",
+                "risk_level": "medium",
+            },
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Willow": "must_remain",
+                "Marlene": "must_remain",
+            },
+            "role_assignments": {"Willow": "ra", "Marlene": "resident"},
+        },
+    )
+    assert is_valid is True
+    assert reason == ""
+
+
+def test_validate_bot_response_allows_must_remain_hallway_offstage() -> None:
     is_valid, reason = validate_bot_response(
         content="let the door swing shut behind her and stood motionless in the hallway outside the room",
         speaker="Celina",
@@ -622,8 +659,8 @@ def test_validate_bot_response_rejects_descriptive_must_remain_exit() -> None:
         },
     )
 
-    assert is_valid is False
-    assert "invalid exit under presence constraint" in reason
+    assert is_valid is True
+    assert reason == ""
 
 
 def test_validate_bot_response_rejects_absence_claim_for_must_remain_character() -> (

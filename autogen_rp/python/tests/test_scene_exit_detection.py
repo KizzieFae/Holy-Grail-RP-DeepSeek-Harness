@@ -104,6 +104,50 @@ def test_threat_get_out_without_departure_cues() -> None:
     assert detect_exit_from_scene(move, None) is False
 
 
+def test_ultimatum_walk_out_or_is_not_hard_departure() -> None:
+    move = {
+        "action": "plants herself in the doorway",
+        "dialogue": "Walk out, or I carry you.",
+        "motivation": {
+            "goal": "force compliance",
+            "tactic": "ultimatum",
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+    }
+    assert has_hard_scene_departure_evidence(move, None) is False
+    assert detect_exit_from_scene(move, None) is False
+
+
+def test_directed_you_better_walk_out_not_hard_departure() -> None:
+    move = {
+        "action": "points at the door",
+        "dialogue": "You better walk out before I call security.",
+        "motivation": {
+            "goal": "eject the other party",
+            "tactic": "threat",
+            "emotional_driver": "anger",
+            "risk_level": "medium",
+        },
+    }
+    assert has_hard_scene_departure_evidence(move, None) is False
+
+
+def test_self_exit_still_hard_when_coupled_with_ultimatum_clause() -> None:
+    move = {
+        "action": "grabs her bag",
+        "dialogue": "I'm leaving. Walk out, or stay and watch the door close.",
+        "motivation": {
+            "goal": "exit on her terms",
+            "tactic": "parting shot",
+            "emotional_driver": "hurt",
+            "risk_level": "medium",
+        },
+    }
+    assert has_hard_scene_departure_evidence(move, None) is True
+    assert detect_exit_from_scene(move, None) is True
+
+
 def test_motivation_only_leave_does_not_trigger_soft_exit() -> None:
     move = {
         "action": "",

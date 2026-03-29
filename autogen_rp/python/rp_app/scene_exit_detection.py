@@ -194,6 +194,49 @@ _EXPLICIT_DEPARTURE_RE = re.compile(
     r"\b(?:walk(?:ed|ing)?\s+out|storms?\s+out|stormed\s+out|storming\s+out|head(?:ed|ing)?\s+out|left\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors)|(?:leave|leaving|exit|exited|exiting|depart(?:ed|ing)?)\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors|here)|(?:i|i'm|im|we|we're|were|she|he|they)\s+(?:am\s+|are\s+|is\s+)?(?:leaving|exiting|departing))\b",
 )
 
+# Directed command / ultimatum / hypothetical: speaker is not describing *their own* embodied exit.
+_DEPARTURE_DIRECTED_OR_ULTIMATUM_RE = re.compile(
+    r"(?:"
+    r"\b(?:walk|walked|walking|head|headed|heading)\s+out\b\s*(?:,\s*)?\s*or\b"
+    r"|"
+    r"\b(?:walk|walked|walking|head|headed|heading)\s+out\b\s+or\s+(?:i|i['\u2019]?m|i['\u2019]?ll|we|we['\u2019]?re|we['\u2019]?ll|else)\b"
+    r"|"
+    r"\byou(?:'d|['\u2019]d)?\s+(?:better\s+)?(?:walk|head|storm)\s+out\b"
+    r"|"
+    r"\b(?:walk|head|storm)\s+out\s*,\s*you\b"
+    r"|"
+    r"\bif\s+you\s+(?:walk|head|get)\s+out\b"
+    r"|"
+    r"\b(?:unless|until)\s+you\s+(?:leave|walk|go)\b"
+    r")",
+    re.IGNORECASE,
+)
+
+_FIRST_PERSON_DEPARTURE_COMMITMENT_RE = re.compile(
+    r"(?:"
+    r"\b(?:i|i'm|im|we|we're|we)\s+(?:am\s+|are\s+)?(?:leaving|exiting|departing|walking\s+out|heading\s+out)\b"
+    r"|"
+    r"\b(?:i|i've|i)\s+(?:left|walked\s+out|headed\s+out)\b"
+    r"|"
+    r"\bleft\s+(?:the\s+)?(?:room|scene|dorm|building|apartment|house|hallway|hall|doorway|door|threshold|outside|outdoors)\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _authored_departure_reads_as_directed_or_hypothetical(direct_text: str) -> bool:
+    """True when exit-like wording commands another, threatens, or is conditional — not self-exit."""
+    if not direct_text or not direct_text.strip():
+        return False
+    return bool(_DEPARTURE_DIRECTED_OR_ULTIMATUM_RE.search(direct_text))
+
+
+def _authored_has_first_person_departure_commitment(direct_text: str) -> bool:
+    """True when the speaker clearly commits to leaving (first person or completed exit)."""
+    if not direct_text or not direct_text.strip():
+        return False
+    return bool(_FIRST_PERSON_DEPARTURE_COMMITMENT_RE.search(direct_text))
+
 
 def has_hard_scene_departure_evidence(
     move: dict[str, Any] | None,
@@ -218,7 +261,12 @@ def has_hard_scene_departure_evidence(
         return True
 
     if _EXPLICIT_DEPARTURE_RE.search(direct_text):
-        return True
+        if _authored_departure_reads_as_directed_or_hypothetical(
+            direct_text
+        ) and not _authored_has_first_person_departure_commitment(direct_text):
+            pass
+        else:
+            return True
 
     if _contains_any(direct_text, _INTERNAL_REPOSITION_TERMS):
         return False
@@ -318,6 +366,30 @@ def _detect_exit_soft_movement_boundary(
         return True
 
     return False
+
+
+_REENTRY_DIRECT_RE = re.compile(
+    r"\b(?:"
+    r"came\s+back|come\s+back|coming\s+back|returns?|returned|returning|"
+    r"re-?entered|re-?entering|re-?enters|"
+    r"walked\s+back\s+in|walks\s+back\s+in|walking\s+back\s+in|"
+    r"stepped\s+back\s+in|steps\s+back\s+in|stepping\s+back\s+in|"
+    r"burst\s+in|bursts\s+in|bursting\s+in|"
+    r"back\s+into\s+(?:the\s+)?(?:room|dorm|suite|apartment|building|scene)|"
+    r"into\s+the\s+(?:room|dorm|suite)\s+again|"
+    r"through\s+the\s+door(?:way)?\s+(?:and\s+)?(?:into|back)|"
+    r"showed\s+up\s+again|shows\s+up\s+again"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def has_scene_reentry_evidence(move: dict[str, Any] | None) -> bool:
+    """True when authored action/dialogue describes re-entering the immediate scene."""
+    direct_text, _, combined = _authored_text_parts(move)
+    if not direct_text.strip():
+        return False
+    return bool(_REENTRY_DIRECT_RE.search(direct_text))
 
 
 def detect_exit_from_scene(

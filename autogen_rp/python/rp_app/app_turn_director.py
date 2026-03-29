@@ -1,8 +1,22 @@
+import logging
 from typing import Any
 
 from autogen_agentchat.messages import TextMessage
 
+from audit_instrumentation import log_audit_exception
+from beat_shift_state import (
+    build_director_beat_shift_prompt_prefix,
+    is_pending_beat_shift_active,
+)
 from orchestration_helpers import resolve_progression_override_actor
+from anti_regression_advisory import sync_anti_regression_advisory_for_prompts
+from progression_advisory import (
+    build_progression_director_prompt_prefix,
+    sync_progression_advisory_for_prompts,
+)
+from scene_grounding import format_grounding_prompt_prefix
+
+logger = logging.getLogger("rp_app.progression_advisory")
 
 
 def split_actionable_and_stalled_issues(
@@ -101,6 +115,7 @@ async def choose_next_actor(
         return decision
 
     orchestration_state = get_orchestration_state_fn()
+    beat_shift_active = is_pending_beat_shift_active(orchestration_state)
     state_manager = st_module.session_state.get("character_state_manager")
     chat_history = st_module.session_state.get("chat_history", [])
     continuity_manager = get_continuity_manager_fn()
@@ -207,6 +222,9 @@ async def choose_next_actor(
             "present_characters": scene_state_for_prompt.get(
                 "present_characters", participant_names
             ),
+            "offstage_characters": scene_state_for_prompt.get(
+                "offstage_characters", []
+            ),
         },
         "scene_template": {
             "template_id": str(
@@ -261,6 +279,57 @@ async def choose_next_actor(
     director_payload["active_issues"] = actionable_issues
     director_payload["stalled_background_issues"] = stalled_background_issues
 
+    progression_advisory_snapshot = sync_progression_advisory_for_prompts(
+        orchestration_state=orchestration_state,
+        continuity_manager=continuity_manager,
+    )
+
+    anti_regression_bundle = sync_anti_regression_advisory_for_prompts(
+        orchestration_state=orchestration_state,
+        progression_advisory=progression_advisory_snapshot,
+        session_state=st_module.session_state,
+        participant_names=participant_names,
+    )
+    anti_prefix = str(anti_regression_bundle.get("prompt_prefix", "") or "")
+    anti_blob = anti_regression_bundle.get("advisory_blob") or {}
+
+    if beat_shift_active:
+        director_payload["beat_shift_director_hints"] = {
+            "active": True,
+            "prompt_prefix": build_director_beat_shift_prompt_prefix(),
+        }
+
+    if progression_advisory_snapshot.get("progression_pressure") == "high":
+        prog_prefix = build_progression_director_prompt_prefix(
+            progression_advisory_snapshot
+        )
+        if prog_prefix:
+            director_payload["progression_director_hints"] = {
+                "active": True,
+                "prompt_prefix": prog_prefix,
+            }
+            logger.info(
+                "[progression_advisory] director prompt injected pressure=high "
+                "stall_score=%s",
+                progression_advisory_snapshot.get("stall_score"),
+            )
+
+    if anti_prefix:
+        director_payload["anti_regression_director_hints"] = {
+            "active": True,
+            "prompt_prefix": anti_prefix,
+        }
+        logger.info(
+            "[anti_regression] director prompt injected ping_pong=%s post_break=%s low_agency=%s",
+            anti_blob.get("ping_pong_detected"),
+            anti_blob.get("post_break_window_active"),
+            anti_blob.get("low_player_agency"),
+        )
+
+    director_payload["settled_scene_facts_prompt"] = format_grounding_prompt_prefix(
+        st_module.session_state.get("scene_grounding")
+    )
+
     prompt = build_director_selection_prompt_fn(director_payload)
     recent_dialogue_history = build_recent_dialogue_history_fn(chat_history)
 
@@ -272,7 +341,11 @@ async def choose_next_actor(
     )
 
     if error or decision is None:
-        fallback_actor = choose_fallback_actor_fn(available_actors, forced_speaker)
+        fallback_actor = choose_fallback_actor_fn(
+            available_actors,
+            forced_speaker,
+            prefer_continuing_spotlight=beat_shift_active,
+        )
         decision = {
             "next_actor": fallback_actor or "",
             "environment_event": "",
@@ -302,6 +375,7 @@ async def choose_next_actor(
             scene_state=scene_state_for_prompt,
             recent_dialogue_history=recent_dialogue_history,
             cancellation_token=cancellation_token,
+            beat_shift_active=beat_shift_active,
         )
     )
     turn_selection_issues = reconcile_turn_selection_issues_fn(
@@ -366,6 +440,20 @@ async def choose_next_actor(
                 metadata={
                     "parse_error": error,
                     "is_fallback": bool(error),
+                    "beat_shift_active": beat_shift_active,
+                    "progression_advisory": {
+                        "stall_score": progression_advisory_snapshot.get("stall_score"),
+                        "progression_pressure": progression_advisory_snapshot.get(
+                            "progression_pressure"
+                        ),
+                        "recommended_channels": progression_advisory_snapshot.get(
+                            "recommended_channels"
+                        ),
+                        "stall_components": progression_advisory_snapshot.get(
+                            "stall_components"
+                        ),
+                    },
+                    "anti_regression_advisory": dict(anti_blob),
                     "turn_selection_issues": turn_selection_issues,
                     "semantic_turn_selection_assessment": semantic_turn_selection_assessment
                     or {},
@@ -375,8 +463,12 @@ async def choose_next_actor(
             )
             audit_logger.log_bot_interaction(entry)
             refresh_audit_summary_report_fn()
-        except Exception:
-            pass
+        except Exception as exc:
+            log_audit_exception(
+                f"audit: director log_bot_interaction or summary refresh failed "
+                f"(round={round_number} turn={turn_number})",
+                exc,
+            )
 
     st_module.session_state["selector_decisions"].append(
         f"Director selected {decision['next_actor']}: {decision.get('reason', '')}"

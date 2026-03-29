@@ -1,5 +1,7 @@
 from typing import Any
 
+from audit_instrumentation import log_audit_exception
+
 
 def log_turn_failure(
     *,
@@ -71,5 +73,9 @@ def log_turn_failure(
             **scene_audit_kwargs,
         )
         audit_logger.log_bot_interaction(entry)
-    except Exception:
-        pass
+    except Exception as exc:
+        log_audit_exception(
+            f"audit: log_turn_failure log_bot_interaction failed "
+            f"(round={round_number} turn={turn_number} bot={bot_name})",
+            exc,
+        )

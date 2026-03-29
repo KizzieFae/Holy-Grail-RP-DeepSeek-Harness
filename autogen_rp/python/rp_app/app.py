@@ -59,6 +59,7 @@ from scene_lifecycle import (
     start_scene as start_scene_impl,
 )
 from scene_opener import OpenerManager, resolve_opening_text, resolve_scene_opener
+from cross_session_memory_policy import compact_report_for_audit
 from summary_audit_helpers import (
     build_summary_block_audit_metadata,
     get_character_scene_audit_context,
@@ -91,6 +92,15 @@ ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
 ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
 ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
+
+
+def get_scene_audit_logging_kwargs_for_audit(scene_state: Any | None) -> dict[str, Any]:
+    base = get_scene_audit_logging_kwargs(scene_state)
+    report = st.session_state.get("cross_session_injection_report")
+    if isinstance(report, dict):
+        base = dict(base)
+        base["cross_session_injection_report"] = compact_report_for_audit(report)
+    return base
 
 
 def get_model_client() -> Any:
@@ -137,7 +147,7 @@ def log_turn_failure(
         get_audit_context_fn=get_audit_context,
         build_attempted_post_details_fn=build_attempted_post_details,
         get_continuity_manager_fn=get_continuity_manager,
-        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs,
+        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_audit,
         get_character_scene_audit_context_fn=get_character_scene_audit_context,
     )
 
@@ -354,13 +364,17 @@ def restore_or_initialize_continuity_manager(
 
 
 def choose_fallback_actor(
-    available_actors: list[str], forced_speaker: str | None
+    available_actors: list[str],
+    forced_speaker: str | None,
+    *,
+    prefer_continuing_spotlight: bool = False,
 ) -> str | None:
     return turn_helpers.choose_fallback_actor(
         available_actors=available_actors,
         forced_speaker=forced_speaker,
         spotlight_history=get_orchestration_state().get("spotlight_history", []),
         choose_fallback_actor_impl_fn=choose_fallback_actor_impl,
+        prefer_continuing_spotlight=prefer_continuing_spotlight,
     )
 
 
@@ -402,7 +416,7 @@ async def choose_next_actor(
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
-        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs,
+        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_audit,
         refresh_audit_summary_report_fn=refresh_audit_summary_report,
         build_recent_dialogue_history_fn=build_recent_dialogue_history,
         prompt_dialogue_history_limit=PROMPT_DIALOGUE_HISTORY_LIMIT,
@@ -433,6 +447,7 @@ def build_character_turn_prompt(
         build_scene_role_prompt_context_fn=build_scene_role_prompt_context,
         build_character_turn_prompt_text_fn=build_character_turn_prompt_text,
         prompt_structured_move_limit=PROMPT_STRUCTURED_MOVE_LIMIT,
+        get_character_display_name_fn=get_character_display_name,
     )
 
 
@@ -449,6 +464,7 @@ async def render_character_move(
     scene_context: str,
     director_decision: dict[str, Any],
     cancellation_token,
+    beat_shift_narrator_suffix: str = "",
 ) -> tuple[str, str, str]:
     return await turn_helpers.render_character_move(
         narrator=narrator,
@@ -459,6 +475,7 @@ async def render_character_move(
         cancellation_token=cancellation_token,
         build_narrator_render_prompt_fn=build_narrator_render_prompt,
         fallback_render_move_fn=fallback_render_move,
+        beat_shift_narrator_suffix=beat_shift_narrator_suffix,
     )
 
 
@@ -525,7 +542,10 @@ def apply_cross_session_memories(
     user_name: str,
 ) -> None:
     memory_helpers.apply_cross_session_memories(
-        char_states, cross_session_memories, user_name
+        char_states,
+        cross_session_memories,
+        user_name,
+        st_module=st,
     )
 
 
@@ -578,7 +598,7 @@ async def start_scene(selected_chars: list[str]) -> bool:
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
-        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs,
+        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_audit,
         refresh_audit_summary_report_fn=refresh_audit_summary_report,
         run_character_turns_fn=run_character_turns,
         save_current_session_fn=save_current_session,
@@ -619,7 +639,7 @@ async def run_character_turns(
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
-        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs,
+        get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_audit,
         get_character_scene_audit_context_fn=get_character_scene_audit_context,
         get_continuity_manager_fn=get_continuity_manager,
         get_model_client_fn=get_model_client,
@@ -741,6 +761,7 @@ async def load_existing_session(session_id: str) -> None:
         character_state_from_dict_fn=CharacterState.from_dict,
         make_agent_identifier_fn=make_agent_identifier,
         resolve_character_file_fn=resolve_character_file,
+        load_cross_session_memories_fn=load_cross_session_memories,
         apply_cross_session_memories_fn=apply_cross_session_memories,
         character_state_manager_cls=CharacterStateManager,
         restore_or_initialize_continuity_manager_fn=restore_or_initialize_continuity_manager,

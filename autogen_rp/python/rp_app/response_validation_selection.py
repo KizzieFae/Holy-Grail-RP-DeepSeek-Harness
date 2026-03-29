@@ -25,10 +25,12 @@ def get_available_actors(
     participant_names: list[str],
     used_actors: list[str] | None = None,
     eligible_participants: list[str] | None = None,
+    offstage_characters: list[str] | None = None,
 ) -> list[str]:
     used = set(used_actors or [])
     available = [name for name in participant_names if name not in used]
-    if eligible_participants is None:
-        return available
-    eligible = set(eligible_participants)
-    return [name for name in available if name in eligible]
+    if eligible_participants is not None:
+        eligible = set(eligible_participants)
+        available = [name for name in available if name in eligible]
+    off = set(offstage_characters or [])
+    return [name for name in available if name not in off]

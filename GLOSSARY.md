@@ -30,6 +30,10 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Continuity** — Durable narrative state between turns: scene snapshot, **issues**, **public events**, per-character **interpretations**, **canon anchors**, knowledge propagation. **Authoritative** for “what the fiction has established.” Primary implementation: `continuity_manager.py`, `continuity_state.py`, helpers under `continuity_*`.
 
+**Scene facts / scene locks** — **Allowlisted, typed** entries in the **Scene Grounding** layer: settled logistics, object states, medical facts, communication outcomes. **Derived** from continuity + deterministic rules; **prompt-facing**; **not** a second authority (PRD §5.8, `autogen_rp/docs/scene-grounding-layer.md`).
+
+**Scene Grounding layer (MVP)** — Read-only projection of **scene facts** into Director/character prompts **after** continuity commits. Cleared on scene end; capped count. Implemented in `scene_grounding.py` (markers on `PublicEvent`, rebuild in `turn_runner_updates`; see module index).
+
 **Issue / pressure** — Structured dramatic tension or blocked objective (`IssueState`, lifecycle active → escalating → stalled → resolved, etc.). Director and validators use issue context; not the same as free-form “plot summary.”
 
 **Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay.
@@ -52,7 +56,11 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Character card** — JSON file under `python/data/autogen_characters/` defining a persona (system prompt, anchors, relationships, etc.). **Current** primary character source (`character_loader.py`).
 
-**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels (`scene_template.py`).
+**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7).
+
+**Progression advisory (MVP)** — Deterministic, **non-authoritative** layer: computes **`stall_score`** from existing scene signals, maps to **`progression_pressure`**, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
+
+**Stall score** — Float 0.0–1.0 from weighted boolean components (phase plateau snapshots, high tension, stable issue statuses, optional low consequence variety). Same signal can lower the bar for **beat-shift** activation (`beat_shift_state.py`); not LLM-classified.
 
 **Session** — Persisted RP state (chat, team, character states, continuity snapshot, audit pointers, etc.) in `python/data/sessions/` (`session_manager.py`, `session_lifecycle_*`).
 

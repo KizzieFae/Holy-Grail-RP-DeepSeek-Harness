@@ -93,6 +93,7 @@ async def save_current_session(
             "opening_mode": st_module.session_state.get("opening_mode", "character"),
             "selected_opener_id": st_module.session_state.get("selected_opener_id"),
             "custom_opener_text": st_module.session_state.get("custom_opener_text", ""),
+            "scene_grounding": st_module.session_state.get("scene_grounding"),
         },
         player_character=player_character,
         chat_history=chat_history,

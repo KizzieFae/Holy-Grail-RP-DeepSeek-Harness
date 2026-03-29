@@ -27,6 +27,9 @@ class FakeContinuityManager:
         self.turn_metadata_by_index: dict[int, dict[str, object]] = {}
         self.scene_state = SimpleNamespace(present_characters=present_characters)
 
+    def get_active_issues(self, limit: int = 24) -> list[object]:
+        return []
+
 
 @pytest.mark.asyncio
 async def test_continuation_override_does_not_bypass_used_actor_restriction(
@@ -57,10 +60,16 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
         participant_names: list[str],
         used_actors: list[str],
         eligible_participants: list[str] | None,
+        offstage_characters: list[str] | None = None,
     ) -> list[str]:
         used = set(used_actors)
         eligible = set(eligible_participants or participant_names)
-        return [name for name in participant_names if name not in used and name in eligible]
+        off = set(offstage_characters or [])
+        return [
+            name
+            for name in participant_names
+            if name not in used and name in eligible and name not in off
+        ]
 
     def set_audit_turn_fn(turn_number: int) -> int:
         return turn_number

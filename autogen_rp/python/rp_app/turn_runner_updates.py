@@ -1,5 +1,15 @@
 from typing import Any
 
+from anti_regression_advisory import (
+    arm_post_break_window,
+    get_cached_anti_regression_advisory,
+)
+from progression_advisory import get_cached_progression_advisory
+from beat_shift_state import (
+    append_scene_snapshot_after_turn,
+    consume_pending_beat_shift_if_active,
+)
+from scene_grounding import rebuild_scene_grounding_from_continuity
 from turn_runner_audit import log_narrator_render_audit, write_turn_audit_artifacts
 
 
@@ -98,6 +108,13 @@ def apply_successful_turn_updates(
         except Exception:
             pass
 
+        try:
+            st_module.session_state["scene_grounding"] = (
+                rebuild_scene_grounding_from_continuity(continuity_manager)
+            )
+        except Exception:
+            pass
+
     log_narrator_render_audit(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
@@ -110,6 +127,10 @@ def apply_successful_turn_updates(
         narrator_semantic_assessment=narrator_semantic_assessment,
         round_number=round_number,
         turn_number=turn_number,
+        progression_advisory=get_cached_progression_advisory(orchestration_state),
+        anti_regression_advisory=get_cached_anti_regression_advisory(
+            orchestration_state
+        ),
         is_audit_enabled_fn=is_audit_enabled_fn,
         get_audit_logger_fn=get_audit_logger_fn,
         get_audit_context_fn=get_audit_context_fn,
@@ -145,5 +166,8 @@ def apply_successful_turn_updates(
         environment_history_limit=environment_history_limit,
         tension_history_limit=tension_history_limit,
     )
+    if consume_pending_beat_shift_if_active(orchestration_state):
+        arm_post_break_window(orchestration_state)
+    append_scene_snapshot_after_turn(orchestration_state)
     st_module.session_state["team_state"] = orchestration_state
     return orchestration_state

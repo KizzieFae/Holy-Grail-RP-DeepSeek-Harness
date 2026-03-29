@@ -124,6 +124,16 @@ Director selection policy is prompt-guided rather than hard-coded. It is instruc
 
 The Director does not write prose.
 
+#### Progression advisory (MVP)
+
+When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the scene template’s optional **`progression_profile`** (e.g. physical action, spatial shift, consequence). This is **guidance only**; it does not override selection logic or continuity.
+
+Beat-shift activation uses the **same** computed **`stall_score`** threshold as this advisory layer (alongside the existing short-user-message path), so there is a **single** plateau-related signal rather than duplicate detectors.
+
+#### Scene Grounding layer (MVP)
+
+A **read-only** **SETTLED SCENE FACTS** block is injected into Director and character prompts when facts exist. Facts are a **deterministic, capped, allowlisted** projection **derived from** `PublicEvent.grounding_markers` (computed in continuity classification) — not a second authority (PRD §5.8). See `scene_grounding.py` and `autogen_rp/docs/scene-grounding-layer.md`. Rebuilt in `turn_runner_updates` after each successful continuity `process_turn`; **no** writes to `CharacterState` or continuity.
+
 ### 4. Narrator Rendering
 
 Narrator receives structured moves and renders:
@@ -206,6 +216,8 @@ This causes several known failure modes:
 
 The next architectural step is therefore to keep strengthening the continuity engine, not to move
 weight back into prompts or transcript windows.
+
+Complementing that, the **Scene Grounding** MVP projects a **small subset** of already-settled truths into prompts so models stop **re-asking** or **resetting** logistics the continuity layer has already established — without making prompts the **author** of those truths (see PRD §5.8).
 
 ## Planned Additions
 

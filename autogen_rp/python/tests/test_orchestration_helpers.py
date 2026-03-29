@@ -120,6 +120,20 @@ def test_choose_fallback_actor_prefers_non_last_spotlight_actor() -> None:
     assert choose_fallback_actor(["Ayame", "Celina"], None, ["Ayame"]) == "Celina"
 
 
+def test_choose_fallback_actor_prefer_continuing_spotlight_keeps_last_when_available() -> (
+    None
+):
+    assert (
+        choose_fallback_actor(
+            ["Ayame", "Celina"],
+            None,
+            ["Ayame"],
+            prefer_continuing_spotlight=True,
+        )
+        == "Ayame"
+    )
+
+
 def test_append_turn_to_orchestration_state_updates_bounded_histories() -> None:
     state = ensure_orchestration_state(None)
 

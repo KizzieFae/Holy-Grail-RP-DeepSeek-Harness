@@ -147,6 +147,7 @@ def validate_bot_response(
         state,
         move,
         canon_anchors,
+        scene_state=scene_state,
     )
     if has_drift:
         return False, f"[CHARACTER_DRIFT] {drift_reason}"

@@ -22,14 +22,14 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
 ┌─────────────────────────────────────────────────────────────┐
 │  RP execution (AutoGen runtime — current bulk: rp_app)        │
 │  Director, orchestration, characters, Narrator, validation,  │
-│  continuity engine, audit                                    │
+│  continuity engine, Scene Grounding (MVP spec), audit        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Dependency direction
 
 - **Ingestion** does not call the live RP UI or turn loop. It produces **durable knowledge artifacts** consumable by packaging.
-- **Packaging** reads authoritative **runtime state** (from the continuity/orchestration side) and **retrieved** candidates; it does not replace continuity as source of truth for “what happened.”
+- **Packaging** reads authoritative **runtime state** (from the continuity/orchestration side) and **retrieved** candidates; it does not replace continuity as source of truth for “what happened.” Future packaging should also include the **Scene Grounding** read model (settled scene facts for prompts — PRD §5.8).
 - **RP runtime** executes turns; it **updates** authoritative state and **logs** audits. Today it builds prompts largely from cards + continuity structures; tomorrow the same boundaries should consume **packets** at the packaging boundary.
 
 ### System boundaries
@@ -40,6 +40,7 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
 | Selecting what enters a token-bounded turn context | Packaging |
 | Who speaks next, validation, scene/session persistence | RP runtime |
 | Authoritative scene/issue/knowledge-boundary state | RP runtime (continuity engine today) |
+| Settled-scene **prompt projection** (facts/locks, read-only, derived from continuity) | RP runtime → prompts (Scene Grounding MVP — [spec](./autogen_rp/docs/scene-grounding-layer.md)) |
 
 PRD alignment: vector retrieval is for **similarity and suggestions**, not authoritative truth ([Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §7).
 
@@ -51,7 +52,7 @@ PRD alignment: vector retrieval is for **similarity and suggestions**, not autho
 - **Characters:** JSON **cards** in `python/data/autogen_characters/`; loaded by `character_loader.py`; agents created via `model_client.py`.
 - **Scenes:** Streamlit-driven; **scene templates** in `python/data/scene_templates/`; openers optional via `scene_opener.py` / `scene_template.py`.
 - **State:** `ContinuityManager` and related types hold structured scene, issue, event, and interpretation state (see `continuity_manager.py`, `continuity_state.py`).
-- **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`).
+- **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`). **Scene Grounding (MVP, planned):** after continuity commit, derive a capped **settled facts** block for Director/character prompts — [PRD](./Holy%20Grail%20PRD.md) §5.8, [technical spec](./autogen_rp/docs/scene-grounding-layer.md).
 - **Orchestration:** Final speaker resolution combines address, continuation override, Director, validation/reconciliation (PRD §5.3); implemented in `orchestration_helpers.py` and turn pipeline.
 
 Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architecture.md`.
@@ -78,7 +79,7 @@ Roadmap tasks: `autogen_rp/python/RP_SETUP_TODO.md` (packet layer section).
 
 ## How to approach problems
 
-Prefer **continuity → orchestration → summaries → validation → Director → Narrator** before changing prompt copy. Use the **symptom → file** table in [MODULE_INDEX.md](./MODULE_INDEX.md) for a quick entry point, and [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for full rules, per-symptom notes, and persistence/audit pointers.
+Prefer **continuity → scene grounding (when implemented) → orchestration → summaries → validation → Director → Narrator** before changing prompt copy. Use the **symptom → file** table in [MODULE_INDEX.md](./MODULE_INDEX.md) for a quick entry point, and [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for full rules, per-symptom notes, and persistence/audit pointers.
 
 ---
 
@@ -88,4 +89,5 @@ Prefer **continuity → orchestration → summaries → validation → Director 
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet intent and field groupings
 - [GLOSSARY.md](./GLOSSARY.md) — terms
 - [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md) — on-disk data
+- [autogen_rp/docs/scene-grounding-layer.md](./autogen_rp/docs/scene-grounding-layer.md) — Scene Grounding MVP (facts contract, lifecycle, prompts)
 - [MODULE_INDEX.md](./MODULE_INDEX.md) — code map (`autogen_rp/python/rp_app/`)

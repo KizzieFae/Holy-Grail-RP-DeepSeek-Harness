@@ -1149,6 +1149,42 @@ def test_hard_exit_still_removes_despite_multi_party_issue() -> None:
     assert "Marlene_Fletcher" in manager.scene_state.absent_but_relevant
 
 
+def test_exit_tag_does_not_remove_must_remain_from_present_even_on_hard_departure() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Willow_Reeves", "Harley_Quinn"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.character_presence_constraints = {
+        "Willow_Reeves": "must_remain",
+        "Harley_Quinn": "must_remain",
+    }
+    manager._update_scene_state(
+        acting_character="Willow_Reeves",
+        move={
+            "action": "stomped out into the hallway and slammed the door",
+            "dialogue": "",
+            "motivation": {
+                "goal": "leave",
+                "tactic": "exit",
+                "emotional_driver": "rage",
+                "risk_level": "high",
+            },
+        },
+        director_decision={},
+        event=None,
+        turn_consequences={
+            "tags": ["exit"],
+            "state_changes": [],
+            "actionable_implications": [],
+        },
+    )
+    assert "Willow_Reeves" in manager.scene_state.present_characters
+    assert "Willow_Reeves" not in manager.scene_state.absent_but_relevant
+
+
 def test_soft_exit_removes_when_actor_not_protected() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(

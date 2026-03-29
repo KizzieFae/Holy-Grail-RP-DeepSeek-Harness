@@ -5,12 +5,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from app_turn_prompting import _build_priority_ladder, _select_relationship_prompt_names
 from character_state import CharacterState
+from beat_shift_state import build_director_beat_shift_prompt_prefix
 from prompt_builders import (
     build_character_turn_prompt,
     build_director_selection_prompt,
     build_narrator_render_prompt,
     build_scene_role_prompt_context,
 )
+from progression_advisory import build_progression_director_prompt_prefix
 
 
 def test_build_scene_role_prompt_context_preserves_requested_participant_order() -> (
@@ -57,6 +59,47 @@ def test_build_director_selection_prompt_serializes_payload_as_json_block() -> N
     assert '"participants": [' in prompt
     assert '"available_next_actors": [' in prompt
     assert '"latest_trigger": "Ayame asks a direct question."' in prompt
+
+
+def test_build_director_selection_prompt_strips_progression_hints_from_json() -> None:
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Celina"],
+        "progression_director_hints": {
+            "active": True,
+            "prompt_prefix": build_progression_director_prompt_prefix(
+                {
+                    "progression_pressure": "high",
+                    "recommended_channels": ["physical_action"],
+                }
+            ),
+        },
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "PROGRESSION ADVISORY" in prompt
+    assert "progression_director_hints" not in prompt
+    assert '"participants": [' in prompt
+
+
+def test_build_director_selection_prompt_strips_beat_shift_hints_from_json() -> None:
+    from beat_shift_state import build_director_beat_shift_prompt_prefix
+
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Celina"],
+        "beat_shift_director_hints": {
+            "active": True,
+            "prompt_prefix": build_director_beat_shift_prompt_prefix(),
+        },
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "BEAT SHIFT (ACTIVE)" in prompt
+    assert "beat_shift_director_hints" not in prompt
+    assert '"participants": [' in prompt
 
 
 def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> None:

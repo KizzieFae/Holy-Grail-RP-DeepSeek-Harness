@@ -71,15 +71,19 @@ class SceneTemplate:
     opening_text: str
     role_slots: list[SceneRoleSlot]
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
+    progression_profile: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "template_id": self.template_id,
             "premise": self.premise,
             "opening_text": self.opening_text,
             "role_slots": [slot.to_dict() for slot in self.role_slots],
             "initial_messages": [msg.to_dict() for msg in self.initial_messages],
         }
+        if self.progression_profile is not None:
+            out["progression_profile"] = dict(self.progression_profile)
+        return out
 
     def get_role_slot(self, role_name: str) -> SceneRoleSlot | None:
         normalized = str(role_name or "").strip().lower()
@@ -107,12 +111,17 @@ class SceneTemplate:
             for item in data.get("initial_messages", [])
             if isinstance(item, dict)
         ]
+        raw_prog = data.get("progression_profile")
+        progression_profile = (
+            dict(raw_prog) if isinstance(raw_prog, dict) else None
+        )
         return cls(
             template_id=template_id,
             premise=str(data.get("premise", "") or "").strip(),
             opening_text=str(data.get("opening_text", "") or "").strip(),
             role_slots=role_slots,
             initial_messages=initial_messages,
+            progression_profile=progression_profile,
         )
 
 

@@ -2,7 +2,9 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from scene_exit_detection import detect_exit_from_scene
+# must_remain: keep the character in the Director's selection pool for the scene.
+# They may be offstage (hallway, another room, etc.) until the narrative brings them back;
+# that is not a validation failure and does not drop them from cast obligations.
 
 
 def get_must_remain_characters(scene_state: dict[str, Any] | None) -> list[str]:
@@ -69,29 +71,26 @@ def detect_scene_presence_violation(
     if not must_remain:
         return False, ""
 
-    presence_constraints = scene_state.get("character_presence_constraints", {})
-    if not isinstance(presence_constraints, dict):
-        return False, ""
-
     move_action = str((move or {}).get("action", "") or "")
     move_dialogue = str((move or {}).get("dialogue", "") or "")
     combined_text = " ".join([content, move_action, move_dialogue]).lower()
 
-    if str(presence_constraints.get(speaker, "") or "") == "must_remain":
-        if detect_exit_from_scene(move, scene_state):
-            return (
-                True,
-                "Character with must_remain presence attempted an invalid exit under presence constraint",
-            )
-
+    # Another must_remain character: only flag explicit false absence near their name,
+    # not normal offstage positioning (e.g. "left the room" / "went to the hall").
     for character_name in must_remain:
         if character_name == speaker:
             continue
         character_pattern = re.escape(character_name.lower())
-        if re.search(
-            rf"\b{character_pattern}\b.*\b(?:left|gone|away|not here|isn't here|wasn't here)\b",
-            combined_text,
-        ):
+        false_absence_near_name = re.compile(
+            rf"\b{character_pattern}\b.{{0,240}}?(?:"
+            r"not\s+here(?:\s+anymore)?|isn'?t\s+here|is\s+not\s+here|"
+            r"wasn'?t\s+here|was\s+not\s+here|"
+            r"nowhere\s+(?:to\s+be\s+)?found|"
+            r"never\s+(?:showed|arrived|came)|didn'?t\s+come"
+            r")\b",
+            re.DOTALL,
+        )
+        if false_absence_near_name.search(combined_text):
             return True, f"Move contradicts must_remain presence for {character_name}"
         if re.search(
             rf"\b{character_pattern}\b.*\blives?\s+alone\b",

@@ -42,6 +42,7 @@ For runtime behavior today, see `autogen_rp/python/rp_app/ARCHITECTURE.md` and `
 | Active issues / pressures | Dynamic | Issue list and metadata the Director and validators use |
 | Recent structured history | Dynamic | Bounded windows of events/moves/dialogue **as chosen by packaging** from authoritative continuity |
 | Template / role context | Setup-time | Template id, premise, role assignments, presence constraints (when using templates) |
+| **Settled scene facts** (Scene Grounding MVP) | Dynamic (derived, read-only) | Capped, allowlisted **facts/locks** projected from continuity for prompt coherence — not a second authority ([PRD](./Holy%20Grail%20PRD.md) §5.8, [spec](./autogen_rp/docs/scene-grounding-layer.md)) |
 
 This packet **does not** replace the continuity manager’s full internal state; it is the **projection** used for prompts and decisions.
 

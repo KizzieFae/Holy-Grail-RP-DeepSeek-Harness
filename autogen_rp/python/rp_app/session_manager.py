@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from character_loader import make_agent_identifier
+from cross_session_memory_policy import (
+    append_load_item,
+    should_promote_cross_session,
+)
 
 SESSION_INDEX_FILE_NAME = "_session_index.json"
 SESSION_INDEX_VERSION = 2
@@ -342,8 +346,14 @@ class SessionManager:
         user_name: str,
         exclude_session_id: str | None = None,
         limit: int = 8,
+        *,
+        injection_report: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Aggregate lightweight cross-session memory buckets from saved sessions."""
+        """Aggregate lightweight cross-session memory buckets from saved sessions.
+
+        When ``injection_report`` is provided, append load-stage trace entries and
+        apply ``should_promote_cross_session`` for eligible string buckets.
+        """
         summaries: list[str] = []
         world_facts: list[str] = []
         user_preferences: list[str] = []
@@ -363,6 +373,99 @@ class SessionManager:
             alias for aliases in character_aliases.values() for alias in aliases
         }
 
+        def _maybe_record_session_summary(src_sid: str, text: str) -> None:
+            if not text or text in summaries:
+                return
+            mt = "session_summary"
+            inj = "session_summary_memory_bucket"
+            dest = ["session_summaries_aggregate"]
+            promote = should_promote_cross_session(text, mt)
+            if injection_report is not None:
+                append_load_item(
+                    injection_report,
+                    memory_type=mt,
+                    injection_reason=inj,
+                    source_session_id=src_sid,
+                    target_character=None,
+                    preview=text,
+                    prompt_destination=dest,
+                    promoted=promote,
+                )
+            if promote:
+                summaries.append(text)
+
+        def _maybe_record_world_fact(src_sid: str, fact_text: str) -> None:
+            if not fact_text or fact_text in world_facts:
+                return
+            mt = "persistent_world_fact"
+            inj = (
+                "location_recurring"
+                if fact_text.lower().startswith("recent recurring location:")
+                else "world_fact_memory_bucket"
+            )
+            dest = ["PERSISTENT WORLD FACTS"]
+            promote = should_promote_cross_session(fact_text, mt)
+            if injection_report is not None:
+                append_load_item(
+                    injection_report,
+                    memory_type=mt,
+                    injection_reason=inj,
+                    source_session_id=src_sid,
+                    target_character=None,
+                    preview=fact_text,
+                    prompt_destination=dest,
+                    promoted=promote,
+                )
+            if promote:
+                world_facts.append(fact_text)
+
+        def _maybe_record_user_pref(src_sid: str, pref_text: str) -> None:
+            if not pref_text or pref_text in user_preferences:
+                return
+            mt = "user_preference"
+            inj = "user_preference_memory_bucket"
+            dest = ["USER PREFERENCES"]
+            promote = should_promote_cross_session(pref_text, mt)
+            if injection_report is not None:
+                append_load_item(
+                    injection_report,
+                    memory_type=mt,
+                    injection_reason=inj,
+                    source_session_id=src_sid,
+                    target_character=None,
+                    preview=pref_text,
+                    prompt_destination=dest,
+                    promoted=promote,
+                )
+            if promote:
+                user_preferences.append(pref_text)
+
+        def _maybe_record_history_line(
+            src_sid: str, char_name: str, line: str
+        ) -> None:
+            if not line or line in character_user_memories[char_name]:
+                return
+            mt = "relationship_history"
+            inj = "relationship_history_shared_cast"
+            dest = [
+                "CROSS-SESSION USER MEMORY",
+                "PRIVATE STATE",
+            ]
+            promote = should_promote_cross_session(line, mt)
+            if injection_report is not None:
+                append_load_item(
+                    injection_report,
+                    memory_type=mt,
+                    injection_reason=inj,
+                    source_session_id=src_sid,
+                    target_character=char_name,
+                    preview=line,
+                    prompt_destination=dest,
+                    promoted=promote,
+                )
+            if promote:
+                character_user_memories[char_name].append(line)
+
         for entry in self._sorted_index_entries():
             session_id = str(entry.get("session_id", "") or "")
             if exclude_session_id and session_id == exclude_session_id:
@@ -377,18 +480,13 @@ class SessionManager:
             session_summary = str(
                 memory_buckets.get("session_summary", "") or ""
             ).strip()
-            if session_summary and session_summary not in summaries:
-                summaries.append(session_summary)
+            _maybe_record_session_summary(session_id, session_summary)
 
             for fact in memory_buckets.get("persistent_world_facts", []):
-                fact_text = str(fact).strip()
-                if fact_text and fact_text not in world_facts:
-                    world_facts.append(fact_text)
+                _maybe_record_world_fact(session_id, str(fact).strip())
 
             for pref in memory_buckets.get("user_preferences", []):
-                pref_text = str(pref).strip()
-                if pref_text and pref_text not in user_preferences:
-                    user_preferences.append(pref_text)
+                _maybe_record_user_pref(session_id, str(pref).strip())
 
             relationships_by_character = entry.get("user_relationships", {})
             for char_name in character_names:
@@ -409,8 +507,7 @@ class SessionManager:
                     if str(item).strip()
                 ]
                 for item in history:
-                    if item not in character_user_memories[char_name]:
-                        character_user_memories[char_name].append(item)
+                    _maybe_record_history_line(session_id, char_name, item)
 
                 last_summary = str(relationship.get("last_summary", "") or "").strip()
                 if (
@@ -433,6 +530,21 @@ class SessionManager:
 
                 if relationship and not cross_session_relationships[char_name]:
                     cross_session_relationships[char_name] = relationship
+                    if injection_report is not None:
+                        snap_prev = (
+                            f"trust={relationship.get('trust')} "
+                            f"history_len={len(relationship.get('history', []) or [])}"
+                        )
+                        append_load_item(
+                            injection_report,
+                            memory_type="relationship_snapshot",
+                            injection_reason="relationship_snapshot_shared_cast",
+                            source_session_id=session_id,
+                            target_character=char_name,
+                            preview=snap_prev,
+                            prompt_destination=["PRIVATE STATE"],
+                            promoted=True,
+                        )
                 relationship_last_seen[char_name] = str(
                     entry.get("saved_at", relationship_last_seen[char_name]) or ""
                 )
@@ -457,6 +569,7 @@ class SessionManager:
             for name in character_names
         }
 
+        indexed = len(self._sorted_index_entries())
         return {
             "session_summaries": summaries[:limit],
             "persistent_world_facts": world_facts[:limit],
@@ -466,7 +579,8 @@ class SessionManager:
             },
             "cross_session_relationships": cross_session_relationships,
             "relationship_trends": relationship_trends,
-            "indexed_session_count": len(self._sorted_index_entries()),
+            "indexed_session_count": indexed,
+            "_cross_session_enabled": True,
         }
 
     def finalize_incomplete_sessions(self) -> list[str]:

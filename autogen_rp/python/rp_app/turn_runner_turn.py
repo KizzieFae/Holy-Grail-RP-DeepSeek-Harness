@@ -2,6 +2,9 @@ from typing import Any
 
 from autogen_agentchat.messages import TextMessage
 
+from beat_shift_state import build_narrator_beat_shift_suffix, is_pending_beat_shift_active
+from anti_regression_advisory import get_cached_anti_regression_advisory
+from progression_advisory import get_cached_progression_advisory
 from turn_runner_audit import log_character_turn_audit
 
 
@@ -230,6 +233,10 @@ async def execute_character_turn(
             turn_number=turn_number,
             character_summary_block_audit=character_summary_block_audit,
             turn_execution_metadata=turn_execution_metadata,
+            progression_advisory=get_cached_progression_advisory(orchestration_state),
+            anti_regression_advisory=get_cached_anti_regression_advisory(
+                orchestration_state
+            ),
             is_audit_enabled_fn=is_audit_enabled_fn,
             get_audit_logger_fn=get_audit_logger_fn,
             get_audit_context_fn=get_audit_context_fn,
@@ -251,6 +258,10 @@ async def execute_character_turn(
         orchestration_state,
     )
 
+    beat_shift_narrator_suffix = ""
+    if is_pending_beat_shift_active(orchestration_state):
+        beat_shift_narrator_suffix = build_narrator_beat_shift_suffix()
+
     try:
         rendered, narrator_raw, narrator_prompt = await render_character_move_fn(
             narrator,
@@ -259,6 +270,7 @@ async def execute_character_turn(
             scene_context,
             decision,
             cancellation_token,
+            beat_shift_narrator_suffix=beat_shift_narrator_suffix,
         )
     except Exception as exc:
         actors_failed_this_round.append(next_actor)

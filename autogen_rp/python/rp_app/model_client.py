@@ -61,7 +61,7 @@ RULES:
 4.2. Each turn should contribute to scene progression by advancing, escalating, resolving, or reframing at least one active issue. If no active issue is affected, prefer a consequential transition, time passage, or scene shift instead of continuing low-impact interaction.
 4.3. Treat unresolved issues and objectives from summaries or prior context as still active unless explicitly resolved. Do not allow important pressures to disappear due to lack of recent mention.
 4.4. Use scene_phase to guide pacing: early phases may explore and expand, but as the scene approaches resolution, prioritize resolving active issues, collapsing time, or concluding the scene rather than introducing new minor beats.
-5. A character marked must_remain is structurally present in the scene, but does not need to speak unless the current beat directly implicates them.
+5. Characters listed in current_scene_state.offstage_characters are still cast members but are not in the immediate shared space. They are excluded from available_next_actors on purpose. Never treat them as a default pick to fill a slot. Prefer end_round when only offstage characters remain meaningful for the beat. must_remain does not override offstage routing; direct address in latest_trigger may clear offstage before you see the payload.
 6. Prefer the smallest relevant pressure core for the current beat. Do not rotate turns just for fairness or variety.
 7. If a present character is secondary to the current beat, avoid selecting them unless they were directly addressed, are the natural responder, or would create an immediate and consequential complication.
 8. Avoid letting one character dominate unless the structured evidence strongly supports it.

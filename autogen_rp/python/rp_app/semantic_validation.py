@@ -19,7 +19,8 @@ SEMANTIC_VALIDATOR_SYSTEM_MESSAGE = """You are a semantic validator for a struct
 Return JSON only.
 Be conservative about flagging contradictions.
 Do not infer that someone left the scene from phrases like 'left side', 'looked away', 'peeled away', or similarly local phrasing.
-Only treat scene-presence violations as real when the text explicitly states or clearly implies that a must_remain character exited, is absent, or is no longer present.
+must_remain means the character stays in the cast selection pool; they may be offstage (hallway, another room, etc.) without violating presence.
+Only treat scene-presence violations as real when the text falsely claims another must_remain character is absent from the scene (e.g. denying they are present when they are), not when someone merely moves off-camera or steps into an adjacent space.
 Treat direct-address failures as real only when the trigger clearly makes one available actor the natural addressed responder.
 Treat narrator failures as real only when the render changes quoted dialogue, invents consequential actions for other characters, or materially rewrites the acting character's move.
 """
@@ -175,7 +176,8 @@ async def assess_presence_violation_semantics(
         },
     }
     prompt = (
-        "Assess whether the attempted move actually violates must_remain scene presence. "
+        "Assess whether the attempted move actually violates must_remain obligations "
+        "(must_remain = character must stay in the cast selection pool; moving offstage or into an adjacent space is allowed). "
         "Return JSON only with keys is_valid, explicit_absence_claim, explicit_exit_attempt, reason, confidence.\n\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
@@ -209,6 +211,7 @@ async def assess_turn_selection_decision_semantics(
     scene_state: dict[str, Any] | None,
     recent_dialogue_history: list[dict[str, Any]],
     cancellation_token: Any,
+    beat_shift_active: bool = False,
 ) -> dict[str, Any] | None:
     payload = {
         "trigger_text": trigger_text,
@@ -218,9 +221,17 @@ async def assess_turn_selection_decision_semantics(
         "spotlight_history": spotlight_history,
         "scene_state": scene_state or {},
         "recent_dialogue_history": recent_dialogue_history,
+        "beat_shift_active": beat_shift_active,
     }
+    beat_shift_clause = ""
+    if beat_shift_active:
+        beat_shift_clause = (
+            "A beat-shift signal is active: repeating the most recent spotlight can be justified when that actor is the natural executor of a concrete scene-state shift; "
+            "set should_flag_repeat_spotlight false when that applies. "
+        )
     prompt = (
         "Assess whether the selected actor is semantically the right choice for the current beat. "
+        f"{beat_shift_clause}"
         "Consider clear direct address, whether repeating the most recent spotlight is justified, whether another available actor is more responsible for the beat, and whether the selected actor still fits the smallest relevant pressure core. "
         "Return JSON only with keys supports_selected_actor, direct_address_target, should_flag_direct_address_miss, should_flag_repeat_spotlight, reason, confidence.\n\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"

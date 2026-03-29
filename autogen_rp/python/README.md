@@ -20,6 +20,10 @@ Please refer to the [migration guide](./migration_guide.md) for how to migrate y
 For the RP app's character-card and opener format, including Janitor-to-AutoGen conversion,
 refer to the [RP Character Migration Guide](./rp_app/CHARACTER_MIGRATION_GUIDE.md).
 
+### Holy Grail RP tests (`tests/`)
+
+Running **`pytest`** or **`python -m pytest`** from this directory defaults to **`tests/`** only (see `pyproject.toml` `[tool.pytest.ini_options]`). Optional dependency group **`autogen-vendored-tests`** supports running vendored `packages/*` tests when needed; see [docs/testing.md](../docs/testing.md).
+
 ## Quick Start
 
 **TL;DR**, run all checks with:
