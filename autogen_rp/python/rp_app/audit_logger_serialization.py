@@ -83,6 +83,11 @@ def normalize_scene_template_metadata(value: Any) -> dict[str, Any]:
         "character_authority_labels": normalize_string_mapping(
             value.get("character_authority_labels", {})
         ),
+        "location_entry_slots": [
+            str(item)
+            for item in value.get("location_entry_slots", [])
+            if str(item or "").strip()
+        ],
     }
 
 

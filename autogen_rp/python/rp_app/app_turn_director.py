@@ -231,6 +231,11 @@ async def choose_next_actor(
                 scene_state_for_prompt.get("scene_template_id", "") or ""
             ),
             "premise": str(scene_state_for_prompt.get("scene_premise", "") or ""),
+            "location_entry_slots": [
+                str(item)
+                for item in scene_state_for_prompt.get("location_entry_slots", [])
+                if str(item or "").strip()
+            ],
         },
         "scene_roles": scene_roles,
         "recent_structured_character_actions": orchestration_state.get(

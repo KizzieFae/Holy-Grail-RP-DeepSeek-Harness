@@ -113,6 +113,37 @@ def test_character_move_schema_requires_structured_motivation():
     assert "Exactly one valid surface_id" in sleeping_assignment["properties"][
         "surface_id"
     ]["description"]
+    assert "housing_call_outcome" in scene_state_updates["properties"]
+    housing_call_outcome = scene_state_updates["properties"]["housing_call_outcome"]
+    assert housing_call_outcome["required"] == ["status"]
+    assert "completed or failed" in housing_call_outcome["description"]
+    assert "Must be exactly one of: completed or failed." in housing_call_outcome[
+        "properties"
+    ]["status"]["description"]
+    assert "suppressant_formulation_outcome" in scene_state_updates["properties"]
+    suppressant_formulation_outcome = scene_state_updates["properties"][
+        "suppressant_formulation_outcome"
+    ]
+    assert suppressant_formulation_outcome["required"] == ["subject_id", "status"]
+    assert "compatible or incompatible" in suppressant_formulation_outcome[
+        "description"
+    ]
+    assert "current suppressant formulation compatibility" in (
+        suppressant_formulation_outcome["properties"]["status"]["description"].lower()
+    )
+    assert "location_entry_outcome" in scene_state_updates["properties"]
+    location_entry_outcome = scene_state_updates["properties"][
+        "location_entry_outcome"
+    ]
+    assert location_entry_outcome["required"] == ["subject_id", "location_id", "status"]
+    assert "explicitly settles a named subject's current permission" in location_entry_outcome["description"]
+    assert "Do not use it for requests, predictions, preferences" in location_entry_outcome["description"]
+    assert "Do not remap, normalize, or substitute" in location_entry_outcome["properties"][
+        "location_id"
+    ]["description"]
+    assert "allowed or denied" in location_entry_outcome["properties"]["status"][
+        "description"
+    ]
 
 
 def test_character_state_preserves_identity_anchors_and_memory_summaries():

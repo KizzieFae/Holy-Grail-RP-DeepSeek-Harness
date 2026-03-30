@@ -277,10 +277,28 @@ OUTPUT RULES:
 - Let dialogue sound natural and in-character rather than explanatory.
  - Only include scene_state_updates when your move deterministically settles a bounded scene fact already supported by the beat.
  - For sleeping arrangement settlement, you may include only scene_state_updates.sleeping_surface_assignment with assignee_id and surface_id.
+ - For a shared housing / res-life call reaching terminal outcome, you may include only scene_state_updates.housing_call_outcome with status.
+- For current suppressant formulation compatibility settlement, you may include only scene_state_updates.suppressant_formulation_outcome with subject_id and status.
+- For current location entry permission settlement, you may include only scene_state_updates.location_entry_outcome with subject_id, location_id, and status.
  - surface_id must be exactly one valid allowed surface_id value already present in CURRENT SCENE STATE or SCENE TEMPLATE, or one generic fallback value: floor, couch, cot, or unassigned.
  - Emit sleeping_surface_assignment only when you, as the acting speaker, are establishing, actively enforcing against present resistance or dispute, or explicitly reassigning where someone will sleep in this turn.
+ - Contested enforcement vs reminder: Include sleeping_surface_assignment when another present character has just challenged the existing sleeping plan in the current exchange, and your move directly responds by keeping the same assignee_id on the same surface_id, even if your tone is soft, conciliatory, or framed as "already settled." That is contested enforcement, not a reminder. Do not use tone as the deciding factor. Do not include the field when no such challenge is present and your move is only informational, referential, or housekeeping about an assignment nobody is contesting in that exchange.
  - Do not include sleeping_surface_assignment for suggestions, pressure, questions, negotiation, teasing, reactions, observations, reminders, restating prior state, or unresolved argument.
- - Do not include sleeping_surface_assignment if the sleeping assignment is already established and this move does not change it.
+ - Do not include sleeping_surface_assignment solely because the assignment is unchanged unless the contested-enforcement case above applies.
+ - Emit housing_call_outcome only when you, as the acting speaker, are explicitly settling the shared housing / res-life call by making it completed or failed in this turn.
+ - housing_call_outcome.status must be exactly one of: completed or failed.
+ - Do not include housing_call_outcome for discussing, planning, attempting, dialing, waiting on hold, leaving voicemail, or asking whether someone called.
+- Emit suppressant_formulation_outcome only when you, as the acting speaker, are explicitly settling whether a named subject's current suppressant formulation is compatible or incompatible in this turn.
+- suppressant_formulation_outcome.status must be exactly one of: compatible or incompatible.
+- Do not include suppressant_formulation_outcome for symptoms alone, suspicion, diagnosis, dosage changes, treatment planning, or historical formulations.
+- Emit location_entry_outcome only when you, as the acting speaker, explicitly settle a named subject's current permission to enter one bounded location in this turn.
+- Emit it only for direct permission rulings such as "you may enter" or "you are not allowed inside."
+- Do not include location_entry_outcome for requests, predictions, preferences, blocked paths, locked doors, or physical obstruction.
+- Do not treat "not yet," "for now," "stay here," "wait," or "until I say otherwise" as permission settlement. These are control instructions, not allowed/denied outcomes.
+- Do not include location_entry_outcome for partial, conditional, or fragmented permission that does not clearly resolve to allowed or denied for the specified location.
+- Base location_entry_outcome emission on the in-fiction assertion made in the turn, not on whether the speaker has real authority.
+- location_entry_outcome.location_id must match the intended in-fiction location exactly. Do not remap, normalize, or substitute it. If the location is outside the allowed set, emit it as-is and let validation reject it.
+- location_entry_outcome.status must be exactly one of: allowed or denied.
  - Positive example: {positive_sleeping_assignment_example}
  - Negative example: {negative_sleeping_assignment_example}
 

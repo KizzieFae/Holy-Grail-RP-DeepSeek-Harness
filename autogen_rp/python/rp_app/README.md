@@ -251,6 +251,20 @@ Character agents are prompted to return JSON with core `action`, `dialogue`, and
 
 Only emit `scene_state_updates.sleeping_surface_assignment` when the acting speaker is establishing, enforcing, or explicitly reassigning where someone will sleep in that turn. Do not emit it for offers, suggestions, negotiation, reactions, or restating prior state.
 
+For terminal housing / res-life contact, you may instead emit:
+
+```json
+{
+  "scene_state_updates": {
+    "housing_call_outcome": {
+      "status": "completed"
+    }
+  }
+}
+```
+
+Only emit `scene_state_updates.housing_call_outcome` when the acting speaker is explicitly settling the shared housing call by making it `completed` or `failed` in that turn. Do not emit it for planning, attempting, dialing, waiting on hold, or asking whether someone called.
+
 Older `intent`-style outputs are still mapped into the new `motivation` structure for compatibility.
 
 ## Runtime Flow

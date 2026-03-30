@@ -73,6 +73,7 @@ class SceneTemplate:
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
     progression_profile: dict[str, Any] | None = None
     sleeping_surface_slots: list[str] = field(default_factory=list)
+    location_entry_slots: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -82,6 +83,7 @@ class SceneTemplate:
             "role_slots": [slot.to_dict() for slot in self.role_slots],
             "initial_messages": [msg.to_dict() for msg in self.initial_messages],
             "sleeping_surface_slots": list(self.sleeping_surface_slots),
+            "location_entry_slots": list(self.location_entry_slots),
         }
         if self.progression_profile is not None:
             out["progression_profile"] = dict(self.progression_profile)
@@ -122,6 +124,11 @@ class SceneTemplate:
             for item in data.get("sleeping_surface_slots", [])
             if str(item or "").strip()
         ]
+        location_entry_slots = [
+            str(item).strip()
+            for item in data.get("location_entry_slots", [])
+            if str(item or "").strip()
+        ]
         return cls(
             template_id=template_id,
             premise=str(data.get("premise", "") or "").strip(),
@@ -130,6 +137,7 @@ class SceneTemplate:
             initial_messages=initial_messages,
             progression_profile=progression_profile,
             sleeping_surface_slots=sleeping_surface_slots,
+            location_entry_slots=location_entry_slots,
         )
 
 

@@ -86,7 +86,9 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `continuity_state.py` | Dataclasses: issues, events, interpretations, anchors, snapshots | — | Serialization shapes for sessions |
 | `continuity_issue_helpers.py` | Issue lifecycle, matching, summaries | `continuity_consequence_classifier` | |
 | `continuity_knowledge_helpers.py` | Knowledge propagation, boundaries, `told`/inference | events, interpretations | |
-| `continuity_resolved_outcomes.py` | Compile continuity-owned resolved outcomes from structured move fields + issue/consequence signals | `continuity_manager`, `continuity_state`, `scene_state` slot registry | V1: `assignment:sleeping_surface` only; no independent authority |
+| `continuity_resolved_outcomes.py` | Facade: structured ingest helpers + delegates apply path to `resolved_outcome_engine` | `resolved_outcome_registry`, `resolved_outcome_engine`, `continuity_manager` | V1: `lodging.sleep_surface`, `communication.housing_call` |
+| `resolved_outcome_registry.py` | `ASPECT_REGISTRY`, parse/validate, `slot_key` encoding, per-aspect promotion policy (read-only evaluate), local revocation | `continuity_state`, `resolved_outcome_engine` | New aspects = new rows; no inference |
+| `resolved_outcome_engine.py` | Deterministic pipeline: ingest → slot → `no_op_existing_value` → revoke → promote → persist | `continuity_state`, `resolved_outcome_registry` | Core stays aspect-agnostic; policies live in registry |
 | `continuity_scene_helpers.py` | Scene snapshots, orchestration context for prompts | scene state | |
 | `continuity_summary_helpers.py` | Summary blocks, retrieval ranking support | issues, events | |
 | `continuity_consequence_classifier.py` | Consequence / category signals for issues | text signals | |

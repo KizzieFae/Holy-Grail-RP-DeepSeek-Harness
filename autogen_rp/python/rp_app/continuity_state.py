@@ -355,6 +355,8 @@ class ResolvedOutcome:
     created_turn_index: int | None = None
     superseded_turn_index: int | None = None
     revoked_turn_index: int | None = None
+    aspect_id: str = ""
+    slot_key: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -371,15 +373,57 @@ class ResolvedOutcome:
             "created_turn_index": self.created_turn_index,
             "superseded_turn_index": self.superseded_turn_index,
             "revoked_turn_index": self.revoked_turn_index,
+            "aspect_id": self.aspect_id,
+            "slot_key": self.slot_key,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "ResolvedOutcome":
+        category = str(data.get("category", "") or "")
+        key = str(data.get("key", "") or "")
+        subject_id = str(data.get("subject_id", "") or "")
+        aspect_id = str(data.get("aspect_id") or "").strip()
+        slot_key = str(data.get("slot_key") or "").strip()
+        if (
+            not slot_key
+            and category == "assignment"
+            and key == "sleeping_surface"
+            and subject_id
+        ):
+            aspect_id = aspect_id or "lodging.sleep_surface"
+            slot_key = f"{aspect_id}::{subject_id}"
+        if not slot_key and category == "communication_state" and key == "housing_call":
+            subject_id = subject_id or "scene"
+            aspect_id = aspect_id or "communication.housing_call"
+            slot_key = f"{aspect_id}::scene"
+        if (
+            not slot_key
+            and category == "medical"
+            and key == "suppressant_formulation"
+            and subject_id
+        ):
+            aspect_id = aspect_id or "medical.suppressant_formulation"
+            slot_key = f"{aspect_id}::{subject_id}"
+        if (
+            not slot_key
+            and category == "access"
+            and key == "location_entry"
+            and subject_id
+        ):
+            aspect_id = aspect_id or "access.location_entry"
+            location_id = str(
+                (data.get("value") or {}).get("location_id", "")
+                or (data.get("value") or {}).get("location", "")
+                or ""
+            ).strip()
+            if location_id:
+                slot_key = f"{aspect_id}::{subject_id}::{location_id}"
+
         return cls(
             outcome_id=str(data.get("outcome_id", "") or ""),
-            category=str(data.get("category", "") or ""),
-            key=str(data.get("key", "") or ""),
-            subject_id=str(data.get("subject_id", "") or ""),
+            category=category,
+            key=key,
+            subject_id=subject_id,
             value={
                 str(k): str(v)
                 for k, v in (data.get("value") or {}).items()
@@ -415,6 +459,8 @@ class ResolvedOutcome:
                 if data.get("revoked_turn_index") is not None
                 else None
             ),
+            aspect_id=aspect_id,
+            slot_key=slot_key,
         )
 
 
@@ -579,6 +625,7 @@ class SceneState:
     character_presence_constraints: dict[str, str] = field(default_factory=dict)
     character_authority_labels: dict[str, str] = field(default_factory=dict)
     sleeping_surface_slots: list[str] = field(default_factory=list)
+    location_entry_slots: list[str] = field(default_factory=list)
 
     # Participants
     present_characters: list[str] = field(default_factory=list)
@@ -611,6 +658,7 @@ class SceneState:
             "character_presence_constraints": self.character_presence_constraints,
             "character_authority_labels": self.character_authority_labels,
             "sleeping_surface_slots": self.sleeping_surface_slots,
+            "location_entry_slots": self.location_entry_slots,
             "present_characters": self.present_characters,
             "absent_but_relevant": self.absent_but_relevant,
             "offstage_characters": self.offstage_characters,
@@ -670,6 +718,11 @@ class SceneState:
             ),
             sleeping_surface_slots=[
                 str(item) for item in data.get("sleeping_surface_slots", []) if str(item or "").strip()
+            ],
+            location_entry_slots=[
+                str(item)
+                for item in data.get("location_entry_slots", [])
+                if str(item or "").strip()
             ],
             present_characters=[
                 str(item) for item in data.get("present_characters", [])

@@ -64,6 +64,87 @@ def _build_sleeping_assignment_move(
     }
 
 
+def _build_housing_call_outcome_move(
+    *,
+    status: str,
+    dialogue: str,
+    action: str,
+    goal: str = "settle the housing call",
+    tactic: str = "state the terminal outcome clearly",
+) -> dict:
+    return {
+        "action": action,
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": goal,
+            "tactic": tactic,
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+        "scene_state_updates": {
+            "housing_call_outcome": {
+                "status": status,
+            }
+        },
+    }
+
+
+def _build_suppressant_formulation_outcome_move(
+    *,
+    subject_id: str,
+    status: str,
+    dialogue: str,
+    action: str,
+    goal: str = "settle suppressant compatibility",
+    tactic: str = "state the current formulation fit clearly",
+) -> dict:
+    return {
+        "action": action,
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": goal,
+            "tactic": tactic,
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+        "scene_state_updates": {
+            "suppressant_formulation_outcome": {
+                "subject_id": subject_id,
+                "status": status,
+            }
+        },
+    }
+
+
+def _build_location_entry_outcome_move(
+    *,
+    subject_id: str,
+    location_id: str,
+    status: str,
+    dialogue: str,
+    action: str,
+    goal: str = "settle entry permission",
+    tactic: str = "state the current permission clearly",
+) -> dict:
+    return {
+        "action": action,
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": goal,
+            "tactic": tactic,
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+        "scene_state_updates": {
+            "location_entry_outcome": {
+                "subject_id": subject_id,
+                "location_id": location_id,
+                "status": status,
+            }
+        },
+    }
+
+
 def test_process_turn_creates_public_event_and_issue() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(
@@ -286,6 +367,8 @@ def test_sleeping_surface_promotes_on_resolved_issue() -> None:
     assert outcome.subject_id == "Kizzie"
     assert outcome.value["surface_id"] == "top_bunk_marlene"
     assert outcome.source_issue_id == issue.issue_id
+    assert outcome.aspect_id == "lodging.sleep_surface"
+    assert outcome.slot_key == "lodging.sleep_surface::Kizzie"
     debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
     assert debug["reason"] == "promoted_issue_resolution"
 
@@ -339,7 +422,7 @@ def test_sleeping_surface_rejects_competing_same_turn_assignments() -> None:
                 "risk_level": "medium",
             },
             "scene_state_updates": {
-                "sleeping_surface_assignments": [
+                "sleeping_surface_assignment": [
                     {"assignee_id": "Kizzie", "surface_id": "floor"},
                     {"assignee_id": "Kizzie", "surface_id": "couch"},
                 ]
@@ -491,6 +574,412 @@ def test_sleeping_surface_does_not_promote_from_weak_conversational_movement() -
     assert manager.resolved_outcomes == []
     debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["sleeping_surface"]
     assert debug["reason"] == "weak_signal"
+
+
+def test_housing_call_promotes_structured_terminal_outcome() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="Everyone is waiting on housing to answer.",
+        present_characters=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
+    )
+
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move=_build_housing_call_outcome_move(
+            status="completed",
+            dialogue="Housing picked up and it's handled.",
+            action="lowers the phone and exhales once",
+        ),
+        director_decision=_build_test_decision("Marlene_Fletcher"),
+        other_characters=["Kizzie", "Marlene_Fletcher"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:10:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    outcome = manager.resolved_outcomes[0]
+    assert outcome.category == "communication_state"
+    assert outcome.key == "housing_call"
+    assert outcome.subject_id == "scene"
+    assert outcome.value["status"] == "completed"
+    assert outcome.aspect_id == "communication.housing_call"
+    assert outcome.slot_key == "communication.housing_call::scene"
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["housing_call"]
+    assert debug["reason"] == "promoted_structured_terminal"
+
+
+def test_housing_call_identical_terminal_outcome_is_no_op() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The roommates keep checking whether housing answered.",
+        present_characters=["Kizzie", "Willow_Reeves"],
+    )
+
+    move = _build_housing_call_outcome_move(
+        status="completed",
+        dialogue="Housing got back to us. It's done.",
+        action="sets the phone on the table",
+    )
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move=move,
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:11:00"),
+    )
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move=move,
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:12:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"]["housing_call"]
+    assert debug["reason"] == "no_op_existing_value"
+
+
+def test_housing_call_supersedes_failed_with_completed() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm 303",
+        opening_description="The first housing call crashed and they tried again.",
+        present_characters=["Kizzie", "Willow_Reeves"],
+    )
+
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move=_build_housing_call_outcome_move(
+            status="failed",
+            dialogue="Call failed. It dropped before anyone answered.",
+            action="pulls the phone away from her ear with a curse",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:13:00"),
+    )
+    manager.process_turn(
+        acting_character="Willow_Reeves",
+        move=_build_housing_call_outcome_move(
+            status="completed",
+            dialogue="Got through this time. Housing fixed it.",
+            action="sets the phone down and nods once",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:14:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 2
+    assert manager.resolved_outcomes[0].status == "superseded"
+    assert manager.resolved_outcomes[1].status == "active"
+    assert manager.resolved_outcomes[1].value["status"] == "completed"
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"]["housing_call"]
+    assert debug["reason"] == "superseded_terminal_outcome"
+
+
+def test_suppressant_formulation_promotes_subject_scoped_attribute_state() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Safehouse bedroom",
+        opening_description="The room goes still as the medication question lands.",
+        present_characters=["Kizzie", "Celina"],
+    )
+
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=_build_suppressant_formulation_outcome_move(
+            subject_id="Kizzie",
+            status="incompatible",
+            dialogue="These suppressants are wrong for me. This formulation is incompatible.",
+            action="presses two fingers to her sternum and forces the words out",
+        ),
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:15:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    outcome = manager.resolved_outcomes[0]
+    assert outcome.category == "medical"
+    assert outcome.key == "suppressant_formulation"
+    assert outcome.subject_id == "Kizzie"
+    assert outcome.value["status"] == "incompatible"
+    assert outcome.aspect_id == "medical.suppressant_formulation"
+    assert outcome.slot_key == "medical.suppressant_formulation::Kizzie"
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"][
+        "suppressant_formulation"
+    ]
+    assert debug["reason"] == "promoted_structured_attribute"
+
+
+def test_suppressant_formulation_identical_value_is_no_op() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Safehouse bedroom",
+        opening_description="They keep circling the same medication fact.",
+        present_characters=["Kizzie", "Celina"],
+    )
+
+    move = _build_suppressant_formulation_outcome_move(
+        subject_id="Kizzie",
+        status="incompatible",
+        dialogue="I said it already. This formulation is incompatible for me.",
+        action="shakes her head once",
+    )
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=move,
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:16:00"),
+    )
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=move,
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:17:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"][
+        "suppressant_formulation"
+    ]
+    assert debug["reason"] == "no_op_existing_value"
+
+
+def test_suppressant_formulation_supersedes_incompatible_with_compatible() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Clinic room",
+        opening_description="The assessment gets corrected in the next beat.",
+        present_characters=["Kizzie", "Celina"],
+    )
+
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_suppressant_formulation_outcome_move(
+            subject_id="Kizzie",
+            status="incompatible",
+            dialogue="That suppressant formulation is incompatible for Kizzie right now.",
+            action="sets the blister pack aside",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:18:00"),
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_suppressant_formulation_outcome_move(
+            subject_id="Kizzie",
+            status="compatible",
+            dialogue="No, this current formulation is compatible. The earlier concern was wrong.",
+            action="checks the label again and nods once",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:19:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 2
+    assert manager.resolved_outcomes[0].status == "superseded"
+    assert manager.resolved_outcomes[1].status == "active"
+    assert manager.resolved_outcomes[1].value["status"] == "compatible"
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"][
+        "suppressant_formulation"
+    ]
+    assert debug["reason"] == "superseded_compatibility_state"
+
+
+def test_suppressant_formulation_tracks_subject_slots_independently() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Clinic room",
+        opening_description="Two separate formulations are discussed.",
+        present_characters=["Kizzie", "Harley_Quinn", "Celina"],
+    )
+
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_suppressant_formulation_outcome_move(
+            subject_id="Kizzie",
+            status="incompatible",
+            dialogue="Kizzie's current suppressant formulation is incompatible.",
+            action="glances from the label to Kizzie",
+        ),
+        director_decision=_build_test_decision("Harley_Quinn"),
+        other_characters=["Kizzie", "Harley_Quinn"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:20:00"),
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_suppressant_formulation_outcome_move(
+            subject_id="Harley_Quinn",
+            status="compatible",
+            dialogue="Harley's current suppressant formulation is compatible.",
+            action="taps the second chart with one finger",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie", "Harley_Quinn"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:21:00"),
+    )
+
+    active = [o for o in manager.resolved_outcomes if o.status == "active"]
+    assert len(active) == 2
+    assert {o.slot_key for o in active} == {
+        "medical.suppressant_formulation::Kizzie",
+        "medical.suppressant_formulation::Harley_Quinn",
+    }
+    grounding = rebuild_scene_grounding_from_continuity(manager)
+    facts = [f for f in grounding["facts"] if f.get("key") == "suppressant_formulation"]
+    assert len(facts) == 2
+
+
+def test_location_entry_promotes_structured_permission_state() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="House hallway",
+        opening_description="The threshold question turns explicit.",
+        present_characters=["Celina", "Kizzie"],
+    )
+    manager.scene_state.location_entry_slots = ["clinic_room", "basement"]
+
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_location_entry_outcome_move(
+            subject_id="Kizzie",
+            location_id="clinic_room",
+            status="allowed",
+            dialogue="Kizzie is allowed into the clinic room now.",
+            action="steps aside from the clinic doorway",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:22:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    outcome = manager.resolved_outcomes[0]
+    assert outcome.category == "access"
+    assert outcome.key == "location_entry"
+    assert outcome.subject_id == "Kizzie"
+    assert outcome.value["location_id"] == "clinic_room"
+    assert outcome.value["status"] == "allowed"
+    assert outcome.aspect_id == "access.location_entry"
+    assert outcome.slot_key == "access.location_entry::Kizzie::clinic_room"
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["location_entry"]
+    assert debug["reason"] == "promoted_structured_permission"
+
+
+def test_location_entry_identical_value_is_no_op() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="House hallway",
+        opening_description="They repeat the same permission ruling.",
+        present_characters=["Celina", "Kizzie"],
+    )
+    manager.scene_state.location_entry_slots = ["clinic_room"]
+
+    move = _build_location_entry_outcome_move(
+        subject_id="Kizzie",
+        location_id="clinic_room",
+        status="allowed",
+        dialogue="Kizzie can enter the clinic room.",
+        action="holds the door open",
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move=move,
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:23:00"),
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move=move,
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:24:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 1
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"]["location_entry"]
+    assert debug["reason"] == "no_op_existing_value"
+
+
+def test_location_entry_supersedes_allowed_with_denied() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="House hallway",
+        opening_description="The permission ruling gets reversed.",
+        present_characters=["Celina", "Kizzie"],
+    )
+    manager.scene_state.location_entry_slots = ["basement"]
+
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_location_entry_outcome_move(
+            subject_id="Kizzie",
+            location_id="basement",
+            status="allowed",
+            dialogue="Kizzie is allowed into the basement.",
+            action="unlocks the basement door and nods once",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:25:00"),
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_location_entry_outcome_move(
+            subject_id="Kizzie",
+            location_id="basement",
+            status="denied",
+            dialogue="No. Kizzie is denied entry to the basement now.",
+            action="shuts the basement door again",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:26:00"),
+    )
+
+    assert len(manager.resolved_outcomes) == 2
+    assert manager.resolved_outcomes[0].status == "superseded"
+    assert manager.resolved_outcomes[1].status == "active"
+    assert manager.resolved_outcomes[1].value["status"] == "denied"
+    debug = manager.turn_metadata_by_index[2]["resolved_outcomes"]["location_entry"]
+    assert debug["reason"] == "superseded_permission_state"
+
+
+def test_location_entry_rejects_location_outside_bounded_set() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="House hallway",
+        opening_description="A speaker tries to mint a new location id.",
+        present_characters=["Celina", "Kizzie"],
+    )
+    manager.scene_state.location_entry_slots = ["clinic_room"]
+
+    manager.process_turn(
+        acting_character="Celina",
+        move=_build_location_entry_outcome_move(
+            subject_id="Kizzie",
+            location_id="secret_tunnel",
+            status="allowed",
+            dialogue="Kizzie is allowed into the secret tunnel.",
+            action="jerks her chin toward the wall",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:27:00"),
+    )
+
+    assert manager.resolved_outcomes == []
+    debug = manager.turn_metadata_by_index[1]["resolved_outcomes"]["location_entry"]
+    assert debug["reason"] == "invalid_location_id"
 
 
 def test_process_turn_updates_scene_presence_on_exit() -> None:

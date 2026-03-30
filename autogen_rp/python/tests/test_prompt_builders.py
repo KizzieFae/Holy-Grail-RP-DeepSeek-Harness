@@ -224,7 +224,79 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
         in prompt
     )
     assert (
-        "Do not include sleeping_surface_assignment if the sleeping assignment is already established and this move does not change it."
+        "Contested enforcement vs reminder: Include sleeping_surface_assignment when another present character has just challenged"
+        in prompt
+    )
+    assert (
+        "Do not include sleeping_surface_assignment solely because the assignment is unchanged unless the contested-enforcement case above applies."
+        in prompt
+    )
+    assert (
+        "For a shared housing / res-life call reaching terminal outcome, you may include only scene_state_updates.housing_call_outcome with status."
+        in prompt
+    )
+    assert (
+        "For current suppressant formulation compatibility settlement, you may include only scene_state_updates.suppressant_formulation_outcome with subject_id and status."
+        in prompt
+    )
+    assert (
+        "For current location entry permission settlement, you may include only scene_state_updates.location_entry_outcome with subject_id, location_id, and status."
+        in prompt
+    )
+    assert (
+        "Emit housing_call_outcome only when you, as the acting speaker, are explicitly settling the shared housing / res-life call by making it completed or failed in this turn."
+        in prompt
+    )
+    assert (
+        "housing_call_outcome.status must be exactly one of: completed or failed."
+        in prompt
+    )
+    assert (
+        "Do not include housing_call_outcome for discussing, planning, attempting, dialing, waiting on hold, leaving voicemail, or asking whether someone called."
+        in prompt
+    )
+    assert (
+        "Emit suppressant_formulation_outcome only when you, as the acting speaker, are explicitly settling whether a named subject's current suppressant formulation is compatible or incompatible in this turn."
+        in prompt
+    )
+    assert (
+        "suppressant_formulation_outcome.status must be exactly one of: compatible or incompatible."
+        in prompt
+    )
+    assert (
+        "Do not include suppressant_formulation_outcome for symptoms alone, suspicion, diagnosis, dosage changes, treatment planning, or historical formulations."
+        in prompt
+    )
+    assert (
+        "Emit location_entry_outcome only when you, as the acting speaker, explicitly settle a named subject's current permission to enter one bounded location in this turn."
+        in prompt
+    )
+    assert (
+        'Emit it only for direct permission rulings such as "you may enter" or "you are not allowed inside."'
+        in prompt
+    )
+    assert (
+        "Do not include location_entry_outcome for requests, predictions, preferences, blocked paths, locked doors, or physical obstruction."
+        in prompt
+    )
+    assert (
+        'Do not treat "not yet," "for now," "stay here," "wait," or "until I say otherwise" as permission settlement.'
+        in prompt
+    )
+    assert (
+        "Do not include location_entry_outcome for partial, conditional, or fragmented permission that does not clearly resolve to allowed or denied for the specified location."
+        in prompt
+    )
+    assert (
+        "Base location_entry_outcome emission on the in-fiction assertion made in the turn, not on whether the speaker has real authority."
+        in prompt
+    )
+    assert (
+        "location_entry_outcome.location_id must match the intended in-fiction location exactly. Do not remap, normalize, or substitute it. If the location is outside the allowed set, emit it as-is and let validation reject it."
+        in prompt
+    )
+    assert (
+        "location_entry_outcome.status must be exactly one of: allowed or denied."
         in prompt
     )
     assert (

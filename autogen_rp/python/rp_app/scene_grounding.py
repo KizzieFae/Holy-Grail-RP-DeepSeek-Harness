@@ -16,6 +16,8 @@ SCHEMA_VERSION = 1
 
 # Default priority by category (higher retained first under cap)
 _CATEGORY_PRIORITY: dict[str, int] = {
+    "access": 78,
+    "medical": 85,
     "medical_status": 85,
     "assignment": 80,
     "communication_state": 75,
@@ -129,19 +131,10 @@ def compute_grounding_markers(
     if SIGNAL_WEAPON_ON_TABLE in signals:
         markers.append("object_state:weapon|location=on_table")
 
-    if ConsequenceCategory.COMMITMENT in cats or ConsequenceCategory.AGREEMENT in cats:
-        if ("housing" in text or "res life" in text or "reslife" in text) and (
-            "call" in text or "office" in text
-        ):
-            if (
-                "ended" in text
-                or "hung up" in text
-                or "done" in text
-                or "over" in text
-                or "finished" in text
-                or "completed" in text
-            ):
-                markers.append("communication_state:housing_call|status=completed")
+    # communication_state:housing_call is not emitted lexically here. Authoritative
+    # promotion is continuity-owned via scene_state_updates.housing_call_outcome
+    # (resolved outcome → grounding). Stored markers on older PublicEvents are
+    # still honored in rebuild_scene_grounding_from_continuity.
 
     return markers
 
@@ -186,6 +179,13 @@ def _build_value_summary(category: str, key: str, kv: dict[str, str]) -> str:
         if form == "wrong_for_physiology":
             return f"{who}: suppressants wrong for physiology"[:120]
         return f"{who}: suppressants ({form})"[:120]
+    if category == "medical" and key == "suppressant_formulation":
+        who = _humanize_id(kv.get("subject", "someone"))
+        return f"{who}: suppressant formulation {kv.get('status', 'unknown')}"[:120]
+    if category == "access" and key == "location_entry":
+        who = _humanize_id(kv.get("subject", "someone"))
+        location = _humanize_id(kv.get("location", "somewhere"))
+        return f"{who}: {location} entry {kv.get('status', 'unknown')}"[:120]
     if category == "object_state" and key == "phone":
         return f"Phone: {kv.get('status', 'unknown')}"[:120]
     if category == "object_state" and key == "weapon":
@@ -233,6 +233,15 @@ def _fact_slot_identity(
             kv.get("assignee", kv.get("assignee_id", "")) or ""
         ).strip()
         return category, key, assignee or None
+    if category == "medical" and key == "suppressant_formulation":
+        subject = str(kv.get("subject", kv.get("subject_id", "")) or "").strip()
+        return category, key, subject or None
+    if category == "access" and key == "location_entry":
+        subject = str(kv.get("subject", kv.get("subject_id", "")) or "").strip()
+        location = str(kv.get("location", kv.get("location_id", "")) or "").strip()
+        slot_subject = subject or ""
+        slot_location = location or ""
+        return category, key, f"{slot_subject}::{slot_location}" if slot_subject or slot_location else None
     return category, key, None
 
 
@@ -307,6 +316,8 @@ def _marker_to_fact(
     if category not in _CATEGORY_PRIORITY:
         return None
     allowed_keys = {
+        "access": {"location_entry"},
+        "medical": {"suppressant_formulation"},
         "assignment": {"sleeping_surface"},
         "medical_status": {"omega_suppressants", "wound_dressing"},
         "object_state": {"phone", "weapon"},
@@ -342,17 +353,49 @@ def _resolved_outcome_to_fact(
 ) -> SceneFact | None:
     category = str(getattr(outcome, "category", "") or "")
     key = str(getattr(outcome, "key", "") or "")
-    if category != "assignment" or key != "sleeping_surface":
-        return None
     value = getattr(outcome, "value", {}) or {}
-    assignee = str(value.get("assignee_id", "") or "").strip()
-    surface = str(value.get("surface_id", "") or "").strip()
-    if not assignee or not surface:
+    if category == "assignment" and key == "sleeping_surface":
+        assignee = str(value.get("assignee_id", "") or "").strip()
+        surface = str(value.get("surface_id", "") or "").strip()
+        if not assignee or not surface:
+            return None
+        kv = {
+            "assignee": assignee,
+            "surface": surface,
+        }
+    elif category == "communication_state" and key == "housing_call":
+        status = str(value.get("status", "") or "").strip()
+        if not status:
+            return None
+        kv = {
+            "status": status,
+        }
+    elif category == "medical" and key == "suppressant_formulation":
+        subject = str(
+            getattr(outcome, "subject_id", "") or value.get("subject_id", "") or ""
+        ).strip()
+        status = str(value.get("status", "") or "").strip()
+        if not subject or not status:
+            return None
+        kv = {
+            "subject": subject,
+            "status": status,
+        }
+    elif category == "access" and key == "location_entry":
+        subject = str(
+            getattr(outcome, "subject_id", "") or value.get("subject_id", "") or ""
+        ).strip()
+        location = str(value.get("location_id", "") or value.get("location", "") or "").strip()
+        status = str(value.get("status", "") or "").strip()
+        if not subject or not location or not status:
+            return None
+        kv = {
+            "subject": subject,
+            "location": location,
+            "status": status,
+        }
+    else:
         return None
-    kv = {
-        "assignee": assignee,
-        "surface": surface,
-    }
     return SceneFact(
         fact_id=str(getattr(outcome, "outcome_id", "") or ""),
         category=category,
@@ -403,7 +446,10 @@ def rebuild_scene_grounding_from_continuity(manager: Any) -> dict[str, Any]:
             continue
         category = str(getattr(outcome, "category", "") or "")
         key = str(getattr(outcome, "key", "") or "")
-        value = getattr(outcome, "value", {}) or {}
+        value = dict(getattr(outcome, "value", {}) or {})
+        subject_id = str(getattr(outcome, "subject_id", "") or "").strip()
+        if subject_id and "subject_id" not in value:
+            value["subject_id"] = subject_id
         slot = _fact_slot_identity(category, key, value)
         prev = by_slot.get(slot)
         fact = _resolved_outcome_to_fact(

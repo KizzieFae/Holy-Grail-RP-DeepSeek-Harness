@@ -34,6 +34,7 @@ def build_default_orchestration_state() -> dict[str, Any]:
             "role_assignments": {},
             "character_presence_constraints": {},
             "character_authority_labels": {},
+            "location_entry_slots": [],
             "offstage_characters": [],
         },
         "spotlight_history": [],
@@ -92,6 +93,9 @@ def sync_orchestration_state_from_continuity(
     )
     orchestration_scene["character_authority_labels"] = (
         scene_state.character_authority_labels.copy()
+    )
+    orchestration_scene["location_entry_slots"] = list(
+        getattr(scene_state, "location_entry_slots", []) or []
     )
     orchestration_scene["present_characters"] = scene_state.present_characters[:]
     orchestration_scene["offstage_characters"] = list(

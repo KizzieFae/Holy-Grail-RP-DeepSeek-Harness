@@ -63,9 +63,16 @@ Aligned with `autogen_rp/docs/architecture.md` RP audit order:
 
 ### Settled sleeping assignment re-litigation
 
-- **Continuity-owned resolved outcome first** — inspect `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["sleeping_surface"]` before editing prompt wording.
+- **Continuity-owned resolved outcome first** — inspect `resolved_outcome_registry.py`, `resolved_outcome_engine.py`, `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["sleeping_surface"]` before editing prompt wording. Identical-value reassertion surfaces as `no_op_existing_value`.
 - **Grounding projection second** — confirm `scene_grounding.py` reflects the active `assignment:sleeping_surface` outcome into SETTLED SCENE FACTS.
 - **Template slots / move field** — verify the scene exposes bounded `sleeping_surface_slots` and the structured move includes `scene_state_updates.sleeping_surface_assignment` only when the beat truly settles the assignment.
+
+### Settled housing-call re-litigation
+
+- **Continuity-owned resolved outcome first** — inspect `resolved_outcome_registry.py`, `resolved_outcome_engine.py`, `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["housing_call"]` before editing prompt wording. Identical-value repetition surfaces as `no_op_existing_value`.
+- **Grounding projection second** — confirm `scene_grounding.py` reflects the active `communication_state:housing_call` outcome into SETTLED SCENE FACTS.
+- **Move field discipline** — verify structured output uses only `scene_state_updates.housing_call_outcome` with terminal `status` values `completed` or `failed`, never planning or in-progress chatter.
+- **No lexical emission** — `compute_grounding_markers` does **not** add `communication_state:housing_call` on new turns; older sessions may still carry that marker on saved `PublicEvent` rows, which rebuild can read without conflicting with an active resolved outcome for the same slot.
 
 ### Audit output / regression analysis
 

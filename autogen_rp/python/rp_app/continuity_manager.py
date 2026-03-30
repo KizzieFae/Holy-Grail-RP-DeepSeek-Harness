@@ -45,8 +45,11 @@ from continuity_knowledge_helpers import (
     update_interpretations as update_interpretations_helper,
 )
 from continuity_resolved_outcomes import (
-    apply_sleeping_surface_outcome_updates,
+    apply_registered_resolved_outcome_updates,
+    build_housing_call_state_change,
+    build_location_entry_state_change,
     build_sleeping_surface_state_change,
+    build_suppressant_formulation_state_change,
 )
 from continuity_scene_helpers import (
     build_character_context,
@@ -247,6 +250,31 @@ class ContinuityManager:
             state_changes.append(sleeping_assignment_state_change)
             actionable_implications.append(
                 "Sleeping arrangement state may now be ready for continuity settlement."
+            )
+        housing_call_state_change = build_housing_call_state_change(move, self.scene_state)
+        if housing_call_state_change and housing_call_state_change not in state_changes:
+            state_changes.append(housing_call_state_change)
+            actionable_implications.append(
+                "Housing call outcome may now be ready for continuity settlement."
+            )
+        suppressant_formulation_state_change = (
+            build_suppressant_formulation_state_change(move, self.scene_state)
+        )
+        if (
+            suppressant_formulation_state_change
+            and suppressant_formulation_state_change not in state_changes
+        ):
+            state_changes.append(suppressant_formulation_state_change)
+            actionable_implications.append(
+                "Suppressant formulation state may now be ready for continuity settlement."
+            )
+        location_entry_state_change = build_location_entry_state_change(
+            move, self.scene_state
+        )
+        if location_entry_state_change and location_entry_state_change not in state_changes:
+            state_changes.append(location_entry_state_change)
+            actionable_implications.append(
+                "Location entry permission may now be ready for continuity settlement."
             )
 
         # Extract additional fields from move for significance calculation
@@ -734,16 +762,16 @@ class ContinuityManager:
             turn_consequences,
         )
 
-        resolved_outcome_debug = apply_sleeping_surface_outcome_updates(
+        resolved_outcome_debug = apply_registered_resolved_outcome_updates(
             manager=self,
             move=move,
             event=event,
             turn_consequences=turn_consequences,
             turn_index=turn_index,
         )
-        turn_consequences.setdefault("resolved_outcomes", {})[
-            "sleeping_surface"
-        ] = resolved_outcome_debug
+        turn_consequences.setdefault("resolved_outcomes", {}).update(
+            resolved_outcome_debug
+        )
 
         self._update_interpretations(
             acting_character, move, director_decision, other_characters, timestamp

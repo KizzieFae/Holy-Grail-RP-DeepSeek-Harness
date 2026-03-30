@@ -58,6 +58,20 @@ def test_compute_grounding_markers_no_sleeping_surface_marker_from_bunk_agreemen
     assert not any("sleeping_surface" in x for x in m)
 
 
+def test_compute_grounding_markers_no_lexical_housing_call_marker():
+    move = {
+        "dialogue": "Housing call is completed; res life sorted the paperwork.",
+        "action": "hung up the phone",
+        "motivation": {"goal": "close the housing thread", "risk_level": "low"},
+    }
+    detected = [
+        _det(ConsequenceCategory.COMMITMENT),
+        _det(ConsequenceCategory.AGREEMENT),
+    ]
+    m = compute_grounding_markers("Willow", move, detected)
+    assert not any("housing_call" in x for x in m)
+
+
 def test_compute_grounding_markers_phone():
     move = {
         "dialogue": "My phone is broken.",
@@ -204,6 +218,100 @@ def test_rebuild_prefers_active_resolved_outcome_over_old_marker_for_same_assign
     fact = out["facts"][0]
     assert fact["value"]["surface"] == "couch"
     assert fact["supersedes"] == "e1:0"
+
+
+def test_rebuild_projects_active_housing_call_resolved_outcome():
+    class M:
+        public_events = []
+        turn_counter = 3
+        resolved_outcomes = [
+            ResolvedOutcome(
+                outcome_id="resolved_communication_housing_call_scene_completed_e3",
+                category="communication_state",
+                key="housing_call",
+                subject_id="scene",
+                value={
+                    "status": "completed",
+                },
+                source_event_id="e3",
+                rule_id="communication.housing_call.completed.v1",
+                created_turn_index=3,
+                aspect_id="communication.housing_call",
+                slot_key="communication.housing_call::scene",
+            )
+        ]
+
+    out = rebuild_scene_grounding_from_continuity(M())
+    assert len(out["facts"]) == 1
+    fact = out["facts"][0]
+    assert fact["category"] == "communication_state"
+    assert fact["key"] == "housing_call"
+    assert fact["value"]["status"] == "completed"
+    assert fact["value_summary"] == "Housing call: completed"
+
+
+def test_rebuild_projects_active_suppressant_formulation_resolved_outcome():
+    class M:
+        public_events = []
+        turn_counter = 3
+        resolved_outcomes = [
+            ResolvedOutcome(
+                outcome_id="resolved_medical_suppressant_formulation_kizzie_incompatible_e3",
+                category="medical",
+                key="suppressant_formulation",
+                subject_id="Kizzie",
+                value={
+                    "status": "incompatible",
+                },
+                source_event_id="e3",
+                rule_id="medical.suppressant_formulation.incompatible.v1",
+                created_turn_index=3,
+                aspect_id="medical.suppressant_formulation",
+                slot_key="medical.suppressant_formulation::Kizzie",
+            )
+        ]
+
+    out = rebuild_scene_grounding_from_continuity(M())
+    assert len(out["facts"]) == 1
+    fact = out["facts"][0]
+    assert fact["category"] == "medical"
+    assert fact["key"] == "suppressant_formulation"
+    assert fact["value"]["subject"] == "Kizzie"
+    assert fact["value"]["status"] == "incompatible"
+    assert fact["value_summary"] == "Kizzie: suppressant formulation incompatible"
+
+
+def test_rebuild_projects_active_location_entry_resolved_outcome():
+    class M:
+        public_events = []
+        turn_counter = 3
+        resolved_outcomes = [
+            ResolvedOutcome(
+                outcome_id="resolved_access_location_entry_kizzie_clinic_room_denied_e3",
+                category="access",
+                key="location_entry",
+                subject_id="Kizzie",
+                value={
+                    "location_id": "clinic_room",
+                    "status": "denied",
+                },
+                source_event_id="e3",
+                rule_id="access.location_entry.denied.v1",
+                created_turn_index=3,
+                aspect_id="access.location_entry",
+                slot_key="access.location_entry::Kizzie::clinic_room",
+            )
+        ]
+
+    out = rebuild_scene_grounding_from_continuity(M())
+    assert len(out["facts"]) == 1
+    fact = out["facts"][0]
+    assert fact["category"] == "access"
+    assert fact["key"] == "location_entry"
+    assert fact["value"]["subject"] == "Kizzie"
+    assert fact["value"]["location"] == "clinic_room"
+    assert fact["value"]["status"] == "denied"
+    assert fact["value_summary"] == "Kizzie: clinic room entry denied"
 
 
 def test_cap_facts(monkeypatch):

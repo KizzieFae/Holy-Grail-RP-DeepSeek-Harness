@@ -1,149 +1,193 @@
-import re
+"""Resolved outcomes from structured move fields (registry-backed facets)."""
+
+from __future__ import annotations
+
 from typing import Any
 
-from continuity_state import IssueStatus, ResolvedOutcome
+from resolved_outcome_engine import apply_registered_resolved_outcomes
+from resolved_outcome_registry import (
+    ACCESS_LOCATION_ENTRY_ALLOWED_RULE_ID,
+    ACCESS_LOCATION_ENTRY_ASPECT_ID,
+    ACCESS_LOCATION_ENTRY_DENIED_RULE_ID,
+    COMMUNICATION_HOUSING_CALL_ASPECT_ID,
+    FALLBACK_SLEEPING_SURFACE_IDS,
+    MEDICAL_SUPPRESSANT_FORMULATION_ASPECT_ID,
+    LODGING_SLEEP_SURFACE_ASPECT_ID,
+    HOUSING_CALL_COMPLETED_RULE_ID,
+    HOUSING_CALL_FAILED_RULE_ID,
+    SUPPRESSANT_FORMULATION_COMPATIBLE_RULE_ID,
+    SUPPRESSANT_FORMULATION_INCOMPATIBLE_RULE_ID,
+    SLEEPING_SURFACE_CONSEQUENCE_RULE_ID,
+    SLEEPING_SURFACE_ISSUE_PREFIX,
+    SLEEPING_SURFACE_ISSUE_RULE_ID,
+    get_valid_sleeping_surface_ids,
+    get_valid_location_entry_ids,
+    parse_housing_call_outcome_candidates,
+    parse_lodging_sleep_surface_candidates,
+    parse_location_entry_outcome_candidates,
+    parse_suppressant_formulation_outcome_candidates,
+)
 
-FALLBACK_SLEEPING_SURFACE_IDS = frozenset({"floor", "couch", "cot", "unassigned"})
-SLEEPING_SURFACE_ISSUE_RULE_ID = "assignment.sleeping_surface.issue_resolved.v1"
-SLEEPING_SURFACE_CONSEQUENCE_RULE_ID = "assignment.sleeping_surface.consequence.v1"
-SLEEPING_SURFACE_ISSUE_PREFIX = "seed_sleeping_surface_assignment_"
-
-
-def get_valid_sleeping_surface_ids(scene_state: Any) -> set[str]:
-    if isinstance(scene_state, dict):
-        slots = scene_state.get("sleeping_surface_slots", [])
-    else:
-        slots = getattr(scene_state, "sleeping_surface_slots", []) if scene_state else []
-    valid = {str(item).strip() for item in slots if str(item or "").strip()}
-    valid.update(FALLBACK_SLEEPING_SURFACE_IDS)
-    return valid
+__all__ = [
+    "FALLBACK_SLEEPING_SURFACE_IDS",
+    "ACCESS_LOCATION_ENTRY_ALLOWED_RULE_ID",
+    "ACCESS_LOCATION_ENTRY_DENIED_RULE_ID",
+    "SLEEPING_SURFACE_ISSUE_RULE_ID",
+    "SLEEPING_SURFACE_CONSEQUENCE_RULE_ID",
+    "SLEEPING_SURFACE_ISSUE_PREFIX",
+    "LODGING_SLEEP_SURFACE_ASPECT_ID",
+    "COMMUNICATION_HOUSING_CALL_ASPECT_ID",
+    "MEDICAL_SUPPRESSANT_FORMULATION_ASPECT_ID",
+    "ACCESS_LOCATION_ENTRY_ASPECT_ID",
+    "HOUSING_CALL_COMPLETED_RULE_ID",
+    "HOUSING_CALL_FAILED_RULE_ID",
+    "SUPPRESSANT_FORMULATION_COMPATIBLE_RULE_ID",
+    "SUPPRESSANT_FORMULATION_INCOMPATIBLE_RULE_ID",
+    "get_valid_sleeping_surface_ids",
+    "get_valid_location_entry_ids",
+    "extract_sleeping_surface_candidates",
+    "extract_housing_call_outcome_candidates",
+    "extract_suppressant_formulation_outcome_candidates",
+    "extract_location_entry_outcome_candidates",
+    "build_sleeping_surface_state_change",
+    "build_housing_call_state_change",
+    "build_suppressant_formulation_state_change",
+    "build_location_entry_state_change",
+    "apply_registered_resolved_outcome_updates",
+    "apply_sleeping_surface_outcome_updates",
+    "apply_housing_call_outcome_updates",
+    "apply_suppressant_formulation_outcome_updates",
+    "apply_location_entry_outcome_updates",
+]
 
 
 def extract_sleeping_surface_candidates(
     move: dict[str, Any], scene_state: Any
 ) -> tuple[list[dict[str, str]], str]:
-    if not isinstance(move, dict):
-        return [], "no_candidate"
-    updates = move.get("scene_state_updates", {})
-    if not isinstance(updates, dict):
-        return [], "no_candidate"
-
-    raw_candidates: list[Any] = []
-    for key in ("sleeping_surface_assignment", "sleeping_surface_assignments"):
-        raw = updates.get(key)
-        if isinstance(raw, dict):
-            raw_candidates.append(raw)
-        elif isinstance(raw, list):
-            raw_candidates.extend(raw)
-
-    if not raw_candidates:
-        return [], "no_candidate"
-
-    valid_surface_ids = get_valid_sleeping_surface_ids(scene_state)
-    normalized: list[dict[str, str]] = []
-    saw_invalid_surface = False
-    for raw in raw_candidates:
-        if not isinstance(raw, dict):
-            continue
-        assignee_id = str(
-            raw.get("assignee_id", raw.get("assignee", "")) or ""
-        ).strip()
-        surface_id = str(raw.get("surface_id", raw.get("surface", "")) or "").strip()
-        if not assignee_id or not surface_id:
-            continue
-        if surface_id not in valid_surface_ids:
-            saw_invalid_surface = True
-            continue
-        candidate = {
-            "assignee_id": assignee_id,
-            "surface_id": surface_id,
-        }
-        if candidate not in normalized:
-            normalized.append(candidate)
-
-    if normalized:
-        return normalized, ""
-    if saw_invalid_surface:
-        return [], "invalid_surface_id"
-    return [], "no_candidate"
+    """Backward-compatible dict list for consequence classifier; ingest is registry-owned."""
+    normalized, reason = parse_lodging_sleep_surface_candidates(move, scene_state)
+    if not normalized:
+        return [], reason
+    return (
+        [
+            {
+                "assignee_id": c.subject_id,
+                "surface_id": str(c.value.get("surface_id", "") or ""),
+            }
+            for c in normalized
+        ],
+        "",
+    )
 
 
 def build_sleeping_surface_state_change(move: dict[str, Any], scene_state: Any) -> str:
-    candidates, _ = extract_sleeping_surface_candidates(move, scene_state)
-    if len(candidates) != 1:
+    normalized, _ = parse_lodging_sleep_surface_candidates(move, scene_state)
+    if len(normalized) != 1:
         return ""
-    candidate = candidates[0]
+    c = normalized[0]
     return (
-        f"{candidate['assignee_id']} sleeping assignment set to "
-        f"{candidate['surface_id']}."
+        f"{c.subject_id} sleeping assignment set to "
+        f"{c.value.get('surface_id', '')}."
     )
 
 
-def _is_sleeping_surface_issue(issue: Any) -> bool:
-    issue_id = str(getattr(issue, "issue_id", "") or "")
-    if issue_id.startswith(SLEEPING_SURFACE_ISSUE_PREFIX):
-        return True
-    text_parts = [
-        str(getattr(issue, "description", "") or ""),
-        *(str(item) for item in getattr(issue, "resolution_signals", []) or []),
-        *(str(item) for item in getattr(issue, "escalation_signals", []) or []),
-    ]
-    blob = " ".join(text_parts).lower()
-    return any(
-        token in blob
-        for token in ("sleep", "bunk", "bed", "couch", "cot", "floor", "roommate")
+def extract_housing_call_outcome_candidates(
+    move: dict[str, Any], scene_state: Any
+) -> tuple[list[dict[str, str]], str]:
+    normalized, reason = parse_housing_call_outcome_candidates(move, scene_state)
+    if not normalized:
+        return [], reason
+    return ([{"status": str(c.value.get("status", "") or "")} for c in normalized], "")
+
+
+def build_housing_call_state_change(move: dict[str, Any], scene_state: Any) -> str:
+    normalized, _ = parse_housing_call_outcome_candidates(move, scene_state)
+    if len(normalized) != 1:
+        return ""
+    status = str(normalized[0].value.get("status", "") or "")
+    if not status:
+        return ""
+    return f"Housing call status set to {status}."
+
+
+def extract_suppressant_formulation_outcome_candidates(
+    move: dict[str, Any], scene_state: Any
+) -> tuple[list[dict[str, str]], str]:
+    normalized, reason = parse_suppressant_formulation_outcome_candidates(
+        move, scene_state
+    )
+    if not normalized:
+        return [], reason
+    return (
+        [
+            {
+                "subject_id": c.subject_id,
+                "status": str(c.value.get("status", "") or ""),
+            }
+            for c in normalized
+        ],
+        "",
     )
 
 
-def _find_resolved_sleeping_surface_issue_id(manager: Any, turn_index: int) -> str | None:
-    matches = [
-        str(issue.issue_id)
-        for issue in getattr(manager, "issues", {}).values()
-        if getattr(issue, "status", None) == IssueStatus.RESOLVED
-        and getattr(issue, "last_turn_index", None) == turn_index
-        and _is_sleeping_surface_issue(issue)
-    ]
-    if not matches:
-        return None
-    return sorted(matches)[0]
-
-
-def _has_strong_sleeping_surface_consequence(consequence_tags: set[str]) -> bool:
-    tags = {str(item or "").strip() for item in consequence_tags if str(item or "").strip()}
-    if "refusal" in tags:
-        return False
-    if {"commitment", "plan_committed", "decision_made"}.intersection(tags):
-        return True
-    return "agreement" in tags
-
-
-def _find_active_sleeping_surface_outcome(
-    manager: Any, assignee_id: str
-) -> ResolvedOutcome | None:
-    for outcome in reversed(getattr(manager, "resolved_outcomes", [])):
-        if (
-            outcome.category == "assignment"
-            and outcome.key == "sleeping_surface"
-            and outcome.subject_id == assignee_id
-            and outcome.status == "active"
-        ):
-            return outcome
-    return None
-
-
-def _normalize_outcome_fragment(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", str(value or "").lower()).strip("_") or "x"
-
-
-def _build_outcome_id(
-    assignee_id: str, surface_id: str, turn_index: int, source_event_id: str
+def build_suppressant_formulation_state_change(
+    move: dict[str, Any], scene_state: Any
 ) -> str:
-    event_fragment = _normalize_outcome_fragment(source_event_id or f"turn_{turn_index}")
-    assignee_fragment = _normalize_outcome_fragment(assignee_id)
-    surface_fragment = _normalize_outcome_fragment(surface_id)
+    normalized, _ = parse_suppressant_formulation_outcome_candidates(move, scene_state)
+    if len(normalized) != 1:
+        return ""
+    c = normalized[0]
+    status = str(c.value.get("status", "") or "")
+    if not c.subject_id or not status:
+        return ""
+    return f"{c.subject_id} suppressant formulation set to {status}."
+
+
+def extract_location_entry_outcome_candidates(
+    move: dict[str, Any], scene_state: Any
+) -> tuple[list[dict[str, str]], str]:
+    normalized, reason = parse_location_entry_outcome_candidates(move, scene_state)
+    if not normalized:
+        return [], reason
     return (
-        f"resolved_assignment_sleeping_surface_{assignee_fragment}_"
-        f"{surface_fragment}_{event_fragment}"
+        [
+            {
+                "subject_id": c.subject_id,
+                "location_id": str(c.value.get("location_id", "") or ""),
+                "status": str(c.value.get("status", "") or ""),
+            }
+            for c in normalized
+        ],
+        "",
+    )
+
+
+def build_location_entry_state_change(move: dict[str, Any], scene_state: Any) -> str:
+    normalized, _ = parse_location_entry_outcome_candidates(move, scene_state)
+    if len(normalized) != 1:
+        return ""
+    c = normalized[0]
+    location_id = str(c.value.get("location_id", "") or "")
+    status = str(c.value.get("status", "") or "")
+    if not c.subject_id or not location_id or not status:
+        return ""
+    return f"{c.subject_id} entry to {location_id} set to {status}."
+
+
+def apply_registered_resolved_outcome_updates(
+    *,
+    manager: Any,
+    move: dict[str, Any],
+    event: Any,
+    turn_consequences: dict[str, Any],
+    turn_index: int,
+) -> dict[str, dict[str, Any]]:
+    return apply_registered_resolved_outcomes(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
     )
 
 
@@ -155,94 +199,61 @@ def apply_sleeping_surface_outcome_updates(
     turn_consequences: dict[str, Any],
     turn_index: int,
 ) -> dict[str, Any]:
-    candidates, reason = extract_sleeping_surface_candidates(move, getattr(manager, "scene_state", None))
-    debug: dict[str, Any] = {
-        "candidate": candidates[0] if len(candidates) == 1 else None,
-        "candidate_source": None,
-        "decision": "none",
-        "reason": reason or "no_candidate",
-        "outcome_id": None,
-        "supersedes_outcome_id": None,
-        "issue_id": None,
-    }
-    if not candidates:
-        return debug
+    return apply_registered_resolved_outcome_updates(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
+    ).get("sleeping_surface", {"reason": "no_candidate", "decision": "none"})
 
-    if len(candidates) > 1:
-        assignee_to_surface: dict[str, str] = {}
-        for candidate in candidates:
-            assignee_id = candidate["assignee_id"]
-            surface_id = candidate["surface_id"]
-            previous_surface = assignee_to_surface.get(assignee_id)
-            if previous_surface and previous_surface != surface_id:
-                debug["reason"] = "competing_same_turn_assignment"
-                return debug
-            assignee_to_surface[assignee_id] = surface_id
-        debug["reason"] = "multiple_candidates_unsupported"
-        return debug
 
-    candidate = candidates[0]
-    assignee_id = candidate["assignee_id"]
-    surface_id = candidate["surface_id"]
-    consequence_tags = {
-        str(item) for item in turn_consequences.get("tags", []) if str(item).strip()
-    }
-    issue_id = _find_resolved_sleeping_surface_issue_id(manager, turn_index)
-    if issue_id:
-        debug["candidate_source"] = "issue_resolution"
-        debug["issue_id"] = issue_id
-        rule_id = SLEEPING_SURFACE_ISSUE_RULE_ID
-    elif _has_strong_sleeping_surface_consequence(consequence_tags):
-        debug["candidate_source"] = "consequence"
-        rule_id = SLEEPING_SURFACE_CONSEQUENCE_RULE_ID
-    else:
-        debug["reason"] = "weak_signal"
-        return debug
+def apply_housing_call_outcome_updates(
+    *,
+    manager: Any,
+    move: dict[str, Any],
+    event: Any,
+    turn_consequences: dict[str, Any],
+    turn_index: int,
+) -> dict[str, Any]:
+    return apply_registered_resolved_outcome_updates(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
+    ).get("housing_call", {"reason": "no_candidate", "decision": "none"})
 
-    active = _find_active_sleeping_surface_outcome(manager, assignee_id)
-    if surface_id == "unassigned":
-        if active is None:
-            debug["reason"] = "no_active_outcome_to_revoke"
-            return debug
-        active.status = "revoked"
-        active.revoked_turn_index = turn_index
-        debug["decision"] = "revoked"
-        debug["reason"] = "revoked_unassigned"
-        debug["outcome_id"] = active.outcome_id
-        return debug
 
-    if active is not None and active.value.get("surface_id") == surface_id:
-        debug["reason"] = "same_assignment_already_active"
-        debug["outcome_id"] = active.outcome_id
-        return debug
+def apply_suppressant_formulation_outcome_updates(
+    *,
+    manager: Any,
+    move: dict[str, Any],
+    event: Any,
+    turn_consequences: dict[str, Any],
+    turn_index: int,
+) -> dict[str, Any]:
+    return apply_registered_resolved_outcome_updates(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
+    ).get("suppressant_formulation", {"reason": "no_candidate", "decision": "none"})
 
-    source_event_id = str(getattr(event, "event_id", "") or "")
-    outcome = ResolvedOutcome(
-        outcome_id=_build_outcome_id(assignee_id, surface_id, turn_index, source_event_id),
-        category="assignment",
-        key="sleeping_surface",
-        subject_id=assignee_id,
-        value={
-            "assignee_id": assignee_id,
-            "surface_id": surface_id,
-        },
-        status="active",
-        source_event_id=source_event_id,
-        source_issue_id=issue_id,
-        rule_id=rule_id,
-        supersedes_outcome_id=active.outcome_id if active is not None else None,
-        created_turn_index=turn_index,
-    )
-    if active is not None:
-        active.status = "superseded"
-        active.superseded_turn_index = turn_index
-    getattr(manager, "resolved_outcomes", []).append(outcome)
-    debug["decision"] = "superseded" if active is not None else "promoted"
-    debug["reason"] = (
-        "superseded_by_reassignment" if active is not None else (
-            "promoted_issue_resolution" if issue_id else "promoted_consequence"
-        )
-    )
-    debug["outcome_id"] = outcome.outcome_id
-    debug["supersedes_outcome_id"] = outcome.supersedes_outcome_id
-    return debug
+
+def apply_location_entry_outcome_updates(
+    *,
+    manager: Any,
+    move: dict[str, Any],
+    event: Any,
+    turn_consequences: dict[str, Any],
+    turn_index: int,
+) -> dict[str, Any]:
+    return apply_registered_resolved_outcome_updates(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
+    ).get("location_entry", {"reason": "no_candidate", "decision": "none"})

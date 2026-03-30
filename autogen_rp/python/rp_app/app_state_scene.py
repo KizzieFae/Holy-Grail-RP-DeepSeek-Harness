@@ -331,6 +331,11 @@ def apply_scene_setup_to_scene_state(
         for item in scene_setup.get("sleeping_surface_slots", [])
         if str(item or "").strip()
     ]
+    scene_state.location_entry_slots = [
+        str(item)
+        for item in scene_setup.get("location_entry_slots", [])
+        if str(item or "").strip()
+    ]
     must_remain = get_must_remain_characters_fn(scene_state.to_dict())
     for character_name in must_remain:
         if character_name not in scene_state.present_characters:
@@ -423,4 +428,5 @@ def resolve_scene_template_setup(
         "character_presence_constraints": character_presence_constraints,
         "character_authority_labels": character_authority_labels,
         "sleeping_surface_slots": list(template.sleeping_surface_slots),
+        "location_entry_slots": list(template.location_entry_slots),
     }, ""

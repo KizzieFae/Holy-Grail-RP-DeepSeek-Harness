@@ -412,6 +412,11 @@ def build_character_turn_prompt(
     scene_template_context = {
         "template_id": str(scene_state.get("scene_template_id", "") or ""),
         "premise": str(scene_state.get("scene_premise", "") or ""),
+        "location_entry_slots": [
+            str(item)
+            for item in scene_state.get("location_entry_slots", [])
+            if str(item or "").strip()
+        ],
     }
     relationship_focus_names, relationship_secondary_names = (
         _select_relationship_prompt_names(
