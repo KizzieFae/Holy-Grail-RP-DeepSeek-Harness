@@ -15,6 +15,7 @@ def _merge_character_audit_metadata(
             "stall_score": progression_advisory.get("stall_score"),
             "progression_pressure": progression_advisory.get("progression_pressure"),
             "recommended_channels": progression_advisory.get("recommended_channels"),
+            "note": progression_advisory.get("note"),
             "stall_components": progression_advisory.get("stall_components"),
         }
     if anti_regression_advisory:

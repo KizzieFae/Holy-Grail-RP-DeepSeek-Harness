@@ -454,6 +454,7 @@ async def choose_next_actor(
                         "recommended_channels": progression_advisory_snapshot.get(
                             "recommended_channels"
                         ),
+                        "note": progression_advisory_snapshot.get("note"),
                         "stall_components": progression_advisory_snapshot.get(
                             "stall_components"
                         ),
