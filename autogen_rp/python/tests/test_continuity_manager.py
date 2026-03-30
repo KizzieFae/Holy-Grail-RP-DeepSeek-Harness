@@ -838,6 +838,52 @@ def test_suppressant_formulation_tracks_subject_slots_independently() -> None:
     assert len(facts) == 2
 
 
+def test_suppressant_formulation_applies_multiple_subjects_from_one_move() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Clinic room",
+        opening_description="Two formulation rulings are stated in the same beat.",
+        present_characters=["Kizzie", "Harley_Quinn", "Celina"],
+    )
+
+    manager.process_turn(
+        acting_character="Celina",
+        move={
+            "action": "checks both charts and gives two quick rulings",
+            "dialogue": (
+                "Kizzie's current suppressant formulation is incompatible. "
+                "Harley's current suppressant formulation is compatible."
+            ),
+            "motivation": {
+                "goal": "settle both compatibility questions at once",
+                "tactic": "state both current formulation fits clearly",
+                "emotional_driver": "resolve",
+                "risk_level": "medium",
+            },
+            "scene_state_updates": {
+                "suppressant_formulation_outcome": [
+                    {"subject_id": "Kizzie", "status": "incompatible"},
+                    {"subject_id": "Harley_Quinn", "status": "compatible"},
+                ]
+            },
+        },
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie", "Harley_Quinn"],
+        timestamp=datetime.fromisoformat("2026-03-29T12:21:30"),
+    )
+
+    active = [o for o in manager.resolved_outcomes if o.status == "active"]
+    assert len(active) == 2
+    assert {(o.subject_id, o.value["status"]) for o in active} == {
+        ("Kizzie", "incompatible"),
+        ("Harley_Quinn", "compatible"),
+    }
+    assert {o.slot_key for o in active} == {
+        "medical.suppressant_formulation::Kizzie",
+        "medical.suppressant_formulation::Harley_Quinn",
+    }
+
+
 def test_location_entry_promotes_structured_permission_state() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(
