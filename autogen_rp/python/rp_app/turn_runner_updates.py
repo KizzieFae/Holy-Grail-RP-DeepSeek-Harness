@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from anti_regression_advisory import (
@@ -11,6 +12,8 @@ from beat_shift_state import (
 )
 from scene_grounding import rebuild_scene_grounding_from_continuity
 from turn_runner_audit import log_narrator_render_audit, write_turn_audit_artifacts
+
+logger = logging.getLogger(__name__)
 
 
 def apply_successful_turn_updates(
@@ -106,14 +109,20 @@ def apply_successful_turn_updates(
                 if "arrival" in consequences:
                     presence_changes.append({"character": next_actor, "change": "entry"})
         except Exception:
-            pass
+            logger.exception(
+                "Post-turn continuity update failed for actor %s", next_actor
+            )
+            raise
 
         try:
             st_module.session_state["scene_grounding"] = (
                 rebuild_scene_grounding_from_continuity(continuity_manager)
             )
         except Exception:
-            pass
+            logger.exception(
+                "Scene grounding rebuild failed after actor %s turn", next_actor
+            )
+            raise
 
     log_narrator_render_audit(
         continuity_manager=continuity_manager,
