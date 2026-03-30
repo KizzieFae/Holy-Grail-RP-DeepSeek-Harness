@@ -1,6 +1,6 @@
 # Scene Grounding Layer (MVP) — Technical Specification
 
-**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). `assignment:sleeping_surface` may now project from a continuity-owned resolved outcome seam; other keys still rely on deterministic markers until extended.  
+**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`.  
 **Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8.  
 **Placement:** Derived **after** continuity updates per turn, consumed **before** LLM calls in the packaging/prompt path.
 
@@ -45,7 +45,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 | Field | Type | Required | Notes |
 |-------|------|----------|--------|
 | `fact_id` | `string` | yes | Stable id: deterministic hash of `(category, key, scene_id, promotion_seq)` or **continuity source event id** when present. |
-| `category` | `enum` | yes | One of: `assignment`, `object_state`, `medical_status`, `communication_state`. |
+| `category` | `enum` | yes | One of: `assignment`, `object_state`, `medical_status`, `medical`, `communication_state`, `access`. |
 | `key` | `string` | yes | **Allowlisted** per category (see §3.3). |
 | `value` | `object` | yes | Category-specific **closed** shape (§3.3). **No** unbounded prose in v1. |
 | `value_summary` | `string` | yes | **Single line**, ≤ 120 chars, **deterministically formatted** from `value` (for prompts). Not an LLM summary. |
@@ -78,14 +78,26 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 | `omega_suppressants` | `{ "subject": "<participant_id>", "formulation": "wrong_for_physiology" \| "standard" \| "unknown" }` | `Kizzie: suppressants wrong for physiology` |
 | `injury` | `{ "subject": "<participant_id>", "kind": "burn" \| "other", "severity": "mild" \| "moderate" \| "severe" \| "resolved" }` | Only when structured signal exists. |
 
-#### D. `communication_state` — calls, messages, institutional contact
+#### D. `medical` — resolved medical compatibility states
+
+| `key` | `value` shape | Example |
+|-------|---------------|---------|
+| `suppressant_formulation` | `{ "subject": "<participant_id>", "status": "compatible" \| "incompatible" }` | `Kizzie: suppressant formulation incompatible` |
+
+#### E. `communication_state` — calls, messages, institutional contact
 
 | `key` | `value` shape | Example |
 |-------|---------------|---------|
 | `housing_call` | `{ "status": "not_started" \| "in_progress" \| "completed" \| "failed" }` | `Housing call: completed` |
 | `external_message` | `{ "channel": string_enum, "status": "sent" \| "received" \| "pending" }` | **MVP:** use only if continuity exposes it. |
 
-**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. **Current V1 resolved-outcome seam:** `assignment:sleeping_surface` only; do not treat it as a general second state system.
+#### F. `access` — resolved location permission states
+
+| `key` | `value` shape | Example |
+|-------|---------------|---------|
+| `location_entry` | `{ "subject": "<participant_id>", "location": "<bounded_location_id>", "status": "allowed" \| "denied" }` | `Kizzie: clinic room entry denied` |
+
+**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`; do not treat it as a general second state system.
 
 ---
 
@@ -96,7 +108,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 1. **Structured continuity outputs** after `ContinuityManager` (or equivalent) processes a turn:
    - `PublicEvent` / event summaries with **typed** `event_type` or tags (existing or **new narrow types** — extraction improvement track).
    - **Issue** lifecycle transitions (e.g. resolved + linked template → promote “call completed”).
-   - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **V1:** `assignment:sleeping_surface` only.
+   - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **Current coverage:** `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`.
 2. **`DetectedConsequence` + `ConsequenceCategory`** from `continuity_consequence_classifier` (deterministic):
    - e.g. `DECISION_MADE`, `AGREEMENT`, `COMMITMENT` **when** paired with **rule rows** that map (category + optional template_id + optional tag) → `SceneFact` patch.
 3. **Explicit system signals** (optional, rare):

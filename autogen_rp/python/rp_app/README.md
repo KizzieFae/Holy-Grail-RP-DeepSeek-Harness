@@ -228,7 +228,7 @@ the character prompt without being intentionally summarized away.
 
 ## Character Move Format
 
-Character agents are prompted to return JSON with core `action`, `dialogue`, and `motivation` fields, plus an optional sleeping-surface assignment update when the acting speaker settles that assignment in their own move:
+Character agents are prompted to return JSON with core `action`, `dialogue`, and `motivation` fields, plus optional `scene_state_updates` for the currently supported resolved-outcome aspects when the acting speaker settles them in their own move:
 
 ```json
 {
@@ -264,6 +264,37 @@ For terminal housing / res-life contact, you may instead emit:
 ```
 
 Only emit `scene_state_updates.housing_call_outcome` when the acting speaker is explicitly settling the shared housing call by making it `completed` or `failed` in that turn. Do not emit it for planning, attempting, dialing, waiting on hold, or asking whether someone called.
+
+For current suppressant formulation compatibility settlement, you may instead emit:
+
+```json
+{
+  "scene_state_updates": {
+    "suppressant_formulation_outcome": {
+      "subject_id": "Kizzie",
+      "status": "incompatible"
+    }
+  }
+}
+```
+
+Only emit `scene_state_updates.suppressant_formulation_outcome` when the acting speaker is explicitly settling whether a named subject's current suppressant formulation is `compatible` or `incompatible` in that turn. Do not emit it for symptoms alone, suspicion, diagnosis, dosage changes, treatment planning, or historical formulations.
+
+For current location entry permission settlement, you may instead emit:
+
+```json
+{
+  "scene_state_updates": {
+    "location_entry_outcome": {
+      "subject_id": "Kizzie",
+      "location_id": "clinic_room",
+      "status": "allowed"
+    }
+  }
+}
+```
+
+Only emit `scene_state_updates.location_entry_outcome` when the acting speaker explicitly settles a named subject's current permission to enter one bounded location in that turn. Do not emit it for requests, predictions, preferences, blocked paths, locked doors, physical obstruction, or partial/conditional permission.
 
 Older `intent`-style outputs are still mapped into the new `motivation` structure for compatibility.
 

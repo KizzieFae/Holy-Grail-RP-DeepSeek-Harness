@@ -30,14 +30,14 @@ Director turn metadata may include **`anti_regression_advisory`**: **`active`** 
 
 ### Scene Grounding (MVP) in audits
 
-When implemented, audits may record a compact **`scene_grounding`** snapshot (or **`scene_grounding_summary`**) per relevant turn: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This is **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).
+Audits may record a compact **`scene_grounding`** snapshot (or **`scene_grounding_summary`**) per relevant turn: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This is **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).
 
 **What to verify in audits**
 
 - After a turn where continuity established a settled logistic (e.g. bunk assignment), the next turn’s **Director/character** audit payload should show the **SETTLED SCENE FACTS** block (or metadata proving injection).
 - **No drift** between **continuity event** and **grounding** for the same key: if promotion rules fired, `source.ref` should tie to the continuity artifact.
 - **Cap behavior:** fact count ≤ configured maximum; pruning should be visible if many keys compete.
-- **Scene end:** grounding snapshot should be **empty** or **absent** on the next scene’s first turn after implementation clears state.
+- **Scene end:** grounding snapshot should be **empty** or **absent** on the next scene’s first turn after grounding state clears.
 
 ## Directory Structure
 

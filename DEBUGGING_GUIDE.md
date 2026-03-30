@@ -18,7 +18,7 @@ How to **approach problems** in the Holy Grail RP runtime without fixing the wro
 Aligned with `autogen_rp/docs/architecture.md` RP audit order:
 
 1. **Continuity extraction and state** — Are events, issues, and scene snapshot correct after the turn? (`continuity_manager.py`, `continuity_*_helpers.py`)
-2. **Scene grounding (when implemented)** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? (`scene_grounding.py`, `prompt_builders.py` formatting only after 1 looks sane)
+2. **Scene grounding** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? (`scene_grounding.py`, `prompt_builders.py` formatting only after 1 looks sane)
 3. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
 4. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after 1–3 look sane)
 5. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`)

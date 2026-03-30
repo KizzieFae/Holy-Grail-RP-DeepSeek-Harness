@@ -52,7 +52,7 @@ PRD alignment: vector retrieval is for **similarity and suggestions**, not autho
 - **Characters:** JSON **cards** in `python/data/autogen_characters/`; loaded by `character_loader.py`; agents created via `model_client.py`.
 - **Scenes:** Streamlit-driven; **scene templates** in `python/data/scene_templates/`; openers optional via `scene_opener.py` / `scene_template.py`.
 - **State:** `ContinuityManager` and related types hold structured scene, issue, event, and interpretation state (see `continuity_manager.py`, `continuity_state.py`).
-- **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`). **Scene Grounding (MVP, planned):** after continuity commit, derive a capped **settled facts** block for Director/character prompts — [PRD](./Holy%20Grail%20PRD.md) §5.8, [technical spec](./autogen_rp/docs/scene-grounding-layer.md).
+- **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`). **Scene Grounding (MVP):** after continuity commit, derive a capped **settled facts** block for Director/character prompts — [PRD](./Holy%20Grail%20PRD.md) §5.8, [technical spec](./autogen_rp/docs/scene-grounding-layer.md).
 - **Orchestration:** Final speaker resolution combines address, continuation override, Director, validation/reconciliation (PRD §5.3); implemented in `orchestration_helpers.py` and turn pipeline.
 
 Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architecture.md`.
@@ -79,7 +79,7 @@ Roadmap tasks: `autogen_rp/python/RP_SETUP_TODO.md` (packet layer section).
 
 ## How to approach problems
 
-Prefer **continuity → scene grounding (when implemented) → orchestration → summaries → validation → Director → Narrator** before changing prompt copy. Use the **symptom → file** table in [MODULE_INDEX.md](./MODULE_INDEX.md) for a quick entry point, and [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for full rules, per-symptom notes, and persistence/audit pointers.
+Prefer **continuity → scene grounding → orchestration → summaries → validation → Director → Narrator** before changing prompt copy. Use the **symptom → file** table in [MODULE_INDEX.md](./MODULE_INDEX.md) for a quick entry point, and [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) for full rules, per-symptom notes, and persistence/audit pointers.
 
 ---
 

@@ -177,18 +177,12 @@ This roadmap reflects the correct execution order:
 - [ ] Character behavior remains consistent
 - [ ] **No continuity corruption** (advisory remains non-authoritative)
 
-## F. Scene Grounding Layer (MVP) — implementation & validation
+## F. Scene Grounding Layer (MVP) — validation
 
 **Product:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8  
 **Technical spec:** [autogen_rp/docs/scene-grounding-layer.md](../docs/scene-grounding-layer.md)
 
-**Implementation order (when ready — follow technical spec):**
-
-- [ ] Schema + `scene_grounding` session persistence + clear on scene end
-- [ ] Promotion rules (initial allowlisted keys only) + unit tests
-- [ ] Deterministic prompt block + Director / character injection (`prompt_builders` path)
-- [ ] Invalidation / supersession + cap pruning + tests
-- [ ] Narrow continuity extraction hooks (structured signals only; no LLM classification)
+**Current baseline:** Scene grounding is already implemented in the current validation/stabilization phase. Use the technical spec and the checks below to validate the existing read-only grounding path rather than treating it as future implementation work.
 
 **Validation:**
 
