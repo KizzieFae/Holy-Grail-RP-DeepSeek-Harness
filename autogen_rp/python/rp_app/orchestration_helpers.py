@@ -1,10 +1,6 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 from beat_shift_state import default_pending_beat_shift, ensure_beat_shift_fields
-from progression_pressure import (
-    default_progression_pressure_state,
-    ensure_progression_pressure_state,
-)
 from summary_audit_helpers import build_summary_block_audit_metadata
 
 _CONTINUATION_SUPERSEDING_TAGS = {
@@ -46,7 +42,6 @@ def build_default_orchestration_state() -> dict[str, Any]:
         "director_decisions": [],
         "pending_beat_shift": default_pending_beat_shift(),
         "beat_shift_scene_snapshots": [],
-        "progression_pressure": default_progression_pressure_state(),
     }
 
 
@@ -61,7 +56,6 @@ def ensure_orchestration_state(team_state: dict[str, Any] | None) -> dict[str, A
     state.setdefault("director_decisions", [])
     state.setdefault("scene_state", build_default_orchestration_state()["scene_state"])
     ensure_beat_shift_fields(state)
-    ensure_progression_pressure_state(state)
     return state
 
 
@@ -326,78 +320,49 @@ def _has_weak_repetition_signal(
     return not consequences and not issue_updates and not presence_changes
 
 
-def _tier_rank(tier: str) -> int:
-    clean = str(tier or "").strip().lower()
-    if clean == "forcing":
-        return 3
-    if clean == "escalating":
-        return 2
-    if clean == "unstable":
-        return 1
-    return 0
-
-
-def _actor_progression_pressure_profile(
+def assign_progression_band_for_actor(
     *,
     actor: str,
+    available_actors: list[str],
     active_issues: list[dict[str, Any]],
-    orchestration_state: dict[str, Any],
-) -> dict[str, Any]:
+    recent_structured_moves: list[dict[str, Any]],
+) -> Literal["high", "med", "low"]:
+    """Assign HIGH/MED/LOW using only approved structural signals.
+
+    Momentum and weak repetition signals must be neutral when outcome fields are missing.
+    """
+
     actor = str(actor or "").strip()
     if not actor:
-        return {
-            "actor": "",
-            "tier_rank": 0,
-            "debt": 0,
-            "is_dominant": False,
-            "issue_count": 0,
-        }
-    progression = (
-        orchestration_state.get("progression_pressure", {})
-        if isinstance(orchestration_state, dict)
-        else {}
+        return "med"
+
+    statuses = _get_actor_issue_statuses(actor=actor, active_issues=active_issues)
+    in_escalating = "escalating" in statuses
+    in_active = "active" in statuses
+    in_actionable = in_escalating or in_active
+
+    last_move = _find_last_move_for_actor(
+        recent_structured_moves=recent_structured_moves,
+        actor=actor,
     )
-    issue_debt = (
-        progression.get("issue_progression_debt", {})
-        if isinstance(progression.get("issue_progression_debt", {}), dict)
-        else {}
+    momentum_signal = _has_momentum_signal(last_move=last_move)
+    repetition_signal = _has_weak_repetition_signal(last_move=last_move)
+
+    has_interaction_density = _actor_has_interaction_density(
+        actor=actor,
+        active_issues=active_issues,
+        available_actors=available_actors,
     )
-    issue_tiers = (
-        progression.get("issue_instability_tiers", {})
-        if isinstance(progression.get("issue_instability_tiers", {}), dict)
-        else {}
-    )
-    dominant_ids = {
-        str(item)
-        for item in progression.get("dominant_issue_ids", [])
-        if str(item or "").strip()
-    }
-    max_tier_rank = 0
-    max_debt = 0
-    issue_count = 0
-    is_dominant = False
-    for issue in active_issues:
-        if not isinstance(issue, dict):
-            continue
-        participants = issue.get("participants", [])
-        if not isinstance(participants, list) or actor not in participants:
-            continue
-        issue_count += 1
-        issue_id = str(issue.get("issue_id", "") or "").strip()
-        if issue_id in dominant_ids:
-            is_dominant = True
-        max_debt = max(max_debt, int(issue_debt.get(issue_id, 0) or 0))
-        max_tier_rank = max(
-            max_tier_rank,
-            _tier_rank(str(issue_tiers.get(issue_id, "stable") or "stable")),
-        )
-    return {
-        "actor": actor,
-        "tier_rank": max_tier_rank,
-        "debt": max_debt,
-        "is_dominant": is_dominant,
-        "issue_count": issue_count,
-    }
+
+    has_momentum = bool(momentum_signal) and in_actionable
+
+    if in_escalating or (in_active and has_interaction_density) or (in_active and has_momentum):
+        return "high"
+
+    if not in_actionable and repetition_signal is True:
+        return "low"
+
+    return "med"
 
 
 def resolve_progression_override_actor(
@@ -405,9 +370,15 @@ def resolve_progression_override_actor(
     director_selected_actor: str,
     available_actors: list[str],
     active_issues: list[dict[str, Any]],
-    orchestration_state: dict[str, Any],
+    recent_structured_moves: list[dict[str, Any]],
 ) -> str | None:
-    """Bias toward actors attached to the highest current progression pressure."""
+    """Apply the approved band-based progression override.
+
+    Override ONLY if:
+    - Director-selected actor is LOW
+    - Another actor exists in HIGH
+    - At least one unresolved actionable issue exists (active or escalating)
+    """
 
     director_selected_actor = str(director_selected_actor or "").strip()
     if not director_selected_actor or director_selected_actor not in available_actors:
@@ -421,58 +392,38 @@ def resolve_progression_override_actor(
     if not unresolved_actionable_issue_exists:
         return None
 
-    progression = (
-        orchestration_state.get("progression_pressure", {})
-        if isinstance(orchestration_state, dict)
-        else {}
-    )
-    scene_tier_rank = _tier_rank(
-        str(progression.get("scene_instability_tier", "stable") or "stable")
-    )
-    if scene_tier_rank < _tier_rank("escalating"):
-        return None
-
-    profiles = [
-        _actor_progression_pressure_profile(
+    bands: dict[str, Literal["high", "med", "low"]] = {}
+    for actor in available_actors:
+        bands[actor] = assign_progression_band_for_actor(
             actor=actor,
+            available_actors=available_actors,
             active_issues=active_issues,
-            orchestration_state=orchestration_state,
+            recent_structured_moves=recent_structured_moves,
         )
-        for actor in available_actors
-    ]
-    profiles = [item for item in profiles if item.get("actor")]
-    if not profiles:
+
+    if bands.get(director_selected_actor) != "low":
         return None
 
-    profiles.sort(
-        key=lambda item: (
-            -int(item.get("tier_rank", 0) or 0),
-            -int(item.get("debt", 0) or 0),
-            -int(bool(item.get("is_dominant"))),
-            -int(item.get("issue_count", 0) or 0),
-            available_actors.index(str(item.get("actor", "") or "")),
-        )
-    )
-    selected = next(
-        (
-            item
-            for item in profiles
-            if str(item.get("actor", "") or "") == director_selected_actor
-        ),
-        None,
-    )
-    best = profiles[0]
-    if selected is None or best["actor"] == director_selected_actor:
+    high_actors = [actor for actor in available_actors if bands.get(actor) == "high"]
+    if not high_actors:
         return None
-    if int(best.get("tier_rank", 0) or 0) < _tier_rank("escalating"):
-        return None
-    if scene_tier_rank == _tier_rank("escalating") and int(
-        selected.get("tier_rank", 0) or 0
-    ) >= int(best.get("tier_rank", 0) or 0):
-        return None
-    if scene_tier_rank >= _tier_rank("forcing") and bool(selected.get("is_dominant")):
-        return None
-    return str(best.get("actor", "") or "") or None
+
+    # Prefer an actor who participates in an escalating issue; else first HIGH in available order.
+    escalating_participants: set[str] = set()
+    for issue in active_issues:
+        if not isinstance(issue, dict):
+            continue
+        if str(issue.get("status", "") or "").strip().lower() != "escalating":
+            continue
+        participants = issue.get("participants", [])
+        if isinstance(participants, list):
+            escalating_participants.update(str(item) for item in participants if str(item).strip())
+
+    for actor in high_actors:
+        if actor in escalating_participants:
+            return actor
+
+    return high_actors[0]
 
 
 def append_turn_to_orchestration_state(

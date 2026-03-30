@@ -14,11 +14,6 @@ from progression_advisory import (
     build_progression_director_prompt_prefix,
     sync_progression_advisory_for_prompts,
 )
-from progression_pressure import (
-    build_director_progression_pressure_payload,
-    build_director_progression_pressure_prefix,
-    get_cached_progression_pressure,
-)
 from scene_grounding import format_grounding_prompt_prefix
 
 logger = logging.getLogger("rp_app.progression_advisory")
@@ -288,14 +283,6 @@ async def choose_next_actor(
     )
     director_payload["active_issues"] = actionable_issues
     director_payload["stalled_background_issues"] = stalled_background_issues
-    progression_pressure_snapshot = get_cached_progression_pressure(orchestration_state)
-    if progression_pressure_snapshot:
-        director_payload["progression_pressure"] = (
-            build_director_progression_pressure_payload(
-                orchestration_state=orchestration_state,
-                active_issues=actionable_issues,
-            )
-        )
 
     progression_advisory_snapshot = sync_progression_advisory_for_prompts(
         orchestration_state=orchestration_state,
@@ -315,13 +302,6 @@ async def choose_next_actor(
         director_payload["beat_shift_director_hints"] = {
             "active": True,
             "prompt_prefix": build_director_beat_shift_prompt_prefix(),
-        }
-
-    pressure_prefix = build_director_progression_pressure_prefix(orchestration_state)
-    if pressure_prefix:
-        director_payload["progression_pressure_director_hints"] = {
-            "active": True,
-            "prompt_prefix": pressure_prefix,
         }
 
     if progression_advisory_snapshot.get("progression_pressure") == "high":
@@ -420,7 +400,11 @@ async def choose_next_actor(
             for issue in (director_payload.get("active_issues", []) or [])
             if isinstance(issue, dict)
         ],
-        orchestration_state=orchestration_state,
+        recent_structured_moves=[
+            item
+            for item in (orchestration_state.get("recent_structured_moves", []) or [])
+            if isinstance(item, dict)
+        ],
     )
     if progression_override_actor and progression_override_actor != decision.get(
         "next_actor"
@@ -474,14 +458,6 @@ async def choose_next_actor(
                             "stall_components"
                         ),
                     },
-                    "progression_pressure": (
-                        build_director_progression_pressure_payload(
-                            orchestration_state=orchestration_state,
-                            active_issues=actionable_issues,
-                        )
-                        if progression_pressure_snapshot
-                        else {}
-                    ),
                     "anti_regression_advisory": dict(anti_blob),
                     "turn_selection_issues": turn_selection_issues,
                     "semantic_turn_selection_assessment": semantic_turn_selection_assessment

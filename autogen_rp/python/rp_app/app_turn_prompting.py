@@ -7,7 +7,6 @@ from progression_advisory import (
     should_append_progression_character_suffix,
     sync_progression_advisory_for_prompts,
 )
-from progression_pressure import build_character_progression_pressure_suffix
 
 _progression_log = logging.getLogger("rp_app.progression_advisory")
 from offstage_prompt_filter import (
@@ -477,11 +476,6 @@ def build_character_turn_prompt(
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)
     if beat_shift_active_here:
         prompt_text += build_character_beat_shift_suffix(trigger_text=trigger_text)
-    prompt_text += build_character_progression_pressure_suffix(
-        orchestration_state=orchestration_state,
-        char_name=char_name,
-        active_issues=active_issues,
-    )
     _pp = str(progression_advisory_snapshot.get("progression_pressure") or "low")
     if should_append_progression_character_suffix(
         progression_pressure=_pp,

@@ -5,7 +5,6 @@ from autogen_agentchat.messages import TextMessage
 from beat_shift_state import build_narrator_beat_shift_suffix, is_pending_beat_shift_active
 from anti_regression_advisory import get_cached_anti_regression_advisory
 from progression_advisory import get_cached_progression_advisory
-from progression_pressure import get_cached_progression_pressure
 from turn_runner_audit import log_character_turn_audit
 
 
@@ -235,7 +234,6 @@ async def execute_character_turn(
             character_summary_block_audit=character_summary_block_audit,
             turn_execution_metadata=turn_execution_metadata,
             progression_advisory=get_cached_progression_advisory(orchestration_state),
-            progression_pressure=get_cached_progression_pressure(orchestration_state),
             anti_regression_advisory=get_cached_anti_regression_advisory(
                 orchestration_state
             ),
