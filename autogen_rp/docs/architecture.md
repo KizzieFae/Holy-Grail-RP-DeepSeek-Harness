@@ -30,8 +30,7 @@ The RP app uses a Director + Narrator + continuity-manager architecture.
 - Keep `app.py` as a thin composition layer.
 - Preserve bounded-context strategies rather than reintroducing unbounded hidden chat state.
 - Preserve `must_remain` as structural presence, not a requirement to speak every beat.
-- **Progression advisory** remains a **prompt-facing support layer**: it may add short Director/character prompt text and feed a **single** deterministic **`stall_score`** into beat-shift eligibility. It must **not** write continuity truth or mutate `CharacterState`.
-- **Progression pressure** is now the structural progression layer: it deterministically classifies scene / issue turns from existing structured signals, stores derived debt / tier memory on orchestration state, and may bias Director selection and prompt salience. It must **not** become a second continuity authority, and validation remains non-primary for progression.
+- **Progression advisory (MVP)** is **advisory only**: it may add short Director/character prompt text and feed a **single** deterministic **`stall_score`** into beat-shift eligibility. It must **not** write continuity truth, mutate `CharacterState`, or add a parallel progression authority.
 - **Scene Grounding (MVP)** is a **read-only, prompt-facing** projection of **settled scene facts** derived **only** from continuity outputs and deterministic rules. It lives **after** continuity commits and **before** LLM prompts. It must **not** write continuity or `CharacterState` or act as a second authority (see [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8, [scene-grounding-layer.md](./scene-grounding-layer.md)).
 
 ## Change strategy

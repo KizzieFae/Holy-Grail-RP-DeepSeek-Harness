@@ -61,137 +61,103 @@ This roadmap reflects the correct execution order:
 - [ ] All known failure types mapped to a layer
 - [ ] System behaves predictably across all test scenarios
 
-## E. Progression Layer — manual behavioral validation suite
+## E. Progression Advisory Layer — plateau test suite (manual / audit)
 
-**Current phase:** **Manual behavioral validation**
+**Purpose:** Validate deterministic **stall signals**, **advisory injection**, and **beat-shift** behavior using live sessions and audits. This is **manual / qualitative** where noted; automated wiring is covered by `tests/test_progression_advisory.py` and related tests.
 
-**Status before starting this section:**
-
-- [x] Progression design complete
-- [x] Runtime implementation complete
-- [x] Deterministic simulation coverage complete
-- [x] Audit verification layer complete
-
-**Purpose:** Validate how the implemented progression layer behaves in real scenes now that structural correctness is covered by automated tests. This section is about **behavioral validation**, not new feature design.
-
-**What is already covered elsewhere:**
-
-- `tests/test_progression_pressure.py` covers deterministic progression classification, debt, tiers, resets, no-op outcomes, and issue identity continuity rules.
-- `tests/test_audit_progression_analysis.py` covers audit-side verification of classification, reset validity, plateau pressure, and fragmentation detection.
-
-**What manual runs must answer:**
-
-- [ ] Do scenes feel less comfortable staying static?
-- [ ] Does escalation feel natural rather than forced?
-- [ ] Does actor selection follow dominant unresolved pressure without collapsing character integrity?
-- [ ] Do prompt hints support the structural layer without becoming the main mechanism?
-
-**Known watch areas:**
-
-- [ ] Issue identity continuity currently transfers debt only on exact structured fingerprint matches
-- [ ] Early-scene reset behavior should be watched before dominant pressure is clearly established
-
-**Overlap with §A:** The repeatable RP scenarios in **§A** are still the main source for progression observation. Use the checklist below during those runs (or clearly bounded replays) rather than creating a parallel testing track.
+**Overlap with §A:** The repeatable RP scenarios in **§A** are the usual sessions that surface plateau issues; use the checklist below during those runs (or targeted replays) instead of inventing parallel scenarios.
 
 ### Test execution guidelines
 
-- [ ] Run each scenario independently or as a clearly bounded segment within a larger session
+- [ ] Run each scenario **independently** (or as a clearly bounded segment within a §A run)
 - [ ] Keep variables controlled
-- [ ] Do not modify system behavior mid-test
-- [ ] Capture audit output for each run
-- [ ] Review both behavioral feel and `_audit_summary.json` `progression_analysis`
-
-### Primary evidence to inspect
-
-- [ ] `progression_analysis.turns[*].scene_classification`
-- [ ] `progression_analysis.turns[*].issue_classifications`
-- [ ] `progression_analysis.turns[*].reset_validation`
-- [ ] `progression_analysis.turns[*].plateau_assessment`
-- [ ] `progression_analysis.turns[*].pressure_targeting`
-- [ ] `progression_analysis.turns[*].issue_identity_events`
-- [ ] Runtime `progression_pressure` snapshots in audit metadata
-- [ ] Advisory / beat-shift traces as supporting evidence only
+- [ ] Do **not** modify system behavior mid-test
+- [ ] Capture **audit output** for each run
+- [ ] Evaluate both **mechanical signals** (scores, logs) and **scene quality** (subjective)
 
 ### Test scenarios
 
 #### 1. Baseline arrival scene
 
-**Suggested cast:** Use **Kizzie** (demure, polite) rather than Harley for a lower-conflict baseline.
+**Suggested cast:** Use **Kizzie** (demure, polite) rather than Harley—aims for a **low-conflict** baseline so `stall_score` and advisory stay naturally subdued.
 
 - [ ] Run scenario
-- [ ] Observe introductions and orientation progression
-- [ ] Observe a concrete setup beat (bunk / space assignment or equivalent)
-- [ ] Confirm scene debt does not escalate prematurely
-- [ ] Confirm no false reset or false progression credit appears in `progression_analysis`
-- [ ] Confirm minimal or no intrusive pressure prompting
+- [ ] Observe introductions occur
+- [ ] Observe orientation progression
+- [ ] Observe bunk/space assignment (or equivalent concrete setup beat)
+- [ ] Check `stall_score` remains low / moderate
+- [ ] Confirm minimal or no advisory injection
+- [ ] Confirm no forced or unnatural shifts
 
 #### 2. Confined argument loop
 
 - [ ] Run scenario
-- [ ] Confirm a verbal loop forms
-- [ ] Observe scene / issue debt rise across consecutive non-progressing turns
-- [ ] Observe tiers escalate from Stable toward Unstable / Escalating / Forcing as applicable
-- [ ] Confirm pressure targeting stays on the dominant unresolved issue
-- [ ] Confirm the eventual reset only happens after meaningful structured change
+- [ ] Confirm loop forms (verbal escalation pattern)
+- [ ] Observe `stall_score` increase
+- [ ] Observe `progression_pressure` reach high
+- [ ] Confirm advisory activation
+- [ ] Confirm next beat introduces **state change**
+- [ ] Verify change is **structural** (not only tone)—subjective rating
 
 #### 3. Strong user steer
 
 - [ ] Run scenario
 - [ ] Allow plateau to begin
 - [ ] Inject short, strong user input
-- [ ] Confirm beat-shift activation reason is visible when it occurs
-- [ ] Confirm the next meaningful change is reflected through structured progression, not prompt text alone
-- [ ] Verify actor selection supports execution on the pressured issue
+- [ ] Confirm beat-shift activation (and note **reason** in audit: short message vs `progression_stall`)
+- [ ] Confirm advisory alignment
+- [ ] Confirm next turn executes concrete action
+- [ ] Verify actor selection supports execution
+- [ ] Verify beat type changes—subjective rating
 
 #### 4. Silent observer case
 
 - [ ] Run scenario
 - [ ] Use passive observation input
-- [ ] Confirm pressure does not escalate inappropriately when real structured progress is still occurring
-- [ ] Confirm advisory does not over-trigger
-- [ ] Confirm progression_analysis does not show false mismatches or false progression credit
+- [ ] Confirm advisory does **not** over-trigger
+- [ ] Confirm natural progression continues
+- [ ] Verify `stall_score` is not inflated incorrectly
 
 #### 5. Real progress with continued tension
 
 - [ ] Run scenario
-- [ ] Ensure each turn includes real structured movement while tension stays high
-- [ ] Confirm material or partial classification fits the observed structured deltas
-- [ ] Confirm debt stays steady or resets only when justified
-- [ ] Confirm pressure does not fight legitimate forward motion
+- [ ] Ensure each turn includes real state change
+- [ ] Confirm `stall_score` remains moderate or drops
+- [ ] Confirm advisory does not interfere inappropriately
+- [ ] Verify system recognizes progress correctly—subjective rating
 
-#### 6. Early derail -> recovery
+#### 6. Early derail → recovery
 
 - [ ] Run scenario
 - [ ] Introduce early destabilization
-- [ ] Watch whether dominant pressure becomes clear quickly enough
-- [ ] Confirm recovery produces justified reset behavior rather than accidental early reset
-- [ ] Note any ambiguity around dominant issue selection for follow-up
+- [ ] Confirm derailment occurs
+- [ ] Observe stall detection timing
+- [ ] Confirm system transitions out of loop
+- [ ] Verify progression resumes via a new channel—subjective rating
 
-#### 7. Issue identity continuity check
+#### 7. Template fit check
 
-- [ ] Run a scene where the same underlying stalled pressure may reappear under a different issue id
-- [ ] Confirm debt transfers only when the exact structured fingerprint matches
-- [ ] Log fragmentation if the same pressure appears to split across ids without transfer
-- [ ] Record whether the exact-match rule feels too strict in live usage
+- [ ] Run **dorm arrival** (or similar) template with a known `progression_profile`
+- [ ] Verify appropriate progression channels appear in advisory metadata when pressure is high
+- [ ] Run a **confrontation** (or second) template with a **distinct** `progression_profile` *when authored*; otherwise skip or mark N/A
+- [ ] Confirm recommendations match the **template** channels (static profile—not inferred)
 
 ### Metrics tracking (each scenario)
 
-- [ ] Record scene progression debt and tier
-- [ ] Record highest issue debt and tier
-- [ ] Record whether `progression_analysis` shows mismatches
-- [ ] Record reset validation results
-- [ ] Record plateau assessment
-- [ ] Record pressure-targeting result
-- [ ] Record issue-identity notes / fragmentation events
-- [ ] Record advisory injection and beat-shift activation as secondary context
+- [ ] Record `stall_score` progression
+- [ ] Record `progression_pressure`
+- [ ] Log advisory injection (Director / Character)
+- [ ] Log beat-shift activation **reason**
+- [ ] Count turns before state change
+- [ ] Tag dialogue-only vs state-changing turns—subjective where needed
 
 ### Evaluation scorecard (rate 1–5, each scenario)
 
-- [ ] Plateau resistance
-- [ ] Naturalness of escalation
-- [ ] Character fidelity under pressure
-- [ ] Reset correctness
-- [ ] Pressure targeting clarity
+- [ ] Plateau detection accuracy
+- [ ] Scene advancement quality
+- [ ] Character fidelity
+- [ ] Naturalness of transition
+- [ ] Over-triggering / under-triggering
 
 ### Recommended execution order
 
@@ -200,16 +166,16 @@ This roadmap reflects the correct execution order:
 3. Strong user steer  
 4. Silent observer case  
 5. Real progress with continued tension  
-6. Early derail -> recovery  
-7. Issue identity continuity check  
+6. Early derail → recovery  
+7. Template fit check  
 
-### Success criteria (manual behavioral validation)
+### Success criteria (Progression Advisory MVP)
 
-- [ ] Plateau loops no longer remain comfortably static for long stretches
-- [ ] Structured movement, not prose intensity alone, is what relieves pressure
-- [ ] No systematic false resets or false progression credit appears in audits
-- [ ] Character behavior remains consistent under elevated pressure
-- [ ] Watch areas are either cleared or logged explicitly for follow-up
+- [ ] Plateau loops break **earlier** than pre-advisory baseline—subjective / comparative
+- [ ] Scene advances through **concrete** state changes when stuck
+- [ ] Advisory triggers **appropriately** (not constantly)
+- [ ] Character behavior remains consistent
+- [ ] **No continuity corruption** (advisory remains non-authoritative)
 
 ## F. Scene Grounding Layer (MVP) — implementation & validation
 

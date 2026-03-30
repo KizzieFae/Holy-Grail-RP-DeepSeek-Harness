@@ -126,39 +126,9 @@ The Director does not write prose.
 
 #### Progression advisory (MVP)
 
-When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the scene template’s optional **`progression_profile`** (e.g. physical action, spatial shift, consequence). This remains **guidance only**; it does not override continuity.
+When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the scene template’s optional **`progression_profile`** (e.g. physical action, spatial shift, consequence). This is **guidance only**; it does not override selection logic or continuity.
 
 Beat-shift activation uses the **same** computed **`stall_score`** threshold as this advisory layer (alongside the existing short-user-message path), so there is a **single** plateau-related signal rather than duplicate detectors.
-
-#### Progression pressure layer
-
-The current progression layer is no longer advisory-only in practice. A deterministic **progression pressure** layer classifies each processed turn at both the **scene** and **issue** level using **structured continuity signals** only:
-
-- resolved-outcome deltas
-- issue-state deltas
-- consequence-tagged continuity deltas
-
-Supporting signals such as grounding, PublicEvent envelopes, and move-declared metadata do **not** count directly.
-
-The layer stores **derived** pressure memory on orchestration state rather than continuity truth:
-
-- `scene_progression_debt`
-- `issue_progression_debt`
-- scene / issue instability tiers
-- dominant issue ids
-- last-turn classification and reset debug
-- issue-identity continuity notes
-
-This pressure state is refreshed after continuity updates, influences Director actor-selection bias toward dominant unresolved pressure, and surfaces stronger prompt hints when debt tiers escalate. It does **not** write continuity truth, does **not** mutate `CharacterState`, and does **not** make validation the primary progression authority.
-
-#### Current validation phase
-
-Progression design, implementation, deterministic simulation coverage, and audit verification are complete. The current project phase is **manual behavioral validation**.
-
-Known watch areas during live-scene testing:
-
-- issue identity continuity currently transfers debt only on exact structured fingerprint matches
-- early scene reset behavior should be watched before dominant pressure is clearly established
 
 #### Scene Grounding layer (MVP)
 

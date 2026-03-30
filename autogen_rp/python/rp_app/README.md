@@ -151,7 +151,7 @@ Scene template JSON may include a static **`progression_profile`** block (human-
 - **`advancement_channels`**: list of string channel ids (e.g. `physical_action`, `spatial_shift`, `bureaucratic_followthrough`, `social_reconfiguration`, `consequence`).
 - **`common_stall_pattern`**: short description of the typical stall pattern for authoring context and advisory **note** text.
 
-If omitted, the app uses a small built-in default profile. This does **not** change continuity authority or character state; it only shapes **optional advisory prompt hints** and related audit/debug fields when `stall_score` is computed from existing scene signals. The structural progression layer now lives separately in `progression_pressure.py` and uses continuity-owned resolved outcomes, issue deltas, and consequence-tagged continuity deltas. **Scene Grounding (settled scene facts, read-only prompts)** is specified in PRD §5.8 and `../../docs/scene-grounding-layer.md`.
+If omitted, the app uses a small built-in default profile. This does **not** change continuity authority or character state; it only shapes **optional prompt hints** and **audit/debug** fields when stall pressure is computed from existing scene signals. See `../Holy Grail PRD.md` §5.7 and `progression_advisory.py`. **Scene Grounding (settled scene facts, read-only prompts)** is specified in PRD §5.8 and `../../docs/scene-grounding-layer.md`.
 
 ### Audit visibility
 
@@ -166,10 +166,6 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 
 ## Current module layout
 
-- Current progression status: design, implementation, deterministic simulation, and audit verification are complete.
-- Current project phase: **manual behavioral validation**.
-- Live watch areas: exact-match issue identity continuity and early scene resets before dominant pressure is clearly established.
-
 - `app.py` - Thin Streamlit compatibility/composition entrypoint that preserves stable wrapper names for tests and callers
 - `app_turn_helpers.py` - Compatibility export layer over `app_turn_director.py`, `app_turn_prompting.py`, `app_turn_rendering.py`, `app_turn_selector.py`, and `app_turn_audit.py`
 - `app_state_helpers.py` - Compatibility export layer over `app_state_audit.py`, `app_state_characters.py`, `app_state_continuity.py`, `app_state_runtime.py`, `app_state_scene.py`, and `app_state_session.py`
@@ -181,14 +177,12 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 - `response_validation.py` - Compatibility export layer over content, presence, drift, parsing, and turn-selection helpers
 - `character_state.py` - Compatibility export layer over `character_state_model.py` and `character_state_manager.py`
 - `turn_runner.py` - Round orchestration entrypoint paired with `turn_runner_turn.py`, `turn_runner_updates.py`, and `turn_runner_audit.py`
-- `progression_pressure.py` - Deterministic scene / issue progression classification, debt, instability tiers, and dominant-pressure tracking derived from structured continuity signals
-- `progression_advisory.py` - Deterministic `stall_score` and prompt-facing advisory hints; still supports beat-shift, but no longer represents the full progression system by itself
+- `progression_advisory.py` - Deterministic stall score and progression advisory for Director/character prompts and beat-shift hook (advisory only)
 - `beat_shift_state.py` - Beat-shift pending state; unified `stall_score` threshold with short-user-message activation
 - `character_loader.py` - Loads character JSON files and creates agents
 - `session_manager.py` - Handles session save/load plus session indexing
 - `continuity_manager.py` - Continuity engine for durable narrative state
 - `audit_logger.py` - Audit logging infrastructure for scene analysis
-- `audit_progression_analysis.py` - Audit-side verification of progression classification, debt behavior, resets, plateau pressure, and issue identity continuity
 - `ARCHITECTURE.md` - Architecture notes and design direction
 - `AUDIT_DOCUMENTATION.md` - Scene audit system documentation and analysis guide
 - `../data/autogen_characters/*.json` - Character definitions

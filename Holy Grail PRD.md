@@ -223,9 +223,9 @@ Purpose:
 
 ---
 
-### 5.7 Progression Advisory Layer (original MVP / current support layer)
+### 5.7 Progression Advisory Layer (MVP)
 
-The original MVP defined a **minimal, deterministic, advisory-only** prompt layer to reduce **scene-level plateau / verbal stall** without becoming a second progression engine.
+A **minimal, deterministic, advisory-only** layer reduces **scene-level plateau / verbal stall** without becoming a second progression engine.
 
 **What it does**
 
@@ -248,17 +248,6 @@ The original MVP defined a **minimal, deterministic, advisory-only** prompt laye
 **Observability**
 
 - Audit / debug output may include **`progression_advisory`** (scores, pressure, channels, **stall_components**) and logs when advisory text is injected or beat-shift sensitivity is engaged via stall score.
-
-**Current implementation status**
-
-- The runtime now includes a broader **signal-based progression layer** in addition to this advisory MVP path.
-- Progression is classified per processed turn at both **scene** and **issue** level using structured deltas only: **resolved outcomes**, **issue-state changes**, and **consequence-tagged continuity**.
-- The system tracks **scene / issue progression debt**, **instability tiers**, **dominant pressure ids**, and issue-identity continuity notes as **derived orchestration state**, not continuity truth.
-- Director orchestration now reacts to elevated progression pressure, while prompts remain supportive rather than authoritative.
-- Deterministic simulation coverage for the progression layer and its audit verification has passed.
-- The audit summary now includes an independent **`progression_analysis`** section that verifies classification, debt behavior, reset validity, plateau pressure, and issue identity continuity without reusing the runtime classifier.
-- **Current project phase:** **Manual behavioral validation**.
-- **Known watch areas:** issue identity continuity currently depends on exact structured fingerprint transfer; early scene reset behavior should be watched before dominant pressure is clearly established.
 
 ---
 

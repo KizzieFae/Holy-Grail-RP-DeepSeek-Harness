@@ -51,14 +51,7 @@ If a task touches the RP app, also read:
 - `python/rp_app/AUDIT_DOCUMENTATION.md`
 - `python/RP_SETUP_TODO.md`
 
-**Progression layer (current):** the implemented structural layer is **signal-based** and derives scene / issue progression classification, debt, instability tiers, dominant pressure ids, and issue-identity continuity notes from existing continuity-owned signals. Runtime state lives in `python/rp_app/progression_pressure.py` and orchestration integration spans `orchestration_helpers.py`, `turn_runner_updates.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner_audit.py`, and audits. It does **not** write continuity truth or `CharacterState`.
-
-**Progression advisory (legacy support layer):** `python/rp_app/progression_advisory.py` still provides deterministic `stall_score`-based prompt hints plus the shared beat-shift hook, but it is no longer the only progression mechanism.
-
-**Current project phase:** **Manual behavioral validation**. Progression design, implementation, deterministic simulation tests, and audit verification are complete. Current live-scene watch areas are:
-
-- issue identity continuity still relies on exact structured fingerprint transfer when issue ids change
-- early scene reset behavior should be watched until dominant pressure is clearly established
+**Progression advisory (MVP):** deterministic, template-grounded prompt hints and a unified **`stall_score`** hook for beat-shift. Implemented under `python/rp_app/progression_advisory.py` with integration in `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, and audits. Does not write continuity or `CharacterState`.
 
 ## Tool-specific compatibility
 
