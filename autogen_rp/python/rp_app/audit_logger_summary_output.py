@@ -243,6 +243,7 @@ def build_report(
     issue_categories: dict[str, dict[str, Any]],
     heuristic_issue_categories: dict[str, dict[str, Any]],
     regression_checks: dict[str, bool],
+    progression_analysis: dict[str, Any],
     utc_timestamp,
     index_rounds: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -386,4 +387,5 @@ def build_report(
         "issue_categories": issue_categories,
         "heuristic_issue_categories": heuristic_issue_categories,
         "regression_checks": regression_checks,
+        "progression_analysis": progression_analysis,
     }
