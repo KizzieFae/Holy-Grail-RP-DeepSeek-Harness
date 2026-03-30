@@ -18,9 +18,41 @@ This allows for:
 - State-change and consequence tracking
 - Summary-block visibility and retrieval analysis
 
-### Progression advisory (MVP) in audits
+### Progression advisory (support layer) in audits
 
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), **`recommended_channels`**, **`stall_components`** (booleans: same phase, high tension, issue stability, low consequence variety), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
+
+### Progression analysis in `_audit_summary.json`
+
+The session summary now includes a top-level **`progression_analysis`** section. This is an audit-side verification layer, not runtime truth, and it does **not** reuse the runtime classifier.
+
+It evaluates each turn deterministically from structured audit artifacts, including:
+
+- resolved-outcome debug deltas
+- issue snapshots after turn
+- issue updates
+- consequence tags and continuity consequences
+- observed progression-pressure state written by the runtime
+
+For each turn it records:
+
+- expected scene and issue classifications
+- observed scene and issue classifications
+- expected vs observed debt changes
+- reset validation
+- plateau assessment
+- pressure-targeting assessment
+- issue-identity continuity events
+- false progression credit flags
+- mixed-turn divergence checks when one issue progresses and another stalls
+
+The summary aggregates:
+
+- total mismatches
+- reset errors
+- fragmentation events
+- false progression events
+- plateau behavior counts
 
 ### Anti-regression advisory (MVP) in audits
 
@@ -265,6 +297,7 @@ rp_audits/
 - `summary_block_quality`: availability/injection/fallback rates
 - `issue_categories` / `heuristic_issue_categories`: confirmed and text-derived pressure buckets
 - `regression_checks`: session-level pass/fail indicators
+- `progression_analysis`: turn-by-turn progression verification and aggregate mismatch counts
 
 ### 5. Granular Bot Logs
 **Naming**: `{owner}_session{###}_round{###}_turn{##}_{bot}_{level}.json`

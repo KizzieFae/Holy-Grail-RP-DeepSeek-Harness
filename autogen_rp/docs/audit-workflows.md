@@ -38,6 +38,7 @@ For session audits, read in this order:
 - whether `issue_updates` reflect pressure movement rather than dialogue paraphrase
 - whether `presence_changes` match true entries, exits, and absences
 - whether summary blocks preserve important context or hide it
+- whether `_audit_summary.json` `progression_analysis` matches the runtime's classification, debt, reset, plateau, and identity-continuity behavior
 
 For issue updates, pay special attention to:
 
@@ -56,6 +57,10 @@ Use the same layer order as `docs/architecture.md`:
 4. validation and enforcement
 5. Director logic
 6. Narrator rendering
+
+For progression-specific reviews, add this check between steps 2 and 3:
+
+- verify `progression_analysis` mismatches, reset errors, plateau assessment, pressure targeting, and fragmentation events before changing prompts
 
 ## Relevant code areas for RP audits
 

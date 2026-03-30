@@ -22,7 +22,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Duplicate** dialogue or repeated line | `response_validation_content.py` (`is_duplicate_dialogue`), `turn_runner_turn.py` (retry path) |
 | **Presence** / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `semantic_validation.py` (override paths) |
 | **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
-| **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py` |
+| **Plateau** / stalled high-tension verbal loop (progression pressure + advisory + beat-shift) | `progression_pressure.py`, `orchestration_helpers.py`, `app_turn_director.py`, `turn_runner_updates.py`, `progression_advisory.py`, `beat_shift_state.py`, `app_turn_prompting.py`, `prompt_builders.py` |
 | Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py` |
 | **Settled facts** repeated / logistics reset in dialogue (after continuity looks correct) | `continuity_resolved_outcomes.py`, `scene_grounding.py`, `prompt_builders.py`, then continuity extraction if facts never promote |
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
@@ -63,16 +63,17 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit, `beat_shift_state` | Passes active issues + recent moves into beat-shift; main loop entry |
+| `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit, `beat_shift_state` | Main loop entry; progression pressure refresh happens in post-turn update path |
 | `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation` | |
-| `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | |
+| `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | Refreshes derived progression pressure after continuity commits |
 | `turn_runner_audit.py` | Audit summary refresh hooks | `audit_logger*` | |
-| `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Advisory only; no continuity writes |
+| `progression_pressure.py` | Deterministic scene / issue progression classification, debt, tiers, dominant issue tracking, issue identity continuity notes | continuity state snapshots, orchestration state, Director prompting / selection | Derived pressure memory only; no continuity writes |
+| `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Prompt-facing support layer; complements structural progression pressure |
 | `anti_regression_advisory.py` | Ping-pong + post-break / low player-agency → short Director ANTI-REGRESSION block | `progression_advisory` (stall read-only), `director_decisions`, `recent_structured_moves`, session `player_character` / `user_name` | Option A trigger: no `high_stall` OR; orchestration cache only |
 | `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
-| `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `anti_regression_advisory` | Optional progression + anti-regression Director prefixes |
+| `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `progression_pressure`, `anti_regression_advisory` | Progression pressure payload/prefix plus actor-selection override under elevated pressure |
 | `app_turn_selector.py` | Turn selection parsing / reconciliation | `response_validation_selection` | |
-| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory` | Optional progression suffix when pressure + beat-shift rules match |
+| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `progression_pressure` | Optional pressure-aware suffixes layered with advisory/beat-shift hints |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 
@@ -148,6 +149,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `audit_logger_summary_rounds.py` | Round-level summary data | — | |
 | `audit_logger_summary_report.py` | `_audit_summary` aggregation | — | |
 | `audit_logger_summary_output.py` | Output formatting helpers | — | |
+| `audit_progression_analysis.py` | Audit-side verification of progression classification, debt, reset validity, plateau pressure, targeting, and identity continuity | `_narrative.json` structured turn artifacts, observed progression state | Independent of runtime classifier |
 | `summary_audit_helpers.py` | Prompt/audit bridges for summaries | continuity | |
 
 ---

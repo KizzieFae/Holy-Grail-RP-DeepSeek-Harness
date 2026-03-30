@@ -56,9 +56,13 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Character card** — JSON file under `python/data/autogen_characters/` defining a persona (system prompt, anchors, relationships, etc.). **Current** primary character source (`character_loader.py`).
 
-**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7).
+**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7). Structural progression pressure comes from continuity-owned runtime signals, not from this template metadata.
 
-**Progression advisory (MVP)** — Deterministic, **non-authoritative** layer: computes **`stall_score`** from existing scene signals, maps to **`progression_pressure`**, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
+**Progression layer** — The current signal-based progression system. It classifies each turn at scene and issue level using structured deltas only, tracks progression debt and instability tiers, preserves dominant unresolved pressure, and feeds orchestration plus prompt salience without becoming continuity truth (`progression_pressure.py`).
+
+**Progression advisory (support layer)** — Deterministic, **non-authoritative** prompt layer: computes **`stall_score`** from existing scene signals, maps to a prompt-facing pressure band, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
+
+**Progression pressure** — Derived orchestration-state memory for the progression layer: scene / issue debt, instability tiers, dominant issue ids, last-turn classification, and issue-identity continuity notes. Built only from resolved outcomes, issue-state deltas, and consequence-tagged continuity signals (`progression_pressure.py`).
 
 **Stall score** — Float 0.0–1.0 from weighted boolean components (phase plateau snapshots, high tension, stable issue statuses, optional low consequence variety). Same signal can lower the bar for **beat-shift** activation (`beat_shift_state.py`); not LLM-classified.
 
