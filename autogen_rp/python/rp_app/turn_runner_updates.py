@@ -5,6 +5,11 @@ from anti_regression_advisory import (
     get_cached_anti_regression_advisory,
 )
 from progression_advisory import get_cached_progression_advisory
+from progression_pressure import (
+    capture_progression_truth_snapshot,
+    get_cached_progression_pressure,
+    update_progression_pressure_state,
+)
 from beat_shift_state import (
     append_scene_snapshot_after_turn,
     consume_pending_beat_shift_if_active,
@@ -57,8 +62,10 @@ def apply_successful_turn_updates(
     consequences: list[str] | None = None
     issue_updates: list[dict[str, Any]] | None = None
     presence_changes: list[dict[str, Any]] | None = None
+    progression_pressure_snapshot: dict[str, Any] | None = None
     if continuity_manager:
         try:
+            progression_before = capture_progression_truth_snapshot(continuity_manager)
             continuity_manager.process_turn(
                 acting_character=next_actor,
                 move=move,
@@ -66,6 +73,11 @@ def apply_successful_turn_updates(
                 other_characters=[name for name in char_names if name != next_actor],
             )
             sync_orchestration_state_from_continuity_fn()
+            progression_pressure_snapshot = update_progression_pressure_state(
+                orchestration_state=orchestration_state,
+                continuity_manager=continuity_manager,
+                before_snapshot=progression_before,
+            )
 
             turn_index = int(getattr(continuity_manager, "turn_counter", 0) or 0)
             metadata_by_index = getattr(continuity_manager, "turn_metadata_by_index", {})
@@ -128,6 +140,8 @@ def apply_successful_turn_updates(
         round_number=round_number,
         turn_number=turn_number,
         progression_advisory=get_cached_progression_advisory(orchestration_state),
+        progression_pressure=progression_pressure_snapshot
+        or get_cached_progression_pressure(orchestration_state),
         anti_regression_advisory=get_cached_anti_regression_advisory(
             orchestration_state
         ),
@@ -145,6 +159,8 @@ def apply_successful_turn_updates(
         rendered=rendered,
         round_number=round_number,
         turn_number=turn_number,
+        progression_pressure=progression_pressure_snapshot
+        or get_cached_progression_pressure(orchestration_state),
         is_audit_enabled_fn=is_audit_enabled_fn,
         get_audit_logger_fn=get_audit_logger_fn,
         get_audit_context_fn=get_audit_context_fn,

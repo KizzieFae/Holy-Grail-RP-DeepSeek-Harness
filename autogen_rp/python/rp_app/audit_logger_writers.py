@@ -149,6 +149,12 @@ def update_narrative_summary(
     scene_state_after: dict[str, Any] | None = None,
     issue_updates: list[dict[str, Any]] | None = None,
     presence_changes: list[dict[str, Any]] | None = None,
+    continuity_tags: list[str] | None = None,
+    continuity_consequences: list[str] | None = None,
+    resolved_outcome_debug: dict[str, Any] | None = None,
+    issues_after: list[dict[str, Any]] | None = None,
+    scene_core_after: dict[str, Any] | None = None,
+    progression_pressure: dict[str, Any] | None = None,
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
@@ -259,6 +265,28 @@ def update_narrative_summary(
         "presence_changes": [
             dict(item) for item in (presence_changes or []) if isinstance(item, dict)
         ],
+        "continuity_tags": [
+            str(item) for item in (continuity_tags or []) if str(item).strip()
+        ],
+        "continuity_consequences": [
+            str(item)
+            for item in (continuity_consequences or [])
+            if str(item).strip()
+        ],
+        "resolved_outcome_debug": {
+            str(k): dict(v)
+            for k, v in (resolved_outcome_debug or {}).items()
+            if isinstance(v, dict)
+        },
+        "issues_after": [
+            dict(item) for item in (issues_after or []) if isinstance(item, dict)
+        ],
+        "scene_core_after": (
+            dict(scene_core_after) if isinstance(scene_core_after, dict) else {}
+        ),
+        "progression_pressure_observed": (
+            dict(progression_pressure) if isinstance(progression_pressure, dict) else {}
+        ),
         "timestamp": utc_timestamp(),
     }
 

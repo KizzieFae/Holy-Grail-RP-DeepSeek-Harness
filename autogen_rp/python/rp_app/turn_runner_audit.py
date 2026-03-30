@@ -7,6 +7,7 @@ def _merge_character_audit_metadata(
     *,
     base: dict[str, Any],
     progression_advisory: dict[str, Any] | None,
+    progression_pressure: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     out = dict(base)
@@ -16,6 +17,16 @@ def _merge_character_audit_metadata(
             "progression_pressure": progression_advisory.get("progression_pressure"),
             "recommended_channels": progression_advisory.get("recommended_channels"),
             "stall_components": progression_advisory.get("stall_components"),
+        }
+    if progression_pressure:
+        last_turn = progression_pressure.get("last_turn", {}) or {}
+        out["progression_pressure"] = {
+            "scene_progression_debt": progression_pressure.get("scene_progression_debt"),
+            "scene_instability_tier": progression_pressure.get("scene_instability_tier"),
+            "dominant_issue_ids": progression_pressure.get("dominant_issue_ids"),
+            "scene_turn_class": last_turn.get("scene_turn_class"),
+            "issue_turn_classes": last_turn.get("issue_turn_classes"),
+            "issue_identity_notes": last_turn.get("issue_identity_notes"),
         }
     if anti_regression_advisory:
         out["anti_regression_advisory"] = {
@@ -39,20 +50,32 @@ def _get_turn_continuity_payload(*, continuity_manager: Any, next_actor: str) ->
     list[dict[str, Any]],
     list[dict[str, Any]],
     list[str],
+    list[str],
+    dict[str, Any],
+    list[dict[str, Any]],
+    dict[str, Any],
 ]:
     """Extract continuity payload including consequences for audit logging."""
     if continuity_manager is None or continuity_manager.scene_state is None:
-        return {}, {}, [], [], []
+        return {}, {}, [], [], [], [], {}, [], {}
 
     current_turn_index = int(getattr(continuity_manager, "turn_counter", 0) or 0)
     continuity_event: dict[str, Any] = {}
     consequences: list[str] = []
+    tags: list[str] = []
+    resolved_outcome_debug: dict[str, Any] = {}
 
     # Read consequences directly from turn-level metadata (not from serialized PublicEvent)
     turn_metadata = getattr(continuity_manager, "turn_metadata_by_index", {})
     turn_consequences = turn_metadata.get(current_turn_index, {})
     if turn_consequences:
         consequences = turn_consequences.get("consequences", [])
+        tags = [
+            str(item) for item in turn_consequences.get("tags", []) if str(item).strip()
+        ]
+        rod = turn_consequences.get("resolved_outcomes", {})
+        if isinstance(rod, dict):
+            resolved_outcome_debug = {str(k): dict(v) for k, v in rod.items() if isinstance(v, dict)}
 
     public_events = list(getattr(continuity_manager, "public_events", []) or [])
     if public_events:
@@ -74,13 +97,45 @@ def _get_turn_continuity_payload(*, continuity_manager: Any, next_actor: str) ->
         if hasattr(continuity_manager.scene_state, "to_dict")
         else {}
     )
+    scene_core_after = {
+        "scene_phase": str(scene_state_after.get("phase", "") or ""),
+        "location": str(scene_state_after.get("location", "") or ""),
+        "present_characters": [
+            str(item)
+            for item in scene_state_after.get("present_characters", [])
+            if str(item).strip()
+        ],
+        "offstage_characters": [
+            str(item)
+            for item in scene_state_after.get("offstage_characters", [])
+            if str(item).strip()
+        ],
+    }
 
     issue_updates: list[dict[str, Any]] = []
+    issues_after: list[dict[str, Any]] = []
     for issue in getattr(continuity_manager, "issues", {}).values():
+        status = getattr(issue, "status", "")
+        issue_snapshot = {
+            "issue_id": str(getattr(issue, "issue_id", "") or ""),
+            "description": str(getattr(issue, "description", "") or ""),
+            "status": str(getattr(status, "value", status) or ""),
+            "status_reason": str(getattr(issue, "status_reason", "") or ""),
+            "participants": [
+                str(item)
+                for item in getattr(issue, "participants", [])
+                if str(item).strip()
+            ],
+            "pressure_kind": str(getattr(issue, "pressure_kind", "") or ""),
+            "blocked_what": str(getattr(issue, "blocked_what", "") or ""),
+            "required_next_step": str(getattr(issue, "required_next_step", "") or ""),
+            "last_change": str(getattr(issue, "last_change", "") or ""),
+            "last_turn_index": int(getattr(issue, "last_turn_index", 0) or 0),
+        }
+        issues_after.append(issue_snapshot)
         last_turn_index = int(getattr(issue, "last_turn_index", 0) or 0)
         if last_turn_index != current_turn_index:
             continue
-        status = getattr(issue, "status", "")
         issue_updates.append(
             {
                 "issue_id": str(getattr(issue, "issue_id", "") or ""),
@@ -116,6 +171,10 @@ def _get_turn_continuity_payload(*, continuity_manager: Any, next_actor: str) ->
         issue_updates,
         presence_changes,
         consequences,
+        tags,
+        resolved_outcome_debug,
+        issues_after,
+        scene_core_after,
     )
 
 
@@ -133,6 +192,7 @@ def log_character_turn_audit(
     character_summary_block_audit: dict[str, Any],
     turn_execution_metadata: dict[str, Any] | None = None,
     progression_advisory: dict[str, Any] | None = None,
+    progression_pressure: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
@@ -149,6 +209,10 @@ def log_character_turn_audit(
         issue_updates,
         presence_changes,
         consequences,
+        _tags,
+        _resolved_outcome_debug,
+        _issues_after,
+        _scene_core_after,
     ) = _get_turn_continuity_payload(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
@@ -192,6 +256,7 @@ def log_character_turn_audit(
                     "turn_execution": turn_execution_metadata or {},
                 },
                 progression_advisory=progression_advisory,
+                progression_pressure=progression_pressure,
                 anti_regression_advisory=anti_regression_advisory,
             ),
             **scene_audit_kwargs,
@@ -219,6 +284,7 @@ def log_narrator_render_audit(
     round_number: int,
     turn_number: int,
     progression_advisory: dict[str, Any] | None = None,
+    progression_pressure: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
@@ -235,6 +301,10 @@ def log_narrator_render_audit(
         issue_updates,
         presence_changes,
         consequences,
+        _tags,
+        _resolved_outcome_debug,
+        _issues_after,
+        _scene_core_after,
     ) = _get_turn_continuity_payload(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
@@ -283,6 +353,7 @@ def log_narrator_render_audit(
                     "semantic_validation": narrator_semantic_assessment or {},
                 },
                 progression_advisory=progression_advisory,
+                progression_pressure=progression_pressure,
                 anti_regression_advisory=anti_regression_advisory,
             ),
             **scene_audit_kwargs,
@@ -305,6 +376,7 @@ def write_turn_audit_artifacts(
     rendered: str,
     round_number: int,
     turn_number: int,
+    progression_pressure: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -321,6 +393,10 @@ def write_turn_audit_artifacts(
         issue_updates,
         presence_changes,
         consequences,
+        tags,
+        resolved_outcome_debug,
+        issues_after,
+        scene_core_after,
     ) = _get_turn_continuity_payload(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
@@ -386,6 +462,14 @@ def write_turn_audit_artifacts(
             scene_state_after=scene_state_after,
             issue_updates=issue_updates,
             presence_changes=presence_changes,
+            continuity_tags=tags,
+            continuity_consequences=consequences,
+            resolved_outcome_debug=resolved_outcome_debug,
+            issues_after=issues_after,
+            scene_core_after=scene_core_after,
+            progression_pressure=(
+                progression_pressure if isinstance(progression_pressure, dict) else {}
+            ),
             **scene_audit_kwargs,
         )
         # Update manifest with current total turn count

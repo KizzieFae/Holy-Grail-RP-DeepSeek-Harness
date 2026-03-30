@@ -517,6 +517,12 @@ class AuditLogger:
         scene_state_after: dict[str, Any] | None = None,
         issue_updates: list[dict[str, Any]] | None = None,
         presence_changes: list[dict[str, Any]] | None = None,
+        continuity_tags: list[str] | None = None,
+        continuity_consequences: list[str] | None = None,
+        resolved_outcome_debug: dict[str, Any] | None = None,
+        issues_after: list[dict[str, Any]] | None = None,
+        scene_core_after: dict[str, Any] | None = None,
+        progression_pressure: dict[str, Any] | None = None,
     ) -> str:
         """Update or create the narrative summary file with this round's contribution.
 
@@ -563,6 +569,12 @@ class AuditLogger:
             scene_state_after=scene_state_after,
             issue_updates=issue_updates,
             presence_changes=presence_changes,
+            continuity_tags=continuity_tags,
+            continuity_consequences=continuity_consequences,
+            resolved_outcome_debug=resolved_outcome_debug,
+            issues_after=issues_after,
+            scene_core_after=scene_core_after,
+            progression_pressure=progression_pressure,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
             utc_timestamp=utc_timestamp,
         )

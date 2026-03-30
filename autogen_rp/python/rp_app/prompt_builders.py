@@ -43,6 +43,10 @@ def build_director_selection_prompt(director_payload: dict[str, Any]) -> str:
     prog_prefix = ""
     if isinstance(prog, dict) and prog.get("active"):
         prog_prefix = str(prog.get("prompt_prefix", "") or "")
+    pressure = payload.pop("progression_pressure_director_hints", None)
+    pressure_prefix = ""
+    if isinstance(pressure, dict) and pressure.get("active"):
+        pressure_prefix = str(pressure.get("prompt_prefix", "") or "")
     hints = payload.pop("beat_shift_director_hints", None)
     beat_prefix = ""
     if isinstance(hints, dict) and hints.get("active"):
@@ -53,7 +57,7 @@ def build_director_selection_prompt(director_payload: dict[str, Any]) -> str:
         anti_prefix = str(anti.get("prompt_prefix", "") or "")
     settled = str(payload.pop("settled_scene_facts_prompt", "") or "")
     settled_prefix = f"{settled}\n" if settled.strip() else ""
-    prefix = f"{prog_prefix}{beat_prefix}{anti_prefix}{settled_prefix}"
+    prefix = f"{pressure_prefix}{prog_prefix}{beat_prefix}{anti_prefix}{settled_prefix}"
     body = (
         "Decide who acts next using only the structured scene information below. Return JSON only. "
         "If it is best to end the response cycle early, return "
