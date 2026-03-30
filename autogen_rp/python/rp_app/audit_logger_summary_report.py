@@ -6,7 +6,6 @@ from audit_instrumentation import (
     audit_instrumentation_enabled,
     log_audit_warning,
 )
-from audit_progression_analysis import build_progression_analysis
 from audit_logger_summary_output import (
     add_spotlight_anomaly,
     build_regression_checks,
@@ -255,7 +254,6 @@ def write_summary_report(
         record_issue_category=record_issue_category,
     )
     regression_checks = build_regression_checks(issue_categories)
-    progression_analysis = build_progression_analysis(turns)
     report = build_report(
         session_owner=session_owner,
         session_number=session_number,
@@ -270,7 +268,6 @@ def write_summary_report(
         issue_categories=issue_categories,
         heuristic_issue_categories=heuristic_issue_categories,
         regression_checks=regression_checks,
-        progression_analysis=progression_analysis,
         utc_timestamp=utc_timestamp,
         index_rounds=index.get("rounds", []),
     )
