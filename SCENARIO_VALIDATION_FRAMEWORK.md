@@ -242,3 +242,15 @@ For **each** scenario:
 
 - **Validation phase, not redesign:** failures should drive **targeted** changes only when reproducible and tied to a specific subsystem (contract, gate, selection, retry, continuity).
 - **Answer the question:** *“Did this change actually improve system behavior?”* — use structured_eval + audits; do not expand scope or redesign the framework preemptively.
+
+---
+
+## Latest validation status (checkpoint)
+
+Written assessment, limitations, and **required next-phase steps** (deeper runs, retries, repeatability, `strong_user_steer` text check) live in:
+
+`autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md` → section **“Validation checkpoint — initial LLM runs”**.
+
+### Deep simulation (headless)
+
+By default, **`--scenario`** runs use **deep simulation**: the runner honors scenario **`max_turns`** (or `--turns`) for how many **successful character turns** to allow in **one** simulated user message, and the **same cast may speak multiple times** (unlike Streamlit’s one-reply-per-bot cap for a single user round). Use **`--no-deep-simulation-turns`** to match that short UI-style cap. Ad-hoc mode (`--chars`, no `--scenario`) stays short-cap unless you pass **`--deep-simulation-turns`**.

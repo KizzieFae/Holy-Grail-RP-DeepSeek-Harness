@@ -12,6 +12,8 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --list-scenarios
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
+    # Scenario runs use deep simulation by default (full max_turns, repeat speakers). Match UI cap:
+    python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-deep-simulation-turns
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --beat-shift --turns 3 --audit
 """
 
@@ -120,6 +122,22 @@ def main() -> None:
         default=None,
         help="Write structured_eval JSON to this file (UTF-8).",
     )
+    p.add_argument(
+        "--deep-simulation-turns",
+        action="store_true",
+        help=(
+            "Headless only: honor --turns / scenario max_turns fully and allow the same cast "
+            "to speak multiple times in one simulated user round. Default when using --scenario."
+        ),
+    )
+    p.add_argument(
+        "--no-deep-simulation-turns",
+        action="store_true",
+        help=(
+            "Headless only: cap at one successful turn per bot per user round (Streamlit-style). "
+            "Overrides default deep mode for --scenario."
+        ),
+    )
     args = p.parse_args()
 
     if args.verdict in ("FAIL", "WARN") and not args.failure_class:
@@ -145,16 +163,23 @@ def main() -> None:
         audit_owner = audit_owner_slug(raw["id"])
         max_turns = int(args.turns) if args.turns is not None else int(raw["max_turns"])
         trigger_text = args.trigger if args.trigger is not None else str(raw["trigger_text"])
+        if args.no_deep_simulation_turns and args.deep_simulation_turns:
+            p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
+        deep_turns = not args.no_deep_simulation_turns
         st = prepare_headless_session(
             **prep_kw,
             audit_enabled=args.audit,
             audit_session_owner=audit_owner,
             progression_enforcement_disabled=args.no_progression_enforcement,
+            deep_simulation_turns=deep_turns,
         )
     else:
         ids = [x.strip() for x in (args.chars or "ayame,celina").split(",") if x.strip()]
         max_turns = int(args.turns) if args.turns is not None else 2
         trigger_text = args.trigger if args.trigger is not None else default_trigger
+        if args.no_deep_simulation_turns and args.deep_simulation_turns:
+            p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
+        deep_turns = bool(args.deep_simulation_turns)
         st = prepare_headless_session(
             character_card_ids=ids,
             opening_description=args.opening or default_opening,
@@ -164,6 +189,7 @@ def main() -> None:
             audit_enabled=args.audit,
             audit_session_owner="headless_adhoc",
             progression_enforcement_disabled=args.no_progression_enforcement,
+            deep_simulation_turns=deep_turns,
         )
 
     async def _run() -> None:

@@ -78,6 +78,37 @@ ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
 
 
+def resolve_bot_reply_limit_deep_simulation(
+    active_bot_count: int, configured_limit: int | None
+) -> int:
+    """Headless scenario runs: honor ``configured_limit`` without capping at bot count.
+
+    Streamlit uses ``min(limit, bot_count)`` so each bot speaks at most once per user round.
+    Validation scenarios often need the same cast to trade lines many times in one simulated
+    user message; this helper allows that while keeping the production path unchanged.
+    """
+    if active_bot_count <= 0:
+        return 0
+    if configured_limit is None or configured_limit < 1:
+        return active_bot_count
+    return int(configured_limit)
+
+
+def get_available_actors_allow_repeat_in_round(
+    participant_names: list[str],
+    used_actors: list[str] | None,
+    eligible_participants: list[str] | None,
+    offstage_characters: list[str] | None,
+) -> list[str]:
+    """Same as ``get_available_actors`` but ignore ``used_actors`` (repeat speakers allowed)."""
+    return get_available_actors(
+        participant_names,
+        None,
+        eligible_participants,
+        offstage_characters,
+    )
+
+
 def _parse_scene_phase(value: str) -> ScenePhase:
     v = str(value or "").strip().lower()
     for p in ScenePhase:
@@ -98,6 +129,18 @@ class HeadlessStreamlit:
 
 def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
     """Return kwargs for ``run_character_turns_impl`` bound to ``st_module``."""
+    sess = getattr(st_module, "session_state", {}) or {}
+    deep = bool(sess.get("headless_deep_simulation_turns"))
+    resolve_limit_fn = (
+        resolve_bot_reply_limit_deep_simulation
+        if deep
+        else memory_helpers.resolve_bot_reply_limit
+    )
+    available_actors_fn = (
+        get_available_actors_allow_repeat_in_round
+        if deep
+        else get_available_actors
+    )
 
     def get_scene_audit_logging_kwargs_for_headless(scene_state: Any | None) -> dict[str, Any]:
         base = get_scene_audit_logging_kwargs(scene_state)
@@ -314,16 +357,16 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
     return {
         "get_orchestration_state_fn": get_orchestration_state_fn,
         "start_audit_round_fn": lambda: state_helpers.start_audit_round(st_module=st_module),
-        "resolve_bot_reply_limit_fn": memory_helpers.resolve_bot_reply_limit,
+        "resolve_bot_reply_limit_fn": resolve_limit_fn,
         "get_current_bot_reply_limit_fn": lambda n: state_helpers.get_current_bot_reply_limit(
             st_module=st_module,
             active_bot_count=n,
             get_bot_reply_limit_widget_key_fn=lambda: state_helpers.get_bot_reply_limit_widget_key(
                 st_module=st_module
             ),
-            resolve_bot_reply_limit_fn=memory_helpers.resolve_bot_reply_limit,
+            resolve_bot_reply_limit_fn=resolve_limit_fn,
         ),
-        "get_available_actors_fn": get_available_actors,
+        "get_available_actors_fn": available_actors_fn,
         "set_audit_turn_fn": lambda tn: state_helpers.set_audit_turn(
             st_module=st_module, turn_number=tn
         ),
@@ -494,11 +537,13 @@ def prepare_headless_session(
     initial_phase: str | None = None,
     seed_issue: dict[str, Any] | None = None,
     expected_pressure_profile: str | None = None,
+    deep_simulation_turns: bool = False,
 ) -> Any:
     """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents."""
     st = HeadlessStreamlit()
     state_helpers.init_session_state(st_module=st)
     st.session_state["scene_grounding"] = empty_grounding_dict()
+    st.session_state["headless_deep_simulation_turns"] = bool(deep_simulation_turns)
 
     st.session_state["simulation_scenario_id"] = scenario_id
     st.session_state["simulation_scenario_title"] = scenario_title

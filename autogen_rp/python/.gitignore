@@ -177,3 +177,6 @@ appsettings.Development.json
 
 # Documentation reference files
 docs/src/reference
+
+# Headless LLM simulation outputs (`--metrics-out`); see testing todo for paths
+runs/

@@ -151,3 +151,68 @@ Verdict
 - **E / “Override improves progression success rate”**: Treat as **hypothesis** — log before/after in manual runs; hard to PASS/FAIL in one session without baseline.
 - **A / “No duplicate events”**: Define “duplicate” (same `turn_index`, same summary, etc.) or keep as manual spot-check.
 - **Prerequisite**: `DEEPSEEK_API_KEY` for LLM rows; `test_deepseek_api_key_exists` still **requires** the key in environments that run the full suite without `-m "not llm"` exclusions.
+
+---
+
+## Validation checkpoint — initial LLM runs (baseline vs treatment)
+
+**Status:** Results match expectations. This is a **strong initial** check of progression enforcement. The framework did what it was built for.
+
+### Assessment
+
+- Baseline vs treatment comparison **worked as intended**.
+- Treatment **consistently improved** structured progression metrics.
+- No obvious regressions in coherence, continuity, or character behavior in these runs.
+
+**Verdicts (initial pass):**
+
+- **emotional_loop_2char** — **PASS** (valid).
+- **conflict_3char** — **PASS** (valid).
+- **strong_user_steer** — **WARN** (valid until the garbled-character text issue is understood).
+
+### Limitations (identified)
+
+1. **Turn depth (2-character scenes)** — The harness effectively caps at **two bot replies per user message** when only two characters are present (`min(max_turns, bot_count)`). These runs were **short-form** validation, not full sustained-pressure validation: hard to see long stalls, plateau recovery, or retry under stress.
+2. **Retry paths not exercised** — No progression retries and no failed attempts in this batch. Gate-under-failure, retry correctness, and recovery are **not yet validated** by these runs.
+3. **Text corruption (strong_user_steer)** — Likely encoding or rendering; **not** treated as a progression-layer logic failure, but must be investigated and not ignored.
+
+### Next steps (required — validation only)
+
+**Do not:** redesign progression logic, tune thresholds, add metrics, or expand the scenario framework until the below is done.
+
+1. **Deeper runs (multi-turn pressure)**  
+   - **Option A (preferred):** Use **3-character** scenarios: `conflict_3char`, `passive_observer`, and **`long_session`** (critical). Aim to observe behavior over **many turns** (e.g. 5–10+ bot steps where the runner allows).  
+   - **Option B:** If needed, adjust the headless runner so **2-character** scenes can exceed two bot lines per user round when scenarios call for it.
+
+2. **Force retry conditions** — Deliberately set up runs (e.g. emotional_loop-style pressure) where non-qualifying / loop-prone turns are likely. Confirm gate, retry, and improved outcome; critical before calling the layer production-ready.
+
+3. **Re-run strong_user_steer** — Check if garbled text reproduces; narrow to encoding vs model vs narrator formatting.
+
+4. **Light repeatability** — For at least one scenario, run treatment **2–3×**; compare structured metrics and overall behavior.
+
+### Phase goal
+
+Confirm that under **sustained** pressure the system **keeps progression healthy**, **handles failures**, and **recovers via retry** without ruining scene quality. After that, the layer can be treated as **production-ready** for v1.
+
+### Current summary
+
+Progression enforcement is **functionally sound** and **measurably better than baseline** in the initial runs, but **not fully validated** under stress, retries, or long horizons yet.
+
+### Deep simulation (follow-up runs)
+
+`run_scene_simulation_llm.py` with **`--scenario`** now defaults to **deep mode**: full `max_turns` / `--turns` and repeat speakers in one simulated user round. Use **`--no-deep-simulation-turns`** only when you intentionally want the old two-bot / three-bot short cap. See **SCENARIO_VALIDATION_FRAMEWORK.md** → *Deep simulation (headless)*.
+
+### Phase 2 — deeper LLM runs (executed)
+
+Artifacts: `autogen_rp/python/runs/progression_val/phase2/*.json`; audits **083–093**.
+
+| Run | Notes |
+|-----|--------|
+| **conflict_3char** baseline | 8 turns, all qualifying, no retries. |
+| **conflict_3char** treatment | 8 turns, **5 progression retries**, **3 failed attempts**, 7 qualifying / 1 non-qualifying — **retry path exercised**; review session **084** audit for retry quality. |
+| **passive_observer** baseline / treatment | 5 turns each; no retries; observer intent unchanged at a glance — **PASS** on “no forced observer center stage” pending your prose read. |
+| **long_session** (`--turns 12`) | Stopped early (**5** baseline / **4** treatment continuity turns): **character exit** (`exit` consequence) left one actor; not a 12-turn arc. Treatment: all qualifying (4/0) vs baseline 3/2 — metrics favor treatment. **WARN**: `long_session` did not hit requested depth; also **mojibake** (U+FFFD) in echoed dialogue where em dash / apostrophe should be — **encoding / console / model**, not progression logic. |
+| **strong_user_steer** treatment ×2 | Each: **1 progression retry**, 0 failed attempts, 5 turns — retry observed; check prose for garbling. |
+| **emotional_loop_2char** treatment ×3 | Metrics: runs 1 & 3 match (first qual **1**, 6/0); run 2 differs (first qual **2**, 5/1) — **mostly stable**, LLM variance as expected. |
+
+**Still open:** fix or document UTF-8 path for Windows console + audit export; re-run **long_session** if you need a true 12+ turn arc without early exit (may need scenario or presence rules review, out of scope for progression tuning).
