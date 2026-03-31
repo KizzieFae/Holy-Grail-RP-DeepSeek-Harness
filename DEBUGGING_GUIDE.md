@@ -52,6 +52,10 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 - **Retry behavior** — `turn_runner_turn.py` (duplicate retry branch)
 - **Do not** “fix” with Narrator instructions until duplicate rejection logic is understood.
 
+### Progression enforcement (structural delta under stall)
+
+When **beat-shift is active** or **progression pressure is high**, a character turn must produce a **qualifying continuity delta** after `process_turn` (consequences / issue movement / arrival-exit / bounded `scene_state_updates`), or the runtime **retries once** before failing the turn. Logic: `progression_enforcement.py`; pipeline: `process_turn` runs **before** narrator/chat in `turn_runner_turn.py`, with snapshot/restore on failed check. **Q3 (presence)** uses continuity `turn_meta["consequences"]` only (same signal orchestration mirrors later), not `orchestration_state` alone.
+
 ### Knowledge leaks / wrong “who knows what”
 
 - **Prompt assembly first** — `perception_audibility.py` (structured `move` + filtering), then `app_turn_prompting.py` / `prompt_builders.py`; verify **each** character’s Director/character `_full.json` `input_messages`, not the shared `_narrative.json` dialogue column alone

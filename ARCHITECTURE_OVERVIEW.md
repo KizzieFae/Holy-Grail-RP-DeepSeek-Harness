@@ -54,6 +54,7 @@ PRD alignment: vector retrieval is for **similarity and suggestions**, not autho
 - **State:** `ContinuityManager` and related types hold structured scene, issue, event, and interpretation state (see `continuity_manager.py`, `continuity_state.py`).
 - **Turn flow:** Director selection → character structured move → validation → Narrator render → continuity updates (see `turn_runner*.py`, `app_turn_*.py`). **Scene Grounding (MVP):** after continuity commit, derive a capped **settled facts** block for Director/character prompts — [PRD](./Holy%20Grail%20PRD.md) §5.8, [technical spec](./autogen_rp/docs/scene-grounding-layer.md).
 - **Orchestration:** Final speaker resolution combines address, continuation override, Director, validation/reconciliation (PRD §5.3); implemented in `orchestration_helpers.py` and turn pipeline.
+- **Behavioral Validation Layer:** Scenario manifests, headless runs on the same path as Streamlit, optional audit JSON, structured metrics (`structured_eval`), and baseline vs treatment (e.g. `--no-progression-enforcement`). Canonical spec: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md).
 
 Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architecture.md`.
 
@@ -85,6 +86,7 @@ Prefer **continuity → scene grounding → orchestration → summaries → vali
 
 ## Related docs
 
+- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — **Behavioral Validation Layer** (core architectural layer: scenarios, headless LLM runs, audits, metrics, baseline comparison)
 - [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) — diagnosis order and symptom routing
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet intent and field groupings
 - [GLOSSARY.md](./GLOSSARY.md) — terms

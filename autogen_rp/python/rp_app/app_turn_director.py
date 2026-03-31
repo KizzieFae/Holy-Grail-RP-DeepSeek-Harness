@@ -413,6 +413,12 @@ async def choose_next_actor(
             f"{decision.get('reason', '')} | Validation: {'; '.join(turn_selection_issues)}"
         ).strip(" |")
 
+    if st_module.session_state.get("progression_enforcement_disabled"):
+        progression_enforcement_gate = False
+    else:
+        progression_enforcement_gate = beat_shift_active or (
+            progression_advisory_snapshot.get("progression_pressure") == "high"
+        )
     progression_override_actor = resolve_progression_override_actor(
         director_selected_actor=str(decision.get("next_actor", "") or ""),
         available_actors=available_actors,
@@ -426,6 +432,7 @@ async def choose_next_actor(
             for item in (orchestration_state.get("recent_structured_moves", []) or [])
             if isinstance(item, dict)
         ],
+        progression_enforcement_gate=progression_enforcement_gate,
     )
     if progression_override_actor and progression_override_actor != decision.get(
         "next_actor"

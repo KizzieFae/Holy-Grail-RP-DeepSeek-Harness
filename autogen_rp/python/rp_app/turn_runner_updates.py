@@ -45,6 +45,7 @@ def apply_successful_turn_updates(
     director_decision_history_limit: int,
     environment_history_limit: int,
     tension_history_limit: int,
+    skip_continuity_process_turn: bool = False,
 ) -> dict[str, Any]:
     if state_manager:
         state_manager.update_character_move(
@@ -62,12 +63,13 @@ def apply_successful_turn_updates(
     presence_changes: list[dict[str, Any]] | None = None
     if continuity_manager:
         try:
-            continuity_manager.process_turn(
-                acting_character=next_actor,
-                move=move,
-                director_decision=decision,
-                other_characters=[name for name in char_names if name != next_actor],
-            )
+            if not skip_continuity_process_turn:
+                continuity_manager.process_turn(
+                    acting_character=next_actor,
+                    move=move,
+                    director_decision=decision,
+                    other_characters=[name for name in char_names if name != next_actor],
+                )
             sync_orchestration_state_from_continuity_fn()
 
             turn_index = int(getattr(continuity_manager, "turn_counter", 0) or 0)

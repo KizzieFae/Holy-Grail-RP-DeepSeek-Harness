@@ -1,0 +1,731 @@
+"""Wire ``turn_runner.run_character_turns`` without Streamlit (same LLM stack as the app).
+
+Director selection, character generation, narrator render, validation, progression gate,
+and continuity updates follow the production path. Use for checklist-style review instead
+of only hand-running Streamlit scenes.
+"""
+
+from __future__ import annotations
+
+import json
+from contextlib import nullcontext
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any
+
+import app_memory_helpers as memory_helpers
+import app_state_helpers as state_helpers
+import app_turn_helpers as turn_helpers
+from character_loader import CharacterLoader, make_agent_identifier
+from continuity_manager import ContinuityManager
+from continuity_state import IssueState, IssueStatus, ScenePhase
+from model_client import create_deepseek_client, create_director_agent, create_narrator_agent
+from orchestration_helpers import (
+    append_turn_to_orchestration_state,
+    build_recent_scene_context as build_recent_scene_context_impl,
+    choose_fallback_actor as choose_fallback_actor_impl,
+    ensure_orchestration_state,
+    sync_orchestration_state_from_continuity as sync_orchestration_state_from_continuity_impl,
+)
+from perception_audibility import build_recent_dialogue_history_for_viewer
+from prompt_builders import (
+    build_character_turn_prompt as build_character_turn_prompt_text,
+    build_director_selection_prompt,
+    build_narrator_render_prompt,
+    build_scene_role_prompt_context,
+)
+from response_validation import (
+    build_attempted_post_details,
+    get_available_actors,
+    get_must_remain_characters,
+    parse_character_move,
+    parse_director_decision,
+    validate_bot_response,
+    validate_turn_selection_decision,
+)
+from scene_grounding import empty_grounding_dict
+from semantic_validation import (
+    assess_narrator_render_semantics,
+    assess_presence_violation_semantics,
+    assess_turn_selection_decision_semantics,
+    reconcile_turn_selection_issues,
+    should_override_presence_rejection,
+)
+from summary_audit_helpers import (
+    build_summary_block_audit_metadata,
+    get_character_scene_audit_context,
+    get_scene_audit_logging_kwargs,
+    serialize_canon_anchors_for_prompt,
+    serialize_events_for_prompt,
+    serialize_summary_blocks_for_prompt,
+)
+from audit_logger import get_audit_logger
+from character_state import CharacterState
+from cross_session_memory_policy import compact_report_for_audit
+from progression_run_metrics import (
+    build_structured_eval_payload,
+    summarize_sim_progression_metrics,
+)
+from turn_runner import run_character_turns as run_character_turns_impl
+
+PROMPT_DIALOGUE_HISTORY_LIMIT = 6
+PROMPT_STRUCTURED_MOVE_LIMIT = 4
+DIRECTOR_SPOTLIGHT_HISTORY_LIMIT = 6
+ORCHESTRATION_SPOTLIGHT_HISTORY_LIMIT = 12
+ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
+ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
+ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
+ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
+
+
+def _parse_scene_phase(value: str) -> ScenePhase:
+    v = str(value or "").strip().lower()
+    for p in ScenePhase:
+        if p.value == v:
+            return p
+    raise ValueError(f"Unknown scene phase: {value!r}; use one of {[e.value for e in ScenePhase]}")
+
+
+class HeadlessStreamlit:
+    """Minimal stand-in for ``streamlit`` module (session_state + spinner)."""
+
+    def __init__(self) -> None:
+        self.session_state: dict[str, Any] = {}
+
+    def spinner(self, _message: str):
+        return nullcontext()
+
+
+def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
+    """Return kwargs for ``run_character_turns_impl`` bound to ``st_module``."""
+
+    def get_scene_audit_logging_kwargs_for_headless(scene_state: Any | None) -> dict[str, Any]:
+        base = get_scene_audit_logging_kwargs(scene_state)
+        report = st_module.session_state.get("cross_session_injection_report")
+        if isinstance(report, dict):
+            base = dict(base)
+            base["cross_session_injection_report"] = compact_report_for_audit(report)
+        return base
+
+    def is_audit_on() -> bool:
+        return bool(st_module.session_state.get("audit_enabled"))
+
+    def get_orchestration_state_fn() -> dict[str, Any]:
+        return state_helpers.get_orchestration_state(
+            st_module=st_module,
+            ensure_orchestration_state_fn=ensure_orchestration_state,
+        )
+
+    def get_model_client_fn() -> Any:
+        return st_module.session_state.get("model_client")
+
+    def get_continuity_manager_fn() -> ContinuityManager | None:
+        return state_helpers.get_continuity_manager(
+            st_module=st_module,
+            continuity_manager_cls=ContinuityManager,
+        )
+
+    def enforce_must_remain_presence_fn() -> None:
+        state_helpers.enforce_must_remain_presence(
+            st_module=st_module,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            get_must_remain_characters_fn=get_must_remain_characters,
+            get_orchestration_state_fn=get_orchestration_state_fn,
+        )
+
+    def sync_orchestration_state_from_continuity_fn() -> None:
+        state_helpers.sync_orchestration_state_from_continuity(
+            st_module=st_module,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            get_orchestration_state_fn=get_orchestration_state_fn,
+            sync_orchestration_state_from_continuity_impl_fn=sync_orchestration_state_from_continuity_impl,
+            enforce_must_remain_presence_fn=enforce_must_remain_presence_fn,
+        )
+
+    def get_character_display_name_fn(identifier: str) -> str:
+        return state_helpers.get_character_display_name(
+            st_module=st_module,
+            identifier=identifier,
+            character_state_cls=CharacterState,
+            character_loader_cls=CharacterLoader,
+            resolve_character_file_fn=lambda loader, ident: state_helpers.resolve_character_file(
+                loader=loader,
+                identifier=ident,
+                make_agent_identifier_fn=make_agent_identifier,
+            ),
+        )
+
+    def build_recent_dialogue_history_fn(
+        chat_history: list[dict[str, Any]],
+        limit: int = PROMPT_DIALOGUE_HISTORY_LIMIT,
+        viewer_character_name: str | None = None,
+    ) -> list[dict[str, str]]:
+        names = [
+            str(a.name)
+            for a in st_module.session_state.get("characters", [])
+            if getattr(a, "name", None)
+        ]
+        return build_recent_dialogue_history_for_viewer(
+            chat_history=chat_history,
+            viewer_character_name=viewer_character_name,
+            character_names=names,
+            get_character_display_name_fn=get_character_display_name_fn,
+            limit=limit,
+        )
+
+    def build_character_turn_prompt_fn(
+        char_name: str,
+        user_name: str,
+        trigger_text: str,
+        director_decision: dict[str, Any],
+    ) -> tuple[str, dict[str, Any]]:
+        return turn_helpers.build_character_turn_prompt(
+            st_module=st_module,
+            char_name=char_name,
+            user_name=user_name,
+            trigger_text=trigger_text,
+            director_decision=director_decision,
+            enforce_must_remain_presence_fn=enforce_must_remain_presence_fn,
+            get_orchestration_state_fn=get_orchestration_state_fn,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
+            serialize_events_for_prompt_fn=serialize_events_for_prompt,
+            serialize_canon_anchors_for_prompt_fn=serialize_canon_anchors_for_prompt,
+            serialize_summary_blocks_for_prompt_fn=serialize_summary_blocks_for_prompt,
+            build_summary_block_audit_metadata_fn=build_summary_block_audit_metadata,
+            build_scene_role_prompt_context_fn=build_scene_role_prompt_context,
+            build_character_turn_prompt_text_fn=build_character_turn_prompt_text,
+            prompt_structured_move_limit=PROMPT_STRUCTURED_MOVE_LIMIT,
+            prompt_dialogue_history_limit=PROMPT_DIALOGUE_HISTORY_LIMIT,
+            get_character_display_name_fn=get_character_display_name_fn,
+        )
+
+    def choose_fallback_actor_fn(
+        available_actors: list[str],
+        forced_speaker: str | None,
+        *,
+        prefer_continuing_spotlight: bool = False,
+    ) -> str | None:
+        return turn_helpers.choose_fallback_actor(
+            available_actors=available_actors,
+            forced_speaker=forced_speaker,
+            spotlight_history=get_orchestration_state_fn().get("spotlight_history", []),
+            choose_fallback_actor_impl_fn=choose_fallback_actor_impl,
+            prefer_continuing_spotlight=prefer_continuing_spotlight,
+        )
+
+    async def choose_next_actor_fn(**kwargs: Any) -> dict[str, Any]:
+        return await turn_helpers.choose_next_actor(
+            st_module=st_module,
+            get_model_client_fn=get_model_client_fn,
+            enforce_must_remain_presence_fn=enforce_must_remain_presence_fn,
+            get_orchestration_state_fn=get_orchestration_state_fn,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            build_scene_role_prompt_context_fn=build_scene_role_prompt_context,
+            serialize_summary_blocks_for_prompt_fn=serialize_summary_blocks_for_prompt,
+            build_summary_block_audit_metadata_fn=build_summary_block_audit_metadata,
+            serialize_events_for_prompt_fn=serialize_events_for_prompt,
+            serialize_canon_anchors_for_prompt_fn=serialize_canon_anchors_for_prompt,
+            build_director_selection_prompt_fn=build_director_selection_prompt,
+            parse_director_decision_fn=parse_director_decision,
+            choose_fallback_actor_fn=choose_fallback_actor_fn,
+            validate_turn_selection_decision_fn=validate_turn_selection_decision,
+            assess_turn_selection_decision_semantics_fn=assess_turn_selection_decision_semantics,
+            reconcile_turn_selection_issues_fn=reconcile_turn_selection_issues,
+            is_audit_enabled_fn=is_audit_on,
+            get_audit_logger_fn=get_audit_logger,
+            get_audit_context_fn=lambda: state_helpers.get_audit_context(
+                st_module=st_module,
+                is_audit_enabled_fn=is_audit_on,
+                get_audit_logger_fn=get_audit_logger,
+            ),
+            get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_headless,
+            refresh_audit_summary_report_fn=lambda: state_helpers.refresh_audit_summary_report(
+                st_module=st_module,
+                is_audit_enabled_fn=is_audit_on,
+                get_audit_logger_fn=get_audit_logger,
+                get_audit_context_fn=lambda: state_helpers.get_audit_context(
+                    st_module=st_module,
+                    is_audit_enabled_fn=is_audit_on,
+                    get_audit_logger_fn=get_audit_logger,
+                ),
+            ),
+            build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
+            prompt_dialogue_history_limit=PROMPT_DIALOGUE_HISTORY_LIMIT,
+            director_spotlight_history_limit=DIRECTOR_SPOTLIGHT_HISTORY_LIMIT,
+            **kwargs,
+        )
+
+    def log_turn_failure_fn(**kwargs: Any) -> None:
+        turn_helpers.log_turn_failure(
+            st_module=st_module,
+            is_audit_enabled_fn=is_audit_on,
+            get_audit_logger_fn=get_audit_logger,
+            get_audit_context_fn=lambda: state_helpers.get_audit_context(
+                st_module=st_module,
+                is_audit_enabled_fn=is_audit_on,
+                get_audit_logger_fn=get_audit_logger,
+            ),
+            build_attempted_post_details_fn=build_attempted_post_details,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_headless,
+            get_character_scene_audit_context_fn=get_character_scene_audit_context,
+            **kwargs,
+        )
+
+    def record_character_memories_fn(
+        acting_character: str,
+        move: dict[str, Any],
+        director_decision: dict[str, Any],
+    ) -> None:
+        memory_helpers.record_character_memories(
+            st_module=st_module,
+            acting_character=acting_character,
+            move=move,
+            director_decision=director_decision,
+            build_memory_fact_summary_fn=memory_helpers.build_memory_fact_summary,
+        )
+
+    async def reset_agents_fn(agents: list[Any], cancellation_token: Any) -> None:
+        await state_helpers.reset_agents(agents, cancellation_token)
+
+    async def render_character_move_fn(
+        narrator: Any,
+        char_name: str,
+        move: dict[str, Any],
+        scene_context: str,
+        director_decision: dict[str, Any],
+        cancellation_token: Any,
+        *,
+        beat_shift_narrator_suffix: str = "",
+    ) -> tuple[str, str, str]:
+        return await turn_helpers.render_character_move(
+            narrator=narrator,
+            char_name=char_name,
+            move=move,
+            scene_context=scene_context,
+            director_decision=director_decision,
+            cancellation_token=cancellation_token,
+            build_narrator_render_prompt_fn=build_narrator_render_prompt,
+            fallback_render_move_fn=turn_helpers.fallback_render_move,
+            beat_shift_narrator_suffix=beat_shift_narrator_suffix,
+        )
+
+    return {
+        "get_orchestration_state_fn": get_orchestration_state_fn,
+        "start_audit_round_fn": lambda: state_helpers.start_audit_round(st_module=st_module),
+        "resolve_bot_reply_limit_fn": memory_helpers.resolve_bot_reply_limit,
+        "get_current_bot_reply_limit_fn": lambda n: state_helpers.get_current_bot_reply_limit(
+            st_module=st_module,
+            active_bot_count=n,
+            get_bot_reply_limit_widget_key_fn=lambda: state_helpers.get_bot_reply_limit_widget_key(
+                st_module=st_module
+            ),
+            resolve_bot_reply_limit_fn=memory_helpers.resolve_bot_reply_limit,
+        ),
+        "get_available_actors_fn": get_available_actors,
+        "set_audit_turn_fn": lambda tn: state_helpers.set_audit_turn(
+            st_module=st_module, turn_number=tn
+        ),
+        "choose_next_actor_fn": choose_next_actor_fn,
+        "log_turn_failure_fn": log_turn_failure_fn,
+        "build_character_turn_prompt_fn": build_character_turn_prompt_fn,
+        "parse_character_move_fn": parse_character_move,
+        "is_audit_enabled_fn": is_audit_on,
+        "get_audit_logger_fn": get_audit_logger,
+        "get_audit_context_fn": lambda: state_helpers.get_audit_context(
+            st_module=st_module,
+            is_audit_enabled_fn=is_audit_on,
+            get_audit_logger_fn=get_audit_logger,
+        ),
+        "get_scene_audit_logging_kwargs_fn": get_scene_audit_logging_kwargs_for_headless,
+        "get_character_scene_audit_context_fn": get_character_scene_audit_context,
+        "get_continuity_manager_fn": get_continuity_manager_fn,
+        "get_model_client_fn": get_model_client_fn,
+        "validate_bot_response_fn": validate_bot_response,
+        "assess_presence_violation_semantics_fn": assess_presence_violation_semantics,
+        "should_override_presence_rejection_fn": should_override_presence_rejection,
+        "build_recent_scene_context_fn": lambda ch, orch, limit=6: turn_helpers.build_recent_scene_context(
+            chat_history=ch,
+            orchestration_state=orch,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
+            build_recent_scene_context_impl_fn=build_recent_scene_context_impl,
+            limit=limit,
+        ),
+        "render_character_move_fn": render_character_move_fn,
+        "fallback_render_move_fn": turn_helpers.fallback_render_move,
+        "assess_narrator_render_semantics_fn": assess_narrator_render_semantics,
+        "record_character_memories_fn": record_character_memories_fn,
+        "sync_orchestration_state_from_continuity_fn": sync_orchestration_state_from_continuity_fn,
+        "refresh_audit_summary_report_fn": lambda: state_helpers.refresh_audit_summary_report(
+            st_module=st_module,
+            is_audit_enabled_fn=is_audit_on,
+            get_audit_logger_fn=get_audit_logger,
+            get_audit_context_fn=lambda: state_helpers.get_audit_context(
+                st_module=st_module,
+                is_audit_enabled_fn=is_audit_on,
+                get_audit_logger_fn=get_audit_logger,
+            ),
+        ),
+        "reset_agents_fn": reset_agents_fn,
+        "get_character_display_name_fn": get_character_display_name_fn,
+        "append_turn_to_orchestration_state_fn": append_turn_to_orchestration_state,
+        "spotlight_history_limit": ORCHESTRATION_SPOTLIGHT_HISTORY_LIMIT,
+        "structured_move_history_limit": ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT,
+        "director_decision_history_limit": ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT,
+        "environment_history_limit": ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT,
+        "tension_history_limit": ORCHESTRATION_TENSION_HISTORY_LIMIT,
+    }
+
+
+@dataclass
+class HeadlessSimulationResult:
+    chat_history: list[dict[str, Any]]
+    recent_structured_moves: list[dict[str, Any]]
+    selector_decisions: list[str]
+    continuity_turn_counter: int
+    last_turn_consequences: list[Any]
+    scenario_id: str | None = None
+    scenario_title: str | None = None
+    scenario_intent: str | None = None
+    audit_session_number: int | None = None
+    audit_summary_report_path: str | None = None
+    progression_metrics_summary: dict[str, Any] | None = None
+    structured_eval: dict[str, Any] | None = None
+
+
+async def run_headless_llm_scene(
+    *,
+    st_module: Any,
+    max_turns: int,
+    trigger_text: str,
+    user_name: str,
+    verdict: str | None = None,
+    failure_classification: str | None = None,
+) -> HeadlessSimulationResult:
+    """Run ``run_character_turns_impl``; session must already hold model client and agents."""
+    char_agents: list[Any] = list(st_module.session_state.get("characters") or [])
+    if not char_agents:
+        raise ValueError("st_module.session_state['characters'] must list loaded agents")
+    if st_module.session_state.get("model_client") is None:
+        raise ValueError("st_module.session_state['model_client'] is required")
+
+    client = st_module.session_state["model_client"]
+    narrator = create_narrator_agent(client)
+    director = create_director_agent(client)
+
+    kwargs = build_headless_turn_runner_kwargs(st_module=st_module)
+    await run_character_turns_impl(
+        st_module=st_module,
+        char_agents=char_agents,
+        narrator=narrator,
+        director=director,
+        trigger_text=trigger_text,
+        user_name=user_name,
+        max_turns=max_turns,
+        **kwargs,
+    )
+
+    cm = state_helpers.get_continuity_manager(
+        st_module=st_module, continuity_manager_cls=ContinuityManager
+    )
+    ti = int(getattr(cm, "turn_counter", 0) or 0) if cm else 0
+    meta = (
+        (getattr(cm, "turn_metadata_by_index", {}) or {}).get(ti, {})
+        if cm
+        else {}
+    )
+    last_cons = meta.get("consequences", []) if isinstance(meta, dict) else []
+
+    orch = ensure_orchestration_state(st_module.session_state.get("team_state"))
+    st_module.session_state["team_state"] = orch
+    moves = orch.get("recent_structured_moves", [])
+
+    rep_path = st_module.session_state.get("audit_summary_report_path")
+    raw_metrics = st_module.session_state.get("sim_progression_metrics")
+    metrics_list = raw_metrics if isinstance(raw_metrics, list) else []
+    enf_on = not bool(st_module.session_state.get("progression_enforcement_disabled"))
+    metrics_summary = summarize_sim_progression_metrics(
+        metrics_list,
+        progression_enforcement_enabled=enf_on,
+    )
+    structured = build_structured_eval_payload(
+        scenario_id=st_module.session_state.get("simulation_scenario_id"),
+        verdict=verdict,
+        failure_classification=failure_classification,
+        metrics=metrics_summary,
+        audit_session_number=st_module.session_state.get("audit_session_number"),
+        audit_summary_report_path=str(rep_path) if rep_path else None,
+        expected_pressure_profile=st_module.session_state.get(
+            "simulation_expected_pressure_profile"
+        ),
+    )
+    return HeadlessSimulationResult(
+        chat_history=list(st_module.session_state.get("chat_history") or []),
+        recent_structured_moves=list(moves) if isinstance(moves, list) else [],
+        selector_decisions=list(st_module.session_state.get("selector_decisions") or []),
+        continuity_turn_counter=ti,
+        last_turn_consequences=list(last_cons) if isinstance(last_cons, list) else [],
+        scenario_id=st_module.session_state.get("simulation_scenario_id"),
+        scenario_title=st_module.session_state.get("simulation_scenario_title"),
+        scenario_intent=st_module.session_state.get("simulation_scenario_intent"),
+        audit_session_number=st_module.session_state.get("audit_session_number"),
+        audit_summary_report_path=str(rep_path) if rep_path else None,
+        progression_metrics_summary=metrics_summary,
+        structured_eval=structured,
+    )
+
+
+def prepare_headless_session(
+    *,
+    character_card_ids: list[str],
+    opening_description: str,
+    location: str,
+    seed_escalating_issue: bool = True,
+    beat_shift_active: bool = False,
+    progression_enforcement_disabled: bool = False,
+    audit_enabled: bool = False,
+    audit_session_owner: str = "headless_sim",
+    scenario_id: str | None = None,
+    scenario_title: str | None = None,
+    scenario_intent: str | None = None,
+    initial_tension: str | None = None,
+    initial_phase: str | None = None,
+    seed_issue: dict[str, Any] | None = None,
+    expected_pressure_profile: str | None = None,
+) -> Any:
+    """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents."""
+    st = HeadlessStreamlit()
+    state_helpers.init_session_state(st_module=st)
+    st.session_state["scene_grounding"] = empty_grounding_dict()
+
+    st.session_state["simulation_scenario_id"] = scenario_id
+    st.session_state["simulation_scenario_title"] = scenario_title
+    st.session_state["simulation_scenario_intent"] = scenario_intent
+    st.session_state["simulation_expected_pressure_profile"] = expected_pressure_profile
+    st.session_state["sim_progression_metrics"] = []
+    st.session_state["progression_enforcement_disabled"] = bool(
+        progression_enforcement_disabled
+    )
+
+    owner = str(audit_session_owner or "headless_sim").strip() or "headless_sim"
+    st.session_state["scene_owner"] = owner
+    if audit_enabled:
+        st.session_state["audit_enabled"] = True
+        logger = get_audit_logger()
+        st.session_state["audit_session_number"] = logger.get_next_session_number()
+        st.session_state["audit_session_owner"] = owner
+        st.session_state["audit_round_number"] = 0
+        st.session_state["audit_turn_number"] = 0
+        st.session_state["audit_summary_report_path"] = None
+    else:
+        st.session_state["audit_enabled"] = False
+        st.session_state["audit_session_number"] = None
+        st.session_state["audit_session_owner"] = None
+
+    loader = CharacterLoader()
+    resolved_files: list[str] = []
+    display_names: list[str] = []
+    for cid in character_card_ids:
+        cf = state_helpers.resolve_character_file(
+            loader=loader,
+            identifier=cid,
+            make_agent_identifier_fn=make_agent_identifier,
+        )
+        if cf is None:
+            raise ValueError(f"Unknown character card id: {cid!r}")
+        card = loader.load_character_card(cf)
+        resolved_files.append(cf)
+        name = str(card.get("name", "") or "").strip() or cf
+        display_names.append(name)
+    st.session_state["selected_chars"] = resolved_files
+
+    def _sync() -> None:
+        state_helpers.sync_orchestration_state_from_continuity(
+            st_module=st,
+            get_continuity_manager_fn=lambda: state_helpers.get_continuity_manager(
+                st_module=st, continuity_manager_cls=ContinuityManager
+            ),
+            get_orchestration_state_fn=lambda: state_helpers.get_orchestration_state(
+                st_module=st, ensure_orchestration_state_fn=ensure_orchestration_state
+            ),
+            sync_orchestration_state_from_continuity_impl_fn=sync_orchestration_state_from_continuity_impl,
+            enforce_must_remain_presence_fn=lambda: state_helpers.enforce_must_remain_presence(
+                st_module=st,
+                get_continuity_manager_fn=lambda: state_helpers.get_continuity_manager(
+                    st_module=st, continuity_manager_cls=ContinuityManager
+                ),
+                get_must_remain_characters_fn=get_must_remain_characters,
+                get_orchestration_state_fn=lambda: state_helpers.get_orchestration_state(
+                    st_module=st, ensure_orchestration_state_fn=ensure_orchestration_state
+                ),
+            ),
+        )
+
+    state_helpers.restore_or_initialize_continuity_manager(
+        st_module=st,
+        continuity_state=None,
+        character_names=display_names,
+        opening_description=opening_description,
+        scene_setup=None,
+        continuity_manager_cls=ContinuityManager,
+        build_initial_scene_issues_fn=state_helpers.build_initial_scene_issues,
+        apply_scene_setup_to_scene_state_fn=state_helpers.apply_scene_setup_to_scene_state,
+        sync_orchestration_state_from_continuity_fn=_sync,
+    )
+
+    cm = state_helpers.get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
+    if cm is not None and cm.scene_state is not None:
+        cm.scene_state.location = location
+        if initial_tension is not None:
+            cm.scene_state.current_tension_level = str(initial_tension)
+        else:
+            cm.scene_state.current_tension_level = "high" if seed_escalating_issue else "low"
+        if initial_phase is not None:
+            cm.scene_state.phase = _parse_scene_phase(str(initial_phase))
+        else:
+            cm.scene_state.phase = ScenePhase.RISING if seed_escalating_issue else ScenePhase.OPENING
+        if seed_escalating_issue:
+            now = datetime.now(timezone.utc)
+            card_to_display = dict(zip(character_card_ids, display_names))
+            if seed_issue and isinstance(seed_issue, dict):
+                iid = str(seed_issue.get("issue_id") or "sim_standoff").strip() or "sim_standoff"
+                desc = str(
+                    seed_issue.get("description")
+                    or "Competing demands at a pressure point; the scene must move."
+                )
+                p_cards = seed_issue.get("participant_card_ids")
+                if isinstance(p_cards, list) and p_cards:
+                    participants = []
+                    for c in p_cards:
+                        key = str(c).strip()
+                        if key not in card_to_display:
+                            raise ValueError(
+                                f"seed_issue participant_card_ids contains {key!r} "
+                                f"not in character_card_ids"
+                            )
+                        participants.append(card_to_display[key])
+                    if not participants:
+                        participants = list(display_names)
+                else:
+                    participants = list(display_names)
+            else:
+                iid = "sim_standoff"
+                desc = "Competing demands at a pressure point; the scene must move."
+                participants = list(display_names)
+            issue = IssueState(
+                issue_id=iid,
+                description=desc,
+                participants=participants,
+                status=IssueStatus.ESCALATING,
+                created_at=now,
+                last_turn_index=None,
+                status_reason="headless simulation seed",
+            )
+            cm.issues[issue.issue_id] = issue
+        _sync()
+
+    if beat_shift_active:
+        orch = state_helpers.get_orchestration_state(
+            st_module=st, ensure_orchestration_state_fn=ensure_orchestration_state
+        )
+        pbs = orch.get("pending_beat_shift")
+        if isinstance(pbs, dict):
+            pbs["active"] = True
+            pbs["reason"] = "short_user_message"
+            pbs["source_turn_id"] = "headless_sim_user_round_1"
+
+    client = create_deepseek_client()
+    st.session_state["model_client"] = client
+    state_helpers.rebuild_character_agents(
+        st_module=st,
+        model_client=client,
+        character_loader_cls=CharacterLoader,
+        resolve_character_file_fn=lambda ld, ident: state_helpers.resolve_character_file(
+            loader=ld,
+            identifier=ident,
+            make_agent_identifier_fn=make_agent_identifier,
+        ),
+    )
+    return st
+
+
+def format_simulation_audit_markdown(result: HeadlessSimulationResult) -> str:
+    """Human-readable audit block for checklist review."""
+    lines = [
+        "## LLM scene simulation audit",
+        "",
+    ]
+    if result.scenario_id:
+        lines.append(f"* **Scenario:** `{result.scenario_id}`")
+    if result.scenario_title:
+        lines.append(f"* **Title:** {result.scenario_title}")
+    if result.scenario_intent:
+        lines.append(f"* **Intent:** {result.scenario_intent}")
+    if result.audit_session_number is not None:
+        lines.append(f"* **Audit session:** {result.audit_session_number:03d}")
+    if result.audit_summary_report_path:
+        lines.append(f"* **Audit summary report:** `{result.audit_summary_report_path}`")
+    if result.progression_metrics_summary:
+        m = result.progression_metrics_summary
+        lines.append(
+            f"* **First qualifying delta (continuity turn index):** "
+            f"{m.get('first_qualifying_progression_delta_turn_index')!r}"
+        )
+        lines.append(f"* **Progression retries:** {m.get('progression_retries_triggered', 0)}")
+        lines.append(
+            f"* **Failed progression attempts:** {m.get('failed_progression_attempts', 0)}"
+        )
+        lines.append(
+            f"* **Qualifying / non-qualifying accepted turns:** "
+            f"{m.get('qualifying_turns', 0)} / {m.get('non_qualifying_turns', 0)}"
+        )
+        lines.append(
+            f"* **Progression enforcement:** "
+            f"{'on' if m.get('progression_enforcement_enabled') else 'off (baseline)'}"
+        )
+    if result.structured_eval:
+        se = result.structured_eval
+        if se.get("verdict") is not None:
+            lines.append(f"* **Verdict (manual):** {se.get('verdict')!r}")
+        if se.get("failure_classification") is not None:
+            lines.append(
+                f"* **Failure classification (manual):** {se.get('failure_classification')!r}"
+            )
+    lines.extend(
+        [
+            f"* **Continuity turns processed:** {result.continuity_turn_counter}",
+            f"* **Last turn classifier consequences:** {result.last_turn_consequences!r}",
+            "",
+            "### Selector / pipeline notes",
+        ]
+    )
+    for s in result.selector_decisions:
+        lines.append(f"- {s}")
+    lines.extend(["", "### Structured moves (orchestration)", ""])
+    for i, m in enumerate(result.recent_structured_moves, 1):
+        if not isinstance(m, dict):
+            lines.append(f"{i}. {m!r}")
+            continue
+        sp = m.get("speaker", "")
+        lines.append(f"{i}. **{sp}** action={m.get('action', '')!r} dialogue={m.get('dialogue', '')!r}")
+        lines.append(f"   - consequences: {m.get('consequences', [])!r}")
+    lines.extend(["", "### Chat history (rendered + user lines)", ""])
+    for entry in result.chat_history[-24:]:
+        role = entry.get("role", "")
+        name = entry.get("name", "")
+        content = str(entry.get("content", ""))[:500]
+        lines.append(f"- [{role}] {name}: {content!r}")
+    if result.structured_eval:
+        lines.extend(
+            [
+                "",
+                "### Structured run result (JSON)",
+                "",
+                "```json",
+                json.dumps(result.structured_eval, indent=2, ensure_ascii=False),
+                "```",
+            ]
+        )
+    return "\n".join(lines)

@@ -4,7 +4,14 @@ from autogen_agentchat.messages import TextMessage
 
 from beat_shift_state import build_narrator_beat_shift_suffix, is_pending_beat_shift_active
 from anti_regression_advisory import get_cached_anti_regression_advisory
+from continuity_manager import ContinuityManager
 from progression_advisory import get_cached_progression_advisory
+from progression_enforcement import (
+    collect_issue_signatures,
+    progression_enforcement_gate_active,
+    qualifies_as_progression_delta,
+)
+from progression_run_metrics import maybe_record_sim_progression_metric
 from turn_runner_audit import log_character_turn_audit
 from perception_audibility import normalize_move_audibility
 
@@ -43,6 +50,7 @@ async def execute_character_turn(
     assess_narrator_render_semantics_fn,
     log_turn_failure_fn,
     get_character_display_name_fn,
+    sync_orchestration_state_from_continuity_fn,
 ) -> dict[str, Any] | None:
     task_prompt, character_summary_block_audit = build_character_turn_prompt_fn(
         next_actor,
@@ -50,27 +58,39 @@ async def execute_character_turn(
         trigger_text,
         decision,
     )
-    continuity_manager = get_continuity_manager_fn()
-    scene_state = (
-        continuity_manager.scene_state.to_dict()
-        if continuity_manager is not None and continuity_manager.scene_state is not None
-        else orchestration_state.get("scene_state", {})
-    )
-
     move: dict[str, Any] | None = None
     rendered_move_result: dict[str, Any] | None = None
     semantic_presence_assessment = None
     rejection_reason = ""
     duplicate_retry_triggered = False
     duplicate_retry_reason = ""
+    progression_retry_triggered = False
+    progression_retry_reason = ""
+    continuity_applied_in_execute = False
 
     for attempt_index in range(2):
+        continuity_manager = get_continuity_manager_fn()
+        scene_state = (
+            continuity_manager.scene_state.to_dict()
+            if continuity_manager is not None and continuity_manager.scene_state is not None
+            else orchestration_state.get("scene_state", {})
+        )
         attempt_prompt = task_prompt
         if attempt_index == 1:
-            attempt_prompt = (
-                f"{task_prompt}\n\nIMPORTANT: Your previous attempt was rejected as a duplicate. "
-                "Write a materially different action/dialogue. Do not repeat previous dialogue verbatim."
-            )
+            retry_notes: list[str] = []
+            if duplicate_retry_triggered:
+                retry_notes.append(
+                    "IMPORTANT: Your previous attempt was rejected as a duplicate. "
+                    "Write a materially different action/dialogue. Do not repeat previous dialogue verbatim."
+                )
+            if progression_retry_triggered:
+                retry_notes.append(
+                    "IMPORTANT: Your previous attempt did not produce sufficient scene progression "
+                    "(no decisive continuity consequence, issue movement, arrival/exit, or bounded settlement). "
+                    "Revise so this beat changes the situation in a concrete, observable way."
+                )
+            if retry_notes:
+                attempt_prompt = task_prompt + "\n\n" + "\n\n".join(retry_notes)
 
         task = TextMessage(content=attempt_prompt, source="system")
 
@@ -216,6 +236,137 @@ async def execute_character_turn(
             )
             return None
 
+        continuity_applied_in_execute = False
+        cm_exec = get_continuity_manager_fn()
+        if cm_exec is not None and cm_exec.scene_state is not None:
+            snapshot = cm_exec.to_dict()
+            issues_before = collect_issue_signatures(cm_exec)
+            gate = progression_enforcement_gate_active(
+                orchestration_state=orchestration_state,
+                continuity_manager=cm_exec,
+            )
+            enforcement_disabled = bool(
+                st_module.session_state.get("progression_enforcement_disabled")
+            )
+            gate_effective = gate and not enforcement_disabled
+            try:
+                cm_exec.process_turn(
+                    acting_character=next_actor,
+                    move=dict(move),
+                    director_decision=decision,
+                    other_characters=[name for name in char_names if name != next_actor],
+                )
+            except Exception:
+                st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
+                    snapshot
+                )
+                sync_orchestration_state_from_continuity_fn()
+                raise
+            sync_orchestration_state_from_continuity_fn()
+            turn_idx = int(getattr(cm_exec, "turn_counter", 0) or 0)
+            meta_by = getattr(cm_exec, "turn_metadata_by_index", {}) or {}
+            turn_meta = meta_by.get(turn_idx, {}) if isinstance(meta_by, dict) else {}
+            if not isinstance(turn_meta, dict):
+                turn_meta = {}
+            qualifies = qualifies_as_progression_delta(
+                continuity_manager=cm_exec,
+                turn_index=turn_idx,
+                turn_meta=turn_meta,
+                issues_before=issues_before,
+                move=dict(move),
+            )
+            if gate_effective and not qualifies:
+                st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
+                    snapshot
+                )
+                sync_orchestration_state_from_continuity_fn()
+                progression_retry_reason = (
+                    "Progression enforcement: no qualifying structural delta after process_turn."
+                )
+                if attempt_index == 0:
+                    progression_retry_triggered = True
+                    maybe_record_sim_progression_metric(
+                        st_module,
+                        {
+                            "kind": "progression_retry",
+                            "round_number": round_number,
+                            "orchestration_turn_number": turn_number,
+                            "next_actor": next_actor,
+                            "continuity_turn_index": turn_idx,
+                        },
+                    )
+                    log_turn_failure_fn(
+                        round_number=round_number,
+                        turn_number=turn_number,
+                        bot_name=next_actor,
+                        bot_type="character",
+                        stage="validation_progression_retry",
+                        reason=progression_retry_reason,
+                        input_messages=[{"role": "system", "content": attempt_prompt}],
+                        raw_response=char_raw_response,
+                        parsed_output=move,
+                        context_snapshot={
+                            "director_decision": decision,
+                            "character_names": char_names,
+                            "attempt_index": attempt_index,
+                        },
+                        metadata={
+                            "summary_blocks": character_summary_block_audit,
+                            "semantic_presence_assessment": semantic_presence_assessment
+                            or {},
+                        },
+                    )
+                    st_module.session_state["selector_decisions"].append(
+                        f"Retrying {next_actor} after progression-enforcement rejection."
+                    )
+                    continue
+                actors_failed_this_round.append(next_actor)
+                maybe_record_sim_progression_metric(
+                    st_module,
+                    {
+                        "kind": "progression_failure",
+                        "round_number": round_number,
+                        "orchestration_turn_number": turn_number,
+                        "next_actor": next_actor,
+                        "continuity_turn_index": turn_idx,
+                    },
+                )
+                log_turn_failure_fn(
+                    round_number=round_number,
+                    turn_number=turn_number,
+                    bot_name=next_actor,
+                    bot_type="character",
+                    stage="validation",
+                    reason=progression_retry_reason,
+                    input_messages=[{"role": "system", "content": attempt_prompt}],
+                    raw_response=char_raw_response,
+                    parsed_output=move,
+                    context_snapshot={
+                        "director_decision": decision,
+                        "character_names": char_names,
+                        "attempt_index": attempt_index,
+                    },
+                    metadata={
+                        "summary_blocks": character_summary_block_audit,
+                        "semantic_presence_assessment": semantic_presence_assessment or {},
+                    },
+                )
+                return None
+            continuity_applied_in_execute = True
+            maybe_record_sim_progression_metric(
+                st_module,
+                {
+                    "kind": "accepted_turn",
+                    "continuity_turn_index": turn_idx,
+                    "qualifies": bool(qualifies),
+                    "gate_active": bool(gate),
+                    "enforcement_effective": bool(gate_effective),
+                    "round_number": round_number,
+                    "orchestration_turn_number": turn_number,
+                    "next_actor": next_actor,
+                },
+            )
+
         turn_execution_metadata = {
             "attempt_index": attempt_index,
             "duplicate_retry_triggered": duplicate_retry_triggered,
@@ -223,6 +374,13 @@ async def execute_character_turn(
             "duplicate_retry_outcome": (
                 "success_after_retry"
                 if duplicate_retry_triggered and attempt_index == 1
+                else "no_retry"
+            ),
+            "progression_retry_triggered": progression_retry_triggered,
+            "progression_retry_reason": progression_retry_reason,
+            "progression_retry_outcome": (
+                "success_after_retry"
+                if progression_retry_triggered and attempt_index == 1
                 else "no_retry"
             ),
         }
@@ -234,7 +392,7 @@ async def execute_character_turn(
             char_raw_response=char_raw_response,
             decision=decision,
             char_names=char_names,
-            continuity_manager=continuity_manager,
+            continuity_manager=get_continuity_manager_fn(),
             round_number=round_number,
             turn_number=turn_number,
             character_summary_block_audit=character_summary_block_audit,
@@ -354,4 +512,5 @@ async def execute_character_turn(
         "narrator_prompt": narrator_prompt,
         "narrator_summary_block_audit": narrator_summary_block_audit,
         "narrator_semantic_assessment": narrator_semantic_assessment,
+        "continuity_applied_in_execute": continuity_applied_in_execute,
     }

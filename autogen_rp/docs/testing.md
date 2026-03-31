@@ -47,6 +47,15 @@ From `python/README.md` and current repo practice:
 - use `autogen_ext.models.replay.ReplayChatCompletionClient` for model-client simulation when relevant
 - skip real external-service tests when required credentials or services are unavailable
 
+## Live LLM tests (DeepSeek)
+
+- Some tests call the real API when `DEEPSEEK_API_KEY` is set (e.g. `tests/test_progression_layer_llm.py`, `tests/test_integration.py`, `tests/test_director_validation.py`, `tests/conftest.py` fixtures `deepseek_api_key` / `deepseek_model_client`).
+- Markers: **`llm`**, **`progression_llm`** (see `pyproject.toml` `[tool.pytest.ini_options].markers`). Run only progression live checks:  
+  `pytest tests/test_progression_layer_llm.py -m progression_llm -v`  
+  Omit them from a fast run:  
+  `pytest -m "not llm"`
+- Without a key, those tests **skip** (except `test_deepseek_api_key_exists`, which asserts the key is present — intended for environments that require configured credentials).
+
 ## RP app-specific testing guidance
 
 If a change touches `python/rp_app/`:
@@ -55,6 +64,7 @@ If a change touches `python/rp_app/`:
 - convert repeated audit findings into tests when feasible
 - use audited scene reruns as verification for continuity, pacing, and scene-behavior fixes
 - check for downstream effects in turn selection, continuity updates, validation, and audit output
+- for **progression enforcement**, combine deterministic tests (`tests/test_progression_enforcement.py`, `turn_runner` / `orchestration` tests) with optional **`progression_llm`** runs above
 
 ## Done criteria
 

@@ -18,6 +18,8 @@ This roadmap reflects the correct execution order:
 
 ## A. Structured scenario validation
 
+**Canonical procedure** (manifests, headless runner, audits, structured metrics, baseline vs enforcement-on): [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md) at the repository root.
+
 - [ ] Run 5–10 repeatable RP scenarios:
   - one-on-one interaction
   - emotional/relationship tension

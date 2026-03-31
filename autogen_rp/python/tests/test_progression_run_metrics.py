@@ -1,0 +1,66 @@
+"""progression_run_metrics summarization (no LLM)."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
+
+from progression_run_metrics import (  # noqa: E402
+    build_structured_eval_payload,
+    summarize_sim_progression_metrics,
+)
+
+
+def test_summarize_empty() -> None:
+    s = summarize_sim_progression_metrics([], progression_enforcement_enabled=True)
+    assert s["first_qualifying_progression_delta_turn_index"] is None
+    assert s["progression_retries_triggered"] == 0
+    assert s["failed_progression_attempts"] == 0
+    assert s["qualifying_turns"] == 0
+    assert s["non_qualifying_turns"] == 0
+    assert s["progression_enforcement_enabled"] is True
+
+
+def test_summarize_mixed_events() -> None:
+    events = [
+        {"kind": "accepted_turn", "continuity_turn_index": 1, "qualifies": False},
+        {"kind": "progression_retry", "continuity_turn_index": 1},
+        {"kind": "accepted_turn", "continuity_turn_index": 1, "qualifies": True},
+        {"kind": "accepted_turn", "continuity_turn_index": 2, "qualifies": True},
+        {"kind": "progression_failure", "continuity_turn_index": 3},
+    ]
+    s = summarize_sim_progression_metrics(events, progression_enforcement_enabled=True)
+    assert s["first_qualifying_progression_delta_turn_index"] == 1
+    assert s["progression_retries_triggered"] == 1
+    assert s["failed_progression_attempts"] == 1
+    assert s["qualifying_turns"] == 2
+    assert s["non_qualifying_turns"] == 1
+    assert s["accepted_character_turns"] == 3
+
+
+def test_build_structured_eval_payload() -> None:
+    m = summarize_sim_progression_metrics([], progression_enforcement_enabled=False)
+    p = build_structured_eval_payload(
+        scenario_id="emotional_loop_2char",
+        verdict="WARN",
+        failure_classification="retry",
+        metrics=m,
+        audit_session_number=5,
+        audit_summary_report_path=None,
+    )
+    assert p["scenario_id"] == "emotional_loop_2char"
+    assert p["verdict"] == "WARN"
+    assert p["failure_classification"] == "retry"
+    assert p["metrics"]["progression_enforcement_enabled"] is False
+    assert p["expected_pressure_profile"] is None
+
+    p2 = build_structured_eval_payload(
+        scenario_id="s",
+        verdict=None,
+        failure_classification=None,
+        metrics=m,
+        expected_pressure_profile="high",
+    )
+    assert p2["expected_pressure_profile"] == "high"

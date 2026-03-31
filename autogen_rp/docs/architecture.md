@@ -11,6 +11,12 @@ For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`.
 - Avoid introducing parallel implementations when an existing path can be corrected.
 - Keep compatibility facades stable unless the task explicitly includes changing callers.
 
+## Behavioral validation layer
+
+Scenario validation is a **core architectural layer**: fixed JSON scenarios, headless runs on the same path as Streamlit, optional audit JSON, structured metrics (`structured_eval`), and baseline vs treatment (e.g. `--no-progression-enforcement` for progression). It answers whether a change **actually improved** emergent behavior, not only whether unit tests pass.
+
+**Canonical spec:** [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md) (repo root). Do not churn that document without evidence from real runs; prefer executing the framework.
+
 ## RP app architecture rules
 
 The RP app uses a Director + Narrator + continuity-manager architecture.

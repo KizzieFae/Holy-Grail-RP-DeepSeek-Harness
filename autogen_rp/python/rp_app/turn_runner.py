@@ -262,6 +262,7 @@ async def run_character_turns(
                     assess_narrator_render_semantics_fn=assess_narrator_render_semantics_fn,
                     log_turn_failure_fn=log_turn_failure_fn,
                     get_character_display_name_fn=get_character_display_name_fn,
+                    sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
                 )
                 if turn_result is None:
                     continue
@@ -275,6 +276,9 @@ async def run_character_turns(
                 ]
                 narrator_semantic_assessment = turn_result.get(
                     "narrator_semantic_assessment"
+                )
+                skip_continuity_process_turn = bool(
+                    turn_result.get("continuity_applied_in_execute", False)
                 )
 
                 actors_used_this_round.append(next_actor)
@@ -308,6 +312,7 @@ async def run_character_turns(
                     director_decision_history_limit=director_decision_history_limit,
                     environment_history_limit=environment_history_limit,
                     tension_history_limit=tension_history_limit,
+                    skip_continuity_process_turn=skip_continuity_process_turn,
                 )
 
         refresh_audit_summary_report_if_enabled(

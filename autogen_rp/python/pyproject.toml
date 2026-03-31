@@ -159,4 +159,6 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "grpc: tests invoking gRPC functionality",
+    "llm: calls a live LLM (requires DEEPSEEK_API_KEY); use pytest -m \"not llm\" to skip",
+    "progression_llm: progression-layer live checks (subset of llm)",
 ]

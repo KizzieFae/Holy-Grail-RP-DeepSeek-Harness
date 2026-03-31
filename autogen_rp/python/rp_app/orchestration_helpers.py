@@ -374,19 +374,48 @@ def assign_progression_band_for_actor(
     return "med"
 
 
+def _pick_high_progression_actor(
+    *,
+    high_actors: list[str],
+    active_issues: list[dict[str, Any]],
+) -> str:
+    """Prefer escalating-issue participant; else first HIGH in list order."""
+    escalating_participants: set[str] = set()
+    for issue in active_issues:
+        if not isinstance(issue, dict):
+            continue
+        if str(issue.get("status", "") or "").strip().lower() != "escalating":
+            continue
+        participants = issue.get("participants", [])
+        if isinstance(participants, list):
+            escalating_participants.update(
+                str(item) for item in participants if str(item).strip()
+            )
+
+    for actor in high_actors:
+        if actor in escalating_participants:
+            return actor
+
+    return high_actors[0]
+
+
 def resolve_progression_override_actor(
     *,
     director_selected_actor: str,
     available_actors: list[str],
     active_issues: list[dict[str, Any]],
     recent_structured_moves: list[dict[str, Any]],
+    progression_enforcement_gate: bool = False,
 ) -> str | None:
-    """Apply the approved band-based progression override.
+    """Apply band-based progression override for Director selection.
 
-    Override ONLY if:
-    - Director-selected actor is LOW
-    - Another actor exists in HIGH
-    - At least one unresolved actionable issue exists (active or escalating)
+    When ``progression_enforcement_gate`` is False (default):
+    - Override ONLY if Director pick is LOW, another actor is HIGH, and an
+      actionable issue exists.
+
+    When gate is True (beat-shift pending or high progression pressure):
+    - Also override if Director pick is MED and at least one HIGH actor exists
+      (same actionable-issue and HIGH-actor rules).
     """
 
     director_selected_actor = str(director_selected_actor or "").strip()
@@ -410,29 +439,22 @@ def resolve_progression_override_actor(
             recent_structured_moves=recent_structured_moves,
         )
 
-    if bands.get(director_selected_actor) != "low":
-        return None
-
+    director_band = bands.get(director_selected_actor)
     high_actors = [actor for actor in available_actors if bands.get(actor) == "high"]
     if not high_actors:
         return None
 
-    # Prefer an actor who participates in an escalating issue; else first HIGH in available order.
-    escalating_participants: set[str] = set()
-    for issue in active_issues:
-        if not isinstance(issue, dict):
-            continue
-        if str(issue.get("status", "") or "").strip().lower() != "escalating":
-            continue
-        participants = issue.get("participants", [])
-        if isinstance(participants, list):
-            escalating_participants.update(str(item) for item in participants if str(item).strip())
+    if director_band == "low":
+        return _pick_high_progression_actor(
+            high_actors=high_actors, active_issues=active_issues
+        )
 
-    for actor in high_actors:
-        if actor in escalating_participants:
-            return actor
+    if progression_enforcement_gate and director_band == "med":
+        return _pick_high_progression_actor(
+            high_actors=high_actors, active_issues=active_issues
+        )
 
-    return high_actors[0]
+    return None
 
 
 def append_turn_to_orchestration_state(

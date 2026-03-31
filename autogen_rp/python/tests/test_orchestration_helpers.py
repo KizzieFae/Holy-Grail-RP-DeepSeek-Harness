@@ -419,6 +419,53 @@ def test_resolve_progression_override_actor_no_override_when_only_stalled_issues
     assert override is None
 
 
+def test_resolve_progression_override_actor_med_to_high_when_gate_active() -> None:
+    active_issues = [
+        {"status": "active", "participants": ["Ayame"]},
+        {"status": "escalating", "participants": ["Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+        {
+            "speaker": "Celina",
+            "action": "push",
+            "dialogue": "Now.",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": ["escalation"],
+            "issue_updates": [{}],
+            "presence_changes": [],
+        },
+    ]
+    assert (
+        resolve_progression_override_actor(
+            director_selected_actor="Ayame",
+            available_actors=["Ayame", "Celina"],
+            active_issues=active_issues,
+            recent_structured_moves=recent_moves,
+            progression_enforcement_gate=False,
+        )
+        is None
+    )
+    assert (
+        resolve_progression_override_actor(
+            director_selected_actor="Ayame",
+            available_actors=["Ayame", "Celina"],
+            active_issues=active_issues,
+            recent_structured_moves=recent_moves,
+            progression_enforcement_gate=True,
+        )
+        == "Celina"
+    )
+
+
 def test_resolve_progression_override_actor_prefers_escalating_participant_when_overriding() -> (
     None
 ):

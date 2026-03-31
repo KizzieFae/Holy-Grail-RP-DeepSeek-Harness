@@ -11,6 +11,14 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
+    config.addinivalue_line(
+        "markers",
+        "llm: live DeepSeek/API tests (skip with DEEPSEEK_API_KEY unset or -m \"not llm\")",
+    )
+    config.addinivalue_line(
+        "markers",
+        "progression_llm: progression-focused live LLM checks",
+    )
 
 
 @pytest.fixture

@@ -482,6 +482,7 @@ async def test_execute_character_turn_smoke_uses_semantic_presence_override_and_
         assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
         log_turn_failure_fn=fake_log_turn_failure,
         get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
     )
 
     assert result is not None
@@ -586,6 +587,7 @@ async def test_execute_character_turn_retries_once_on_duplicate_and_succeeds(
         assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
         log_turn_failure_fn=fake_log_turn_failure,
         get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
     )
 
     assert result is not None
@@ -691,6 +693,7 @@ async def test_execute_character_turn_logs_retry_lineage_in_character_audit_meta
         assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
         log_turn_failure_fn=fake_log_turn_failure,
         get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
     )
 
     assert len(agent_calls) == 2
