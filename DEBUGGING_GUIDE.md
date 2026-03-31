@@ -49,6 +49,7 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 - Do not **rerun with altered conditions** (different flags, edited JSON, local hacks) unless **explicitly instructed**; comparability of runs matters.
 - During **validation phases**, do not optimize behavior or “improve outcomes” — analyze, attribute to layer, document, then **stop**.
 - In **remediation** (after approval), changes should **target the triaged layer** unless new evidence overturns the prior classification.
+- **Invalid run / validation retries** (when to try another run, how many times, when to stop — **not** auto-fix): [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) → **Validation retry policy (invalid runs)**.
 
 ### Evidence order (strict)
 

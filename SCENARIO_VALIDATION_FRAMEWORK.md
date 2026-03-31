@@ -261,6 +261,30 @@ Full boundary between validation and remediation: **[DEBUGGING_GUIDE.md](./DEBUG
 2. If a walkout occurs: **triage** the event; classify with the four verdicts; then decide whether the run is **usable** for long-session validation — **do not** auto-rerun to “fix” the outcome.
 3. **Usable for long-session evaluation** only if: depth is **~10–12** successful character turns **and** no **critical layer bug** invalidates the run. Otherwise: **classify** the failure; start a **new** run only when directed — **no** automated remediation to salvage the run.
 
+### Validation retry policy (invalid runs)
+
+This is **not** remediation. It only defines **recovery for validation attempts** when a run cannot support the current goal — **no** code, prompt, threshold, or hidden flag changes between attempts unless a human **explicitly** changes the validation plan.
+
+1. **When a run is invalid for the current validation target**
+   - **Insufficient depth** — e.g. fewer successful character turns than required for that goal (long-session arc, retry stress, etc.).
+   - **Confirmed bug** — triage **bug**; the run must **not** be used as clean evidence for production-readiness until addressed in a **separate** remediation phase.
+   - **Critical ambiguity** — triage **ambiguous**; outcome cannot be interpreted vs baseline/treatment or vs the question under test.
+
+2. **Retry rule**
+   - **Triage first**; record **suspected layer**, **verdict**, and **why** the run is invalid.
+   - Only then may a human **manually** start a **new** run with the **same** scenario and flags (comparable) unless the plan is deliberately updated.
+
+3. **Retry limit**
+   - **At most 2–3 retries per scenario** for the **same validation goal** (same question / comparison), **in addition to** the first attempt. Further attempts require **rescoping** or a **different** scenario (see below).
+
+4. **Stop condition**
+   - If repeated runs fail for the **same substantive, repeating reason** (documented in triage), **stop** retrying that scenario for that goal until something changes (scenario design, validation target, or post-remediation code).
+
+5. **Next action after stop**
+   - Use a **different scenario** that still targets the layer or hypothesis.
+   - **Manually redesign** the scenario (human-authored manifest change — test-artifact work, distinct from runtime remediation).
+   - **Re-scope** the validation target (narrow what counts as success for this phase).
+
 ### When a run “looks wrong” (triage pointer)
 
 Before changing code, use **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simulation failure triage (layer-aware deep-dive)**. Evidence order, layer labels, and verdicts are defined there; **remediation** is separate and human-directed.
