@@ -45,6 +45,21 @@ from progression_simulation_scenarios import (  # noqa: E402
 )
 
 
+def _configure_stdout_utf8() -> None:
+    """Best-effort UTF-8 for stdout so audit markdown prints correctly (e.g. Windows cp1252)."""
+    out = sys.stdout
+    enc = (getattr(out, "encoding", None) or "").lower().replace("_", "-")
+    if enc in ("utf-8", "utf8"):
+        return
+    reconfigure = getattr(out, "reconfigure", None)
+    if reconfigure is None:
+        return
+    try:
+        reconfigure(encoding="utf-8")
+    except (OSError, ValueError, TypeError, AttributeError):
+        pass
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="Run headless LLM scene simulation (production turn runner + optional audit JSON)."
@@ -139,6 +154,7 @@ def main() -> None:
         ),
     )
     args = p.parse_args()
+    _configure_stdout_utf8()
 
     if args.verdict in ("FAIL", "WARN") and not args.failure_class:
         p.error("--failure-class is required when --verdict is FAIL or WARN")
