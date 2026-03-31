@@ -308,6 +308,8 @@ for that turn.
    - Which issues moved (`issue_updates`)
    - Final rendered output (`rendered_output`)
 
+`character_dialogue` here is the **acting character’s full structured `dialogue`** for that beat (canonical story trace). It is **not** a per-viewer view: other characters’ prompts may omit or stub private/directed lines. For perception audits, open each subject’s `{character}_full.json` and compare `input_messages` on the same round/turn, and/or the parsed `move`’s `audibility` / `audience` in ground-truth artifacts.
+
 ### Audit Continuity and State Transitions
 1. Start with `_audit_summary.json`
 2. Review `continuity_overview` for:

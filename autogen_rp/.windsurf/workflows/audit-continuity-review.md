@@ -18,7 +18,7 @@ Goal: produce recommendations that target the correct layer of the system instea
 
 ## Step 1: Identify the session and read the audit artifacts in the correct order
 
-1. Locate the relevant session under `python/data/rp_audits/session_{###}/`.
+1. Locate the relevant session under `python/rp_app/data/rp_audits/session_{###}/` (from `autogen_rp/`; same on-disk tree as `AUDIT_DOCUMENTATION.md`).
 2. Read `python/rp_app/AUDIT_DOCUMENTATION.md` if you need to confirm artifact meanings.
 3. Read these artifacts in this order:
    - `_audit_summary.json`
@@ -120,25 +120,31 @@ For each observed failure, classify the most likely intervention layer:
    - Presence or scene deltas not being updated
    - Confusing **membership** (`present_characters`) with **literal on-stage presence**; missing or incorrect **`offstage_characters`** relative to the fiction
 
-2. `issue lifecycle / orchestration state`
+2. `perception / audibility / prompt assembly`
+   - Impossible knowledge, verbatim private **`dialogue`** reaching the wrong character or Director when structured **`move`** says directed/private (see §3b and `perception_audibility.py`)
+
+3. `scene grounding` (read-only prompt projection)
+   - Settled facts missing, stale, or contradicting continuity after extraction looks correct (`scene_grounding.py`)
+
+4. `issue lifecycle / orchestration state`
    - Pressure not being created
    - Issues not escalating, resolving, or stalling correctly
    - Active issues not matching the true scene state
 
-3. `summary/retrieval/compression`
+5. `summary/retrieval/compression`
    - Important older state is not reaching prompts
    - Summary blocks compress speech but miss consequences
 
-4. `validation / enforcement boundary`
+6. `validation / enforcement boundary`
    - The system detects the problem but does not stop or correct it
    - Must-remain, direct-address, or authority constraints are weakly enforced
 
-5. `Director decision logic`
+7. `Director decision logic`
    - Only use this category after checking the earlier layers
    - Use only when the Director clearly received good, consequence-rich signals but still made the wrong choice
    - Do not classify a failure here unless the audit shows the Director received clear, consequence-rich signals and still selected the wrong beat
 
-6. `Narrator or rendering layer`
+8. `Narrator or rendering layer`
    - The underlying move is sound but the final prose introduces drift or repetition
 
 ## Step 5: Produce recommendations in the right order
@@ -154,11 +160,13 @@ When recommending changes:
 If multiple fixes are needed, order them like this unless the evidence clearly says otherwise:
 
 1. continuity/state extraction
-2. issue lifecycle/orchestration state
-3. summary retrieval/compression
-4. validation/enforcement
-5. Director prompt/rules
-6. narrator/render polish
+2. perception/audibility and per-recipient prompt assembly (when the failure is knowledge boundaries)
+3. scene grounding projection (when the failure is settled facts in prompts)
+4. issue lifecycle/orchestration state
+5. summary retrieval/compression
+6. validation/enforcement
+7. Director prompt/rules
+8. narrator/render polish
 
 ## Step 6: Output format
 
@@ -173,6 +181,8 @@ Return the audit result using this structure:
 ### Root cause by layer
 
 - continuity/state representation
+- perception/audibility/prompt assembly
+- scene grounding
 - issue lifecycle/orchestration
 - summary/retrieval
 - validation/enforcement
@@ -188,7 +198,7 @@ Return the audit result using this structure:
 
 ### Validation plan
 
-- focused tests to run (including `python/tests/test_offstage_presence.py` and offstage routing integration coverage)
+- focused tests to run (including `python/tests/test_perception_audibility.py`, `python/tests/test_offstage_presence.py`, and offstage routing integration coverage)
 - audited scenario(s) to rerun
 - what success would look like in `_audit_summary.json` and `_narrative.json`
 - increased rate of meaningful non-empty `state_changes`
@@ -201,7 +211,7 @@ Return the audit result using this structure:
 
 Avoid these failure modes in the audit:
 
-- recommending Director prompt edits before checking continuity state and issue signals
+- recommending Director prompt edits before checking continuity state, perception filtering, scene grounding, and issue signals
 - treating repeated dialogue as a prompt-style problem without checking whether the system produced any real change signals
 - recommending architecture changes when a targeted fix to existing continuity or audit wiring would solve it
 - ignoring role, presence, or authority metadata when scene templates are active

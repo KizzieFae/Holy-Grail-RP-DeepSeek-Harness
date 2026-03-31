@@ -53,11 +53,12 @@ Use the same layer order as `docs/architecture.md`:
 
 1. continuity and state representation
 2. **perception / audibility** (`perception_audibility.py` and prompt assembly) when the failure is impossible knowledge or leaked private lines
-3. issue lifecycle and orchestration state
-4. summary retrieval and compression
-5. validation and enforcement
-6. Director logic
-7. Narrator rendering
+3. **scene grounding** (settled-facts projection vs continuity) when the failure is repeated logistics or missing/stale SETTLED SCENE FACTS
+4. issue lifecycle and orchestration state
+5. summary retrieval and compression
+6. validation and enforcement
+7. Director logic
+8. Narrator rendering
 
 ## Relevant code areas for RP audits
 

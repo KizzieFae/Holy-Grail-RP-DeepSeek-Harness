@@ -45,14 +45,15 @@ Before making architecture-sensitive changes:
 
 ## RP audit diagnosis order
 
-When debugging scene quality or continuity behavior, prefer this order:
+When debugging scene quality or continuity behavior, prefer this order (see also `docs/audit-workflows.md`):
 
-1. continuity and state extraction
-2. **scene grounding** (prompt projection: are settled facts present, stale, or missing?)
-3. issue lifecycle and orchestration state
-4. summary retrieval and compression
-5. validation and enforcement boundaries
-6. Director logic
-7. Narrator rendering polish
+1. continuity and state representation
+2. **perception / audibility** when the symptom is impossible knowledge, leaked private lines, or per-character prompt mismatch (`perception_audibility.py`, `app_turn_prompting.py`, per-character `_full.json` prompts)
+3. **scene grounding** (prompt projection: are settled facts present, stale, or missing?)
+4. issue lifecycle and orchestration state
+5. summary retrieval and compression
+6. validation and enforcement boundaries
+7. Director logic
+8. Narrator rendering polish
 
-This order mirrors the existing RP audit workflow and helps avoid prompt-first misdiagnosis.
+This order mirrors the RP audit workflow and helps avoid prompt-first misdiagnosis.

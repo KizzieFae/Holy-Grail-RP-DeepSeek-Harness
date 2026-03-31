@@ -15,15 +15,16 @@ How to **approach problems** in the Holy Grail RP runtime without fixing the wro
 
 ## Suggested diagnosis order (runtime)
 
-Aligned with `autogen_rp/docs/architecture.md` RP audit order:
+Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workflows.md`:
 
 1. **Continuity extraction and state** — Are events, issues, and scene snapshot correct after the turn? (`continuity_manager.py`, `continuity_*_helpers.py`)
-2. **Scene grounding** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? (`scene_grounding.py`, `prompt_builders.py` formatting only after 1 looks sane)
-3. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
-4. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after 1–3 look sane)
-5. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`)
-6. **Director** — Selection policy and prompts when evidence points here
-7. **Narrator** — Prose polish; dialogue must stay verbatim (`app_turn_rendering.py`)
+2. **Perception / audibility** (when the bug is knowledge boundaries, whispers, or “who saw that line”) — `perception_audibility.py`, `app_turn_prompting.py`, `prompt_builders.py`; confirm with per-character audit `_full.json` prompts, not `_narrative.json` alone
+3. **Scene grounding** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? (`scene_grounding.py`, `prompt_builders.py` formatting only after 1–2 look sane for that symptom)
+4. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
+5. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after earlier layers look sane)
+6. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`)
+7. **Director** — Selection policy and prompts when evidence points here
+8. **Narrator** — Prose polish; dialogue must stay verbatim (`app_turn_rendering.py`)
 
 ---
 
@@ -53,8 +54,9 @@ Aligned with `autogen_rp/docs/architecture.md` RP audit order:
 
 ### Knowledge leaks / wrong “who knows what”
 
-- **Authoritative propagation** — `continuity_knowledge_helpers.py`, `continuity_manager.py`
-- **Validation** — Knowledge-related checks live alongside other validators; boundary truth is continuity, not retrieval (future: [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)).
+- **Prompt assembly first** — `perception_audibility.py` (structured `move` + filtering), then `app_turn_prompting.py` / `prompt_builders.py`; verify **each** character’s Director/character `_full.json` `input_messages`, not the shared `_narrative.json` dialogue column alone
+- **Continuity propagation** — `continuity_knowledge_helpers.py`, `continuity_manager.py` (`PublicEvent` knowability, interpretations)
+- **Validation** — Knowledge-related checks live alongside other validators; boundary truth combines continuity with perception filtering (future: [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md))
 
 ### Persistence / reload issues
 
