@@ -48,7 +48,7 @@ async def choose_next_actor(
     cancellation_token,
     round_number: int,
     turn_number: int,
-    available_actors: list[str] | None,
+    available_actors: list[str],
     continuation_override_actor: str | None,
     enforce_must_remain_presence_fn,
     get_orchestration_state_fn,
@@ -76,7 +76,10 @@ async def choose_next_actor(
     enforce_must_remain_presence_fn()
 
     if available_actors is None:
-        available_actors = participant_names
+        raise ValueError(
+            "choose_next_actor requires available_actors: pass the filtered list "
+            "from get_available_actors (never None)."
+        )
 
     if not available_actors:
         return {

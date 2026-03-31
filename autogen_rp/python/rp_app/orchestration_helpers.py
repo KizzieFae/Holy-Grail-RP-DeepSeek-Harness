@@ -164,6 +164,15 @@ def resolve_continuation_override_actor(
     eligible_participants: list[str] | None,
     actors_used_this_round: list[str],
 ) -> str | None:
+    if eligible_participants is None:
+        cm_state = getattr(continuity_manager, "scene_state", None)
+        if cm_state is not None:
+            eligible_participants = list(
+                getattr(cm_state, "present_characters", []) or []
+            )
+        else:
+            return None
+
     recent_moves = orchestration_state.get("recent_structured_moves", [])
     if not isinstance(recent_moves, list) or not recent_moves:
         return None
@@ -175,7 +184,7 @@ def resolve_continuation_override_actor(
     actor = str(last_move.get("speaker", "") or "").strip()
     if not actor:
         return None
-    if eligible_participants is not None and actor not in eligible_participants:
+    if actor not in eligible_participants:
         return None
     if actors_used_this_round.count(actor) != 1:
         return None

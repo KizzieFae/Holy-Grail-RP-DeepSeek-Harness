@@ -100,6 +100,24 @@ _DEPARTURE_COMPLETION_TERMS = {
     "out of the dorm",
     "out of the building",
 }
+# In-room / adjacent sub-areas: movement here must not trigger soft exit alone.
+_INTERIOR_SUBSCENE_TERMS = {
+    "kitchenette",
+    "kitchen",
+    "bathroom",
+    "restroom",
+    "shower",
+    "sink",
+    "counter",
+    "refrigerator",
+    "fridge",
+    "pantry",
+    "microwave",
+    "stove",
+    "cupboard",
+    "closet",
+    "wardrobe",
+}
 _INTERNAL_REPOSITION_TERMS = {
     "across the room",
     "within the room",
@@ -127,6 +145,17 @@ _INTERNAL_REPOSITION_TERMS = {
     "into the hall",
     "skipped toward",
     "bouncing toward",
+    "toward the kitchenette",
+    "toward the kitchen",
+    "to the kitchenette",
+    "to the kitchen",
+    "toward the bathroom",
+    "to the bathroom",
+    "toward the counter",
+    "to the counter",
+    "pushed off the wall",
+    "leaned against the wall",
+    "leaning against the wall",
 }
 _LOCATION_STOPWORDS = {
     "the",
@@ -140,6 +169,38 @@ _LOCATION_STOPWORDS = {
     "university",
     "hall",
 }
+
+# Door closed behind another person / object — not the actor leaving.
+_DOOR_SHUT_BEHIND_OTHER_RE = re.compile(
+    r"(?:slammed|slam|slamming|shut|shuts|shutting|closed|closes|closing)\s+(?:the\s+)?(?:door|doors)\s+"
+    r"(?:shut\s+)?behind\s+(?:the\s+)?(?:omega|them|him|her|they|guest|visitor|newcomer|newcomers|student)\b",
+    re.IGNORECASE,
+)
+
+# Time / bathroom / release idioms — not scene departure.
+_OUT_NON_DEPARTURE_IDIOM_RE = re.compile(
+    r"(?:"
+    r"\bout\s+in\s+\d+"
+    r"|"
+    r"\bnot\s+out\s+yet\b"
+    r"|"
+    r"\bout\s+of\s+the\s+bathroom\b"
+    r"|"
+    r"\bcoming\s+out\s+of\s+the\s+bathroom\b"
+    r"|"
+    r"\bif\s+you\s*'?(?:re|are)\s+not\s+out\b"
+    r")",
+    re.IGNORECASE,
+)
+
+_STRONG_REMOVAL_PHRASE_RES = (
+    re.compile(r"\bget\s+out\s+of\s+(?:here|this\s+room|my\s+room|my\s+space|the\s+room)\b", re.I),
+    re.compile(r"\bout\s+of\s+here\b", re.I),
+    re.compile(r"\bout\s+of\s+this\s+room\b", re.I),
+    re.compile(r"\bout\s+of\s+my\s+(?:room|space|face)\b", re.I),
+    re.compile(r"\bkick\s+(?:him|her|them)\s+out\b", re.I),
+    re.compile(r"\bthrow\s+(?:him|her|them)\s+out\b", re.I),
+)
 
 
 def _authored_text_parts(
@@ -303,6 +364,101 @@ def _soft_departure_intent_in_authored(move: dict[str, Any] | None) -> bool:
     )
 
 
+def _direct_has_embodied_departure_cue(direct_text: str) -> bool:
+    """Primary embodied signals must appear in action/dialogue (not motivation alone)."""
+    if not direct_text.strip():
+        return False
+    embodied_terms = (
+        _MOVEMENT_TERMS
+        | _BOUNDARY_STRUCTURE_TERMS
+        | _BOUNDARY_LOCATION_TERMS
+        | _DEPARTURE_COMPLETION_TERMS
+    )
+    return _contains_any(direct_text, embodied_terms)
+
+
+def _soft_exit_blocked_door_shut_behind_other(direct_text: str) -> bool:
+    if not direct_text.strip():
+        return False
+    if not _DOOR_SHUT_BEHIND_OTHER_RE.search(direct_text):
+        return False
+    if _FIRST_PERSON_DEPARTURE_COMMITMENT_RE.search(direct_text):
+        return False
+    if _EXPLICIT_DEPARTURE_RE.search(direct_text) and not _authored_departure_reads_as_directed_or_hypothetical(
+        direct_text
+    ):
+        return False
+    return True
+
+
+def _soft_exit_blocked_interior_local_move(direct_text: str, combined_authored: str) -> bool:
+    """Interior subscene movement without leaving the shared space."""
+    if not direct_text.strip():
+        return False
+    if not _contains_any(direct_text, _INTERIOR_SUBSCENE_TERMS) and not _contains_any(
+        direct_text, _INTERNAL_REPOSITION_TERMS
+    ):
+        return False
+    # Explicit leave of room/building in direct text overrides.
+    leave_markers = (
+        "out of the room",
+        "out of the dorm",
+        "out of the building",
+        "outside the room",
+        "left the room",
+        "left the dorm",
+        "walked out",
+        "headed out",
+        "storms out",
+        "stormed out",
+    )
+    if any(m in direct_text for m in leave_markers):
+        return False
+    if _EXPLICIT_DEPARTURE_RE.search(direct_text):
+        return False
+    # Motivation may support but not independently trigger: need embodied boundary in direct.
+    if _contains_any(combined_authored, _BOUNDARY_LOCATION_TERMS) and _contains_any(
+        combined_authored, _DEPARTURE_COMPLETION_TERMS
+    ):
+        return False
+    return True
+
+
+def _soft_exit_blocked_out_idioms(combined_authored: str, direct_text: str) -> bool:
+    if _OUT_NON_DEPARTURE_IDIOM_RE.search(combined_authored):
+        for rx in _STRONG_REMOVAL_PHRASE_RES:
+            if rx.search(combined_authored):
+                return False
+        if _EXPLICIT_DEPARTURE_RE.search(direct_text):
+            return False
+        if _FIRST_PERSON_DEPARTURE_COMMITMENT_RE.search(direct_text):
+            return False
+        return True
+    return False
+
+
+def _soft_exit_false_positive(
+    move: dict[str, Any] | None,
+    scene_state: dict[str, Any] | None,
+) -> bool:
+    """In-room or idiomatic prose that must not count as soft scene exit."""
+    if not isinstance(move, dict):
+        return True
+    direct_text, _, combined = _authored_text_parts(move)
+    if _soft_exit_blocked_door_shut_behind_other(direct_text):
+        return True
+    if _soft_exit_blocked_interior_local_move(direct_text, combined):
+        return True
+    if _soft_exit_blocked_out_idioms(combined, direct_text):
+        return True
+    leaves_anchor = _leaves_scene_anchor_authored(
+        combined_authored=combined, scene_state=scene_state
+    )
+    if not _direct_has_embodied_departure_cue(direct_text) and not leaves_anchor:
+        return True
+    return False
+
+
 def _leaves_scene_anchor_authored(
     *,
     combined_authored: str,
@@ -326,9 +482,6 @@ def _detect_exit_soft_movement_boundary(
 ) -> bool:
     """Tightened soft path: movement/setting cues require completion or anchor leave."""
     direct_text, _, combined_authored = _authored_text_parts(move)
-    if not direct_text and not combined_authored:
-        return False
-    # Soft heuristics need an embodied beat; motivation-only intent is not a departure.
     if not direct_text.strip():
         return False
 
@@ -347,46 +500,82 @@ def _detect_exit_soft_movement_boundary(
         combined_authored=combined_authored, scene_state=scene_state
     )
 
+    soft_positive = False
     if (
         has_movement
         and has_boundary_location
         and has_departure_completion
     ):
-        return True
+        soft_positive = True
 
     if (has_boundary_structure and has_departure_completion) or leaves_anchor:
         if has_movement or has_boundary_location:
-            return True
+            soft_positive = True
 
     if (
         has_soft_intent
         and has_boundary_location
         and has_departure_completion
     ):
-        return True
+        soft_positive = True
 
-    return False
+    if not soft_positive:
+        return False
+
+    if _soft_exit_false_positive(move, scene_state):
+        return False
+
+    return True
 
 
+# Narrow re-entry: spatial return into the immediate scene (no vague "came back").
 _REENTRY_DIRECT_RE = re.compile(
     r"\b(?:"
-    r"came\s+back|come\s+back|coming\s+back|returns?|returned|returning|"
-    r"re-?entered|re-?entering|re-?enters|"
-    r"walked\s+back\s+in|walks\s+back\s+in|walking\s+back\s+in|"
-    r"stepped\s+back\s+in|steps\s+back\s+in|stepping\s+back\s+in|"
-    r"burst\s+in|bursts\s+in|bursting\s+in|"
-    r"back\s+into\s+(?:the\s+)?(?:room|dorm|suite|apartment|building|scene)|"
-    r"into\s+the\s+(?:room|dorm|suite)\s+again|"
-    r"through\s+the\s+door(?:way)?\s+(?:and\s+)?(?:into|back)|"
-    r"showed\s+up\s+again|shows\s+up\s+again"
+    r"walked\s+back\s+into\s+(?:the\s+)?(?:room|dorm|suite|apartment|building)"
+    r"|stepped\s+back\s+into\s+(?:the\s+)?(?:room|dorm|suite|apartment)"
+    r"|re-?entered\s+(?:the\s+)?(?:room|dorm|suite|apartment|building)"
+    r"|returned\s+to\s+the\s+(?:room|dorm|suite|apartment)"
+    r"|back\s+through\s+the\s+door(?:way)?\s+(?:into|to)\s+the\s+(?:room|dorm|suite)"
+    r"|entered\s+(?:the\s+)?(?:room|dorm|suite)\s+again"
     r")\b",
     re.IGNORECASE,
 )
 
+_STRUCTURED_REENTRY_CHANGES = frozenset({"entry", "return", "reenter", "re-entry"})
+
+
+def structured_presence_exit_for_character(move: dict[str, Any] | None, character_id: str) -> bool:
+    """True when move includes a validated structured exit for this character."""
+    if not isinstance(move, dict) or not str(character_id or "").strip():
+        return False
+    for item in move.get("presence_changes") or []:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("change", "") or "").lower() != "exit":
+            continue
+        if str(item.get("character", "") or "").strip() == character_id:
+            return True
+    return False
+
+
+def structured_presence_reentry_for_character(move: dict[str, Any] | None, character_id: str) -> bool:
+    """True when move includes structured re-entry for this character (any speaker)."""
+    if not isinstance(move, dict) or not str(character_id or "").strip():
+        return False
+    for item in move.get("presence_changes") or []:
+        if not isinstance(item, dict):
+            continue
+        chg = str(item.get("change", "") or "").lower().replace("_", "-")
+        if chg not in _STRUCTURED_REENTRY_CHANGES:
+            continue
+        if str(item.get("character", "") or "").strip() == character_id:
+            return True
+    return False
+
 
 def has_scene_reentry_evidence(move: dict[str, Any] | None) -> bool:
     """True when authored action/dialogue describes re-entering the immediate scene."""
-    direct_text, _, combined = _authored_text_parts(move)
+    direct_text, _, _ = _authored_text_parts(move)
     if not direct_text.strip():
         return False
     return bool(_REENTRY_DIRECT_RE.search(direct_text))
@@ -395,12 +584,32 @@ def has_scene_reentry_evidence(move: dict[str, Any] | None) -> bool:
 def detect_exit_from_scene(
     move: dict[str, Any] | None,
     scene_state: dict[str, Any] | None,
+    acting_character: str | None = None,
 ) -> bool:
     """True if the turn describes actually leaving the immediate scene.
 
     Hard evidence (explicit wording / system phrase in authored text) wins first; soft
-    path requires completion or clear anchor-leave, and ignores structured list echoes.
+    path requires completion or clear anchor-leave, actor-relative false-positive filters,
+    and embodied cues in action/dialogue (motivation may support but not trigger alone).
+
+    ``acting_character`` is used for future narrowing; soft false positives are filtered
+    regardless when prose matches in-room / door-control patterns.
     """
+    _ = acting_character
     if has_hard_scene_departure_evidence(move, scene_state):
         return True
     return _detect_exit_soft_movement_boundary(move, scene_state)
+
+
+def dialogue_has_territorial_removal_language(dialogue_lower: str) -> bool:
+    """True only for deterministic removal phrases (not bare 'out' or 'my')."""
+    if not dialogue_lower.strip():
+        return False
+    for rx in _STRONG_REMOVAL_PHRASE_RES:
+        if rx.search(dialogue_lower):
+            return True
+    if re.search(r"\bget\s+out\b", dialogue_lower) and re.search(
+        r"\b(?:here|room|face)\b", dialogue_lower
+    ):
+        return True
+    return False

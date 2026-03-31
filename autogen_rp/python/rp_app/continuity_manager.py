@@ -15,6 +15,7 @@ from scene_exit_detection import (
     detect_exit_from_scene,
     has_hard_scene_departure_evidence,
     has_scene_reentry_evidence,
+    structured_presence_exit_for_character,
 )
 
 from continuity_issue_helpers import (
@@ -903,43 +904,21 @@ class ContinuityManager:
             )
             self.scene_state.environment_description = environment_event
 
-        if "exit" in consequence_tags:
-            constraints = self.scene_state.character_presence_constraints or {}
-            must_remain_cast = (
-                str(constraints.get(acting_character, "") or "") == "must_remain"
-            )
-            if not must_remain_cast:
-                scene_for_exit = self.scene_state.to_dict()
-                hard_departure = has_hard_scene_departure_evidence(move, scene_for_exit)
-                skip_soft_removal = (
-                    not hard_departure
-                    and self._should_skip_soft_exit_presence_removal(
-                        acting_character, move
-                    )
-                )
-                if not skip_soft_removal:
-                    self.scene_state.present_characters = [
-                        name
-                        for name in self.scene_state.present_characters
-                        if name != acting_character
-                    ]
-                    if acting_character not in self.scene_state.absent_but_relevant:
-                        self.scene_state.absent_but_relevant.append(acting_character)
+        self._process_structured_reentries_from_move(move)
+
+        if has_scene_reentry_evidence(move):
+            self._apply_canonical_reentry(acting_character)
+
         if "entry" in consequence_tags:
-            if acting_character not in self.scene_state.present_characters:
-                self.scene_state.present_characters.append(acting_character)
-            self.scene_state.absent_but_relevant = [
-                name
-                for name in self.scene_state.absent_but_relevant
-                if name != acting_character
-            ]
-            self.remove_from_offstage(acting_character)
+            self._apply_canonical_reentry(acting_character)
 
         scene_dict = self.scene_state.to_dict()
-        if detect_exit_from_scene(move, scene_dict):
-            self.mark_character_offstage(acting_character)
-        if has_scene_reentry_evidence(move):
-            self.remove_from_offstage(acting_character)
+        self._apply_canonical_exit_offstage_transition(
+            acting_character,
+            move,
+            consequence_tags=consequence_tags,
+            scene_dict=scene_dict,
+        )
 
         self._update_scene_phase()
 
@@ -965,6 +944,7 @@ class ContinuityManager:
 
         self._reconcile_presence_lists()
         self._assert_presence_invariant_after_reconcile()
+        self._ensure_at_least_one_present_character()
 
     def _reconcile_presence_lists(self) -> None:
         """Drop absent entries that are still present; dedupe both lists."""
@@ -1005,20 +985,134 @@ class ContinuityManager:
             deduped_off.append(n)
         self.scene_state.offstage_characters = deduped_off
 
-    def mark_character_offstage(self, character_name: str) -> None:
+    def _process_structured_reentries_from_move(self, move: dict[str, Any]) -> None:
+        """Apply structured re-entry for any character named in presence_changes."""
         if self.scene_state is None:
             return
-        if character_name not in self.scene_state.present_characters:
-            return
-        if character_name not in self.scene_state.offstage_characters:
-            self.scene_state.offstage_characters.append(character_name)
+        seen: set[str] = set()
+        reentry_changes = frozenset({"entry", "return", "reenter", "re-entry"})
+        for item in move.get("presence_changes") or []:
+            if not isinstance(item, dict):
+                continue
+            ch = str(item.get("character", "") or "").strip()
+            chg = str(item.get("change", "") or "").lower().replace("_", "-")
+            if not ch or ch in seen or chg not in reentry_changes:
+                continue
+            seen.add(ch)
+            self._apply_canonical_reentry(ch)
 
-    def remove_from_offstage(self, character_name: str) -> None:
+    def _apply_canonical_reentry(self, character_name: str) -> None:
+        """Single path: onstage, present, not offstage, absent list trimmed."""
         if self.scene_state is None:
+            return
+        name = str(character_name or "").strip()
+        if not name:
             return
         self.scene_state.offstage_characters = [
-            n for n in self.scene_state.offstage_characters if n != character_name
+            n for n in self.scene_state.offstage_characters if n != name
         ]
+        if name not in self.scene_state.present_characters:
+            self.scene_state.present_characters.append(name)
+        self.scene_state.absent_but_relevant = [
+            n for n in self.scene_state.absent_but_relevant if n != name
+        ]
+        self.scene_state.character_presence_status[name] = "onstage"
+
+    def _apply_canonical_exit_offstage_transition(
+        self,
+        acting_character: str,
+        move: dict[str, Any],
+        *,
+        consequence_tags: set[str],
+        scene_dict: dict[str, Any],
+    ) -> None:
+        """Single path for exit / offstage: must_remain, soft/hard, temporary vs departed."""
+        if self.scene_state is None:
+            return
+        actor = str(acting_character or "").strip()
+        if not actor:
+            return
+
+        exit_tag = "exit" in consequence_tags
+        detect = detect_exit_from_scene(move, scene_dict, actor)
+        structured_exit = structured_presence_exit_for_character(move, actor)
+        raw_exit = exit_tag or detect or structured_exit
+        if not raw_exit:
+            return
+
+        hard = has_hard_scene_departure_evidence(move, scene_dict)
+        lexical_exit = hard or structured_exit
+        detect_soft = bool(detect and not lexical_exit)
+        tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
+        soft_style = detect_soft or tag_only_soft
+
+        constraints = self.scene_state.character_presence_constraints or {}
+        must_remain = str(constraints.get(actor, "") or "") == "must_remain"
+
+        if must_remain:
+            if soft_style:
+                return
+            if not structured_exit:
+                return
+            status_kind = "temporary_offstage"
+        elif soft_style:
+            if self._should_skip_soft_exit_presence_removal(actor, move):
+                return
+            status_kind = "temporary_offstage"
+        else:
+            status_kind = "departed"
+
+        self.scene_state.present_characters = [
+            name for name in self.scene_state.present_characters if name != actor
+        ]
+        if actor not in self.scene_state.absent_but_relevant:
+            self.scene_state.absent_but_relevant.append(actor)
+        if actor not in self.scene_state.offstage_characters:
+            self.scene_state.offstage_characters.append(actor)
+        self.scene_state.character_presence_status[actor] = status_kind
+
+    def _ensure_at_least_one_present_character(self) -> None:
+        """Deadlock guard: restore at least one on-stage actor when possible.
+
+        Never revives characters explicitly marked ``departed``. Missing
+        ``character_presence_status`` is treated as temporary-offstage-equivalent
+        for eligibility (not departed, does not block re-entry).
+        """
+        if self.scene_state is None:
+            return
+        if self.scene_state.present_characters:
+            return
+        cast = [str(k).strip() for k in self.scene_state.role_assignments.keys() if str(k).strip()]
+        if not cast:
+            return
+        status_map = self.scene_state.character_presence_status or {}
+
+        def is_departed(n: str) -> bool:
+            return str(status_map.get(n, "") or "").strip() == "departed"
+
+        def is_temporary_offstage_equivalent(n: str) -> bool:
+            if is_departed(n):
+                return False
+            st = str(status_map.get(n, "") or "").strip()
+            return st == "temporary_offstage" or st == ""
+
+        off = list(self.scene_state.offstage_characters)
+        tier1 = [n for n in off if n in cast and is_temporary_offstage_equivalent(n)]
+        if tier1:
+            self._apply_canonical_reentry(tier1[0])
+            return
+        tier2 = [n for n in off if n in cast and not is_departed(n)]
+        if tier2:
+            self._apply_canonical_reentry(tier2[0])
+            return
+        tier3 = [n for n in cast if not is_departed(n)]
+        if tier3:
+            self._apply_canonical_reentry(tier3[0])
+            return
+        logger.critical(
+            "presence deadlock guard: present_characters empty and all cast are departed; "
+            "skipping re-entry (no implicit resurrection)"
+        )
 
     def _assert_presence_invariant_after_reconcile(self) -> None:
         if self.scene_state is None:

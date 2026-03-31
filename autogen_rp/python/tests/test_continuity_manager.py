@@ -2212,3 +2212,59 @@ def test_plain_greeting_does_not_create_noisy_public_event() -> None:
     )
     assert manager.public_events == []
 
+
+def test_deadlock_guard_reentries_temporary_offstage_first() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Alpha", "Beta"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.role_assignments = {"Alpha": "guest", "Beta": "guest"}
+    manager.scene_state.present_characters = []
+    manager.scene_state.offstage_characters = ["Alpha", "Beta"]
+    manager.scene_state.character_presence_status = {
+        "Alpha": "temporary_offstage",
+        "Beta": "departed",
+    }
+    manager._ensure_at_least_one_present_character()
+    assert manager.scene_state.present_characters == ["Alpha"]
+    assert "Alpha" not in manager.scene_state.offstage_characters
+    assert manager.scene_state.character_presence_status.get("Alpha") == "onstage"
+
+
+def test_deadlock_guard_missing_presence_status_treated_as_temporary_equivalent() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["OnlyOne"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.role_assignments = {"OnlyOne": "lead"}
+    manager.scene_state.present_characters = []
+    manager.scene_state.offstage_characters = ["OnlyOne"]
+    manager.scene_state.character_presence_status = {}
+    manager._ensure_at_least_one_present_character()
+    assert "OnlyOne" in manager.scene_state.present_characters
+
+
+def test_deadlock_guard_does_not_revive_when_all_cast_departed() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["Alpha", "Beta"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.role_assignments = {"Alpha": "guest", "Beta": "guest"}
+    manager.scene_state.present_characters = []
+    manager.scene_state.offstage_characters = ["Alpha", "Beta"]
+    manager.scene_state.character_presence_status = {
+        "Alpha": "departed",
+        "Beta": "departed",
+    }
+    manager._ensure_at_least_one_present_character()
+    assert manager.scene_state.present_characters == []
+

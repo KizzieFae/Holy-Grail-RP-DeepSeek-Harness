@@ -385,7 +385,7 @@ async def choose_next_actor(
     cancellation_token,
     round_number: int,
     turn_number: int,
-    available_actors: list[str] | None = None,
+    available_actors: list[str],
     continuation_override_actor: str | None = None,
 ) -> dict[str, Any]:
     return await turn_helpers.choose_next_actor(

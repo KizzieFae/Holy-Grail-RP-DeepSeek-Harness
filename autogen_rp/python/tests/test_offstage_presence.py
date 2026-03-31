@@ -123,8 +123,8 @@ def test_replay_slice_traveler_exit_then_available_actors_omits_offstage() -> No
     assert "Harley_Quinn" in available
 
 
-def test_replay_slice_must_remain_exit_marks_offstage_keeps_present() -> None:
-    """Departure move + must_remain: still in present_characters but listed offstage."""
+def test_replay_slice_must_remain_hard_exit_keeps_present_no_offstage() -> None:
+    """Departure move + must_remain: stays in present_characters; no offstage mutation."""
     manager = ContinuityManager()
     manager.initialize_scene(
         location="Dorm suite",
@@ -157,7 +157,7 @@ def test_replay_slice_must_remain_exit_marks_offstage_keeps_present() -> None:
     )
 
     assert "Alpha_Cast" in manager.scene_state.present_characters
-    assert "Alpha_Cast" in manager.scene_state.offstage_characters
+    assert "Alpha_Cast" not in manager.scene_state.offstage_characters
 
 
 def test_replay_slice_embodied_reentry_clears_offstage() -> None:

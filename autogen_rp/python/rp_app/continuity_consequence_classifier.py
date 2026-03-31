@@ -14,9 +14,15 @@ except ImportError:
     )
 
 try:
-    from scene_exit_detection import detect_exit_from_scene
+    from scene_exit_detection import (
+        detect_exit_from_scene,
+        dialogue_has_territorial_removal_language,
+    )
 except ImportError:
-    from python.rp_app.scene_exit_detection import detect_exit_from_scene
+    from python.rp_app.scene_exit_detection import (
+        detect_exit_from_scene,
+        dialogue_has_territorial_removal_language,
+    )
 
 try:
     from continuity_state import ConsequenceCategory, DetectedConsequence
@@ -156,7 +162,7 @@ class ConsequenceClassifier:
         # Build signal profiles
         intent = self._extract_intent_signals(goal, tactic)
         behavior = self._extract_behavior_signals(action, dialogue)
-        if detect_exit_from_scene(move, scene_state):
+        if detect_exit_from_scene(move, scene_state, acting_character):
             behavior["exit"] = True
 
         # Accumulate all detected consequences
@@ -372,12 +378,8 @@ class ConsequenceClassifier:
                 )
             )
 
-        # TERRITORIAL_DENIAL: control intent + exit/denial language + space reference
-        if (
-            intent["control"]
-            and "out" in dialogue
-            and ("my" in dialogue or "space" in dialogue)
-        ):
+        # TERRITORIAL_DENIAL: control intent + deterministic removal phrasing only
+        if intent["control"] and dialogue_has_territorial_removal_language(dialogue):
             results.append(
                 DetectedConsequence(
                     category=ConsequenceCategory.TERRITORIAL_DENIAL,

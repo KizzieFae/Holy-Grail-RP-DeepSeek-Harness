@@ -482,6 +482,110 @@ def test_resolve_continuation_override_actor_allows_one_step_owned_continuation(
     )
 
 
+@pytest.mark.asyncio
+async def test_choose_next_actor_raises_when_available_actors_is_none() -> None:
+    st_module = SimpleNamespace(
+        session_state={
+            "pending_forced_speaker": None,
+            "forced_speaker_consumed": False,
+            "selector_decisions": [],
+        }
+    )
+    with pytest.raises(ValueError, match="available_actors"):
+        await choose_next_actor_impl(
+            st_module=st_module,
+            director=None,
+            get_model_client_fn=lambda: None,
+            participant_names=["Ayame", "Celina"],
+            trigger_text="hello",
+            cancellation_token=None,
+            round_number=1,
+            turn_number=1,
+            available_actors=None,  # type: ignore[arg-type]
+            continuation_override_actor=None,
+            enforce_must_remain_presence_fn=lambda: None,
+            get_orchestration_state_fn=lambda: {},
+            get_continuity_manager_fn=lambda: None,
+            build_scene_role_prompt_context_fn=lambda *_args, **_kwargs: {},
+            serialize_summary_blocks_for_prompt_fn=lambda *_args, **_kwargs: [],
+            build_summary_block_audit_metadata_fn=lambda *_args, **_kwargs: {},
+            serialize_events_for_prompt_fn=lambda *_args, **_kwargs: [],
+            serialize_canon_anchors_for_prompt_fn=lambda *_args, **_kwargs: [],
+            build_director_selection_prompt_fn=lambda *_args, **_kwargs: "",
+            parse_director_decision_fn=lambda *_args, **_kwargs: ({"next_actor": ""}, ""),
+            choose_fallback_actor_fn=lambda *_args, **_kwargs: "",
+            validate_turn_selection_decision_fn=lambda *_args, **_kwargs: [],
+            assess_turn_selection_decision_semantics_fn=lambda *_args, **_kwargs: {},
+            reconcile_turn_selection_issues_fn=lambda issues, _assessment: issues,
+            is_audit_enabled_fn=lambda: False,
+            get_audit_logger_fn=lambda: None,
+            get_audit_context_fn=lambda: ("", 0, 0, 0),
+            get_scene_audit_logging_kwargs_fn=lambda *_args, **_kwargs: {},
+            refresh_audit_summary_report_fn=lambda: None,
+            build_recent_dialogue_history_fn=lambda *_args, **_kwargs: [],
+            prompt_dialogue_history_limit=6,
+            director_spotlight_history_limit=6,
+        )
+
+
+def test_resolve_continuation_override_none_eligible_no_continuity_scene_returns_none() -> (
+    None
+):
+    orchestration_state = ensure_orchestration_state(None)
+    orchestration_state["recent_structured_moves"] = [
+        {
+            "speaker": "Ayame",
+            "action": "holds",
+            "dialogue": "",
+            "motivation": {"goal": "block", "tactic": "stand firm"},
+        }
+    ]
+    orchestration_state["spotlight_history"] = ["Ayame"]
+    continuity_manager = SimpleNamespace(
+        turn_counter=1,
+        turn_metadata_by_index={1: {"tags": ["authority_asserted"]}},
+    )
+    assert (
+        resolve_continuation_override_actor(
+            orchestration_state=orchestration_state,
+            continuity_manager=continuity_manager,
+            eligible_participants=None,
+            actors_used_this_round=["Ayame"],
+        )
+        is None
+    )
+
+
+def test_resolve_continuation_override_none_eligible_derives_from_continuity_present() -> (
+    None
+):
+    orchestration_state = ensure_orchestration_state(None)
+    orchestration_state["recent_structured_moves"] = [
+        {
+            "speaker": "Ayame",
+            "action": "holds",
+            "dialogue": "",
+            "motivation": {"goal": "block", "tactic": "stand firm"},
+        }
+    ]
+    orchestration_state["spotlight_history"] = ["Ayame"]
+    scene_state = SimpleNamespace(present_characters=["Ayame", "Celina"])
+    continuity_manager = SimpleNamespace(
+        turn_counter=1,
+        turn_metadata_by_index={1: {"tags": ["authority_asserted"]}},
+        scene_state=scene_state,
+    )
+    assert (
+        resolve_continuation_override_actor(
+            orchestration_state=orchestration_state,
+            continuity_manager=continuity_manager,
+            eligible_participants=None,
+            actors_used_this_round=["Ayame"],
+        )
+        == "Ayame"
+    )
+
+
 def test_resolve_continuation_override_actor_rejects_superseded_line() -> None:
     orchestration_state = ensure_orchestration_state(None)
     orchestration_state["recent_structured_moves"] = [

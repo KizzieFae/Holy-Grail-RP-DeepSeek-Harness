@@ -129,7 +129,7 @@ async def run_character_turns(
             while successful_turns < turn_limit and attempt_count < max_attempts:
                 attempt_count += 1
                 continuity_manager = get_continuity_manager_fn()
-                eligible_participants: list[str] | None = None
+                eligible_participants: list[str] = []
                 continuity_scene_state = getattr(
                     continuity_manager, "scene_state", None
                 )

@@ -63,13 +63,16 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
         offstage_characters: list[str] | None = None,
     ) -> list[str]:
         used = set(used_actors)
-        eligible = set(eligible_participants or participant_names)
         off = set(offstage_characters or [])
-        return [
+        available = [
             name
             for name in participant_names
-            if name not in used and name in eligible and name not in off
+            if name not in used and name not in off
         ]
+        if eligible_participants is not None:
+            eligible = set(eligible_participants)
+            available = [name for name in available if name in eligible]
+        return available
 
     def set_audit_turn_fn(turn_number: int) -> int:
         return turn_number

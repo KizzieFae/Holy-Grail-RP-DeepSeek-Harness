@@ -7,7 +7,7 @@ Manages scene state, issues/pressures, public events, and per-character interpre
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 
 def _utc_now() -> datetime:
@@ -607,6 +607,32 @@ class SummaryBlock:
         )
 
 
+def _migrate_character_presence_status(
+    raw: Optional[Any],
+    offstage_characters: Optional[list],
+    present_characters: Optional[list] = None,
+) -> dict[str, str]:
+    """Load presence status; default legacy offstage rows to temporary_offstage."""
+    out: dict[str, str] = {}
+    if isinstance(raw, dict):
+        for key, value in raw.items():
+            k = str(key or "").strip()
+            v = str(value or "").strip()
+            if k and v in ("onstage", "temporary_offstage", "departed"):
+                out[k] = v
+    legacy_off = offstage_characters if isinstance(offstage_characters, list) else []
+    for item in legacy_off:
+        name = str(item or "").strip()
+        if name and name not in out:
+            out[name] = "temporary_offstage"
+    present = present_characters if isinstance(present_characters, list) else []
+    for item in present:
+        name = str(item or "").strip()
+        if name and name not in out:
+            out[name] = "onstage"
+    return out
+
+
 @dataclass
 class SceneState:
     """The current state of the scene including setting, participants, and active pressures.
@@ -632,6 +658,9 @@ class SceneState:
     absent_but_relevant: list[str] = field(default_factory=list)
     # Still in cast / present_characters but not in the immediate shared space (hallway, garage, etc.)
     offstage_characters: list[str] = field(default_factory=list)
+    # Annotation only: refines offstage / presence meaning. Keys are character ids.
+    # Values: onstage | temporary_offstage | departed
+    character_presence_status: dict[str, str] = field(default_factory=dict)
 
     # Scene progression
     phase: ScenePhase = field(default=ScenePhase.OPENING)
@@ -662,6 +691,7 @@ class SceneState:
             "present_characters": self.present_characters,
             "absent_but_relevant": self.absent_but_relevant,
             "offstage_characters": self.offstage_characters,
+            "character_presence_status": dict(self.character_presence_status),
             "phase": self.phase.value,
             "opening_description": self.opening_description,
             "recent_delta": self.recent_delta,
@@ -733,6 +763,11 @@ class SceneState:
             offstage_characters=[
                 str(item) for item in data.get("offstage_characters", [])
             ],
+            character_presence_status=_migrate_character_presence_status(
+                data.get("character_presence_status"),
+                data.get("offstage_characters", []),
+                data.get("present_characters", []),
+            ),
             phase=ScenePhase(str(data.get("phase", ScenePhase.OPENING.value))),
             opening_description=str(data.get("opening_description", "")),
             recent_delta=str(data.get("recent_delta", "")),
