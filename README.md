@@ -9,6 +9,7 @@ Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, 
 | Product goals, layers, non-goals (incl. **Progression Advisory** §5.7, **Scene Grounding** §5.8) | [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) |
 | Three-layer model (ingestion → packaging → runtime) and boundaries | [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) |
 | **Where to change code** (symptom → module) | [MODULE_INDEX.md](./MODULE_INDEX.md) |
+| **Behavioral validation** (scenarios, headless LLM runs, audits, baseline vs treatment) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) |
 | **Persistence, files on disk, audits** | [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md) |
 | Debugging order / avoid wrong-layer fixes | [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) |
 | Future runtime input shapes (packets) | [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) |

@@ -29,6 +29,7 @@ Do not rely on tool memory as the only source of important project behavior.
 ## Where to start
 
 - For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
+- For **behavioral / scenario validation** (headless simulation on the production path, structured metrics, audits, baseline vs enforcement): `../SCENARIO_VALIDATION_FRAMEWORK.md` at the Holy Grail RP repo root.
 - Read `docs/repo-map.md` for repo structure.
 - Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).
 - Read `docs/code-style.md` for change-scope and coding expectations.
