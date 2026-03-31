@@ -240,8 +240,30 @@ For **each** scenario:
 
 ## Constraints
 
-- **Validation phase, not redesign:** failures should drive **targeted** changes only when reproducible and tied to a specific subsystem (contract, gate, selection, retry, continuity).
+- **Validation phase, not redesign:** failures should drive **targeted** changes only when reproducible and tied to a specific subsystem (contract, gate, selection, retry, continuity) — and **only after** human-approved remediation, not inside the validation pass itself.
 - **Answer the question:** *“Did this change actually improve system behavior?”* — use structured_eval + audits; do not expand scope or redesign the framework preemptively.
+- **Scenario validation does not modify runtime behavior** — runs **observe** outcomes; they do not change code, scenarios, prompts, or thresholds as part of the run.
+- **Triage before any fix:** an unexpected result is classified first ([DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) triage); **no** fix attempts in the same breath as analysis.
+- **Comparable runs:** baseline vs treatment and reruns stay apples-to-apples — **no hidden adjustments** between executions unless explicitly documented and intentional.
+
+### Enforced workflow (validation only; hard rule)
+
+1. Run scenario with **`--audit`** and optional **`--metrics-out`**.
+2. If the result is unexpected: run **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simulation failure triage (layer-aware deep-dive)**.
+3. Record **suspected layer**, **verdict** (**legitimate** / **legitimate but undesirable** / **bug** / **ambiguous**), and **minimal repro**.
+4. **Stop.** Do not proceed to fixes, reruns with altered conditions, or tuning unless **explicitly instructed** (separate remediation phase).
+
+Full boundary between validation and remediation: **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Validation vs Remediation Boundary** (under triage).
+
+### Long-session evaluation (`long_session`, natural rerun)
+
+1. **`--scenario long_session`**, **deep simulation** (default), **`--turns 12`**, **`--audit`**, **`--metrics-out`** — let the scene run **naturally** (no artificial exit constraints, no scenario wording edits, no detection tweaks for that run).
+2. If a walkout occurs: **triage** the event; classify with the four verdicts; then decide whether the run is **usable** for long-session validation — **do not** auto-rerun to “fix” the outcome.
+3. **Usable for long-session evaluation** only if: depth is **~10–12** successful character turns **and** no **critical layer bug** invalidates the run. Otherwise: **classify** the failure; start a **new** run only when directed — **no** automated remediation to salvage the run.
+
+### When a run “looks wrong” (triage pointer)
+
+Before changing code, use **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simulation failure triage (layer-aware deep-dive)**. Evidence order, layer labels, and verdicts are defined there; **remediation** is separate and human-directed.
 
 ---
 

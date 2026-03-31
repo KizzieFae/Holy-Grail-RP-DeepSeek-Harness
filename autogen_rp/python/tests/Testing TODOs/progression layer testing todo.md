@@ -34,7 +34,9 @@ The first two are **deterministic** (no LLM). `run_scene_simulation_llm.py` uses
 
 Overarching workflow and scenario catalog: **`SCENARIO_VALIDATION_FRAMEWORK.md`** at the **repository root** (next to `ARCHITECTURE_OVERVIEW.md`).
 
-If a run looks wrong but the symptom might be **presence, exit, continuity, selection, or encoding**, use **`DEBUGGING_GUIDE.md` → Simulation failure triage (layer-aware deep-dive)** before tuning progression or Director prompts.
+**Hard rule:** validation **observes / classifies / reports** and **stops**; **no** automatic code, scenario, prompt, or threshold changes after a run. Triage → record layer + verdict + repro → **stop** unless a human explicitly directs remediation. See framework **Constraints** + **`DEBUGGING_GUIDE.md` → Validation vs Remediation Boundary**.
+
+If a run looks wrong but the symptom might be **presence, exit, continuity, selection, or encoding**, use **`DEBUGGING_GUIDE.md` → Simulation failure triage (layer-aware deep-dive)** before any fix — and **do not** implement the fix in the same pass without explicit approval.
 
 **Mapping (high level)**
 

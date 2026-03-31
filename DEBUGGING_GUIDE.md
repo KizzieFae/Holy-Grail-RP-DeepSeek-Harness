@@ -28,6 +28,67 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 
 ---
 
+## Simulation failure triage (layer-aware deep-dive)
+
+Use this when a **headless scenario run** or **Streamlit session** “looks wrong” (FAIL/WARN, bad prose, collapsed cast, stuck loop) and you are deciding whether to **change code** and **which subsystem** owns the fix. It is the default path between **“simulation looked wrong”** and **“open the right file.”** Headless runs: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); audit layout: [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md).
+
+### Workflow
+
+1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant.
+2. Pick **one primary suspected layer** first (below). Do not spread the investigation across layers until the evidence chain is clear.
+3. Walk **evidence order** once, top to bottom; stop when you can name what **committed** the bad state.
+4. Produce **suspected layer**, **verdict**, and **minimal repro** (scenario id, audit session folder, turn index if known).
+5. **Stop** — validation and triage end here (see **Validation vs Remediation Boundary** below). Do not implement fixes or alter runs in the same pass unless a human **explicitly** directs remediation.
+
+### Validation vs Remediation Boundary
+
+- The validation path **observes, classifies, and reports**; it **stops** at **classification + minimal repro**.
+- **No automatic remediation:** do not change code, scenarios, prompts, thresholds, or runtime behavior while acting as validator.
+- **All fixes** require **explicit human approval** and are **manually implemented** in a separate remediation phase.
+- Do not **tune or “try fixes”** automatically after triage (no drive-by patches, prompt edits, or scenario tweaks to “see if the run improves”).
+- Do not **rerun with altered conditions** (different flags, edited JSON, local hacks) unless **explicitly instructed**; comparability of runs matters.
+- During **validation phases**, do not optimize behavior or “improve outcomes” — analyze, attribute to layer, document, then **stop**.
+- In **remediation** (after approval), changes should **target the triaged layer** unless new evidence overturns the prior classification.
+
+### Evidence order (strict)
+
+1. **Structured move** — `action`, `dialogue`, `motivation`, `presence_changes`, raw character JSON (source of truth; not inferred from prose alone).
+2. **Consequences / classification** — What tags fired (`exit`, etc.) and how they attach to the move (`continuity_consequence_classifier`, `scene_exit_detection.detect_exit_from_scene`; continuity applies rules in `continuity_manager.py`, e.g. canonical exit handling).
+3. **Continuity snapshot** — After the suspect turn: `present_characters`, `offstage_characters`, `character_presence_status`, active issues/events as needed (audit + `continuity_manager` / `SceneState`).
+4. **Selector / Director** — Orchestration notes, overrides, `selector_decisions` / audit selection stages (`orchestration_helpers.py`, `app_turn_director.py`, `response_validation_selection.py`).
+5. **Narrator / rendered chat last** — Confirms presentation and model tone; **do not** treat as proof of what continuity believed.
+
+### Primary suspected layer (pick one to start)
+
+Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. Examples:
+
+| Label | Typical symptoms | First code to inspect |
+|-------|------------------|------------------------|
+| `presence_exit` | Cast shrinks or jumps offstage without a clear embodied beat | `scene_exit_detection.py`, `continuity_manager.py` (`_apply_canonical_exit_offstage_transition`), `response_validation_presence.py` |
+| `consequence_classifier` | Consequence list contradicts plain reading of action/dialogue | `continuity_consequence_classifier.py`, `scene_exit_detection.py` |
+| `continuity_commit` | Wrong issues/events/scene fields after a turn | `continuity_manager.py`, `continuity_*_helpers.py`, `turn_runner_updates.py` |
+| `director_selection` | Wrong next actor given available pool and address | `app_turn_director.py`, `orchestration_helpers.py`, `semantic_validation.py` |
+| `progression_enforcement` | Retry / gate / Q1–Q4 delta behavior | `progression_enforcement.py`, `turn_runner_turn.py` |
+| `narrator_render` | Prose garble, voice, dialogue not verbatim | `app_turn_rendering.py`, narrator prompts |
+| `encoding_io` | U+FFFD, mojibake in logs, files, or console | Encoding of JSON/triggers/terminal; separate from model “quality” |
+| `other` | After the above are ruled out | Narrow from audit timeline |
+
+### Verdict (record one)
+
+- **legitimate** — State change matches the structured move and rules; scene behaved as designed.
+- **legitimate but undesirable** — Rules and classifiers behaved as implemented, but the outcome is a **design or scenario weakness** (e.g. trigger phrasing, cast size, template pressure)—not a classifier bug. Fix may be **scenario**, **template**, or **product rule**, not “random prompt tweak.”
+- **bug** — Implementation misread authored content or wrote wrong continuity (e.g. false exit on negated phrasing); fix belongs in the **labeled layer**.
+- **ambiguous** — Not enough evidence in one pass; re-run, add audit session, or isolate turn before coding.
+
+### Success criteria
+
+- There is a **default path** from “simulation looked wrong” to **layer-labeled** investigation **before** any **approved** code change.
+- Oddities are **labeled by layer** before fixes; **progression** is not tuned for **presence/continuity/selection/encoding** bugs unless triage (then human-directed remediation) says so.
+- Repros stay **small** (scenario + audit session + optional `structured_eval` path).
+- **Triage output is complete** when suspected layer, verdict, and repro are recorded and the validation pass **stops** — implementation is out of band.
+
+---
+
 ## By problem type
 
 ### Turn selection issues
