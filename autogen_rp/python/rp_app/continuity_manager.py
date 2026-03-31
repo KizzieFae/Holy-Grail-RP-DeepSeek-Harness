@@ -974,12 +974,13 @@ class ContinuityManager:
             deduped_absent.append(n)
         self.scene_state.absent_but_relevant = deduped_absent
 
-        present_off = set(self.scene_state.present_characters)
         seen_off: set[str] = set()
         deduped_off: list[str] = []
         for n in self.scene_state.offstage_characters:
             n = str(n).strip()
-            if not n or n not in present_off or n in seen_off:
+            if not n or n in seen_off:
+                continue
+            if n in present_set:
                 continue
             seen_off.add(n)
             deduped_off.append(n)

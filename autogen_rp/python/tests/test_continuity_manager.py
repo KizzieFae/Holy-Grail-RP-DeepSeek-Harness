@@ -1879,6 +1879,20 @@ def test_reconcile_presence_lists_clears_overlap_and_dedupes() -> None:
     assert manager.scene_state.absent_but_relevant == ["Willow_Reeves"]
 
 
+def test_reconcile_presence_lists_keeps_offstage_not_on_present_roster() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=["On_Stage_A", "On_Stage_B"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.offstage_characters = ["Gone_C", "Gone_C", "On_Stage_A"]
+    manager._reconcile_presence_lists()
+    assert set(manager.scene_state.offstage_characters) == {"Gone_C"}
+    assert "On_Stage_A" not in manager.scene_state.offstage_characters
+
+
 def test_soft_exit_does_not_remove_actor_required_by_multi_party_issue() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(
