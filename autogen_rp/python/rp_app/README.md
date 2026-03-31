@@ -344,7 +344,8 @@ The following Stage 4 hardening work has been implemented and is ready for calib
 ### Knowledge Propagation
 - **Explicit `told` transitions** - when a character mentions an event to another by name, knowledge transfers as `told`
 - **Limited inference** - token-overlap based inference for scene-local implied knowledge (conservative threshold)
-- **Knowledge boundary validation** - `known_by`, `observed_by`, `told_to`, `inferred_by` tracked per event
+- **Knowledge boundary validation** - `known_by`, `observed_by`, `told_to`, `inferred_by` tracked per event; **`PublicEvent.knowledge_level_for`** requires membership in **`known_by`** before any observed/told/inferred label applies
+- **Audibility / perception (deterministic)** - structured moves may include **`audibility`** (`public` \| `directed` \| `private`) and **`audience`**; `perception_audibility.py` normalizes defaults and heuristics, then gates **per-recipient** transcript and structured **`dialogue`**, **`PublicEvent`** knower lists and safe summaries, **interpretation** quoting, and **Director** structured-move redaction. Narrator **`rendered`** prose is presentation only for this layer (not parsed for who heard what)
 
 ### Canon & Identity Enforcement
 - **Extended drift detection** - voice profile, speech fingerprint, and reaction profile checks

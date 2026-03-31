@@ -501,7 +501,12 @@ This matters because the source of truth for the scene is intended to be:
 
 - `team_state` / `scene_state`
 - `character_states`
-- recent structured moves and recent dialogue history
+- recent structured moves (orchestration store may include full **`dialogue`** for ground truth)
+- **Perception-filtered** recent scene transcript and structured slices **as assembled into each LLM prompt** (character prompts and Director payload differ; see `perception_audibility.py`)
+
+**Important:** Persisted **`chat_history`** entries store **full narrator `rendered`** text for each beat. That is **not** identical to what another character’s prompt contains after filtering. When auditing “what character X could know,” use **per-character prompt artifacts** or **structured `move` + `audibility`**, not the raw shared chat log alone.
+
+**Audit artifacts:** Turn payloads may include **full parsed moves** (e.g. dialogue previews) for debugging—that reflects **ground-truth structured output**, not necessarily the **redacted** view shown to every other character in the same round.
 
 Not the agent's hidden accumulated chat transcript.
 

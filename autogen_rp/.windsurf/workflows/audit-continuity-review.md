@@ -63,11 +63,18 @@ When replaying a session or reading per-turn audits, verify:
 3. **Knowledge / prompt assembly**
    - For a character turn audit while offstage: character prompt (or redacted snapshot) should include the **OFFSTAGE / PERCEPTUAL SCOPE** block and **filtered** recent dialogue / structured moves (Traveler + self), not full in-room lines from other assistants—unless a separate mechanism explicitly granted remote perception.
 
+3b. **Directed / private speech (audibility)** — checklist
+
+- Structured **`move`** is the source of truth: **`audibility`**, **`audience`**, and **`dialogue`** (see `perception_audibility.py`).
+- For a beat marked **`directed`** or **`private`**, a **third party** (not speaker, not in `audience`) must **not** receive verbatim private **`dialogue`** in: character transcript, **RECENT STRUCTURED ACTIONS**, **interpretations** (may note behavior-only), **`PublicEvent.summary`**, or **Director** `recent_dialogue_history` / redacted structured moves.
+- Speaker and addressees **may** receive full narrator **`rendered`** for that beat when rules allow; orchestration mode (`viewer_character_name=None`) must **not** ship non-public full prose for those beats.
+
 4. **Re-entry conservatism**
    - Offstage clears only when evidence matches **user re-entry phrasing**, **embodied re-entry** in the character move, structured **entry** consequence, or **forced-speaker** release—not from vague proximity or motivation-only intent.
 
 5. **False exits**
    - If **`detect_exit_from_scene`** misfires, expect a **wrong offstage** flag rather than silent removal from **`present_characters`**. Flag those cases as **continuity/state representation** or **exit-detection tuning**, not Director-only fixes.
+
 - whether rounds drift into low-change beats despite active unresolved pressure
 
 If the audit shows dialogue-heavy turns with weak material change signals, treat that as evidence against a Director-first diagnosis.
@@ -83,6 +90,7 @@ Inspect the moving parts that shape scene progression. At minimum, review the re
 - `python/rp_app/continuity_state.py`
 - `python/rp_app/app_turn_director.py`
 - `python/rp_app/app_turn_prompting.py`
+- `python/rp_app/perception_audibility.py`
 - `python/rp_app/orchestration_helpers.py`
 - `python/rp_app/character_state_manager.py`
 - `python/rp_app/turn_runner_turn.py`

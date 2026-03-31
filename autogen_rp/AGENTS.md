@@ -44,6 +44,7 @@ area is usually `python/rp_app/`.
 If a task touches the RP app, also read:
 
 - `../MODULE_INDEX.md` (file-level map; canonical at repo root)
+- For **knowledge leaks, whispers, or per-character prompt differences:** `python/rp_app/perception_audibility.py` (authoritative perception gate; structured `move` as source of truth)
 - `../Holy Grail PRD.md` (product intent, including **Progression Advisory MVP** in §5.7 and **Scene Grounding MVP** in §5.8)
 - `docs/scene-grounding-layer.md` (Scene Grounding: facts contract, lifecycle, prompt integration — under `autogen_rp/`)
 - `python/rp_app/README.md`

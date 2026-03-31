@@ -22,7 +22,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Orchestration** — Final authority ordering for **who actually speaks**, combining direct address, continuation override, Director output, validation, and progression rules (`orchestration_helpers.py`, PRD §5.3).
 
-**Character agent** — Bot that emits structured JSON: `action`, `dialogue`, `motivation` (see `rp_app/README.md`). Must respect knowledge boundaries enforced by continuity/validation.
+**Character agent** — Bot that emits structured JSON: `action`, `dialogue`, `motivation`, and optionally **`audibility`** / **`audience`** (see `rp_app/README.md`). Knowledge boundaries combine continuity (`PublicEvent` knowers, interpretations) with **`perception_audibility.py`** (per-recipient prompts; structured move is the perception source of truth).
 
 ---
 
@@ -36,7 +36,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Issue / pressure** — Structured dramatic tension or blocked objective (`IssueState`, lifecycle active → escalating → stalled → resolved, etc.). Director and validators use issue context; not the same as free-form “plot summary.”
 
-**Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay.
+**Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay. **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** via `public_safe_event_summary` at promotion time.
 
 **Scene state** — Participants, environment, phase, recent beats—portion of continuity scoped to the current scene (`continuity_scene_helpers.py`, `scene_lifecycle_*`).
 

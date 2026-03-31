@@ -106,7 +106,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 ### 4.1 Allowed inputs
 
 1. **Structured continuity outputs** after `ContinuityManager` (or equivalent) processes a turn:
-   - `PublicEvent` / event summaries with **typed** `event_type` or tags (existing or **new narrow types** — extraction improvement track).
+   - `PublicEvent` / event summaries with **typed** `event_type` or tags (existing or **new narrow types** — extraction improvement track). Event **`summary`** strings for non-public speech are **audibility-safe** (no verbatim private **`dialogue`** in the global summary text); consumers that need word-level private content must use per-recipient prompt state, not shared event text alone.
    - **Issue** lifecycle transitions (e.g. resolved + linked template → promote “call completed”).
    - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **Current coverage:** `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`.
 2. **`DetectedConsequence` + `ConsequenceCategory`** from `continuity_consequence_classifier` (deterministic):

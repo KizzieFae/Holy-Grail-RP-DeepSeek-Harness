@@ -23,7 +23,8 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Presence** / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `semantic_validation.py` (override paths) |
 | **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
 | **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py` |
-| Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py` |
+| Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
+| **Whisper / private line** known to wrong character; per-character prompt mismatch | `perception_audibility.py`, then `app_turn_prompting.py`, `continuity_manager.py`, `continuity_knowledge_helpers.py`, `app_turn_director.py` |
 | **Settled facts** repeated / logistics reset in dialogue (after continuity looks correct) | `continuity_resolved_outcomes.py`, `scene_grounding.py`, `prompt_builders.py`, then continuity extraction if facts never promote |
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
@@ -64,7 +65,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
 | `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit, `beat_shift_state` | Passes active issues + recent moves into beat-shift; main loop entry |
-| `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation` | |
+| `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation`, `perception_audibility` | Normalizes move audibility after parse; chat append includes `actor` id |
 | `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | |
 | `turn_runner_audit.py` | Audit summary refresh hooks | `audit_logger*` | |
 | `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Advisory only; no continuity writes |
@@ -72,7 +73,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
 | `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `anti_regression_advisory` | Optional progression + anti-regression Director prefixes |
 | `app_turn_selector.py` | Turn selection parsing / reconciliation | `response_validation_selection` | |
-| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory` | Optional progression suffix when pressure + beat-shift rules match |
+| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `perception_audibility`, `offstage_prompt_filter` | Per-recipient transcript + structured moves; offstage narrowing; optional progression suffix |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 
@@ -82,17 +83,19 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `continuity_manager.py` | Promote moves to events; issues; scene; interpretations; knowledge | `continuity_*_helpers`, `continuity_state` | Authoritative narrative state |
-| `continuity_state.py` | Dataclasses: issues, events, interpretations, anchors, snapshots | — | Serialization shapes for sessions |
+| `continuity_manager.py` | Promote moves to events; issues; scene; interpretations; knowledge | `continuity_*_helpers`, `continuity_state`, `perception_audibility` | Authoritative narrative state; `PublicEvent` knowability via `known_by`/`observed_by`; safe summaries for non-public dialogue |
+| `continuity_state.py` | Dataclasses: issues, events, interpretations, anchors, snapshots | — | `PublicEvent.knowledge_level_for` gates on `known_by` first |
 | `continuity_issue_helpers.py` | Issue lifecycle, matching, summaries | `continuity_consequence_classifier` | |
-| `continuity_knowledge_helpers.py` | Knowledge propagation, boundaries, `told`/inference | events, interpretations | |
+| `continuity_knowledge_helpers.py` | Knowledge propagation, boundaries, `told`/inference | events, interpretations, `perception_audibility` | Dialogue-mediated propagation and interpretation quotes respect `viewer_may_perceive_dialogue` |
 | `continuity_resolved_outcomes.py` | Facade: structured ingest helpers + delegates apply path to `resolved_outcome_engine` | `resolved_outcome_registry`, `resolved_outcome_engine`, `continuity_manager` | Current aspects: `lodging.sleep_surface`, `communication.housing_call`, `medical.suppressant_formulation`, `access.location_entry` |
 | `resolved_outcome_registry.py` | `ASPECT_REGISTRY`, parse/validate, `slot_key` encoding, per-aspect promotion policy (read-only evaluate), local revocation | `continuity_state`, `resolved_outcome_engine` | New aspects = new rows; no inference |
 | `resolved_outcome_engine.py` | Deterministic pipeline: ingest → slot → `no_op_existing_value` → revoke → promote → persist | `continuity_state`, `resolved_outcome_registry` | Core stays aspect-agnostic; policies live in registry |
 | `continuity_scene_helpers.py` | Scene snapshots, orchestration context for prompts | scene state | |
-| `continuity_summary_helpers.py` | Summary blocks, retrieval ranking support | issues, events | |
+| `continuity_summary_helpers.py` | Summary blocks, retrieval ranking support | issues, events | `key_events` derive from `event.summary` (already audibility-safe at promotion) |
 | `continuity_consequence_classifier.py` | Consequence / category signals for issues | text signals | |
 | `scene_grounding.py` | Derive **read-only** **scene facts** from continuity `PublicEvent.grounding_markers` and active resolved outcomes; format Director/character prompt blocks; cap/prune | `continuity_manager`, `turn_runner_updates`, `prompt_builders`, `app_turn_director`, `app_turn_prompting` | **No** continuity or `CharacterState` writes; PRD §5.8; spec: `autogen_rp/docs/scene-grounding-layer.md` |
+| `perception_audibility.py` | Deterministic **`audibility`** / **`audience`**; per-recipient transcript + structured-move filtering; **`public_safe_event_summary`**; Director orchestration redaction | `app_turn_prompting`, `app_turn_director`, `continuity_manager`, `continuity_knowledge_helpers`, `turn_runner_turn`, `orchestration_helpers`, `prompt_builders` | **Single source of truth** for perception boundaries; structured `move` only (no narrator prose parsing) |
+| `offstage_prompt_filter.py` | Traveler + self-only transcript/moves for offstage characters | `app_turn_prompting` | Applied after perception filtering |
 
 ---
 
@@ -100,7 +103,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `response_validation_parsing.py` | Parse character moves, Director JSON | — | |
+| `response_validation_parsing.py` | Parse character moves, Director JSON | — | Optional `audibility`, `audience` on character moves |
 | `response_validation_content.py` | Self-narration / structural checks | parsed moves | |
 | `response_validation_presence.py` | must_remain / exit contradictions | scene, templates | |
 | `response_validation_drift.py` | Voice / profile drift vs anchors | `character_state` | |
@@ -131,8 +134,8 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `character_loader.py` | Load JSON cards, build agents | `data/autogen_characters`, `model_client` | Current “ingestion” is files |
 | `character_state_model.py` | Per-character state schema | cards | Identity anchors |
 | `character_state_manager.py` | Update goals, emotions, relationships | continuity, turns | |
-| `orchestration_helpers.py` | Spotlight, continuation override, sync from continuity | `st.session_state` | Final speaker ordering support |
-| `prompt_builders.py` | Structured prompt text for Director/characters/Narrator | continuity, templates | Future: consume packets |
+| `orchestration_helpers.py` | Spotlight, continuation override, sync from continuity | `st.session_state` | Persists `audibility`/`audience` on structured move entries; narrator scene context uses perception-filtered transcript |
+| `prompt_builders.py` | Structured prompt text for Director/characters/Narrator | continuity, templates | Labels perception-filtered transcript/structured sections; future: consume packets |
 
 ---
 

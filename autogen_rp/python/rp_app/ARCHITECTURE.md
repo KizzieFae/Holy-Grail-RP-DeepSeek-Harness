@@ -91,9 +91,13 @@ Characters now return:
     "tactic": "probe with a direct question",
     "emotional_driver": "suspicion",
     "risk_level": "low"
-  }
+  },
+  "audibility": "public",
+  "audience": []
 }
 ```
+
+Optional fields **`audibility`** (`public` \| `directed` \| `private`) and **`audience`** (names, for non-public) are parsed from character JSON when present, then **normalized** in `perception_audibility.py` (including deterministic whisper-style heuristics on structured `action`/`dialogue` only). **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what.
 
 ### 3. Director Agent
 
@@ -109,10 +113,10 @@ Director inputs are intentionally structured and lightweight:
 - current scene state, including location, scene phase, present characters, and recent tension or environment beats
 - scene-template context, including template ID and premise
 - cast role map, including assigned roles, `presence_constraint`, and informational authority labels
-- recent structured character actions
+- recent structured character actions (**non-public `dialogue` redacted** in the Director payload)
 - public character goal/emotion snapshot
 - active issues and recent public events
-- recent dialogue history
+- recent scene transcript (**perception-filtered**: only **public** beats use full narrator `rendered`; directed/private beats use structured, observable stubs—see `perception_audibility.py`)
 - spotlight history and currently available next actors
 
 Director selection policy is prompt-guided rather than hard-coded. It is instructed to:
@@ -154,8 +158,8 @@ Available actor set excludes any character already used this round
     ↓
 Character Agent sees:
     - Current scene state
-    - Recent structured actions
-    - Recent dialogue history
+    - Recent structured actions (**`dialogue` redacted** when this character is not allowed to perceive it)
+    - Recent scene transcript (**perception-filtered for this character**; full narrator prose for others’ beats only when audibility is `public` or this character is in `audience`)
     - Director decision for the current beat
     - Its own private state
     ↓
@@ -180,8 +184,8 @@ The current implementation now uses a hidden continuity manager plus bounded pro
 
 The active prompt is kept bounded by:
 
-- recent structured moves
-- recent dialogue history
+- recent structured moves (**per-recipient**: non-perceivable **`dialogue`** cleared)
+- recent scene transcript (**per-recipient** / Director-global-safe via `perception_audibility`)
 - scene state windows for tension/environment beats
 - active issues / pressures
 - recent public events and retrieved summary blocks
@@ -366,7 +370,7 @@ Its job is not to write prose. Its job is to convert transient interaction into 
 ```text
 User turn + character turns complete
     ↓
-Inspect recent structured moves + recent dialogue window
+Inspect recent structured moves + recent transcript window (prompt-facing views are perception-filtered)
     ↓
 Promote significant developments into event objects
     ↓
@@ -389,7 +393,7 @@ The narrator should remain lightweight. It should not become a long-horizon memo
 Current `CharacterState` covers private goals, identity anchors, and private interpretation
 summaries, while the continuity layer now provides the missing shared story-state structures:
 
-- structured knowledge map through `PublicEvent.known_by` / `observed_by` / `told_to` / `inferred_by`
+- structured knowledge map through `PublicEvent.known_by` / `observed_by` / `told_to` / `inferred_by` (**`known_by` is authoritative** for retrieval; new events scope knowers by audibility; summaries avoid embedding verbatim non-public **`dialogue`**—see `perception_audibility.public_safe_event_summary`)
 - active vs background fact separation through recent public events plus retrieved summary blocks
 - resolved vs unresolved pressure tracking through `IssueState` lifecycle and filtered active issues
 - scene-level continuity state shared across prompts through `SceneState`

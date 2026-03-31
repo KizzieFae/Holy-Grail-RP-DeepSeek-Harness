@@ -38,6 +38,7 @@ For session audits, read in this order:
 - whether `issue_updates` reflect pressure movement rather than dialogue paraphrase
 - whether `presence_changes` match true entries, exits, and absences
 - whether summary blocks preserve important context or hide it
+- **Perception / audibility:** for whisper or directed beats, compare **this character’s** assembled prompt (or audit snapshot) to the **parsed `move`** (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private **`dialogue`** in transcript, structured moves, `PublicEvent.summary`, or interpretations; Director payload must use the same redaction rules.
 
 For issue updates, pay special attention to:
 
@@ -51,17 +52,19 @@ For issue updates, pay special attention to:
 Use the same layer order as `docs/architecture.md`:
 
 1. continuity and state representation
-2. issue lifecycle and orchestration state
-3. summary retrieval and compression
-4. validation and enforcement
-5. Director logic
-6. Narrator rendering
+2. **perception / audibility** (`perception_audibility.py` and prompt assembly) when the failure is impossible knowledge or leaked private lines
+3. issue lifecycle and orchestration state
+4. summary retrieval and compression
+5. validation and enforcement
+6. Director logic
+7. Narrator rendering
 
 ## Relevant code areas for RP audits
 
 Start with these files when the audit points to runtime behavior:
 
 - `python/rp_app/continuity_manager.py`
+- `python/rp_app/perception_audibility.py`
 - `python/rp_app/turn_runner.py`
 - `python/rp_app/turn_runner_turn.py`
 - `python/rp_app/turn_runner_updates.py`

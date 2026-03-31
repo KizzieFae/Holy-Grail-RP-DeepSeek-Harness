@@ -22,6 +22,7 @@ The RP app uses a Director + Narrator + continuity-manager architecture.
 - The Narrator renders prose and should preserve character dialogue verbatim.
 - The continuity manager updates durable scene and issue state.
 - Validation and enforcement should remain separate from prompt styling.
+- **`perception_audibility.py`** is the authoritative gate for who may see **`dialogue`** and full narrator **`rendered`** for others’ beats in prompts; structured **`move`** (including optional **`audibility`** / **`audience`**) is the source of truth—narrator prose is not parsed for boundaries.
 
 ### Protected architectural intent
 
