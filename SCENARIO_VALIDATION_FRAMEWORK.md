@@ -293,9 +293,11 @@ Before changing code, use **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simul
 
 ## Latest validation status (checkpoint)
 
-Written assessment, limitations, and **required next-phase steps** (deeper runs, retries, repeatability, `strong_user_steer` text check) live in:
+**Progression layer (v1):** declared **validated** — `autogen_rp/python/tests/Testing TODOs/progression layer validation status v1.md`.
 
-`autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md` → section **“Validation checkpoint — initial LLM runs”**.
+Written assessment, limitations, and historical phase notes also live in:
+
+`autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md` → sections **“Validation checkpoint — initial LLM runs”**, **Phase 2**, **Phase 2b**, etc.
 
 ### Deep simulation (headless)
 

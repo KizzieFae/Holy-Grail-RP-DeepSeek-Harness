@@ -1,5 +1,7 @@
 Progression Layer — Test Sheet (Pass / Fail)
 
+**v1 checkpoint (validated):** [progression layer validation status v1.md](./progression%20layer%20validation%20status%20v1.md) — official progression layer validation status and behavioral summary.
+
 ## 0. Automated baseline (before manual checklist)
 
 From `autogen_rp/python`:
