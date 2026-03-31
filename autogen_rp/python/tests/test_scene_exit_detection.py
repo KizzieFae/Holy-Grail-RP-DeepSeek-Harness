@@ -160,3 +160,31 @@ def test_motivation_only_leave_does_not_trigger_soft_exit() -> None:
         },
     }
     assert detect_exit_from_scene(move, None) is False
+
+
+def test_negated_no_walking_out_mid_sentence_no_hard_exit() -> None:
+    move = {
+        "action": "tapped the table once",
+        "dialogue": "We keep going until this is settled—no walking out mid-sentence.",
+        "motivation": {"goal": "", "tactic": "", "emotional_driver": "", "risk_level": "low"},
+    }
+    assert has_hard_scene_departure_evidence(move, None) is False
+
+
+def test_negated_no_walking_out_on_me_no_hard_exit() -> None:
+    move = {
+        "action": "held her ground",
+        "dialogue": "There's no walking out on me, not tonight.",
+        "motivation": {"goal": "", "tactic": "", "emotional_driver": "", "risk_level": "low"},
+    }
+    assert has_hard_scene_departure_evidence(move, None) is False
+
+
+def test_negated_walking_out_plus_first_person_still_hard_exit() -> None:
+    move = {
+        "action": "stood",
+        "dialogue": "No walking out mid-sentence—but I'm leaving anyway.",
+        "motivation": {"goal": "", "tactic": "", "emotional_driver": "", "risk_level": "low"},
+    }
+    assert has_hard_scene_departure_evidence(move, None) is True
+    assert detect_exit_from_scene(move, None) is True

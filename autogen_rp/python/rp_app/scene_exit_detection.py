@@ -299,6 +299,31 @@ def _authored_has_first_person_departure_commitment(direct_text: str) -> bool:
     return bool(_FIRST_PERSON_DEPARTURE_COMMITMENT_RE.search(direct_text))
 
 
+# Prohibition: "no walking out" is not an embodied self-exit for the speaker.
+_NEGATED_WALKING_OUT_PROHIBITION_RE = re.compile(
+    r"\b(?:no|not|never|without)\s+walk(?:ing|ed)?\s+out\b",
+    re.IGNORECASE,
+)
+
+
+def _negated_walking_out_spans(direct_text: str) -> list[tuple[int, int]]:
+    return [
+        (m.start(), m.end())
+        for m in _NEGATED_WALKING_OUT_PROHIBITION_RE.finditer(direct_text)
+    ]
+
+
+def _explicit_departure_matches_after_negation_skip(direct_text: str) -> list[re.Match]:
+    """``_EXPLICIT_DEPARTURE_RE`` hits that are not inside a negated *walking out* prohibition."""
+    spans = _negated_walking_out_spans(direct_text)
+    out: list[re.Match[str]] = []
+    for m in _EXPLICIT_DEPARTURE_RE.finditer(direct_text):
+        if any(m.start() < end and m.end() > start for start, end in spans):
+            continue
+        out.append(m)
+    return out
+
+
 def has_hard_scene_departure_evidence(
     move: dict[str, Any] | None,
     scene_state: dict[str, Any] | None,
@@ -321,7 +346,8 @@ def has_hard_scene_departure_evidence(
     if "left the immediate scene" in combined_authored:
         return True
 
-    if _EXPLICIT_DEPARTURE_RE.search(direct_text):
+    explicit_after_skip = _explicit_departure_matches_after_negation_skip(direct_text)
+    if explicit_after_skip:
         if _authored_departure_reads_as_directed_or_hypothetical(
             direct_text
         ) and not _authored_has_first_person_departure_commitment(direct_text):
