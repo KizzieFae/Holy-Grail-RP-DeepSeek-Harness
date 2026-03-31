@@ -116,6 +116,18 @@ def parse_character_move(content: str) -> tuple[dict | None, str]:
     motivation.setdefault("emotional_driver", "guarded focus")
     motivation.setdefault("risk_level", "medium")
     data["dialogue"] = str(data.get("dialogue", "") or "")
+    aud = str(data.get("audibility", "") or "").strip().lower()
+    if aud in ("public", "directed", "private"):
+        data["audibility"] = aud
+    else:
+        data.pop("audibility", None)
+    raw_audience = data.get("audience")
+    if isinstance(raw_audience, list):
+        data["audience"] = [str(a).strip() for a in raw_audience if str(a).strip()]
+    elif raw_audience is not None:
+        data["audience"] = [str(raw_audience).strip()] if str(raw_audience).strip() else []
+    else:
+        data.pop("audience", None)
 
     return data, ""
 

@@ -13,6 +13,7 @@ from offstage_prompt_filter import (
     filter_dialogue_for_offstage_character,
     filter_structured_moves_for_offstage_character,
 )
+from perception_audibility import filter_structured_move_for_viewer
 from scene_grounding import format_character_grounding_section
 
 
@@ -191,27 +192,6 @@ def _build_priority_ladder(
     return ladder
 
 
-def build_recent_dialogue_history(
-    *,
-    chat_history: list[dict[str, Any]],
-    get_character_display_name_fn,
-    limit: int,
-) -> list[dict[str, str]]:
-    history: list[dict[str, str]] = []
-    for message in chat_history[-limit:]:
-        if message.get("role") == "system":
-            continue
-        raw_speaker = str(message.get("speaker", "Unknown") or "Unknown")
-        history.append(
-            {
-                "role": str(message.get("role", "assistant") or "assistant"),
-                "speaker": get_character_display_name_fn(raw_speaker),
-                "content": str(message.get("content", "") or ""),
-            }
-        )
-    return history
-
-
 def build_character_turn_prompt(
     *,
     st_module: Any,
@@ -230,6 +210,7 @@ def build_character_turn_prompt(
     build_scene_role_prompt_context_fn,
     build_character_turn_prompt_text_fn,
     prompt_structured_move_limit: int,
+    prompt_dialogue_history_limit: int,
     get_character_display_name_fn: Callable[[str], str],
 ):
     enforce_must_remain_presence_fn()
@@ -242,7 +223,7 @@ def build_character_turn_prompt(
         continuity_manager=continuity_manager,
     )
     state = state_manager.get_state(char_name) if state_manager else None
-    recent_moves = orchestration_state.get("recent_structured_moves", [])[
+    raw_moves = orchestration_state.get("recent_structured_moves", [])[
         -prompt_structured_move_limit:
     ]
     cross_session_memories = st_module.session_state.get("cross_session_memories", {})
@@ -256,7 +237,25 @@ def build_character_turn_prompt(
         if continuity_context is not None
         else orchestration_state.get("scene_state", {})
     )
-    recent_dialogue = build_recent_dialogue_history_fn(chat_history)
+    present_for_moves = scene_state.get("present_characters") or [
+        str(a.name)
+        for a in st_module.session_state.get("characters", [])
+        if getattr(a, "name", None)
+    ]
+    recent_moves = [
+        filter_structured_move_for_viewer(
+            dict(m),
+            viewer_character_name=char_name,
+            present_characters=list(present_for_moves),
+        )
+        for m in raw_moves
+        if isinstance(m, dict)
+    ]
+    recent_dialogue = build_recent_dialogue_history_fn(
+        chat_history,
+        limit=prompt_dialogue_history_limit,
+        viewer_character_name=char_name,
+    )
     offstage_names = [
         str(n)
         for n in (scene_state.get("offstage_characters") or [])

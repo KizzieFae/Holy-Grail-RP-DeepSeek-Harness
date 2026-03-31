@@ -62,6 +62,12 @@ from continuity_scene_helpers import (
 )
 from scene_grounding import compute_grounding_markers, grounding_markers_event_summary
 
+from perception_audibility import (
+    event_knowledge_recipients,
+    normalize_move_audibility,
+    public_safe_event_summary,
+)
+
 from continuity_state import (
     CanonAnchor,
     CharacterInterpretation,
@@ -719,6 +725,13 @@ class ContinuityManager:
         if self.scene_state is None:
             raise RuntimeError("Scene not initialized. Call initialize_scene() first.")
 
+        present_list = (
+            list(self.scene_state.present_characters)
+            if self.scene_state
+            else [acting_character]
+        )
+        move = normalize_move_audibility(dict(move), acting_character, present_list)
+
         turn_index = self.turn_counter + 1
         turn_consequences = self._classify_turn_consequences(
             acting_character,
@@ -801,28 +814,39 @@ class ContinuityManager:
         self.event_counter += 1
         event_id = f"evt_{timestamp.isoformat()}_{self.event_counter}"
 
+        present_list = (
+            list(self.scene_state.present_characters[:])
+            if self.scene_state
+            else [acting_character]
+        )
+        recipients = event_knowledge_recipients(
+            move,
+            acting_character=acting_character,
+            present_characters=present_list,
+        )
+        if not recipients:
+            recipients = [acting_character]
+        raw_summary = str(
+            turn_consequences.get("summary", "")
+            or f"{acting_character} took action"
+        )
+        safe_summary = public_safe_event_summary(
+            acting_character=acting_character,
+            move=move,
+            provisional_summary=raw_summary,
+        )
+
         return PublicEvent(
             event_id=event_id,
             timestamp=timestamp,
             event_type=str(turn_consequences.get("event_type", "action") or "action"),
             participants=[acting_character],
-            summary=str(
-                turn_consequences.get("summary", "")
-                or f"{acting_character} took action"
-            ),
+            summary=safe_summary,
             turn_index=turn_index,
             location=self.scene_state.location if self.scene_state else None,
             significance=str(turn_consequences.get("significance", "minor") or "minor"),
-            observed_by=(
-                self.scene_state.present_characters[:]
-                if self.scene_state
-                else [acting_character]
-            ),
-            known_by=(
-                self.scene_state.present_characters[:]
-                if self.scene_state
-                else [acting_character]
-            ),
+            observed_by=list(recipients),
+            known_by=list(recipients),
             state_changes=[
                 str(item)
                 for item in turn_consequences.get("state_changes", [])

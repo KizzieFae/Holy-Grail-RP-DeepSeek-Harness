@@ -461,6 +461,8 @@ def append_turn_to_orchestration_state(
         "motivation": move.get("motivation", {}),
         "environment_event": decision.get("environment_event", ""),
         "tension_shift": decision.get("tension_shift", ""),
+        "audibility": str(move.get("audibility", "public") or "public"),
+        "audience": list(move.get("audience") or []),
     }
     # Persist existing computed outcome signals when available (no new logic).
     if consequences is not None:

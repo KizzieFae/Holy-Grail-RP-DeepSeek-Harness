@@ -273,16 +273,22 @@ class PublicEvent:
     grounding_markers: list[str] = field(default_factory=list)
 
     def knowledge_level_for(self, character_name: str) -> str | None:
-        """Return how the character knows this event, if known."""
-        if character_name in self.observed_by or character_name in self.participants:
+        """Return how the character knows this event, if known.
+
+        ``known_by`` is authoritative: characters not listed do not retrieve this
+        event, even if legacy data lists them under ``observed_by`` only.
+        """
+        if character_name not in self.known_by:
+            return None
+        if character_name in self.participants:
+            return "observed"
+        if character_name in self.observed_by:
             return "observed"
         if character_name in self.told_to:
             return "told"
         if character_name in self.inferred_by:
             return "inferred"
-        if character_name in self.known_by:
-            return "known"
-        return None
+        return "known"
 
     def to_dict(self) -> dict:
         """Serialize the event for persistence."""

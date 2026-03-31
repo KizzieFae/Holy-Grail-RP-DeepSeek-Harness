@@ -3,6 +3,11 @@ from datetime import datetime
 from typing import Any
 
 from continuity_state import CharacterInterpretation
+from perception_audibility import (
+    normalize_move_audibility,
+    observer_may_quote_dialogue_in_interpretation,
+    viewer_may_perceive_dialogue,
+)
 
 
 def share_event_knowledge(
@@ -49,6 +54,8 @@ def propagate_knowledge_from_turn(
     dialogue = str(move.get("dialogue", "") or "")
     if not dialogue:
         return
+    present = list(dict.fromkeys([acting_character, *other_characters]))
+    move = normalize_move_audibility(dict(move), acting_character, present)
     move_tokens = turn_tokens_fn(move)
     if not move_tokens:
         return
@@ -62,6 +69,10 @@ def propagate_knowledge_from_turn(
             continue
         for target in candidate_targets:
             if event.knowledge_level_for(target) is not None:
+                continue
+            if not viewer_may_perceive_dialogue(
+                move, acting_character=acting_character, viewer_character=target
+            ):
                 continue
             knowledge_type = "told" if target in direct_targets else "inferred"
             share_event_knowledge_fn(event.event_id, target, knowledge_type)
@@ -78,6 +89,8 @@ def update_interpretations(
     dialogue = move.get("dialogue", "")
     action = move.get("action", "")
     motivation = move.get("motivation", {})
+    present = list(dict.fromkeys([acting_character, *other_characters]))
+    norm_move = normalize_move_audibility(dict(move), acting_character, present)
 
     for observer in other_characters:
         if observer not in manager.interpretations:
@@ -85,7 +98,14 @@ def update_interpretations(
 
         observed = f"Saw {acting_character} {action}"
         if dialogue:
-            observed += f' and say: "{dialogue[:50]}"'
+            if observer_may_quote_dialogue_in_interpretation(
+                norm_move,
+                acting_character=acting_character,
+                observer_character=observer,
+            ):
+                observed += f' and heard: "{str(dialogue)[:50]}"'
+            else:
+                observed += " (speech not audible to you; only observable behavior)"
 
         reaction = "observing neutrally"
         if "angry" in str(motivation).lower() or "accus" in dialogue.lower():

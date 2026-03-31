@@ -15,6 +15,7 @@ from progression_advisory import (
     sync_progression_advisory_for_prompts,
 )
 from scene_grounding import format_grounding_prompt_prefix
+from perception_audibility import redact_structured_move_for_orchestration
 
 logger = logging.getLogger("rp_app.progression_advisory")
 
@@ -241,13 +242,26 @@ async def choose_next_actor(
             ],
         },
         "scene_roles": scene_roles,
-        "recent_structured_character_actions": orchestration_state.get(
-            "recent_structured_moves", []
-        )[-4:],
+        "recent_structured_character_actions": [
+            redact_structured_move_for_orchestration(
+                dict(item),
+                present_characters=scene_state_for_prompt.get(
+                    "present_characters", participant_names
+                ),
+            )
+            for item in (orchestration_state.get("recent_structured_moves", []) or [])[
+                -4:
+            ]
+            if isinstance(item, dict)
+        ],
         "character_states": (
             state_manager.public_state_snapshot() if state_manager else {}
         ),
-        "recent_dialogue_history": build_recent_dialogue_history_fn(chat_history),
+        "recent_dialogue_history": build_recent_dialogue_history_fn(
+            chat_history,
+            limit=prompt_dialogue_history_limit,
+            viewer_character_name=None,
+        ),
         "spotlight_history": orchestration_state.get("spotlight_history", [])[
             -director_spotlight_history_limit:
         ],
@@ -339,7 +353,11 @@ async def choose_next_actor(
     )
 
     prompt = build_director_selection_prompt_fn(director_payload)
-    recent_dialogue_history = build_recent_dialogue_history_fn(chat_history)
+    recent_dialogue_history = build_recent_dialogue_history_fn(
+        chat_history,
+        limit=prompt_dialogue_history_limit,
+        viewer_character_name=None,
+    )
 
     task = TextMessage(content=prompt, source="system")
     result = await director.on_messages([task], cancellation_token)

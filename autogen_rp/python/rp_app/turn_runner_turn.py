@@ -6,6 +6,7 @@ from beat_shift_state import build_narrator_beat_shift_suffix, is_pending_beat_s
 from anti_regression_advisory import get_cached_anti_regression_advisory
 from progression_advisory import get_cached_progression_advisory
 from turn_runner_audit import log_character_turn_audit
+from perception_audibility import normalize_move_audibility
 
 
 async def execute_character_turn(
@@ -117,6 +118,11 @@ async def execute_character_turn(
                 metadata={"summary_blocks": character_summary_block_audit},
             )
             return None
+
+        present_for_norm = scene_state.get("present_characters") or char_names
+        move = normalize_move_audibility(
+            dict(move), next_actor, list(present_for_norm)
+        )
 
         move_text = f"{move.get('action', '')} {move.get('dialogue', '')}".strip()
         is_valid, rejection_reason = validate_bot_response_fn(
@@ -319,6 +325,7 @@ async def execute_character_turn(
                 "role": "assistant",
                 "content": rendered,
                 "speaker": get_character_display_name_fn(next_actor),
+                "actor": next_actor,
                 "move": move,
                 "director_decision": decision,
             }

@@ -78,6 +78,7 @@ from session_lifecycle import (
     save_current_session as save_current_session_impl,
 )
 from session_manager import SessionManager
+from perception_audibility import build_recent_dialogue_history_for_viewer
 from turn_runner import run_character_turns as run_character_turns_impl
 from ui_rendering import (
     render_chat as render_chat_impl,
@@ -245,10 +246,19 @@ def resolve_scene_template_setup(
 
 
 def build_recent_dialogue_history(
-    chat_history: list[dict[str, Any]], limit: int = PROMPT_DIALOGUE_HISTORY_LIMIT
+    chat_history: list[dict[str, Any]],
+    limit: int = PROMPT_DIALOGUE_HISTORY_LIMIT,
+    viewer_character_name: str | None = None,
 ) -> list[dict[str, str]]:
-    return turn_helpers.build_recent_dialogue_history(
+    names = [
+        str(a.name)
+        for a in st.session_state.get("characters", [])
+        if getattr(a, "name", None)
+    ]
+    return build_recent_dialogue_history_for_viewer(
         chat_history=chat_history,
+        viewer_character_name=viewer_character_name,
+        character_names=names,
         get_character_display_name_fn=get_character_display_name,
         limit=limit,
     )
@@ -447,6 +457,7 @@ def build_character_turn_prompt(
         build_scene_role_prompt_context_fn=build_scene_role_prompt_context,
         build_character_turn_prompt_text_fn=build_character_turn_prompt_text,
         prompt_structured_move_limit=PROMPT_STRUCTURED_MOVE_LIMIT,
+        prompt_dialogue_history_limit=PROMPT_DIALOGUE_HISTORY_LIMIT,
         get_character_display_name_fn=get_character_display_name,
     )
 

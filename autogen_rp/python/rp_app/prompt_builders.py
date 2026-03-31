@@ -115,7 +115,7 @@ def build_character_turn_prompt(
             "DIRECTOR DECISION explicitly establishes a channel (open door, shout, phone/video, etc.).\n"
             "Do not write as if you heard in-room dialogue or saw in-room detail from others unless that "
             "access is justified.\n"
-            "RECENT DIALOGUE HISTORY and RECENT STRUCTURED ACTIONS below are filtered to Traveler posts and "
+            "RECENT SCENE TRANSCRIPT and RECENT STRUCTURED ACTIONS below are filtered to Traveler posts and "
             "your own prior beats; treat other in-room developments as unknown unless clearly established "
             "otherwise.\n\n"
         )
@@ -170,10 +170,10 @@ YOUR SCENE ROLE:
 CAST ROLE MAP:
 {json.dumps(scene_roles, ensure_ascii=False, indent=2)}
 
-RECENT STRUCTURED ACTIONS:
+RECENT STRUCTURED ACTIONS (PERCEPTION-FILTERED FOR THIS CHARACTER):
 {json.dumps(recent_moves, ensure_ascii=False, indent=2)}
 
-RECENT DIALOGUE HISTORY:
+RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):
 {json.dumps(recent_dialogue, ensure_ascii=False, indent=2)}
 
 ACTIVE ISSUES / PRESSURES (ACTIONABLE NOW):
