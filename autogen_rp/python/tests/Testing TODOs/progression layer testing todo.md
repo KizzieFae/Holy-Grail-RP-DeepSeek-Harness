@@ -34,6 +34,8 @@ The first two are **deterministic** (no LLM). `run_scene_simulation_llm.py` uses
 
 Overarching workflow and scenario catalog: **`SCENARIO_VALIDATION_FRAMEWORK.md`** at the **repository root** (next to `ARCHITECTURE_OVERVIEW.md`).
 
+If a run looks wrong but the symptom might be **presence, exit, continuity, selection, or encoding**, use **`DEBUGGING_GUIDE.md` → Simulation failure triage (layer-aware deep-dive)** before tuning progression or Director prompts.
+
 **Mapping (high level)**
 
 | Checklist area | Mostly covered by |
@@ -211,8 +213,23 @@ Artifacts: `autogen_rp/python/runs/progression_val/phase2/*.json`; audits **083�
 | **conflict_3char** baseline | 8 turns, all qualifying, no retries. |
 | **conflict_3char** treatment | 8 turns, **5 progression retries**, **3 failed attempts**, 7 qualifying / 1 non-qualifying — **retry path exercised**; review session **084** audit for retry quality. |
 | **passive_observer** baseline / treatment | 5 turns each; no retries; observer intent unchanged at a glance — **PASS** on “no forced observer center stage” pending your prose read. |
-| **long_session** (`--turns 12`) | Stopped early (**5** baseline / **4** treatment continuity turns): **character exit** (`exit` consequence) left one actor; not a 12-turn arc. Treatment: all qualifying (4/0) vs baseline 3/2 — metrics favor treatment. **WARN**: `long_session` did not hit requested depth; also **mojibake** (U+FFFD) in echoed dialogue where em dash / apostrophe should be — **encoding / console / model**, not progression logic. |
+| **long_session** (`--turns 12`) | **Superseded by Phase 2b** (below). Original stop was **`presence_exit` bug**: negated “no walking out” matched hard departure; **not** a progression failure. |
 | **strong_user_steer** treatment ×2 | Each: **1 progression retry**, 0 failed attempts, 5 turns — retry observed; check prose for garbling. |
 | **emotional_loop_2char** treatment ×3 | Metrics: runs 1 & 3 match (first qual **1**, 6/0); run 2 differs (first qual **2**, 5/1) — **mostly stable**, LLM variance as expected. |
 
-**Still open:** fix or document UTF-8 path for Windows console + audit export; re-run **long_session** if you need a true 12+ turn arc without early exit (may need scenario or presence rules review, out of scope for progression tuning).
+### Phase 2b — `long_session` after exit-detection fix (`scene_exit_detection` negation overlap)
+
+**Closed:** False `exit` on prohibition phrasing (“no walking out”) — fixed in repo (per-match skip of `_EXPLICIT_DEPARTURE_RE` overlaps with negated `walking out` spans). Steer / scenario text unchanged.
+
+**Re-evaluation** (deep simulation default, `--turns 12`, `--audit`). Artifacts: `runs/progression_val/long_session_negation_fix/*.json` (local; gitignored). Audits **094** (baseline) / **095** (treatment).
+
+| Mode | `accepted_character_turns` | Progression retries / failed | Notes |
+|------|----------------------------|------------------------------|--------|
+| Baseline | **12** | 0 / 0 | Full requested depth; initial “long arc” criterion **met** for baseline. |
+| Treatment | **10** | 8 / 6 | Stops **before** 12: model gives Ayame a **later, legitimate** `exit` (“walk out that door”); solo Celina then hits **enforcement / qualifying-delta** churn — triage as **`progression_enforcement`** (or gate + cast size), **not** `presence_exit`. |
+
+**Versus Phase 2 table:** Treatment previously looked “better” on a **4-turn** false collapse; the fair comparison is now **12 vs 10** turns with **different endgame physics** — use prose + audit **095** before declaring treatment PASS on long_session.
+
+**Still open:** UTF-8 / mojibake (U+FFFD) in logs; **long_session treatment** follow-up under solo-cast progression (separate issue from the negation bug).
+
+You **can** redo other initial evaluations (e.g. phase 1 shallow trio with `--no-deep-simulation-turns`) anytime for apples-to-apples with the first checkpoint; **long_session** “long arc” analysis should use **Phase 2b** + deep mode, not the superseded Phase 2 row.
