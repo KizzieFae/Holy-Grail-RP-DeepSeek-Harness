@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
-from app_turn_prompting import _build_priority_ladder, _select_relationship_prompt_names
+from prompt_derivations import build_priority_ladder, select_relationship_prompt_names
 from character_state import CharacterState
 from beat_shift_state import build_director_beat_shift_prompt_prefix
 from prompt_builders import (
@@ -310,7 +310,7 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
 
 
 def test_build_priority_ladder_places_active_issue_after_owned_line() -> None:
-    ladder = _build_priority_ladder(
+    ladder = build_priority_ladder(
         state=CharacterState(
             name="Ayame",
             current_objective="hold the doorway and control the exchange",
@@ -333,7 +333,7 @@ def test_build_priority_ladder_places_active_issue_after_owned_line() -> None:
 def test_select_relationship_prompt_names_prioritizes_protagonist_and_co_holder_roles() -> (
     None
 ):
-    focus_names, secondary_names = _select_relationship_prompt_names(
+    focus_names, secondary_names = select_relationship_prompt_names(
         char_name="Celina",
         cast=["Kizzie", "Ayame", "Orderly"],
         my_scene_role={

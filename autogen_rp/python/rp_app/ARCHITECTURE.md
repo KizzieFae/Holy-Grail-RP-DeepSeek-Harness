@@ -82,6 +82,13 @@ Tracks per-character:
 
 Commit-time episodic writes are owned by **`memory_layer`** (facade → writes → storage); observer lines are perception-filtered at write time (`perception_audibility`). **`ContinuityManager`** remains authoritative for scene/issue/event truth—do not conflate it with per-character episodic prompt text.
 
+#### Runtime Packet Seam (Phase 0.5)
+
+A **shadow-mode** seam introduces **read-only** **`RuntimeScenePacket`** (authored / scene-start-stable slice of scene dict fields) and **`RuntimeCharacterPacket`** (dynamic scene slice plus per-character prompt inputs), plus an empty **`RetrievedContextBundle`** stub. **Continuity and `CharacterState` remain the source of truth**; packets are **normalized projections** for future packaging, not a second store.
+
+- **Where built:** `app_turn_prompting.build_character_turn_prompt` builds packets **in parallel** with live assembly when env **`RP_PACKET_SHADOW_COMPARE`** is `1`, `true`, or `yes` (default **off**). **No** change to prompt strings, control flow, or mutation of live inputs when enabled—only logging on structured mismatch (`rp_app.packet_shadow`); optional string diff at debug level.
+- **Validation:** **Structured** comparison of the kwargs-shaped bundle for `prompt_builders.build_character_turn_prompt` (live vs reconstructed from packets + the same `CharacterState` instance). Helpers live in **`runtime_packets.py`**; shared ladder/relationship logic in **`prompt_derivations.py`** avoids circular imports.
+
 ### 2. Structured Output Format
 
 Characters now return:

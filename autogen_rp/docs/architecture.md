@@ -107,3 +107,11 @@ For **production** character turn prompts:
 - **`prompt_builders`** must **not** re-read `character_memory_summary` or `recent_observations` from `CharacterState`; they insert **`state_context`** into the template **unchanged**.
 
 **Streamlit** (`app.py` → `app_turn_helpers` → `app_turn_prompting`) and **headless simulation** (`headless_scene_simulation` → same `turn_helpers.build_character_turn_prompt`) use this **same** spine. Unit tests may pass a synthetic `state_context` directly into `prompt_builders` to test template shape in isolation—that is not a second runtime path.
+
+## Runtime packet seam (Phase 0.5)
+
+**Purpose:** Introduce **read-only** runtime packets (`RuntimeScenePacket`, `RuntimeCharacterPacket`, `RetrievedContextBundle` stub) and **structured** parity checks **without** changing prompts or behavior.
+
+- **Shadow-only:** Default **off**. Set **`RP_PACKET_SHADOW_COMPARE`** to `1`, `true`, or `yes` to build packets alongside live assembly in **`app_turn_prompting.build_character_turn_prompt`** and compare live vs packet-derived **prompt-input bundles** (kwargs shape for `prompt_builders.build_character_turn_prompt`). Mismatch → **`rp_app.packet_shadow`** warning + optional debug string diff. **No** writes to continuity, character state, or prompt inputs.
+- **Authority:** **Continuity** and **`CharacterState`** stay authoritative; packets are **projections** only (`runtime_packets.py`).
+- **Implementation note:** **`prompt_derivations.py`** holds shared relationship ordering and priority-ladder logic used by both the live path and packet reconstruction (avoids circular imports).

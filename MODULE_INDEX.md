@@ -79,7 +79,9 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
 | `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `anti_regression_advisory` | Optional progression + anti-regression Director prefixes |
 | `app_turn_selector.py` | Turn selection parsing / reconciliation | `response_validation_selection` | |
-| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `perception_audibility`, `offstage_prompt_filter`, `memory_layer.retrieval` | Character `state_context` via `build_character_state_context_for_prompt` (identity + episodic); per-recipient transcript + structured moves; offstage narrowing; optional progression suffix |
+| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `perception_audibility`, `offstage_prompt_filter`, `memory_layer.retrieval`, `prompt_derivations`, `runtime_packets` (shadow) | Character `state_context` via `build_character_state_context_for_prompt` (identity + episodic); per-recipient transcript + structured moves; offstage narrowing; optional progression suffix; **Phase 0.5:** optional env-gated packet shadow compare (`RP_PACKET_SHADOW_COMPARE`) — no prompt mutation |
+| `prompt_derivations.py` | Shared **relationship-name ordering** (`select_relationship_prompt_names`) and **priority ladder** (`build_priority_ladder`) for character prompts | `app_turn_prompting`, `runtime_packets` | **Phase 0.5:** extracted so `runtime_packets` can reconstruct prompt-input bundles without importing `app_turn_prompting`; **live path uses these same functions every turn** (not env-gated) |
+| `runtime_packets.py` | **Phase 0.5** read-only packet types (`RuntimeScenePacket`, `RuntimeCharacterPacket`, `RetrievedContextBundle` stub), scene-state split/merge, live vs packet-derived **structured** prompt-input bundle compare | `app_turn_prompting` (shadow hook only) | **Shadow-mode only (Phase 0.5):** packet build + compare run only when `RP_PACKET_SHADOW_COMPARE` is `1`/`true`/`yes`; continuity + `CharacterState` remain authoritative; packets are projections |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 
@@ -141,7 +143,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `character_state_model.py` | Per-character state schema | cards | Identity anchors |
 | `character_state_manager.py` | Update goals, emotions, relationships | continuity, turns | |
 | `orchestration_helpers.py` | Spotlight, continuation override, sync from continuity | `st.session_state` | Persists `audibility`/`audience` on structured move entries; narrator scene context uses perception-filtered transcript |
-| `prompt_builders.py` | Structured prompt text for Director/characters/Narrator | continuity, templates | Labels perception-filtered transcript/structured sections; future: consume packets |
+| `prompt_builders.py` | Structured prompt text for Director/characters/Narrator | continuity, templates | Labels perception-filtered transcript/structured sections; inputs assembled in `app_turn_prompting` (Phase 0.5 shadow parity in `runtime_packets`) |
 
 ---
 
@@ -182,7 +184,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 - [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) — Director/Narrator/continuity deep dive
 - [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — audit file meanings
 - [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md) — data directories
-- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future packet seam
+- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — target packet contracts; Phase 0.5 **shadow** implementation: `runtime_packets.py`
 - [autogen_rp/docs/scene-grounding-layer.md](./autogen_rp/docs/scene-grounding-layer.md) — Scene Grounding MVP (facts contract, lifecycle)
 
 *A short pointer file remains at `autogen_rp/python/rp_app/MODULE_INDEX.md` so existing links into `rp_app/` still resolve.*

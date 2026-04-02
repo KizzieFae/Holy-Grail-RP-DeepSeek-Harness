@@ -96,6 +96,18 @@ The Phase 0 blocker **character prompt knowledge leak from global player trigger
 
 **Goal**: Introduce a structured runtime interface (packets) without changing system behavior.
 
+#### Phase 0.5 — Packet seam (shadow mode)
+
+- [x] RuntimeScenePacket introduced (authored/stable scene slice only)
+- [x] RuntimeCharacterPacket introduced (dynamic per-character slice)
+- [x] RetrievedContextBundle stub added (no retrieval yet)
+- [x] Shadow-mode packet build integrated into prompt assembly
+- [x] Structured prompt-input bundle reconstruction implemented
+- [x] Structured comparison (live vs packet-derived) implemented
+- [x] No prompt/output behavior change (validated)
+- [x] Shadow compare gated behind env flag
+- [x] Test coverage added for packet build + comparison
+
 ---
 
 ## A. Freeze baseline behavior
