@@ -180,9 +180,7 @@ def test_phase3_character_drift_detection_allows_voice_intensity_variation_as_so
     assert reason == ""
 
 
-def test_phase3_character_drift_detection_allows_speech_fingerprint_variation_as_soft_signal() -> (
-    None
-):
+def test_phase3_character_drift_detects_formal_speech_fingerprint_diction_conflict() -> None:
     state = CharacterState(
         name="Mira",
         speech_fingerprint={"register": "formal", "signature": "spare, clipped"},
@@ -203,13 +201,11 @@ def test_phase3_character_drift_detection_allows_speech_fingerprint_variation_as
         },
     )
 
-    assert has_drift is False
-    assert reason == ""
+    assert has_drift is True
+    assert "speech fingerprint" in reason.lower()
 
 
-def test_phase3_character_drift_detection_allows_reaction_profile_variation_as_soft_signal() -> (
-    None
-):
+def test_phase3_character_drift_detects_reaction_profile_tactic_conflict() -> None:
     state = CharacterState(
         name="Ayame",
         reaction_profile={"under_pressure": "guarded, controlled, narrows focus"},
@@ -230,8 +226,8 @@ def test_phase3_character_drift_detection_allows_reaction_profile_variation_as_s
         },
     )
 
-    assert has_drift is False
-    assert reason == ""
+    assert has_drift is True
+    assert "reaction profile" in reason.lower()
 
 
 def test_phase3_turn_selection_validation_only_checks_structural_membership() -> None:
@@ -266,6 +262,119 @@ def test_phase3_turn_selection_validation_rejects_unavailable_actor() -> None:
     )
 
     assert issues == ["Selected actor is not in available_next_actors: Celina"]
+
+
+def test_phase5_turn_selection_end_round_empty_actor_valid() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "",
+            "end_round": True,
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "Scene beat complete.",
+        },
+        participant_names=["Ayame", "Celina"],
+        available_actors=["Ayame"],
+        trigger_text="",
+        spotlight_history=[],
+    )
+    assert issues == []
+
+
+def test_phase5_turn_selection_flags_offstage_actor() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "test",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=[],
+        offstage_characters=["Celina"],
+    )
+    assert issues == ["Selected actor is marked offstage: Celina"]
+
+
+def test_phase5_turn_selection_preemption_forced_speaker_mismatch() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Mira",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=[],
+        pending_forced_speaker="Ayame",
+        forced_speaker_consumed=False,
+    )
+    assert issues == [
+        "next_actor should match pending forced speaker (Ayame), got Mira",
+    ]
+
+
+def test_phase5_turn_selection_preemption_continuation_mismatch() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Mira",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=[],
+        continuation_override_actor="Celina",
+    )
+    assert issues == [
+        "next_actor should match continuation override (Celina), got Mira",
+    ]
+
+
+def test_phase5_turn_selection_skips_preemption_when_source_fallback() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Mira",
+            "source": "fallback",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "Fallback selection after director parse failure: ...",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=[],
+        pending_forced_speaker="Ayame",
+        forced_speaker_consumed=False,
+        continuation_override_actor="Celina",
+    )
+    assert issues == []
+
+
+def test_phase5_turn_selection_skips_preemption_when_is_fallback() -> None:
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Mira",
+            "is_fallback": True,
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "recovery",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=[],
+        pending_forced_speaker="Ayame",
+        forced_speaker_consumed=False,
+        continuation_override_actor="Celina",
+    )
+    assert issues == []
 
 
 def test_phase3_bounded_dialogue_history_window() -> None:

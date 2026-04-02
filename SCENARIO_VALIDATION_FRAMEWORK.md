@@ -66,6 +66,12 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 | `passive_observer` | Third character witness; avoid forcing unnatural center-stage action |
 | `long_session` | 22-turn default; accumulation / continuity drift |
 | `recovery_derail` | Off-topic user steer; recovery of progression and grounding |
+| `memory_public_propagation` | Public dialogue; observer episodic memory (simulation-primary checks) |
+| `memory_private_directed` | Whisper / directed line; boundary vs non-addressee memory |
+| `memory_duplicate_retry` | Longer run; bounded memory (duplicate retry exercised in supplemental tests) |
+| `memory_fallback_director` | Normal Director JSON path (parse fallback in supplemental tests) |
+| `memory_long_session` | Deep multi-turn run; episodic list bounds |
+| `memory_forced_speaker` | `pending_forced_speaker` session preseed before Director pick |
 
 **Manifest regression (no API):**
 
@@ -78,7 +84,7 @@ pytest tests/test_progression_simulation_scenarios.py -q
 
 ### 2. Simulation Execution (live LLM)
 
-The **headless runner** drives the same code path as Streamlit: Director selection, character generation, validation, progression enforcement (when enabled), narrator render, continuity / orchestration updates.
+The **headless runner** drives the same code path as Streamlit: Director selection, character generation, validation, progression enforcement (when enabled), narrator render, continuity / orchestration updates. Character prompts are assembled through **`app_turn_prompting.build_character_turn_prompt`**, including **`build_character_state_context_for_prompt`** for **`state_context`** (same spine as Streamlit; see **`autogen_rp/docs/architecture.md`**).
 
 **Requirements**
 

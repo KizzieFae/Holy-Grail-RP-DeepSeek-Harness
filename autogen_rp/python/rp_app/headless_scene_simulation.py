@@ -17,6 +17,7 @@ import app_memory_helpers as memory_helpers
 import app_state_helpers as state_helpers
 import app_turn_helpers as turn_helpers
 from character_loader import CharacterLoader, make_agent_identifier
+from character_state_manager import CharacterStateManager
 from continuity_manager import ContinuityManager
 from continuity_state import IssueState, IssueStatus, ScenePhase
 from model_client import create_deepseek_client, create_director_agent, create_narrator_agent
@@ -76,6 +77,43 @@ ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
 ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
 ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
+
+
+def _rebuild_headless_agents_and_character_states(*, st_module: Any, model_client: Any) -> None:
+    """Load agents once and register ``character_states`` + ``character_state_manager``.
+
+    ``rebuild_character_agents`` alone omits the state manager; without it, memory-layer
+    commits no-op and simulation memory assertions cannot observe episodic writes.
+    """
+    loader = CharacterLoader()
+    identifiers = list(st_module.session_state.get("selected_chars") or [])
+    agents: list[Any] = []
+    resolved_files: list[str] = []
+    char_states: dict[str, Any] = {}
+    for ident in identifiers:
+        char_file = state_helpers.resolve_character_file(
+            loader=loader,
+            identifier=ident,
+            make_agent_identifier_fn=make_agent_identifier,
+        )
+        if char_file is None:
+            continue
+        try:
+            agent, cstate = loader.load_and_create_agent(char_file, model_client)
+        except FileNotFoundError:
+            continue
+        agents.append(agent)
+        resolved_files.append(char_file)
+        char_states[agent.name] = cstate
+    if not agents:
+        return
+    st_module.session_state["characters"] = agents
+    st_module.session_state["selected_chars"] = resolved_files
+    st_module.session_state["character_states"] = char_states
+    mgr = CharacterStateManager()
+    for name, cstate in char_states.items():
+        mgr.register_character(name, cstate)
+    st_module.session_state["character_state_manager"] = mgr
 
 
 def resolve_bot_reply_limit_deep_simulation(
@@ -275,6 +313,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
             validate_turn_selection_decision_fn=validate_turn_selection_decision,
             assess_turn_selection_decision_semantics_fn=assess_turn_selection_decision_semantics,
             reconcile_turn_selection_issues_fn=reconcile_turn_selection_issues,
+            get_character_display_name_fn=get_character_display_name_fn,
             is_audit_enabled_fn=is_audit_on,
             get_audit_logger_fn=get_audit_logger,
             get_audit_context_fn=lambda: state_helpers.get_audit_context(
@@ -320,6 +359,9 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         acting_character: str,
         move: dict[str, Any],
         director_decision: dict[str, Any],
+        *,
+        st_module: Any,
+        char_names: list[str],
     ) -> None:
         memory_helpers.record_character_memories(
             st_module=st_module,
@@ -327,6 +369,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
             move=move,
             director_decision=director_decision,
             build_memory_fact_summary_fn=memory_helpers.build_memory_fact_summary,
+            character_names=char_names,
         )
 
     async def reset_agents_fn(agents: list[Any], cancellation_token: Any) -> None:
@@ -683,16 +726,7 @@ def prepare_headless_session(
 
     client = create_deepseek_client()
     st.session_state["model_client"] = client
-    state_helpers.rebuild_character_agents(
-        st_module=st,
-        model_client=client,
-        character_loader_cls=CharacterLoader,
-        resolve_character_file_fn=lambda ld, ident: state_helpers.resolve_character_file(
-            loader=ld,
-            identifier=ident,
-            make_agent_identifier_fn=make_agent_identifier,
-        ),
-    )
+    _rebuild_headless_agents_and_character_states(st_module=st, model_client=client)
     return st
 
 

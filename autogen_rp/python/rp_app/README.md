@@ -175,6 +175,7 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 - `scene_lifecycle.py` - Compatibility export layer over `scene_lifecycle_start.py` and `scene_lifecycle_actions.py`
 - `session_lifecycle.py` - Compatibility export layer over `session_lifecycle_save.py` and `session_lifecycle_load.py`
 - `response_validation.py` - Compatibility export layer over content, presence, drift, parsing, and turn-selection helpers
+- `memory_layer/` - Episodic write policy (`facade`, `writes`, `storage`) and read/format for character prompts (`retrieval`); see `../../docs/architecture.md`
 - `character_state.py` - Compatibility export layer over `character_state_model.py` and `character_state_manager.py`
 - `turn_runner.py` - Round orchestration entrypoint paired with `turn_runner_turn.py`, `turn_runner_updates.py`, and `turn_runner_audit.py`
 - `progression_advisory.py` - Deterministic stall score and progression advisory for Director/character prompts and beat-shift hook (advisory only)

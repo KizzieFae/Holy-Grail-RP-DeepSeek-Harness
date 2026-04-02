@@ -325,12 +325,17 @@ class CharacterState:
             f"[Emotional shift due to: {event_description}]"
         )
 
-    def to_prompt_context(
+    def to_prompt_identity_context(
         self,
         *,
         relationship_focus_names: list[str] | None = None,
         relationship_secondary_names: list[str] | None = None,
     ) -> str:
+        """Goals, voice, relationships, and user context for prompts (no episodic lists).
+
+        Episodic sections (``character_memory_summary``, ``recent_observations``) are
+        formatted by ``memory_layer.retrieval`` for read-side ownership (Phase B).
+        """
         parts = [
             "Your current state:",
             f"- Core goals: {', '.join(self.core_goals) if self.core_goals else self.long_term_goal}",
@@ -426,16 +431,6 @@ class CharacterState:
                         )
                     else:
                         parts.append(f"  • Relationship trend: {trend}")
-
-        if self.character_memory_summary:
-            parts.append("\nYour private interpretation summary:")
-            for memory in self.character_memory_summary[-5:]:
-                parts.append(f"  • {memory}")
-
-        if self.recent_observations:
-            parts.append("\nRecent memories:")
-            for obs in self.recent_observations[-5:]:
-                parts.append(f"  • {obs}")
 
         return "\n".join(parts)
 

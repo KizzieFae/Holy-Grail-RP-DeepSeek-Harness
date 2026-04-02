@@ -12,380 +12,369 @@ This roadmap reflects the correct execution order:
 
 ---
 
-# Phase 0 — Stabilization & Validation (CURRENT PRIORITY)
-
-**Goal**: Prove the current system is correct, stable, and debuggable using the new documentation and audit workflow.
+# Phase 0 — Stabilization & Validation (**complete — v1 checkpoint**; progression: `tests/Testing TODOs/progression layer validation status v1.md`, repo root `SCENARIO_VALIDATION_FRAMEWORK.md`; player-text perception closure: section **G** below)
 
 ## A. Structured scenario validation
 
-**Canonical procedure** (manifests, headless runner, audits, structured metrics, baseline vs enforcement-on): [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md) at the repository root.
+- [x] Run 5–10 repeatable RP scenarios:
+  - [x] one-on-one interaction
+  - [x] emotional/relationship tension
+  - [x] multi-character (3+ actors)
+  - [x] long-session continuity
+  - [x] reload-after-save
 
-- [ ] Run 5–10 repeatable RP scenarios:
-  - one-on-one interaction
-  - emotional/relationship tension
-  - multi-character (3+ actors)
-  - long-session continuity
-  - reload-after-save
-- [ ] Ensure each scenario is reproducible
-- [ ] For **Progression Advisory / plateau** validation, drive **§E** from these same runs where a scenario aligns (argument loop, short user steer, passive observation, etc.)—no separate duplicate scenario matrix required.
+- [x] Ensure each scenario is reproducible
 
 ## B. Validate core behaviors
 
-- [ ] Turn selection correctness:
-  - direct address honored
-  - continuation override holds
-  - progression override does not overfire
-- [ ] Continuity integrity:
-  - issues persist and evolve correctly
-  - events are promoted correctly
-  - knowledge boundaries enforced
-- [ ] Validation behavior:
-  - duplicate dialogue triggers single retry
-  - no permanent skipped turns
-  - presence (`must_remain`) enforced correctly
-- [ ] Character fidelity:
-  - no long-session drift
-  - no personality flattening
+- [x] Turn selection correctness
+- [x] Continuity integrity
+- [x] Validation behavior
+- [x] Character fidelity (no drift, no flattening)
 
 ## C. Failure classification
 
-- [ ] Log all failures via audit system
-- [ ] Categorize failures by layer:
-  - continuity
-  - orchestration
-  - validation
-  - prompt surface (last resort)
-- [ ] Fix only at the correct layer (see DEBUGGING_GUIDE.md)
+- [x] Log all failures via audit system
+- [x] Categorize failures by layer:
+  - [x] continuity
+  - [x] orchestration
+  - [x] validation
+  - [x] prompt surface (last resort)
 
 ## D. Exit criteria
 
-- [ ] No recurring unclassified failures
-- [ ] All known failure types mapped to a layer
-- [ ] System behaves predictably across all test scenarios
+- [x] No recurring unclassified failures
+- [x] All known failure types mapped to a layer
+- [x] System behaves predictably across all test scenarios
 
-## E. Progression Advisory Layer — plateau test suite (manual / audit)
+---
 
-**Purpose:** Validate deterministic **stall signals**, **advisory injection**, and **beat-shift** behavior using live sessions and audits. This is **manual / qualitative** where noted; automated wiring is covered by `tests/test_progression_advisory.py` and related tests.
+## E. Progression Advisory Validation
 
-**Overlap with §A:** The repeatable RP scenarios in **§A** are the usual sessions that surface plateau issues; use the checklist below during those runs (or targeted replays) instead of inventing parallel scenarios.
+- [x] Confirm plateau detection works
+- [x] Confirm advisory triggers appropriately
+- [x] Confirm beat-shifts introduce real state changes
+- [x] Confirm no continuity corruption
+- [x] Confirm characters remain consistent under pressure
 
-### Test execution guidelines
+---
 
-- [ ] Run each scenario **independently** (or as a clearly bounded segment within a §A run)
-- [ ] Keep variables controlled
-- [ ] Do **not** modify system behavior mid-test
-- [ ] Capture **audit output** for each run
-- [ ] Evaluate both **mechanical signals** (scores, logs) and **scene quality** (subjective)
+## F. Scene Grounding Validation
 
-### Test scenarios
+- [x] Confirm settled facts do not re-litigate
+- [x] Confirm grounding remains read-only
+- [x] Confirm no unintended writes to continuity or character state
 
-#### 1. Baseline arrival scene
+---
 
-**Suggested cast:** Use **Kizzie** (demure, polite) rather than Harley—aims for a **low-conflict** baseline so `stall_score` and advisory stay naturally subdued.
+## G. Player-text perception & knowledge boundaries (Phase 0 closure)
 
-- [ ] Run scenario
-- [ ] Observe introductions occur
-- [ ] Observe orientation progression
-- [ ] Observe bunk/space assignment (or equivalent concrete setup beat)
-- [ ] Check `stall_score` remains low / moderate
-- [ ] Confirm minimal or no advisory injection
-- [ ] Confirm no forced or unnatural shifts
+- [x] Character prompts respect knowledge boundaries for **player** input (no global raw trigger for non-recipients)
+- [x] All character-visible player text paths use **`perception_audibility`** rules:
+  - [x] `TRIGGER FOR THIS BEAT`
+  - [x] Beat-shift `LATEST PLAYER INPUT` (character suffix)
+  - [x] User lines inside `RECENT SCENE TRANSCRIPT`
+- [x] Scenario 1 — knowledge-boundary stress (`memory_private_directed`) **passes** (validated rerun: audit **`session_107`**)
+- [x] Simulation pipeline matches Streamlit: same `app_turn_prompting` / `build_recent_dialogue_history_for_viewer` path; audits reflect **filtered** character system prompts
+- [x] Director unchanged: full raw trigger and unfiltered user lines in orchestration transcript (`viewer_character_name=None`)
+- [x] All **confirmed** Phase 0 runtime blockers resolved (including global player-trigger knowledge leak)
 
-#### 2. Confined argument loop
+**Not claimed complete in Phase 0** (explicit follow-up, not blockers):
 
-- [ ] Run scenario
-- [ ] Confirm loop forms (verbal escalation pattern)
-- [ ] Observe `stall_score` increase
-- [ ] Observe `progression_pressure` reach high
-- [ ] Confirm advisory activation
-- [ ] Confirm next beat introduces **state change**
-- [ ] Verify change is **structural** (not only tone)—subjective rating
+- [ ] Tighter **ambiguity** handling (MVP: ambiguous player input defaults to **public**)
+- [ ] **Heuristic** improvements for whisper / directed inference on free-text player lines
+- [ ] **Narrator** alignment with player-text perception boundaries
+- [ ] Additional **memory** scenarios / memory-layer validation beyond existing checks
 
-#### 3. Strong user steer
+### Phase 0 completion note — player-text visibility
 
-- [ ] Run scenario
-- [ ] Allow plateau to begin
-- [ ] Inject short, strong user input
-- [ ] Confirm beat-shift activation (and note **reason** in audit: short message vs `progression_stall`)
-- [ ] Confirm advisory alignment
-- [ ] Confirm next turn executes concrete action
-- [ ] Verify actor selection supports execution
-- [ ] Verify beat type changes—subjective rating
-
-#### 4. Silent observer case
-
-- [ ] Run scenario
-- [ ] Use passive observation input
-- [ ] Confirm advisory does **not** over-trigger
-- [ ] Confirm natural progression continues
-- [ ] Verify `stall_score` is not inflated incorrectly
-
-#### 5. Real progress with continued tension
-
-- [ ] Run scenario
-- [ ] Ensure each turn includes real state change
-- [ ] Confirm `stall_score` remains moderate or drops
-- [ ] Confirm advisory does not interfere inappropriately
-- [ ] Verify system recognizes progress correctly—subjective rating
-
-#### 6. Early derail → recovery
-
-- [ ] Run scenario
-- [ ] Introduce early destabilization
-- [ ] Confirm derailment occurs
-- [ ] Observe stall detection timing
-- [ ] Confirm system transitions out of loop
-- [ ] Verify progression resumes via a new channel—subjective rating
-
-#### 7. Template fit check
-
-- [ ] Run **dorm arrival** (or similar) template with a known `progression_profile`
-- [ ] Verify appropriate progression channels appear in advisory metadata when pressure is high
-- [ ] Run a **confrontation** (or second) template with a **distinct** `progression_profile` *when authored*; otherwise skip or mark N/A
-- [ ] Confirm recommendations match the **template** channels (static profile—not inferred)
-
-### Metrics tracking (each scenario)
-
-- [ ] Record `stall_score` progression
-- [ ] Record `progression_pressure`
-- [ ] Log advisory injection (Director / Character)
-- [ ] Log beat-shift activation **reason**
-- [ ] Count turns before state change
-- [ ] Tag dialogue-only vs state-changing turns—subjective where needed
-
-### Evaluation scorecard (rate 1–5, each scenario)
-
-- [ ] Plateau detection accuracy
-- [ ] Scene advancement quality
-- [ ] Character fidelity
-- [ ] Naturalness of transition
-- [ ] Over-triggering / under-triggering
-
-### Recommended execution order
-
-1. Baseline arrival scene  
-2. Confined argument loop  
-3. Strong user steer  
-4. Silent observer case  
-5. Real progress with continued tension  
-6. Early derail → recovery  
-7. Template fit check  
-
-### Success criteria (Progression Advisory MVP)
-
-- [ ] Plateau loops break **earlier** than pre-advisory baseline—subjective / comparative
-- [ ] Scene advances through **concrete** state changes when stuck
-- [ ] Advisory triggers **appropriately** (not constantly)
-- [ ] Character behavior remains consistent
-- [ ] **No continuity corruption** (advisory remains non-authoritative)
-
-## F. Scene Grounding Layer (MVP) — validation
-
-**Product:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8  
-**Technical spec:** [autogen_rp/docs/scene-grounding-layer.md](../docs/scene-grounding-layer.md)
-
-**Current baseline:** Scene grounding is already implemented in the current validation/stabilization phase. Use the technical spec and the checks below to validate the existing read-only grounding path rather than treating it as future implementation work.
-
-**Validation:**
-
-- [ ] Replay or manual runs: settled logistics / facts do not **re-litigate** once continuity has promoted them (see dorm audit examples: bunk, suppressants)
-- [ ] Audits: grounding snapshot or injection metadata when enabled ([AUDIT_DOCUMENTATION.md](./rp_app/AUDIT_DOCUMENTATION.md))
-- [ ] Confirm: **no** writes to continuity blobs or `CharacterState` from grounding code paths
+The Phase 0 blocker **character prompt knowledge leak from global player trigger visibility** is **closed**. Implementation: recipient-filtered player text via **`player_text_for_character_viewer`** in `perception_audibility.py`, invoked from **`app_turn_prompting`** (per-character trigger + beat-shift suffix) and **`build_recent_dialogue_history_for_viewer`** (user transcript lines). **Director** still receives the full raw trigger for selection. **MVP limitation:** ambiguous player input remains **public** by default to avoid over-redaction; revisit in a later phase.
 
 ---
 
 # Phase 0.5 — Packet Seam Introduction (NO BEHAVIOR CHANGE)
 
-**Goal**: Introduce the packaging layer interface without altering runtime behavior.
+**Goal**: Introduce a structured runtime interface (packets) without changing system behavior.
 
-This is the bridge to the PRD architecture.
+---
 
-## A. Define packet builders
+## A. Freeze baseline behavior
 
-- [ ] Create:
-  - `build_runtime_character_packet(...)`
-  - `build_runtime_scene_packet(...)`
-- [ ] Source data from:
-  - character cards
-  - continuity state
-  - existing prompt inputs
+- [ ] Select 2–3 canonical test scenarios
+- [ ] Save audit outputs for comparison
+- [ ] Record expected:
+  - [ ] turn selection
+  - [ ] progression behavior
+  - [ ] grounding behavior
+  - [ ] continuity behavior
 
-## B. Map current system → packet structure
+- [ ] Guardrails:
+  - [ ] No changes to:
+    - [ ] turn_runner*
+    - [ ] app_turn_director.py
+    - [ ] response_validation*
+    - [ ] progression_enforcement.py
+  - [ ] Changes limited to:
+    - [ ] packet builders
+    - [ ] prompt assembly glue
 
-- [ ] Identity → Identity core
-- [ ] Continuity → Scene-facing slice
-- [ ] Relationships → Relationship overlays
-- [ ] Existing summaries → RetrievedContextBundle (stub, no retrieval yet)
+---
 
-## C. Shadow mode validation
+## B. Define packet structures
+
+### ScenePacket
+
+- [ ] template_id
+- [ ] premise / opening_text
+- [ ] location / time
+- [ ] progression_profile
+- [ ] role_slots / constraints
+
+Runtime fields:
+- [ ] present_characters
+- [ ] offstage_characters
+- [ ] scene_phase
+- [ ] tension level
+- [ ] recent events / delta
+
+---
+
+### CharacterPacket
+
+Static:
+- [ ] name / description
+- [ ] personality / voice
+- [ ] goals
+- [ ] lore facts
+
+Runtime:
+- [ ] current_objective
+- [ ] short_term_tactic
+- [ ] emotional_state
+- [ ] stress_level
+
+---
+
+### CharacterRuntimeContextPacket
+
+- [ ] active issues
+- [ ] recent public events
+- [ ] summary blocks
+- [ ] canon anchors
+- [ ] interpretations
+- [ ] filtered dialogue
+- [ ] filtered moves
+- [ ] scene grounding
+
+---
+
+### RetrievedContextBundle (stub)
+
+- [ ] Exists but empty
+- [ ] No retrieval logic yet
+
+---
+
+## C. Build packet builders
+
+- [ ] `build_runtime_scene_packet(...)`
+- [ ] `build_runtime_character_packet(...)`
+- [ ] `build_character_runtime_context_packet(...)`
+
+Sources:
+- [ ] templates
+- [ ] character cards
+- [ ] continuity_manager
+- [ ] character_state_manager
+- [ ] perception filtering
+- [ ] scene grounding
+
+---
+
+## D. Shadow-mode integration
 
 - [ ] Generate packets alongside current prompt inputs
+- [ ] Do NOT replace prompt builder yet
+
+- [ ] Create adapters:
+  - [ ] packet → prompt inputs
+
 - [ ] Compare:
-  - existing prompt inputs
-  - packet-derived inputs
-- [ ] Ensure equivalence (no behavior drift)
+  - [ ] scene state
+  - [ ] issues
+  - [ ] summaries
+  - [ ] grounding
+  - [ ] dialogue windows
+  - [ ] role mappings
 
-## D. Constraints
+- [ ] Log mismatches only
 
-- [ ] Do NOT modify:
-  - Director logic
-  - orchestration flow
-  - validation system
-- [ ] Do NOT introduce:
-  - retrieval
-  - vector search
-  - ingestion inputs
+---
 
-## E. Exit criteria
+## E. File-level integration
 
-- [ ] Packets fully represent current runtime inputs
-- [ ] No change in system behavior
-- [ ] Packet layer is ready to become runtime input source
+### app_turn_prompting.py
+
+- [ ] Entry point for packet building
+- [ ] Shadow comparison logging
+
+### prompt_builders.py
+
+- [ ] Validate packet completeness
+
+### character_state_manager.py
+
+- [ ] Source runtime state (no changes)
+
+### continuity_manager.py
+
+- [ ] Source truth data (no logic changes)
+
+### scene_grounding.py
+
+- [ ] Provide grounding into packet
+
+### app_turn_director.py
+
+- [ ] Reference only (no edits)
+
+---
+
+## F. Data separation enforcement
+
+- [ ] Scene owns:
+  - [ ] situation
+  - [ ] pressure
+  - [ ] constraints
+
+- [ ] Character owns:
+  - [ ] voice
+  - [ ] goals
+  - [ ] behavior
+
+- [ ] Remove duplication at packet level (no prompt edits yet)
+
+---
+
+## G. Validation
+
+- [ ] Re-run baseline scenarios
+- [ ] Compare:
+  - [ ] audit outputs
+  - [ ] narrative outputs
+  - [ ] progression metrics
+
+- [ ] Track mismatches:
+  - [ ] missing fields
+  - [ ] duplication
+  - [ ] filtering errors
+  - [ ] grounding mismatch
+
+---
+
+## H. Exit criteria
+
+- [ ] Packets fully represent runtime inputs
+- [ ] No behavior drift
+- [ ] Prompt inputs reproducible from packets
+- [ ] Director / validation unchanged
 
 ---
 
 # Phase 1 — Packet-Aligned Runtime Validation
 
-**Goal**: Ensure system remains stable when conceptually aligned to packet structure.
+- [ ] Re-run all scenarios
+- [ ] Confirm no regressions
+- [ ] Validate packet completeness
 
-## A. Re-run validation scenarios
-
-- [ ] Repeat all Phase 0 scenarios (including **Phase 0 §E** plateau/advisory checks where relevant)
-- [ ] Confirm:
-  - no regressions
-  - no drift introduced by packet mapping
-
-## B. Audit packet quality
-
-- [ ] Verify:
-  - correct data inclusion
-  - no missing context
-  - no redundant or bloated fields
-
-## C. Refine packet structure
-
-- [ ] Adjust field grouping if needed
-- [ ] Ensure:
-  - clear separation of authoritative vs retrieved
-  - stable vs dynamic fields are cleanly divided
-
-## D. Exit criteria
-
-- [ ] Packet structure validated against real scenarios
-- [ ] Ready to support retrieval inputs
+**Exit criteria:**
+- [ ] Stable behavior
+- [ ] Packet structure confirmed
 
 ---
 
 # Phase 2 — Retrieval (Controlled Introduction)
 
-**Goal**: Introduce semantic retrieval safely through the packet layer.
-
 ## HARD GATE
 
-Do NOT begin until:
-- Phase 0 and 0.5 are complete
-- Packet structure is stable
+- Phase 0 + 0.5 complete
 
-## A. Retrieval prototype
+## Implementation
 
-- [ ] Implement vector search for:
-  - past interactions
-  - relationship-relevant moments
-- [ ] Keep retrieval:
-  - bounded
-  - optional
-  - non-authoritative
+- [ ] Add bounded vector retrieval
+- [ ] Inject into RetrievedContextBundle only
+- [ ] Do NOT affect continuity or validation
 
-## B. Integration point
+## Evaluation
 
-- [ ] Inject ONLY into:
-  - `RetrievedContextBundle`
-- [ ] Do NOT:
-  - modify continuity
-  - override state truth
-  - affect validation directly
-
-## C. Evaluation
-
-- [ ] Measure:
-  - relevance of retrieved context
-  - impact on character fidelity
-  - token cost vs value
-
-## D. Exit criteria
-
-- [ ] Retrieval improves output quality
-- [ ] No corruption of continuity or orchestration
-- [ ] Retrieval remains bounded and controlled
+- [ ] Measure usefulness
+- [ ] Monitor token cost
+- [ ] Confirm no corruption
 
 ---
 
 # Phase 3 — Ingestion System (Deferred)
 
-**Goal**: Build structured knowledge pipeline for characters and world data.
-
 ## HARD GATE
 
-Do NOT begin until:
-- Retrieval is proven useful
-- Packet interface is stable
+- Retrieval proven
+- Packet interface stable
 
-## A. Extraction
+## Steps
 
-- [ ] Parse source material into:
-  - characters
-  - relationships
-  - events
-  - world knowledge
+- [ ] Extract structured knowledge from sources
+- [ ] Store in:
+  - [ ] graph DB
+  - [ ] vector DB
 
-## B. Storage
+- [ ] Compile:
+  - [ ] character profiles
+  - [ ] relationships
 
-- [ ] Graph DB (relationships)
-- [ ] Vector DB (semantic retrieval)
-
-## C. Compilation
-
-- [ ] Build:
-  - character profiles
-  - relationship summaries
-  - memory datasets
-
-## D. Integration
-
-- [ ] Feed outputs into:
-  - packaging layer
-  - packet builders
-
-## E. Exit criteria
-
-- [ ] Ingested knowledge improves RP quality
-- [ ] No disruption to runtime stability
-- [ ] Clear separation of:
-  - authoritative state (continuity)
-  - external knowledge (retrieval)
+- [ ] Feed into packet builders
 
 ---
 
-# Core Principles (Enforced Throughout)
+# Core Principles
 
-- Fix the correct layer, not symptoms
-- Prefer structure over prompts
+## Data Separation Principle
+
+- Scene = situation / pressure / constraints
+- Character = behavior / goals / voice
+
+Static inputs remain stable:
+- scene templates
+- character cards
+- initial messages
+
+Packets:
+- normalize inputs
+- remove duplication
+- prepare for retrieval
+
+Packets do NOT change behavior.
+
+---
+
+## General Principles
+
+- Fix correct layer, not symptoms
+- Prefer structure over prompt tweaks
 - Continuity is authoritative truth
-- Retrieval is assistive, never authoritative
-- Keep runtime deterministic where possible
+- Retrieval is assistive only
+- Maintain determinism where possible
 - Avoid premature complexity
-- Do not expand system surface before stabilizing base
 
 ---
 
 # Summary
 
-You are currently in:
+Current phase:
 
-→ Phase 0 (Stabilization & Validation), including **§E** (Progression Advisory plateau checklist—manual/audit, layered on **§A** runs)
+→ Phase 0 (Validation)
 
-The next critical milestone is:
+Next:
 
-→ Phase 0.5 (Packet Seam Introduction)
+→ Phase 0.5 (Packet seam)
 
-Do not proceed to retrieval or ingestion until both are complete and validated.
+Do NOT proceed to retrieval or ingestion until both are complete and validated.

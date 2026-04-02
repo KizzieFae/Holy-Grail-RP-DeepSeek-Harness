@@ -23,10 +23,17 @@ ALLOWED_SCENE_STATE_UPDATE_KEYS = frozenset(
 
 _PRESENCE_CONSEQUENCE_MARKERS = frozenset({"exit", "arrival"})
 
+# Issue snapshot for Q2: status, participants, status_reason, last_change (normalized strings).
+IssueSignature = tuple[str, frozenset[str], str, str]
 
-def collect_issue_signatures(continuity_manager: Any) -> dict[str, tuple[str, frozenset[str]]]:
+
+def _norm_issue_text(val: Any) -> str:
+    return str(val or "").strip()
+
+
+def collect_issue_signatures(continuity_manager: Any) -> dict[str, IssueSignature]:
     """Stable issue snapshot for material-change detection (pre–process_turn)."""
-    out: dict[str, tuple[str, frozenset[str]]] = {}
+    out: dict[str, IssueSignature] = {}
     issues = getattr(continuity_manager, "issues", None) or {}
     for issue in issues.values():
         sid = str(getattr(issue, "issue_id", "") or "")
@@ -36,7 +43,9 @@ def collect_issue_signatures(continuity_manager: Any) -> dict[str, tuple[str, fr
         st = str(getattr(status, "value", status) or "")
         raw_parts = getattr(issue, "participants", []) or []
         parts = frozenset(str(p).strip() for p in raw_parts if str(p).strip())
-        out[sid] = (st, parts)
+        sr = _norm_issue_text(getattr(issue, "status_reason", ""))
+        lc = _norm_issue_text(getattr(issue, "last_change", ""))
+        out[sid] = (st, parts, sr, lc)
     return out
 
 
@@ -51,7 +60,7 @@ def _q2_issue_material_change(
     *,
     continuity_manager: Any,
     turn_index: int,
-    issues_before: dict[str, tuple[str, frozenset[str]]],
+    issues_before: dict[str, IssueSignature],
 ) -> bool:
     for issue in (getattr(continuity_manager, "issues", None) or {}).values():
         last_ti = int(getattr(issue, "last_turn_index", 0) or 0)
@@ -64,11 +73,18 @@ def _q2_issue_material_change(
         st = str(getattr(status, "value", status) or "")
         raw_parts = getattr(issue, "participants", []) or []
         parts = frozenset(str(p).strip() for p in raw_parts if str(p).strip())
+        sr = _norm_issue_text(getattr(issue, "status_reason", ""))
+        lc = _norm_issue_text(getattr(issue, "last_change", ""))
         before = issues_before.get(sid)
         if before is None:
             return True
-        b_st, b_parts = before
-        if b_st != st or b_parts != parts:
+        b_st, b_parts, b_sr, b_lc = before
+        if (
+            b_st != st
+            or b_parts != parts
+            or b_sr != sr
+            or b_lc != lc
+        ):
             return True
     return False
 
@@ -124,7 +140,7 @@ def qualifies_as_progression_delta(
     continuity_manager: Any,
     turn_index: int,
     turn_meta: dict[str, Any],
-    issues_before: dict[str, tuple[str, frozenset[str]]],
+    issues_before: dict[str, IssueSignature],
     move: dict[str, Any],
 ) -> bool:
     """Return True if this turn satisfies the v1 progression contract (Q1–Q4)."""

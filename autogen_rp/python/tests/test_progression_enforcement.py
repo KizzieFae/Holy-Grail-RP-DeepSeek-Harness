@@ -93,9 +93,57 @@ def test_q2_issue_status_change_qualifies() -> None:
         status=SimpleNamespace(value="escalating"),
         participants=["A"],
         status_reason="",
+        last_change="",
     )
     cm = _cm(turn_index=2, turn_metadata_by_index={2: {"consequences": []}}, issues={"i1": issue})
-    before = {"i1": ("active", frozenset({"A"}))}
+    before = {"i1": ("active", frozenset({"A"}), "", "")}
+    assert (
+        qualifies_as_progression_delta(
+            continuity_manager=cm,
+            turn_index=2,
+            turn_meta={"consequences": []},
+            issues_before=before,
+            move={},
+        )
+        is True
+    )
+
+
+def test_q2_same_status_and_participants_last_change_delta_qualifies() -> None:
+    """B2: continuity can refresh framing (last_change) without status/participant movement."""
+    issue = SimpleNamespace(
+        issue_id="i1",
+        last_turn_index=2,
+        status=SimpleNamespace(value="active"),
+        participants=["A"],
+        status_reason="",
+        last_change="Celina holds the line after the challenge.",
+    )
+    cm = _cm(turn_index=2, turn_metadata_by_index={2: {"consequences": []}}, issues={"i1": issue})
+    before = {"i1": ("active", frozenset({"A"}), "", "standoff at the door")}
+    assert (
+        qualifies_as_progression_delta(
+            continuity_manager=cm,
+            turn_index=2,
+            turn_meta={"consequences": []},
+            issues_before=before,
+            move={},
+        )
+        is True
+    )
+
+
+def test_q2_same_status_and_participants_status_reason_delta_qualifies() -> None:
+    issue = SimpleNamespace(
+        issue_id="i1",
+        last_turn_index=2,
+        status=SimpleNamespace(value="active"),
+        participants=["A", "B"],
+        status_reason="User escalated tone; pressure holds.",
+        last_change="same beat",
+    )
+    cm = _cm(turn_index=2, turn_metadata_by_index={2: {"consequences": []}}, issues={"i1": issue})
+    before = {"i1": ("active", frozenset({"A", "B"}), "Pressure holds.", "same beat")}
     assert (
         qualifies_as_progression_delta(
             continuity_manager=cm,

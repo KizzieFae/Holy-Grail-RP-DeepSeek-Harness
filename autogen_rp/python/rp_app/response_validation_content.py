@@ -1,9 +1,67 @@
+"""Character response checks and ``validate_bot_response`` orchestration.
+
+Conceptual validation tiers (taxonomy):
+
+1. **Structural** — bot must not voice the user or leave unresolved user placeholders.
+2. **Scene-truth** — contradictions with scene/template obligations (e.g. ``must_remain``).
+3. **Identity / drift** — POV and goal-anchor consistency.
+4. **Quality / repetition** — duplicate content and dialogue vs recent assistant turns.
+
+**Pipeline order** (first failure wins; unchanged from historical behavior) runs:
+structural → quality/repetition → identity/drift → scene-truth.
+That order differs from the numeric tier list above; keep both in mind when extending validation.
+"""
+
 import re
 from typing import Any
 
 from character_state import CharacterState
 from response_validation_drift import detect_character_drift
 from response_validation_presence import detect_scene_presence_violation
+
+# Fuzzy duplicate detection (prefix / substring only; exact matches always reject).
+DUPLICATE_LENGTH_RATIO_MIN = 0.8
+DUPLICATE_SUBSTRING_MIN_SHORT_LEN = 40
+DUPLICATE_SUBSTRING_MIN_FRACTION = 0.65
+DUPLICATE_PREFIX_REMAINDER_MIN_LEN = 25
+
+
+def _length_ratio(a: str, b: str) -> float:
+    la, lb = len(a), len(b)
+    mx = max(la, lb)
+    if mx == 0:
+        return 1.0
+    return min(la, lb) / mx
+
+
+def _fuzzy_prefix_duplicate_long_text(
+    s1: str, s2: str, *, prefix_len: int
+) -> bool:
+    if len(s1) <= prefix_len or len(s2) <= prefix_len:
+        return False
+    if s1[:prefix_len] != s2[:prefix_len]:
+        return False
+    if _length_ratio(s1, s2) < DUPLICATE_LENGTH_RATIO_MIN:
+        return False
+    r1, r2 = s1[prefix_len:], s2[prefix_len:]
+    if min(len(r1), len(r2)) < DUPLICATE_PREFIX_REMAINDER_MIN_LEN:
+        return False
+    return True
+
+
+def _fuzzy_substring_duplicate(s1: str, s2: str) -> bool:
+    if s1 == s2:
+        return False
+    short, long_s = (s1, s2) if len(s1) <= len(s2) else (s2, s1)
+    if len(short) < DUPLICATE_SUBSTRING_MIN_SHORT_LEN:
+        return False
+    if not long_s:
+        return False
+    if short not in long_s:
+        return False
+    if len(short) / len(long_s) < DUPLICATE_SUBSTRING_MIN_FRACTION:
+        return False
+    return True
 
 
 def contains_user_speech(content: str, user_name: str) -> tuple[bool, str]:
@@ -75,13 +133,12 @@ def is_duplicate_dialogue(
             return True, "Exact duplicate dialogue detected"
 
         if len(normalized_dialogue) > 60 and len(prev_dialogue) > 60:
-            if normalized_dialogue[:60] == prev_dialogue[:60]:
+            if _fuzzy_prefix_duplicate_long_text(
+                normalized_dialogue, prev_dialogue, prefix_len=60
+            ):
                 return True, "Substantial dialogue overlap detected"
 
-            if (
-                normalized_dialogue in prev_dialogue
-                or prev_dialogue in normalized_dialogue
-            ):
+            if _fuzzy_substring_duplicate(normalized_dialogue, prev_dialogue):
                 return True, "Repeated dialogue structure detected"
 
     return False, ""
@@ -105,29 +162,34 @@ def is_duplicate_content(
             return True, "Exact duplicate of previous message"
 
         if len(normalized) > 50 and len(prev_content) > 50:
-            if normalized[:50] == prev_content[:50]:
+            if _fuzzy_prefix_duplicate_long_text(
+                normalized, prev_content, prefix_len=50
+            ):
                 return True, "Substantial content overlap detected"
 
-            if normalized in prev_content or prev_content in normalized:
+            if _fuzzy_substring_duplicate(normalized, prev_content):
                 return True, "Repeated content structure"
 
     return False, ""
 
 
-def validate_bot_response(
-    content: str,
-    speaker: str,
-    user_name: str,
-    chat_history: list[dict],
-    state: CharacterState | None = None,
-    move: dict[str, Any] | None = None,
-    canon_anchors: list[Any] | None = None,
-    scene_state: dict[str, Any] | None = None,
+def _validate_bot_tier_structural(
+    content: str, user_name: str
 ) -> tuple[bool, str]:
+    """Tier 1 — structural invalidity."""
     has_user_speech, user_reason = contains_user_speech(content, user_name)
     if has_user_speech:
         return False, f"[USER_SPEECH] {user_reason}"
+    return True, ""
 
+
+def _validate_bot_tier_quality_repetition(
+    content: str,
+    speaker: str,
+    chat_history: list[dict],
+    move: dict[str, Any] | None,
+) -> tuple[bool, str]:
+    """Tier 4 — quality / repetition (runs before identity and scene-truth in the pipeline)."""
     is_dup, dup_reason = is_duplicate_content(content, chat_history)
     if is_dup:
         return False, f"[DUPLICATE] {dup_reason}"
@@ -141,6 +203,18 @@ def validate_bot_response(
     if is_dup_dialogue:
         return False, f"[DUPLICATE] {dup_dialogue_reason}"
 
+    return True, ""
+
+
+def _validate_bot_tier_identity_drift(
+    content: str,
+    speaker: str,
+    state: CharacterState | None,
+    move: dict[str, Any] | None,
+    canon_anchors: list[Any] | None,
+    scene_state: dict[str, Any] | None,
+) -> tuple[bool, str]:
+    """Tier 3 — identity / drift."""
     has_drift, drift_reason = detect_character_drift(
         content,
         speaker,
@@ -151,14 +225,61 @@ def validate_bot_response(
     )
     if has_drift:
         return False, f"[CHARACTER_DRIFT] {drift_reason}"
+    return True, ""
 
+
+def _validate_bot_tier_scene_truth(
+    content: str,
+    speaker: str,
+    move: dict[str, Any] | None,
+    scene_state: dict[str, Any] | None,
+    chat_history: list[dict],
+) -> tuple[bool, str]:
+    """Tier 2 — scene-truth / template obligations (runs last in the pipeline)."""
     has_presence_violation, presence_reason = detect_scene_presence_violation(
         content,
         speaker,
         move,
         scene_state,
+        chat_history=chat_history,
     )
     if has_presence_violation:
+        if presence_reason.startswith("[PERCEPTION]"):
+            return False, presence_reason
         return False, f"[SCENE_PRESENCE] {presence_reason}"
+    return True, ""
+
+
+def validate_bot_response(
+    content: str,
+    speaker: str,
+    user_name: str,
+    chat_history: list[dict],
+    state: CharacterState | None = None,
+    move: dict[str, Any] | None = None,
+    canon_anchors: list[Any] | None = None,
+    scene_state: dict[str, Any] | None = None,
+) -> tuple[bool, str]:
+    ok, msg = _validate_bot_tier_structural(content, user_name)
+    if not ok:
+        return False, msg
+
+    ok, msg = _validate_bot_tier_quality_repetition(
+        content, speaker, chat_history, move
+    )
+    if not ok:
+        return False, msg
+
+    ok, msg = _validate_bot_tier_identity_drift(
+        content, speaker, state, move, canon_anchors, scene_state
+    )
+    if not ok:
+        return False, msg
+
+    ok, msg = _validate_bot_tier_scene_truth(
+        content, speaker, move, scene_state, chat_history
+    )
+    if not ok:
+        return False, msg
 
     return True, ""

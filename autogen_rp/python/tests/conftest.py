@@ -19,6 +19,10 @@ def pytest_configure(config):
         "markers",
         "progression_llm: progression-focused live LLM checks",
     )
+    config.addinivalue_line(
+        "markers",
+        "supplemental_simulation: monkeypatched simulation paths (not primary scenario coverage)",
+    )
 
 
 @pytest.fixture

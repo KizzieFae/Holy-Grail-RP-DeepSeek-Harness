@@ -13,7 +13,11 @@ from offstage_prompt_filter import (
     filter_dialogue_for_offstage_character,
     filter_structured_moves_for_offstage_character,
 )
-from perception_audibility import filter_structured_move_for_viewer
+from perception_audibility import (
+    filter_structured_move_for_viewer,
+    player_text_for_character_viewer,
+)
+from memory_layer.retrieval import build_character_state_context_for_prompt
 from scene_grounding import format_character_grounding_section
 
 
@@ -437,8 +441,11 @@ def build_character_turn_prompt(
         state=state,
         active_issues=actionable_issues,
     )
+    # state_context contract: single string from memory_layer + identity; passed unchanged
+    # to prompt_builders.build_character_turn_prompt (see autogen_rp/docs/architecture.md).
     state_context = (
-        state.to_prompt_context(
+        build_character_state_context_for_prompt(
+            state=state,
             relationship_focus_names=relationship_focus_names,
             relationship_secondary_names=relationship_secondary_names,
         )
@@ -448,10 +455,17 @@ def build_character_turn_prompt(
     grounding_section = format_character_grounding_section(
         st_module.session_state.get("scene_grounding")
     )
+    filtered_trigger = player_text_for_character_viewer(
+        raw_text=trigger_text,
+        viewer_character_name=char_name,
+        present_characters=list(present_for_moves),
+        user_display_name=user_name,
+        get_character_display_name_fn=get_character_display_name_fn,
+    )
     prompt_text = build_character_turn_prompt_text_fn(
         char_name=char_name,
         user_name=user_name,
-        trigger_text=trigger_text,
+        trigger_text=filtered_trigger,
         director_decision=director_decision,
         scene_state=scene_state,
         scene_template_context=scene_template_context,
@@ -474,7 +488,9 @@ def build_character_turn_prompt(
     )
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)
     if beat_shift_active_here:
-        prompt_text += build_character_beat_shift_suffix(trigger_text=trigger_text)
+        prompt_text += build_character_beat_shift_suffix(
+            trigger_text=filtered_trigger
+        )
     _pp = str(progression_advisory_snapshot.get("progression_pressure") or "low")
     if should_append_progression_character_suffix(
         progression_pressure=_pp,

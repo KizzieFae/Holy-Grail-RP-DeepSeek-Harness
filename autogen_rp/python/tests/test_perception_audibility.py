@@ -6,10 +6,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from perception_audibility import (
+    REDACTED_PLAYER_TEXT_CONTENT,
     build_recent_dialogue_history_for_viewer,
     event_knowledge_recipients,
     filter_structured_move_for_viewer,
     normalize_move_audibility,
+    player_text_for_character_viewer,
     public_safe_event_summary,
     viewer_may_perceive_dialogue,
 )
@@ -122,6 +124,99 @@ def test_filter_structured_move_redacts_for_non_audience() -> None:
         present_characters=["A", "B", "C"],
     )
     assert out["dialogue"] == ""
+
+
+def test_player_text_public_all_viewers_see_full() -> None:
+    raw = "Hello everyone, the door is open."
+    present = ["Ayame", "Celina", "Hannah Lovelace"]
+    for viewer in present:
+        out = player_text_for_character_viewer(
+            raw_text=raw,
+            viewer_character_name=viewer,
+            present_characters=present,
+            user_display_name="Traveler",
+            get_character_display_name_fn=lambda n: n,
+        )
+        assert out == raw
+
+
+def test_player_text_whisper_directed_only_addressee_sees_secret() -> None:
+    secret = "ZEPHYR-OMEGA-NINE"
+    raw = (
+        f"Ayame leans in and whispers only to Celina, voice low: "
+        f"'Codeword for tonight is {secret}—tell no one else.'"
+    )
+    present = ["Ayame", "Celina", "Hannah Lovelace"]
+    celina = player_text_for_character_viewer(
+        raw_text=raw,
+        viewer_character_name="Celina",
+        present_characters=present,
+        user_display_name="Traveler",
+        get_character_display_name_fn=lambda n: n,
+    )
+    assert secret in celina
+    hannah = player_text_for_character_viewer(
+        raw_text=raw,
+        viewer_character_name="Hannah Lovelace",
+        present_characters=present,
+        user_display_name="Traveler",
+        get_character_display_name_fn=lambda n: n,
+    )
+    assert secret not in hannah
+    assert REDACTED_PLAYER_TEXT_CONTENT in hannah
+
+
+def test_player_text_ambiguous_defaults_to_public() -> None:
+    raw = "Someone should check the hallway."
+    present = ["A", "B", "C"]
+    for viewer in present:
+        out = player_text_for_character_viewer(
+            raw_text=raw,
+            viewer_character_name=viewer,
+            present_characters=present,
+            user_display_name="Traveler",
+            get_character_display_name_fn=lambda n: n,
+        )
+        assert out == raw
+
+
+def test_build_recent_dialogue_user_line_filtered_for_character_viewer() -> None:
+    def _display(name: str) -> str:
+        return name
+
+    secret = "NEVER_LEAK_THIS_USER_SECRET"
+    hist = [
+        {
+            "role": "user",
+            "speaker": "Traveler",
+            "content": f"Whisper to Bob only: {secret}",
+        }
+    ]
+    bob_out = build_recent_dialogue_history_for_viewer(
+        chat_history=hist,
+        viewer_character_name="Bob",
+        character_names=["Alice", "Bob", "Carol"],
+        get_character_display_name_fn=_display,
+        limit=8,
+    )
+    carol_out = build_recent_dialogue_history_for_viewer(
+        chat_history=hist,
+        viewer_character_name="Carol",
+        character_names=["Alice", "Bob", "Carol"],
+        get_character_display_name_fn=_display,
+        limit=8,
+    )
+    none_out = build_recent_dialogue_history_for_viewer(
+        chat_history=hist,
+        viewer_character_name=None,
+        character_names=["Alice", "Bob", "Carol"],
+        get_character_display_name_fn=_display,
+        limit=8,
+    )
+    assert secret in bob_out[0]["content"]
+    assert secret not in carol_out[0]["content"]
+    assert REDACTED_PLAYER_TEXT_CONTENT in carol_out[0]["content"]
+    assert secret in none_out[0]["content"]
 
 
 def test_build_recent_dialogue_orchestration_omits_private_rendered() -> None:

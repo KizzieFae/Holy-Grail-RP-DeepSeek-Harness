@@ -1,0 +1,15 @@
+{
+  "id": "memory_long_session",
+  "title": "Long session memory hygiene",
+  "intent": "15–20 turns: episodic lines stay bounded; no unbounded growth; session completes without crash.",
+  "character_card_ids": ["ayame", "celina"],
+  "opening_description": "Extended back-and-forth; keep each reply under a few sentences and advance the topic slightly each turn.",
+  "location": "apartment",
+  "trigger_text": "Ayame opens: 'We have time—walk me through every step, one turn at a time.' Alternate speakers naturally.",
+  "max_turns": 18,
+  "seed_escalating_issue": false,
+  "beat_shift_active": false,
+  "initial_tension": "low",
+  "initial_phase": "opening",
+  "expected_pressure_profile": "low"
+}

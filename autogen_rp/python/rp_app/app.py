@@ -423,6 +423,7 @@ async def choose_next_actor(
         validate_turn_selection_decision_fn=validate_turn_selection_decision,
         assess_turn_selection_decision_semantics_fn=assess_turn_selection_decision_semantics,
         reconcile_turn_selection_issues_fn=reconcile_turn_selection_issues,
+        get_character_display_name_fn=get_character_display_name,
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
@@ -572,13 +573,17 @@ def record_character_memories(
     acting_character: str,
     move: dict[str, Any],
     director_decision: dict[str, Any],
+    *,
+    st_module: Any | None = None,
+    char_names: list[str] | None = None,
 ) -> None:
     memory_helpers.record_character_memories(
-        st_module=st,
+        st_module=st_module or st,
         acting_character=acting_character,
         move=move,
         director_decision=director_decision,
         build_memory_fact_summary_fn=build_memory_fact_summary,
+        character_names=char_names,
     )
 
 

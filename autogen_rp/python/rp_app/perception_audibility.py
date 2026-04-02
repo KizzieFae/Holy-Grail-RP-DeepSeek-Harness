@@ -145,6 +145,76 @@ def viewer_may_perceive_dialogue(
     return viewer_character in [str(a).strip() for a in audience if str(a).strip()]
 
 
+REDACTED_PLAYER_TEXT_CONTENT = (
+    "[private or directed player input — exact words omitted for this recipient]"
+)
+
+
+def _canonical_viewer_for_present(
+    viewer_character_name: str,
+    present_characters: list[str],
+    get_character_display_name_fn: Callable[[str], str],
+) -> str:
+    """Align viewer id with the ``present_characters`` labels used in audiences."""
+    v = str(viewer_character_name or "").strip()
+    present = [str(p).strip() for p in present_characters if str(p or "").strip()]
+    if v in present:
+        return v
+    vd = get_character_display_name_fn(v).strip()
+    for p in present:
+        if get_character_display_name_fn(p).strip() == vd:
+            return p
+    return v
+
+
+def player_text_for_character_viewer(
+    *,
+    raw_text: str,
+    viewer_character_name: str,
+    present_characters: list[str],
+    user_display_name: str,
+    get_character_display_name_fn: Callable[[str], str] | None = None,
+) -> str:
+    """Return player/user ``raw_text`` or a redacted placeholder for this viewer.
+
+    Models the line as structured ``dialogue`` on a synthetic move from
+    ``user_display_name``, then applies :func:`normalize_move_audibility` and
+    :func:`viewer_may_perceive_dialogue` — same rules as character moves.
+
+    **MVP:** If audibility is ambiguous (no whisper / directed markers), the line
+    is treated as **public** so all present characters receive the full string.
+    This preserves pre-fix default exposure and avoids over-redaction; it is not
+    declared final policy.
+
+    Director / orchestration transcript paths pass ``viewer_character_name=None``
+    to :func:`build_recent_dialogue_history_for_viewer` and receive unfiltered
+    user lines.
+    """
+    text = str(raw_text or "")
+    if not str(text).strip():
+        return text
+
+    display_fn = get_character_display_name_fn or (lambda x: str(x))
+    acting = str(user_display_name or "").strip() or "Traveler"
+    present = [str(p).strip() for p in present_characters if str(p or "").strip()]
+
+    synthetic: dict[str, Any] = {
+        "action": "",
+        "dialogue": text,
+        "audibility": "",
+        "audience": [],
+    }
+    norm = normalize_move_audibility(synthetic, acting, present)
+    viewer = _canonical_viewer_for_present(
+        viewer_character_name, present, display_fn
+    )
+    if viewer_may_perceive_dialogue(
+        norm, acting_character=acting, viewer_character=viewer
+    ):
+        return text
+    return REDACTED_PLAYER_TEXT_CONTENT
+
+
 def use_full_narrator_content_for_recipient(
     move: dict[str, Any],
     *,
@@ -285,11 +355,24 @@ def build_recent_dialogue_history_for_viewer(
             continue
         role = str(message.get("role", "assistant") or "assistant")
         if role == "user":
+            speaker = str(message.get("speaker", "Traveler") or "Traveler")
+            content = str(message.get("content", "") or "")
+            if viewer_character_name is None:
+                safe_content = content
+            else:
+                present = [str(n).strip() for n in character_names if str(n or "").strip()]
+                safe_content = player_text_for_character_viewer(
+                    raw_text=content,
+                    viewer_character_name=viewer_character_name,
+                    present_characters=present,
+                    user_display_name=speaker,
+                    get_character_display_name_fn=get_character_display_name_fn,
+                )
             history.append(
                 {
                     "role": role,
-                    "speaker": str(message.get("speaker", "Traveler") or "Traveler"),
-                    "content": str(message.get("content", "") or ""),
+                    "speaker": speaker,
+                    "content": safe_content,
                 }
             )
             continue

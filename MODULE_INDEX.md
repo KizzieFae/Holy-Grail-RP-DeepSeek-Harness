@@ -24,6 +24,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Duplicate** dialogue or repeated line | `response_validation_content.py` (`is_duplicate_dialogue`), `turn_runner_turn.py` (retry path) |
 | **Presence** / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `semantic_validation.py` (override paths) |
 | **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
+| **Episodic prompt sections** / wrong “memories” block in character prompt | `memory_layer/retrieval.py`, `app_turn_prompting.py` (`build_character_state_context_for_prompt`); identity text: `character_state_model.py` (`to_prompt_identity_context`) |
 | **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `progression_enforcement.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, `turn_runner_turn.py` |
 | Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
 | **Whisper / private line** known to wrong character; per-character prompt mismatch | `perception_audibility.py`, then `app_turn_prompting.py`, `continuity_manager.py`, `continuity_knowledge_helpers.py`, `app_turn_director.py` |
@@ -59,6 +60,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `scene_lifecycle.py` | `scene_lifecycle_start`, `scene_lifecycle_actions` |
 | `session_lifecycle.py` | `session_lifecycle_save`, `session_lifecycle_load` |
 | `response_validation.py` | `response_validation_*` (content, presence, drift, parsing, selection) |
+| `memory_layer/` | `facade` (writes), `writes`, `storage`, `retrieval` (episodic prompt sections); see `autogen_rp/docs/architecture.md` |
 | `character_state.py` | `character_state_model`, `character_state_manager` |
 
 ---
@@ -77,7 +79,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
 | `app_turn_director.py` | Director selection logic / call path | `model_client`, `prompt_builders`, `progression_advisory`, `anti_regression_advisory` | Optional progression + anti-regression Director prefixes |
 | `app_turn_selector.py` | Turn selection parsing / reconciliation | `response_validation_selection` | |
-| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `perception_audibility`, `offstage_prompt_filter` | Per-recipient transcript + structured moves; offstage narrowing; optional progression suffix |
+| `app_turn_prompting.py` | Character / Director / Narrator prompt assembly glue | `prompt_builders`, state, `progression_advisory`, `perception_audibility`, `offstage_prompt_filter`, `memory_layer.retrieval` | Character `state_context` via `build_character_state_context_for_prompt` (identity + episodic); per-recipient transcript + structured moves; offstage narrowing; optional progression suffix |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 

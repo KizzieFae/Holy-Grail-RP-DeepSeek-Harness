@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from character_loader import CHARACTER_MOVE_SCHEMA, _normalize_relationships
 from character_state import CharacterState, CharacterStateManager
+from memory_layer.retrieval import build_character_state_context_for_prompt
 from scene_lifecycle_start import (
     _seed_scene_role_character_priorities,
     _seed_scene_role_relationship_context,
@@ -172,7 +173,7 @@ def test_character_state_preserves_identity_anchors_and_memory_summaries():
         "I read his silence as confirmation that he is hiding the map.",
     )
 
-    prompt_context = state.to_prompt_context()
+    prompt_context = build_character_state_context_for_prompt(state=state)
 
     assert state.current_objective == "expose Thorn"
     assert state.short_term_tactic == "provoke anger"
@@ -243,7 +244,7 @@ def test_character_state_preserves_persistent_goal_when_new_move_is_only_a_local
         },
     )
 
-    prompt_context = state.to_prompt_context()
+    prompt_context = state.to_prompt_identity_context()
 
     assert (
         state.current_objective
@@ -312,7 +313,7 @@ def test_character_state_prompt_context_surfaces_focused_goal_threads_and_second
         threat_level="low",
     )
 
-    prompt_context = state.to_prompt_context(
+    prompt_context = state.to_prompt_identity_context(
         relationship_focus_names=["Kizzie", "Ayame"],
         relationship_secondary_names=["Orderly"],
     )
@@ -391,10 +392,10 @@ def test_scene_role_relationship_seeding_creates_prompt_visible_goal_threads() -
         },
     )
 
-    celina_prompt = char_states["Celina"].to_prompt_context(
+    celina_prompt = char_states["Celina"].to_prompt_identity_context(
         relationship_focus_names=["Kizzie"]
     )
-    kizzie_prompt = char_states["Kizzie"].to_prompt_context(
+    kizzie_prompt = char_states["Kizzie"].to_prompt_identity_context(
         relationship_focus_names=["Celina"]
     )
 

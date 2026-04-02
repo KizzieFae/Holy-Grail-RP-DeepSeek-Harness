@@ -132,6 +132,28 @@ def parse_character_move(content: str) -> tuple[dict | None, str]:
     return data, ""
 
 
+def _resolve_next_actor_to_allowed(
+    next_actor: Any, allowed_actors: list[str]
+) -> str | None:
+    """If ``next_actor`` is an exact allowed key, or equals ``make_agent_identifier``
+    of an allowed key, or ``make_agent_identifier(next_actor)`` is in allowed, return
+    that allowed key. Otherwise None. No fuzzy matching."""
+    from character_loader import make_agent_identifier
+
+    na = str(next_actor or "").strip()
+    if not na:
+        return None
+    allowed = [str(a).strip() for a in allowed_actors if str(a or "").strip()]
+    if not allowed:
+        return None
+    if na in allowed:
+        return na
+    derived = make_agent_identifier(na)
+    if derived in allowed:
+        return derived
+    return None
+
+
 def parse_director_decision(
     content: str,
     participant_names: list[str],
@@ -141,15 +163,27 @@ def parse_director_decision(
     if error or data is None:
         return None, error
 
-    allowed_actors = (
-        available_actors if available_actors is not None else participant_names
-    )
+    allowed_actors = [
+        str(a).strip()
+        for a in (
+            available_actors
+            if available_actors is not None
+            else participant_names
+        )
+        if str(a or "").strip()
+    ]
     end_round = bool(data.get("end_round"))
-    next_actor = data.get("next_actor")
-    if end_round and not next_actor:
+    raw_next = data.get("next_actor")
+    if end_round and not raw_next:
         next_actor = ""
+    else:
+        canonical = _resolve_next_actor_to_allowed(raw_next, allowed_actors)
+        if canonical is None:
+            return None, f"Invalid next_actor: {raw_next!r}"
+        next_actor = canonical
+
     if next_actor not in allowed_actors and not (end_round and next_actor == ""):
-        return None, f"Invalid next_actor: {next_actor}"
+        return None, f"Invalid next_actor: {next_actor!r}"
 
     return {
         "next_actor": next_actor,

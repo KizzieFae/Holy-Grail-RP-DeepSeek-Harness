@@ -51,13 +51,26 @@ def record_character_memories(
     move: dict,
     director_decision: dict,
     build_memory_fact_summary_fn,
+    character_names: list[str] | None = None,
+    continuity_manager=None,
 ) -> None:
+    names = (
+        character_names
+        if character_names is not None
+        else [
+            str(getattr(c, "name", "") or "").strip()
+            for c in st_module.session_state.get("characters", [])
+            if str(getattr(c, "name", "") or "").strip()
+        ]
+    )
     _record_character_memories_impl(
         st_module=st_module,
         acting_character=acting_character,
         move=move,
         director_decision=director_decision,
         build_memory_fact_summary_fn=build_memory_fact_summary_fn,
+        character_names=names,
+        continuity_manager=continuity_manager,
     )
 
 

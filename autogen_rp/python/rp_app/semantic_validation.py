@@ -1,4 +1,6 @@
 import json
+import re
+from collections.abc import Callable
 from typing import Any
 
 from autogen_agentchat.agents import AssistantAgent
@@ -312,3 +314,65 @@ async def assess_narrator_render_semantics(
         "parse_error": str(data.get("parse_error", "") or ""),
         "raw_response": str(data.get("raw_response", "") or ""),
     }
+
+
+# Human-facing Director log lines (selector_decisions / decision["reason"]): display
+# names and mild suppression of low-confidence semantic-only notes. Does not change
+# next_actor or other machine fields beyond optional reason text formatting.
+SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD = 0.5
+
+
+def filter_selection_issues_for_human_log(
+    *,
+    base_issues: list[str],
+    reconciled_issues: list[str],
+    semantic_assessment: dict[str, Any] | None,
+    confidence_threshold: float = SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD,
+) -> list[str]:
+    """When deterministic validation is clean, omit reconciled issues if semantic confidence is low.
+
+    If ``base_issues`` is non-empty, always return ``reconciled_issues``. If ``base_issues``
+    is empty and semantic assessment is missing, keep ``reconciled_issues`` (deterministic-only
+    reconcile path). If ``base_issues`` is empty and assessment exists, keep reconciled issues
+    only when ``confidence >= confidence_threshold``.
+    """
+    if base_issues:
+        return list(reconciled_issues)
+    if semantic_assessment is None:
+        return list(reconciled_issues)
+    try:
+        conf = float(semantic_assessment.get("confidence", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        conf = 0.0
+    if conf >= confidence_threshold:
+        return list(reconciled_issues)
+    return []
+
+
+def substitute_agent_keys_with_display_names(
+    text: str,
+    participant_names: list[str],
+    display_name_for_key: Callable[[str], str],
+) -> str:
+    """Replace whole-token agent keys with card display names (longest keys first).
+
+    Identifier-like boundaries: ASCII alnum + underscore so short keys do not substitute
+    inside longer identifiers.
+    """
+    if not text or not participant_names:
+        return text
+    keys = sorted(
+        {str(k).strip() for k in participant_names if str(k or "").strip()},
+        key=len,
+        reverse=True,
+    )
+    out = text
+    for key in keys:
+        disp = str(display_name_for_key(key) or "").strip()
+        if not disp or disp == key:
+            continue
+        pattern = re.compile(
+            r"(?<![0-9A-Za-z_])" + re.escape(key) + r"(?![0-9A-Za-z_])"
+        )
+        out = pattern.sub(disp, out)
+    return out

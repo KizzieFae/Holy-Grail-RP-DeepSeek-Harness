@@ -59,6 +59,19 @@ _OFFSITE_SETTING_LEXEMES = frozenset(
     }
 )
 
+MIN_DIALOGUE_WORDS_FOR_VOICE_DRIFT = 8
+
+_VOICE_MARKER_FAMILY = ("measured", "cool", "calm", "controlled")
+_SPEECH_MARKER_FAMILY = ("spare", "clipped", "blunt", "formal")
+
+
+def _identity_profile_blob(profile: dict[str, Any] | None) -> str:
+    if not isinstance(profile, dict) or not profile:
+        return ""
+    parts = [str(v).strip() for v in profile.values() if str(v).strip()]
+    return " ".join(parts).lower()
+
+
 TACTICAL_STABILIZATION_GOAL_TERMS = {
     "assist",
     "breathe",
@@ -294,5 +307,36 @@ def detect_character_drift(
     for anchor_goal in anchor_goals:
         if goal_conflicts_with_identity_anchor(candidate_goal, anchor_goal):
             return True, f"Move goal conflicts with stable goal anchor: '{anchor_goal}'"
+
+    if isinstance(move, dict):
+        dialogue = str(move.get("dialogue") or "").strip()
+        voice_blob = _identity_profile_blob(
+            state.voice_profile if isinstance(state.voice_profile, dict) else None
+        )
+        speech_blob = _identity_profile_blob(
+            state.speech_fingerprint
+            if isinstance(state.speech_fingerprint, dict)
+            else None
+        )
+        voice_family_hit = any(m in voice_blob for m in _VOICE_MARKER_FAMILY)
+        speech_family_hit = any(m in speech_blob for m in _SPEECH_MARKER_FAMILY)
+        if (
+            dialogue
+            and _dialogue_word_count(dialogue) >= MIN_DIALOGUE_WORDS_FOR_VOICE_DRIFT
+            and (voice_family_hit or speech_family_hit)
+        ):
+            voice_msg = _dialogue_breaks_voice_profile(
+                dialogue, voice_blob, speech_blob
+            )
+            if voice_msg:
+                return True, voice_msg
+
+        reaction_blob = _identity_profile_blob(
+            state.reaction_profile if isinstance(state.reaction_profile, dict) else None
+        )
+        if reaction_blob:
+            reaction_msg = _move_conflicts_with_reaction_profile(move, reaction_blob)
+            if reaction_msg:
+                return True, reaction_msg
 
     return False, ""

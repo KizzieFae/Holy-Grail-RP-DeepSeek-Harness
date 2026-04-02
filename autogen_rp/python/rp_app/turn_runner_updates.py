@@ -55,7 +55,13 @@ def apply_successful_turn_updates(
             move.get("motivation", {}),
         )
 
-    record_character_memories_fn(next_actor, move, decision)
+    record_character_memories_fn(
+        next_actor,
+        move,
+        decision,
+        st_module=st_module,
+        char_names=char_names,
+    )
 
     continuity_manager = st_module.session_state.get("continuity_manager")
     consequences: list[str] | None = None

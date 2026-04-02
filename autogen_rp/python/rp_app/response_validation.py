@@ -21,6 +21,7 @@ from response_validation_presence import (
     get_must_remain_characters,
 )
 from response_validation_selection import (
+    eligible_agent_keys_for_present_characters,
     get_available_actors,
     validate_turn_selection_decision,
 )
@@ -32,6 +33,7 @@ __all__ = [
     "detect_character_drift",
     "detect_forced_speaker",
     "detect_scene_presence_violation",
+    "eligible_agent_keys_for_present_characters",
     "get_available_actors",
     "get_must_remain_characters",
     "goal_conflicts_with_identity_anchor",

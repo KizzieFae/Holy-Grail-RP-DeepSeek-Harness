@@ -19,10 +19,14 @@ from continuity_state import CanonAnchor
 from prompt_builders import build_character_turn_prompt
 from response_validation import (
     build_attempted_post_details,
+    eligible_agent_keys_for_present_characters,
     get_available_actors,
+    is_duplicate_content,
+    is_duplicate_dialogue,
     parse_director_decision,
     validate_bot_response,
 )
+from response_validation_presence import detect_scene_presence_violation
 from scene_exit_detection import detect_exit_from_scene
 from semantic_validation import (
     _extract_json_object_text,
@@ -206,6 +210,37 @@ def test_parse_director_decision_rejects_actor_outside_available_list() -> None:
 
     assert decision is None
     assert "Invalid next_actor" in error
+
+
+def test_eligible_agent_keys_maps_display_names_to_agent_keys() -> None:
+    def display_name_for_key(agent_key: str) -> str:
+        if agent_key == "Hannah_Lovelace":
+            return "Hannah Lovelace"
+        return agent_key
+
+    assert eligible_agent_keys_for_present_characters(
+        ["Ayame", "Hannah Lovelace", "Celina"],
+        ["Ayame", "Celina", "Hannah_Lovelace"],
+        display_name_for_key=display_name_for_key,
+    ) == ["Ayame", "Hannah_Lovelace", "Celina"]
+
+
+def test_parse_director_decision_normalizes_display_name_when_allowed() -> None:
+    decision, error = parse_director_decision(
+        json.dumps(
+            {
+                "next_actor": "Hannah Lovelace",
+                "environment_event": "",
+                "tension_shift": "steady",
+                "reason": "Hannah was addressed.",
+            }
+        ),
+        ["Ayame", "Celina", "Hannah_Lovelace"],
+        ["Ayame", "Hannah_Lovelace"],
+    )
+    assert error == ""
+    assert decision is not None
+    assert decision["next_actor"] == "Hannah_Lovelace"
 
 
 def test_parse_director_decision_allows_end_round_without_next_actor() -> None:
@@ -694,6 +729,268 @@ def test_validate_bot_response_rejects_absence_claim_for_must_remain_character()
     assert "Ayame" in reason
 
 
+def test_validate_bot_response_allows_absence_claim_when_target_is_offstage() -> None:
+    is_valid, reason = validate_bot_response(
+        content="Ayame isn't here anymore.",
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=[],
+        move={
+            "action": "glances toward the hallway",
+            "dialogue": "Ayame isn't here anymore.",
+            "motivation": {
+                "goal": "report status",
+                "tactic": "plain statement",
+                "emotional_driver": "neutral",
+                "risk_level": "low",
+            },
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Celina": "must_remain",
+                "Ayame": "must_remain",
+            },
+            "role_assignments": {"Celina": "guard", "Ayame": "host"},
+            "offstage_characters": ["Ayame"],
+            "present_characters": ["Celina", "Ayame"],
+        },
+    )
+
+    assert is_valid is True
+    assert reason == ""
+
+
+def test_validate_bot_response_allows_absence_claim_when_target_temporary_offstage() -> (
+    None
+):
+    is_valid, reason = validate_bot_response(
+        content="Ayame isn't here in the dorm right now.",
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=[],
+        move={
+            "action": "checks the doorway",
+            "dialogue": "Ayame isn't here in the dorm right now.",
+            "motivation": {},
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Celina": "must_remain",
+                "Ayame": "must_remain",
+            },
+            "present_characters": ["Celina", "Ayame"],
+            "character_presence_status": {"Ayame": "temporary_offstage"},
+        },
+    )
+
+    assert is_valid is True
+    assert reason == ""
+
+
+def test_validate_bot_response_rejects_private_prior_dialogue_reuse() -> None:
+    private_line = (
+        "The emergency phrase is sapphire nine seven tango full stop for the room."
+    )
+    assert len(private_line) >= 30
+    chat_history = [
+        {
+            "role": "assistant",
+            "actor": "Celina",
+            "speaker": "Celina",
+            "content": "Narrator render omitted.",
+            "move": {
+                "action": "leans in close",
+                "dialogue": private_line,
+                "audibility": "private",
+                "audience": [],
+            },
+        }
+    ]
+    move_text = f'repeats aloud, "{private_line}"'
+    is_valid, reason = validate_bot_response(
+        content=move_text,
+        speaker="Marlene",
+        user_name="Alex",
+        chat_history=chat_history,
+        move={
+            "action": 'repeats aloud verbatim what she could not have heard',
+            "dialogue": private_line,
+            "motivation": {},
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Celina": "must_remain",
+                "Marlene": "must_remain",
+                "Ayame": "must_remain",
+            },
+            "present_characters": ["Celina", "Marlene", "Ayame"],
+        },
+    )
+
+    assert is_valid is False
+    assert reason.startswith("[PERCEPTION]")
+
+
+def test_validate_bot_response_allows_public_prior_dialogue_reuse() -> None:
+    public_line = (
+        "The emergency phrase is sapphire nine seven tango full stop for the room."
+    )
+    chat_history = [
+        {
+            "role": "assistant",
+            "actor": "Celina",
+            "speaker": "Celina",
+            "content": "Narrator render omitted.",
+            "move": {
+                "action": "speaks clearly to the room",
+                "dialogue": public_line,
+                "audibility": "public",
+                "audience": [],
+            },
+        }
+    ]
+    move_text = f"echoes back: {public_line}"
+    is_valid, reason = validate_bot_response(
+        content=move_text,
+        speaker="Marlene",
+        user_name="Alex",
+        chat_history=chat_history,
+        move={
+            "action": "nods and repeats the phrase for emphasis",
+            "dialogue": public_line,
+            "motivation": {},
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Celina": "must_remain",
+                "Marlene": "must_remain",
+                "Ayame": "must_remain",
+            },
+            "present_characters": ["Celina", "Marlene", "Ayame"],
+        },
+    )
+
+    assert is_valid is True
+    assert reason == ""
+
+
+def test_detect_scene_presence_violation_skips_perception_when_chat_history_none() -> (
+    None
+):
+    private_line = (
+        "The emergency phrase is sapphire nine seven tango full stop for the room."
+    )
+    scene_state = {
+        "character_presence_constraints": {
+            "Celina": "must_remain",
+            "Marlene": "must_remain",
+        },
+        "present_characters": ["Celina", "Marlene"],
+    }
+    move_text = private_line
+    has_v, r = detect_scene_presence_violation(
+        move_text,
+        "Marlene",
+        move={"action": "", "dialogue": private_line},
+        scene_state=scene_state,
+        chat_history=None,
+    )
+    assert has_v is False
+    assert r == ""
+
+
+def test_is_duplicate_dialogue_allows_shared_long_prefix_with_short_remainders() -> None:
+    """Phase 4: same 60-char opening but tails under REMAINDER_MIN — not fuzzy duplicate."""
+    common = "w" * 60
+    tail_a = "x" * 10
+    tail_b = "y" * 10
+    d1 = common + tail_a
+    d2 = common + tail_b
+    assert len(d1) > 60 and len(d2) > 60
+    chat = [
+        {
+            "role": "assistant",
+            "speaker": "Marlene",
+            "move": {"dialogue": d1},
+        }
+    ]
+    is_dup, _reason = is_duplicate_dialogue(
+        speaker="Marlene", dialogue=d2, chat_history=chat
+    )
+    assert is_dup is False
+
+
+def test_is_duplicate_dialogue_rejects_fuzzy_prefix_when_remainders_substantial() -> None:
+    common = "z" * 60
+    tail = "t" * 30
+    d1 = common + tail
+    d2 = common + tail.replace("t", "u")  # same lengths, different tail
+    assert d1[:60] == d2[:60]
+    assert min(len(d1) - 60, len(d2) - 60) >= 25
+    chat = [
+        {
+            "role": "assistant",
+            "speaker": "Marlene",
+            "move": {"dialogue": d1},
+        }
+    ]
+    is_dup, reason = is_duplicate_dialogue(
+        speaker="Marlene", dialogue=d2, chat_history=chat
+    )
+    assert is_dup is True
+    assert "overlap" in reason.lower()
+
+
+def test_is_duplicate_dialogue_allows_short_substring_inside_long_line() -> None:
+    """Embedded phrase too small a fraction of longer line — not duplicate."""
+    short = "b" * 40
+    long_line = ("a" * 50) + short + ("c" * 80)
+    assert len(short) >= 40
+    assert short in long_line
+    assert len(short) / len(long_line) < 0.65
+    chat = [
+        {
+            "role": "assistant",
+            "speaker": "Marlene",
+            "move": {"dialogue": long_line},
+        }
+    ]
+    is_dup, _reason = is_duplicate_dialogue(
+        speaker="Marlene", dialogue=short, chat_history=chat
+    )
+    assert is_dup is False
+
+
+def test_is_duplicate_dialogue_rejects_near_full_substring_reuse() -> None:
+    # Fuzzy substring runs only when both sides exceed the long-text threshold (>60).
+    short = "c" * 65
+    long_line = short + " tail"
+    assert len(short) >= 40
+    assert len(short) / len(long_line) >= 0.65
+    assert len(short) > 60 and len(long_line) > 60
+    chat = [
+        {
+            "role": "assistant",
+            "speaker": "Marlene",
+            "move": {"dialogue": long_line},
+        }
+    ]
+    is_dup, reason = is_duplicate_dialogue(
+        speaker="Marlene", dialogue=short, chat_history=chat
+    )
+    assert is_dup is True
+    assert "structure" in reason.lower()
+
+
+def test_is_duplicate_content_allows_shared_prefix_with_short_remainders() -> None:
+    common = "p" * 50
+    c1 = common + "q" * 10
+    c2 = common + "r" * 10
+    chat = [{"role": "assistant", "content": c1}]
+    is_dup, _reason = is_duplicate_content(c2, chat)
+    assert is_dup is False
+
+
 def test_validate_bot_response_rejects_duplicate_dialogue_even_if_action_differs() -> (
     None
 ):
@@ -731,6 +1028,156 @@ def test_validate_bot_response_rejects_duplicate_dialogue_even_if_action_differs
     assert reason.startswith("[DUPLICATE]")
 
 
+def test_validate_bot_response_pipeline_order_duplicate_before_character_drift() -> None:
+    """Quality/repetition runs before identity/drift; duplicate dialogue wins first."""
+    prior_dialogue = (
+        "This is duplicate dialogue text that is long enough for the duplicate check "
+        "to run and match exactly between turns without being skipped."
+    )
+    chat_history = [
+        {
+            "role": "assistant",
+            "speaker": "Marlene",
+            "content": "Rendered.",
+            "move": {"action": "prior beat", "dialogue": prior_dialogue},
+        }
+    ]
+    is_valid, reason = validate_bot_response(
+        content="Marlene's eyes narrowed with contempt while she spoke.",
+        speaker="Marlene",
+        user_name="Kizzie",
+        chat_history=chat_history,
+        move={
+            "action": "stares down the room",
+            "dialogue": prior_dialogue,
+            "motivation": {},
+        },
+        scene_state={},
+    )
+    assert is_valid is False
+    assert reason.startswith("[DUPLICATE]")
+    assert "[CHARACTER_DRIFT]" not in reason
+
+
+def test_validate_bot_response_pipeline_order_duplicate_before_scene_presence() -> None:
+    """Quality/repetition runs before scene-truth; duplicate dialogue wins first."""
+    prior_dialogue = (
+        "Repeated line for duplicate detection that is long enough to qualify "
+        "and must match the new move dialogue byte-for-byte after normalization."
+    )
+    chat_history = [
+        {
+            "role": "assistant",
+            "speaker": "Celina",
+            "content": "Earlier render.",
+            "move": {"action": "prior", "dialogue": prior_dialogue},
+        }
+    ]
+    is_valid, reason = validate_bot_response(
+        content="Celina studies the door.",
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=chat_history,
+        move={
+            "action": "mutters that Ayame isn't here anymore",
+            "dialogue": prior_dialogue,
+            "motivation": {
+                "goal": "misdirect",
+                "tactic": "false claim",
+                "emotional_driver": "guarded focus",
+                "risk_level": "medium",
+            },
+        },
+        scene_state={
+            "character_presence_constraints": {
+                "Celina": "must_remain",
+                "Ayame": "must_remain",
+            },
+            "role_assignments": {"Celina": "guard", "Ayame": "host"},
+        },
+    )
+    assert is_valid is False
+    assert reason.startswith("[DUPLICATE]")
+    assert "[SCENE_PRESENCE]" not in reason
+
+
+def test_validate_bot_response_drifts_measured_voice_with_high_intensity_dialogue() -> None:
+    dialogue = (
+        "I need you to listen very carefully because none of this is optional any more "
+        "and I will not repeat myself again under any circumstances here!!!"
+    )
+    is_valid, reason = validate_bot_response(
+        content=dialogue,
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=[],
+        state=CharacterState(
+            name="Celina",
+            voice_profile={"tone": "measured", "delivery": "calm and controlled"},
+        ),
+        move={
+            "action": "steps forward with rigid posture",
+            "dialogue": dialogue,
+            "motivation": {"goal": "assert control", "tactic": "command"},
+        },
+        scene_state={},
+    )
+    assert is_valid is False
+    assert reason.startswith("[CHARACTER_DRIFT]")
+    assert "voice profile" in reason.lower()
+
+
+def test_validate_bot_response_allows_intense_short_dialogue_without_voice_marker_family() -> None:
+    """No recognized voice/speech marker family → voice drift check does not run."""
+    dialogue = "LEAVE NOW!!!"
+    is_valid, reason = validate_bot_response(
+        content=dialogue,
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=[],
+        state=CharacterState(
+            name="Celina",
+            voice_profile={},
+            speech_fingerprint={},
+        ),
+        move={
+            "action": "shouts",
+            "dialogue": dialogue,
+            "motivation": {"goal": "clear the room", "tactic": "shout"},
+        },
+        scene_state={},
+    )
+    assert is_valid is True
+    assert reason == ""
+
+
+def test_validate_bot_response_drifts_guarded_reaction_with_rant_tactic() -> None:
+    is_valid, reason = validate_bot_response(
+        content="She lets the rant spill out in one breath.",
+        speaker="Celina",
+        user_name="Alex",
+        chat_history=[],
+        state=CharacterState(
+            name="Celina",
+            reaction_profile={"under_pressure": "guarded, controlled, narrows focus"},
+        ),
+        move={
+            "action": "paces and vents loudly",
+            "dialogue": "Fine. You want the truth spelled out in every ugly detail.",
+            "motivation": {
+                "goal": "vent frustration",
+                "tactic": "rant at length without filtering",
+                "emotional_driver": "bitter anger",
+                "risk_level": "medium",
+            },
+        },
+        scene_state={},
+    )
+    assert is_valid is False
+    assert reason.startswith("[CHARACTER_DRIFT]")
+    assert "reaction profile" in reason.lower()
+
+
 def test_validate_bot_response_allows_soft_reaction_style_variation() -> None:
     is_valid, reason = validate_bot_response(
         content=(
@@ -752,7 +1199,7 @@ def test_validate_bot_response_allows_soft_reaction_style_variation() -> None:
             "dialogue": "Good. Keep moving. The faster you're dry, the less likely I'll have to haul your ass to a doctor.",
             "motivation": {
                 "goal": "ensure the clothing change is completed efficiently to prevent illness while maintaining a facade of irritation",
-                "tactic": "offer gruff encouragement masked as a practical threat, using the turned posture to grant a sliver of privacy without dropping vigilance",
+                "tactic": "offer gruff encouragement masked as a practical threat, using the turned posture to allow a sliver of privacy without dropping vigilance",
                 "emotional_driver": "protective urgency channeled into controlled, efficient oversight",
                 "risk_level": "low",
             },

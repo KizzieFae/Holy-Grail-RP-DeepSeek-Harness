@@ -5,6 +5,7 @@ from turn_runner_audit import refresh_audit_summary_report_if_enabled
 from turn_runner_turn import execute_character_turn
 from turn_runner_updates import apply_successful_turn_updates
 from orchestration_helpers import resolve_continuation_override_actor
+from response_validation_selection import eligible_agent_keys_for_present_characters
 
 
 async def run_character_turns(
@@ -52,7 +53,7 @@ async def run_character_turns(
     assess_narrator_render_semantics_fn: Callable[
         ..., Awaitable[dict[str, Any] | None]
     ],
-    record_character_memories_fn: Callable[[str, dict[str, Any], dict[str, Any]], None],
+    record_character_memories_fn: Callable[..., None],
     sync_orchestration_state_from_continuity_fn: Callable[[], None],
     refresh_audit_summary_report_fn: Callable[[], None],
     reset_agents_fn: Callable[..., Awaitable[None]],
@@ -134,13 +135,16 @@ async def run_character_turns(
                     continuity_manager, "scene_state", None
                 )
                 if continuity_scene_state is not None:
-                    eligible_participants = [
-                        name
-                        for name in getattr(
-                            continuity_scene_state, "present_characters", []
-                        )
-                        if name in char_names
-                    ]
+                    eligible_participants = eligible_agent_keys_for_present_characters(
+                        list(
+                            getattr(
+                                continuity_scene_state, "present_characters", []
+                            )
+                            or []
+                        ),
+                        char_names,
+                        display_name_for_key=get_character_display_name_fn,
+                    )
                 elif isinstance(
                     orchestration_state.get("scene_state", {}), dict
                 ) and isinstance(
@@ -149,13 +153,16 @@ async def run_character_turns(
                     ),
                     list,
                 ):
-                    eligible_participants = [
-                        name
-                        for name in orchestration_state.get("scene_state", {}).get(
-                            "present_characters", []
-                        )
-                        if name in char_names
-                    ]
+                    eligible_participants = eligible_agent_keys_for_present_characters(
+                        list(
+                            orchestration_state.get("scene_state", {}).get(
+                                "present_characters", []
+                            )
+                            or []
+                        ),
+                        char_names,
+                        display_name_for_key=get_character_display_name_fn,
+                    )
                 offstage_list: list[str] = []
                 if continuity_scene_state is not None:
                     offstage_list = list(

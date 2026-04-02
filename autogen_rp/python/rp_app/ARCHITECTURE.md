@@ -78,6 +78,10 @@ Tracks per-character:
 - Character-specific interpretation summaries of scene events
 - Relationship states
 
+**Prompt assembly note:** Identity and relationship text for character prompts comes from **`CharacterState.to_prompt_identity_context`**. Episodic list formatting (**`character_memory_summary`**, **`recent_observations`**) is owned by **`memory_layer.retrieval`** and composed into a single **`state_context`** string in **`app_turn_prompting.build_character_turn_prompt`** via **`build_character_state_context_for_prompt`**, then passed unchanged into **`prompt_builders.build_character_turn_prompt`**. See **`autogen_rp/docs/architecture.md`** for the full `state_context` contract and fallback-vs-memory invariant.
+
+Commit-time episodic writes are owned by **`memory_layer`** (facade → writes → storage); observer lines are perception-filtered at write time (`perception_audibility`). **`ContinuityManager`** remains authoritative for scene/issue/event truth—do not conflate it with per-character episodic prompt text.
+
 ### 2. Structured Output Format
 
 Characters now return:

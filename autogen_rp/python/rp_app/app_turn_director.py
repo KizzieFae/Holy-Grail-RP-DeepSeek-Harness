@@ -1,7 +1,13 @@
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from autogen_agentchat.messages import TextMessage
+
+from semantic_validation import (
+    filter_selection_issues_for_human_log,
+    substitute_agent_keys_with_display_names,
+)
 
 from audit_instrumentation import log_audit_exception
 from beat_shift_state import (
@@ -65,6 +71,7 @@ async def choose_next_actor(
     validate_turn_selection_decision_fn,
     assess_turn_selection_decision_semantics_fn,
     reconcile_turn_selection_issues_fn,
+    get_character_display_name_fn: Callable[[str], str],
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -75,6 +82,19 @@ async def choose_next_actor(
     director_spotlight_history_limit: int,
 ):
     enforce_must_remain_presence_fn()
+
+    def _actor_label_for_selector(actor_key: str) -> str:
+        if not (actor_key or "").strip():
+            return actor_key
+        label = str(get_character_display_name_fn(actor_key) or "").strip()
+        return label if label else actor_key
+
+    def _reason_text_for_human_logs(reason: str) -> str:
+        return substitute_agent_keys_with_display_names(
+            str(reason or ""),
+            participant_names,
+            get_character_display_name_fn,
+        )
 
     if available_actors is None:
         raise ValueError(
@@ -102,7 +122,7 @@ async def choose_next_actor(
             "reason": "Forced by direct address routing.",
         }
         st_module.session_state["selector_decisions"].append(
-            f"Director override to addressed character: {forced_speaker}"
+            f"Director override to addressed character: {_actor_label_for_selector(forced_speaker)}"
         )
         return decision
 
@@ -114,7 +134,7 @@ async def choose_next_actor(
             "reason": "Forced by continuation override.",
         }
         st_module.session_state["selector_decisions"].append(
-            f"Director override to continuation owner: {continuation_override_actor}"
+            f"Director override to continuation owner: {_actor_label_for_selector(continuation_override_actor)}"
         )
         return decision
 
@@ -377,9 +397,17 @@ async def choose_next_actor(
             "environment_event": "",
             "tension_shift": "",
             "reason": f"Fallback selection after director parse failure: {error}",
+            "source": "fallback",
         }
 
-    turn_selection_issues = validate_turn_selection_decision_fn(
+    pending_forced = st_module.session_state.get("pending_forced_speaker")
+    pending_forced_str = (
+        pending_forced if isinstance(pending_forced, str) and pending_forced.strip() else None
+    )
+    offstage_raw = scene_state_for_prompt.get("offstage_characters", [])
+    offstage_list = offstage_raw if isinstance(offstage_raw, list) else None
+
+    deterministic_turn_selection_issues = validate_turn_selection_decision_fn(
         decision,
         participant_names,
         available_actors,
@@ -387,6 +415,12 @@ async def choose_next_actor(
         orchestration_state.get("spotlight_history", [])[
             -director_spotlight_history_limit:
         ],
+        pending_forced_speaker=pending_forced_str,
+        forced_speaker_consumed=bool(
+            st_module.session_state.get("forced_speaker_consumed", False)
+        ),
+        continuation_override_actor=continuation_override_actor,
+        offstage_characters=offstage_list,
     )
     semantic_turn_selection_assessment = (
         await assess_turn_selection_decision_semantics_fn(
@@ -404,13 +438,18 @@ async def choose_next_actor(
             beat_shift_active=beat_shift_active,
         )
     )
-    turn_selection_issues = reconcile_turn_selection_issues_fn(
-        turn_selection_issues,
+    reconciled_turn_selection_issues = reconcile_turn_selection_issues_fn(
+        deterministic_turn_selection_issues,
         semantic_turn_selection_assessment,
     )
-    if turn_selection_issues:
+    human_turn_selection_issues = filter_selection_issues_for_human_log(
+        base_issues=deterministic_turn_selection_issues,
+        reconciled_issues=reconciled_turn_selection_issues,
+        semantic_assessment=semantic_turn_selection_assessment,
+    )
+    if human_turn_selection_issues:
         decision["reason"] = (
-            f"{decision.get('reason', '')} | Validation: {'; '.join(turn_selection_issues)}"
+            f"{decision.get('reason', '')} | Validation: {'; '.join(human_turn_selection_issues)}"
         ).strip(" |")
 
     if st_module.session_state.get("progression_enforcement_disabled"):
@@ -442,6 +481,10 @@ async def choose_next_actor(
         decision["reason"] = (
             f"{decision.get('reason', '')} | Progression override from {original_actor} to {progression_override_actor}"
         ).strip(" |")
+
+    decision["reason"] = _reason_text_for_human_logs(
+        str(decision.get("reason", "") or "")
+    )
 
     if is_audit_enabled_fn():
         try:
@@ -488,7 +531,7 @@ async def choose_next_actor(
                         ),
                     },
                     "anti_regression_advisory": dict(anti_blob),
-                    "turn_selection_issues": turn_selection_issues,
+                    "turn_selection_issues": reconciled_turn_selection_issues,
                     "semantic_turn_selection_assessment": semantic_turn_selection_assessment
                     or {},
                     "summary_blocks": summary_block_audit,
@@ -505,6 +548,7 @@ async def choose_next_actor(
             )
 
     st_module.session_state["selector_decisions"].append(
-        f"Director selected {decision['next_actor']}: {decision.get('reason', '')}"
+        f"Director selected {_actor_label_for_selector(str(decision.get('next_actor') or ''))}: "
+        f"{decision.get('reason', '')}"
     )
     return decision

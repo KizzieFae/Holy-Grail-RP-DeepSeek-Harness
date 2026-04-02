@@ -159,7 +159,12 @@ def is_pending_beat_shift_active(orchestration_state: dict[str, Any]) -> bool:
 
 
 def build_character_beat_shift_suffix(*, trigger_text: str) -> str:
-    """Soft Phase-3 instructions appended to the character system prompt."""
+    """Soft Phase-3 instructions appended to the character system prompt.
+
+    ``trigger_text`` must already be the **per-character, perception-filtered**
+    player line (see ``player_text_for_character_viewer``). Callers must not pass
+    the raw global user trigger here.
+    """
     lines = [
         "",
         "BEAT SHIFT (ACTIVE):",
