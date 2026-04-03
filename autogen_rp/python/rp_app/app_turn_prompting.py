@@ -25,10 +25,15 @@ from prompt_derivations import (
     build_priority_ladder,
     select_relationship_prompt_names,
 )
+from episodic_memory_cache import get_or_compile_episodic_candidate_pool
+from episodic_memory_inputs import continuity_sequences_for_episodic
+from episodic_memory_prompt import is_episodic_memory_enabled
+from episodic_memory_select import select_episodic_items_for_character
 from retrieved_context_select import (
     get_index_path_from_env,
     load_authored_retrieval_index,
     log_retrieval_if_active,
+    merge_retrieved_context_with_episodic,
     select_retrieved_context_bundle,
 )
 from runtime_packets import format_retrieved_context_for_prompt
@@ -329,16 +334,40 @@ def build_character_turn_prompt(
         get_character_display_name_fn=get_character_display_name_fn,
     )
     _retrieval_index = load_authored_retrieval_index(get_index_path_from_env())
-    retrieved_bundle = select_retrieved_context_bundle(
-        index=_retrieval_index,
-        char_name=char_name,
-        scene_template_id=str(scene_state.get("scene_template_id", "") or ""),
-        relationship_focus_names=tuple(sorted(relationship_focus_names)),
-        cast=tuple(sorted(cast)),
-        dedup_against_texts=_prompt_dedup_texts_for_retrieval(
-            scene_state, canon_anchors, summary_blocks
-        ),
+    _dedup_texts = _prompt_dedup_texts_for_retrieval(
+        scene_state, canon_anchors, summary_blocks
     )
+    _tid = str(scene_state.get("scene_template_id", "") or "")
+    _rf = tuple(sorted(relationship_focus_names))
+    _cast_t = tuple(sorted(cast))
+    if is_episodic_memory_enabled() and continuity_manager is not None:
+        pe, itp, isu, ca = continuity_sequences_for_episodic(continuity_manager)
+        pool = get_or_compile_episodic_candidate_pool(
+            st_module.session_state,
+            public_events=pe,
+            interpretations=itp,
+            issues=isu,
+            canon_anchors=ca,
+        )
+        episodic_selected = select_episodic_items_for_character(pool, char_name)
+        retrieved_bundle = merge_retrieved_context_with_episodic(
+            index=_retrieval_index,
+            char_name=char_name,
+            scene_template_id=_tid,
+            relationship_focus_names=_rf,
+            cast=_cast_t,
+            dedup_against_texts=_dedup_texts,
+            episodic_items=episodic_selected,
+        )
+    else:
+        retrieved_bundle = select_retrieved_context_bundle(
+            index=_retrieval_index,
+            char_name=char_name,
+            scene_template_id=_tid,
+            relationship_focus_names=_rf,
+            cast=_cast_t,
+            dedup_against_texts=_dedup_texts,
+        )
     log_retrieval_if_active(retrieved_bundle, char_name=char_name)
     retrieved_context_section = format_retrieved_context_for_prompt(retrieved_bundle)
 

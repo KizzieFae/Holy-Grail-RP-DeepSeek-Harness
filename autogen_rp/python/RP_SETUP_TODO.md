@@ -330,7 +330,8 @@ Sources:
 - [ ] Bounded **vector** retrieval into this bundle
 - [ ] **Graph** DB / graph-backed retrieval
 - [ ] **Transcript** ingestion as retrieval source
-- [ ] **Dynamic memory** / episodic pipeline feeding `RetrievedContextBundle`
+
+**Bounded deterministic episodic recall** is **Phase 3.2** (complete — see below), not Phase 2. Phase 2 remains **authored index only**.
 
 ## Evaluation
 
@@ -367,10 +368,50 @@ Sources:
 
 ### Explicitly **not** Phase 3.1 (still deferred)
 
-- [ ] Episodic / **memory** retrieval into this bundle
 - [ ] **Vector** / embedding retrieval
 - [ ] **Graph** DB retrieval
 - [ ] **Transcript** ingestion
+
+(Episodic / bounded runtime recall → **Phase 3.2**, complete below.)
+
+---
+
+# Phase 3.2 — Bounded episodic memory (**complete — closure**)
+
+**Scope:** Deterministic compile from explicit continuity rows only (`PublicEvent`, `CharacterInterpretation`, `IssueState`, `CanonAnchor` where visibility resolves); **no** LLM in compile/select; **no** continuity writes; merged into the **same** `RetrievedContextBundle` lane as authored items; feature flag **`RP_EPISODIC_MEMORY`**. **Not** vector, graph, or transcript-wide indexing.
+
+## Completion checklist
+
+- [x] **`episodic_memory_compile.py`** — template-only summaries; visibility gating; anchor/event dedup (`canon_impact`)
+- [x] **`episodic_memory_cache.py`** — deterministic snapshot key; `session_state` pool cache; `clear_episodic_pool_cache`
+- [x] **`episodic_memory_select.py`** — per-character filter from shared pool; episodic-only subcaps
+- [x] **`episodic_memory_inputs.py`** — read-only continuity sequences for compile/cache
+- [x] **`episodic_memory_prompt.py`** — `is_episodic_memory_enabled()` (flag)
+- [x] **`retrieved_context_select.py`** — `merge_retrieved_context_with_episodic`; single global cap on merged list; **authored wins** on priority tie; stable survivor order
+- [x] **`app_turn_prompting.py`** — single path: flag on → merge; flag off → authored-only (no cache touch)
+- [x] Packet shadow: merged retrieval only in `retrieved` / `retrieved_context_section` (no separate episodic prompt block)
+- [x] **Tests:** `test_episodic_memory_*.py`, `test_retrieved_context_merge.py`, `test_app_turn_prompting_episodic.py`; extended retrieval/packet tests
+
+### Follow-up (hardening — **not** blockers)
+
+- [ ] Run **full** `pytest tests/` to completion in CI or locally when convenient (optional; some environments hit long-running LLM/deep-sim tests)
+- [ ] Optional: explicit **continuity no-mutation** unit test around prompt assembly + episodic path
+
+### Explicitly **not** Phase 3.2 (still deferred)
+
+- [ ] **Vector** / embedding retrieval for memory
+- [ ] **Graph** schema / graph-backed memory
+- [ ] **Transcript-wide** memory indexing or corpus ingestion
+
+---
+
+## Phase 3.2 validation reference (closure)
+
+- **Flag-off regression:** With `RP_EPISODIC_MEMORY` unset/false, `merge_retrieved_context_with_episodic` is not used; prompts match authored-only path (`test_episodic_disabled_no_episodic_line_in_retrieved`, plus `test_prompt_perception_integration`, `test_retrieved_context`, `test_runtime_packets`, `test_prompt_builders`).
+- **Flag-on visibility & merge:** Eligible character sees `episodic:*` lines inside `RETRIEVED REFERENCE MATERIAL`; non-`known_by` character does not (`test_app_turn_prompting_episodic`). Merge/cap/tie: `test_retrieved_context_merge`.
+- **Shadow parity:** `RP_PACKET_SHADOW_COMPARE=1` + targeted suite (e.g. episodic + retrieval + perception + builders + packets) → **green** (e.g. **67 passed** in closure run); no structured bundle mismatches.
+- **Targeted suite counts (example closure run):** **67** tests (episodic + merge + retrieved + runtime_packets + perception + builders + `test_episodic_memory_*`); additional regression cluster e.g. **84** (`test_turn_runner_updates`, `test_continuity_manager`, `test_scene_grounding`, `test_offstage_presence`).
+- **Full-suite completion:** optional hardening (see follow-up above); not required for Phase 3.2 sign-off.
 
 ---
 
@@ -446,10 +487,10 @@ Packets do NOT change behavior.
 
 # Summary
 
-**Completed through Phase 3.1** (packet seam + authored retrieval + manifest compile + lore lane + subcaps).
+**Completed through Phase 3.2** (packet seam + authored retrieval + manifest compile + lore lane + subcaps + **bounded deterministic episodic** merged retrieved lane).
 
 Next (when ready):
 
-→ **Phase 3 (vector/graph)** — still deferred
+→ **Phase 3 (vector/graph / transcript-wide ingestion)** — still deferred
 
-Do not treat Phase 3.1 as completion of vector, graph, transcript, or dynamic-memory retrieval.
+Do not treat Phase 3.2 as completion of **vector**, **graph**, or **transcript-wide** memory. Episodic here is **continuity-backed, capped, non-authoritative** retrieval only.

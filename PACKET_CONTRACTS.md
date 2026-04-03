@@ -50,7 +50,7 @@ This packet **does not** replace the continuity manager’s full internal state;
 
 ## RetrievedContextBundle
 
-**Intent:** **Per-turn**, **optional**, **bounded** context — **inputs to packaging**, not to validation truth. **Phase 2–3.1 (current):** snippets come from a **deterministic authored JSON index** (`retrieved_context_select.py`, env `RP_RETRIEVED_CONTEXT_INDEX`). **Phase 3.1:** index is **`schema_version` 2** with optional **`lore`**; JSON is produced offline by **`authored_index_compile.compile_authored_index`** from a **manifest** (CLI: `autogen_rp/python/scripts/compile_authored_retrieval_index.py`). **Authored ingestion only** — not vector/graph/transcript/memory. **Later:** vector/graph/search pipelines may feed the same bundle shape.
+**Intent:** **Per-turn**, **optional**, **bounded** context — **inputs to packaging**, not to validation truth. **Phase 2–3.1:** snippets from a **deterministic authored JSON index** (`retrieved_context_select.py`, env `RP_RETRIEVED_CONTEXT_INDEX`). **Phase 3.1:** index is **`schema_version` 2** with optional **`lore`**; JSON is produced offline by **`authored_index_compile.compile_authored_index`** from a **manifest** (CLI: `autogen_rp/python/scripts/compile_authored_retrieval_index.py`). **Phase 3.2:** when **`RP_EPISODIC_MEMORY`** is enabled, **bounded episodic** lines (compiled from explicit continuity rows only) are **merged** into the same bundle lane (`source_kind` prefixes such as `episodic:`), under a **single global cap** with authored winning ties — still **not** vector/graph/transcript-wide. **Later:** vector/graph/search pipelines may feed the same bundle shape.
 
 **Placement:** formatted block is injected **after** scene grounding and **before** `CURRENT SCENE STATE` in `prompt_builders.build_character_turn_prompt`, with explicit **non-authoritative** instructions. Selection runs **only** in `app_turn_prompting.build_character_turn_prompt`.
 
@@ -75,4 +75,4 @@ Typical contents (all subject to token budget and relevance gates):
 2. Introduce a `packet_builder` (or equivalent) in packaging that produces these structures; runtime reads packets instead of assembling ad hoc.
 3. Wire retrieval outputs only into `RetrievedContextBundle`.
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 0.5 packet seam, Phase 2 retrieval, Phase 3.1 authored compile).
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 0.5 packet seam, Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).

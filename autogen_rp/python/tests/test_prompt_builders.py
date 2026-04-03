@@ -309,6 +309,48 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
     assert "PLAYER NAME: Alex" in prompt
 
 
+def test_build_character_turn_prompt_retrieved_includes_authored_before_episodic_before_scene_state() -> (
+    None
+):
+    retrieved = (
+        "RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):\n"
+        "x\n\nAUTHORED_RETRIEVED_MARKER\n\n"
+        "[eref | episodic:public_event]\nEPISODIC_MARKER\n\n"
+    )
+    prompt = build_character_turn_prompt(
+        char_name="Ayame",
+        user_name="Alex",
+        trigger_text="T",
+        director_decision={"next_actor": "Ayame", "reason": "r"},
+        scene_state={"location": "workshop", "present_characters": ["Ayame"]},
+        scene_template_context={"template_id": "", "premise": "", "location_entry_slots": []},
+        my_scene_role={"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""},
+        scene_roles=[
+            {"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""}
+        ],
+        recent_moves=[],
+        recent_dialogue=[],
+        active_issues=[],
+        priority_ladder=[],
+        summary_blocks=[],
+        recent_public_events=[],
+        cross_session_user_memories=[],
+        cross_session_world_facts=[],
+        user_preferences=[],
+        my_interpretations=[],
+        canon_anchors=[],
+        state_context="",
+        cast=[],
+        scene_grounding_section="GROUND_HERE",
+        retrieved_context_section=retrieved,
+    )
+    g = prompt.index("GROUND_HERE")
+    a = prompt.index("AUTHORED_RETRIEVED_MARKER")
+    e = prompt.index("EPISODIC_MARKER")
+    c = prompt.index("CURRENT SCENE STATE:")
+    assert g < a < e < c
+
+
 def test_build_priority_ladder_places_active_issue_after_owned_line() -> None:
     ladder = build_priority_ladder(
         state=CharacterState(
