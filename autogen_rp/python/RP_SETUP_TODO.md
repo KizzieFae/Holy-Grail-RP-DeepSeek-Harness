@@ -350,15 +350,43 @@ Sources:
 
 ---
 
-# Phase 3.1 — Authored ingestion expansion (**complete**)
+# Phase 3.1 — Authored ingestion expansion (**complete — closure**)
 
-**Scope:** manifest-driven compile → `schema_version` 2 index (`lore` bucket); selector: template → setup → **world_lore** (template/tag match) → **self** (`character_local` only) → relationship; **per-`source_kind` subcaps** (trim: priority DESC, `source_ref` ASC, drop from end); **lore truncation at selection** only (full text in compiled JSON); **no** vectors, graph, transcript, memory.
+**Scope (authored ingestion only):** manifest-driven compile → **`schema_version` 2** compiled index (**`lore`** lane); deterministic selector; **no** memory, vectors, graph DB, or transcript ingestion.
 
-- [x] `authored_index_compile.py` + `compile_authored_index(manifest, output)`
-- [x] CLI `scripts/compile_authored_retrieval_index.py`
-- [x] Lossy compile; OOC blocklist (`ooc_notes_for_model` never compiled); no `compiled_at` in output
-- [x] `load_authored_retrieval_index` + `select_retrieved_context_bundle` extended
-- [x] Tests: `tests/test_authored_index_compile.py`, fixtures under `tests/fixtures/compile_*`, extended `test_retrieved_context.py`
+## Completion checklist
+
+- [x] **Manifest-driven authored compiler** (`authored_index_compile.py`, `compile_authored_index(manifest, output)`)
+- [x] **Schema v2 compiled index** (`schema_version` 2, `version`; buckets: `characters`, `templates`, `setup_notes`, **`lore`**)
+- [x] **Lore lane** loaded and selected (`world_lore`, template/tag match only)
+- [x] **Deterministic selector ordering** updated: template → setup → lore → self (`character_local` only) → relationship
+- [x] **Source-kind subcaps** enforced (trim: priority DESC, `source_ref` ASC, keep head / drop from end)
+- [x] **Lore truncation at selection time** only (full lore text stored in compiled JSON)
+- [x] **Tests:** `tests/test_authored_index_compile.py`, `tests/fixtures/compile_*`, extended `tests/test_retrieved_context.py`
+- [x] **Shadow validation:** `RP_PACKET_SHADOW_COMPARE=1` on `test_prompt_perception_integration` — no structured mismatches
+
+### Explicitly **not** Phase 3.1 (still deferred)
+
+- [ ] Episodic / **memory** retrieval into this bundle
+- [ ] **Vector** / embedding retrieval
+- [ ] **Graph** DB retrieval
+- [ ] **Transcript** ingestion
+
+---
+
+## Phase 3.1 validation reference (closure)
+
+- **Targeted pytest:**  
+  `cd autogen_rp/python && pytest tests/test_authored_index_compile.py tests/test_retrieved_context.py tests/test_runtime_packets.py tests/test_prompt_perception_integration.py -q` → **green** (e.g. **26+ passed** in closure run).
+- **Shadow parity:**  
+  `RP_PACKET_SHADOW_COMPARE=1` + `pytest tests/test_prompt_perception_integration.py -q` → **green**, no `rp_app.packet_shadow` mismatch warnings.
+- **Example compile command** (with `cwd` = `autogen_rp/python`):
+
+  `python scripts/compile_authored_retrieval_index.py --manifest tests/fixtures/compile_sample/manifest.json --output path/to/compiled_index.json`
+
+- **Example selection result** (`tests/fixtures/retrieved_context_index_test.json`, `char_name=A`, `scene_template_id=tpl1`, relationship focus `B`, cast `B`):  
+  `source_ref` order:  
+  `tpl1:atmosphere` → `setup:tpl1` → `lore:fixture:long_trunc` → `A:dup_hash` → `A:self` → `B:rel`
 
 ---
 
