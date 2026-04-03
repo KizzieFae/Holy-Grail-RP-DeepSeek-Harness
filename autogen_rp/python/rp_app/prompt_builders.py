@@ -87,6 +87,7 @@ def build_character_turn_prompt(
     state_context: str,
     cast: list[str],
     scene_grounding_section: str = "",
+    retrieved_context_section: str = "",
 ) -> str:
     actionable_statuses = {"active", "escalating", ""}
     active_issue_payload: list[dict[str, Any]] = []
@@ -122,6 +123,8 @@ def build_character_turn_prompt(
 
     grounding = str(scene_grounding_section or "").strip()
     grounding_block = f"{grounding}\n\n" if grounding else ""
+    retrieved = str(retrieved_context_section or "").strip()
+    retrieved_block = f"{retrieved}\n\n" if retrieved else ""
 
     positive_sleeping_assignment_example = json.dumps(
         {
@@ -158,7 +161,7 @@ def build_character_turn_prompt(
 
     return f"""You are taking your next turn in an ongoing roleplay scene.
 
-{offstage_header}{grounding_block}CURRENT SCENE STATE:
+{offstage_header}{grounding_block}{retrieved_block}CURRENT SCENE STATE:
 {json.dumps(scene_state, ensure_ascii=False, indent=2)}
 
 SCENE TEMPLATE:

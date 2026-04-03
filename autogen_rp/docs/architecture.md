@@ -108,10 +108,11 @@ For **production** character turn prompts:
 
 **Streamlit** (`app.py` → `app_turn_helpers` → `app_turn_prompting`) and **headless simulation** (`headless_scene_simulation` → same `turn_helpers.build_character_turn_prompt`) use this **same** spine. Unit tests may pass a synthetic `state_context` directly into `prompt_builders` to test template shape in isolation—that is not a second runtime path.
 
-## Runtime packet seam (Phase 0.5)
+## Runtime packet seam (Phase 0.5 + Phase 2 retrieval)
 
-**Purpose:** Introduce **read-only** runtime packets (`RuntimeScenePacket`, `RuntimeCharacterPacket`, `RetrievedContextBundle` stub) and **structured** parity checks **without** changing prompts or behavior.
+**Purpose:** Introduce **read-only** runtime packets (`RuntimeScenePacket`, `RuntimeCharacterPacket`, `RetrievedContextBundle`) and **structured** parity checks. Phase 0.5 added shadow compare with no behavior change; **Phase 2** wires **authored-index-only** retrieval (still non-authoritative).
 
-- **Shadow-only:** Default **off**. Set **`RP_PACKET_SHADOW_COMPARE`** to `1`, `true`, or `yes` to build packets alongside live assembly in **`app_turn_prompting.build_character_turn_prompt`** and compare live vs packet-derived **prompt-input bundles** (kwargs shape for `prompt_builders.build_character_turn_prompt`). Mismatch → **`rp_app.packet_shadow`** warning + optional debug string diff. **No** writes to continuity, character state, or prompt inputs.
-- **Authority:** **Continuity** and **`CharacterState`** stay authoritative; packets are **projections** only (`runtime_packets.py`).
+- **Phase 2 retrieval:** **JSON index** (`RP_RETRIEVED_CONTEXT_INDEX`), **deterministic** selection in **`retrieved_context_select.py`**, invoked **only** from **`app_turn_prompting.build_character_turn_prompt`**. Bundle attaches to **`RuntimeCharacterPacket.retrieved`**; prompt section is **after** scene grounding and **before** `CURRENT SCENE STATE`, with explicit **non-authoritative** wording. **Not** vector/graph retrieval or transcript/dynamic-memory sourcing in this phase.
+- **Shadow-only (compare):** Default **off**. Set **`RP_PACKET_SHADOW_COMPARE`** to `1`, `true`, or `yes` to build packets alongside live assembly in **`app_turn_prompting.build_character_turn_prompt`** and compare live vs packet-derived **prompt-input bundles** (kwargs shape for `prompt_builders.build_character_turn_prompt`), including **`retrieved_context_section`**. Mismatch → **`rp_app.packet_shadow`** warning + optional debug string diff. **No** writes to continuity or character state from shadow compare.
+- **Authority:** **Continuity** and **`CharacterState`** stay authoritative; packets and retrieved snippets are **projections / assistive reference** only (`runtime_packets.py`, `retrieved_context_select.py`).
 - **Implementation note:** **`prompt_derivations.py`** holds shared relationship ordering and priority-ladder logic used by both the live path and packet reconstruction (avoids circular imports).

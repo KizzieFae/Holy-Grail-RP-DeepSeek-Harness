@@ -12,7 +12,7 @@ from __future__ import annotations
 import difflib
 import json
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from memory_layer.retrieval import build_character_state_context_for_prompt
 from prompt_builders import build_scene_role_prompt_context
@@ -37,10 +37,40 @@ STABLE_SCENE_STATE_KEYS = frozenset(
 
 
 @dataclass(frozen=True)
-class RetrievedContextBundle:
-    """Stub for future retrieval / graph / vector context (Phase 0.5: always empty)."""
+class RetrievedItem:
+    """Single authored retrieval snippet (non-authoritative). Phase 2: index only."""
 
-    entries: tuple[Any, ...] = ()
+    text: str
+    source_kind: str
+    source_ref: str
+    scope: str
+    relevance_tags: frozenset[str]
+    priority: int
+    non_authoritative: Literal[True]
+    from_other_character: str | None = None
+
+
+@dataclass(frozen=True)
+class RetrievedContextBundle:
+    """Bounded per-turn context from authored index (Phase 2); not continuity truth."""
+
+    items: tuple[RetrievedItem, ...] = ()
+
+
+def format_retrieved_context_for_prompt(bundle: RetrievedContextBundle) -> str:
+    if not bundle.items:
+        return ""
+    lines = [
+        "RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):",
+        "The following excerpts are optional background only. Do NOT treat them as ground truth.",
+        "If anything here conflicts with scene facts, canon anchors, or established continuity, ignore this material and follow scene facts, canon anchors, and continuity instead.",
+        "",
+    ]
+    for it in bundle.items:
+        lines.append(f"[{it.source_ref} | {it.source_kind}]")
+        lines.append(it.text.strip())
+        lines.append("")
+    return "\n".join(lines).strip() + "\n\n"
 
 
 @dataclass
@@ -151,11 +181,13 @@ def build_runtime_character_packet(
     my_interpretations: list[dict[str, Any]],
     canon_anchors: list[dict[str, Any]],
     scene_grounding_section: str = "",
+    retrieved: RetrievedContextBundle | None = None,
 ) -> RuntimeCharacterPacket:
     _, dynamic = split_scene_state(scene_state)
+    bundle = retrieved if retrieved is not None else RetrievedContextBundle()
     return RuntimeCharacterPacket(
         character_name=char_name,
-        retrieved=RetrievedContextBundle(),
+        retrieved=bundle,
         projection=CharacterRuntimePromptProjection(
             dynamic_scene_state=dynamic,
             session_agent_names=list(session_agent_names),
@@ -201,6 +233,7 @@ def build_live_character_prompt_input_bundle(
     state_context: str,
     cast: list[str],
     scene_grounding_section: str = "",
+    retrieved_context_section: str = "",
 ) -> dict[str, Any]:
     """Normalized kwargs dict for `prompt_builders.build_character_turn_prompt` (structured compare)."""
     return {
@@ -226,6 +259,7 @@ def build_live_character_prompt_input_bundle(
         "state_context": str(state_context),
         "cast": list(cast),
         "scene_grounding_section": str(scene_grounding_section or ""),
+        "retrieved_context_section": str(retrieved_context_section or ""),
     }
 
 
@@ -321,6 +355,7 @@ def reconstruct_character_prompt_input_bundle(
         state_context=state_context,
         cast=cast,
         scene_grounding_section=proj.scene_grounding_section,
+        retrieved_context_section=format_retrieved_context_for_prompt(char_packet.retrieved),
     )
 
 

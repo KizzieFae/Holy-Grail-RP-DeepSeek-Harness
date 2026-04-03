@@ -50,7 +50,9 @@ This packet **does not** replace the continuity manager’s full internal state;
 
 ## RetrievedContextBundle
 
-**Intent:** **Per-turn**, **optional**, **bounded** semantic context from vector/graph/search pipelines — **inputs to packaging**, not to validation truth.
+**Intent:** **Per-turn**, **optional**, **bounded** context — **inputs to packaging**, not to validation truth. **Phase 2 (current):** snippets come from a **deterministic authored JSON index** only (`retrieved_context_select.py`, env `RP_RETRIEVED_CONTEXT_INDEX`). **Later:** vector/graph/search pipelines may feed the same bundle shape.
+
+**Phase 2 placement:** formatted block is injected **after** scene grounding and **before** `CURRENT SCENE STATE` in `prompt_builders.build_character_turn_prompt`, with explicit **non-authoritative** instructions. Selection runs **only** in `app_turn_prompting.build_character_turn_prompt`.
 
 Typical contents (all subject to token budget and relevance gates):
 
@@ -73,4 +75,4 @@ Typical contents (all subject to token budget and relevance gates):
 2. Introduce a `packet_builder` (or equivalent) in packaging that produces these structures; runtime reads packets instead of assembling ad hoc.
 3. Wire retrieval outputs only into `RetrievedContextBundle`.
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` §0.5.
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 0.5 packet seam, Phase 2 retrieval).

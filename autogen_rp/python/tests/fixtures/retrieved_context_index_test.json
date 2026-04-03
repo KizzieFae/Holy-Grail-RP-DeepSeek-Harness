@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "characters": {
+    "A": [
+      {
+        "source_ref": "A:self",
+        "text": "Self voice line for A.",
+        "priority": 10,
+        "source_kind": "character_card",
+        "scope": "character_local",
+        "relevance_tags": [],
+        "relationship_relevant": false
+      },
+      {
+        "source_ref": "A:dup_hash",
+        "text": "Same text hash target.",
+        "priority": 99,
+        "source_kind": "character_card",
+        "scope": "character_local",
+        "relevance_tags": [],
+        "relationship_relevant": false
+      }
+    ],
+    "B": [
+      {
+        "source_ref": "B:rel",
+        "text": "Relationship blurb about A.",
+        "priority": 50,
+        "source_kind": "character_card",
+        "scope": "character_local",
+        "relevance_tags": [],
+        "relationship_relevant": true
+      },
+      {
+        "source_ref": "B:general",
+        "text": "General B card not for retrieval.",
+        "priority": 100,
+        "source_kind": "character_card",
+        "scope": "character_local",
+        "relevance_tags": [],
+        "relationship_relevant": false
+      }
+    ]
+  },
+  "templates": {
+    "tpl1": [
+      {
+        "source_ref": "tpl1:atmosphere",
+        "text": "Template atmosphere for tpl1.",
+        "priority": 20,
+        "source_kind": "scene_template",
+        "scope": "scene_shared",
+        "relevance_tags": [],
+        "relationship_relevant": false
+      }
+    ]
+  },
+  "setup_notes": [
+    {
+      "template_id": "tpl1",
+      "source_ref": "setup:tpl1",
+      "text": "Setup note for tpl1.",
+      "priority": 5,
+      "source_kind": "setup_note",
+      "scope": "scene_shared",
+      "relevance_tags": []
+    }
+  ]
+}

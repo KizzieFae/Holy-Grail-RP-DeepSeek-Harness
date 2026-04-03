@@ -25,6 +25,36 @@ from prompt_derivations import (
     build_priority_ladder,
     select_relationship_prompt_names,
 )
+from retrieved_context_select import (
+    get_index_path_from_env,
+    load_authored_retrieval_index,
+    log_retrieval_if_active,
+    select_retrieved_context_bundle,
+)
+from runtime_packets import format_retrieved_context_for_prompt
+
+
+def _prompt_dedup_texts_for_retrieval(
+    scene_state: dict[str, Any],
+    canon_anchors: list[dict[str, Any]],
+    summary_blocks: list[dict[str, Any]],
+) -> tuple[str, ...]:
+    out: list[str] = []
+    for key in ("scene_premise", "opening_description"):
+        v = scene_state.get(key)
+        if v is not None and str(v).strip():
+            out.append(str(v))
+    for ca in canon_anchors:
+        if isinstance(ca, dict):
+            for v in ca.values():
+                if isinstance(v, str) and v.strip():
+                    out.append(v)
+    for sb in summary_blocks:
+        if isinstance(sb, dict):
+            for v in sb.values():
+                if isinstance(v, str) and v.strip():
+                    out.append(v)
+    return tuple(out)
 
 
 def _packet_shadow_compare_enabled() -> bool:
@@ -298,6 +328,20 @@ def build_character_turn_prompt(
         user_display_name=user_name,
         get_character_display_name_fn=get_character_display_name_fn,
     )
+    _retrieval_index = load_authored_retrieval_index(get_index_path_from_env())
+    retrieved_bundle = select_retrieved_context_bundle(
+        index=_retrieval_index,
+        char_name=char_name,
+        scene_template_id=str(scene_state.get("scene_template_id", "") or ""),
+        relationship_focus_names=tuple(sorted(relationship_focus_names)),
+        cast=tuple(sorted(cast)),
+        dedup_against_texts=_prompt_dedup_texts_for_retrieval(
+            scene_state, canon_anchors, summary_blocks
+        ),
+    )
+    log_retrieval_if_active(retrieved_bundle, char_name=char_name)
+    retrieved_context_section = format_retrieved_context_for_prompt(retrieved_bundle)
+
     if _packet_shadow_compare_enabled():
         from runtime_packets import (
             build_live_character_prompt_input_bundle,
@@ -336,6 +380,7 @@ def build_character_turn_prompt(
             state_context=state_context,
             cast=cast,
             scene_grounding_section=grounding_section,
+            retrieved_context_section=retrieved_context_section,
         )
         scene_packet = build_runtime_scene_packet(
             scene_state,
@@ -359,6 +404,7 @@ def build_character_turn_prompt(
             my_interpretations=my_interpretations,
             canon_anchors=canon_anchors,
             scene_grounding_section=grounding_section,
+            retrieved=retrieved_bundle,
         )
         recon_bundle = reconstruct_character_prompt_input_bundle(
             scene_packet,
@@ -399,6 +445,7 @@ def build_character_turn_prompt(
         state_context=state_context,
         cast=cast,
         scene_grounding_section=grounding_section,
+        retrieved_context_section=retrieved_context_section,
     )
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)
     if beat_shift_active_here:

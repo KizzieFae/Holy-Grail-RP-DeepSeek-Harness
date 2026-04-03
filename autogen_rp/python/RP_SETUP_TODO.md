@@ -100,7 +100,7 @@ The Phase 0 blocker **character prompt knowledge leak from global player trigger
 
 - [x] RuntimeScenePacket introduced (authored/stable scene slice only)
 - [x] RuntimeCharacterPacket introduced (dynamic per-character slice)
-- [x] RetrievedContextBundle stub added (no retrieval yet)
+- [x] RetrievedContextBundle introduced (Phase 0.5: empty stub; **Phase 2:** typed items + authored retrieval — see Phase 2)
 - [x] Shadow-mode packet build integrated into prompt assembly
 - [x] Structured prompt-input bundle reconstruction implemented
 - [x] Structured comparison (live vs packet-derived) implemented
@@ -180,10 +180,10 @@ Runtime:
 
 ---
 
-### RetrievedContextBundle (stub)
+### RetrievedContextBundle
 
-- [ ] Exists but empty
-- [ ] No retrieval logic yet
+- [x] Phase 0.5: stub (empty `RetrievedContextBundle`)
+- [x] Phase 2: `RetrievedItem` + bounded bundle; see **Phase 2** below
 
 ---
 
@@ -305,23 +305,48 @@ Sources:
 
 ---
 
-# Phase 2 — Retrieval (Controlled Introduction)
+# Phase 2 — Retrieval (Controlled Introduction) (**complete — authored index only**)
 
 ## HARD GATE
 
-- Phase 0 + 0.5 complete
+- [x] Phase 0 + 0.5 complete
 
-## Implementation
+## Implementation (this phase: **authored JSON index**; no graph / vector / transcript mining)
 
-- [ ] Add bounded vector retrieval
-- [ ] Inject into RetrievedContextBundle only
-- [ ] Do NOT affect continuity or validation
+- [x] `RetrievedContextBundle` implemented (`RetrievedItem`, caps, dedup: `source_ref` → text hash → substring)
+- [x] Deterministic authored retrieval selection (`retrieved_context_select.py`)
+- [x] Relationship retrieval constraints: **relationship-tagged** chunks from other characters only; **≤1 item per other**; lower priority than self/template/setup lane; caps drop cross-character before primary
+- [x] Session **opener** excluded from retrieval (no opener items in bundle)
+- [x] Bundle integrated through **`RuntimeCharacterPacket.retrieved`**; selection runs **once** per turn in **`app_turn_prompting`** only (`build_runtime_character_packet(..., retrieved=...)` — **no** selector in `runtime_packets`)
+- [x] Prompt injection: **after** scene grounding, **before** `CURRENT SCENE STATE` (therefore before recent transcript); **non-authoritative** contract in `format_retrieved_context_for_prompt` / `prompt_builders.build_character_turn_prompt`
+- [x] Shadow parity extended: `retrieved_context_section` in live + reconstructed prompt-input bundles (`RP_PACKET_SHADOW_COMPARE`)
+- [x] Retrieval logging when bundle non-empty: `rp_app.retrieved_context` (item count, char count, ordered `source_ref` list)
+- [x] Env `RP_RETRIEVED_CONTEXT_INDEX`; missing/unset path → **no-op** (prompt shape matches Phase 1 aside from optional empty kwargs default)
+- [x] Does **not** affect continuity writes or validation truth; retrieval is assistive only
+- [x] Tests: `tests/test_retrieved_context.py`, fixture `tests/fixtures/retrieved_context_index_test.json`
+
+### Explicitly **not** Phase 2 (deferred)
+
+- [ ] Bounded **vector** retrieval into this bundle
+- [ ] **Graph** DB / graph-backed retrieval
+- [ ] **Transcript** ingestion as retrieval source
+- [ ] **Dynamic memory** / episodic pipeline feeding `RetrievedContextBundle`
 
 ## Evaluation
 
-- [ ] Measure usefulness
-- [ ] Monitor token cost
-- [ ] Confirm no corruption
+- [x] Validation completed for Phase 2 scope (see **Phase 2 validation reference** below)
+- [ ] Measure usefulness (ongoing / later phases)
+- [ ] Monitor token cost at scale (later)
+
+---
+
+## Phase 2 validation reference (closure)
+
+- **Prompt placement correction:** Retrieved context is inserted **immediately after** the scene grounding block and **before** `CURRENT SCENE STATE` (and thus before **RECENT SCENE TRANSCRIPT**). An earlier implementation placed it only adjacent to the transcript section; that was corrected to match the agreed hierarchy.
+- **Tests (full tree, no key-presence-only failure):**  
+  `pytest tests/ -q -k "not test_deepseek_api_key_exists"` → **green** (e.g. **375 passed**, **25 skipped**, **1 deselected**) with **`DEEPSEEK_API_KEY` unset**.
+- **RP-focused subset:** `test_retrieved_context`, `test_runtime_packets`, `test_prompt_builders`, `test_prompt_perception_integration`, `test_offstage_presence`, `test_rp_app_rules` → **green**.
+- **Full-suite slowness / apparent hang:** When **`DEEPSEEK_API_KEY` is set**, live DeepSeek / integration / LLM-marked tests run and dominate runtime. **Unrelated** to Phase 2 retrieval.
 
 ---
 
@@ -381,12 +406,10 @@ Packets do NOT change behavior.
 
 # Summary
 
-Current phase:
+**Completed through Phase 2** (packet seam + authored retrieval via `RetrievedContextBundle`).
 
-→ Phase 0 (Validation)
+Next (when ready):
 
-Next:
+→ **Phase 3** — ingestion / vector / graph (deferred; not started)
 
-→ Phase 0.5 (Packet seam)
-
-Do NOT proceed to retrieval or ingestion until both are complete and validated.
+Do not treat Phase 2 as completion of vector, graph, transcript, or dynamic-memory retrieval.
