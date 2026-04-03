@@ -1,5 +1,6 @@
 {
-  "version": 1,
+  "schema_version": 2,
+  "version": 2,
   "characters": {
     "A": [
       {
@@ -18,6 +19,15 @@
         "source_kind": "character_card",
         "scope": "character_local",
         "relevance_tags": [],
+        "relationship_relevant": false
+      },
+      {
+        "source_ref": "A:wrong_scope",
+        "text": "Non-local scope must not appear in self lane.",
+        "priority": 100,
+        "source_kind": "character_card",
+        "scope": "scene_shared",
+        "relevance_tags": ["template:tpl1"],
         "relationship_relevant": false
       }
     ],
@@ -64,6 +74,44 @@
       "source_kind": "setup_note",
       "scope": "scene_shared",
       "relevance_tags": []
+    }
+  ],
+  "lore": [
+    {
+      "source_ref": "lore:fixture:long_trunc",
+      "text": "LORE_LONG_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "priority": 16,
+      "source_kind": "lore",
+      "scope": "world_lore",
+      "relevance_tags": ["template:tpl1"],
+      "relationship_relevant": false
+    },
+    {
+      "source_ref": "lore:fixture:match_tpl1",
+      "text": "World lore line tied to tpl1.",
+      "priority": 15,
+      "source_kind": "lore",
+      "scope": "world_lore",
+      "relevance_tags": ["template:tpl1"],
+      "relationship_relevant": false
+    },
+    {
+      "source_ref": "lore:fixture:other_template",
+      "text": "Lore for another template only.",
+      "priority": 99,
+      "source_kind": "lore",
+      "scope": "world_lore",
+      "relevance_tags": ["template:other_tpl"],
+      "relationship_relevant": false
+    },
+    {
+      "source_ref": "lore:fixture:second_tpl1",
+      "text": "Second lore row for tpl1 for subcap test.",
+      "priority": 14,
+      "source_kind": "lore",
+      "scope": "world_lore",
+      "relevance_tags": ["template:tpl1"],
+      "relationship_relevant": false
     }
   ]
 }

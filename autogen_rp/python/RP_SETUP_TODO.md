@@ -350,7 +350,19 @@ Sources:
 
 ---
 
-# Phase 3 — Ingestion System (Deferred)
+# Phase 3.1 — Authored ingestion expansion (**complete**)
+
+**Scope:** manifest-driven compile → `schema_version` 2 index (`lore` bucket); selector: template → setup → **world_lore** (template/tag match) → **self** (`character_local` only) → relationship; **per-`source_kind` subcaps** (trim: priority DESC, `source_ref` ASC, drop from end); **lore truncation at selection** only (full text in compiled JSON); **no** vectors, graph, transcript, memory.
+
+- [x] `authored_index_compile.py` + `compile_authored_index(manifest, output)`
+- [x] CLI `scripts/compile_authored_retrieval_index.py`
+- [x] Lossy compile; OOC blocklist (`ooc_notes_for_model` never compiled); no `compiled_at` in output
+- [x] `load_authored_retrieval_index` + `select_retrieved_context_bundle` extended
+- [x] Tests: `tests/test_authored_index_compile.py`, fixtures under `tests/fixtures/compile_*`, extended `test_retrieved_context.py`
+
+---
+
+# Phase 3 — Ingestion System (vector / graph — still deferred)
 
 ## HARD GATE
 
@@ -406,10 +418,10 @@ Packets do NOT change behavior.
 
 # Summary
 
-**Completed through Phase 2** (packet seam + authored retrieval via `RetrievedContextBundle`).
+**Completed through Phase 3.1** (packet seam + authored retrieval + manifest compile + lore lane + subcaps).
 
 Next (when ready):
 
-→ **Phase 3** — ingestion / vector / graph (deferred; not started)
+→ **Phase 3 (vector/graph)** — still deferred
 
-Do not treat Phase 2 as completion of vector, graph, transcript, or dynamic-memory retrieval.
+Do not treat Phase 3.1 as completion of vector, graph, transcript, or dynamic-memory retrieval.

@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "type": "character",
+      "path": "char.json",
+      "character_id": "X",
+      "allowlist_keys": ["voice_notes", "ooc_notes_for_model"]
+    }
+  ]
+}

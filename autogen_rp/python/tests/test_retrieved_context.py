@@ -298,3 +298,81 @@ def test_shadow_bundle_parity_with_retrieved() -> None:
 def test_empty_index_path_returns_none() -> None:
     assert load_authored_retrieval_index(None) is None
     assert load_authored_retrieval_index("") is None
+
+
+def test_primary_lane_ordering_tpl_setup_lore_self_cross() -> None:
+    idx = _index()
+    b = select_retrieved_context_bundle(
+        index=idx,
+        char_name="A",
+        scene_template_id="tpl1",
+        relationship_focus_names=("B",),
+        cast=("B",),
+        dedup_against_texts=(),
+    )
+    refs = [i.source_ref for i in b.items]
+    assert refs == [
+        "tpl1:atmosphere",
+        "setup:tpl1",
+        "lore:fixture:long_trunc",
+        "A:dup_hash",
+        "A:self",
+        "B:rel",
+    ]
+
+
+def test_lore_excluded_when_template_mismatch() -> None:
+    idx = _index()
+    b = select_retrieved_context_bundle(
+        index=idx,
+        char_name="A",
+        scene_template_id="tpl1",
+        relationship_focus_names=(),
+        cast=(),
+        dedup_against_texts=(),
+    )
+    refs = [i.source_ref for i in b.items]
+    assert "lore:fixture:other_template" not in refs
+
+
+def test_lore_subcap_keeps_highest_priority() -> None:
+    idx = _index()
+    b = select_retrieved_context_bundle(
+        index=idx,
+        char_name="A",
+        scene_template_id="tpl1",
+        relationship_focus_names=(),
+        cast=(),
+        dedup_against_texts=(),
+    )
+    lore_refs = [i.source_ref for i in b.items if i.source_kind == "lore"]
+    assert lore_refs == ["lore:fixture:long_trunc"]
+
+
+def test_lore_truncated_at_selection_not_compile(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("retrieved_context_select.MAX_KIND_LORE_CHARS", 40)
+    idx = _index()
+    b = select_retrieved_context_bundle(
+        index=idx,
+        char_name="A",
+        scene_template_id="tpl1",
+        relationship_focus_names=(),
+        cast=(),
+        dedup_against_texts=(),
+    )
+    lore = next(i for i in b.items if i.source_kind == "lore")
+    assert len(lore.text) <= 40
+    assert lore.text.endswith("…")
+
+
+def test_character_non_local_scope_excluded_from_self_lane() -> None:
+    idx = _index()
+    b = select_retrieved_context_bundle(
+        index=idx,
+        char_name="A",
+        scene_template_id="tpl1",
+        relationship_focus_names=(),
+        cast=(),
+        dedup_against_texts=(),
+    )
+    assert "A:wrong_scope" not in [i.source_ref for i in b.items]

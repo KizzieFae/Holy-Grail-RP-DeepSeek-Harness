@@ -1,0 +1,10 @@
+{
+  "chunks": [
+    {
+      "local_id": "gate",
+      "text": "The house seal overrides city law at the threshold.",
+      "relevance_tags": ["template:tpl_x"],
+      "priority": 22
+    }
+  ]
+}

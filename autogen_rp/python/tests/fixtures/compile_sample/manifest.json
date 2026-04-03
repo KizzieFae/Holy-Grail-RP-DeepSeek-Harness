@@ -1,0 +1,27 @@
+{
+  "entries": [
+    {
+      "type": "character",
+      "path": "characters/zeta.json",
+      "character_id": "Zeta",
+      "allowlist_keys": ["voice_notes"]
+    },
+    {
+      "type": "template",
+      "path": "templates/tpl_x.json",
+      "template_id": "tpl_x",
+      "allowlist_keys": ["tone"]
+    },
+    {
+      "type": "setup",
+      "path": "setup/stakes.json",
+      "template_id": "tpl_x",
+      "allowlist_keys": ["stakes"]
+    },
+    {
+      "type": "lore_file",
+      "path": "lore/world.json",
+      "default_tags": ["faction:test"]
+    }
+  ]
+}

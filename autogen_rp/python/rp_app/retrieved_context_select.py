@@ -21,6 +21,13 @@ _LOG = logging.getLogger("rp_app.retrieved_context")
 MAX_RETRIEVED_ITEMS = 8
 MAX_RETRIEVED_CHARS = 8000
 
+# Phase 3.1: per-source_kind subcaps (trim: priority DESC, source_ref ASC, keep head).
+MAX_KIND_LORE_ITEMS = 1
+MAX_KIND_LORE_CHARS = 600
+MAX_KIND_SCENE_TEMPLATE_ITEMS = 3
+MAX_KIND_SETUP_NOTE_ITEMS = 2
+MAX_KIND_CHARACTER_CARD_ITEMS = 4
+
 NonAuthoritative = Literal[True]
 
 
@@ -49,9 +56,11 @@ class AuthoredIndexChunk:
 @dataclass(frozen=True)
 class AuthoredRetrievalIndex:
     version: int
+    schema_version: int
     characters: dict[str, tuple[AuthoredIndexChunk, ...]]
     templates: dict[str, tuple[AuthoredIndexChunk, ...]]
     setup_notes: tuple[AuthoredIndexChunk, ...]
+    lore: tuple[AuthoredIndexChunk, ...]
 
 
 def load_authored_retrieval_index(path: str | None) -> AuthoredRetrievalIndex | None:
@@ -69,6 +78,7 @@ def load_authored_retrieval_index(path: str | None) -> AuthoredRetrievalIndex | 
     if not isinstance(raw, dict):
         return None
     ver = int(raw.get("version", 1))
+    schema_ver = int(raw.get("schema_version", 1))
     chars: dict[str, tuple[AuthoredIndexChunk, ...]] = {}
     raw_chars = raw.get("characters") or {}
     if isinstance(raw_chars, dict):
@@ -99,11 +109,21 @@ def load_authored_retrieval_index(path: str | None) -> AuthoredRetrievalIndex | 
             if ch:
                 setup_list.append(ch)
     setup_list.sort(key=lambda x: x.source_ref)
+    lore_list: list[AuthoredIndexChunk] = []
+    raw_lore = raw.get("lore") or []
+    if isinstance(raw_lore, list):
+        for c in raw_lore:
+            ch = _parse_chunk(c)
+            if ch:
+                lore_list.append(ch)
+    lore_list.sort(key=lambda x: x.source_ref)
     return AuthoredRetrievalIndex(
         version=ver,
+        schema_version=schema_ver,
         characters=chars,
         templates=templates,
         setup_notes=tuple(setup_list),
+        lore=tuple(lore_list),
     )
 
 
@@ -134,13 +154,27 @@ def _parse_chunk(c: Any) -> AuthoredIndexChunk | None:
     )
 
 
+def _truncate_lore_for_prompt(text: str) -> str:
+    """Selection-time only; compiled index stores full lore text."""
+    m = MAX_KIND_LORE_CHARS
+    if len(text) <= m:
+        return text
+    if m <= 1:
+        return "…"
+    return text[: m - 1] + "…"
+
+
 def _chunk_to_item(
     ch: AuthoredIndexChunk,
     *,
     from_other_character: str | None,
+    apply_lore_truncation: bool = False,
 ) -> RetrievedItem:
+    text = ch.text
+    if apply_lore_truncation and ch.source_kind == "lore":
+        text = _truncate_lore_for_prompt(text)
     return RetrievedItem(
-        text=ch.text,
+        text=text,
         source_kind=ch.source_kind,
         source_ref=ch.source_ref,
         scope=ch.scope,
@@ -148,6 +182,42 @@ def _chunk_to_item(
         priority=ch.priority,
         non_authoritative=True,
         from_other_character=from_other_character,
+    )
+
+
+def _lore_matches_scene(ch: AuthoredIndexChunk, tid: str) -> bool:
+    if ch.source_kind != "lore" or ch.scope != "world_lore":
+        return False
+    if not tid.strip():
+        return False
+    if ch.template_id == tid:
+        return True
+    return f"template:{tid}" in ch.relevance_tags
+
+
+def _trim_kind_subcap(items: list[RetrievedItem], cap: int) -> list[RetrievedItem]:
+    if cap <= 0:
+        return []
+    s = sorted(items, key=lambda x: (-x.priority, x.source_ref))
+    return s[:cap]
+
+
+def _apply_source_kind_subcaps(items: list[RetrievedItem]) -> list[RetrievedItem]:
+    lore_l = [x for x in items if x.source_kind == "lore"]
+    tpl_l = [x for x in items if x.source_kind == "scene_template"]
+    setup_l = [x for x in items if x.source_kind == "setup_note"]
+    self_l = [
+        x
+        for x in items
+        if x.source_kind == "character_card" and x.from_other_character is None
+    ]
+    cross_l = [x for x in items if x.from_other_character is not None]
+    return (
+        _trim_kind_subcap(tpl_l, MAX_KIND_SCENE_TEMPLATE_ITEMS)
+        + _trim_kind_subcap(setup_l, MAX_KIND_SETUP_NOTE_ITEMS)
+        + _trim_kind_subcap(lore_l, MAX_KIND_LORE_ITEMS)
+        + _trim_kind_subcap(self_l, MAX_KIND_CHARACTER_CARD_ITEMS)
+        + cross_l
     )
 
 
@@ -246,17 +316,31 @@ def select_retrieved_context_bundle(
 
     if tid and tid in index.templates:
         for ch in index.templates[tid]:
-            primary_ordered.append(_chunk_to_item(ch, from_other_character=None))
-
-    self_chunks = index.characters.get(char_name, ())
-    for ch in self_chunks:
-        primary_ordered.append(_chunk_to_item(ch, from_other_character=None))
+            primary_ordered.append(
+                _chunk_to_item(ch, from_other_character=None, apply_lore_truncation=False)
+            )
 
     if tid:
         for note in index.setup_notes:
             match = note.template_id == tid or f"template:{tid}" in note.relevance_tags
             if match:
-                primary_ordered.append(_chunk_to_item(note, from_other_character=None))
+                primary_ordered.append(
+                    _chunk_to_item(note, from_other_character=None, apply_lore_truncation=False)
+                )
+
+    for ch in index.lore:
+        if _lore_matches_scene(ch, tid):
+            primary_ordered.append(
+                _chunk_to_item(ch, from_other_character=None, apply_lore_truncation=True)
+            )
+
+    self_chunks = index.characters.get(char_name, ())
+    for ch in self_chunks:
+        if ch.scope != "character_local":
+            continue
+        primary_ordered.append(
+            _chunk_to_item(ch, from_other_character=None, apply_lore_truncation=False)
+        )
 
     cross_ordered: list[RetrievedItem] = []
     eligible_others = sorted(
@@ -268,13 +352,16 @@ def select_retrieved_context_bundle(
         if not rel:
             continue
         best = max(rel, key=lambda c: (c.priority, c.source_ref))
-        cross_ordered.append(_chunk_to_item(best, from_other_character=other))
+        cross_ordered.append(
+            _chunk_to_item(best, from_other_character=other, apply_lore_truncation=False)
+        )
 
     ordered = primary_ordered + cross_ordered
 
     deduped = _dedupe_items(ordered)
     filtered = _dedupe_against_authority(deduped, list(dedup_against_texts))
-    capped = _apply_caps(filtered)
+    subcapped = _apply_source_kind_subcaps(filtered)
+    capped = _apply_caps(subcapped)
     return RetrievedContextBundle(items=tuple(capped))
 
 
