@@ -90,6 +90,8 @@ A **shadow-mode** seam introduces **read-only** **`RuntimeScenePacket`** (author
 - **Where built:** `app_turn_prompting.build_character_turn_prompt` builds packets **in parallel** with live assembly when env **`RP_PACKET_SHADOW_COMPARE`** is `1`, `true`, or `yes` (default **off**). Shadow mode adds **no** extra mutations of continuity or character state—only logging on structured mismatch (`rp_app.packet_shadow`); optional string diff at debug level.
 - **Validation:** **Structured** comparison of the kwargs-shaped bundle for `prompt_builders.build_character_turn_prompt` (live vs reconstructed from packets + the same `CharacterState` instance), including **`retrieved_context_section`**. Helpers live in **`runtime_packets.py`**; shared ladder/relationship logic in **`prompt_derivations.py`** avoids circular imports.
 
+**Phase 3.4 — canonical knowledge (contract only):** The repo-root **`CANONICAL_KNOWLEDGE_MODEL.md`** defines the **canonical knowledge entry** contract, **authority ceilings** by `knowledge_type`, **`subject_scope`** resolution rules, and **future** graph/vector/agent retrieval compatibility. Phase 3.4 is **spec + static ingestion contract**; it **does not** require changing the runtime retrieval selector, merge behavior, or packet APIs unless a later phase explicitly schedules that work.
+
 ### 2. Structured Output Format
 
 Characters now return:

@@ -2,7 +2,7 @@
 
 **Location:** Every module named below lives in **`autogen_rp/python/rp_app/`** (unless a path is written out explicitly).
 
-Quick map for **where to change what**. Architecture rules: [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md), [autogen_rp/docs/architecture.md](./autogen_rp/docs/architecture.md), and [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).
+Quick map for **where to change what**. Architecture rules: [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md), [autogen_rp/docs/architecture.md](./autogen_rp/docs/architecture.md), and [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Canonical knowledge:** [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) — offline compile (`schema_version` 2 default, 3 additive canonical fields); **runtime** still reads only legacy projection fields on chunks; continuity authoritative.
 
 **Constraints (recurring):** Keep `app.py` thin. Do not fix continuity/orchestration bugs by bloating Director prompts. Preserve `must_remain` as **structural presence**, not “must speak every turn.”
 
@@ -91,8 +91,9 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `episodic_memory_select.py` | Per-character filter + episodic-only subcaps from shared pool | `app_turn_prompting` | |
 | `episodic_memory_inputs.py` | Read-only flatten/sort of continuity sequences for compile/cache | `app_turn_prompting` | |
 | `episodic_memory_prompt.py` | `is_episodic_memory_enabled()` → `RP_EPISODIC_MEMORY` | `app_turn_prompting` | |
-| `authored_index_compile.py` | **Phase 3.1** offline `compile_authored_index`: manifest → `schema_version` 2 JSON with **`lore`** lane (lossy; no `compiled_at`; OOC blocklist) | `scripts/compile_authored_retrieval_index.py`, tests | **Authored ingestion only**; manifest-driven; no globs; not vector/graph/memory |
-| `scripts/compile_authored_retrieval_index.py` | CLI wrapper: `--manifest` / `--output` → `compile_authored_index` | `authored_index_compile` | Run from `autogen_rp/python`; writes index consumed by `RP_RETRIEVED_CONTEXT_INDEX` |
+| `authored_index_compile.py` | Offline `compile_authored_index`: manifest → **`schema_version` 2** (legacy chunks only, default) or **3** (canonical fields + same legacy projection); strict adapter coverage; `lore` lane; OOC blocklist | `canonical_compile_adapters`, `scripts/compile_authored_retrieval_index.py`, tests (`test_authored_index_compile`, fixtures `compile_sample`, `compile_realistic`) | **Pre-packaging** artifact; does not change retrieval selector/merge at runtime |
+| `canonical_compile_adapters.py` | Adapter registry: manifest entry type + JSON key path → `knowledge_type`, `authority_class`, `visibility`, **decomposition strategy**; unmapped → `lore_reference` / `reference_only` (**strict fallback**) | `authored_index_compile` | See implementation snapshot in [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) |
+| `scripts/compile_authored_retrieval_index.py` | CLI: `--manifest` / `--output`, **`--schema-version 2`** (default) or **`3`** | `authored_index_compile` | Example manifest: `data/retrieval/authored_manifest.example.json`; output → `RP_RETRIEVED_CONTEXT_INDEX` |
 | `app_turn_rendering.py` | Narrator render path | `model_client` | Preserve dialogue verbatim |
 | `app_turn_audit.py` | Turn-level audit helpers | `audit_logger*` | |
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile manifest-driven authored sources into retrieval index JSON (schema v2)."""
+"""Compile manifest-driven authored sources into retrieval index JSON (schema v2 or v3)."""
 
 from __future__ import annotations
 
@@ -20,8 +20,19 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--manifest", type=Path, required=True, help="Path to manifest.json")
     p.add_argument("--output", type=Path, required=True, help="Output compiled index path")
+    p.add_argument(
+        "--schema-version",
+        type=int,
+        choices=(2, 3),
+        default=2,
+        help="schema_version for output JSON (default: 2 legacy-only; 3 adds canonical fields)",
+    )
     args = p.parse_args()
-    stats = compile_authored_index(args.manifest.resolve(), args.output.resolve())
+    stats = compile_authored_index(
+        args.manifest.resolve(),
+        args.output.resolve(),
+        schema_version=args.schema_version,
+    )
     print(json.dumps(stats, indent=2))
     return 0
 

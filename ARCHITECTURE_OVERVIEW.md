@@ -6,8 +6,9 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  Ingestion (future)                                          │
-│  Source material → entities, relationships, events, stores   │
+│  Ingestion (static today at the packaging boundary edge)     │
+│  Authored JSON → offline canonical compile → index artifact  │
+│  (future: entities, relationships, graph/vector stores)      │
 └───────────────────────────────┬─────────────────────────────┘
                                 │ structured knowledge outputs
                                 ▼
@@ -28,7 +29,7 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
 
 ### Dependency direction
 
-- **Ingestion** does not call the live RP UI or turn loop. It produces **durable knowledge artifacts** consumable by packaging.
+- **Ingestion** does not call the live RP UI or turn loop. It produces **durable knowledge artifacts** consumable by packaging. **Today:** deterministic **offline** compile of authored sources to a JSON index (`authored_index_compile` / `compile_authored_retrieval_index`, `schema_version` 2 or 3) is the implemented slice; **runtime** behavior is unchanged—`retrieved_context_select` still consumes the **legacy** chunk fields only.
 - **Packaging** reads authoritative **runtime state** (from the continuity/orchestration side) and **retrieved** candidates; it does not replace continuity as source of truth for “what happened.” Future packaging should also include the **Scene Grounding** read model (settled scene facts for prompts — PRD §5.8).
 - **RP runtime** executes turns; it **updates** authoritative state and **logs** audits. Today it builds prompts largely from cards + continuity structures; tomorrow the same boundaries should consume **packets** at the packaging boundary.
 
@@ -65,6 +66,8 @@ Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architectu
 ## Future system (direction, not a rewrite yet)
 
 - **Cards** remain the practical source until ingestion + packaging land; the **packet contracts** describe the intended **runtime-facing** shape ([PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)).
+- **Phase 3.4 (canonical compile milestone):** [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) defines the contract; **offline** compile supports **`schema_version` 3** (canonical fields alongside legacy projection). This **does not** change runtime retrieval or merge—continuity and scene grounding remain authoritative; v3 is **opt-in** at compile time (`--schema-version 3`; CLI default remains **2**).
+- **Later:** Graph/vector stores and optional **request-driven retrieval** (e.g. a retrieval agent) must **conform** to that canonical envelope; agents may rank candidates but **do not** determine truth ([CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) §11).
 - **Packaging** becomes the single place that merges: stable identity, dynamic state, relationships, **retrieved** snippets, and scene-facing summaries—so the runtime does not grow ad-hoc retrieval logic.
 - **Ingestion** supplies compiled profiles and retrievable corpora; **runtime** stays deterministic where possible for orchestration and validation.
 
@@ -88,6 +91,7 @@ Prefer **continuity → scene grounding → orchestration → summaries → vali
 
 ## Related docs
 
+- [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) — Phase 3.4 canonical knowledge contract, authority/visibility, static ingestion boundaries, future retrieval compatibility
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — **Behavioral Validation Layer** (core architectural layer: scenarios, headless LLM runs, audits, metrics, baseline comparison)
 - [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) — diagnosis order and symptom routing
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet intent and field groupings

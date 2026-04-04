@@ -1,0 +1,101 @@
+{
+  "characters": {
+    "Zeta": [
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "cd41a037cfe3e92b98bdfb08aa95c5de09cf5efce29f6c761759e58c66f63c6f",
+        "knowledge_type": "voice_guidance",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Zeta:voice_notes",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Zeta"
+        },
+        "temporal_scope": {},
+        "text": "Speaks in fragments.",
+        "visibility": "character_scoped"
+      }
+    ]
+  },
+  "compile_metadata": {
+    "authority_clamps": 0,
+    "dense_caps": 0,
+    "fallback_uses": 0,
+    "schema_version_target": 3,
+    "warnings": []
+  },
+  "lore": [
+    {
+      "authority_class": "reference_only",
+      "knowledge_id": "afb783e597584d9b0645333e33d1360bec90629a97744a1b4b77c7f53b7e19cb",
+      "knowledge_type": "lore_reference",
+      "priority": 22,
+      "relationship_relevant": false,
+      "relevance_tags": [
+        "faction:test",
+        "template:tpl_x"
+      ],
+      "scope": "world_lore",
+      "source_kind": "lore",
+      "source_ref": "lore:world:gate",
+      "structured_payload": null,
+      "subject_scope": {},
+      "temporal_scope": {},
+      "text": "The house seal overrides city law at the threshold.",
+      "visibility": "public"
+    }
+  ],
+  "schema_version": 3,
+  "setup_notes": [
+    {
+      "authority_class": "setup_truth",
+      "knowledge_id": "40266ac090b2f110691da28102ea44234fba3f97df7c9f426a65671525636224",
+      "knowledge_type": "scene_setup_fact",
+      "priority": 35,
+      "relationship_relevant": false,
+      "relevance_tags": [
+        "template:tpl_x"
+      ],
+      "scope": "scene_shared",
+      "source_kind": "setup_note",
+      "source_ref": "setup:tpl_x:stakes",
+      "structured_payload": null,
+      "subject_scope": {
+        "template_id": "tpl_x"
+      },
+      "template_id": "tpl_x",
+      "temporal_scope": {},
+      "text": "Reputation is on the line.",
+      "visibility": "template_participants"
+    }
+  ],
+  "templates": {
+    "tpl_x": [
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "3b1fe9f6b804083a1f762062d94f4987d1214a2e2cc0cbf091c12be97937fb47",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:tpl_x"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:tpl_x:tone",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "tpl_x"
+        },
+        "temporal_scope": {},
+        "text": "Cold formal reception room.",
+        "visibility": "template_participants"
+      }
+    ]
+  },
+  "version": 3
+}

@@ -11,6 +11,7 @@ python/
 ├── data/
 │   ├── autogen_characters/     # character cards (+ optional opener JSON)
 │   ├── scene_templates/        # scene template definitions
+│   ├── retrieval/              # authored retrieval manifest example(s); compiled index path is env-defined
 │   └── sessions/               # persisted RP sessions (+ _session_index.json)
 └── rp_app/
     └── data/
@@ -42,6 +43,16 @@ python/
 **Read by:** `scene_template.py`, `scene_lifecycle_start.py`, prompts via `prompt_builders.py`.
 
 **Written by:** Designers / content; not mutated by session save.
+
+---
+
+## Authored retrieval manifest & compiled index (offline)
+
+**Manifest (author input):** Lists static sources (character paths, templates, lore files, optional `initial_message` entries) for the **offline** compiler. **Example:** `python/data/retrieval/authored_manifest.example.json` — copy and extend for a real build; paths are relative to the manifest file’s directory unless absolute.
+
+**Compiled index (artifact):** Produced by `python/scripts/compile_authored_retrieval_index.py` with **`--schema-version 2`** (default, legacy chunk shape only) or **`--schema-version 3`** (adds canonical fields per [CANONICAL_KNOWLEDGE_MODEL.md](../../CANONICAL_KNOWLEDGE_MODEL.md); **same** legacy fields the runtime reads). Not stored in-repo by default; set **`RP_RETRIEVED_CONTEXT_INDEX`** to the output JSON path when using authored retrieval.
+
+**Scope:** Pre-packaging **ingestion** only. Does **not** integrate vector/graph retrieval or change continuity authority.
 
 ---
 

@@ -1,0 +1,71 @@
+{
+  "entries": [
+    {
+      "type": "character",
+      "path": "../autogen_characters/ayame.json",
+      "character_id": "ayame",
+      "allowlist_keys": [
+        "name",
+        "description",
+        "personality",
+        "speaking_style",
+        "goals",
+        "medium_term_goal",
+        "core_goals",
+        "voice_profile",
+        "reaction_profile",
+        "speech_fingerprint",
+        "system_prompt",
+        "lore_facts"
+      ]
+    },
+    {
+      "type": "character",
+      "path": "../autogen_characters/celina.json",
+      "character_id": "celina",
+      "allowlist_keys": [
+        "name",
+        "description",
+        "personality",
+        "speaking_style",
+        "goals",
+        "medium_term_goal",
+        "core_goals",
+        "voice_profile",
+        "reaction_profile",
+        "speech_fingerprint",
+        "system_prompt",
+        "lore_facts"
+      ]
+    },
+    {
+      "type": "template",
+      "path": "../scene_templates/arkham_asylum_cell_intake.json",
+      "template_id": "arkham_asylum_cell_intake",
+      "allowlist_keys": [
+        "premise",
+        "opening_text",
+        "location_entry_slots",
+        "role_slots",
+        "initial_messages"
+      ]
+    },
+    {
+      "type": "template",
+      "path": "../scene_templates/ayame_household_entry_evaluation.json",
+      "template_id": "ayame_household_entry_evaluation",
+      "allowlist_keys": [
+        "premise",
+        "opening_text",
+        "location_entry_slots",
+        "role_slots",
+        "initial_messages"
+      ]
+    },
+    {
+      "type": "initial_message",
+      "path": "../scene_templates/arkham_asylum_cell_intake_initial_message.json",
+      "template_id": "arkham_asylum_cell_intake"
+    }
+  ]
+}

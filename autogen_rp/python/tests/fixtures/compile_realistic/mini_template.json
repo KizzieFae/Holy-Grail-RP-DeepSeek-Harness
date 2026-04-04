@@ -1,0 +1,29 @@
+{
+  "template_id": "mini_tpl",
+  "premise": "Controlled premise line.",
+  "opening_text": "Opening beat text.",
+  "location_entry_slots": [
+    "z_entry",
+    "a_entry"
+  ],
+  "role_slots": [
+    {
+      "role_name": "beta",
+      "required": false,
+      "presence_constraint": "flexible",
+      "authority": "medium"
+    },
+    {
+      "role_name": "alpha",
+      "required": true,
+      "presence_constraint": "must_remain",
+      "authority": "high"
+    }
+  ],
+  "initial_messages": [
+    {
+      "file": "mini_imsg.json",
+      "label": "Pointer only"
+    }
+  ]
+}

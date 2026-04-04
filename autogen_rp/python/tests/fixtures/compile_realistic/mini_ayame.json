@@ -1,0 +1,16 @@
+{
+  "name": "Mini Ayame",
+  "core_goals": [
+    "Second listed goal",
+    "First listed goal"
+  ],
+  "voice_profile": {
+    "speech_style": "soft authority",
+    "rhetorical_habits": ["habit_b", "habit_a"],
+    "formality": "high"
+  },
+  "lore_facts": [
+    "Fact two",
+    "Fact one"
+  ]
+}

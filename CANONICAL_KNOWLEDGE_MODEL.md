@@ -2,6 +2,19 @@
 
 Architectural specification for **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion**. This document defines the **canonical runtime knowledge contract** that all authored sources must compile into. It is **not** an implementation guide.
 
+**Phase 3.4 scope (documentation contract):** Finalize and maintain this **canonical contract** and the rules for **static ingestion** (offline compile from authored sources into canonical-shaped artifacts consumable by the existing pipeline). Phase 3.4 **does not**, by itself, require **runtime** or **retrieval-behavior** changes (selector logic, merge order, caps, env-gated paths, or packet APIs remain as implemented for Phases 2–3.2 unless a later phase explicitly schedules code work).
+
+### Current implementation snapshot (compile layer only)
+
+What exists in-repo today (no future design here):
+
+- **Offline compiler:** `autogen_rp/python/rp_app/authored_index_compile.py` — `compile_authored_index(manifest, output, schema_version=2|3)`. Default output remains **`schema_version` 2** (legacy chunk shape only). **`schema_version` 3** adds canonical primary fields (`knowledge_id`, `knowledge_type`, `authority_class`, `visibility`, `subject_scope`, optional `structured_payload` / `temporal_scope`) **alongside** the same legacy projection fields the runtime already reads; **runtime behavior is unchanged** whether the file is v2 or v3.
+- **`knowledge_id`:** Deterministic hash over `source_ref` + normalized chunk text + `knowledge_type` only — **excludes** `authority_class` and policy-volatile fields so the id stays stable if authority policy shifts.
+- **Adapter registry:** `autogen_rp/python/rp_app/canonical_compile_adapters.py` — table-driven `(manifest entry type, key_path)` → `knowledge_type`, `authority_class`, `visibility`, **decomposition strategy**. **Strict fallback:** unmapped keys → `lore_reference` + `reference_only` (with compile metadata warnings in v3).
+- **Decomposition strategies (fixed set):** `whole_value_single_row`, `one_row_per_string_list_item`, `nested_object_leaf_strings`, `role_slots_array_rows`, `emit_zero_chunks` — each manifest key path declares **exactly one** strategy.
+- **CLI:** `autogen_rp/python/scripts/compile_authored_retrieval_index.py` — `--schema-version 2` (default) or `3`. **Example manifest:** `autogen_rp/python/data/retrieval/authored_manifest.example.json`.
+- **Continuity** remains the only authoritative in-scene truth; compiled knowledge is **non-authoritative** assistive material at retrieval/prompt boundaries (unchanged from Phase 2–3.2 semantics).
+
 ---
 
 ## 1. Purpose and Scope
@@ -11,11 +24,14 @@ Architectural specification for **Phase 3.4 — Canonical Knowledge Shape & Stat
 - The **canonical envelope** for a single unit of injectable knowledge at runtime (`Canonical Knowledge Entry`).
 - **Knowledge types** classified by **runtime function** (how the turn runner and prompt assembly consume the item), not by source file format.
 - **Authority classes** and **visibility** rules that govern whether and how an item may appear in a character- or scene-facing context.
+- **Authority ceilings** per `knowledge_type` and **dense-source caps** so narrative material cannot be promoted into truth classes at compile time.
+- **Hard resolution rules** for `subject_scope` and **non-semantic** use of optional envelope fields.
 - **Provenance** requirements so every item is traceable to an origin.
 - **Compile expectations** mapping static authored sources into canonical entries.
-- **Injection placement** relative to continuity, grounding, retrieval, and transcript lanes.
+- **Injection placement** relative to continuity, grounding, retrieval, and transcript lanes (target semantics aligned with the existing packet / retrieval contract).
 - **Precedence and deduplication** rules relative to other runtime truth sources.
-- The **boundary** between Phase 3.4 (shape + static compile + deterministic injection) and Phase 4 (vector/graph storage and advanced retrieval).
+- The **boundary** between Phase 3.4 (contract + static ingestion specification) and Phase 4 (vector/graph storage and advanced retrieval).
+- **Future compatibility** with graph/vector retrieval and request-driven retrieval agents (§11); not part of Phase 3.4 delivery.
 
 ### What systems it governs
 
@@ -33,6 +49,7 @@ All **future** knowledge sources—including **dense prose ingestion** (e.g. ful
 
 The following are **out of scope** for Phase 3.4. They do not appear in this specification as design targets.
 
+- **Mandatory runtime or retrieval code changes** — updating `retrieved_context_select`, `app_turn_prompting` merge/caps, or packet shadow behavior is **not** required to close Phase 3.4 contract work; such changes belong to explicitly scoped implementation phases.
 - **Vector / embedding** design, index layout, or similarity semantics.
 - **Graph schema** design, query languages, or graph-specific optimization.
 - **Transcript-wide** or session-log ingestion as a knowledge source.
@@ -52,7 +69,7 @@ Every injectable knowledge item **must** be representable as a record with the f
 |--------|--------|
 | **Definition** | Stable, unique identifier for this canonical entry within the compile scope (e.g. content hash + source path, or deterministic id from source coordinates). |
 | **Purpose** | Deduplication, audit trails, stable references across recompiles and future storage layers. |
-| **Constraints** | Must be **deterministic** for the same source content and compile rules. Must not depend on runtime session state. |
+| **Constraints** | Must be **deterministic** for the same source content and compile rules. Must not depend on runtime session state. **Implemented compile rule:** inputs are `source_ref` + normalized text + `knowledge_type` only — **not** `authority_class` or other policy-volatile fields — so the same semantic slice keeps the same id if authority classification policy changes later. |
 
 ### `knowledge_type`
 
@@ -69,6 +86,8 @@ Every injectable knowledge item **must** be representable as a record with the f
 | **Definition** | Structured description of **who or what** the knowledge is about (e.g. agent key(s), scene template id, role slot, “global scene”, “relationship pair”). |
 | **Purpose** | Enables deterministic filtering by character, scene, and retrieval caps. |
 | **Constraints** | Must be machine-actionable (no prose-only scope). Empty or “unscoped” only where explicitly allowed by type rules. |
+
+**Hard rule (resolution without inference):** `subject_scope` must be **fully resolvable** to concrete keys or ids using **only** (a) explicit literals in the entry, (b) identifiers carried from the manifest or adapter input, or (c) **contract-defined resolvers** documented in this spec or a versioned adjunct (e.g. fixed enum → key maps). **Prose names, freeform descriptions, or ambiguous references** are **not** valid scope specifiers. If scope cannot be stated without inference, the compile must **reject** the entry or emit a **reference_only** slice with scope narrowed by an explicit manifest binding—not guessed from text.
 
 ### `visibility`
 
@@ -133,6 +152,12 @@ Every injectable knowledge item **must** be representable as a record with the f
 | **Definition** | Typed JSON-like object for machine-readable facets (e.g. relationship endpoints, role constraints, numeric tiers) when `text` alone is insufficient. |
 | **Purpose** | Supports packet shadow compare, validation, and future graph projection without changing the envelope. |
 | **Constraints** | Schema is **type-dependent**; must not duplicate fields that belong in continuity or grounding stores. If absent, `text` must suffice for intended injection. |
+
+### Optional envelope fields (extensions)
+
+Future or auxiliary fields (e.g. span coordinates, edition ids, content fingerprints, redundancy groups, language tags) may be added to the envelope **only** under this rule:
+
+**Non-semantics rule:** Optional fields **must not** affect **retrieval eligibility** (whether an entry may be selected), **authority resolution** (effective `authority_class`), or **visibility enforcement** (who may receive the entry). They are limited to **formatting**, **traceability**, **deduplication**, **metadata enrichment**, and **merge ordering hints** that do not override the required fields above.
 
 ---
 
@@ -210,7 +235,7 @@ Types are defined by **runtime function**, not by source filename.
 |--------|--------|
 | **Represents** | Pointed lore excerpts or summaries for assistive recall. |
 | **Runtime use** | Retrieved reference material; optional cross-links. |
-| **Truth / guidance** | **Reference_only** unless explicitly promoted by a separate authoritative process (not this layer). |
+| **Truth / guidance** | **Reference_only** only; maximum `authority_class` is **`reference_only`** (§4a). Promotion to truth-bearing classes is **not** done in this layer. |
 
 ### `interpretive_frame`
 
@@ -219,6 +244,31 @@ Types are defined by **runtime function**, not by source filename.
 | **Represents** | How a character or narrator may **frame** information (bias, uncertainty, POV)—not raw world fact. |
 | **Runtime use** | Character interpretation lanes; separate from transcript and from settled facts. |
 | **Truth / guidance** | **Interpretive guidance**; never continuity-equivalent. |
+
+---
+
+## 4a. Maximum `authority_class` by `knowledge_type` (constraint table)
+
+Each `knowledge_type` has a **ceiling**: compile **must not** emit a higher `authority_class` than allowed below. This applies uniformly so **dense/narrative** and **structured-authored** pipelines share the same type ceilings; **§4b** further restricts narrative sources.
+
+| `knowledge_type` | Maximum allowed `authority_class` |
+|------------------|----------------------------------|
+| `identity_fact` | `foundational_truth` |
+| `relationship_fact` | `foundational_truth` |
+| `world_rule` | `foundational_truth` |
+| `scene_setup_fact` | `setup_truth` |
+| `role_constraint` | `foundational_truth` |
+| `behavioral_tendency` | `behavioral_guidance` |
+| `goal_or_drive` | `behavioral_guidance` |
+| `voice_guidance` | `behavioral_guidance` |
+| `interpretive_frame` | `interpretive_guidance` |
+| `lore_reference` | `reference_only` |
+
+**Consistency:** `authority_class` must be **≤** the row ceiling for that entry’s `knowledge_type`. Violations are **compile errors** (or must be demoted automatically to the ceiling with audit, per product policy—never promoted above the ceiling).
+
+### 4b. Dense / narrative-derived sources (additional cap)
+
+For entries whose `source_kind` classifies them as **extracted narrative**, **dense prose**, **novel spans**, or equivalent (exact enum in implementation policy), `authority_class` **must** be one of **`behavioral_guidance`**, **`interpretive_guidance`**, or **`reference_only`** only—**never** **`foundational_truth`** or **`setup_truth`**, regardless of surface similarity to identity or scene text. That prevents fiction and expository prose from being promoted into truth classes at compile time. **Structured static** sources (e.g. authored cards, templates, designated setting bibles) use the §4a table up to the ceiling when policy marks them as eligible for `foundational_truth` / `setup_truth`.
 
 ---
 
@@ -287,6 +337,8 @@ Authority classes describe **what the runtime may treat as** when injecting into
 
 ## 9. Runtime Injection Contract
 
+This section states **target semantics** aligned with the existing **packet / retrieval** path. **Phase 3.4 contract work** does not by itself change runtime code; implementation must conform when compile and wiring land.
+
 - **Packet entry**: Canonical items appear only in **defined packet or bundle slots** agreed for Phase 3.4 (e.g. retrieved context, character runtime context) as **serialized or structured lists** derived from the envelope.
 - **Prompt assembly**: Injection occurs in **assistive** regions (e.g. retrieved reference material, optional lore blocks), **after** continuity-backed state and **alongside**—never **instead of**—scene grounding where grounding is authoritative for settled facts.
 - **Placement relative to**:
@@ -329,12 +381,22 @@ Authority classes describe **what the runtime may treat as** when injecting into
 
 ---
 
-## 11. Phase Boundary (3.4 → Phase 4)
+## 11. Future retrieval compatibility (not Phase 3.4)
+
+This section is **forward-looking** only. **Phase 3.4** does **not** implement graph stores, vector indexes, embedding pipelines, or a retrieval agent.
+
+- The **canonical model** must remain sufficient for future **graph-backed retrieval**, **vector similarity retrieval**, and **request-driven retrieval** (e.g. a dedicated **retrieval agent** that accepts structured requests and returns **ranked** canonical entries or projections compatible with this envelope).
+- A retrieval agent may **rank**, **broaden**, or **narrow** candidates; it **does not** determine **truth**. Effective **`authority_class`**, **`visibility`**, and conflict rules against continuity/grounding remain enforced by **packaging and compile policy**, not by agent output.
+- **Continuity** remains the sole authority for established in-scene play truth; **scene grounding** remains authoritative for **settled** prompt-facing facts derived from continuity. Retrieved knowledge—whether from static index, future graph/vector stores, or an agent—stays **non-authoritative** relative to those layers.
+
+---
+
+## 12. Phase Boundary (3.4 → Phase 4)
 
 ### Phase 3.4 guarantees for future vector/graph work
 
-- A **stable envelope** (`knowledge_id`, types, authority, visibility, provenance, text/payload).
-- **Deterministic** compile from static sources and **deterministic** merge into existing packet/retrieval injection.
+- A **stable envelope** (`knowledge_id`, types, authority ceilings, visibility, provenance, text/payload, optional non-semantic extensions).
+- **Deterministic** compile from static sources into canonical-shaped artifacts; **deterministic** merge **as today** until a later phase changes code.
 - **Clear non-authoritative** placement relative to continuity and grounding.
 - **Extension point**: new `source_kind` values and new storage backends **project into** this model.
 
@@ -350,7 +412,7 @@ Phase 4 storage systems **must** store and retrieve **records compatible with** 
 
 ---
 
-## 12. Open Questions / Deferred Design
+## 13. Open Questions / Deferred Design
 
 The following are **intentionally** not fixed in this document; they are resolved in later specs or implementation when required.
 

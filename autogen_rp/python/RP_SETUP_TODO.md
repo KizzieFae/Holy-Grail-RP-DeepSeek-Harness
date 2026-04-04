@@ -458,7 +458,10 @@ Sources:
   `RP_PACKET_SHADOW_COMPARE=1` + `pytest tests/test_prompt_perception_integration.py -q` → **green**, no `rp_app.packet_shadow` mismatch warnings.
 - **Example compile command** (with `cwd` = `autogen_rp/python`):
 
-  `python scripts/compile_authored_retrieval_index.py --manifest tests/fixtures/compile_sample/manifest.json --output path/to/compiled_index.json`
+  `python scripts/compile_authored_retrieval_index.py --manifest tests/fixtures/compile_sample/manifest.json --output path/to/compiled_index.json`  
+  Optional **schema v3** (canonical fields + legacy projection): add `--schema-version 3` (default remains **2**).  
+  Manifest entry type **`initial_message`**: JSON file with required **`text`**; optional **`template_id`** on the manifest row for `template:…` relevance tags; compiled rows use **`source_kind` `setup_note`** (retrieval-compatible). Template field **`initial_messages`** (pointer list) is allowlistable but compiles to **zero rows** (`emit_zero_chunks`).  
+  **Draft production-shaped manifest** (subset of real paths): `data/retrieval/authored_manifest.example.json` — copy and extend for `RP_RETRIEVED_CONTEXT_INDEX` builds; paths are relative to that file’s directory.
 
 - **Example selection result** (`tests/fixtures/retrieved_context_index_test.json`, `char_name=A`, `scene_template_id=tpl1`, relationship focus `B`, cast `B`):  
   `source_ref` order:  
@@ -604,16 +607,17 @@ _optional hardening_
 
 # Phase 3.4 — Canonical Knowledge Shape & Static Ingestion
 
-**Purpose:** Define the **canonical runtime knowledge model** from **system function**, not from current file layout. Reshape **static authored sources** (character cards, scenarios, initial/setup materials, lore) so they **compile deterministically** into that model and **inject through the existing packet / retrieval contract**. Preserve **authority boundaries** (continuity, grounding, episodic retrieval remain distinct). This phase is the **contractual foundation** for later **novel → graph / vector** ingestion—not a throwaway adapter layer.
+**Purpose:** Define the **canonical runtime knowledge model** from **system function**, not from current file layout. Reshape **static authored sources** (character cards, scenarios, initial/setup materials, lore) so they **compile deterministically** into that model and **conform to the existing packet / retrieval contract** when a compiled index is wired via **`RP_RETRIEVED_CONTEXT_INDEX`**. Preserve **authority boundaries** (continuity, grounding, episodic retrieval remain distinct). This work is **pre-packaging**: it produces **offline artifacts**; it does **not** replace the packet seam or merge packaging logic.
 
-**Scope (what this phase is about):**
+**Scope boundary (non-negotiable):** Canonical compile **does not change runtime behavior**: `retrieved_context_select` still reads only **legacy projection** fields on each chunk; v2 and v3 index files behave the same at runtime. **Continuity** remains authoritative for in-scene truth; compiled rows are **non-authoritative** assistive context. **Authoritative spec:** [CANONICAL_KNOWLEDGE_MODEL.md](../../CANONICAL_KNOWLEDGE_MODEL.md).
 
-- Canonical **knowledge entry schema** and **typed categories** driven by runtime need
-- **Authority classes**, **visibility**, **provenance / source metadata**
-- **Compiler / adapters** from today’s authored sources into the canonical shape
-- **Deterministic selection and injection** using existing runtime structures (packets, authored index path, etc.)
-- **Source document updates** where authored files must change to compile cleanly
-- Explicit **bridge narrative**: how canonical shape and contracts **guide** future graph/vector work
+**Milestone — compiler expansion & validation (complete):** Contract doc + **schema_version 3** compile path (canonical fields + legacy projection), **adapter registry**, **decomposition strategies**, real-source adapter coverage, **`initial_message`** manifest type (`source_kind` **`setup_note`** for retrieval compatibility), tests/fixtures (`compile_sample`, `compile_realistic`, golden v3), example manifest `data/retrieval/authored_manifest.example.json`. **Default CLI remains `--schema-version 2`**.
+
+**Operational follow-ups (not blocking the milestone):**
+
+- Maintain / extend a **production manifest** (copy from `authored_manifest.example.json`) and point **`RP_RETRIEVED_CONTEXT_INDEX`** at a rebuilt index when ready.
+- Optional: CI job that compiles with **`--schema-version 3`** and fails on unexpected diff; later, flip CLI default to **3** when operators standardize on v3 artifacts.
+- Remaining **high-fallback** paths if allowlisted without new rows: e.g. **`progression_profile`**, **`sleeping_surface_slots`** on templates (see adapter registry).
 
 ## Constraints (non-negotiable for this phase)
 
@@ -623,20 +627,19 @@ _optional hardening_
 - No semantic retrieval tuning
 - No LLM-based selection logic
 - Do not collapse advisory knowledge into authoritative truth (continuity / grounding / binding discipline unchanged)
+- **No mandatory runtime retrieval / merge / packet API changes** for this milestone
 
 ## Checklist
 
-- [ ] Define canonical **knowledge object** schema
-- [ ] Define **knowledge types** by runtime function (not by legacy file type alone)
-- [ ] Define **authority classes** and **visibility** rules
-- [ ] Define **provenance / source metadata** requirements
-- [ ] Map **character cards** into canonical knowledge entries
-- [ ] Map **scenarios / setup / initial materials** into canonical knowledge entries
-- [ ] Identify **required source-shape changes** in authored files
-- [ ] Implement **deterministic compile / adaptation** path
-- [ ] Integrate with **existing packet / retrieval injection** contract
-- [ ] Validate **deduplication**, **precedence**, and **no authority drift** vs continuity / grounding / episodic
-- [ ] **Document** how this phase **bridges** to future graph/vector ingestion (contract-first, storage later)
+- [x] Canonical **knowledge object** contract ([CANONICAL_KNOWLEDGE_MODEL.md](../../CANONICAL_KNOWLEDGE_MODEL.md)) + implementation snapshot
+- [x] **Knowledge types**, **authority classes**, **visibility**, **authority ceiling table**, **dense-source cap** (spec + compile enforcement for v3)
+- [x] **`subject_scope`** resolution rules (no inference) in compile path
+- [x] **Adapter mapping** for current real character / template / setup / lore / **initial_message** shapes (`canonical_compile_adapters.py`)
+- [x] **Deterministic compile** (`authored_index_compile.py`): **schema_version** 2 and 3; strict fallback; tests + goldens
+- [x] **Document** runtime alignment: legacy projection only; no retrieval integration change
+- [ ] **Source document** edits to cards/templates only where authors choose stricter allowlists or new fields need adapters
+- [ ] **Packet / packaging** consumption of canonical fields as first-class (deferred — next seam work)
+- [x] Bridge to Phase 4 documented in canonical spec (§11–§12)
 
 ---
 
@@ -707,15 +710,13 @@ Packets do NOT change behavior.
 
 **Phase 3.3 — selector-quality & turn-selection stability:** **complete (closed).** Hard obligation-vs-action-responsibility rule, diagnostic integrity, and advisory semantic alignment are documented in `python/rp_app/SELECTOR_QUALITY_PHASE.md`. Non-blocking optional hardening (character prompts, narrator, extra scenarios) remains listed under Phase 3.3 above; **does not reopen** the selector track unless a concrete regression appears.
 
-**Next active phase:** **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion** (canonical schema, authority/visibility/provenance, deterministic compile from authored sources, packet/retrieval integration—**not** vector/graph yet).
+**Phase 3.4 — canonical compile expansion:** **closed** for the scoped milestone (offline v3 compile + adapters + tests + example manifest; runtime unchanged).
 
-Next (when ready):
-
-→ **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion**
+**Next active engineering focus:** **Phase 0.5 packet seam / packaging** — deepen read-only packet projections, structured compare, and path toward packaging consuming authoritative state + retrieval outputs ([PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)); canonical compile output is an **upstream artifact**, not a substitute for packets.
 
 Later (deferred):
 
-→ **Phase 4 — Advanced Retrieval & Storage (vector / graph)** — hard gate: retrieval proven, packet interface stable, Phase 3.4 complete
+→ **Phase 4 — Advanced Retrieval & Storage (vector / graph)** — hard gate: retrieval proven, packet interface stable, Phase 3.4 **canonical compile** milestone complete
 
 Optional (non-blocking):
 

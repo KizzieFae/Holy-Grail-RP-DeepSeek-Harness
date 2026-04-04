@@ -1,0 +1,32 @@
+{
+  "entries": [
+    {
+      "type": "character",
+      "path": "mini_ayame.json",
+      "character_id": "MiniAyame",
+      "allowlist_keys": [
+        "name",
+        "core_goals",
+        "voice_profile",
+        "lore_facts"
+      ]
+    },
+    {
+      "type": "template",
+      "path": "mini_template.json",
+      "template_id": "mini_tpl",
+      "allowlist_keys": [
+        "premise",
+        "opening_text",
+        "location_entry_slots",
+        "role_slots",
+        "initial_messages"
+      ]
+    },
+    {
+      "type": "initial_message",
+      "path": "mini_imsg.json",
+      "template_id": "mini_tpl"
+    }
+  ]
+}

@@ -1,0 +1,333 @@
+{
+  "characters": {
+    "MiniAyame": [
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "83ba11ec61144b3a9f19d5e9316db292cc5427f32b4fd3b59df333678d5dbb0e",
+        "knowledge_type": "goal_or_drive",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:core_goals#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "Second listed goal",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "db17e5a39961a9c52c7f62bedf1588497d6158bb49c7c16c453a81633a98f08e",
+        "knowledge_type": "goal_or_drive",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:core_goals#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "First listed goal",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "25fb834c8f924a37706ffe434f06c39da5a24852e3afe78c16ba3aaaa1c2fd78",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:lore_facts#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "Fact two",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "b14b7ca03bdbfd57987c48d626f47d5bfb4069ed99d508f2e88192c63481804f",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:lore_facts#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "Fact one",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "97b75c276567fb847ffea537267c2588c241794a5d870171f508a615aff2c6cd",
+        "knowledge_type": "identity_fact",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:name",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "Mini Ayame",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "84a153bc7bb71143db7b19677f1b14d61e1b7cc2d7ad887fe3d856fee70b4e52",
+        "knowledge_type": "voice_guidance",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:voice_profile.formality",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "high",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "3b650a8b51b10b95f6e22e26ac0d888e59c5c8195294898a55c01a1e79d21c8c",
+        "knowledge_type": "voice_guidance",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:voice_profile.rhetorical_habits#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "habit_b",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "bbebf18675958fa3bb05012216918db7d2596c508d62385c2eb4e455f309950f",
+        "knowledge_type": "voice_guidance",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:voice_profile.rhetorical_habits#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "habit_a",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "behavioral_guidance",
+        "knowledge_id": "1be6fd0e753386b280cd98746c43a2429eabeee4c08efd70e05e91fce989bae6",
+        "knowledge_type": "voice_guidance",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:MiniAyame:voice_profile.speech_style",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "MiniAyame"
+        },
+        "temporal_scope": {},
+        "text": "soft authority",
+        "visibility": "character_scoped"
+      }
+    ]
+  },
+  "compile_metadata": {
+    "authority_clamps": 0,
+    "dense_caps": 0,
+    "fallback_uses": 0,
+    "schema_version_target": 3,
+    "warnings": []
+  },
+  "lore": [],
+  "schema_version": 3,
+  "setup_notes": [
+    {
+      "authority_class": "setup_truth",
+      "knowledge_id": "0471f844b0885febf0688a83716e02c0242cb13d404fa9c665ed3d8ba42c4789",
+      "knowledge_type": "scene_setup_fact",
+      "priority": 35,
+      "relationship_relevant": false,
+      "relevance_tags": [
+        "template:mini_tpl"
+      ],
+      "scope": "scene_shared",
+      "source_kind": "setup_note",
+      "source_ref": "imsg:mini_imsg:text",
+      "structured_payload": null,
+      "subject_scope": {},
+      "template_id": "mini_tpl",
+      "temporal_scope": {},
+      "text": "The scene opens with a short deterministic line for compile tests.",
+      "visibility": "public"
+    }
+  ],
+  "templates": {
+    "mini_tpl": [
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "3561eb0e65f1c0b35c10776517e8b3f91430fc3716d860dbbac65caaf34af92b",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:location_entry_slots#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "z_entry",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "cc7f0cc7c0861ed633a5045e07a451f1ab129c6328c41214bb5817606f6f0c41",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:location_entry_slots#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "a_entry",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "f9a7d42adfa26d4f9d846024f46824c68f8b7567ff5972fcdc418e163db18841",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:opening_text",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "Opening beat text.",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "48560886b92ff18deceec10eafa6c0eaef360ccee189b508c2969c33702b309c",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:premise",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "Controlled premise line.",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "4205be4ff252e99a2b14dabb9594cd412a997df23c8d63fbf695ac159675edf4",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:role_slots:role_slot:alpha",
+        "structured_payload": {
+          "authority": "high",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "alpha"
+        },
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"high\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"alpha\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "b4488e089fad196057934cd9e7e9ddeff9a03f7fcd3ce5895f97d2a5c745f057",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:mini_tpl"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:mini_tpl:role_slots:role_slot:beta",
+        "structured_payload": {
+          "authority": "medium",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "beta"
+        },
+        "subject_scope": {
+          "template_id": "mini_tpl"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"beta\"}",
+        "visibility": "template_participants"
+      }
+    ]
+  },
+  "version": 3
+}
