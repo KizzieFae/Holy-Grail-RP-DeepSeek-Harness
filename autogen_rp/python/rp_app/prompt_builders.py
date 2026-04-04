@@ -18,6 +18,42 @@ _EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK = """## **EVIDENCE & AUTHORITY DISCIPLINE (
 """
 
 
+def build_responder_obligation_director_prompt_prefix(
+    responder_obligation: dict[str, Any] | None,
+) -> str:
+    if not isinstance(responder_obligation, dict):
+        return ""
+    if not responder_obligation.get("active"):
+        return ""
+    return (
+        "[responder_obligation] The JSON payload may include responder_obligation.\n"
+        "- Treat responder_obligation as advisory only. It is not forced routing.\n"
+        "- Prefer the available actor with the clearest immediate obligation to respond.\n"
+        "- Strong obligation comes from direct address, explicit question, accusation or challenge, or a required response to the prior move.\n"
+        "- If responder_obligation.confidence is \"high\" and primary_actor is present, you SHOULD prefer that actor unless another available actor more clearly advances the immediate beat; if so, explain why in reason.\n"
+        "- If responder_obligation.confidence is \"medium\", treat the listed candidates as plausible obligated responders and use scene judgment.\n"
+        "- Do not substitute broad dramatic relevance for a clearly obligated responder.\n\n"
+    )
+
+
+def build_action_responsibility_director_prompt_prefix(
+    action_responsibility: dict[str, Any] | None,
+) -> str:
+    if not isinstance(action_responsibility, dict):
+        return ""
+    if not action_responsibility.get("active"):
+        return ""
+    return (
+        "[action_responsibility] The JSON payload may include action_responsibility.\n"
+        "- Treat action_responsibility as advisory only. It is not forced routing.\n"
+        "- Use it only when the next beat is a bounded action handoff or concrete directive outcome rather than a reply beat.\n"
+        "- Strong action responsibility comes from ownership of a controlled next step or being the clear target of a concrete immediate directive.\n"
+        "- If action_responsibility.confidence is \"high\" and primary_actor is present, you SHOULD prefer that actor unless another available actor more clearly advances the immediate beat; if so, explain why in reason.\n"
+        "- If action_responsibility.confidence is \"medium\", treat the listed candidates as plausible bounded action owners and use scene judgment.\n"
+        "- Do not substitute broad dramatic relevance for a clearly bounded action owner.\n\n"
+    )
+
+
 def build_scene_role_prompt_context(
     scene_state: dict[str, Any] | None,
     participants: list[str] | None = None,
@@ -71,9 +107,29 @@ def build_director_selection_prompt(director_payload: dict[str, Any]) -> str:
     lowp_prefix = ""
     if isinstance(lowp, dict) and lowp.get("active"):
         lowp_prefix = str(lowp.get("prompt_prefix", "") or "")
+    obligation_hints = payload.pop("responder_obligation_director_hints", None)
+    obligation_prefix = ""
+    if isinstance(obligation_hints, dict) and obligation_hints.get("active"):
+        obligation_prefix = build_responder_obligation_director_prompt_prefix(
+            payload.get("responder_obligation")
+        )
+    action_responsibility_hints = payload.pop("action_responsibility_director_hints", None)
+    action_responsibility_prefix = ""
+    if isinstance(action_responsibility_hints, dict) and action_responsibility_hints.get(
+        "active"
+    ):
+        action_responsibility_prefix = (
+            build_action_responsibility_director_prompt_prefix(
+                payload.get("action_responsibility")
+            )
+        )
     settled = str(payload.pop("settled_scene_facts_prompt", "") or "")
     settled_prefix = f"{settled}\n" if settled.strip() else ""
-    prefix = f"{prog_prefix}{beat_prefix}{anti_prefix}{lowp_prefix}{settled_prefix}"
+    prefix = (
+        f"{prog_prefix}{beat_prefix}{anti_prefix}{lowp_prefix}{obligation_prefix}"
+        f"{action_responsibility_prefix}"
+        f"{settled_prefix}"
+    )
     body = (
         "Decide who acts next using only the structured scene information below. Return JSON only. "
         "If it is best to end the response cycle early, return "

@@ -261,10 +261,10 @@ def run_all() -> list[tuple[str, str, dict]]:
         recent_structured_moves=recent_moves,
         progression_enforcement_gate=False,
     )
-    ok6 = ov_on == "Celina" and ov_off is None
+    ok6 = ov_on is None and ov_off is None
     out.append(
         (
-            "S6_med_to_high_override_only_when_gate",
+            "S6_med_to_high_override_suppressed_even_when_gate",
             "PASS" if ok6 else "FAIL",
             {"override_gate_on": ov_on, "override_gate_off": ov_off},
         )

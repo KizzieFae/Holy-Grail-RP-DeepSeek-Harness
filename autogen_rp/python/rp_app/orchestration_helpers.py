@@ -605,8 +605,7 @@ def resolve_progression_override_actor(
       actionable issue exists.
 
     When gate is True (beat-shift pending or high progression pressure):
-    - Also override if Director pick is MED and at least one HIGH actor exists
-      (same actionable-issue and HIGH-actor rules).
+    - Preserve the explicit MED branch, but return no override for MED picks.
     """
 
     director_selected_actor = str(director_selected_actor or "").strip()
@@ -648,14 +647,7 @@ def resolve_progression_override_actor(
         )
 
     if progression_enforcement_gate and director_band == "med":
-        return _pick_high_progression_actor(
-            full_high_list=high_actors,
-            director_selected_actor=director_selected_actor,
-            spotlight_history=sh,
-            recent_structured_moves=recent_structured_moves,
-            available_actors=available_actors,
-            active_issues=active_issues,
-        )
+        return None
 
     return None
 

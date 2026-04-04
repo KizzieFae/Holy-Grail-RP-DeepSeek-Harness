@@ -4,17 +4,30 @@ from collections.abc import Callable
 from typing import Any
 
 from autogen_agentchat.agents import AssistantAgent
+
+from turn_selection_preference import (
+    resolve_participant_key,
+    sanitize_semantic_turn_selection_assessment,
+)
 from autogen_agentchat.messages import TextMessage
 from autogen_core.model_context import BufferedChatCompletionContext
 
 MODEL_CONTEXT_BUFFER_SIZE = 1
 DIRECT_ADDRESS_ISSUE_PREFIX = "Selected actor ignored direct address preference"
+SEMANTIC_ADDRESSEE_MISMATCH_PREFIX = "Addressee advisory mismatch (semantic):"
 REPEAT_SPOTLIGHT_ISSUE = (
     "Selected actor repeats the most recent spotlight when alternatives exist"
 )
 SEMANTIC_SELECTION_ISSUE = (
     "Semantic turn_selection review did not support selected actor for current beat"
 )
+
+
+def _is_semantic_addressee_style_issue(issue: str) -> bool:
+    s = str(issue or "")
+    return s.startswith(DIRECT_ADDRESS_ISSUE_PREFIX) or s.startswith(
+        SEMANTIC_ADDRESSEE_MISMATCH_PREFIX
+    )
 
 SEMANTIC_VALIDATOR_SYSTEM_MESSAGE = """You are a semantic validator for a structured roleplay system.
 
@@ -101,37 +114,61 @@ async def _run_semantic_validation(
 def reconcile_turn_selection_issues(
     issues: list[str],
     semantic_assessment: dict[str, Any] | None,
+    *,
+    selected_actor: str = "",
+    participant_names: list[str] | None = None,
+    display_name_for_key: Callable[[str], str] | None = None,
 ) -> list[str]:
     if semantic_assessment is None:
         return issues
 
+    effective: dict[str, Any] | None = semantic_assessment
+    names = list(participant_names or [])
+    pick = str(selected_actor or "").strip()
+    if (
+        names
+        and pick
+        and isinstance(semantic_assessment, dict)
+        and not semantic_assessment.get("parse_error")
+    ):
+        sanitized = sanitize_semantic_turn_selection_assessment(
+            semantic_assessment,
+            selected_actor=pick,
+            participant_names=names,
+            display_name_for_key=display_name_for_key,
+        )
+        if sanitized is not None:
+            effective = sanitized
+
     reconciled = [
         issue
         for issue in issues
-        if semantic_assessment.get("should_flag_direct_address_miss")
-        or not issue.startswith(DIRECT_ADDRESS_ISSUE_PREFIX)
+        if effective.get("should_flag_direct_address_miss")
+        or not _is_semantic_addressee_style_issue(issue)
     ]
 
-    if semantic_assessment.get("should_flag_direct_address_miss"):
-        direct_address_target = str(
-            semantic_assessment.get("direct_address_target", "") or ""
-        ).strip()
-        issue = (
-            f"{DIRECT_ADDRESS_ISSUE_PREFIX} for {direct_address_target}"
-            if direct_address_target
-            else DIRECT_ADDRESS_ISSUE_PREFIX
+    if effective.get("should_flag_direct_address_miss"):
+        target_key = resolve_participant_key(
+            str(effective.get("direct_address_target") or ""),
+            names,
+            display_name_for_key=display_name_for_key,
         )
-        if issue not in reconciled:
-            reconciled.append(issue)
+        if target_key and pick and target_key != pick:
+            issue = (
+                f"{SEMANTIC_ADDRESSEE_MISMATCH_PREFIX} preferred {target_key} "
+                f"vs selected {pick}"
+            )
+            if issue not in reconciled:
+                reconciled.append(issue)
 
     if (
-        semantic_assessment.get("should_flag_repeat_spotlight")
+        effective.get("should_flag_repeat_spotlight")
         and REPEAT_SPOTLIGHT_ISSUE not in reconciled
     ):
         reconciled.append(REPEAT_SPOTLIGHT_ISSUE)
 
     if (
-        not semantic_assessment.get("supports_selected_actor", True)
+        not effective.get("supports_selected_actor", True)
         and SEMANTIC_SELECTION_ISSUE not in reconciled
     ):
         reconciled.append(SEMANTIC_SELECTION_ISSUE)
@@ -214,6 +251,7 @@ async def assess_turn_selection_decision_semantics(
     recent_dialogue_history: list[dict[str, Any]],
     cancellation_token: Any,
     beat_shift_active: bool = False,
+    routing_preference: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     payload = {
         "trigger_text": trigger_text,
@@ -224,6 +262,7 @@ async def assess_turn_selection_decision_semantics(
         "scene_state": scene_state or {},
         "recent_dialogue_history": recent_dialogue_history,
         "beat_shift_active": beat_shift_active,
+        "routing_preference": routing_preference or {},
     }
     beat_shift_clause = ""
     if beat_shift_active:
@@ -231,9 +270,19 @@ async def assess_turn_selection_decision_semantics(
             "A beat-shift signal is active: repeating the most recent spotlight can be justified when that actor is the natural executor of a concrete scene-state shift; "
             "set should_flag_repeat_spotlight false when that applies. "
         )
+    routing_clause = (
+        "The routing_preference object is deterministic orchestration context: "
+        "preference_candidate (if any) is an advisory hint from responder_obligation or action_responsibility. "
+        "It is not forced routing. "
+        "direct_address_target must be an exact string from available_actors when a single clear addressee exists, else empty string. "
+        "should_flag_direct_address_miss must be false when decision.next_actor equals direct_address_target. "
+        "supports_selected_actor should be true when the selected actor is that clear addressee. "
+        "Do not flag a direct-address miss when the selected actor matches the natural addressee. "
+    )
     prompt = (
         "Assess whether the selected actor is semantically the right choice for the current beat. "
         f"{beat_shift_clause}"
+        f"{routing_clause}"
         "Consider clear direct address, whether repeating the most recent spotlight is justified, whether another available actor is more responsible for the beat, and whether the selected actor still fits the smallest relevant pressure core. "
         "Return JSON only with keys supports_selected_actor, direct_address_target, should_flag_direct_address_miss, should_flag_repeat_spotlight, reason, confidence.\n\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"

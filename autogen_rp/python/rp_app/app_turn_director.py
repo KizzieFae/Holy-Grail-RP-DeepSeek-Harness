@@ -20,6 +20,7 @@ from beat_shift_state import (
     is_pending_beat_shift_active,
 )
 from orchestration_helpers import (
+    assign_progression_band_for_actor,
     apply_participation_fairness_to_decision,
     resolve_progression_override_actor,
 )
@@ -30,7 +31,12 @@ from progression_advisory import (
     sync_progression_advisory_for_prompts,
 )
 from scene_grounding import format_grounding_prompt_prefix
-from perception_audibility import redact_structured_move_for_orchestration
+from perception_audibility import (
+    AUDIBILITY_DIRECTED,
+    AUDIBILITY_PRIVATE,
+    normalize_move_audibility,
+    redact_structured_move_for_orchestration,
+)
 from director_low_pressure_guidance import (
     all_available_have_spoken_this_cycle,
     build_director_selection_metrics,
@@ -40,8 +46,111 @@ from director_low_pressure_guidance import (
     consecutive_trailing_same_speaker,
     low_pressure_turn_guidance_active,
 )
+from turn_selection_preference import (
+    build_routing_preference_snapshot,
+    build_turn_selection_diagnostics_for_audit,
+    format_turn_selection_diagnostic_block,
+    sanitize_semantic_turn_selection_assessment,
+)
 
 logger = logging.getLogger("rp_app.progression_advisory")
+
+_OBLIGATION_CHALLENGE_OR_ACCUSATION_CUES = (
+    "answer me",
+    "explain yourself",
+    "explain yourselves",
+    "prove it",
+    "prove yourself",
+    "admit it",
+    "admit it.",
+    "defend yourself",
+    "justify yourself",
+    "look at me",
+    "say it again",
+    "say that again",
+    "liar",
+    "lying",
+    "coward",
+    "then say it",
+)
+
+_OBLIGATION_REQUIRED_RESPONSE_CUES = (
+    "answer",
+    "explain",
+    "respond",
+    "tell me",
+    "say it",
+    "justify",
+    "defend",
+    "admit",
+    "deny",
+    "prove",
+)
+
+_OBLIGATION_IMMEDIATE_EXECUTOR_CUES = (
+    "go",
+    "get",
+    "bring",
+    "take",
+    "leave",
+    "come",
+    "call",
+    "open",
+    "close",
+    "move",
+    "step",
+    "stay",
+    "wait",
+    "sit",
+    "stand",
+    "look",
+)
+
+_ACTION_RESPONSIBILITY_CONTROL_CUES = (
+    "key",
+    "keys",
+    "access",
+    "permission",
+    "permit",
+    "allow",
+    "let me in",
+    "let us in",
+    "let her in",
+    "let him in",
+    "let them in",
+    "give me",
+    "hand me",
+    "pass me",
+    "unlock",
+    "open the door",
+    "open up",
+)
+
+_ACTION_RESPONSIBILITY_DIRECTIVE_CUES = (
+    "wait here",
+    "stay here",
+    "stay put",
+    "sit down",
+    "stand down",
+    "come here",
+    "go now",
+    "leave now",
+    "step back",
+    "move aside",
+    "hold still",
+    "take the couch",
+    "turn around",
+)
+
+# Responder obligation activates only when the beat seeks a verbal/social reply, not
+# merely directed attention or a concrete physical/task directive (those use action_responsibility).
+_REPLY_EXPECTATION_SIGNALS = frozenset(
+    {
+        "explicit_question",
+        "accusation_or_challenge",
+        "required_response_to_prior_move",
+    }
+)
 
 
 def split_actionable_and_stalled_issues(
@@ -61,6 +170,273 @@ def split_actionable_and_stalled_issues(
             stalled_background_issues.append(issue)
 
     return actionable_issues, stalled_background_issues
+
+
+def _empty_responder_obligation_hint() -> dict[str, Any]:
+    return {
+        "active": False,
+        "soft_priority": True,
+        "confidence": "none",
+        "candidates": [],
+        "instruction": "No clear immediate responder obligation detected.",
+    }
+
+
+def _append_candidate_signal(
+    candidate_signals: dict[str, list[str]], actor: str, signal: str
+) -> None:
+    actor_key = str(actor or "").strip()
+    signal_key = str(signal or "").strip()
+    if not actor_key or not signal_key:
+        return
+    bucket = candidate_signals.setdefault(actor_key, [])
+    if signal_key not in bucket:
+        bucket.append(signal_key)
+
+
+def _empty_action_responsibility_hint() -> dict[str, Any]:
+    return {
+        "active": False,
+        "soft_priority": True,
+        "confidence": "none",
+        "candidates": [],
+        "instruction": (
+            "No clear bounded action owner detected from the immediately prior move."
+        ),
+    }
+
+
+def _extract_local_candidate_targets(
+    *, last_structured_move: dict[str, Any], available_actors: list[str]
+) -> list[str]:
+    available = [str(x or "").strip() for x in available_actors if str(x or "").strip()]
+    available_set = set(available)
+    audibility = str(last_structured_move.get("audibility", "") or "").strip().lower()
+    raw_audience = last_structured_move.get("audience", [])
+    audience = raw_audience if isinstance(raw_audience, list) else []
+    audience_targets = [
+        str(x or "").strip() for x in audience if str(x or "").strip() in available_set
+    ]
+    if audibility in (AUDIBILITY_DIRECTED, AUDIBILITY_PRIVATE) and audience_targets:
+        return audience_targets
+
+    dialogue = str(last_structured_move.get("dialogue", "") or "").strip().lower()
+    action = str(last_structured_move.get("action", "") or "").strip().lower()
+    combined = " ".join(part for part in [dialogue, action] if part)
+    named_targets = [actor for actor in available if actor.lower() in combined]
+    return named_targets
+
+
+def _classify_action_responsibility_mode(text: str) -> str | None:
+    normalized = " ".join(str(text or "").strip().lower().split())
+    if not normalized:
+        return None
+    if any(cue in normalized for cue in _ACTION_RESPONSIBILITY_CONTROL_CUES):
+        return "grant_or_withhold_controlled_action"
+    if any(cue in normalized for cue in _ACTION_RESPONSIBILITY_DIRECTIVE_CUES):
+        return "comply_or_refuse_concrete_directive"
+    return None
+
+
+def _compute_action_responsibility_hint(
+    *,
+    last_structured_move: dict[str, Any] | None,
+    available_actors: list[str],
+    responder_obligation: dict[str, Any] | None,
+) -> dict[str, Any]:
+    hint = _empty_action_responsibility_hint()
+    if isinstance(responder_obligation, dict) and responder_obligation.get("active"):
+        return hint
+    if not isinstance(last_structured_move, dict):
+        return hint
+
+    available = [str(x or "").strip() for x in available_actors if str(x or "").strip()]
+    if not available:
+        return hint
+
+    dialogue = str(last_structured_move.get("dialogue", "") or "").strip()
+    action = str(last_structured_move.get("action", "") or "").strip()
+    combined_text = " ".join(part for part in [dialogue, action] if part)
+    mode = _classify_action_responsibility_mode(combined_text)
+    if mode is None:
+        return hint
+
+    targets = _extract_local_candidate_targets(
+        last_structured_move=last_structured_move,
+        available_actors=available,
+    )
+    if not targets:
+        return hint
+
+    candidate_signals: dict[str, list[str]] = {}
+    if mode == "grant_or_withhold_controlled_action":
+        for target in targets:
+            _append_candidate_signal(
+                candidate_signals, target, "controls_bounded_next_step"
+            )
+            _append_candidate_signal(candidate_signals, target, "must_grant_or_refuse")
+    else:
+        for target in targets:
+            _append_candidate_signal(
+                candidate_signals, target, "concrete_directive_target"
+            )
+            _append_candidate_signal(candidate_signals, target, "must_comply_or_refuse")
+
+    candidates = [
+        {
+            "actor": actor,
+            "signals": list(candidate_signals[actor]),
+        }
+        for actor in available
+        if candidate_signals.get(actor)
+    ]
+    if not candidates:
+        return hint
+
+    hint["active"] = True
+    hint["responsibility_mode"] = mode
+    if len(candidates) == 1:
+        hint["confidence"] = "high"
+        hint["primary_actor"] = candidates[0]["actor"]
+        hint["instruction"] = (
+            "If the next meaningful beat is a bounded controlled action or concrete "
+            "directive outcome rather than a reply beat, prefer the actor who owns "
+            "that next step. This is advisory only."
+        )
+    else:
+        hint["confidence"] = "medium"
+        hint["instruction"] = (
+            "Multiple available actors plausibly own the next bounded action beat. "
+            "Treat this as advisory only."
+        )
+    hint["candidates"] = candidates
+    return hint
+
+
+def _looks_like_immediate_executor_signal(text: str, target: str) -> bool:
+    norm_text = " ".join(str(text or "").strip().lower().replace(",", " ").split())
+    target_name = str(target or "").strip().lower()
+    if not norm_text or not target_name or "?" in norm_text:
+        return False
+    for cue in _OBLIGATION_IMMEDIATE_EXECUTOR_CUES:
+        if norm_text.startswith(f"{cue} "):
+            return True
+        if norm_text.startswith(f"you {cue} "):
+            return True
+        if norm_text.startswith(f"{target_name} {cue} "):
+            return True
+        if f" {target_name} {cue} " in f" {norm_text} ":
+            return True
+        if f" you {cue} " in f" {norm_text} ":
+            return True
+    return False
+
+
+def _compute_responder_obligation_hint(
+    *,
+    last_structured_move: dict[str, Any] | None,
+    available_actors: list[str],
+    present_characters: list[str],
+) -> dict[str, Any]:
+    hint = _empty_responder_obligation_hint()
+    if not isinstance(last_structured_move, dict):
+        return hint
+
+    speaker = str(last_structured_move.get("speaker", "") or "").strip()
+    if not speaker:
+        return hint
+
+    available = [str(x or "").strip() for x in available_actors if str(x or "").strip()]
+    if not available:
+        return hint
+    available_set = set(available)
+
+    present = [
+        str(x or "").strip() for x in (present_characters or []) if str(x or "").strip()
+    ]
+    if not present:
+        present = list(available)
+
+    normalized_move = normalize_move_audibility(dict(last_structured_move), speaker, present)
+    audibility = str(normalized_move.get("audibility", "") or "").strip().lower()
+    raw_audience = normalized_move.get("audience", [])
+    audience = raw_audience if isinstance(raw_audience, list) else []
+    audience_targets = [
+        str(x or "").strip() for x in audience if str(x or "").strip() in available_set
+    ]
+
+    dialogue = str(last_structured_move.get("dialogue", "") or "").strip()
+    action = str(last_structured_move.get("action", "") or "").strip()
+    combined_text = " ".join(part for part in [dialogue, action] if part).lower()
+    question_like = "?" in dialogue or "?" in action
+    challenge_like = any(
+        cue in combined_text for cue in _OBLIGATION_CHALLENGE_OR_ACCUSATION_CUES
+    )
+    required_response_like = question_like or challenge_like or any(
+        cue in combined_text for cue in _OBLIGATION_REQUIRED_RESPONSE_CUES
+    )
+
+    candidate_signals: dict[str, list[str]] = {}
+    if audibility in (AUDIBILITY_DIRECTED, AUDIBILITY_PRIVATE):
+        if len(audience_targets) == 1:
+            target = audience_targets[0]
+            _append_candidate_signal(candidate_signals, target, "direct_address")
+            if question_like:
+                _append_candidate_signal(candidate_signals, target, "explicit_question")
+            if challenge_like:
+                _append_candidate_signal(
+                    candidate_signals, target, "accusation_or_challenge"
+                )
+            if required_response_like:
+                _append_candidate_signal(
+                    candidate_signals, target, "required_response_to_prior_move"
+                )
+            if _looks_like_immediate_executor_signal(dialogue or action, target):
+                _append_candidate_signal(
+                    candidate_signals, target, "immediate_consequence_executor"
+                )
+        elif len(audience_targets) > 1 and required_response_like:
+            for target in audience_targets:
+                if question_like:
+                    _append_candidate_signal(
+                        candidate_signals, target, "explicit_question"
+                    )
+                if challenge_like:
+                    _append_candidate_signal(
+                        candidate_signals, target, "accusation_or_challenge"
+                    )
+                _append_candidate_signal(
+                    candidate_signals, target, "required_response_to_prior_move"
+                )
+
+    candidates = [
+        {
+            "actor": actor,
+            "signals": list(candidate_signals[actor]),
+        }
+        for actor in available
+        if candidate_signals.get(actor)
+        and _REPLY_EXPECTATION_SIGNALS.intersection(candidate_signals[actor])
+    ]
+    if not candidates:
+        return hint
+
+    hint["active"] = True
+    if len(candidates) == 1:
+        hint["confidence"] = "high"
+        hint["primary_actor"] = candidates[0]["actor"]
+        hint["instruction"] = (
+            "Prefer the available actor with the clearest immediate obligation to respond. "
+            "This is advisory only."
+        )
+    else:
+        hint["confidence"] = "medium"
+        hint["instruction"] = (
+            "Multiple available actors have plausible immediate obligation. Treat this "
+            "as advisory only and choose the actor who best advances the immediate beat."
+        )
+    hint["candidates"] = candidates
+    return hint
 
 
 async def choose_next_actor(
@@ -550,6 +926,22 @@ async def choose_next_actor(
             "prompt_prefix": build_low_pressure_director_prompt_prefix(),
         }
 
+    director_payload["responder_obligation"] = _compute_responder_obligation_hint(
+        last_structured_move=last_raw_move,
+        available_actors=available_actors,
+        present_characters=present_for_audibility,
+    )
+    if director_payload["responder_obligation"].get("active"):
+        director_payload["responder_obligation_director_hints"] = {"active": True}
+
+    director_payload["action_responsibility"] = _compute_action_responsibility_hint(
+        last_structured_move=last_raw_move,
+        available_actors=available_actors,
+        responder_obligation=director_payload["responder_obligation"],
+    )
+    if director_payload["action_responsibility"].get("active"):
+        director_payload["action_responsibility_director_hints"] = {"active": True}
+
     director_prefix_eligible = {
         "progression": "progression_director_hints" in director_payload,
         "beat_shift": "beat_shift_director_hints" in director_payload,
@@ -560,6 +952,8 @@ async def choose_next_actor(
         director_payload.pop("progression_director_hints", None)
         director_payload.pop("anti_regression_director_hints", None)
         director_payload.pop("low_pressure_turn_director_hints", None)
+        director_payload.pop("responder_obligation_director_hints", None)
+        director_payload.pop("action_responsibility_director_hints", None)
 
     director_prefix_in_prompt = {
         "progression": "progression_director_hints" in director_payload,
@@ -637,6 +1031,11 @@ async def choose_next_actor(
         continuation_override_actor=continuation_override_actor,
         offstage_characters=offstage_list,
     )
+    routing_snapshot = build_routing_preference_snapshot(
+        responder_obligation=director_payload.get("responder_obligation"),
+        action_responsibility=director_payload.get("action_responsibility"),
+        available_actors=available_actors,
+    )
     semantic_turn_selection_assessment = (
         await assess_turn_selection_decision_semantics_fn(
             model_client=get_model_client_fn(),
@@ -651,26 +1050,39 @@ async def choose_next_actor(
             recent_dialogue_history=recent_dialogue_history,
             cancellation_token=cancellation_token,
             beat_shift_active=beat_shift_active,
+            routing_preference=routing_snapshot,
         )
     )
+    effective_semantic_assessment = None
+    if isinstance(semantic_turn_selection_assessment, dict):
+        if semantic_turn_selection_assessment.get("parse_error"):
+            effective_semantic_assessment = semantic_turn_selection_assessment
+        else:
+            effective_semantic_assessment = sanitize_semantic_turn_selection_assessment(
+                semantic_turn_selection_assessment,
+                selected_actor=director_pick_for_audit,
+                participant_names=participant_names,
+                display_name_for_key=get_character_display_name_fn,
+            )
     reconciled_turn_selection_issues = reconcile_turn_selection_issues_fn(
         deterministic_turn_selection_issues,
         semantic_turn_selection_assessment,
+        selected_actor=director_pick_for_audit,
+        participant_names=participant_names,
+        display_name_for_key=get_character_display_name_fn,
     )
     human_turn_selection_issues = filter_selection_issues_for_human_log(
         base_issues=deterministic_turn_selection_issues,
         reconciled_issues=reconciled_turn_selection_issues,
-        semantic_assessment=semantic_turn_selection_assessment,
+        semantic_assessment=effective_semantic_assessment,
     )
     reason_before_semantic_note = str(decision.get("reason", "") or "")
-    if human_turn_selection_issues:
-        decision["reason"] = (
-            f"{decision.get('reason', '')} | Validation: {'; '.join(human_turn_selection_issues)}"
-        ).strip(" |")
-    reason_amended_for_semantic = str(decision.get("reason", "") or "") != (
-        reason_before_semantic_note
+    pref_candidate = routing_snapshot.get("preference_candidate")
+    routing_misaligned = bool(
+        pref_candidate and str(pref_candidate).strip() != str(director_pick_for_audit).strip()
     )
-    actor_after_semantic = str(decision.get("next_actor", "") or "").strip()
+    reason_amended_for_semantic = False
+    actor_after_semantic = str(director_pick_for_audit or "").strip()
 
     if st_module.session_state.get("progression_enforcement_disabled"):
         progression_enforcement_gate = False
@@ -681,22 +1093,45 @@ async def choose_next_actor(
 
     actor_before_progression_override = actor_after_semantic
     progression_override_actor = None
+    progression_override_high_candidate_available = False
+    progression_override_suppressed_med_band = False
+    progression_override_director_band = None
     if not p1_continuation_applied and not arch_quality_c_disable_progression_override(
         st_module
     ):
+        progression_override_active_issues = [
+            issue
+            for issue in (director_payload.get("active_issues", []) or [])
+            if isinstance(issue, dict)
+        ]
+        progression_override_recent_structured_moves = [
+            item
+            for item in (orchestration_state.get("recent_structured_moves", []) or [])
+            if isinstance(item, dict)
+        ]
+        progression_override_bands: dict[str, str] = {}
+        for actor in available_actors:
+            progression_override_bands[actor] = assign_progression_band_for_actor(
+                actor=actor,
+                available_actors=available_actors,
+                active_issues=progression_override_active_issues,
+                recent_structured_moves=progression_override_recent_structured_moves,
+            )
+        progression_override_director_band = progression_override_bands.get(
+            str(decision.get("next_actor", "") or "")
+        )
+        progression_override_high_candidate_available = (
+            progression_override_director_band == "med"
+            and any(
+                progression_override_bands.get(actor) == "high"
+                for actor in available_actors
+            )
+        )
         progression_override_actor = resolve_progression_override_actor(
             director_selected_actor=str(decision.get("next_actor", "") or ""),
             available_actors=available_actors,
-            active_issues=[
-                issue
-                for issue in (director_payload.get("active_issues", []) or [])
-                if isinstance(issue, dict)
-            ],
-            recent_structured_moves=[
-                item
-                for item in (orchestration_state.get("recent_structured_moves", []) or [])
-                if isinstance(item, dict)
-            ],
+            active_issues=progression_override_active_issues,
+            recent_structured_moves=progression_override_recent_structured_moves,
             spotlight_history=[
                 str(x or "").strip()
                 for x in (orchestration_state.get("spotlight_history", []) or [])
@@ -714,6 +1149,12 @@ async def choose_next_actor(
         decision["reason"] = (
             f"{decision.get('reason', '')} | Progression override from {original_actor} to {progression_override_actor}"
         ).strip(" |")
+    progression_override_suppressed_med_band = (
+        progression_override_director_band == "med"
+        and progression_enforcement_gate
+        and progression_override_high_candidate_available
+        and not progression_override_applied
+    )
 
     actor_after_override = str(decision.get("next_actor", "") or "").strip()
     actor_before_fairness = actor_after_override
@@ -728,6 +1169,33 @@ async def choose_next_actor(
     fairness_rotated = (
         actor_before_fairness != actor_after_fairness
         and not bool(decision.get("end_round"))
+    )
+
+    if human_turn_selection_issues or routing_misaligned:
+        final_pick = str(decision.get("next_actor", "") or "").strip()
+        diag = format_turn_selection_diagnostic_block(
+            validated_pick=str(director_pick_for_audit or "").strip(),
+            final_pick=final_pick,
+            routing_snapshot=routing_snapshot,
+            reconciled_issues=human_turn_selection_issues,
+        )
+        extra: list[str] = []
+        if human_turn_selection_issues:
+            extra.append(f"Validation: {'; '.join(human_turn_selection_issues)}")
+        extra.append(diag)
+        decision["reason"] = (
+            f"{decision.get('reason', '')} | {' | '.join(extra)}"
+        ).strip(" |")
+    reason_amended_for_semantic = str(decision.get("reason", "") or "") != (
+        reason_before_semantic_note
+    )
+
+    turn_selection_diag = build_turn_selection_diagnostics_for_audit(
+        actual_pick=director_pick_for_audit,
+        final_pick=str(decision.get("next_actor", "") or "").strip(),
+        routing_snapshot=routing_snapshot,
+        semantic_effective=effective_semantic_assessment,
+        reconciled_issues=reconciled_turn_selection_issues,
     )
 
     decision["reason"] = _reason_text_for_human_logs(
@@ -788,7 +1256,14 @@ async def choose_next_actor(
         "low_pressure_regime_active": low_pressure_turn_guidance_active_flag,
         "progression_enforcement_gate": progression_enforcement_gate,
         "semantic_validation_ran": semantic_turn_selection_assessment is not None,
-        "semantic_flag_summary": semantic_flag_summary(semantic_turn_selection_assessment),
+        "semantic_flag_summary": semantic_flag_summary(
+            effective_semantic_assessment
+            if effective_semantic_assessment is not None
+            else semantic_turn_selection_assessment
+        ),
+        "turn_selection_diagnostics": turn_selection_diag,
+        "progression_override_high_candidate_available": progression_override_high_candidate_available,
+        "progression_override_suppressed_med_band": progression_override_suppressed_med_band,
         "final_next_actor": str(decision.get("next_actor", "") or "").strip(),
         "attribution_chain": attribution_chain,
         "continuation_override_skipped_c2": continuation_override_skipped_c2,
@@ -841,7 +1316,10 @@ async def choose_next_actor(
                     },
                     "anti_regression_advisory": dict(anti_blob),
                     "turn_selection_issues": reconciled_turn_selection_issues,
+                    "turn_selection_diagnostics": turn_selection_diag,
                     "semantic_turn_selection_assessment": semantic_turn_selection_assessment
+                    or {},
+                    "semantic_turn_selection_assessment_effective": effective_semantic_assessment
                     or {},
                     "summary_blocks": summary_block_audit,
                     "director_selection_metrics": director_selection_audit_metrics,

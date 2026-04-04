@@ -361,7 +361,7 @@ async def _run_choose_next_actor_early_return(
         choose_fallback_actor_fn=lambda *_args, **_kwargs: "",
         validate_turn_selection_decision_fn=lambda *_args, **_kwargs: [],
         assess_turn_selection_decision_semantics_fn=lambda *_args, **_kwargs: {},
-        reconcile_turn_selection_issues_fn=lambda issues, _assessment: issues,
+        reconcile_turn_selection_issues_fn=lambda issues, _assessment, **_: issues,
         get_character_display_name_fn=lambda k: k,
         is_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
@@ -466,7 +466,7 @@ async def test_continuation_override_c2_skips_when_last_spotlight_matches() -> N
         choose_fallback_actor_fn=lambda *_a, **_k: "Ayame",
         validate_turn_selection_decision_fn=validate_turn_selection_decision,
         assess_turn_selection_decision_semantics_fn=lambda **_k: _async_none(),
-        reconcile_turn_selection_issues_fn=lambda issues, _a: issues,
+        reconcile_turn_selection_issues_fn=lambda issues, _a, **_: issues,
         get_character_display_name_fn=lambda k: k,
         is_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
@@ -552,7 +552,7 @@ def test_resolve_progression_override_actor_med_to_high_when_gate_active() -> No
             recent_structured_moves=recent_moves,
             progression_enforcement_gate=True,
         )
-        == "Celina"
+        is None
     )
 
 
@@ -860,6 +860,173 @@ def test_resolve_continuation_override_allowed_when_all_present_have_spoken() ->
 
 
 @pytest.mark.asyncio
+async def test_choose_next_actor_records_med_band_override_suppression_flags() -> None:
+    class _FakeDirResp:
+        __slots__ = ("chat_message",)
+
+        def __init__(self, content: str) -> None:
+            self.chat_message = SimpleNamespace(content=content)
+
+    class _FakeDirector:
+        async def on_messages(self, _messages, _token):
+            return _FakeDirResp("{}")
+
+    active_issues = [
+        SerializableItem({"status": "active", "participants": ["Ayame"]}),
+        SerializableItem({"status": "escalating", "participants": ["Celina"]}),
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+        {
+            "speaker": "Celina",
+            "action": "push",
+            "dialogue": "Now.",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": ["escalation"],
+            "issue_updates": [{}],
+            "presence_changes": [],
+        },
+    ]
+
+    class _FakeContinuityManager:
+        def __init__(self) -> None:
+            self.summary_blocks = []
+            self.summary_interval = 0
+            self.turn_counter = 0
+            self.scene_state = SimpleNamespace(
+                opening_description="",
+                recent_environment_events=[],
+                tension_history=[],
+                resolved_events=[],
+                present_characters=["Ayame", "Celina"],
+                offstage_characters=[],
+                scene_template_id="",
+                location="hallway",
+                environment_description="quiet hallway",
+                current_tension_level="moderate",
+                recent_delta="",
+            )
+
+        def get_snapshot(self) -> SimpleNamespace:
+            return SimpleNamespace(
+                scene_state=SimpleNamespace(
+                    to_dict=lambda: {
+                        "opening_description": "",
+                        "recent_environment_events": [],
+                        "tension_history": [],
+                        "resolved_events": [],
+                        "present_characters": ["Ayame", "Celina"],
+                        "offstage_characters": [],
+                        "scene_template_id": "",
+                        "location": "hallway",
+                        "current_tension_level": "moderate",
+                        "recent_delta": "",
+                    }
+                )
+            )
+
+        def get_orchestration_context(
+            self, active_issue_limit: int, recent_event_limit: int, summary_limit: int
+        ) -> dict[str, object]:
+            del active_issue_limit, recent_event_limit, summary_limit
+            return {
+                "resolved_events": [],
+                "active_issues": active_issues,
+                "recent_public_events": [],
+                "summary_blocks": [],
+                "scene_canon_anchors": [],
+            }
+
+        def retrieve_summary_blocks(self, limit: int = 0) -> list[object]:
+            del limit
+            return []
+
+    continuity_manager = _FakeContinuityManager()
+    orchestration_state = {
+        "pending_beat_shift": {"active": True, "reason": "test", "source_turn_id": None},
+        "spotlight_history": ["Mira"],
+        "scene_state": {
+            "opening_description": "",
+            "recent_environment_events": [],
+            "tension_history": [],
+            "resolved_events": [],
+            "present_characters": ["Ayame", "Celina"],
+            "offstage_characters": [],
+            "scene_template_id": "",
+            "current_tension_level": "moderate",
+        },
+        "recent_structured_moves": recent_moves,
+    }
+    session_state = {
+        "chat_history": [],
+        "selector_decisions": [],
+        "sim_progression_metrics": [],
+        "pending_forced_speaker": None,
+        "forced_speaker_consumed": False,
+    }
+
+    decision = await choose_next_actor_impl(
+        st_module=SimpleNamespace(session_state=session_state),
+        director=_FakeDirector(),
+        get_model_client_fn=lambda: None,
+        participant_names=["Ayame", "Celina"],
+        trigger_text="hello",
+        cancellation_token=None,
+        round_number=1,
+        turn_number=1,
+        available_actors=["Ayame", "Celina"],
+        continuation_override_actor=None,
+        actors_used_this_round=[],
+        enforce_must_remain_presence_fn=lambda: None,
+        get_orchestration_state_fn=lambda: orchestration_state,
+        get_continuity_manager_fn=lambda: continuity_manager,
+        build_scene_role_prompt_context_fn=lambda _ss, _names: [],
+        serialize_summary_blocks_for_prompt_fn=lambda *_a, **_k: [],
+        build_summary_block_audit_metadata_fn=lambda **_k: {},
+        serialize_events_for_prompt_fn=lambda *_a, **_k: [],
+        serialize_canon_anchors_for_prompt_fn=lambda *_a, **_k: [],
+        build_director_selection_prompt_fn=lambda _p: "",
+        parse_director_decision_fn=lambda *_a, **_k: (
+            {
+                "next_actor": "Ayame",
+                "environment_event": "",
+                "tension_shift": "",
+                "reason": "director pick",
+            },
+            None,
+        ),
+        choose_fallback_actor_fn=lambda *_a, **_k: "Ayame",
+        validate_turn_selection_decision_fn=validate_turn_selection_decision,
+        assess_turn_selection_decision_semantics_fn=lambda **_k: _async_none(),
+        reconcile_turn_selection_issues_fn=lambda issues, _a, **_: issues,
+        get_character_display_name_fn=lambda k: k,
+        is_audit_enabled_fn=lambda: False,
+        get_audit_logger_fn=lambda: None,
+        get_audit_context_fn=lambda: ("", 0, 0, 0),
+        get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
+        refresh_audit_summary_report_fn=lambda: None,
+        build_recent_dialogue_history_fn=lambda *_a, **_k: [],
+        prompt_dialogue_history_limit=6,
+        director_spotlight_history_limit=6,
+    )
+
+    assert decision.get("next_actor") == "Ayame"
+    assert len(session_state["sim_progression_metrics"]) == 1
+    event = session_state["sim_progression_metrics"][0]
+    assert event.get("kind") == "selection_attribution"
+    assert event.get("progression_override_high_candidate_available") is True
+    assert event.get("progression_override_suppressed_med_band") is True
+
+
+@pytest.mark.asyncio
 async def test_choose_next_actor_raises_when_available_actors_is_none() -> None:
     st_module = SimpleNamespace(
         session_state={
@@ -894,7 +1061,7 @@ async def test_choose_next_actor_raises_when_available_actors_is_none() -> None:
             choose_fallback_actor_fn=lambda *_args, **_kwargs: "",
             validate_turn_selection_decision_fn=lambda *_args, **_kwargs: [],
             assess_turn_selection_decision_semantics_fn=lambda *_args, **_kwargs: {},
-            reconcile_turn_selection_issues_fn=lambda issues, _assessment: issues,
+            reconcile_turn_selection_issues_fn=lambda issues, _assessment, **_: issues,
             get_character_display_name_fn=lambda k: k,
             is_audit_enabled_fn=lambda: False,
             get_audit_logger_fn=lambda: None,

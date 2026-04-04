@@ -1299,6 +1299,9 @@ def test_reconcile_turn_selection_issues_removes_false_positive_direct_address_i
             "should_flag_direct_address_miss": False,
             "direct_address_target": "Celina",
         },
+        selected_actor="Ayame",
+        participant_names=["Ayame", "Celina"],
+        display_name_for_key=lambda k: k,
     )
 
     assert reconciled == [
@@ -1316,6 +1319,8 @@ def test_reconcile_turn_selection_issues_adds_semantic_repeat_and_selection_supp
             "should_flag_direct_address_miss": False,
             "should_flag_repeat_spotlight": True,
         },
+        selected_actor="Ayame",
+        participant_names=["Ayame", "Celina"],
     )
 
     assert (
@@ -1325,6 +1330,50 @@ def test_reconcile_turn_selection_issues_adds_semantic_repeat_and_selection_supp
     assert (
         "Semantic turn_selection review did not support selected actor for current beat"
         in reconciled
+    )
+
+
+def test_reconcile_turn_selection_issues_no_addressee_mismatch_when_pick_matches_target() -> (
+    None
+):
+    reconciled = reconcile_turn_selection_issues(
+        [],
+        {
+            "supports_selected_actor": False,
+            "should_flag_direct_address_miss": True,
+            "direct_address_target": "Ayame",
+            "should_flag_repeat_spotlight": False,
+        },
+        selected_actor="Ayame",
+        participant_names=["Ayame", "Celina"],
+        display_name_for_key=lambda k: k,
+    )
+
+    assert not any(
+        "Addressee advisory mismatch (semantic):" in x for x in reconciled
+    )
+    assert reconciled == []
+
+
+def test_reconcile_turn_selection_issues_adds_addressee_mismatch_when_pick_differs() -> None:
+    reconciled = reconcile_turn_selection_issues(
+        [],
+        {
+            "supports_selected_actor": False,
+            "should_flag_direct_address_miss": True,
+            "direct_address_target": "Celina",
+            "should_flag_repeat_spotlight": False,
+        },
+        selected_actor="Ayame",
+        participant_names=["Ayame", "Celina"],
+        display_name_for_key=lambda k: k,
+    )
+
+    assert any(
+        x.startswith("Addressee advisory mismatch (semantic):")
+        and "Celina" in x
+        and "Ayame" in x
+        for x in reconciled
     )
 
 

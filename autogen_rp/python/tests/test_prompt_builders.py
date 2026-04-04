@@ -121,6 +121,107 @@ def test_build_director_selection_prompt_strips_low_pressure_hints_from_json() -
     assert '"participants": [' in prompt
 
 
+def test_build_director_selection_prompt_includes_responder_obligation_advisory() -> None:
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Ayame", "Celina"],
+        "responder_obligation": {
+            "active": True,
+            "soft_priority": True,
+            "confidence": "high",
+            "primary_actor": "Celina",
+            "candidates": [
+                {
+                    "actor": "Celina",
+                    "signals": ["direct_address", "required_response_to_prior_move"],
+                }
+            ],
+            "instruction": "Prefer Celina as the clearest immediate responder. This is advisory only.",
+        },
+        "responder_obligation_director_hints": {"active": True},
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "[responder_obligation]" in prompt
+    assert "Treat responder_obligation as advisory only" in prompt
+    assert "responder_obligation_director_hints" not in prompt
+    assert '"responder_obligation": {' in prompt
+    assert '"primary_actor": "Celina"' in prompt
+
+
+def test_build_director_selection_prompt_omits_responder_obligation_advisory_when_inactive() -> None:
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Ayame", "Celina"],
+        "responder_obligation": {
+            "active": False,
+            "soft_priority": True,
+            "confidence": "none",
+            "candidates": [],
+            "instruction": "No clear immediate responder obligation detected.",
+        },
+        "responder_obligation_director_hints": {"active": False},
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "[responder_obligation]" not in prompt
+    assert "responder_obligation_director_hints" not in prompt
+    assert '"confidence": "none"' in prompt
+
+
+def test_build_director_selection_prompt_includes_action_responsibility_advisory() -> None:
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Ayame", "Celina"],
+        "action_responsibility": {
+            "active": True,
+            "soft_priority": True,
+            "confidence": "high",
+            "primary_actor": "Celina",
+            "responsibility_mode": "grant_or_withhold_controlled_action",
+            "candidates": [
+                {
+                    "actor": "Celina",
+                    "signals": ["controls_bounded_next_step", "must_grant_or_refuse"],
+                }
+            ],
+            "instruction": "Prefer Celina as the clear bounded action owner. This is advisory only.",
+        },
+        "action_responsibility_director_hints": {"active": True},
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "[action_responsibility]" in prompt
+    assert "Treat action_responsibility as advisory only" in prompt
+    assert "action_responsibility_director_hints" not in prompt
+    assert '"action_responsibility": {' in prompt
+    assert '"primary_actor": "Celina"' in prompt
+
+
+def test_build_director_selection_prompt_omits_action_responsibility_advisory_when_inactive() -> None:
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Ayame", "Celina"],
+        "action_responsibility": {
+            "active": False,
+            "soft_priority": True,
+            "confidence": "none",
+            "candidates": [],
+            "instruction": "No clear bounded action owner detected from the immediately prior move.",
+        },
+        "action_responsibility_director_hints": {"active": False},
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "[action_responsibility]" not in prompt
+    assert "action_responsibility_director_hints" not in prompt
+    assert '"confidence": "none"' in prompt
+
+
 def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> None:
     prompt = build_character_turn_prompt(
         char_name="Ayame",
