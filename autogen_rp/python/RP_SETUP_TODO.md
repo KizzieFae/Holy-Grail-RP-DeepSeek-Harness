@@ -598,16 +598,57 @@ _optional hardening_
 - [x] No obvious handoff / override / continuation instability in core scenarios (**selector-quality closure**)
 - [ ] Character prompts feel sharp without instruction drag regressions _(optional hardening — not blocking progression)_
 - [ ] Narration remains readable and non-procedural _(optional hardening — not blocking progression)_
-- [x] Runtime quality is sufficient to defer further **selector / turn-selection** tuning until model change, Phase 3 ingestion, or a concrete regression (closure met)
+- [x] Runtime quality is sufficient to defer further **selector / turn-selection** tuning until model change, Phase 4 (vector/graph) ingestion, or a concrete regression (closure met)
 
 ---
 
-# Phase 3 — Ingestion System (vector / graph — still deferred)
+# Phase 3.4 — Canonical Knowledge Shape & Static Ingestion
+
+**Purpose:** Define the **canonical runtime knowledge model** from **system function**, not from current file layout. Reshape **static authored sources** (character cards, scenarios, initial/setup materials, lore) so they **compile deterministically** into that model and **inject through the existing packet / retrieval contract**. Preserve **authority boundaries** (continuity, grounding, episodic retrieval remain distinct). This phase is the **contractual foundation** for later **novel → graph / vector** ingestion—not a throwaway adapter layer.
+
+**Scope (what this phase is about):**
+
+- Canonical **knowledge entry schema** and **typed categories** driven by runtime need
+- **Authority classes**, **visibility**, **provenance / source metadata**
+- **Compiler / adapters** from today’s authored sources into the canonical shape
+- **Deterministic selection and injection** using existing runtime structures (packets, authored index path, etc.)
+- **Source document updates** where authored files must change to compile cleanly
+- Explicit **bridge narrative**: how canonical shape and contracts **guide** future graph/vector work
+
+## Constraints (non-negotiable for this phase)
+
+- No vector DB
+- No graph DB
+- No transcript-wide ingestion
+- No semantic retrieval tuning
+- No LLM-based selection logic
+- Do not collapse advisory knowledge into authoritative truth (continuity / grounding / binding discipline unchanged)
+
+## Checklist
+
+- [ ] Define canonical **knowledge object** schema
+- [ ] Define **knowledge types** by runtime function (not by legacy file type alone)
+- [ ] Define **authority classes** and **visibility** rules
+- [ ] Define **provenance / source metadata** requirements
+- [ ] Map **character cards** into canonical knowledge entries
+- [ ] Map **scenarios / setup / initial materials** into canonical knowledge entries
+- [ ] Identify **required source-shape changes** in authored files
+- [ ] Implement **deterministic compile / adaptation** path
+- [ ] Integrate with **existing packet / retrieval injection** contract
+- [ ] Validate **deduplication**, **precedence**, and **no authority drift** vs continuity / grounding / episodic
+- [ ] **Document** how this phase **bridges** to future graph/vector ingestion (contract-first, storage later)
+
+---
+
+# Phase 4 — Advanced Retrieval & Storage (vector / graph — still deferred)
+
+**Note:** Executes **after** Phase 3.4 canonical shape and static ingestion are in place; graph/vector implement storage and retrieval **against** that contract, not instead of it.
 
 ## HARD GATE
 
 - Retrieval proven
 - Packet interface stable
+- Canonical knowledge shape & static ingestion path established (Phase 3.4)
 
 ## Steps
 
@@ -666,9 +707,15 @@ Packets do NOT change behavior.
 
 **Phase 3.3 — selector-quality & turn-selection stability:** **complete (closed).** Hard obligation-vs-action-responsibility rule, diagnostic integrity, and advisory semantic alignment are documented in `python/rp_app/SELECTOR_QUALITY_PHASE.md`. Non-blocking optional hardening (character prompts, narrator, extra scenarios) remains listed under Phase 3.3 above; **does not reopen** the selector track unless a concrete regression appears.
 
+**Next active phase:** **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion** (canonical schema, authority/visibility/provenance, deterministic compile from authored sources, packet/retrieval integration—**not** vector/graph yet).
+
 Next (when ready):
 
-→ **Phase 3 — Ingestion System (vector / graph — still deferred)** — hard gate unchanged (retrieval proven, packet interface stable)
+→ **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion**
+
+Later (deferred):
+
+→ **Phase 4 — Advanced Retrieval & Storage (vector / graph)** — hard gate: retrieval proven, packet interface stable, Phase 3.4 complete
 
 Optional (non-blocking):
 
