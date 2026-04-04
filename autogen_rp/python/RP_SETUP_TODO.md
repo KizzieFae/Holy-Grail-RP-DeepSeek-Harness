@@ -5,8 +5,8 @@
 This roadmap reflects the correct execution order:
 
 1. Stabilize and validate the current runtime
-2. Introduce the packet seam (no behavior change)
-3. Validate again under packet alignment
+2. Introduce the packet seam (no behavior change) — **character prompt path complete** (Phase 0.5 closure)
+3. Validate again under packet alignment — **Phase 1** (scenario re-validation / broader packet completeness)
 4. Only then expand into retrieval
 5. Only after that begin ingestion work
 
@@ -125,23 +125,43 @@ High-salience **character** prompt constraints only (no new validators, retries,
 
 ---
 
-# Phase 0.5 — Packet Seam Introduction (NO BEHAVIOR CHANGE)
+# Phase 0.5 — Packet Seam Introduction (NO BEHAVIOR CHANGE) (**complete — character prompt path**)
 
 **Goal**: Introduce a structured runtime interface (packets) without changing system behavior.
 
-#### Phase 0.5 — Packet seam (shadow mode)
+### Phase 0.5 closure — character prompt path (implemented & validated)
 
-- [x] RuntimeScenePacket introduced (authored/stable scene slice only)
+**Implemented**
+
+- **`CharacterPromptInputAssembly`** — single authoritative assembly of all inputs needed for **`prompt_builders.build_character_turn_prompt`** (seam boundary). Populated once per character turn in **`app_turn_prompting.build_character_turn_prompt`** after retrieval/grounding assembly.
+- **No dual derivation** — **`live_bundle_from_character_prompt_assembly`** and **`runtime_packets_from_character_prompt_assembly`** consume the **same** assembly; live kwargs and packets are not built from parallel parameter lists.
+- **Shadow comparison** (`RP_PACKET_SHADOW_COMPARE`, default off): required **structural** equality of live vs reconstructed prompt-input bundles; optional **core prompt text** check (same **`build_character_turn_prompt_text_fn`**, beat-shift / progression / other suffix layers excluded from that check). Side-effect free beyond logging.
+- **Parity corpus** — **10** parametrized scenarios in **`tests/test_runtime_packets.py`** (offstage-shaped inputs, no-present fallback cast, high issue pressure, multi-character cast, grounding/binding strings, cross-session slices, session metadata on scene packet, multi-source **`RetrievedContextBundle`**, etc.) plus core prompt-text parity test when bundles match.
+- **Runtime** — retrieval, prompt wording, continuity, Director, Narrator, validation unchanged with shadow off.
+
+**Validated**
+
+- Unit/parity tests green; headless **`scripts/run_scene_simulation_llm.py`** runs with **`RP_PACKET_SHADOW_COMPARE=1`** over multiple scenarios (including **`arrival_setup`** with **`--episodic-memory`**) — **zero** packet shadow structured mismatches observed in captured output.
+
+**Known limitation (documentation)**
+
+- Shadow comparison results log to **stderr** via **`rp_app.packet_shadow`**; they are **not** persisted in audit JSON today. Follow-up (optional): record pass/fail in **`rp_app/data/rp_audits`** for CI-style checks.
+
+#### Phase 0.5 — Packet seam (checklist — character path)
+
+- [x] RuntimeScenePacket introduced (authored/stable scene slice only; **character prompt support** — not yet a full Director/Narrator scene abstraction)
 - [x] RuntimeCharacterPacket introduced (dynamic per-character slice)
 - [x] RetrievedContextBundle introduced (Phase 0.5: empty stub; **Phase 2:** typed items + authored retrieval — see Phase 2)
-- [x] Shadow-mode packet build integrated into prompt assembly
+- [x] Single assembly + packet build integrated into **`app_turn_prompting`** (character path)
 - [x] Structured prompt-input bundle reconstruction implemented
 - [x] Structured comparison (live vs packet-derived) implemented
 - [x] No prompt/output behavior change (validated)
 - [x] Shadow compare gated behind env flag
-- [x] Test coverage added for packet build + comparison
+- [x] Test coverage: packet build, comparison, parity corpus
 
 ---
+
+**Subsections A–H below** are **forward-looking** packaging / completeness goals (Phase 1+ and broader packet model). They are **not** the Phase 0.5 **character-path** exit gate; closure is defined in **Phase 0.5 closure** above.
 
 ## A. Freeze baseline behavior
 
@@ -330,13 +350,15 @@ Sources:
 
 # Phase 1 — Packet-Aligned Runtime Validation
 
-- [ ] Re-run all scenarios
+**Gate:** Phase 0.5 **character** packet seam (single assembly, shadow parity, simulation validation) is **complete** — see Phase 0.5 closure above.
+
+- [ ] Re-run all scenarios (or agreed subset) under normal and **`RP_PACKET_SHADOW_COMPARE=1`** as needed
 - [ ] Confirm no regressions
-- [ ] Validate packet completeness
+- [ ] Validate packet completeness **beyond** the **`build_character_turn_prompt`** boundary (e.g. Director/Narrator, future packaging consumers — scoped by future milestones)
 
 **Exit criteria:**
 - [ ] Stable behavior
-- [ ] Packet structure confirmed
+- [ ] Packet structure confirmed for agreed scope
 
 ---
 
@@ -712,7 +734,9 @@ Packets do NOT change behavior.
 
 **Phase 3.4 — canonical compile expansion:** **closed** for the scoped milestone (offline v3 compile + adapters + tests + example manifest; runtime unchanged).
 
-**Next active engineering focus:** **Phase 0.5 packet seam / packaging** — deepen read-only packet projections, structured compare, and path toward packaging consuming authoritative state + retrieval outputs ([PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)); canonical compile output is an **upstream artifact**, not a substitute for packets.
+**Phase 0.5 — packet seam (character prompt path):** **complete and validated** — single assembly (**`CharacterPromptInputAssembly`**), packet construction from assembly, reconstruction + shadow compare, parity corpus tests, simulation runs with shadow on (no mismatches). Shadow logs to stderr only; not yet in audit artifacts (see Phase 0.5 section).
+
+**Next active engineering focus:** **Phase 1 — Packet-Aligned Runtime Validation** (below) — re-run scenario coverage, confirm no regressions, and extend packet completeness **beyond** the character **`build_character_turn_prompt`** seam (e.g. Director/Narrator paths, future packaging read path) per [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md). Canonical compile output remains an **upstream artifact**, not a substitute for packets.
 
 Later (deferred):
 

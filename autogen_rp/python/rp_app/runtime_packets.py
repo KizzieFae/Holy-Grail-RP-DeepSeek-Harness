@@ -115,6 +115,104 @@ class RuntimeCharacterPacket:
     projection: CharacterRuntimePromptProjection
 
 
+@dataclass(frozen=True)
+class CharacterPromptInputAssembly:
+    """Single source of truth for character prompt inputs (Phase 0.5 seam boundary).
+
+    Holds everything required to call ``prompt_builders.build_character_turn_prompt`` and
+    to build ``RuntimeScenePacket`` / ``RuntimeCharacterPacket``. Populated once per turn;
+    live bundle and packets are derived only from this object — no dual derivation.
+    """
+
+    char_name: str
+    user_name: str
+    trigger_text: str
+    director_decision: dict[str, Any]
+    scene_state: dict[str, Any]
+    scene_template_context: dict[str, Any]
+    my_scene_role: dict[str, Any]
+    scene_roles: list[dict[str, Any]]
+    recent_moves: list[dict[str, Any]]
+    recent_dialogue: list[dict[str, Any]]
+    active_issues: list[dict[str, Any]]
+    priority_ladder: list[str]
+    summary_blocks: list[dict[str, Any]]
+    recent_public_events: list[dict[str, Any]]
+    cross_session_user_memories: list[Any]
+    cross_session_world_facts: list[Any]
+    user_preferences: list[Any]
+    my_interpretations: list[dict[str, Any]]
+    canon_anchors: list[dict[str, Any]]
+    state_context: str
+    cast: list[str]
+    scene_grounding_section: str
+    scene_binding_constraints_section: str
+    retrieved_bundle: RetrievedContextBundle
+    session_agent_names: list[str]
+    session_state: Any
+
+
+def live_bundle_from_character_prompt_assembly(
+    asm: CharacterPromptInputAssembly,
+) -> dict[str, Any]:
+    """Kwargs dict for ``build_character_turn_prompt`` / bundle compare (from assembly only)."""
+    return build_live_character_prompt_input_bundle(
+        char_name=asm.char_name,
+        user_name=asm.user_name,
+        trigger_text=asm.trigger_text,
+        director_decision=asm.director_decision,
+        scene_state=asm.scene_state,
+        scene_template_context=asm.scene_template_context,
+        my_scene_role=asm.my_scene_role,
+        scene_roles=asm.scene_roles,
+        recent_moves=asm.recent_moves,
+        recent_dialogue=asm.recent_dialogue,
+        active_issues=asm.active_issues,
+        priority_ladder=asm.priority_ladder,
+        summary_blocks=asm.summary_blocks,
+        recent_public_events=asm.recent_public_events,
+        cross_session_user_memories=asm.cross_session_user_memories,
+        cross_session_world_facts=asm.cross_session_world_facts,
+        user_preferences=asm.user_preferences,
+        my_interpretations=asm.my_interpretations,
+        canon_anchors=asm.canon_anchors,
+        state_context=asm.state_context,
+        cast=asm.cast,
+        scene_grounding_section=asm.scene_grounding_section,
+        scene_binding_constraints_section=asm.scene_binding_constraints_section,
+        retrieved_context_section=format_retrieved_context_for_prompt(asm.retrieved_bundle),
+    )
+
+
+def runtime_packets_from_character_prompt_assembly(
+    asm: CharacterPromptInputAssembly,
+) -> tuple[RuntimeScenePacket, RuntimeCharacterPacket]:
+    """Build scene + character packets from the same assembly as the live bundle."""
+    scene_packet = build_runtime_scene_packet(asm.scene_state, asm.session_state)
+    char_packet = build_runtime_character_packet(
+        scene_state=asm.scene_state,
+        char_name=asm.char_name,
+        user_name=asm.user_name,
+        trigger_text=asm.trigger_text,
+        director_decision=asm.director_decision,
+        session_agent_names=asm.session_agent_names,
+        recent_moves=asm.recent_moves,
+        recent_dialogue=asm.recent_dialogue,
+        active_issues=asm.active_issues,
+        summary_blocks=asm.summary_blocks,
+        recent_public_events=asm.recent_public_events,
+        cross_session_user_memories=asm.cross_session_user_memories,
+        cross_session_world_facts=asm.cross_session_world_facts,
+        user_preferences=asm.user_preferences,
+        my_interpretations=asm.my_interpretations,
+        canon_anchors=asm.canon_anchors,
+        scene_grounding_section=asm.scene_grounding_section,
+        scene_binding_constraints_section=asm.scene_binding_constraints_section,
+        retrieved=asm.retrieved_bundle,
+    )
+    return scene_packet, char_packet
+
+
 def split_scene_state(scene_state: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     stable: dict[str, Any] = {}
     dynamic: dict[str, Any] = {}

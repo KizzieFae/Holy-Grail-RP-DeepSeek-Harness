@@ -9,7 +9,7 @@ A Streamlit-based multi-character roleplay system using AutoGen.
 - A Narrator agent renders character moves into scene prose
 - Character dialogue is preserved verbatim during narration
 - Each character keeps private state, identity anchors, and interpretation summaries
-- **Phase 0.5 — runtime packet seam (shadow):** `runtime_packets.py` + env **`RP_PACKET_SHADOW_COMPARE`** optional structured parity check inside `app_turn_prompting.build_character_turn_prompt`; continuity and character state remain authoritative (see `ARCHITECTURE.md` and `autogen_rp/docs/architecture.md`)
+- **Phase 0.5 — packet seam (character path, complete):** **`CharacterPromptInputAssembly`** + `live_bundle_from_character_prompt_assembly` / `runtime_packets_from_character_prompt_assembly` in `runtime_packets.py`; **`RP_PACKET_SHADOW_COMPARE`** enables bundle parity (+ optional core prompt-text check, stderr logging — not audit-persisted). Director/Narrator not on this path yet. See `ARCHITECTURE.md` and `autogen_rp/docs/architecture.md`.
 
 ## Operating Rules
 

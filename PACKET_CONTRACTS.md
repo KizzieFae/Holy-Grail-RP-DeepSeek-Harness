@@ -1,6 +1,8 @@
 # Packet contracts (intent)
 
-These are **architectural contracts** for the **packaging layer** described in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §§3.2, 4.1–4.3. They are the **future integration seam** between knowledge/retrieval and the **RP runtime** (`autogen_rp/python/rp_app`). They are **not** fully implemented as dedicated types yet; existing code uses cards, continuity structures, and prompt builders.
+These are **architectural contracts** for the **packaging layer** described in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §§3.2, 4.1–4.3. They describe the **integration seam** between knowledge/retrieval and the **RP runtime** (`autogen_rp/python/rp_app`).
+
+**Implementation status (Phase 0.5 — character prompt path):** The **mechanical seam** for **character** generation is implemented in **`runtime_packets.py`** + **`app_turn_prompting.py`**: **`CharacterPromptInputAssembly`** holds exactly the inputs required for **`prompt_builders.build_character_turn_prompt`** (this is the **seam boundary** for that path). **`RuntimeScenePacket`** and **`RuntimeCharacterPacket`** are built from that assembly; **`reconstruct_character_prompt_input_bundle`** rebuilds the same kwargs shape from packets + **`CharacterState`**. **Shadow validation:** `RP_PACKET_SHADOW_COMPARE` — structural bundle equality (required); optional core prompt-text equality excluding beat-shift/progression suffixes. **Not yet:** Director or Narrator prompt paths do not consume this assembly; **`RuntimeScenePacket`** in code today supports the character path (stable scene slice + session fields), not the full shared-scene abstraction described below for every consumer. **Known gap:** shadow results log to **stderr** (`rp_app.packet_shadow`); they are **not** written into audit JSON yet.
 
 For runtime behavior today, see `autogen_rp/python/rp_app/ARCHITECTURE.md` and `prompt_builders.py`.
 
@@ -71,8 +73,8 @@ Typical contents (all subject to token budget and relevance gates):
 
 ## Evolution path (documentation-only commitment)
 
-1. Map today’s card + continuity + prompt sections → fields above **without behavior change**.
-2. Introduce a `packet_builder` (or equivalent) in packaging that produces these structures; runtime reads packets instead of assembling ad hoc.
-3. Wire retrieval outputs only into `RetrievedContextBundle`.
+1. Map today’s card + continuity + prompt sections → fields above **without behavior change**. **(Done for character path:** assembly + packets + reconstruction + shadow compare; see **Implementation status** above.)
+2. Extend packaging so **Director / Narrator** (and any other consumers) can use the same packet discipline; runtime eventually reads packets as the primary input boundary instead of ad hoc assembly.
+3. Wire retrieval outputs only into `RetrievedContextBundle` (character path: **done** via `app_turn_prompting`).
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 0.5 packet seam, Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 packet-aligned validation; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).

@@ -42,7 +42,11 @@ from retrieved_context_select import (
     select_retrieved_context_bundle,
     structured_prompt_id_sets_for_episodic_suppression,
 )
-from runtime_packets import format_retrieved_context_for_prompt
+from runtime_packets import (
+    CharacterPromptInputAssembly,
+    live_bundle_from_character_prompt_assembly,
+    runtime_packets_from_character_prompt_assembly,
+)
 
 
 def _prompt_dedup_texts_for_retrieval(
@@ -398,91 +402,13 @@ def build_character_turn_prompt(
             dedup_against_texts=_dedup_texts,
         )
     log_retrieval_if_active(retrieved_bundle, char_name=char_name)
-    retrieved_context_section = format_retrieved_context_for_prompt(retrieved_bundle)
 
-    if _packet_shadow_compare_enabled():
-        from runtime_packets import (
-            build_live_character_prompt_input_bundle,
-            build_runtime_character_packet,
-            build_runtime_scene_packet,
-            compare_character_prompt_bundles,
-            debug_bundle_mismatch_strings,
-            reconstruct_character_prompt_input_bundle,
-        )
-
-        session_agent_names = [
-            str(getattr(a, "name", "") or "").strip()
-            for a in st_module.session_state.get("characters", [])
-            if str(getattr(a, "name", "") or "").strip()
-        ]
-        live_bundle = build_live_character_prompt_input_bundle(
-            char_name=char_name,
-            user_name=user_name,
-            trigger_text=filtered_trigger,
-            director_decision=director_decision,
-            scene_state=scene_state,
-            scene_template_context=scene_template_context,
-            my_scene_role=my_scene_role,
-            scene_roles=scene_roles,
-            recent_moves=recent_moves,
-            recent_dialogue=recent_dialogue,
-            active_issues=active_issues,
-            priority_ladder=priority_ladder,
-            summary_blocks=summary_blocks,
-            recent_public_events=recent_public_events,
-            cross_session_user_memories=cross_session_user_memories,
-            cross_session_world_facts=cross_session_world_facts,
-            user_preferences=user_preferences,
-            my_interpretations=my_interpretations,
-            canon_anchors=canon_anchors,
-            state_context=state_context,
-            cast=cast,
-            scene_grounding_section=grounding_section,
-            scene_binding_constraints_section=binding_constraints_section,
-            retrieved_context_section=retrieved_context_section,
-        )
-        scene_packet = build_runtime_scene_packet(
-            scene_state,
-            st_module.session_state,
-        )
-        char_packet = build_runtime_character_packet(
-            scene_state=scene_state,
-            char_name=char_name,
-            user_name=user_name,
-            trigger_text=filtered_trigger,
-            director_decision=director_decision,
-            session_agent_names=session_agent_names,
-            recent_moves=recent_moves,
-            recent_dialogue=recent_dialogue,
-            active_issues=active_issues,
-            summary_blocks=summary_blocks,
-            recent_public_events=recent_public_events,
-            cross_session_user_memories=cross_session_user_memories,
-            cross_session_world_facts=cross_session_world_facts,
-            user_preferences=user_preferences,
-            my_interpretations=my_interpretations,
-            canon_anchors=canon_anchors,
-            scene_grounding_section=grounding_section,
-            scene_binding_constraints_section=binding_constraints_section,
-            retrieved=retrieved_bundle,
-        )
-        recon_bundle = reconstruct_character_prompt_input_bundle(
-            scene_packet,
-            char_packet,
-            state=state,
-        )
-        ok, detail = compare_character_prompt_bundles(live_bundle, recon_bundle)
-        if not ok:
-            _plog = logging.getLogger("rp_app.packet_shadow")
-            _plog.warning(
-                "packet shadow structured mismatch: %s", detail, exc_info=False
-            )
-            _plog.debug(
-                "packet shadow string diff (debug):\n%s",
-                debug_bundle_mismatch_strings(live_bundle, recon_bundle),
-            )
-
-    prompt_text = build_character_turn_prompt_text_fn(
+    session_agent_names = [
+        str(getattr(a, "name", "") or "").strip()
+        for a in st_module.session_state.get("characters", [])
+        if str(getattr(a, "name", "") or "").strip()
+    ]
+    prompt_input_assembly = CharacterPromptInputAssembly(
         char_name=char_name,
         user_name=user_name,
         trigger_text=filtered_trigger,
@@ -506,8 +432,53 @@ def build_character_turn_prompt(
         cast=cast,
         scene_grounding_section=grounding_section,
         scene_binding_constraints_section=binding_constraints_section,
-        retrieved_context_section=retrieved_context_section,
+        retrieved_bundle=retrieved_bundle,
+        session_agent_names=session_agent_names,
+        session_state=st_module.session_state,
     )
+    character_prompt_kwargs = live_bundle_from_character_prompt_assembly(
+        prompt_input_assembly
+    )
+
+    if _packet_shadow_compare_enabled():
+        from runtime_packets import (
+            compare_character_prompt_bundles,
+            debug_bundle_mismatch_strings,
+            reconstruct_character_prompt_input_bundle,
+        )
+
+        scene_packet, char_packet = runtime_packets_from_character_prompt_assembly(
+            prompt_input_assembly
+        )
+        recon_bundle = reconstruct_character_prompt_input_bundle(
+            scene_packet,
+            char_packet,
+            state=state,
+        )
+        ok, detail = compare_character_prompt_bundles(
+            character_prompt_kwargs, recon_bundle
+        )
+        _plog = logging.getLogger("rp_app.packet_shadow")
+        if not ok:
+            _plog.warning(
+                "packet shadow structured mismatch: %s", detail, exc_info=False
+            )
+            _plog.debug(
+                "packet shadow string diff (debug):\n%s",
+                debug_bundle_mismatch_strings(character_prompt_kwargs, recon_bundle),
+            )
+        else:
+            core_live = build_character_turn_prompt_text_fn(**character_prompt_kwargs)
+            core_recon = build_character_turn_prompt_text_fn(**recon_bundle)
+            if core_live != core_recon:
+                _plog.debug(
+                    "packet shadow core prompt text mismatch (bundle matched); "
+                    "len live=%d recon=%d",
+                    len(core_live),
+                    len(core_recon),
+                )
+
+    prompt_text = build_character_turn_prompt_text_fn(**character_prompt_kwargs)
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)
     if beat_shift_active_here:
         prompt_text += build_character_beat_shift_suffix(
