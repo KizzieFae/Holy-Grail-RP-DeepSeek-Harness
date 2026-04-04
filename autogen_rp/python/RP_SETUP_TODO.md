@@ -6,8 +6,8 @@ This roadmap reflects the correct execution order:
 
 1. Stabilize and validate the current runtime
 2. Introduce the packet seam (no behavior change) — **character prompt path complete** (Phase 0.5 closure)
-3. Validate again under packet alignment — **Phase 1** (scenario re-validation / broader packet completeness)
-4. Only then expand into retrieval
+3. **Scoped Phase 1 (retrieval-lock / validation)** — **complete** (bundle seam invariant, tests, snapshots; no new retrieval architecture). Broader scenario re-validation / Director–Narrator packet completeness remains **future** work.
+4. Only then expand into retrieval **product** behavior (Phase 2+ index, lanes, etc. — see Phase 2)
 5. Only after that begin ingestion work
 
 ---
@@ -348,17 +348,33 @@ Sources:
 
 ---
 
-# Phase 1 — Packet-Aligned Runtime Validation
+# Phase 1 — Packet-Aligned Runtime Validation (**scoped retrieval-lock / validation — complete**)
 
-**Gate:** Phase 0.5 **character** packet seam (single assembly, shadow parity, simulation validation) is **complete** — see Phase 0.5 closure above.
+This milestone was **intentionally narrow:** **validation and enforcement**, not new retrieval product behavior.
 
-- [ ] Re-run all scenarios (or agreed subset) under normal and **`RP_PACKET_SHADOW_COMPARE=1`** as needed
-- [ ] Confirm no regressions
-- [ ] Validate packet completeness **beyond** the **`build_character_turn_prompt`** boundary (e.g. Director/Narrator, future packaging consumers — scoped by future milestones)
+**What Phase 1 did *not* do (explicit):**
 
-**Exit criteria:**
-- [ ] Stable behavior
-- [ ] Packet structure confirmed for agreed scope
+- No new retrieval capabilities, **no** selector logic changes, **no** new lanes or branches in `retrieved_context_select.py`
+- No graph/vector retrieval, **no** retrieval-agent or Director-side retrieval planning
+- **No** change to runtime authority (continuity / grounding remain authoritative; retrieved stays **non-authoritative**)
+- **No** change to `prompt_builders` wording or placement beyond what existing tests already asserted (Phase 1 added **tests** that **document** current layout)
+
+**What Phase 1 did (closure summary):**
+
+- **Inventory:** Confirmed **no retrieval seam bypass** on the character path — bundle is built only in **`app_turn_prompting.build_character_turn_prompt`**, stored on **`CharacterPromptInputAssembly.retrieved_bundle`**.
+- **Assembly invariant (locked):** **`RetrievedContextBundle`** is the **behavioral source** for retrieval in the seam; **`retrieved_context_section`** is a **pure derived** artifact via **`format_retrieved_context_for_prompt(bundle)`** (through **`live_bundle_from_character_prompt_assembly`** only).
+- **Tests added:** assembly invariant (`test_phase1_assembly_invariant_section_is_pure_format_of_bundle`); **golden/snapshot** bundle composition (`tests/test_phase1_retrieval_seam.py`, `test_phase1_merge_bundle_composition_snapshot_stable` in `test_retrieved_context_merge.py`); **prompt-shape invariance** and **authority** guardrails (`tests/test_prompt_builders.py` Phase 1 tests).
+- **Regression:** **`RP_PACKET_SHADOW_COMPARE=1`** with retrieved / runtime_packets / perception / episodic prompt pytest subset — **green** (no new shadow regressions from this pass).
+
+**Gate:** Phase 0.5 character packet seam remains prerequisite — see Phase 0.5 closure above.
+
+**Future / out of scope (not Phase 1):**
+
+- Optional **headless simulation** burn-in with **`RP_PACKET_SHADOW_COMPARE=1`** (release hygiene; same style as Phase 0.5 validation — not required to call this scoped pass “complete”).
+- **Director / Narrator** packet consumers and broader **packaging** read path — separate milestone.
+- **Caps / dedup / merge** behavior: **unchanged** in code; existing tests + new snapshots **guard** composition drift.
+
+**Exit criteria (this scoped Phase 1):** **met** — retrieval-lock **documented and test-enforced** without expanding retrieval architecture.
 
 ---
 
@@ -736,7 +752,9 @@ Packets do NOT change behavior.
 
 **Phase 0.5 — packet seam (character prompt path):** **complete and validated** — single assembly (**`CharacterPromptInputAssembly`**), packet construction from assembly, reconstruction + shadow compare, parity corpus tests, simulation runs with shadow on (no mismatches). Shadow logs to stderr only; not yet in audit artifacts (see Phase 0.5 section).
 
-**Next active engineering focus:** **Phase 1 — Packet-Aligned Runtime Validation** (below) — re-run scenario coverage, confirm no regressions, and extend packet completeness **beyond** the character **`build_character_turn_prompt`** seam (e.g. Director/Narrator paths, future packaging read path) per [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md). Canonical compile output remains an **upstream artifact**, not a substitute for packets.
+**Phase 1 — scoped retrieval-lock / packet-aligned validation:** **complete** — no seam bypass; **bundle-driven** retrieval invariant; **pure derived** `retrieved_context_section`; snapshot + prompt-shape + authority tests; shadow pytest subset green. **Did not** add selector features, lanes, graph/vector, or Director retrieval. See Phase 1 section.
+
+**Next broader packaging focus:** extend packet consumers **beyond** the character **`build_character_turn_prompt`** seam (Director/Narrator, etc.) per [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md). Canonical compile output remains an **upstream artifact**, not a substitute for packets.
 
 Later (deferred):
 

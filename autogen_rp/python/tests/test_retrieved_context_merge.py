@@ -146,3 +146,22 @@ def test_merge_order_authored_segment_before_episodic_no_cap():
     )
     refs = [it.source_ref for it in bundle.items]
     assert refs.index("a1") < refs.index("e1")
+
+
+def test_phase1_merge_bundle_composition_snapshot_stable():
+    """Golden snapshot for authored+episodic merge (detect silent selector/merge drift)."""
+    idx = _index_t1(_chunk(ref="a1", text="first authored", pri=100))
+    ep = _ep(sid="e1", summary="second episodic", sal=20)
+    bundle = merge_retrieved_context_with_episodic(
+        index=idx,
+        char_name="Alice",
+        scene_template_id="t1",
+        relationship_focus_names=(),
+        cast=(),
+        dedup_against_texts=(),
+        episodic_items=(ep,),
+    )
+    assert [(it.source_ref, it.source_kind, it.scope, it.priority, it.text) for it in bundle.items] == [
+        ("a1", "scene_template", "scene", 100, "first authored"),
+        ("e1", "episodic:public_event", "session_episodic", 20, "second episodic"),
+    ]

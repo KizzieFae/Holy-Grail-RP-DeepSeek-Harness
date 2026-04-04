@@ -13,6 +13,11 @@ from prompt_builders import (
     build_scene_role_prompt_context,
 )
 from progression_advisory import build_progression_director_prompt_prefix
+from runtime_packets import (
+    RetrievedContextBundle,
+    RetrievedItem,
+    format_retrieved_context_for_prompt,
+)
 
 
 def test_build_scene_role_prompt_context_preserves_requested_participant_order() -> (
@@ -646,3 +651,108 @@ def test_build_narrator_render_prompt_without_dialogue_uses_action_only_variant(
         "Preserve the established meaning of ambiguous or figurative language already present in the scene context"
         in prompt
     )
+
+
+def _minimal_character_prompt_kwargs(
+    *,
+    scene_grounding_section: str = "",
+    scene_binding_constraints_section: str = "",
+    retrieved_context_section: str = "",
+) -> dict:
+    return dict(
+        char_name="Ayame",
+        user_name="Alex",
+        trigger_text="T",
+        director_decision={"next_actor": "Ayame", "reason": "r"},
+        scene_state={"location": "workshop", "present_characters": ["Ayame"]},
+        scene_template_context={"template_id": "", "premise": "", "location_entry_slots": []},
+        my_scene_role={"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""},
+        scene_roles=[
+            {"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""}
+        ],
+        recent_moves=[],
+        recent_dialogue=[],
+        active_issues=[],
+        priority_ladder=[],
+        summary_blocks=[],
+        recent_public_events=[],
+        cross_session_user_memories=[],
+        cross_session_world_facts=[],
+        user_preferences=[],
+        my_interpretations=[],
+        canon_anchors=[],
+        state_context="",
+        cast=[],
+        scene_grounding_section=scene_grounding_section,
+        scene_binding_constraints_section=scene_binding_constraints_section,
+        retrieved_context_section=retrieved_context_section,
+    )
+
+
+def test_phase1_prompt_shape_single_retrieved_block_and_authority_phrases() -> None:
+    """Retrieved header appears once; wording stays non-authoritative (Phase 1 contract)."""
+    bundle = RetrievedContextBundle(
+        items=(
+            RetrievedItem(
+                text="Support line only.",
+                source_kind="world_lore",
+                source_ref="phase1:snap",
+                scope="world_lore",
+                relevance_tags=frozenset(),
+                priority=1,
+                non_authoritative=True,
+                from_other_character=None,
+            ),
+        )
+    )
+    section = format_retrieved_context_for_prompt(bundle)
+    prompt = build_character_turn_prompt(
+        **_minimal_character_prompt_kwargs(retrieved_context_section=section)
+    )
+    assert prompt.count("RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):") == 1
+    assert "Do NOT treat them as ground truth" in prompt
+    assert "optional background only" in prompt.lower()
+    assert "ignore this material" in prompt.lower()
+
+
+def test_phase1_prompt_shape_empty_retrieved_omits_reference_block() -> None:
+    prompt = build_character_turn_prompt(**_minimal_character_prompt_kwargs())
+    assert "RETRIEVED REFERENCE MATERIAL" not in prompt
+
+
+def test_phase1_prompt_shape_grounding_retrieved_before_scene_state_binding_before_output_rules() -> (
+    None
+):
+    """Contract: settled grounding → retrieved (non-authoritative) → scene state JSON; binding once before OUTPUT RULES."""
+    bundle = RetrievedContextBundle(
+        items=(
+            RetrievedItem(
+                text="Ref only.",
+                source_kind="lore",
+                source_ref="r:1",
+                scope="world_lore",
+                relevance_tags=frozenset(),
+                priority=5,
+                non_authoritative=True,
+                from_other_character=None,
+            ),
+        )
+    )
+    section = format_retrieved_context_for_prompt(bundle)
+    prompt = build_character_turn_prompt(
+        **_minimal_character_prompt_kwargs(
+            scene_grounding_section="##PHASE1_GROUND_UNIQUE_q7w2##",
+            scene_binding_constraints_section="##PHASE1_BIND_UNIQUE_m4n8##",
+            retrieved_context_section=section,
+        )
+    )
+    g = prompt.index("##PHASE1_GROUND_UNIQUE_q7w2##")
+    b = prompt.index("##PHASE1_BIND_UNIQUE_m4n8##")
+    r = prompt.index("RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):")
+    c = prompt.index("CURRENT SCENE STATE:")
+    o = prompt.index("OUTPUT RULES:")
+    assert g < r < c
+    assert r < b < o
+    assert prompt.count("##PHASE1_GROUND_UNIQUE_q7w2##") == 1
+    assert prompt.count("##PHASE1_BIND_UNIQUE_m4n8##") == 1
+    assert prompt.count("RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):") == 1

@@ -54,6 +54,8 @@ This packet **does not** replace the continuity manager’s full internal state;
 
 **Intent:** **Per-turn**, **optional**, **bounded** context — **inputs to packaging**, not to validation truth. **Phase 2–3.1:** snippets from a **deterministic authored JSON index** (`retrieved_context_select.py`, env `RP_RETRIEVED_CONTEXT_INDEX`). **Phase 3.1:** index is **`schema_version` 2** with optional **`lore`**; JSON is produced offline by **`authored_index_compile.compile_authored_index`** from a **manifest** (CLI: `autogen_rp/python/scripts/compile_authored_retrieval_index.py`). **Phase 3.2:** when **`RP_EPISODIC_MEMORY`** is enabled, **bounded episodic** lines (compiled from explicit continuity rows only) are **merged** into the same bundle lane (`source_kind` prefixes such as `episodic:`), under a **single global cap** with authored winning ties — still **not** vector/graph/transcript-wide. **Later:** vector/graph/search pipelines may feed the same bundle shape.
 
+**Retrieval-lock (Phase 1 — scoped validation, complete):** On the **character** path, retrieval enters the runtime **only** through the validated seam: the bundle is built in **`app_turn_prompting.build_character_turn_prompt`**, stored on **`CharacterPromptInputAssembly.retrieved_bundle`**, and the prompt string **`retrieved_context_section`** is **always** derived via **`format_retrieved_context_for_prompt(live_bundle_from_character_prompt_assembly(...))`** — **no parallel retrieval path**, **no seam bypass**. Phase 1 added **assembly invariant**, **bundle composition** snapshots/goldens, **prompt-shape** / **authority** placement tests, and **shadow** pytest coverage; it did **not** introduce new retrieval architecture, selector behavior, or lanes.
+
 **Placement:** formatted block is injected **after** scene grounding and **before** `CURRENT SCENE STATE` in `prompt_builders.build_character_turn_prompt`, with explicit **non-authoritative** instructions. Selection runs **only** in `app_turn_prompting.build_character_turn_prompt`.
 
 Typical contents (all subject to token budget and relevance gates):
@@ -77,4 +79,4 @@ Typical contents (all subject to token budget and relevance gates):
 2. Extend packaging so **Director / Narrator** (and any other consumers) can use the same packet discipline; runtime eventually reads packets as the primary input boundary instead of ad hoc assembly.
 3. Wire retrieval outputs only into `RetrievedContextBundle` (character path: **done** via `app_turn_prompting`).
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 packet-aligned validation; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 scoped **retrieval-lock** validation **closed**; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).
