@@ -129,6 +129,16 @@ def main() -> None:
         help="Baseline run: disable progression gate/retry and MED->HIGH override (compare vs default).",
     )
     p.add_argument(
+        "--arch-quality-variant",
+        choices=("baseline", "a1", "b", "c"),
+        default="baseline",
+        help=(
+            "Architecture-quality harness only: session_state arch_quality_variant for headless runs "
+            "(A1 director prefix ablation, B no character progression suffix, C no progression override). "
+            "See SCENARIO_VALIDATION_FRAMEWORK.md / arch_quality_variants.py."
+        ),
+    )
+    p.add_argument(
         "--verdict",
         choices=("PASS", "FAIL", "WARN"),
         default=None,
@@ -201,6 +211,7 @@ def main() -> None:
             audit_enabled=args.audit,
             audit_session_owner=audit_owner,
             progression_enforcement_disabled=args.no_progression_enforcement,
+            arch_quality_variant=args.arch_quality_variant,
             deep_simulation_turns=deep_turns,
             enable_episodic_memory=args.episodic_memory,
         )
@@ -220,6 +231,7 @@ def main() -> None:
             audit_enabled=args.audit,
             audit_session_owner="headless_adhoc",
             progression_enforcement_disabled=args.no_progression_enforcement,
+            arch_quality_variant=args.arch_quality_variant,
             deep_simulation_turns=deep_turns,
             enable_episodic_memory=args.episodic_memory,
         )

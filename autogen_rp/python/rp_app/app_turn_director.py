@@ -9,6 +9,11 @@ from semantic_validation import (
     substitute_agent_keys_with_display_names,
 )
 
+from arch_quality_variants import (
+    arch_quality_a1_suppress_director_soft_prefixes,
+    arch_quality_c_disable_progression_override,
+    arch_quality_variant,
+)
 from audit_instrumentation import log_audit_exception
 from beat_shift_state import (
     build_director_beat_shift_prompt_prefix,
@@ -18,6 +23,7 @@ from orchestration_helpers import (
     apply_participation_fairness_to_decision,
     resolve_progression_override_actor,
 )
+from selection_attribution import record_selection_attribution_event, semantic_flag_summary
 from anti_regression_advisory import sync_anti_regression_advisory_for_prompts
 from progression_advisory import (
     build_progression_director_prompt_prefix,
@@ -116,6 +122,28 @@ async def choose_next_actor(
         )
 
     if not available_actors:
+        orch = get_orchestration_state_fn()
+        record_selection_attribution_event(
+            st_module,
+            {
+                "round_number": round_number,
+                "turn_number": turn_number,
+                "available_actors": [],
+                "pending_forced_speaker": st_module.session_state.get(
+                    "pending_forced_speaker"
+                ),
+                "forced_speaker_consumed": bool(
+                    st_module.session_state.get("forced_speaker_consumed", False)
+                ),
+                "continuation_override_actor": continuation_override_actor,
+                "arch_quality_variant": arch_quality_variant(st_module),
+                "hard_route": True,
+                "hard_route_source": "no_available_actors",
+                "final_next_actor": "",
+                "attribution_chain": [],
+                "beat_shift_pending": is_pending_beat_shift_active(orch),
+            },
+        )
         return {
             "next_actor": "",
             "environment_event": "",
@@ -128,34 +156,114 @@ async def choose_next_actor(
         if isinstance(actors_used_this_round, list)
         else []
     )
+    p1_continuation_applied = False
+    continuation_override_skipped_c2 = False
 
     forced_speaker = st_module.session_state.get("pending_forced_speaker")
     if forced_speaker in available_actors and not st_module.session_state.get(
         "forced_speaker_consumed", False
     ):
         st_module.session_state["forced_speaker_consumed"] = True
+        orchestration_state_early = get_orchestration_state_fn()
+        cm_early = get_continuity_manager_fn()
+        pa_early = sync_progression_advisory_for_prompts(
+            orchestration_state=orchestration_state_early,
+            continuity_manager=cm_early,
+        )
         decision = {
             "next_actor": forced_speaker,
             "environment_event": "",
             "tension_shift": "",
             "reason": "Forced by direct address routing.",
         }
+        record_selection_attribution_event(
+            st_module,
+            {
+                "round_number": round_number,
+                "turn_number": turn_number,
+                "available_actors": list(available_actors),
+                "pending_forced_speaker": forced_speaker,
+                "forced_speaker_consumed": True,
+                "continuation_override_actor": continuation_override_actor,
+                "arch_quality_variant": arch_quality_variant(st_module),
+                "hard_route": True,
+                "hard_route_source": "forced_speaker",
+                "final_next_actor": forced_speaker,
+                "attribution_chain": ["forced_speaker"],
+                "beat_shift_pending": is_pending_beat_shift_active(
+                    orchestration_state_early
+                ),
+                "stall_score": pa_early.get("stall_score"),
+                "progression_pressure": pa_early.get("progression_pressure"),
+                "layer_flags": {
+                    "semantic_validation_ran": False,
+                    "progression_enforcement_gate": False,
+                },
+            },
+        )
         st_module.session_state["selector_decisions"].append(
             f"Director override to addressed character: {_actor_label_for_selector(forced_speaker)}"
         )
         return decision
 
     if continuation_override_actor in available_actors:
-        decision = {
-            "next_actor": continuation_override_actor,
-            "environment_event": "",
-            "tension_shift": "",
-            "reason": "Forced by continuation override.",
-        }
-        st_module.session_state["selector_decisions"].append(
-            f"Director override to continuation owner: {_actor_label_for_selector(continuation_override_actor)}"
-        )
-        return decision
+        orchestration_state_early = get_orchestration_state_fn()
+        sh_raw = orchestration_state_early.get("spotlight_history", []) or []
+        if not isinstance(sh_raw, list):
+            sh_raw = []
+        spotlight_tail = [
+            str(x or "").strip() for x in sh_raw if str(x or "").strip()
+        ]
+        last_spot = spotlight_tail[-1] if spotlight_tail else ""
+        co = str(continuation_override_actor or "").strip()
+        if last_spot and co and last_spot == co:
+            continuation_override_skipped_c2 = True
+        else:
+            cm_early = get_continuity_manager_fn()
+            pa_early = sync_progression_advisory_for_prompts(
+                orchestration_state=orchestration_state_early,
+                continuity_manager=cm_early,
+            )
+            decision = {
+                "next_actor": continuation_override_actor,
+                "environment_event": "",
+                "tension_shift": "",
+                "reason": "Forced by continuation override.",
+            }
+            p1_continuation_applied = True
+            record_selection_attribution_event(
+                st_module,
+                {
+                    "round_number": round_number,
+                    "turn_number": turn_number,
+                    "available_actors": list(available_actors),
+                    "pending_forced_speaker": st_module.session_state.get(
+                        "pending_forced_speaker"
+                    ),
+                    "forced_speaker_consumed": bool(
+                        st_module.session_state.get("forced_speaker_consumed", False)
+                    ),
+                    "continuation_override_actor": continuation_override_actor,
+                    "arch_quality_variant": arch_quality_variant(st_module),
+                    "hard_route": True,
+                    "hard_route_source": "continuation_override",
+                    "final_next_actor": continuation_override_actor,
+                    "attribution_chain": ["continuation_override"],
+                    "beat_shift_pending": is_pending_beat_shift_active(
+                        orchestration_state_early
+                    ),
+                    "stall_score": pa_early.get("stall_score"),
+                    "progression_pressure": pa_early.get("progression_pressure"),
+                    "layer_flags": {
+                        "semantic_validation_ran": False,
+                        "progression_enforcement_gate": False,
+                    },
+                },
+            )
+            st_module.session_state["selector_decisions"].append(
+                f"Director override to continuation owner: {_actor_label_for_selector(continuation_override_actor)}"
+            )
+            return decision
 
     orchestration_state = get_orchestration_state_fn()
     beat_shift_active = is_pending_beat_shift_active(orchestration_state)
@@ -442,6 +550,24 @@ async def choose_next_actor(
             "prompt_prefix": build_low_pressure_director_prompt_prefix(),
         }
 
+    director_prefix_eligible = {
+        "progression": "progression_director_hints" in director_payload,
+        "beat_shift": "beat_shift_director_hints" in director_payload,
+        "anti_regression": "anti_regression_director_hints" in director_payload,
+        "low_pressure": "low_pressure_turn_director_hints" in director_payload,
+    }
+    if arch_quality_a1_suppress_director_soft_prefixes(st_module):
+        director_payload.pop("progression_director_hints", None)
+        director_payload.pop("anti_regression_director_hints", None)
+        director_payload.pop("low_pressure_turn_director_hints", None)
+
+    director_prefix_in_prompt = {
+        "progression": "progression_director_hints" in director_payload,
+        "beat_shift": "beat_shift_director_hints" in director_payload,
+        "anti_regression": "anti_regression_director_hints" in director_payload,
+        "low_pressure": "low_pressure_turn_director_hints" in director_payload,
+    }
+
     director_payload["settled_scene_facts_prompt"] = format_grounding_prompt_prefix(
         st_module.session_state.get("scene_grounding")
     )
@@ -536,10 +662,15 @@ async def choose_next_actor(
         reconciled_issues=reconciled_turn_selection_issues,
         semantic_assessment=semantic_turn_selection_assessment,
     )
+    reason_before_semantic_note = str(decision.get("reason", "") or "")
     if human_turn_selection_issues:
         decision["reason"] = (
             f"{decision.get('reason', '')} | Validation: {'; '.join(human_turn_selection_issues)}"
         ).strip(" |")
+    reason_amended_for_semantic = str(decision.get("reason", "") or "") != (
+        reason_before_semantic_note
+    )
+    actor_after_semantic = str(decision.get("next_actor", "") or "").strip()
 
     if st_module.session_state.get("progression_enforcement_disabled"):
         progression_enforcement_gate = False
@@ -547,45 +678,122 @@ async def choose_next_actor(
         progression_enforcement_gate = beat_shift_active or (
             progression_advisory_snapshot.get("progression_pressure") == "high"
         )
-    progression_override_actor = resolve_progression_override_actor(
-        director_selected_actor=str(decision.get("next_actor", "") or ""),
-        available_actors=available_actors,
-        active_issues=[
-            issue
-            for issue in (director_payload.get("active_issues", []) or [])
-            if isinstance(issue, dict)
-        ],
-        recent_structured_moves=[
-            item
-            for item in (orchestration_state.get("recent_structured_moves", []) or [])
-            if isinstance(item, dict)
-        ],
-        spotlight_history=[
-            str(x or "").strip()
-            for x in (orchestration_state.get("spotlight_history", []) or [])
-            if str(x or "").strip()
-        ],
-        progression_enforcement_gate=progression_enforcement_gate,
-    )
+
+    actor_before_progression_override = actor_after_semantic
+    progression_override_actor = None
+    if not p1_continuation_applied and not arch_quality_c_disable_progression_override(
+        st_module
+    ):
+        progression_override_actor = resolve_progression_override_actor(
+            director_selected_actor=str(decision.get("next_actor", "") or ""),
+            available_actors=available_actors,
+            active_issues=[
+                issue
+                for issue in (director_payload.get("active_issues", []) or [])
+                if isinstance(issue, dict)
+            ],
+            recent_structured_moves=[
+                item
+                for item in (orchestration_state.get("recent_structured_moves", []) or [])
+                if isinstance(item, dict)
+            ],
+            spotlight_history=[
+                str(x or "").strip()
+                for x in (orchestration_state.get("spotlight_history", []) or [])
+                if str(x or "").strip()
+            ],
+            progression_enforcement_gate=progression_enforcement_gate,
+        )
+    progression_override_applied = False
     if progression_override_actor and progression_override_actor != decision.get(
         "next_actor"
     ):
+        progression_override_applied = True
         original_actor = str(decision.get("next_actor", "") or "")
         decision["next_actor"] = progression_override_actor
         decision["reason"] = (
             f"{decision.get('reason', '')} | Progression override from {original_actor} to {progression_override_actor}"
         ).strip(" |")
 
-    apply_participation_fairness_to_decision(
-        decision,
-        participant_names=participant_names,
-        available_actors=available_actors,
-        actors_used_this_round=used_this_round,
+    actor_after_override = str(decision.get("next_actor", "") or "").strip()
+    actor_before_fairness = actor_after_override
+    if not p1_continuation_applied:
+        apply_participation_fairness_to_decision(
+            decision,
+            participant_names=participant_names,
+            available_actors=available_actors,
+            actors_used_this_round=used_this_round,
+        )
+    actor_after_fairness = str(decision.get("next_actor", "") or "").strip()
+    fairness_rotated = (
+        actor_before_fairness != actor_after_fairness
+        and not bool(decision.get("end_round"))
     )
 
     decision["reason"] = _reason_text_for_human_logs(
         str(decision.get("reason", "") or "")
     )
+
+    director_source = "fallback" if (error or decision.get("source") == "fallback") else "director"
+    attribution_chain: list[str] = []
+    if director_source == "fallback":
+        attribution_chain.append("fallback")
+    else:
+        attribution_chain.append("director")
+    if progression_override_applied:
+        attribution_chain.append("progression_override")
+    if fairness_rotated:
+        attribution_chain.append("participation_fairness")
+
+    selection_attribution_record: dict[str, Any] = {
+        "round_number": round_number,
+        "turn_number": turn_number,
+        "available_actors": list(available_actors),
+        "pending_forced_speaker": pending_forced_str,
+        "forced_speaker_consumed": bool(
+            st_module.session_state.get("forced_speaker_consumed", False)
+        ),
+        "continuation_override_actor": continuation_override_actor,
+        "arch_quality_variant": arch_quality_variant(st_module),
+        "hard_route": False,
+        "director_raw": {
+            "source": director_source,
+            "next_actor": director_pick_for_audit,
+            "end_round": end_round_for_audit,
+            "parse_error": str(error) if error else None,
+            "is_fallback": director_source == "fallback",
+        },
+        "after_semantic_note": {
+            "reason_amended": reason_amended_for_semantic,
+            "next_actor": actor_after_semantic,
+        },
+        "after_progression_override": {
+            "applied": progression_override_applied,
+            "previous_actor": actor_before_progression_override,
+            "next_actor": actor_after_override,
+            "source": "progression_override" if progression_override_applied else None,
+        },
+        "after_fairness": {
+            "rotated": fairness_rotated,
+            "previous_actor": actor_before_fairness,
+            "next_actor": actor_after_fairness,
+            "source": "participation_fairness" if fairness_rotated else None,
+        },
+        "beat_shift_pending": beat_shift_active,
+        "stall_score": progression_advisory_snapshot.get("stall_score"),
+        "progression_pressure": progression_advisory_snapshot.get("progression_pressure"),
+        "director_prefix_eligible": director_prefix_eligible,
+        "director_prefix_in_prompt": director_prefix_in_prompt,
+        "anti_regression_triggered": bool(str(anti_prefix or "").strip()),
+        "low_pressure_regime_active": low_pressure_turn_guidance_active_flag,
+        "progression_enforcement_gate": progression_enforcement_gate,
+        "semantic_validation_ran": semantic_turn_selection_assessment is not None,
+        "semantic_flag_summary": semantic_flag_summary(semantic_turn_selection_assessment),
+        "final_next_actor": str(decision.get("next_actor", "") or "").strip(),
+        "attribution_chain": attribution_chain,
+        "continuation_override_skipped_c2": continuation_override_skipped_c2,
+    }
+    record_selection_attribution_event(st_module, selection_attribution_record)
 
     if is_audit_enabled_fn():
         try:
@@ -637,6 +845,7 @@ async def choose_next_actor(
                     or {},
                     "summary_blocks": summary_block_audit,
                     "director_selection_metrics": director_selection_audit_metrics,
+                    "selection_attribution": selection_attribution_record,
                 },
                 **scene_audit_kwargs,
             )

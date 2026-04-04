@@ -81,7 +81,7 @@ Runtime validation is split under `autogen_rp/python/rp_app/`:
 
 Validators **reject or annotate**; they do **not** replace Director selection or continuity commits. **Intentional pipeline order** inside `validate_bot_response`: **duplicate → drift → presence** (duplicate first as loop prevention).
 
-Turn-selection checks include participant / availability, optional offstage cross-check, optional preemption invariants when kwargs are supplied, and **`end_round` + empty `next_actor`**. Preemption validation is **skipped** when the decision is marked fallback (`decision.get("source") == "fallback"` or truthy `is_fallback`).
+Turn-selection checks include participant / availability, optional offstage cross-check, optional preemption invariants when kwargs are supplied, and **`end_round` + empty `next_actor`**. Preemption validation is **skipped** when the decision is marked fallback (`decision.get("source") == "fallback"` or truthy `is_fallback`). **Continuation preemption** (next actor must match `continuation_override_actor` when that actor is available) is **not** enforced when the **v1 C2** rule applies: last non-empty `spotlight_history` entry equals the continuation actor — then the runtime falls through to Director (`app_turn_director.py`) instead of the continuation hard route, and validation matches that policy.
 
 ## Director fallback marker (cross-layer contract)
 

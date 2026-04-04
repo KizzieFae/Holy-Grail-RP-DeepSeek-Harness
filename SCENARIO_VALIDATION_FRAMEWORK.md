@@ -150,8 +150,10 @@ These confirm **code-level** behavior; scenarios confirm **model + pipeline** be
   - `scenario_id`
   - `verdict` / `failure_classification` (when you pass CLI flags; otherwise `null`)
   - `expected_pressure_profile` (from scenario manifest when present; else `null`)
-  - `metrics`: first qualifying continuity turn index, progression retry count, failed progression attempts, qualifying vs non-qualifying accepted turns, whether enforcement was on
+  - `metrics`: first qualifying continuity turn index, progression retry count, failed progression attempts, qualifying vs non-qualifying accepted turns, whether enforcement was on; when the sim records selection events, **`selection_attribution_summary`** (hard routes, progression-override applications, fairness rotations, attribution-chain counts)
   - `audit_session_number` / `audit_summary_report_path` when `--audit` was used
+
+**Selection attribution (baseline v1):** Director audit metadata may include **`selection_attribution`** with **`continuation_override_skipped_c2: true`** when the continuation override was eligible but skipped because the last spotlight speaker already matched the continuation actor (see `autogen_rp/python/RP_SETUP_TODO.md` Phase 0 §I). On normal quality runs, optionally note how often C2 fires and whether continuation / override behavior feels improved — no separate C2-only validation phase required.
 
 **Audit JSON** (with `--audit`): written under `autogen_rp/python/rp_app/data/rp_audits/` (session folders + summary), same mechanism as the Streamlit app with auditing enabled.
 

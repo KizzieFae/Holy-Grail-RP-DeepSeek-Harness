@@ -536,6 +536,9 @@ async def run_headless_llm_scene(
     metrics_summary = summarize_sim_progression_metrics(
         metrics_list,
         progression_enforcement_enabled=enf_on,
+        arch_quality_variant=str(
+            st_module.session_state.get("arch_quality_variant") or "baseline"
+        ),
     )
     structured = build_structured_eval_payload(
         scenario_id=st_module.session_state.get("simulation_scenario_id"),
@@ -572,6 +575,7 @@ def prepare_headless_session(
     seed_escalating_issue: bool = True,
     beat_shift_active: bool = False,
     progression_enforcement_disabled: bool = False,
+    arch_quality_variant: str = "baseline",
     audit_enabled: bool = False,
     audit_session_owner: str = "headless_sim",
     scenario_id: str | None = None,
@@ -605,6 +609,10 @@ def prepare_headless_session(
     st.session_state["sim_progression_metrics"] = []
     st.session_state["progression_enforcement_disabled"] = bool(
         progression_enforcement_disabled
+    )
+    aq = str(arch_quality_variant or "baseline").strip().lower()
+    st.session_state["arch_quality_variant"] = (
+        aq if aq in ("baseline", "a1", "b", "c") else "baseline"
     )
 
     owner = str(audit_session_owner or "headless_sim").strip() or "headless_sim"

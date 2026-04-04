@@ -20,7 +20,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Narrator** — LLM that turns a **validated structured character move** into scene prose; **dialogue** from the character must stay **verbatim** (`app_turn_rendering.py`, `model_client.py`).
 
-**Orchestration** — Final authority ordering for **who actually speaks**, combining direct address, continuation override, Director output, validation, and progression rules (`orchestration_helpers.py`, PRD §5.3).
+**Orchestration** — Final authority ordering for **who actually speaks**, combining direct address, continuation override (with **v1 C2** skip when last spotlight already matches continuation — `app_turn_director.py`, `RP_SETUP_TODO.md` §I), Director output, validation, and progression rules (`orchestration_helpers.py`, PRD §5.3).
 
 **Character agent** — Bot that emits structured JSON: `action`, `dialogue`, `motivation`, and optionally **`audibility`** / **`audience`** (see `rp_app/README.md`). Knowledge boundaries combine continuity (`PublicEvent` knowers, interpretations) with **`perception_audibility.py`** (per-recipient prompts; structured move is the perception source of truth).
 

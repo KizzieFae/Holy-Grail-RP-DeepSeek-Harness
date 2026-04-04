@@ -31,8 +31,11 @@ def summarize_sim_progression_metrics(
     events: list[dict[str, Any]] | None,
     *,
     progression_enforcement_enabled: bool,
+    arch_quality_variant: str | None = None,
 ) -> dict[str, Any]:
     """Aggregate captured events into a compact metrics dict."""
+    from selection_attribution import summarize_selection_attribution_from_sim_events
+
     events = events or []
     retries = sum(1 for e in events if e.get("kind") == "progression_retry")
     failures = sum(1 for e in events if e.get("kind") == "progression_failure")
@@ -48,7 +51,7 @@ def summarize_sim_progression_metrics(
         if isinstance(ti, int):
             first_qual = ti if first_qual is None else min(first_qual, ti)
 
-    return {
+    out: dict[str, Any] = {
         "first_qualifying_progression_delta_turn_index": first_qual,
         "progression_retries_triggered": retries,
         "failed_progression_attempts": failures,
@@ -56,7 +59,13 @@ def summarize_sim_progression_metrics(
         "non_qualifying_turns": non_qualifying,
         "accepted_character_turns": len(accepted),
         "progression_enforcement_enabled": progression_enforcement_enabled,
+        "selection_attribution_summary": summarize_selection_attribution_from_sim_events(
+            events,
+        ),
     }
+    if arch_quality_variant:
+        out["arch_quality_variant"] = arch_quality_variant
+    return out
 
 
 def build_structured_eval_payload(

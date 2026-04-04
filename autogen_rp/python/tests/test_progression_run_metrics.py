@@ -21,6 +21,31 @@ def test_summarize_empty() -> None:
     assert s["qualifying_turns"] == 0
     assert s["non_qualifying_turns"] == 0
     assert s["progression_enforcement_enabled"] is True
+    assert s["selection_attribution_summary"]["selection_events"] == 0
+
+
+def test_summarize_includes_arch_quality_variant_when_requested() -> None:
+    s = summarize_sim_progression_metrics(
+        [],
+        progression_enforcement_enabled=True,
+        arch_quality_variant="a1",
+    )
+    assert s["arch_quality_variant"] == "a1"
+
+
+def test_summarize_selection_attribution_mixed_with_progression() -> None:
+    events = [
+        {"kind": "accepted_turn", "continuity_turn_index": 1, "qualifies": True},
+        {
+            "kind": "selection_attribution",
+            "final_next_actor": "Ayame",
+            "attribution_chain": ["director", "participation_fairness"],
+            "hard_route": False,
+        },
+    ]
+    s = summarize_sim_progression_metrics(events, progression_enforcement_enabled=True)
+    assert s["selection_attribution_summary"]["selection_events"] == 1
+    assert s["qualifying_turns"] == 1
 
 
 def test_summarize_mixed_events() -> None:

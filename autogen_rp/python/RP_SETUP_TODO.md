@@ -12,7 +12,7 @@ This roadmap reflects the correct execution order:
 
 ---
 
-# Phase 0 — Stabilization & Validation (**complete — v1 checkpoint**; progression: `tests/Testing TODOs/progression layer validation status v1.md`, repo root `SCENARIO_VALIDATION_FRAMEWORK.md`; player-text perception closure: section **G** below)
+# Phase 0 — Stabilization & Validation (**complete — v1 checkpoint**; progression: `tests/Testing TODOs/progression layer validation status v1.md`, repo root `SCENARIO_VALIDATION_FRAMEWORK.md`; player-text perception closure: section **G**; turn selection v1 policy: section **I** below)
 
 ## A. Structured scenario validation
 
@@ -104,6 +104,27 @@ High-salience **character** prompt constraints only (no new validators, retries,
 
 ---
 
+## I. Turn selection policy — v1 baseline refinement (**complete**)
+
+**Goal:** Cut down continuation double-speaks, avoid progression override fighting a coherent continuation when the last spotlight already matches the continuation actor, and encode P3/P4 vs P1 explicitly for clarity and safe refactors.
+
+**Implemented**
+
+- [x] **C2 (continuation):** If `continuation_override_actor` is available but equals the **last non-empty** `spotlight_history` speaker, **do not** take the continuation hard route — fall through to Director (`app_turn_director.py`).
+- [x] **O4 / F2 (explicit):** `p1_continuation_applied` gates progression override resolution and `apply_participation_fairness_to_decision` so P3/P4 do not run when P1 continuation actually fired (guard is redundant with control flow today but documents policy).
+- [x] **Validation:** `validate_turn_selection_decision` (`response_validation_selection.py`) uses the same C2 rule so Director picks after a C2 skip are not flagged as continuation preemption failures.
+- [x] **Attribution:** Non–hard-route `selection_attribution` records include **`continuation_override_skipped_c2`** when C2 applied (`selection_attribution.py` / `record_selection_attribution_event`).
+- [x] **Tests:** `test_continuation_override_c2_skips_when_last_spotlight_matches` (`test_orchestration_helpers.py`), `test_phase5_turn_selection_c2_skips_continuation_preemption_when_last_spotlight_matches` (`test_phase3_regressions.py`).
+- [x] **Spot check:** `conflict_3char` and `arkham_multi_character_stress` headless runs (2× each) showed no new instability; continuation hard routes were sparse in that slice.
+
+**Explicitly not in v1:** C1 / extra continuation state, O5 semantic gating for override, threshold tuning, or new selection subsystems.
+
+**Ongoing (normal quality / scenario runs — no dedicated C2-only validation phase):** Note frequency of `continuation_override_skipped_c2: true` in attribution; whether same-speaker continuation beats feel rarer; whether override less often fights coherent continuation. Optional short bullet in future quality reports.
+
+**Related:** Architecture-quality harness variants (`arch_quality_variants.py`, `--arch-quality-variant` on headless sim) are unchanged by this policy.
+
+---
+
 # Phase 0.5 — Packet Seam Introduction (NO BEHAVIOR CHANGE)
 
 **Goal**: Introduce a structured runtime interface (packets) without changing system behavior.
@@ -141,6 +162,8 @@ High-salience **character** prompt constraints only (no new validators, retries,
   - [ ] Changes limited to:
     - [ ] packet builders
     - [ ] prompt assembly glue
+
+**Exception (documented baseline, not packet work):** The **v1 turn selection policy** (Phase 0 **§I** — continuation C2, explicit P1 vs P3/P4 guards, matching selection validation) intentionally touches `app_turn_director.py` and `response_validation_selection.py`. Phase 0.5 implementation should still avoid **unrelated** edits in those modules.
 
 ---
 
@@ -260,7 +283,7 @@ Sources:
 
 ### app_turn_director.py
 
-- [ ] Reference only (no edits)
+- [ ] Reference only (no edits) — **except** documented baseline policy updates (Phase 0 **§I**); packet seam work must not piggyback unrelated director changes
 
 ---
 
@@ -502,6 +525,8 @@ Packets do NOT change behavior.
 **Completed through Phase 3.2** (packet seam + authored retrieval + manifest compile + lore lane + subcaps + **bounded deterministic episodic** merged retrieved lane).
 
 **Phase 0 prompt-layer stability** (section **H**): **BINDING CONSTRAINTS** + **EVIDENCE & AUTHORITY DISCIPLINE** in `prompt_builders.py` / `scene_grounding.py` — **complete** for prompt-only scope (see **H** above).
+
+**Phase 0 turn selection** (section **I**): v1 continuation C2, explicit P1 vs P3/P4 guards, aligned `validate_turn_selection_decision`, and `continuation_override_skipped_c2` attribution — **complete** (accepted baseline refinement).
 
 Next (when ready):
 

@@ -337,6 +337,25 @@ def test_phase5_turn_selection_preemption_continuation_mismatch() -> None:
     ]
 
 
+def test_phase5_turn_selection_c2_skips_continuation_preemption_when_last_spotlight_matches() -> (
+    None
+):
+    issues = validate_turn_selection_decision(
+        decision={
+            "next_actor": "Mira",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        participant_names=["Ayame", "Celina", "Mira"],
+        available_actors=["Ayame", "Celina", "Mira"],
+        trigger_text="",
+        spotlight_history=["Ayame", "Celina"],
+        continuation_override_actor="Celina",
+    )
+    assert issues == []
+
+
 def test_phase5_turn_selection_skips_preemption_when_source_fallback() -> None:
     issues = validate_turn_selection_decision(
         decision={

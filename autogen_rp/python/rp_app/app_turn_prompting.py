@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any, Callable
 
+from arch_quality_variants import arch_quality_b_no_character_progression_suffix
 from beat_shift_state import build_character_beat_shift_suffix, is_pending_beat_shift_active
 from progression_advisory import (
     PROGRESSION_CHARACTER_SUFFIX,
@@ -516,7 +517,7 @@ def build_character_turn_prompt(
     if should_append_progression_character_suffix(
         progression_pressure=_pp,
         beat_shift_active=beat_shift_active_here,
-    ):
+    ) and not arch_quality_b_no_character_progression_suffix(st_module):
         prompt_text += PROGRESSION_CHARACTER_SUFFIX
         _progression_log.info(
             "[progression_advisory] character prompt suffix injected pressure=%s "

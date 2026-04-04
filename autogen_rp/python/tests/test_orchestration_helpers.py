@@ -21,6 +21,12 @@ from orchestration_helpers import (
 )
 
 from app_turn_director import choose_next_actor as choose_next_actor_impl
+from beat_shift_state import default_pending_beat_shift
+from response_validation_selection import validate_turn_selection_decision
+
+
+async def _async_none(**_kwargs):
+    return None
 
 
 class SerializableItem:
@@ -394,6 +400,84 @@ async def test_continuation_override_dominates_over_director_and_progression() -
         continuation_override_actor="Ayame",
     )
     assert decision.get("next_actor") == "Ayame"
+
+
+@pytest.mark.asyncio
+async def test_continuation_override_c2_skips_when_last_spotlight_matches() -> None:
+    class _FakeDirResp:
+        __slots__ = ("chat_message",)
+
+        def __init__(self, content: str) -> None:
+            self.chat_message = SimpleNamespace(content=content)
+
+    class _FakeDirector:
+        def __init__(self, content: str) -> None:
+            self._content = content
+
+        async def on_messages(self, _messages, _token):
+            return _FakeDirResp(self._content)
+
+    orch = {
+        "pending_beat_shift": default_pending_beat_shift(),
+        "spotlight_history": ["Mira", "Ayame"],
+        "scene_state": {
+            "opening_description": "",
+            "recent_environment_events": [],
+            "tension_history": [],
+            "resolved_events": [],
+            "present_characters": ["Ayame", "Celina", "Mira"],
+            "offstage_characters": [],
+        },
+        "recent_structured_moves": [],
+    }
+
+    decision = await choose_next_actor_impl(
+        st_module=SimpleNamespace(
+            session_state={"chat_history": [], "selector_decisions": []}
+        ),
+        director=_FakeDirector("{}"),
+        get_model_client_fn=lambda: None,
+        participant_names=["Ayame", "Celina", "Mira"],
+        trigger_text="hello",
+        cancellation_token=None,
+        round_number=1,
+        turn_number=1,
+        available_actors=["Ayame", "Celina", "Mira"],
+        continuation_override_actor="Ayame",
+        actors_used_this_round=[],
+        enforce_must_remain_presence_fn=lambda: None,
+        get_orchestration_state_fn=lambda: orch,
+        get_continuity_manager_fn=lambda: None,
+        build_scene_role_prompt_context_fn=lambda _ss, _names: [],
+        serialize_summary_blocks_for_prompt_fn=lambda *_a, **_k: [],
+        build_summary_block_audit_metadata_fn=lambda **_k: {},
+        serialize_events_for_prompt_fn=lambda *_a, **_k: [],
+        serialize_canon_anchors_for_prompt_fn=lambda *_a, **_k: [],
+        build_director_selection_prompt_fn=lambda _p: "",
+        parse_director_decision_fn=lambda *_a, **_k: (
+            {
+                "next_actor": "Celina",
+                "environment_event": "",
+                "tension_shift": "",
+                "reason": "director pick",
+            },
+            None,
+        ),
+        choose_fallback_actor_fn=lambda *_a, **_k: "Ayame",
+        validate_turn_selection_decision_fn=validate_turn_selection_decision,
+        assess_turn_selection_decision_semantics_fn=lambda **_k: _async_none(),
+        reconcile_turn_selection_issues_fn=lambda issues, _a: issues,
+        get_character_display_name_fn=lambda k: k,
+        is_audit_enabled_fn=lambda: False,
+        get_audit_logger_fn=lambda: None,
+        get_audit_context_fn=lambda: ("", 0, 0, 0),
+        get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
+        refresh_audit_summary_report_fn=lambda: None,
+        build_recent_dialogue_history_fn=lambda *_a, **_k: [],
+        prompt_dialogue_history_limit=6,
+        director_spotlight_history_limit=6,
+    )
+    assert decision.get("next_actor") == "Celina"
 
 
 def test_resolve_progression_override_actor_no_override_when_only_stalled_issues_exist() -> (

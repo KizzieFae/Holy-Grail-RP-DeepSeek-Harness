@@ -96,7 +96,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. Examples:
 
 ### Turn selection issues
 
-- **Who speaks next** — `orchestration_helpers.py` (address / continuation / caps), `app_turn_director.py` (Director call and overrides), `response_validation_selection.py`, then `semantic_validation.py` for reconciliation.
+- **Who speaks next** — `orchestration_helpers.py` (address / continuation / caps), `app_turn_director.py` (Director call and overrides; **v1:** continuation C2 skip when last spotlight matches continuation actor — see `autogen_rp/python/RP_SETUP_TODO.md` §I), `response_validation_selection.py`, then `semantic_validation.py` for reconciliation. Audits / sim metrics: `selection_attribution`, `continuation_override_skipped_c2`.
 - **Director ignores context** — Check what **structured** inputs the prompt receives (`prompt_builders.py`, continuity snapshot helpers), not only the Director system text.
 
 ### Character drift (voice, tone, anchors)

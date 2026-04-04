@@ -77,7 +77,18 @@ def validate_turn_selection_decision(
                 f"next_actor should match pending forced speaker ({pf}), got {next_actor}"
             )
         co = str(continuation_override_actor or "").strip()
-        if co and co in available_actors and next_actor != co:
+        sh = spotlight_history or []
+        tail = [str(x or "").strip() for x in sh if str(x or "").strip()]
+        last_spot = tail[-1] if tail else ""
+        continuation_skipped_c2 = bool(
+            co and co in available_actors and last_spot and last_spot == co
+        )
+        if (
+            co
+            and co in available_actors
+            and next_actor != co
+            and not continuation_skipped_c2
+        ):
             issues.append(
                 f"next_actor should match continuation override ({co}), got {next_actor}"
             )
