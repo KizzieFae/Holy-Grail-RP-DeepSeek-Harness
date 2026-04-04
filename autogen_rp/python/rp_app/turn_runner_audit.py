@@ -3,6 +3,39 @@ from typing import Any
 from audit_instrumentation import log_audit_exception
 
 
+def split_character_prompt_audit_for_metadata(
+    prompt_layer_audit: dict[str, Any],
+) -> tuple[dict[str, Any], bool, str]:
+    """Split summary-block audit dict from binding observability (prompt layer only).
+
+    ``prompt_layer_audit`` is the dict returned with the character prompt from
+    ``app_turn_prompting.build_character_turn_prompt`` (summary fields + binding keys).
+    """
+    merged = dict(prompt_layer_audit)
+    bc_section = str(merged.pop("scene_binding_constraints_section", "") or "")
+    has_raw = merged.pop("has_binding_constraints", None)
+    if isinstance(has_raw, bool):
+        has_bc = has_raw
+    else:
+        has_bc = bool(bc_section.strip())
+    return merged, has_bc, bc_section
+
+
+def promote_character_binding_fields_for_audit_metadata(
+    metadata: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Hoist binding fields from ``metadata.summary_blocks`` to metadata top level (failure audits)."""
+    base = dict(metadata or {})
+    sb = base.get("summary_blocks")
+    if not isinstance(sb, dict):
+        return base
+    cleaned, has_bc, bc_section = split_character_prompt_audit_for_metadata(dict(sb))
+    base["summary_blocks"] = cleaned
+    base["has_binding_constraints"] = has_bc
+    base["scene_binding_constraints_section"] = bc_section
+    return base
+
+
 def _merge_character_audit_metadata(
     *,
     base: dict[str, Any],
@@ -155,6 +188,10 @@ def log_character_turn_audit(
         next_actor=next_actor,
     )
 
+    summary_blocks_audit, has_binding_constraints, binding_constraints_section = (
+        split_character_prompt_audit_for_metadata(character_summary_block_audit)
+    )
+
     try:
         audit_logger = get_audit_logger_fn()
         session_owner, session_num, _, _ = get_audit_context_fn()
@@ -189,7 +226,9 @@ def log_character_turn_audit(
                     "issue_updates": issue_updates,
                     "presence_changes": presence_changes,
                     "consequences": consequences,
-                    "summary_blocks": character_summary_block_audit,
+                    "summary_blocks": summary_blocks_audit,
+                    "has_binding_constraints": has_binding_constraints,
+                    "scene_binding_constraints_section": binding_constraints_section,
                     "turn_execution": turn_execution_metadata or {},
                 },
                 progression_advisory=progression_advisory,

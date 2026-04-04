@@ -1,0 +1,40 @@
+{
+  "id": "arkham_multi_character_stress_long",
+  "title": "Arkham nine-character ward stress (extended run)",
+  "intent": "Same large-cast stress as arkham_multi_character_stress but with a longer beat budget so staff (Arkham, Karlsson, Cash) and patients cycle more often under perimeter-alarm uncertainty; useful for evidence on authoritative assertion patterns.",
+  "character_card_ids": [
+    "harley_quinn",
+    "poison_ivy",
+    "selina_kyle",
+    "magpie",
+    "nocturna",
+    "aaron_cash",
+    "jeremiah_arkham",
+    "ingrid_karlsson",
+    "jane_doe"
+  ],
+  "opening_description": "Late evening stretches toward night on Arkham's secure clinical wing: fluorescent hum, locked doors, disinfectant and old stone. Staff and high-profile patients have been held in a prolonged corridor cluster after a partial lockdown drill—radios still trade conflicting fragments about a fence line and who might have been near it. Overtime orderlies swap in; fatigue and boredom sharpen some inmates while others go brittle. Dr. Arkham and Dr. Karlsson keep trying to impose a single narrative; Cash keeps a hand near his belt; Selina, Ivy, Harley, Magpie, Nocturna, and Jane Doe remain under escort or observation with uneven privileges and old grudges. Nobody has been shown full incident video; rumors have had time to fork.",
+  "location": "arkham_clinical_wing",
+  "trigger_text": "A PA line cuts in mid-sentence—static, then silence. Cash snaps, 'Nobody moves until we know if that was a test or a breach.' Ivy murmurs something only Selina is close enough to catch. Harley grins like she heard anyway. Arkham raises his voice just enough to cut through the whispers: 'We need one clear chain of fact, not nine competing stories. Who was where when the alarm tripped—and I want it coherent enough to survive a chart note.' Karlsson's eyes flick toward the patients, measuring who is already fraying.",
+  "max_turns": 24,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "high",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "high",
+  "seed_issue": {
+    "issue_id": "sim_arkham_lockdown_rumor",
+    "description": "Conflicting partial information about a perimeter or lockdown event; staff must assert control while patients test boundaries; extended time in corridor increases pressure for definitive statements.",
+    "participant_card_ids": [
+      "harley_quinn",
+      "poison_ivy",
+      "selina_kyle",
+      "magpie",
+      "nocturna",
+      "aaron_cash",
+      "jeremiah_arkham",
+      "ingrid_karlsson",
+      "jane_doe"
+    ]
+  }
+}

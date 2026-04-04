@@ -105,6 +105,7 @@ class CharacterRuntimePromptProjection:
     my_interpretations: list[dict[str, Any]]
     canon_anchors: list[dict[str, Any]]
     scene_grounding_section: str = ""
+    scene_binding_constraints_section: str = ""
 
 
 @dataclass
@@ -181,6 +182,7 @@ def build_runtime_character_packet(
     my_interpretations: list[dict[str, Any]],
     canon_anchors: list[dict[str, Any]],
     scene_grounding_section: str = "",
+    scene_binding_constraints_section: str = "",
     retrieved: RetrievedContextBundle | None = None,
 ) -> RuntimeCharacterPacket:
     _, dynamic = split_scene_state(scene_state)
@@ -205,6 +207,9 @@ def build_runtime_character_packet(
             my_interpretations=list(my_interpretations),
             canon_anchors=list(canon_anchors),
             scene_grounding_section=str(scene_grounding_section or ""),
+            scene_binding_constraints_section=str(
+                scene_binding_constraints_section or ""
+            ),
         ),
     )
 
@@ -233,6 +238,7 @@ def build_live_character_prompt_input_bundle(
     state_context: str,
     cast: list[str],
     scene_grounding_section: str = "",
+    scene_binding_constraints_section: str = "",
     retrieved_context_section: str = "",
 ) -> dict[str, Any]:
     """Normalized kwargs dict for `prompt_builders.build_character_turn_prompt` (structured compare)."""
@@ -259,6 +265,9 @@ def build_live_character_prompt_input_bundle(
         "state_context": str(state_context),
         "cast": list(cast),
         "scene_grounding_section": str(scene_grounding_section or ""),
+        "scene_binding_constraints_section": str(
+            scene_binding_constraints_section or ""
+        ),
         "retrieved_context_section": str(retrieved_context_section or ""),
     }
 
@@ -355,6 +364,7 @@ def reconstruct_character_prompt_input_bundle(
         state_context=state_context,
         cast=cast,
         scene_grounding_section=proj.scene_grounding_section,
+        scene_binding_constraints_section=proj.scene_binding_constraints_section,
         retrieved_context_section=format_retrieved_context_for_prompt(char_packet.retrieved),
     )
 

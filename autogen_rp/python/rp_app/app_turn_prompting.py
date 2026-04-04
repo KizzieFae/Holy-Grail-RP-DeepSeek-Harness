@@ -10,6 +10,7 @@ from progression_advisory import (
 )
 
 _progression_log = logging.getLogger("rp_app.progression_advisory")
+_episodic_merge_log = logging.getLogger("rp_app.episodic_prompt")
 from offstage_prompt_filter import (
     filter_dialogue_for_offstage_character,
     filter_structured_moves_for_offstage_character,
@@ -19,7 +20,10 @@ from perception_audibility import (
     player_text_for_character_viewer,
 )
 from memory_layer.retrieval import build_character_state_context_for_prompt
-from scene_grounding import format_character_grounding_section
+from scene_grounding import (
+    format_character_binding_constraints_section,
+    format_character_grounding_section,
+)
 
 from prompt_derivations import (
     build_priority_ladder,
@@ -35,6 +39,7 @@ from retrieved_context_select import (
     log_retrieval_if_active,
     merge_retrieved_context_with_episodic,
     select_retrieved_context_bundle,
+    structured_prompt_id_sets_for_episodic_suppression,
 )
 from runtime_packets import format_retrieved_context_for_prompt
 
@@ -323,9 +328,9 @@ def build_character_turn_prompt(
         if state
         else "No private state available."
     )
-    grounding_section = format_character_grounding_section(
-        st_module.session_state.get("scene_grounding")
-    )
+    _sg = st_module.session_state.get("scene_grounding")
+    grounding_section = format_character_grounding_section(_sg)
+    binding_constraints_section = format_character_binding_constraints_section(_sg)
     filtered_trigger = player_text_for_character_viewer(
         raw_text=trigger_text,
         viewer_character_name=char_name,
@@ -349,7 +354,20 @@ def build_character_turn_prompt(
             issues=isu,
             canon_anchors=ca,
         )
-        episodic_selected = select_episodic_items_for_character(pool, char_name)
+        _sup_issue_ids, _sup_evt_ids, _sup_int_ids = (
+            structured_prompt_id_sets_for_episodic_suppression(
+                active_issues=active_issues,
+                recent_public_events=recent_public_events,
+                my_interpretations=my_interpretations,
+            )
+        )
+        episodic_selected = select_episodic_items_for_character(
+            pool,
+            char_name,
+            structured_prompt_issue_ids=_sup_issue_ids,
+            structured_prompt_public_event_ids=_sup_evt_ids,
+            structured_prompt_interpretation_ids=_sup_int_ids,
+        )
         retrieved_bundle = merge_retrieved_context_with_episodic(
             index=_retrieval_index,
             char_name=char_name,
@@ -358,6 +376,16 @@ def build_character_turn_prompt(
             cast=_cast_t,
             dedup_against_texts=_dedup_texts,
             episodic_items=episodic_selected,
+            structured_prompt_issue_ids=_sup_issue_ids,
+            structured_prompt_public_event_ids=_sup_evt_ids,
+            structured_prompt_interpretation_ids=_sup_int_ids,
+        )
+        _episodic_merge_log.info(
+            "episodic merge char=%s pool_len=%d selected_len=%d bundle_items=%d",
+            char_name,
+            len(pool),
+            len(episodic_selected),
+            len(retrieved_bundle.items),
         )
     else:
         retrieved_bundle = select_retrieved_context_bundle(
@@ -409,6 +437,7 @@ def build_character_turn_prompt(
             state_context=state_context,
             cast=cast,
             scene_grounding_section=grounding_section,
+            scene_binding_constraints_section=binding_constraints_section,
             retrieved_context_section=retrieved_context_section,
         )
         scene_packet = build_runtime_scene_packet(
@@ -433,6 +462,7 @@ def build_character_turn_prompt(
             my_interpretations=my_interpretations,
             canon_anchors=canon_anchors,
             scene_grounding_section=grounding_section,
+            scene_binding_constraints_section=binding_constraints_section,
             retrieved=retrieved_bundle,
         )
         recon_bundle = reconstruct_character_prompt_input_bundle(
@@ -474,6 +504,7 @@ def build_character_turn_prompt(
         state_context=state_context,
         cast=cast,
         scene_grounding_section=grounding_section,
+        scene_binding_constraints_section=binding_constraints_section,
         retrieved_context_section=retrieved_context_section,
     )
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)
@@ -493,7 +524,14 @@ def build_character_turn_prompt(
             _pp,
             beat_shift_active_here,
         )
-    return (prompt_text, summary_block_audit)
+    prompt_layer_audit: dict[str, Any] = {
+        **summary_block_audit,
+        "has_binding_constraints": bool(
+            str(binding_constraints_section or "").strip()
+        ),
+        "scene_binding_constraints_section": binding_constraints_section or "",
+    }
+    return (prompt_text, prompt_layer_audit)
 
 
 def build_recent_scene_context(

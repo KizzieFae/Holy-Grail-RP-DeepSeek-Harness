@@ -34,6 +34,8 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Scene Grounding layer (MVP)** — Read-only projection of **scene facts** into Director/character prompts **after** continuity commits. Cleared on scene end; capped count. Implemented in `scene_grounding.py` (markers on `PublicEvent`, rebuild in `turn_runner_updates`; see module index).
 
+**BINDING CONSTRAINTS (character prompt)** — High-priority bullet list of a **filtered** subset of grounded facts (e.g. sleeping surface, location entry) injected only into **character** system prompts so dialogue does not **deny** promoted settlements; built by `format_character_binding_constraints_section` in `scene_grounding.py`. Distinct from the full **SETTLED SCENE FACTS** block. **EVIDENCE & AUTHORITY DISCIPLINE** — static instructions in `prompt_builders.py` (after binding text, before OUTPUT RULES) to avoid stating unsupported concrete specifics as clinical / institutional fact.
+
 **Issue / pressure** — Structured dramatic tension or blocked objective (`IssueState`, lifecycle active → escalating → stalled → resolved, etc.). Director and validators use issue context; not the same as free-form “plot summary.”
 
 **Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay. **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** via `public_safe_event_summary` at promotion time.

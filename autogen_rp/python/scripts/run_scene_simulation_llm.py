@@ -12,6 +12,8 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --list-scenarios
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
+    # Continuity-backed episodic recall in character prompts (requires flag or RP_EPISODIC_MEMORY=1):
+    python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 2 --episodic-memory
     # Scenario runs use deep simulation by default (full max_turns, repeat speakers). Match UI cap:
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-deep-simulation-turns
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --beat-shift --turns 3 --audit
@@ -113,6 +115,15 @@ def main() -> None:
         help="Enable audit logging to rp_app/data/rp_audits/ (same as Streamlit with auditing on).",
     )
     p.add_argument(
+        "--episodic-memory",
+        action="store_true",
+        help=(
+            "Set RP_EPISODIC_MEMORY=1 for this process and pass enable_episodic_memory to headless "
+            "prepare so character prompts include merged episodic lines in RETRIEVED REFERENCE "
+            "(continuity-backed; visibility must match turn-runner character keys)."
+        ),
+    )
+    p.add_argument(
         "--no-progression-enforcement",
         action="store_true",
         help="Baseline run: disable progression gate/retry and MED->HIGH override (compare vs default).",
@@ -170,6 +181,9 @@ def main() -> None:
         print("DEEPSEEK_API_KEY is not set; cannot run live LLM simulation.", file=sys.stderr)
         sys.exit(1)
 
+    if args.episodic_memory:
+        os.environ["RP_EPISODIC_MEMORY"] = "1"
+
     default_trigger = "The standoff has looped on talk; something has to give."
     default_opening = "Two people face off in a cramped corridor; neither will back down first."
 
@@ -188,6 +202,7 @@ def main() -> None:
             audit_session_owner=audit_owner,
             progression_enforcement_disabled=args.no_progression_enforcement,
             deep_simulation_turns=deep_turns,
+            enable_episodic_memory=args.episodic_memory,
         )
     else:
         ids = [x.strip() for x in (args.chars or "ayame,celina").split(",") if x.strip()]
@@ -206,6 +221,7 @@ def main() -> None:
             audit_session_owner="headless_adhoc",
             progression_enforcement_disabled=args.no_progression_enforcement,
             deep_simulation_turns=deep_turns,
+            enable_episodic_memory=args.episodic_memory,
         )
 
     async def _run() -> None:

@@ -23,7 +23,10 @@ def continuity_sequences_for_episodic(
     """Return tuples suitable for ``get_or_compile_episodic_candidate_pool`` / snapshot key.
 
     Interpretations are flattened in sorted character-name order for stability.
-    Issues and anchors are sorted by id.
+    Issues use ``ContinuityManager.get_active_issues(limit=0, participants=None)`` — the same
+    projection as authoritative ACTIVE ISSUES (``scene_state.active_issue_ids`` + default status
+    filter), not the full ``manager.issues`` map. Sorted by issue id for stability.
+    Anchors are sorted by id.
     """
     if continuity_manager is None:
         return ((), (), (), ())
@@ -35,10 +38,14 @@ def continuity_sequences_for_episodic(
         lst = raw_interp.get(char_key) or []
         interpretations_list.extend(lst)
     interpretations = tuple(interpretations_list)
-    issues_raw = getattr(mgr, "issues", None) or {}
-    if hasattr(issues_raw, "values"):
+    get_active = getattr(mgr, "get_active_issues", None)
+    if callable(get_active):
+        active_issues = get_active(limit=0, participants=None)
         issues_seq = tuple(
-            sorted(issues_raw.values(), key=lambda i: str(getattr(i, "issue_id", "") or ""))
+            sorted(
+                active_issues,
+                key=lambda i: str(getattr(i, "issue_id", "") or ""),
+            )
         )
     else:
         issues_seq = ()

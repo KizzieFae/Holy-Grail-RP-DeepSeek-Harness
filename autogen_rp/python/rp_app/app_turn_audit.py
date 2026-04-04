@@ -1,6 +1,7 @@
 from typing import Any
 
 from audit_instrumentation import log_audit_exception
+from turn_runner_audit import promote_character_binding_fields_for_audit_metadata
 
 
 def log_turn_failure(
@@ -53,6 +54,9 @@ def log_turn_failure(
             failure_context_snapshot.update(
                 get_character_scene_audit_context_fn(bot_name, scene_audit_kwargs)
             )
+        failure_metadata = promote_character_binding_fields_for_audit_metadata(
+            metadata or {}
+        )
         entry = audit_logger.create_entry(
             session_owner=session_owner,
             session_number=session_num,
@@ -68,7 +72,7 @@ def log_turn_failure(
                 "failure_stage": stage,
                 "failure_reason": reason,
                 **({"attempted_post": attempted_post} if attempted_post else {}),
-                **(metadata or {}),
+                **failure_metadata,
             },
             **scene_audit_kwargs,
         )

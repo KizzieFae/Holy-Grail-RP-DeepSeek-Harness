@@ -102,6 +102,25 @@ def test_build_director_selection_prompt_strips_beat_shift_hints_from_json() -> 
     assert '"participants": [' in prompt
 
 
+def test_build_director_selection_prompt_strips_low_pressure_hints_from_json() -> None:
+    from director_low_pressure_guidance import build_low_pressure_director_prompt_prefix
+
+    director_payload = {
+        "participants": ["Ayame", "Celina"],
+        "available_next_actors": ["Ayame", "Celina"],
+        "low_pressure_turn_director_hints": {
+            "active": True,
+            "prompt_prefix": build_low_pressure_director_prompt_prefix(),
+        },
+    }
+
+    prompt = build_director_selection_prompt(director_payload)
+
+    assert "[low_pressure_turn_selection]" in prompt
+    assert "low_pressure_turn_director_hints" not in prompt
+    assert '"participants": [' in prompt
+
+
 def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> None:
     prompt = build_character_turn_prompt(
         char_name="Ayame",
@@ -307,6 +326,76 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
     assert 'Negative example: {"action": "gestured between the couch and the floor"' in prompt
     assert "OTHER PRESENT CHARACTERS: Celina" in prompt
     assert "PLAYER NAME: Alex" in prompt
+
+
+def test_build_character_turn_prompt_binding_constraints_before_output_rules() -> None:
+    binding = (
+        "## **BINDING CONSTRAINTS (HIGH PRIORITY)**\n"
+        "MARKER_BINDING_BLOCK\n"
+        "- [assignment] test\n\n"
+    )
+    prompt = build_character_turn_prompt(
+        char_name="Ayame",
+        user_name="Alex",
+        trigger_text="T",
+        director_decision={"next_actor": "Ayame", "reason": "r"},
+        scene_state={"location": "workshop", "present_characters": ["Ayame"]},
+        scene_template_context={"template_id": "", "premise": "", "location_entry_slots": []},
+        my_scene_role={"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""},
+        scene_roles=[
+            {"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""}
+        ],
+        recent_moves=[],
+        recent_dialogue=[],
+        active_issues=[],
+        priority_ladder=[],
+        summary_blocks=[],
+        recent_public_events=[],
+        cross_session_user_memories=[],
+        cross_session_world_facts=[],
+        user_preferences=[],
+        my_interpretations=[],
+        canon_anchors=[],
+        state_context="",
+        cast=[],
+        scene_binding_constraints_section=binding,
+    )
+    idx_bind = prompt.index("MARKER_BINDING_BLOCK")
+    idx_evidence = prompt.index("EVIDENCE & AUTHORITY DISCIPLINE")
+    idx_out = prompt.index("OUTPUT RULES:")
+    assert idx_bind < idx_evidence < idx_out
+
+
+def test_build_character_turn_prompt_evidence_discipline_before_output_rules_without_binding() -> None:
+    prompt = build_character_turn_prompt(
+        char_name="Ayame",
+        user_name="Alex",
+        trigger_text="T",
+        director_decision={"next_actor": "Ayame", "reason": "r"},
+        scene_state={"location": "workshop", "present_characters": ["Ayame"]},
+        scene_template_context={"template_id": "", "premise": "", "location_entry_slots": []},
+        my_scene_role={"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""},
+        scene_roles=[
+            {"character": "Ayame", "role": "host", "presence_constraint": "", "authority": ""}
+        ],
+        recent_moves=[],
+        recent_dialogue=[],
+        active_issues=[],
+        priority_ladder=[],
+        summary_blocks=[],
+        recent_public_events=[],
+        cross_session_user_memories=[],
+        cross_session_world_facts=[],
+        user_preferences=[],
+        my_interpretations=[],
+        canon_anchors=[],
+        state_context="",
+        cast=[],
+    )
+    idx_evidence = prompt.index("EVIDENCE & AUTHORITY DISCIPLINE")
+    idx_out = prompt.index("OUTPUT RULES:")
+    assert idx_evidence < idx_out
+    assert "Do not introduce new specific facts in an authoritative or institutional tone" in prompt
 
 
 def test_build_character_turn_prompt_retrieved_includes_authored_before_episodic_before_scene_state() -> (

@@ -14,7 +14,10 @@ from beat_shift_state import (
     build_director_beat_shift_prompt_prefix,
     is_pending_beat_shift_active,
 )
-from orchestration_helpers import resolve_progression_override_actor
+from orchestration_helpers import (
+    apply_participation_fairness_to_decision,
+    resolve_progression_override_actor,
+)
 from anti_regression_advisory import sync_anti_regression_advisory_for_prompts
 from progression_advisory import (
     build_progression_director_prompt_prefix,
@@ -22,6 +25,15 @@ from progression_advisory import (
 )
 from scene_grounding import format_grounding_prompt_prefix
 from perception_audibility import redact_structured_move_for_orchestration
+from director_low_pressure_guidance import (
+    all_available_have_spoken_this_cycle,
+    build_director_selection_metrics,
+    build_low_pressure_director_prompt_prefix,
+    build_low_pressure_turn_selection_payload,
+    compute_responder_hint,
+    consecutive_trailing_same_speaker,
+    low_pressure_turn_guidance_active,
+)
 
 logger = logging.getLogger("rp_app.progression_advisory")
 
@@ -57,6 +69,7 @@ async def choose_next_actor(
     turn_number: int,
     available_actors: list[str],
     continuation_override_actor: str | None,
+    actors_used_this_round: list[str] | None = None,
     enforce_must_remain_presence_fn,
     get_orchestration_state_fn,
     get_continuity_manager_fn,
@@ -109,6 +122,12 @@ async def choose_next_actor(
             "tension_shift": "",
             "reason": "No available actors remaining in this response cycle.",
         }
+
+    used_this_round = (
+        list(actors_used_this_round)
+        if isinstance(actors_used_this_round, list)
+        else []
+    )
 
     forced_speaker = st_module.session_state.get("pending_forced_speaker")
     if forced_speaker in available_actors and not st_module.session_state.get(
@@ -313,6 +332,11 @@ async def choose_next_actor(
         "actors_already_used_this_round": [
             name for name in participant_names if name not in available_actors
         ],
+        "response_cycle_acting_counts": {
+            str(name): used_this_round.count(str(name))
+            for name in participant_names
+            if str(name or "").strip()
+        },
     }
 
     actionable_issues, stalled_background_issues = split_actionable_and_stalled_issues(
@@ -368,6 +392,56 @@ async def choose_next_actor(
             anti_blob.get("low_player_agency"),
         )
 
+    anti_regression_director_hints_active = bool(str(anti_prefix or "").strip())
+    progression_pressure_val = progression_advisory_snapshot.get("progression_pressure")
+    spotlight_slice = orchestration_state.get("spotlight_history", [])[
+        -director_spotlight_history_limit:
+    ]
+    spotlight_recent = [
+        str(x or "").strip() for x in (spotlight_slice or []) if str(x or "").strip()
+    ]
+    raw_moves = orchestration_state.get("recent_structured_moves", []) or []
+    last_raw_move = raw_moves[-1] if raw_moves and isinstance(raw_moves[-1], dict) else None
+    present_for_audibility = [
+        str(x or "").strip()
+        for x in scene_state_for_prompt.get("present_characters", participant_names)
+        if str(x or "").strip()
+    ]
+
+    low_pressure_turn_guidance_active_flag = low_pressure_turn_guidance_active(
+        beat_shift_active=beat_shift_active,
+        progression_pressure=str(progression_pressure_val or ""),
+        available_actors=available_actors,
+        continuation_override_actor=continuation_override_actor,
+        anti_regression_director_hints_active=anti_regression_director_hints_active,
+    )
+
+    spotlight_last_before_pick: str | None = None
+    sh_full = orchestration_state.get("spotlight_history", []) or []
+    if isinstance(sh_full, list) and sh_full:
+        spotlight_last_before_pick = str(sh_full[-1] or "").strip() or None
+
+    responder_hint_for_audit: dict[str, Any] = {"confidence": "none"}
+    if low_pressure_turn_guidance_active_flag:
+        director_payload["low_pressure_turn_selection"] = (
+            build_low_pressure_turn_selection_payload(
+                spotlight_recent=spotlight_recent,
+                response_cycle_counts=director_payload["response_cycle_acting_counts"],
+                actors_used_this_round=used_this_round,
+                available_actors=available_actors,
+            )
+        )
+        director_payload["responder_hint"] = compute_responder_hint(
+            last_structured_move=last_raw_move,
+            available_actors=available_actors,
+            present_characters=present_for_audibility,
+        )
+        responder_hint_for_audit = dict(director_payload["responder_hint"])
+        director_payload["low_pressure_turn_director_hints"] = {
+            "active": True,
+            "prompt_prefix": build_low_pressure_director_prompt_prefix(),
+        }
+
     director_payload["settled_scene_facts_prompt"] = format_grounding_prompt_prefix(
         st_module.session_state.get("scene_grounding")
     )
@@ -399,6 +473,21 @@ async def choose_next_actor(
             "reason": f"Fallback selection after director parse failure: {error}",
             "source": "fallback",
         }
+
+    director_pick_for_audit = str(decision.get("next_actor", "") or "").strip()
+    end_round_for_audit = bool(decision.get("end_round"))
+    director_selection_audit_metrics = build_director_selection_metrics(
+        low_pressure_regime=low_pressure_turn_guidance_active_flag,
+        consecutive_spotlight_same=consecutive_trailing_same_speaker(spotlight_recent),
+        all_available_have_spoken=all_available_have_spoken_this_cycle(
+            available_actors=available_actors,
+            actors_used_this_round=used_this_round,
+        ),
+        responder_hint=responder_hint_for_audit,
+        director_pick=director_pick_for_audit,
+        spotlight_last_before_pick=spotlight_last_before_pick,
+        end_round=end_round_for_audit,
+    )
 
     pending_forced = st_module.session_state.get("pending_forced_speaker")
     pending_forced_str = (
@@ -471,6 +560,11 @@ async def choose_next_actor(
             for item in (orchestration_state.get("recent_structured_moves", []) or [])
             if isinstance(item, dict)
         ],
+        spotlight_history=[
+            str(x or "").strip()
+            for x in (orchestration_state.get("spotlight_history", []) or [])
+            if str(x or "").strip()
+        ],
         progression_enforcement_gate=progression_enforcement_gate,
     )
     if progression_override_actor and progression_override_actor != decision.get(
@@ -481,6 +575,13 @@ async def choose_next_actor(
         decision["reason"] = (
             f"{decision.get('reason', '')} | Progression override from {original_actor} to {progression_override_actor}"
         ).strip(" |")
+
+    apply_participation_fairness_to_decision(
+        decision,
+        participant_names=participant_names,
+        available_actors=available_actors,
+        actors_used_this_round=used_this_round,
+    )
 
     decision["reason"] = _reason_text_for_human_logs(
         str(decision.get("reason", "") or "")
@@ -535,6 +636,7 @@ async def choose_next_actor(
                     "semantic_turn_selection_assessment": semantic_turn_selection_assessment
                     or {},
                     "summary_blocks": summary_block_audit,
+                    "director_selection_metrics": director_selection_audit_metrics,
                 },
                 **scene_audit_kwargs,
             )

@@ -203,6 +203,12 @@ SETTLED SCENE FACTS (authoritative for this scene; do not contradict or re-open 
 
 **Non-redundancy:** If another prompt section already prints the **same** deterministic line (unlikely), skip duplicate — single canonical builder function.
 
+### 7.3 Character BINDING CONSTRAINTS + evidence discipline (downstream)
+
+**BINDING CONSTRAINTS (HIGH PRIORITY)** — **character prompts only:** a **filtered** bullet list of promoted facts whose `(category, key)` pairs are allowlisted as binding (e.g. sleeping surface assignment, location entry). Built from the **same** `SceneGroundingState` as SETTLED SCENE FACTS via `format_character_binding_constraints_section` in `scene_grounding.py` (see `_BINDING_FACT_KEYS` / preamble there). Passed through `app_turn_prompting.build_character_turn_prompt` as `scene_binding_constraints_section` and inserted in `prompt_builders.build_character_turn_prompt` **after** sections 1–7 (voice, evidence ladder, canon) and **before** the static **EVIDENCE & AUTHORITY DISCIPLINE** block and **OUTPUT RULES**. Purpose: high-salience “do not contradict these settled facts” without duplicating the full Director grounding block.
+
+**EVIDENCE & AUTHORITY DISCIPLINE** — **not** part of scene grounding; a **fixed** instruction paragraph in `prompt_builders.py` placed **after** binding constraints and **before** **OUTPUT RULES**. It targets a distinct failure mode (unsupported specifics in authoritative / clinical / “noted” voice). See `RP_SETUP_TODO.md` Phase 0 section **H**.
+
 ---
 
 ## 8. Interaction with existing systems

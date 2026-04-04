@@ -1,6 +1,22 @@
 import json
 from typing import Any
 
+_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK = """## **EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY)**
+
+**Authoritative and institutional framing**—including **clinical** language, **institutional** framing, and a **"recorded"** or **"noted"** tone—**must not introduce unsupported specifics** (concrete who / what / where / when). You may **accuse, pressure, and bluff** in a strong voice, but you must **not present unsupported specific facts as established truth**, especially in those voices.
+
+**Do not introduce new specific facts in an authoritative or institutional tone unless they already appear as facts in this prompt** (e.g. in perception-filtered moves, transcript, public events, scene state, binding constraints, or canon anchors).
+
+**Bluffing is allowed** when it is **contestable in-scene** and framed as **pressure, accusation, hypothesis, or conditional** ("If you were near X…," "Convince me you weren't…," "We'll **treat** this as… unless you explain").
+
+**Bluffing is not allowed** when it is framed as **objective institutional truth** or **settled record** while embedding **new unsupported specifics**—for example, "**Noted**: your commentary **redirected** from **your proximity to the perimeter** during the alarm" when **proximity** was **never** already stated as fact in this prompt.
+
+**Allowed without that support:** Subjective reads ("Your tone **reads** as evasive"), procedural demands ("**Account** for your movements during the alarm"), and **explicitly conditional** or **interrogative** specifics ("**Were** you near the perimeter?").
+
+**Not allowed:** Unsupported particulars presented as **established truth** in **clinical**, **institutional**, or **recorded / noted** voice when those particulars are **not already stated as fact in this prompt**.
+
+"""
+
 
 def build_scene_role_prompt_context(
     scene_state: dict[str, Any] | None,
@@ -51,9 +67,13 @@ def build_director_selection_prompt(director_payload: dict[str, Any]) -> str:
     anti_prefix = ""
     if isinstance(anti, dict) and anti.get("active"):
         anti_prefix = str(anti.get("prompt_prefix", "") or "")
+    lowp = payload.pop("low_pressure_turn_director_hints", None)
+    lowp_prefix = ""
+    if isinstance(lowp, dict) and lowp.get("active"):
+        lowp_prefix = str(lowp.get("prompt_prefix", "") or "")
     settled = str(payload.pop("settled_scene_facts_prompt", "") or "")
     settled_prefix = f"{settled}\n" if settled.strip() else ""
-    prefix = f"{prog_prefix}{beat_prefix}{anti_prefix}{settled_prefix}"
+    prefix = f"{prog_prefix}{beat_prefix}{anti_prefix}{lowp_prefix}{settled_prefix}"
     body = (
         "Decide who acts next using only the structured scene information below. Return JSON only. "
         "If it is best to end the response cycle early, return "
@@ -87,6 +107,7 @@ def build_character_turn_prompt(
     state_context: str,
     cast: list[str],
     scene_grounding_section: str = "",
+    scene_binding_constraints_section: str = "",
     retrieved_context_section: str = "",
 ) -> str:
     actionable_statuses = {"active", "escalating", ""}
@@ -123,6 +144,10 @@ def build_character_turn_prompt(
 
     grounding = str(scene_grounding_section or "").strip()
     grounding_block = f"{grounding}\n\n" if grounding else ""
+    binding_constraints = str(scene_binding_constraints_section or "").strip()
+    binding_constraints_block = (
+        f"{binding_constraints}\n\n" if binding_constraints else ""
+    )
     retrieved = str(retrieved_context_section or "").strip()
     retrieved_block = f"{retrieved}\n\n" if retrieved else ""
 
@@ -274,6 +299,7 @@ YOUR PRIORITIES, IN ORDER:
 - Treat abilities and constraints as specific, not elastic. Do not exaggerate healing speed, power scale, duration, ease, or form-specific limitations.
 - Match your emotional reaction to how extraordinary the event would be in this setting. Rare, miraculous, or destabilizing events should not be flattened into routine logistics unless your character would truly take them in stride.
 
+{binding_constraints_block}{_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK}
 OUTPUT RULES:
 - Only output a JSON object with action, dialogue, motivation, and optional scene_state_updates.
 - Keep action concrete and observable.

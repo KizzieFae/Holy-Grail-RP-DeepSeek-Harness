@@ -397,6 +397,7 @@ async def choose_next_actor(
     turn_number: int,
     available_actors: list[str],
     continuation_override_actor: str | None = None,
+    actors_used_this_round: list[str] | None = None,
 ) -> dict[str, Any]:
     return await turn_helpers.choose_next_actor(
         st_module=st,
@@ -409,6 +410,7 @@ async def choose_next_actor(
         turn_number=turn_number,
         available_actors=available_actors,
         continuation_override_actor=continuation_override_actor,
+        actors_used_this_round=actors_used_this_round,
         enforce_must_remain_presence_fn=enforce_must_remain_presence,
         get_orchestration_state_fn=get_orchestration_state,
         get_continuity_manager_fn=get_continuity_manager,

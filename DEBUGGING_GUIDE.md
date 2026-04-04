@@ -19,13 +19,14 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 
 1. **Continuity extraction and state** — Are events, issues, and scene snapshot correct after the turn? (`continuity_manager.py`, `continuity_*_helpers.py`)
 2. **Perception / audibility** (when the bug is knowledge boundaries, whispers, or “who saw that line”) — `perception_audibility.py`, `app_turn_prompting.py`, `prompt_builders.py`; confirm with per-character audit `_full.json` prompts, not `_narrative.json` alone
-3. **Scene grounding** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? (`scene_grounding.py`, `prompt_builders.py` formatting only after 1–2 look sane for that symptom)
-4. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
-5. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after earlier layers look sane)
-6. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`); turn-selection preemption checks respect `decision["source"] == "fallback"`
-7. **Memory layer (prompt read path)** — Episodic sections in character prompts: `memory_layer/retrieval.py` + `build_character_state_context_for_prompt`; production `state_context` is built only in `app_turn_prompting` (see `autogen_rp/docs/architecture.md`)
-8. **Director** — Selection policy and prompts when evidence points here
-9. **Narrator** — Prose polish; dialogue must stay verbatim (`app_turn_rendering.py`)
+3. **Scene grounding + binding** — Does `scene_grounding` reflect continuity (settled facts present, not stale, not empty when extraction promoted)? For **character** turns, does `_full.json` include **BINDING CONSTRAINTS** when binding categories are active? (`scene_grounding.py`, `app_turn_prompting.py`, `prompt_builders.py`)
+4. **Evidence / authority wording** — If the issue is **fabricated specifics** in clinical or “noted” voice (not continuity truth), check the static **EVIDENCE & AUTHORITY DISCIPLINE** block in `prompt_builders.py` and the model output; still verify perception and grounding first so you are not debugging the wrong layer
+5. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
+6. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after earlier layers look sane)
+7. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`); turn-selection preemption checks respect `decision["source"] == "fallback"`
+8. **Memory layer (prompt read path)** — Episodic sections in character prompts: `memory_layer/retrieval.py` + `build_character_state_context_for_prompt`; production `state_context` is built only in `app_turn_prompting` (see `autogen_rp/docs/architecture.md`)
+9. **Director** — Selection policy and prompts when evidence points here
+10. **Narrator** — Prose polish; dialogue must stay verbatim (`app_turn_rendering.py`)
 
 ---
 

@@ -244,5 +244,5 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
     assert first_call["available_actors"] == ["A", "B"]
     assert first_call["continuation_override_actor"] is None
 
-    assert second_call["continuation_override_actor"] == "A"
+    assert second_call["continuation_override_actor"] is None
     assert second_call["available_actors"] == ["B"]

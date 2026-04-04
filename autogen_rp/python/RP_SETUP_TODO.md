@@ -92,6 +92,18 @@ The Phase 0 blocker **character prompt knowledge leak from global player trigger
 
 ---
 
+## H. Prompt-layer stability — binding + evidence discipline (**complete**)
+
+High-salience **character** prompt constraints only (no new validators, retries, or schema changes for this track):
+
+- [x] **BINDING CONSTRAINTS (HIGH PRIORITY):** Filtered subset of settled scene facts (allowlisted `(category, key)` pairs), same `scene_grounding` rebuild pipeline as SETTLED SCENE FACTS; `format_character_binding_constraints_section` in `scene_grounding.py`; passed via `app_turn_prompting` as `scene_binding_constraints_section`; injected in `prompt_builders.build_character_turn_prompt` after priority sections 1–7 and **before** **OUTPUT RULES**
+- [x] **EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY):** Static block in `prompt_builders.py` (`_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK`) immediately **after** the binding block and **before** **OUTPUT RULES** — reduces unsupported who/what/where/when stated as clinical / institutional / “noted” truth; preserves pressure, accusation, intimidation, and contestable bluffing
+- [x] **Stress scenarios:** `willow_dorm_binding_stress`, `arkham_multi_character_stress`, `arkham_multi_character_stress_long` in `rp_app/data/progression_simulation_scenarios/`
+- [x] **Audit visibility:** binding-related metadata on character audits and failure logging (`turn_runner_audit.py`, `audit_logger_serialization.py`, `app_turn_audit.py`)
+- [x] **Observed on audited runs:** same-character **denial** of promoted binding state not seen; dialogue shifts toward **enforcement / resistance**; **unsupported authoritative specifics** (e.g. fabricated perimeter placement as chart fact) **not reproduced** in evaluated Willow/Arkham sessions — stochastic; re-run for regression
+
+---
+
 # Phase 0.5 — Packet Seam Introduction (NO BEHAVIOR CHANGE)
 
 **Goal**: Introduce a structured runtime interface (packets) without changing system behavior.
@@ -488,6 +500,8 @@ Packets do NOT change behavior.
 # Summary
 
 **Completed through Phase 3.2** (packet seam + authored retrieval + manifest compile + lore lane + subcaps + **bounded deterministic episodic** merged retrieved lane).
+
+**Phase 0 prompt-layer stability** (section **H**): **BINDING CONSTRAINTS** + **EVIDENCE & AUTHORITY DISCIPLINE** in `prompt_builders.py` / `scene_grounding.py` — **complete** for prompt-only scope (see **H** above).
 
 Next (when ready):
 

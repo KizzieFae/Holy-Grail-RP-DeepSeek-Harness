@@ -180,6 +180,7 @@ async def run_character_turns(
                     continuity_manager=continuity_manager,
                     eligible_participants=eligible_participants,
                     actors_used_this_round=actors_used_this_round,
+                    offstage_characters=offstage_list,
                 )
                 if not available_actors:
                     break
@@ -195,6 +196,7 @@ async def run_character_turns(
                     turn_number=turn_number,
                     available_actors=available_actors,
                     continuation_override_actor=continuation_override_actor,
+                    actors_used_this_round=list(actors_used_this_round),
                 )
                 next_actor = str(decision.get("next_actor", "") or "")
 

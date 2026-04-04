@@ -7,11 +7,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from orchestration_helpers import (
+    _pick_high_progression_actor,
     append_turn_to_orchestration_state,
+    apply_participation_fairness_to_decision,
     assign_progression_band_for_actor,
     build_recent_scene_context,
     choose_fallback_actor,
     ensure_orchestration_state,
+    first_unheard_available_actor_this_round,
     resolve_progression_override_actor,
     resolve_continuation_override_actor,
     sync_orchestration_state_from_continuity,
@@ -323,6 +326,7 @@ async def _run_choose_next_actor_early_return(
     session_state: dict[str, object],
     available_actors: list[str],
     continuation_override_actor: str | None,
+    actors_used_this_round: list[str] | None = None,
 ) -> dict[str, object]:
     st_module = SimpleNamespace(session_state=session_state)
     session_state.setdefault("selector_decisions", [])
@@ -337,6 +341,7 @@ async def _run_choose_next_actor_early_return(
         turn_number=1,
         available_actors=available_actors,
         continuation_override_actor=continuation_override_actor,
+        actors_used_this_round=actors_used_this_round or [],
         enforce_must_remain_presence_fn=lambda: None,
         get_orchestration_state_fn=lambda: {},
         get_continuity_manager_fn=lambda: None,
@@ -500,7 +505,221 @@ def test_resolve_progression_override_actor_prefers_escalating_participant_when_
     assert override == "Celina"
 
 
-def test_resolve_continuation_override_actor_allows_one_step_owned_continuation() -> None:
+def test_resolve_progression_override_prefers_non_spotlight_high_when_spotlight_history_set() -> (
+    None
+):
+    """With two HIGH actors on the same escalating issue, deprioritize last spotlight."""
+    active_issues = [
+        {"status": "escalating", "participants": ["Mira", "Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=["Mira"],
+    )
+    assert override == "Celina"
+
+
+def test_resolve_progression_override_escalating_subset_restricts_high_candidates() -> None:
+    """Only HIGH actors on escalating issues are candidates when any HIGH is escalating."""
+    active_issues = [
+        {"status": "active", "participants": ["Mira", "Celina"]},
+        {"status": "escalating", "participants": ["Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Mira",
+            "action": "push",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": ["x"],
+            "issue_updates": [{}],
+            "presence_changes": [],
+        },
+        {
+            "speaker": "Celina",
+            "action": "push",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": ["x"],
+            "issue_updates": [{}],
+            "presence_changes": [],
+        },
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=[],
+    )
+    assert override == "Celina"
+
+
+def test_resolve_progression_override_least_recent_spotlight_tie_break() -> None:
+    active_issues = [
+        {"status": "escalating", "participants": ["Mira", "Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=["Mira", "Ayame", "Celina"],
+    )
+    assert override == "Mira"
+
+
+def test_resolve_progression_override_balanced_highs_use_spotlight_not_first_in_list() -> None:
+    """When both HIGH tie on other criteria, least-recent spotlight breaks first-in-high-list bias."""
+    active_issues = [
+        {"status": "escalating", "participants": ["Mira", "Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=["Celina"],
+    )
+    assert override == "Mira"
+
+
+def test_resolve_progression_override_single_high_may_repeat_with_spotlight() -> None:
+    active_issues = [
+        {"status": "escalating", "participants": ["Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=["Celina"],
+    )
+    assert override == "Celina"
+
+
+def test_pick_high_progression_actor_prefers_director_name_when_in_candidate_set() -> None:
+    issues = [{"status": "escalating", "participants": ["Mira", "Celina"]}]
+    picked = _pick_high_progression_actor(
+        full_high_list=["Mira", "Celina"],
+        director_selected_actor="Celina",
+        spotlight_history=["Mira"],
+        recent_structured_moves=[],
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=issues,
+    )
+    assert picked == "Celina"
+
+
+def test_pick_high_progression_actor_anti_loop_reroutes_when_director_matches_prev_spotlight() -> (
+    None
+):
+    issues = [{"status": "escalating", "participants": ["Ayame", "Celina"]}]
+    picked = _pick_high_progression_actor(
+        full_high_list=["Ayame", "Celina"],
+        director_selected_actor="Ayame",
+        spotlight_history=["Celina", "Ayame"],
+        recent_structured_moves=[],
+        available_actors=["Ayame", "Celina"],
+        active_issues=issues,
+    )
+    assert picked == "Celina"
+
+
+def test_resolve_progression_override_expel_proxy_uses_structured_move_when_spotlight_empty() -> (
+    None
+):
+    """Stage-A 'not previous speaker' uses last structured move speaker if no spotlight."""
+    active_issues = [
+        {"status": "escalating", "participants": ["Mira", "Celina"]},
+    ]
+    recent_moves = [
+        {
+            "speaker": "Ayame",
+            "action": "wait",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+        {
+            "speaker": "Mira",
+            "action": "push",
+            "dialogue": "",
+            "motivation": {"goal": "x", "tactic": "y"},
+            "consequences": [],
+            "issue_updates": [],
+            "presence_changes": [],
+        },
+    ]
+    override = resolve_progression_override_actor(
+        director_selected_actor="Ayame",
+        available_actors=["Ayame", "Mira", "Celina"],
+        active_issues=active_issues,
+        recent_structured_moves=recent_moves,
+        spotlight_history=[],
+    )
+    assert override == "Celina"
+
+
+def test_resolve_continuation_override_suppressed_while_other_present_unheard() -> None:
     orchestration_state = ensure_orchestration_state(None)
     orchestration_state["recent_structured_moves"] = [
         {
@@ -525,6 +744,32 @@ def test_resolve_continuation_override_actor_allows_one_step_owned_continuation(
             continuity_manager=continuity_manager,
             eligible_participants=["Ayame", "Celina"],
             actors_used_this_round=["Ayame"],
+        )
+        is None
+    )
+
+
+def test_resolve_continuation_override_allowed_when_all_present_have_spoken() -> None:
+    orchestration_state = ensure_orchestration_state(None)
+    orchestration_state["recent_structured_moves"] = [
+        {
+            "speaker": "Ayame",
+            "action": "second beat",
+            "dialogue": "Still here.",
+            "motivation": {"goal": "press", "tactic": "hold"},
+        }
+    ]
+    orchestration_state["spotlight_history"] = ["Ayame"]
+    continuity_manager = SimpleNamespace(
+        turn_counter=3,
+        turn_metadata_by_index={3: {"tags": ["authority_asserted"]}},
+    )
+    assert (
+        resolve_continuation_override_actor(
+            orchestration_state=orchestration_state,
+            continuity_manager=continuity_manager,
+            eligible_participants=["Ayame", "Celina"],
+            actors_used_this_round=["Celina", "Ayame"],
         )
         == "Ayame"
     )
@@ -551,6 +796,7 @@ async def test_choose_next_actor_raises_when_available_actors_is_none() -> None:
             turn_number=1,
             available_actors=None,  # type: ignore[arg-type]
             continuation_override_actor=None,
+            actors_used_this_round=[],
             enforce_must_remain_presence_fn=lambda: None,
             get_orchestration_state_fn=lambda: {},
             get_continuity_manager_fn=lambda: None,
@@ -631,7 +877,7 @@ def test_resolve_continuation_override_none_eligible_derives_from_continuity_pre
             eligible_participants=None,
             actors_used_this_round=["Ayame"],
         )
-        == "Ayame"
+        is None
     )
 
 
@@ -663,6 +909,78 @@ def test_resolve_continuation_override_actor_rejects_superseded_line() -> None:
         )
         is None
     )
+
+
+def test_resolve_continuation_override_not_suppressed_when_only_offstage_unheard() -> None:
+    orchestration_state = ensure_orchestration_state(None)
+    orchestration_state["recent_structured_moves"] = [
+        {
+            "speaker": "Ayame",
+            "action": "holds",
+            "dialogue": "",
+            "motivation": {"goal": "block", "tactic": "stand firm"},
+        }
+    ]
+    orchestration_state["spotlight_history"] = ["Ayame"]
+    continuity_manager = SimpleNamespace(
+        turn_counter=1,
+        turn_metadata_by_index={1: {"tags": ["authority_asserted"]}},
+    )
+    assert (
+        resolve_continuation_override_actor(
+            orchestration_state=orchestration_state,
+            continuity_manager=continuity_manager,
+            eligible_participants=["Ayame", "Celina"],
+            actors_used_this_round=["Ayame"],
+            offstage_characters=["Celina"],
+        )
+        == "Ayame"
+    )
+
+
+def test_first_unheard_available_actor_this_round_order() -> None:
+    assert (
+        first_unheard_available_actor_this_round(
+            participant_names=["Celina", "Ayame"],
+            available_actors=["Celina", "Ayame"],
+            actors_used_this_round=["Celina"],
+        )
+        == "Ayame"
+    )
+    assert (
+        first_unheard_available_actor_this_round(
+            participant_names=["Ayame", "Celina"],
+            available_actors=["Ayame"],
+            actors_used_this_round=["Ayame"],
+        )
+        is None
+    )
+
+
+def test_apply_participation_fairness_rotates_when_director_reuses_speaker() -> None:
+    decision: dict[str, object] = {
+        "next_actor": "Celina",
+        "reason": "Director picked Celina again.",
+    }
+    apply_participation_fairness_to_decision(
+        decision,
+        participant_names=["Celina", "Ayame", "Hannah_Lovelace"],
+        available_actors=["Celina", "Ayame", "Hannah_Lovelace"],
+        actors_used_this_round=["Celina"],
+    )
+    assert decision["next_actor"] == "Ayame"
+
+
+def test_apply_participation_fairness_no_op_when_director_picks_unheard() -> None:
+    decision: dict[str, object] = {"next_actor": "Ayame", "reason": "ok"}
+    apply_participation_fairness_to_decision(
+        decision,
+        participant_names=["Celina", "Ayame"],
+        available_actors=["Celina", "Ayame"],
+        actors_used_this_round=["Celina"],
+    )
+    assert decision["next_actor"] == "Ayame"
+    assert "Spotlight fairness" not in str(decision.get("reason", ""))
 
 
 def test_sync_orchestration_state_from_continuity_copies_scene_and_continuity_views() -> (

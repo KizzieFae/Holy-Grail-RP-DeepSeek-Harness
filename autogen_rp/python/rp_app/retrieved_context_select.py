@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -18,6 +19,7 @@ from episodic_memory_compile import EpisodicCompiledItem
 from runtime_packets import RetrievedContextBundle, RetrievedItem
 
 _LOG = logging.getLogger("rp_app.retrieved_context")
+_EPISODIC_SUPPRESS_LOG = logging.getLogger("rp_app.episodic_prompt")
 
 MAX_RETRIEVED_ITEMS = 8
 MAX_RETRIEVED_CHARS = 8000
@@ -318,6 +320,74 @@ def episodic_compiled_to_retrieved_item(ep: EpisodicCompiledItem) -> RetrievedIt
     )
 
 
+def structured_prompt_id_sets_for_episodic_suppression(
+    *,
+    active_issues: Sequence[Mapping[str, Any]],
+    recent_public_events: Sequence[Mapping[str, Any]],
+    my_interpretations: Sequence[Mapping[str, Any]],
+) -> tuple[frozenset[str], frozenset[str], frozenset[str]]:
+    """IDs present in this character's structured prompt JSON (exact match for merge-time suppression)."""
+    issue_ids: set[str] = set()
+    for row in active_issues:
+        if not isinstance(row, Mapping):
+            continue
+        iid = str(row.get("issue_id", "") or "").strip()
+        if iid:
+            issue_ids.add(iid)
+    event_ids: set[str] = set()
+    for row in recent_public_events:
+        if not isinstance(row, Mapping):
+            continue
+        eid = str(row.get("event_id", "") or "").strip()
+        if eid:
+            event_ids.add(eid)
+    interp_ids: set[str] = set()
+    for row in my_interpretations:
+        if not isinstance(row, Mapping):
+            continue
+        nid = str(row.get("interpretation_id", "") or "").strip()
+        if nid:
+            interp_ids.add(nid)
+    return frozenset(issue_ids), frozenset(event_ids), frozenset(interp_ids)
+
+
+def filter_episodic_items_by_structured_prompt_overlap(
+    episodic_items: tuple[EpisodicCompiledItem, ...],
+    *,
+    prompt_issue_ids: frozenset[str],
+    prompt_public_event_ids: frozenset[str],
+    prompt_interpretation_ids: frozenset[str],
+) -> tuple[EpisodicCompiledItem, ...]:
+    """Drop episodic rows whose source id already appears in structured prompt sections (exact id only)."""
+    kept: list[EpisodicCompiledItem] = []
+    for ep in episodic_items:
+        mt = str(ep.memory_type or "")
+        ref = str(ep.source_ref or "").strip()
+        if not ref:
+            kept.append(ep)
+            continue
+        if mt == "issue" and ref in prompt_issue_ids:
+            _EPISODIC_SUPPRESS_LOG.debug(
+                "episodic suppress id=%s type=issue reason=already present in ACTIVE ISSUES",
+                ref,
+            )
+            continue
+        if mt == "public_event" and ref in prompt_public_event_ids:
+            _EPISODIC_SUPPRESS_LOG.debug(
+                "episodic suppress id=%s type=public_event reason=already present in RECENT PUBLIC EVENTS",
+                ref,
+            )
+            continue
+        if mt == "interpretation" and ref in prompt_interpretation_ids:
+            _EPISODIC_SUPPRESS_LOG.debug(
+                "episodic suppress id=%s type=interpretation reason=already present in YOUR RECENT INTERPRETATIONS",
+                ref,
+            )
+            continue
+        kept.append(ep)
+    return tuple(kept)
+
+
 def _dedupe_merged_retrieval_items(items: list[RetrievedItem]) -> list[RetrievedItem]:
     """Like ``_dedupe_items`` but on priority tie, substring containment drops episodic before authored."""
     seen_refs: set[str] = set()
@@ -464,6 +534,9 @@ def merge_retrieved_context_with_episodic(
     cast: tuple[str, ...],
     dedup_against_texts: tuple[str, ...],
     episodic_items: tuple[EpisodicCompiledItem, ...],
+    structured_prompt_issue_ids: frozenset[str] | None = None,
+    structured_prompt_public_event_ids: frozenset[str] | None = None,
+    structured_prompt_interpretation_ids: frozenset[str] | None = None,
 ) -> RetrievedContextBundle:
     """Merge authored (pre–global-cap pipeline) with episodic items; one global cap; deterministic order.
 
@@ -478,6 +551,15 @@ def merge_retrieved_context_with_episodic(
         relationship_focus_names=relationship_focus_names,
         cast=cast,
         dedup_against_texts=dedup_against_texts,
+    )
+    pi = structured_prompt_issue_ids or frozenset()
+    pe = structured_prompt_public_event_ids or frozenset()
+    pn = structured_prompt_interpretation_ids or frozenset()
+    episodic_items = filter_episodic_items_by_structured_prompt_overlap(
+        episodic_items,
+        prompt_issue_ids=pi,
+        prompt_public_event_ids=pe,
+        prompt_interpretation_ids=pn,
     )
     if not episodic_items:
         return RetrievedContextBundle(items=tuple(_apply_caps(authored)))

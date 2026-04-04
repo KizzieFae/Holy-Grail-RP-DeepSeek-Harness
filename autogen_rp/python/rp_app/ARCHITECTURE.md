@@ -150,6 +150,10 @@ Beat-shift activation uses the **same** computed **`stall_score`** threshold as 
 
 A **read-only** **SETTLED SCENE FACTS** block is injected into Director and character prompts when facts exist. Facts are a **deterministic, capped, allowlisted** projection **derived from** `PublicEvent.grounding_markers` (computed in continuity classification) — not a second authority (PRD §5.8). See `scene_grounding.py` and `autogen_rp/docs/scene-grounding-layer.md`. Rebuilt in `turn_runner_updates` after each successful continuity `process_turn`; **no** writes to `CharacterState` or continuity.
 
+**Character prompts only — BINDING CONSTRAINTS:** a **high-priority** subsection lists a **filtered** subset of the same promoted facts (allowlisted keys) so the model treats assignment / entry-type settlements as non-deniable in dialogue. Formatted by `format_character_binding_constraints_section` in `scene_grounding.py`, passed as `scene_binding_constraints_section` from `app_turn_prompting`, inserted in `prompt_builders.build_character_turn_prompt` **before** **OUTPUT RULES**.
+
+**Character prompts only — EVIDENCE & AUTHORITY DISCIPLINE:** a **static** instruction block in `prompt_builders.py` (after binding constraints, before **OUTPUT RULES**) discourages stating **unsupported** concrete specifics as clinical / institutional / “noted” fact while still allowing strong pressure and contestable bluffing. Prompt-only; no schema or validator changes.
+
 ### 4. Narrator Rendering
 
 Narrator receives structured moves and renders:

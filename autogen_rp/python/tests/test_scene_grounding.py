@@ -18,10 +18,13 @@ from scene_grounding import (
     MAX_SCENE_FACTS,
     compute_grounding_markers,
     empty_grounding_dict,
+    format_character_binding_constraints_section,
+    format_character_grounding_section,
     format_grounding_block_body,
     format_grounding_prompt_prefix,
     grounding_markers_event_summary,
     grounding_state_signals_from_move,
+    is_behaviorally_binding_scene_fact,
     rebuild_scene_grounding_from_continuity,
 )
 
@@ -384,3 +387,85 @@ def test_format_grounding_block_body():
     )
     assert "[object_state]" in body
     assert "Phone: broken" in body
+
+
+def test_is_behaviorally_binding_scene_fact() -> None:
+    assert is_behaviorally_binding_scene_fact("assignment", "sleeping_surface")
+    assert is_behaviorally_binding_scene_fact("access", "location_entry")
+    assert not is_behaviorally_binding_scene_fact("assignment", "other")
+    assert not is_behaviorally_binding_scene_fact("medical_status", "omega_suppressants")
+
+
+def test_format_grounding_block_body_binding_filter() -> None:
+    d = {
+        "facts": [
+            {
+                "category": "assignment",
+                "key": "sleeping_surface",
+                "value_summary": "Willow: sleeping — couch",
+            },
+            {
+                "category": "object_state",
+                "key": "phone",
+                "value_summary": "Phone: broken",
+            },
+        ],
+    }
+    bind = format_grounding_block_body(d, binding_filter="binding")
+    non = format_grounding_block_body(d, binding_filter="non_binding")
+    assert "Willow" in bind and "Phone" not in bind
+    assert "Phone" in non and "Willow" not in non
+    all_body = format_grounding_block_body(d)
+    assert "Willow" in all_body and "Phone" in all_body
+
+
+def test_format_character_settled_excludes_binding_facts() -> None:
+    d = {
+        "facts": [
+            {
+                "category": "assignment",
+                "key": "sleeping_surface",
+                "value_summary": "A: couch",
+            },
+        ],
+    }
+    settled = format_character_grounding_section(d)
+    assert settled == ""
+
+
+def test_format_character_settled_keeps_non_binding_only() -> None:
+    d = {
+        "facts": [
+            {
+                "category": "assignment",
+                "key": "sleeping_surface",
+                "value_summary": "A: couch",
+            },
+            {
+                "category": "object_state",
+                "key": "phone",
+                "value_summary": "Phone: broken",
+            },
+        ],
+    }
+    settled = format_character_grounding_section(d)
+    assert "SETTLED SCENE FACTS" in settled
+    assert "Phone" in settled
+    assert "couch" not in settled
+
+
+def test_format_character_binding_constraints_section_nonempty() -> None:
+    d = {
+        "facts": [
+            {
+                "category": "assignment",
+                "key": "sleeping_surface",
+                "value_summary": "A: couch",
+            },
+        ],
+    }
+    block = format_character_binding_constraints_section(d)
+    assert "BINDING CONSTRAINTS" in block
+    assert "HIGH PRIORITY" in block
+    assert "[assignment]" in block
+    assert "couch" in block

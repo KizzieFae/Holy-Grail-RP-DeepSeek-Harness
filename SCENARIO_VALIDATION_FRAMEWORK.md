@@ -72,6 +72,9 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 | `memory_fallback_director` | Normal Director JSON path (parse fallback in supplemental tests) |
 | `memory_long_session` | Deep multi-turn run; episodic list bounds |
 | `memory_forced_speaker` | `pending_forced_speaker` session preseed before Director pick |
+| `willow_dorm_binding_stress` | Dorm logistics + binding-fact stress (Willow / sleeping surface enforcement) |
+| `arkham_multi_character_stress` | Nine-character clinical/security/patient corridor stress (perimeter-alarm rumor) |
+| `arkham_multi_character_stress_long` | Same cast as `arkham_multi_character_stress`; higher `max_turns` / extended premise for staff–patient cycling |
 
 **Manifest regression (no API):**
 

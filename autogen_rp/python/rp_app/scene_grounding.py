@@ -14,6 +14,19 @@ from continuity_state import ConsequenceCategory, DetectedConsequence, PublicEve
 MAX_SCENE_FACTS = 16
 SCHEMA_VERSION = 1
 
+# Character prompt: BINDING CONSTRAINTS (subset of settled facts; same rebuild pipeline).
+_BINDING_FACT_KEYS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("assignment", "sleeping_surface"),
+        ("access", "location_entry"),
+    }
+)
+
+
+def is_behaviorally_binding_scene_fact(category: str, key: str) -> bool:
+    """Facts that must not be contradicted in dialogue/action (prompt enforcement only)."""
+    return (str(category or "").strip(), str(key or "").strip()) in _BINDING_FACT_KEYS
+
 # Default priority by category (higher retained first under cap)
 _CATEGORY_PRIORITY: dict[str, int] = {
     "access": 78,
@@ -492,8 +505,18 @@ def format_grounding_prompt_prefix(scene_grounding: Any) -> str:
     )
 
 
-def format_grounding_block_body(scene_grounding: Any) -> str:
-    """Bullet lines only (no header)."""
+def format_grounding_block_body(
+    scene_grounding: Any,
+    *,
+    binding_filter: str | None = None,
+) -> str:
+    """Bullet lines only (no header).
+
+    binding_filter:
+        None — all facts (Director prefix, tests).
+        ``"binding"`` — only behaviorally binding categories (sleeping assignment, entry).
+        ``"non_binding"`` — exclude those (character SETTLED block; binding lives separately).
+    """
     raw = scene_grounding
     if raw is None:
         return ""
@@ -508,6 +531,12 @@ def format_grounding_block_body(scene_grounding: Any) -> str:
         if not isinstance(item, dict):
             continue
         cat = str(item.get("category", "") or "")
+        key = str(item.get("key", "") or "")
+        is_binding = is_behaviorally_binding_scene_fact(cat, key)
+        if binding_filter == "binding" and not is_binding:
+            continue
+        if binding_filter == "non_binding" and is_binding:
+            continue
         summ = str(item.get("value_summary", "") or "").strip()
         if not summ:
             continue
@@ -515,8 +544,32 @@ def format_grounding_block_body(scene_grounding: Any) -> str:
     return "\n".join(lines)
 
 
+_BINDING_CONSTRAINTS_PREAMBLE = """## **BINDING CONSTRAINTS (HIGH PRIORITY)**
+
+When the list below is non-empty, these facts override how you may express yourself if there is a conflict: do not deny or nullify them in dialogue or action unless a **new in-scene event** changes them.
+
+The following facts are **true in the world**. You may react emotionally or resist them, but you must **not** state or act as if they are **false** unless a new in-scene event changes them.
+
+**Allowed (examples):** "This is bullshit." / "I'm not agreeing to this." / "I'll call housing and fix this." / "You don't get to decide this long-term."
+
+**Not allowed (examples):** "The couch isn't yours." (when it is assigned) / acting as if no assignment exists / commands that override the assignment or entry permission **without** a new settling event.
+
+**Assertable (must match the list):** declarative statements about world state (who sleeps where, who may enter where). **Performative (allowed):** threats, objections, refusal, attempts to escalate or change the situation.
+
+If your character's instincts conflict with these constraints, **preserve the truth of the constraints** and express resistance through **attitude**, not **contradiction**.
+"""
+
+
+def format_character_binding_constraints_section(scene_grounding: Any) -> str:
+    """High-salience binding block for character prompts only; empty if no binding facts."""
+    body = format_grounding_block_body(scene_grounding, binding_filter="binding")
+    if not body.strip():
+        return ""
+    return f"{_BINDING_CONSTRAINTS_PREAMBLE}\n{body}\n\n"
+
+
 def format_character_grounding_section(scene_grounding: Any) -> str:
-    body = format_grounding_block_body(scene_grounding)
+    body = format_grounding_block_body(scene_grounding, binding_filter="non_binding")
     if not body.strip():
         return ""
     return (

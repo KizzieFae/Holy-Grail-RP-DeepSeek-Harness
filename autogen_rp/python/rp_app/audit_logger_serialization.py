@@ -42,7 +42,7 @@ def entry_to_light_dict(entry: Any) -> dict[str, Any]:
         "dialogue_preview": str(entry.parsed_output.get("dialogue", ""))[:100],
     }
 
-    return {
+    out: dict[str, Any] = {
         "timestamp": entry.timestamp,
         "session_owner": entry.session_owner,
         "session_number": entry.session_number,
@@ -56,6 +56,29 @@ def entry_to_light_dict(entry: Any) -> dict[str, Any]:
         "word_count": len(entry.raw_response.split()),
         "metadata_keys": list(entry.metadata.keys()),
     }
+    if entry.bot_type in ("character", "character_failure") and isinstance(
+        entry.metadata, dict
+    ):
+        if "has_binding_constraints" in entry.metadata:
+            out["has_binding_constraints"] = bool(
+                entry.metadata.get("has_binding_constraints")
+            )
+        bc = entry.metadata.get("scene_binding_constraints_section")
+        if isinstance(bc, str) and bc.strip():
+            out["scene_binding_constraints_section"] = bc
+        im0 = (
+            entry.input_messages[0]
+            if entry.input_messages
+            and isinstance(entry.input_messages[0], dict)
+            else None
+        )
+        if im0 and str(im0.get("role", "")).strip() == "system":
+            content = str(im0.get("content", "") or "")
+            out["character_system_prompt_length"] = len(content)
+            out["character_system_prompt_contains_binding_header"] = (
+                "BINDING CONSTRAINTS" in content
+            )
+    return out
 
 
 def normalize_string_mapping(value: Any) -> dict[str, str]:

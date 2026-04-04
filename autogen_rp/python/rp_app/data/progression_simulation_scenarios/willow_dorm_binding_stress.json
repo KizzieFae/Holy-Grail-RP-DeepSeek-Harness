@@ -1,0 +1,20 @@
+{
+  "id": "willow_dorm_binding_stress",
+  "title": "Willow dorm binding stress (sleeping logistics)",
+  "intent": "Three-way alpha/omega dorm pressure with explicit sleeping-surface stakes so continuity may promote assignment and character prompts receive BINDING CONSTRAINTS; stress Willow's control style without scripting outcomes.",
+  "character_card_ids": ["kizzie", "marlene", "willow"],
+  "opening_description": "SCUC triple dorm, evening. Kizzie (omega, kitsune) stands near the door with a single bag while Marlene and Willow Reeves—roommates who run this space like a two-alpha household—block the narrow path between bunk ladder and couch. The room is already lived-in: Willow's tools on the desk, Marlene's art clutter, two bunks, a couch, floor space. Housing put a third body in here anyway. The air is sharp with territorial patience and the unspoken question of who sleeps where tonight.",
+  "location": "university_dorm_triple",
+  "trigger_text": "Marlene says too cheerfully, 'Alright, sugar—we need a real plan, not vibes. Couch, floor, whose bunk, who's gonna hate me tomorrow? Willow, you don't get to scowl this into limbo; Kizzie, you don't get to vanish into polite fox silence. Pick surfaces. Now.' Kizzie flinches but doesn't answer yet. Willow's jaw sets like she's already running a list of ways this could blow up.",
+  "max_turns": 14,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "high",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "high",
+  "seed_issue": {
+    "issue_id": "sim_dorm_sleeping_territory",
+    "description": "Third roommate arrival forces immediate, contested sleeping-surface assignment between two territorial alphas and a displaced omega.",
+    "participant_card_ids": ["kizzie", "marlene", "willow"]
+  }
+}

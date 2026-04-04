@@ -44,7 +44,7 @@ def test_descriptive_exit_updates_authoritative_presence_state() -> None:
     assert manager.public_events[0].state_changes == ["Mira left the immediate scene."]
 
 
-def test_resolve_continuation_override_actor_allows_one_step_owned_continuation() -> None:
+def test_resolve_continuation_override_suppressed_while_other_present_unheard() -> None:
     orchestration_state = ensure_orchestration_state(None)
     orchestration_state["recent_structured_moves"] = [
         {
@@ -70,7 +70,7 @@ def test_resolve_continuation_override_actor_allows_one_step_owned_continuation(
             eligible_participants=["Ayame", "Celina"],
             actors_used_this_round=["Ayame"],
         )
-        == "Ayame"
+        is None
     )
 
 

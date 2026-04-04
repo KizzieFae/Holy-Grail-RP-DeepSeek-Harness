@@ -157,12 +157,60 @@ def choose_fallback_actor(
     return available_actors[0]
 
 
+def first_unheard_available_actor_this_round(
+    *,
+    participant_names: list[str],
+    available_actors: list[str],
+    actors_used_this_round: list[str],
+) -> str | None:
+    """First cast member in *participant_names* who may act but has not this round."""
+    avail = {str(a) for a in available_actors if str(a or "").strip()}
+    for name in participant_names:
+        key = str(name or "").strip()
+        if key in avail and actors_used_this_round.count(key) == 0:
+            return key
+    return None
+
+
+def apply_participation_fairness_to_decision(
+    decision: dict[str, Any],
+    *,
+    participant_names: list[str],
+    available_actors: list[str],
+    actors_used_this_round: list[str],
+) -> None:
+    """If the chosen actor already spoke this round while another available actor has not, rotate.
+
+    Mutates *decision* in place. Skips when ending the round or when no unheard actor exists.
+    """
+    if bool(decision.get("end_round")):
+        return
+    na = str(decision.get("next_actor") or "").strip()
+    if not na or not available_actors:
+        return
+    unheard = first_unheard_available_actor_this_round(
+        participant_names=participant_names,
+        available_actors=available_actors,
+        actors_used_this_round=actors_used_this_round,
+    )
+    if not unheard or actors_used_this_round.count(na) == 0 or na == unheard:
+        return
+    decision["next_actor"] = unheard
+    prev = str(decision.get("reason", "") or "").strip()
+    note = (
+        f"Spotlight fairness: rotate to {unheard} "
+        "(present participant not yet heard this response cycle)"
+    )
+    decision["reason"] = f"{prev} | {note}".strip(" |") if prev else note
+
+
 def resolve_continuation_override_actor(
     *,
     orchestration_state: dict[str, Any],
     continuity_manager: Any,
     eligible_participants: list[str] | None,
     actors_used_this_round: list[str],
+    offstage_characters: list[str] | None = None,
 ) -> str | None:
     if eligible_participants is None:
         cm_state = getattr(continuity_manager, "scene_state", None)
@@ -220,6 +268,22 @@ def resolve_continuation_override_actor(
         if str(item or "").strip()
     }
     if tags.intersection(_CONTINUATION_SUPERSEDING_TAGS):
+        return None
+
+    off = {
+        str(x).strip()
+        for x in (offstage_characters or [])
+        if str(x or "").strip()
+    }
+    unheard_other = [
+        p
+        for p in eligible_participants
+        if str(p or "").strip()
+        and str(p).strip() not in off
+        and str(p).strip() != actor
+        and actors_used_this_round.count(str(p).strip()) == 0
+    ]
+    if unheard_other:
         return None
 
     return actor
@@ -374,13 +438,8 @@ def assign_progression_band_for_actor(
     return "med"
 
 
-def _pick_high_progression_actor(
-    *,
-    high_actors: list[str],
-    active_issues: list[dict[str, Any]],
-) -> str:
-    """Prefer escalating-issue participant; else first HIGH in list order."""
-    escalating_participants: set[str] = set()
+def _escalating_issue_participants(active_issues: list[dict[str, Any]]) -> set[str]:
+    out: set[str] = set()
     for issue in active_issues:
         if not isinstance(issue, dict):
             continue
@@ -388,15 +447,146 @@ def _pick_high_progression_actor(
             continue
         participants = issue.get("participants", [])
         if isinstance(participants, list):
-            escalating_participants.update(
-                str(item) for item in participants if str(item).strip()
+            out.update(str(item) for item in participants if str(item).strip())
+    return out
+
+
+def _restrict_high_to_escalating_subset_if_any(
+    *,
+    high_actors: list[str],
+    active_issues: list[dict[str, Any]],
+) -> list[str]:
+    """Option 1: if any HIGH participates in escalating issues, narrow to that subset."""
+    escalating = _escalating_issue_participants(active_issues)
+    restricted = [a for a in high_actors if a in escalating]
+    return restricted if restricted else list(high_actors)
+
+
+def _prev_spotlight_expel_proxy(
+    *,
+    spotlight_history: list[str],
+    recent_structured_moves: list[dict[str, Any]],
+) -> str | None:
+    """Speaker to deprioritize for 'not previous speaker' tie-break (Stage A)."""
+    if spotlight_history:
+        s = str(spotlight_history[-1] or "").strip()
+        return s or None
+    if recent_structured_moves:
+        last = recent_structured_moves[-1]
+        if isinstance(last, dict):
+            sp = str(last.get("speaker", "") or "").strip()
+            return sp or None
+    return None
+
+
+def _last_spotlight_index(actor: str, spotlight_history: list[str]) -> int | None:
+    for i in range(len(spotlight_history) - 1, -1, -1):
+        if spotlight_history[i] == actor:
+            return i
+    return None
+
+
+def _least_recent_spotlight_actor(
+    candidates: list[str],
+    *,
+    spotlight_history: list[str],
+    available_actors: list[str],
+) -> str:
+    """Prefer never spotlighted, then smallest last index in history, then list order."""
+
+    def sort_key(name: str) -> tuple[int, int, int]:
+        li = _last_spotlight_index(name, spotlight_history)
+        try:
+            av_idx = available_actors.index(name)
+        except ValueError:
+            av_idx = len(available_actors)
+        if li is None:
+            return (0, 0, av_idx)
+        return (1, li, av_idx)
+
+    return min(candidates, key=sort_key)
+
+
+def _pick_high_progression_actor_once(
+    *,
+    candidate_high_list: list[str],
+    director_selected_actor: str,
+    spotlight_history: list[str],
+    recent_structured_moves: list[dict[str, Any]],
+    available_actors: list[str],
+) -> str:
+    """Single pass: director preference, expel proxy, least-recent spotlight, list order."""
+    if not candidate_high_list:
+        return ""
+
+    if director_selected_actor in candidate_high_list:
+        return director_selected_actor
+
+    expel = _prev_spotlight_expel_proxy(
+        spotlight_history=spotlight_history,
+        recent_structured_moves=recent_structured_moves,
+    )
+    pool = candidate_high_list
+    if expel:
+        without = [a for a in candidate_high_list if a != expel]
+        if without:
+            pool = without
+
+    return _least_recent_spotlight_actor(
+        pool,
+        spotlight_history=spotlight_history,
+        available_actors=available_actors,
+    )
+
+
+def _pick_high_progression_actor(
+    *,
+    full_high_list: list[str],
+    director_selected_actor: str,
+    spotlight_history: list[str],
+    recent_structured_moves: list[dict[str, Any]],
+    available_actors: list[str],
+    active_issues: list[dict[str, Any]],
+) -> str:
+    """Escalating subset first, then tie-break policy and narrow anti-loop guard."""
+    working = _restrict_high_to_escalating_subset_if_any(
+        high_actors=full_high_list,
+        active_issues=active_issues,
+    )
+    chosen = _pick_high_progression_actor_once(
+        candidate_high_list=working,
+        director_selected_actor=director_selected_actor,
+        spotlight_history=spotlight_history,
+        recent_structured_moves=recent_structured_moves,
+        available_actors=available_actors,
+    )
+
+    prev_spot = (
+        str(spotlight_history[-1] or "").strip()
+        if spotlight_history
+        else ""
+    )
+    if (
+        prev_spot
+        and chosen == prev_spot
+        and len(full_high_list) >= 2
+    ):
+        rerun_high = [a for a in full_high_list if a != prev_spot]
+        if len(rerun_high) >= 1:
+            working2 = _restrict_high_to_escalating_subset_if_any(
+                high_actors=rerun_high,
+                active_issues=active_issues,
             )
+            if working2:
+                chosen = _pick_high_progression_actor_once(
+                    candidate_high_list=working2,
+                    director_selected_actor=director_selected_actor,
+                    spotlight_history=spotlight_history,
+                    recent_structured_moves=recent_structured_moves,
+                    available_actors=available_actors,
+                )
 
-    for actor in high_actors:
-        if actor in escalating_participants:
-            return actor
-
-    return high_actors[0]
+    return chosen
 
 
 def resolve_progression_override_actor(
@@ -405,6 +595,7 @@ def resolve_progression_override_actor(
     available_actors: list[str],
     active_issues: list[dict[str, Any]],
     recent_structured_moves: list[dict[str, Any]],
+    spotlight_history: list[str] | None = None,
     progression_enforcement_gate: bool = False,
 ) -> str | None:
     """Apply band-based progression override for Director selection.
@@ -421,6 +612,8 @@ def resolve_progression_override_actor(
     director_selected_actor = str(director_selected_actor or "").strip()
     if not director_selected_actor or director_selected_actor not in available_actors:
         return None
+
+    sh = [str(x or "").strip() for x in (spotlight_history or []) if str(x or "").strip()]
 
     unresolved_actionable_issue_exists = any(
         _is_actionable_issue_status(str(issue.get("status", "") or ""))
@@ -446,12 +639,22 @@ def resolve_progression_override_actor(
 
     if director_band == "low":
         return _pick_high_progression_actor(
-            high_actors=high_actors, active_issues=active_issues
+            full_high_list=high_actors,
+            director_selected_actor=director_selected_actor,
+            spotlight_history=sh,
+            recent_structured_moves=recent_structured_moves,
+            available_actors=available_actors,
+            active_issues=active_issues,
         )
 
     if progression_enforcement_gate and director_band == "med":
         return _pick_high_progression_actor(
-            high_actors=high_actors, active_issues=active_issues
+            full_high_list=high_actors,
+            director_selected_actor=director_selected_actor,
+            spotlight_history=sh,
+            recent_structured_moves=recent_structured_moves,
+            available_actors=available_actors,
+            active_issues=active_issues,
         )
 
     return None

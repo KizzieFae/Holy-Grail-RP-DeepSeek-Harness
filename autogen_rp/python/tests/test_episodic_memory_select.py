@@ -2,10 +2,11 @@
 
 import sys
 from pathlib import Path
+from typing import cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
-from episodic_memory_compile import EpisodicCompiledItem
+from episodic_memory_compile import EpisodicCompiledItem, EpisodicOriginType
 from episodic_memory_select import (
     DEFAULT_MAX_EPISODIC_CHARS,
     DEFAULT_MAX_EPISODIC_ITEMS,
@@ -21,12 +22,13 @@ def _item(
     salience: int = 50,
     rk: int = 1,
     origin: str = "event",
+    memory_type: str = "public_event",
 ) -> EpisodicCompiledItem:
     return EpisodicCompiledItem(
         memory_id=f"id-{sid}",
-        origin_type=origin,  # type: ignore[arg-type]
+        origin_type=cast(EpisodicOriginType, origin),
         source_ref=sid,
-        memory_type="public_event",
+        memory_type=memory_type,
         visible_to=visible,
         involved_characters=tuple(sorted(visible)),
         summary_text=summary,
@@ -114,3 +116,123 @@ def test_zero_cap_returns_empty():
 def test_default_constants_are_positive():
     assert DEFAULT_MAX_EPISODIC_ITEMS > 0
     assert DEFAULT_MAX_EPISODIC_CHARS > 0
+
+
+def test_gap_filter_excludes_duplicate_public_event_ids():
+    pool = (
+        _item(sid="evt_dup", summary="dup", visible=frozenset({"Alice"})),
+        _item(sid="evt_gap", summary="gap", visible=frozenset({"Alice"})),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_public_event_ids=frozenset({"evt_dup"}),
+    )
+    assert [x.source_ref for x in got] == ["evt_gap"]
+
+
+def test_gap_filter_selects_gap_items_when_duplicates_also_present():
+    pool = (
+        _item(sid="e_old", summary="old", visible=frozenset({"Alice"}), salience=10, rk=1),
+        _item(sid="e_new", summary="new", visible=frozenset({"Alice"}), salience=99, rk=9),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_public_event_ids=frozenset({"e_new"}),
+    )
+    assert [x.source_ref for x in got] == ["e_old"]
+
+
+def test_gap_filter_empty_when_all_candidates_are_duplicates():
+    pool = (
+        _item(sid="a", summary="1", visible=frozenset({"Alice"})),
+        _item(sid="b", summary="2", visible=frozenset({"Alice"})),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_public_event_ids=frozenset({"a", "b"}),
+    )
+    assert got == ()
+
+
+def test_gap_filter_anchor_unaffected_by_issue_event_interp_sets():
+    pool = (
+        _item(
+            sid="anchor_x",
+            summary="canon line",
+            visible=frozenset({"Alice"}),
+            origin="anchor",
+            memory_type="anchor",
+        ),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_issue_ids=frozenset({"anchor_x"}),
+        structured_prompt_public_event_ids=frozenset({"anchor_x"}),
+        structured_prompt_interpretation_ids=frozenset({"anchor_x"}),
+    )
+    assert len(got) == 1 and got[0].source_ref == "anchor_x"
+
+
+def test_gap_filter_preserves_pool_order_among_survivors():
+    pool = (
+        _item(sid="gap1", summary="a", visible=frozenset({"Alice"}), salience=10),
+        _item(sid="dup_mid", summary="b", visible=frozenset({"Alice"}), salience=99),
+        _item(sid="gap2", summary="c", visible=frozenset({"Alice"}), salience=20),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_public_event_ids=frozenset({"dup_mid"}),
+    )
+    assert [x.source_ref for x in got] == ["gap1", "gap2"]
+
+
+def test_gap_filter_issue_and_interpretation_types():
+    pool = (
+        _item(
+            sid="iss1",
+            summary="i",
+            visible=frozenset({"Alice"}),
+            origin="issue",
+            memory_type="issue",
+        ),
+        _item(
+            sid="int1",
+            summary="n",
+            visible=frozenset({"Alice"}),
+            origin="interpretation",
+            memory_type="interpretation",
+        ),
+    )
+    got = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_issue_ids=frozenset({"iss1"}),
+        structured_prompt_interpretation_ids=frozenset({"int1"}),
+    )
+    assert got == ()
+    got2 = select_episodic_items_for_character(
+        pool,
+        "Alice",
+        max_items=10,
+        max_chars=9999,
+        structured_prompt_issue_ids=frozenset(),
+        structured_prompt_interpretation_ids=frozenset(),
+    )
+    assert [x.source_ref for x in got2] == ["iss1", "int1"]

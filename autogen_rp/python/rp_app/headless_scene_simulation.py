@@ -8,6 +8,7 @@ of only hand-running Streamlit scenes.
 from __future__ import annotations
 
 import json
+import os
 from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -581,8 +582,17 @@ def prepare_headless_session(
     seed_issue: dict[str, Any] | None = None,
     expected_pressure_profile: str | None = None,
     deep_simulation_turns: bool = False,
+    enable_episodic_memory: bool = False,
 ) -> Any:
-    """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents."""
+    """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents.
+
+    When ``enable_episodic_memory`` is True, sets process env ``RP_EPISODIC_MEMORY=1`` so character
+    prompts merge continuity-backed episodic lines into the retrieved bundle (same as shell export).
+    Issue seed participants use **agent keys** (card ``agent_name`` or ``make_agent_identifier``)
+    so ``select_episodic_items_for_character`` visibility matches ``next_actor`` from the turn runner.
+    """
+    if enable_episodic_memory:
+        os.environ["RP_EPISODIC_MEMORY"] = "1"
     st = HeadlessStreamlit()
     state_helpers.init_session_state(st_module=st)
     st.session_state["scene_grounding"] = empty_grounding_dict()
@@ -615,6 +625,7 @@ def prepare_headless_session(
     loader = CharacterLoader()
     resolved_files: list[str] = []
     display_names: list[str] = []
+    agent_keys: list[str] = []
     for cid in character_card_ids:
         cf = state_helpers.resolve_character_file(
             loader=loader,
@@ -627,6 +638,8 @@ def prepare_headless_session(
         resolved_files.append(cf)
         name = str(card.get("name", "") or "").strip() or cf
         display_names.append(name)
+        ak = str(card.get("agent_name", "") or "").strip() or make_agent_identifier(name)
+        agent_keys.append(ak)
     st.session_state["selected_chars"] = resolved_files
 
     def _sync() -> None:
@@ -676,7 +689,7 @@ def prepare_headless_session(
             cm.scene_state.phase = ScenePhase.RISING if seed_escalating_issue else ScenePhase.OPENING
         if seed_escalating_issue:
             now = datetime.now(timezone.utc)
-            card_to_display = dict(zip(character_card_ids, display_names))
+            card_to_agent = dict(zip(character_card_ids, agent_keys))
             if seed_issue and isinstance(seed_issue, dict):
                 iid = str(seed_issue.get("issue_id") or "sim_standoff").strip() or "sim_standoff"
                 desc = str(
@@ -688,20 +701,20 @@ def prepare_headless_session(
                     participants = []
                     for c in p_cards:
                         key = str(c).strip()
-                        if key not in card_to_display:
+                        if key not in card_to_agent:
                             raise ValueError(
                                 f"seed_issue participant_card_ids contains {key!r} "
                                 f"not in character_card_ids"
                             )
-                        participants.append(card_to_display[key])
+                        participants.append(card_to_agent[key])
                     if not participants:
-                        participants = list(display_names)
+                        participants = list(agent_keys)
                 else:
-                    participants = list(display_names)
+                    participants = list(agent_keys)
             else:
                 iid = "sim_standoff"
                 desc = "Competing demands at a pressure point; the scene must move."
-                participants = list(display_names)
+                participants = list(agent_keys)
             issue = IssueState(
                 issue_id=iid,
                 description=desc,
