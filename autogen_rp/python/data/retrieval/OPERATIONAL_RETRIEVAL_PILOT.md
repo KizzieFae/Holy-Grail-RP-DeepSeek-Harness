@@ -1,10 +1,19 @@
 # Operational retrieval pilot — real manifest → v3 index
 
-**Status:** **Closed.** This document is the **runbook and artifact map** for the **accepted operational baseline**. The pilot used a **fixed** cast, **two** Arkham templates, and **`schema_version` 3** index wiring via **`RP_RETRIEVED_CONTEXT_INDEX`**.
+**Status:** **Closed (pilot).** This file remains the **artifact map** (manifest paths, compile command, cast/template locks, A/B protocol) for the **accepted operational index**. **Day-to-day validation** treats retrieval OFF/ON as **standard** — see repository-root **`SCENARIO_VALIDATION_FRAMEWORK.md`** (*Authored retrieval*), **`rp_app/AUDIT_DOCUMENTATION.md`**, and **`RP_SETUP_TODO.md`** Phase **4A** (operationalization complete).
 
-**Purpose (historical):** Evaluate whether current retrieval is **useful, neutral, or harmful** before any architecture expansion. Outcome: baseline **accepted** for product use; **template-aware headless** validated; one **selector experiment** was **evaluated and not adopted** (see **Rejected experiments**).
+**Purpose (historical):** The pilot used a **fixed** cast, **two** Arkham templates, and **`schema_version` 3** wiring via **`RP_RETRIEVED_CONTEXT_INDEX`** to decide whether retrieval was **useful, neutral, or harmful**. Outcome: baseline **accepted**; **template-aware headless** validated; **low-tension template-row cap** **evaluated and not adopted** (reverted from selector — see **Rejected experiments**).
 
 **Authority (unchanged):** continuity → grounding → binding → **retrieved (non-authoritative)**. `RetrievedContextBundle` remains the behavioral source; `retrieved_context_section` is purely derived.
+
+**What is “standard” vs “pilot” today**
+
+| Topic | Where it lives |
+|--------|----------------|
+| **OFF/ON commands, default scenario set, strict headless verify** | **`SCENARIO_VALIDATION_FRAMEWORK.md`** |
+| **Audit field definitions (`retrieval_summary`, `retrieval_session`, Streamlit vs headless summary)** | **`rp_app/AUDIT_DOCUMENTATION.md`** |
+| **Manifest paths, compile line, locked cast/templates, duplication protocol** | **This runbook** (pilot artifact contract) |
+| **Rejected selector experiment (situational cap)** | **This runbook** + **`RP_SETUP_TODO.md`** (pilot section) |
 
 ---
 

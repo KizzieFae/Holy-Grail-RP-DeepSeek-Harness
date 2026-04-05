@@ -59,6 +59,18 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 **Logs:** at INFO, logger `rp_app.episodic_prompt` emits one line per character turn when the episodic merge path runs (`pool_len`, `selected_len`, `bundle_items`). Logger `rp_app.retrieved_context` logs when the post-merge bundle is non-empty (`log_retrieval_if_active`).
 
+### Authored index retrieval (standard evaluation mode — Phase 4A)
+
+**Activation:** **`RP_RETRIEVED_CONTEXT_INDEX`** only (path to compiled JSON, or unset / empty = OFF). Optional CLI: `scripts/run_scene_simulation_llm.py --retrieved-context-index [PATH]` (see [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) from repository root).
+
+**Accepted baseline** (content, not audit-specific): character **`lore_facts`**; template **`role_slots`** + refined **`premise`**; retrieval remains **non-authoritative** (same prompt contract as Phase 2). **Historical pilot** artifacts and the **rejected situational template-row cap** are documented in `data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md` — that file is the **runbook + manifest map**; day-to-day validation workflow is **standard**, not pilot-only.
+
+**Per-turn (character `*_full.json` / light):** `metadata` may include **`retrieval_summary`**: `retrieved_block_present`, `retrieved_item_count`, `retrieved_char_count`, `retrieved_source_refs` (capped list). **No** full retrieved text is stored. Populated from the **`RetrievedContextBundle`** at prompt build time (`app_turn_prompting` → `turn_runner_audit`).
+
+**Session summary (`_audit_summary.json`):** Top-level **`retrieval_session`** (same shape as structured_eval: mode, path, `retrieval_verified_active`, fingerprint) is **merged after headless simulation** completes (`headless_scene_simulation.run_headless_llm_scene`). **Streamlit** refresh of `_audit_summary.json` does **not** currently add this block — for run-level retrieval metadata in the UI path, rely on **per-turn** `retrieval_summary` and logs, or run the **headless** scenario with `--audit`.
+
+**Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration).
+
 ## Directory Structure
 
 All audit files are stored in:
@@ -285,6 +297,7 @@ rp_audits/
 - `summary_block_quality`: availability/injection/fallback rates
 - `issue_categories` / `heuristic_issue_categories`: confirmed and text-derived pressure buckets
 - `regression_checks`: session-level pass/fail indicators
+- **`retrieval_session`** (when present): run-level authored-retrieval observability — **typically after headless simulation** with `--audit` (see *Authored index retrieval* above). Omitted when the session never ran through that merge step (e.g. Streamlit-only audits).
 
 ### 5. Granular Bot Logs
 **Naming**: `{owner}_session{###}_round{###}_turn{##}_{bot}_{level}.json`

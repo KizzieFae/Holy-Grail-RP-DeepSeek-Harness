@@ -26,6 +26,7 @@ def test_prepare_headless_session_sets_scene_template_id(_mock_client: MagicMock
     cm = get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     assert cm is not None and cm.scene_state is not None
     assert cm.scene_state.scene_template_id == "arkham_asylum_cell_intake"
+    assert st.session_state.get("sim_retrieval_saw_nonempty_bundle") is False
 
 
 @patch("headless_scene_simulation.create_deepseek_client", return_value=MagicMock())

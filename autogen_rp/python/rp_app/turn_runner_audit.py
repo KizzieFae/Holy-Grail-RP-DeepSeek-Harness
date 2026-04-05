@@ -188,8 +188,10 @@ def log_character_turn_audit(
         next_actor=next_actor,
     )
 
+    char_audit = dict(character_summary_block_audit)
+    retrieval_summary = char_audit.pop("retrieval_summary", None)
     summary_blocks_audit, has_binding_constraints, binding_constraints_section = (
-        split_character_prompt_audit_for_metadata(character_summary_block_audit)
+        split_character_prompt_audit_for_metadata(char_audit)
     )
 
     try:
@@ -230,6 +232,11 @@ def log_character_turn_audit(
                     "has_binding_constraints": has_binding_constraints,
                     "scene_binding_constraints_section": binding_constraints_section,
                     "turn_execution": turn_execution_metadata or {},
+                    **(
+                        {"retrieval_summary": retrieval_summary}
+                        if isinstance(retrieval_summary, dict)
+                        else {}
+                    ),
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,

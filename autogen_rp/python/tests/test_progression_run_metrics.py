@@ -80,6 +80,7 @@ def test_build_structured_eval_payload() -> None:
     assert p["failure_classification"] == "retry"
     assert p["metrics"]["progression_enforcement_enabled"] is False
     assert p["expected_pressure_profile"] is None
+    assert "retrieval_session" not in p
 
     p2 = build_structured_eval_payload(
         scenario_id="s",
@@ -89,3 +90,16 @@ def test_build_structured_eval_payload() -> None:
         expected_pressure_profile="high",
     )
     assert p2["expected_pressure_profile"] == "high"
+
+
+def test_build_structured_eval_payload_retrieval_session() -> None:
+    m = summarize_sim_progression_metrics([], progression_enforcement_enabled=True)
+    rs = {"retrieval_mode": "on", "retrieval_verified_active": True}
+    p = build_structured_eval_payload(
+        scenario_id="x",
+        verdict=None,
+        failure_classification=None,
+        metrics=m,
+        retrieval_session=rs,
+    )
+    assert p["retrieval_session"] == rs

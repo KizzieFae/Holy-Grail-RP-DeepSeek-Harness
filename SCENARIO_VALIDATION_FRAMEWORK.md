@@ -75,6 +75,12 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 | `willow_dorm_binding_stress` | Dorm logistics + binding-fact stress (Willow / sleeping surface enforcement) |
 | `arkham_multi_character_stress` | Nine-character clinical/security/patient corridor stress (perimeter-alarm rumor) |
 | `arkham_multi_character_stress_long` | Same cast as `arkham_multi_character_stress`; higher `max_turns` / extended premise for staff–patient cycling |
+| `headless_template_retrieval_smoke` | Minimal Harley/Magpie run; `scene_template_id` for template-linked authored retrieval checks |
+| `operational_baseline_3char_cafeteria` | **Accepted retrieval baseline** cast (Harley, Ivy, Magpie) + cafeteria template for standard OFF vs ON comparisons |
+
+**Optional scenario fields**
+
+- **`scene_template_id`**: When set, headless prep writes `ContinuityManager.scene_state.scene_template_id` (same as Streamlit). Use for scenarios where **template** rows (`role_slots`, `premise`) from the authored index should apply. Omit for character-only expectations or casts outside the indexed templates.
 
 **Manifest regression (no API):**
 
@@ -115,6 +121,33 @@ python scripts/run_scene_simulation_llm.py --scenario strong_user_steer --audit 
 python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-progression-enforcement --metrics-out ./runs/baseline.json
 ```
 
+### Authored retrieval (standard evaluation mode)
+
+Retrieval activation is **only** via environment variable `RP_RETRIEVED_CONTEXT_INDEX` (compiled JSON path). The headless runner can set it for a single process:
+
+| Goal | Command pattern |
+|------|-----------------|
+| **Retrieval OFF** | Unset the variable, or pass `--retrieved-context-index` with no value (empty index). |
+| **Retrieval ON (accepted baseline)** | `--retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json` (from `autogen_rp/python` cwd). |
+| **Leave parent shell unchanged** | Omit `--retrieved-context-index` entirely. |
+
+Example A/B pair (same scenario, different retrieval):
+
+```bash
+cd autogen_rp/python
+python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char_cafeteria --audit --turns 4 --metrics-out ./runs/caf_OFF.json --retrieved-context-index
+python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char_cafeteria --audit --turns 4 --metrics-out ./runs/caf_ON.json --retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json
+```
+
+**Verification**
+
+- **Structured output:** `structured_eval.retrieval_session` includes `retrieval_mode` (`"off"` \| `"on"`), `retrieval_index_path`, `retrieval_verified_active`, and optional `retrieval_index_fingerprint`.
+- **Strict check (headless):** If retrieval is ON **and** the scene has `scene_template_id`, the run **fails** if no character turn produced a non-empty retrieved bundle (avoids silent misconfiguration).
+- **Per-turn audits:** Character `*_full.json` metadata may include `retrieval_summary` (`retrieved_block_present`, counts, capped `retrieved_source_refs`) — no full retrieved text.
+- **`_audit_summary.json`:** After a **headless** `run_headless_llm_scene` completes, a top-level **`retrieval_session`** object is **merged** into `_audit_summary.json` when that file exists (post–summary refresh). **Streamlit** sessions with auditing on still get **per-turn** `metadata.retrieval_summary` on character entries when applicable, but **`retrieval_session` is not written into `_audit_summary.json` on the UI path today** — use headless `--audit` runs or **`structured_eval.retrieval_session`** from the simulation CLI for the run-level block.
+
+**Default scenario set for OFF/ON comparisons** (operational index): `headless_template_retrieval_smoke`, `operational_baseline_3char_cafeteria`, and optionally `arkham_multi_character_stress` / `_long` (large cast; template id set for cafeteria template). Scenarios such as `emotional_loop_2char` remain valid for non-indexed casts (retrieval ON may still be neutral/empty for those cards).
+
 **Ad-hoc runs** (no scenario file): use `--chars`, `--opening`, `--location`, `--trigger`, `--beat-shift`, `--no-seed-issue` as documented in `scripts/run_scene_simulation_llm.py`.
 
 ---
@@ -152,6 +185,7 @@ These confirm **code-level** behavior; scenarios confirm **model + pipeline** be
   - `expected_pressure_profile` (from scenario manifest when present; else `null`)
   - `metrics`: first qualifying continuity turn index, progression retry count, failed progression attempts, qualifying vs non-qualifying accepted turns, whether enforcement was on; when the sim records selection events, **`selection_attribution_summary`** (hard routes, progression-override applications, fairness rotations, attribution-chain counts)
   - `audit_session_number` / `audit_summary_report_path` when `--audit` was used
+  - **`retrieval_session`** (headless simulation): `retrieval_mode` (`off` / `on`), `retrieval_index_path`, `retrieval_verified_active`, optional `retrieval_index_fingerprint` — see *Authored retrieval* above
 
 **Selection attribution (baseline v1):** Director audit metadata may include **`selection_attribution`** with **`continuation_override_skipped_c2: true`** when the continuation override was eligible but skipped because the last spotlight speaker already matched the continuation actor (see `autogen_rp/python/RP_SETUP_TODO.md` Phase 0 §I). On normal quality runs, optionally note how often C2 fires and whether continuation / override behavior feels improved — no separate C2-only validation phase required.
 

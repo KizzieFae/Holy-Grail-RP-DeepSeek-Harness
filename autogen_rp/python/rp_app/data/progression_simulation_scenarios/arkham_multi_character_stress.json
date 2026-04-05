@@ -22,6 +22,7 @@
   "initial_tension": "high",
   "initial_phase": "rising",
   "expected_pressure_profile": "high",
+  "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
   "seed_issue": {
     "issue_id": "sim_arkham_lockdown_rumor",
     "description": "Conflicting partial information about a perimeter or lockdown event; staff must assert control while patients test boundaries.",

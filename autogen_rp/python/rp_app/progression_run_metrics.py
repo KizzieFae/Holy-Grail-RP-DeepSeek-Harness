@@ -77,6 +77,7 @@ def build_structured_eval_payload(
     audit_session_number: int | None = None,
     audit_summary_report_path: str | None = None,
     expected_pressure_profile: str | None = None,
+    retrieval_session: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Single JSON-serializable object for run comparison (manual verdict/classification)."""
     out: dict[str, Any] = {
@@ -88,4 +89,6 @@ def build_structured_eval_payload(
         "audit_summary_report_path": audit_summary_report_path,
         "expected_pressure_profile": expected_pressure_profile,
     }
+    if retrieval_session is not None:
+        out["retrieval_session"] = dict(retrieval_session)
     return out

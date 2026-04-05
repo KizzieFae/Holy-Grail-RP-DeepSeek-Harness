@@ -166,3 +166,5 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 
 - [GLOSSARY.md](./GLOSSARY.md)
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future seam; do not implement retrieval as authoritative state
+- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — headless **authored retrieval OFF/ON** (`RP_RETRIEVED_CONTEXT_INDEX`, `--retrieved-context-index`) and **`structured_eval.retrieval_session`**
+- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (headless merge)

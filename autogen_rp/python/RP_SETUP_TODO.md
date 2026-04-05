@@ -7,7 +7,8 @@ This roadmap reflects the correct execution order:
 1. Stabilize and validate the current runtime
 2. Introduce the packet seam (no behavior change) — **character prompt path complete** (Phase 0.5 closure)
 3. **Scoped Phase 1 (retrieval-lock / validation)** — **complete** (bundle seam invariant, tests, snapshots; no new retrieval architecture). Broader scenario re-validation / Director–Narrator packet completeness remains **future** work.
-4. Only then expand into retrieval **product** behavior (Phase 2+ index, lanes, etc. — see Phase 2)
+3b. **Phase 4A (retrieval workflow operationalization)** — **complete** — authored retrieval **OFF/ON** is **standard** in headless simulation + audits (`retrieval_session`, `retrieval_summary`, strict verify); **no** selector change. See **Phase 4A** section below; **SCENARIO_VALIDATION_FRAMEWORK.md** / **AUDIT_DOCUMENTATION.md**.
+4. Only then expand into retrieval **product** behavior (Phase 2+ index, lanes, etc. — see Phase 2; **Phase 2 is complete**; further retrieval architecture is **not** the default next priority after 4A).
 5. Only after that begin ingestion work
 
 ---
@@ -404,10 +405,29 @@ This milestone was **intentionally narrow:** **validation and enforcement**, not
 
 - **Low-tension template row cap / premise-first subcap** — Explored to reduce noise in calm beats; **not clearly beneficial** vs baseline across matrix runs; **reverted** from `retrieved_context_select.py` / `app_turn_prompting.py` so **selector matches accepted baseline** (fixed per-`source_kind` subcaps only).
 
-### Next-step pointer
+### Next-step pointer (pilot artifact track)
 
-- **Product / scale:** Broader scenario matrices, token/cost monitoring, or **Phase 4+** retrieval work **only** with a new scoped spec (no implicit continuation of the pilot branch).
+- **Phase 4A** (below) **completed** — retrieval OFF/ON is **standard** in the simulation + audit workflow; see **SCENARIO_VALIDATION_FRAMEWORK.md** and **AUDIT_DOCUMENTATION.md**.
+- **Product / scale:** Broader scenario matrices or token/cost monitoring — **not** “more retrieval tuning” by default; any **new** retrieval architecture work needs an explicit scoped spec.
 - **Optional revisit:** Situational template trimming could be re-proposed behind a **flag** if a future phase wants it; keep **manifest + premise** as the stable content contract until then.
+
+---
+
+# Phase 4A — Retrieval workflow operationalization (**complete**)
+
+**Intent:** Treat the **accepted** authored retrieval baseline as a **routine** validation mode (not pilot-only wiring).
+
+**Completed**
+
+- [x] **OFF / ON as standard simulation modes** — `RP_RETRIEVED_CONTEXT_INDEX` is the **only** runtime switch; optional **`--retrieved-context-index`** on `run_scene_simulation_llm.py` (omit flag = leave shell env unchanged; bare flag = empty index / OFF).
+- [x] **Template-aware headless** in scenario workflow — `scene_template_id` in scenario JSON / `prepare_headless_session` / CLI `--scene-template-id` (unchanged from pilot closeout; now documented as standard).
+- [x] **Audit visibility** — per-turn **`metadata.retrieval_summary`** on character audits; run-level **`retrieval_session`** in **`structured_eval`** and merged into **`_audit_summary.json`** after **headless** simulation; optional index fingerprint.
+- [x] **Strict headless check** — retrieval **ON** + non-empty **`scene_template_id`** ⇒ run fails if no turn had a non-empty retrieved bundle.
+- [x] **No selector or prompt-structure change** — observability and CLI only; baseline remains **lore_facts** + **role_slots** + **premise**, non-authoritative.
+
+**Docs / tests:** `SCENARIO_VALIDATION_FRAMEWORK.md` (*Authored retrieval*), `AUDIT_DOCUMENTATION.md`, `OPERATIONAL_RETRIEVAL_PILOT.md` (pilot vs standard), `docs/audit-workflows.md`, `tests/test_retrieval_workflow_audit.py`.
+
+**Default next phase:** **Not** retrieval tuning unless a new milestone is opened — prefer other product/validation goals.
 
 ---
 

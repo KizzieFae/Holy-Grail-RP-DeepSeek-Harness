@@ -38,6 +38,7 @@ For session audits, read in this order:
 - whether `issue_updates` reflect pressure movement rather than dialogue paraphrase
 - whether `presence_changes` match true entries, exits, and absences
 - whether summary blocks preserve important context or hide it
+- **Authored retrieval (standard eval):** On **headless** audited runs, check `_audit_summary.json` → **`retrieval_session`** (`retrieval_mode`, `retrieval_verified_active`, index path/fingerprint) when present; on **any** audited character turn, `metadata` may include **`retrieval_summary`** (counts/refs only). See `python/rp_app/AUDIT_DOCUMENTATION.md` (*Authored index retrieval*) and repo-root `SCENARIO_VALIDATION_FRAMEWORK.md`. Run-level `retrieval_session` in `_audit_summary` is **headless-oriented** today.
 - **Perception / audibility:** for whisper or directed beats, compare **this character’s** assembled prompt (or audit snapshot) to the **parsed `move`** (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private **`dialogue`** in transcript, structured moves, `PublicEvent.summary`, or interpretations; Director payload must use the same redaction rules.
 
 For issue updates, pay special attention to:

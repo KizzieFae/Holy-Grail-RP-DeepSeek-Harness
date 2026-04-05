@@ -68,6 +68,11 @@ from progression_run_metrics import (
     build_structured_eval_payload,
     summarize_sim_progression_metrics,
 )
+from retrieval_audit_helpers import (
+    build_retrieval_session_audit,
+    merge_retrieval_session_into_audit_summary,
+    verify_retrieval_strict_or_raise,
+)
 from turn_runner import run_character_turns as run_character_turns_impl
 
 PROMPT_DIALOGUE_HISTORY_LIMIT = 6
@@ -517,6 +522,22 @@ async def run_headless_llm_scene(
     cm = state_helpers.get_continuity_manager(
         st_module=st_module, continuity_manager_cls=ContinuityManager
     )
+    scene_tpl_id = None
+    if cm is not None and cm.scene_state is not None:
+        scene_tpl_id = (
+            str(getattr(cm.scene_state, "scene_template_id", None) or "").strip() or None
+        )
+    session_retrieval = build_retrieval_session_audit(
+        saw_nonempty_bundle=bool(
+            st_module.session_state.get("sim_retrieval_saw_nonempty_bundle")
+        ),
+    )
+    verify_retrieval_strict_or_raise(session_retrieval, scene_template_id=scene_tpl_id)
+    rep_path_pre = st_module.session_state.get("audit_summary_report_path")
+    merge_retrieval_session_into_audit_summary(
+        str(rep_path_pre) if rep_path_pre else None,
+        session_retrieval,
+    )
     ti = int(getattr(cm, "turn_counter", 0) or 0) if cm else 0
     meta = (
         (getattr(cm, "turn_metadata_by_index", {}) or {}).get(ti, {})
@@ -550,6 +571,7 @@ async def run_headless_llm_scene(
         expected_pressure_profile=st_module.session_state.get(
             "simulation_expected_pressure_profile"
         ),
+        retrieval_session=session_retrieval,
     )
     return HeadlessSimulationResult(
         chat_history=list(st_module.session_state.get("chat_history") or []),
@@ -611,6 +633,7 @@ def prepare_headless_session(
     st.session_state["simulation_scenario_intent"] = scenario_intent
     st.session_state["simulation_expected_pressure_profile"] = expected_pressure_profile
     st.session_state["sim_progression_metrics"] = []
+    st.session_state["sim_retrieval_saw_nonempty_bundle"] = False
     st.session_state["progression_enforcement_disabled"] = bool(
         progression_enforcement_disabled
     )

@@ -58,6 +58,8 @@ This packet **does not** replace the continuity manager’s full internal state;
 
 **Operational pilot baseline (accepted, documented):** The **reference** manifest compiles to **`schema_version` 3** and retrieves **minimal character `lore_facts`** plus **template `role_slots` + `premise`** (refined premise text in source templates). **Headless** supplies **`scene_template_id`** so template-scoped rows are selected on the same path as Streamlit. Retrieval stays **non-authoritative** and **bundle-driven**. A **low-tension template-row cap** experiment was **not adopted** and is **not** in the default selector. See `autogen_rp/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md` and `autogen_rp/python/RP_SETUP_TODO.md`.
 
+**Phase 4A (operationalized testing):** Standard simulation supports retrieval **OFF/ON** via **`RP_RETRIEVED_CONTEXT_INDEX`** (optional CLI `--retrieved-context-index`). Audits record **`retrieval_summary`** per character turn and **`retrieval_session`** at run level in headless **`structured_eval`** / merged **`_audit_summary.json`** (see `rp_app/AUDIT_DOCUMENTATION.md`). **No** change to bundle shape or selector.
+
 **Placement:** formatted block is injected **after** scene grounding and **before** `CURRENT SCENE STATE` in `prompt_builders.build_character_turn_prompt`, with explicit **non-authoritative** instructions. Selection runs **only** in `app_turn_prompting.build_character_turn_prompt`.
 
 Typical contents (all subject to token budget and relevance gates):
@@ -81,4 +83,4 @@ Typical contents (all subject to token budget and relevance gates):
 2. Extend packaging so **Director / Narrator** (and any other consumers) can use the same packet discipline; runtime eventually reads packets as the primary input boundary instead of ad hoc assembly.
 3. Wire retrieval outputs only into `RetrievedContextBundle` (character path: **done** via `app_turn_prompting`).
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 scoped **retrieval-lock** validation **closed**; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic; **operational retrieval pilot closed** — `autogen_rp/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`).
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 scoped **retrieval-lock** validation **closed**; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic; **operational retrieval pilot closed**; **Phase 4A retrieval workflow operationalization complete** — standard OFF/ON sim + audit visibility, no selector change).

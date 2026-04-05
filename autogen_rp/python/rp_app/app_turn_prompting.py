@@ -42,6 +42,7 @@ from retrieved_context_select import (
     select_retrieved_context_bundle,
     structured_prompt_id_sets_for_episodic_suppression,
 )
+from retrieval_audit_helpers import build_retrieval_summary_for_audit
 from runtime_packets import (
     CharacterPromptInputAssembly,
     live_bundle_from_character_prompt_assembly,
@@ -402,6 +403,8 @@ def build_character_turn_prompt(
             dedup_against_texts=_dedup_texts,
         )
     log_retrieval_if_active(retrieved_bundle, char_name=char_name)
+    if retrieved_bundle.items:
+        st_module.session_state["sim_retrieval_saw_nonempty_bundle"] = True
 
     session_agent_names = [
         str(getattr(a, "name", "") or "").strip()
@@ -502,6 +505,7 @@ def build_character_turn_prompt(
             str(binding_constraints_section or "").strip()
         ),
         "scene_binding_constraints_section": binding_constraints_section or "",
+        "retrieval_summary": build_retrieval_summary_for_audit(retrieved_bundle),
     }
     return (prompt_text, prompt_layer_audit)
 

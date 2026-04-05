@@ -1,0 +1,21 @@
+{
+  "id": "operational_baseline_3char_cafeteria",
+  "title": "Operational retrieval baseline — 3-character cafeteria conflict",
+  "intent": "Standard OFF/ON comparison cast for the accepted authored index: Harley, Ivy, Magpie with cafeteria template for role_slots + premise retrieval.",
+  "character_card_ids": ["harley_quinn", "poison_ivy", "magpie"],
+  "opening_description": "Arkham cafeteria at shift change: plastic trays, weak coffee, a guard's radio murmuring at the edge of hearing. Harley is wound tight; Ivy has claimed a table like territory; Magpie watches both, ready to side-step or steal focus.",
+  "location": "arkham_cafeteria",
+  "trigger_text": "A tray clatters—too loud. Harley's eyes jump to Ivy's hands. Magpie mutters, 'Nobody's eating until someone says what this is really about.'",
+  "max_turns": 6,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "high",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "high",
+  "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+  "seed_issue": {
+    "issue_id": "sim_cafeteria_triangle",
+    "description": "Public space tension between three patients; staff proximity implied; no clean exit.",
+    "participant_card_ids": ["harley_quinn", "poison_ivy", "magpie"]
+  }
+}

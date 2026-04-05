@@ -20,6 +20,9 @@ From ``autogen_rp/python``::
     # Template-linked retrieval (sets Continuity scene_template_id; same field as Streamlit):
     python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1
     python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --audit --turns 1
+    # Authored retrieval ON/OFF (sets RP_RETRIEVED_CONTEXT_INDEX for this process; omit flag to leave env unchanged):
+    python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1 --retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json
+    python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 1 --retrieved-context-index
 """
 
 from __future__ import annotations
@@ -127,6 +130,19 @@ def main() -> None:
         help="Enable audit logging to rp_app/data/rp_audits/ (same as Streamlit with auditing on).",
     )
     p.add_argument(
+        "--retrieved-context-index",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Set RP_RETRIEVED_CONTEXT_INDEX before session setup (authored retrieval). "
+            "Omit this flag entirely to leave the environment unchanged. "
+            "Pass --retrieved-context-index alone (no PATH) to force retrieval OFF (empty index). "
+            "Otherwise pass the compiled JSON path (e.g. data/retrieval/compiled/operational_pilot_v3.json)."
+        ),
+    )
+    p.add_argument(
         "--episodic-memory",
         action="store_true",
         help=(
@@ -205,6 +221,9 @@ def main() -> None:
 
     if args.episodic_memory:
         os.environ["RP_EPISODIC_MEMORY"] = "1"
+
+    if args.retrieved_context_index is not None:
+        os.environ["RP_RETRIEVED_CONTEXT_INDEX"] = args.retrieved_context_index
 
     default_trigger = "The standoff has looped on talk; something has to give."
     default_opening = "Two people face off in a cramped corridor; neither will back down first."
