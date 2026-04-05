@@ -18,11 +18,8 @@ _ISSUE_STABLE = frozenset({"active", "escalating", ""})
 _STALL_WEIGHT_PLATEAU = 0.35
 _STALL_WEIGHT_HIGH_TENSION = 0.25
 _STALL_WEIGHT_ISSUE_STABILITY = 0.25
-_STALL_WEIGHT_LOW_CONSEQUENCE = 0.15
+_STALL_WEIGHT_EXACT_REPETITION = 0.15
 STALL_BEAT_SHIFT_THRESHOLD = 0.6
-_LOW_CONSEQUENCE_MOVE_WINDOW = 4
-_LOW_CONSEQUENCE_UNIQUE_MAX = 2
-_MIN_MOVES_FOR_LOW_VARIETY = 3
 
 DEFAULT_ADVANCEMENT_CHANNELS: list[str] = [
     "physical_action",
@@ -63,12 +60,56 @@ def _humanize_channel(channel_id: str) -> str:
     return str(channel_id or "").replace("_", " ").strip() or channel_id
 
 
+def collapse_whitespace_only(text: str) -> str:
+    """Whitespace normalization only: strip, collapse internal runs to single spaces."""
+    return " ".join(str(text or "").strip().split())
+
+
+def motivation_signature(motivation: Any) -> str:
+    if isinstance(motivation, dict):
+        return json.dumps(motivation, sort_keys=True, ensure_ascii=True)
+    return ""
+
+
+def exact_structural_repetition_immediate_same_actor(
+    *,
+    current_actor: str,
+    current_move: dict[str, Any],
+    recent_structured_moves: list[dict[str, Any]],
+) -> bool:
+    """True if current move matches the chronologically last structured move and same speaker.
+
+    Compared fields only: action, dialogue, motivation (dict serialized with sort_keys).
+    Normalization: whitespace collapse on action/dialogue only. Exact string equality.
+    """
+    actor = str(current_actor or "").strip()
+    if not actor or not isinstance(current_move, dict):
+        return False
+    seq = [m for m in (recent_structured_moves or []) if isinstance(m, dict)]
+    if not seq:
+        return False
+    last = seq[-1]
+    if str(last.get("speaker", "") or "").strip() != actor:
+        return False
+
+    def _triplet(m: dict[str, Any]) -> tuple[str, str, str]:
+        return (
+            collapse_whitespace_only(str(m.get("action", "") or "")),
+            collapse_whitespace_only(str(m.get("dialogue", "") or "")),
+            motivation_signature(m.get("motivation")),
+        )
+
+    return _triplet(current_move) == _triplet(last)
+
+
 def compute_stall_score(
     *,
     scene_state: dict[str, Any],
     recent_structured_moves: list[dict[str, Any]],
     active_issues: list[dict[str, Any]],
     beat_shift_snapshots: list[dict[str, Any]],
+    current_actor: str | None = None,
+    current_move: dict[str, Any] | None = None,
 ) -> tuple[float, dict[str, bool]]:
     """Return (stall_score 0..1, stall_components). Deterministic; no LLM."""
     same_phase = bool(plateau_snapshots_suggest_beat_shift(beat_shift_snapshots)[0])
@@ -83,23 +124,16 @@ def compute_stall_score(
             if isinstance(iss, dict)
         )
 
-    low_consequence_variety = False
-    tail = [
-        m
-        for m in (recent_structured_moves or [])[-_LOW_CONSEQUENCE_MOVE_WINDOW:]
-        if isinstance(m, dict)
-    ]
-    if len(tail) >= _MIN_MOVES_FOR_LOW_VARIETY:
-        flattened: list[str] = []
-        for m in tail:
-            cons = m.get("consequences")
-            if isinstance(cons, list):
-                for c in cons:
-                    if c is not None and str(c).strip():
-                        flattened.append(str(c).strip().lower())
-        low_consequence_variety = (
-            len(flattened) > 0
-            and len(set(flattened)) <= _LOW_CONSEQUENCE_UNIQUE_MAX
+    exact_repetition = False
+    if (
+        current_actor is not None
+        and current_move is not None
+        and isinstance(current_move, dict)
+    ):
+        exact_repetition = exact_structural_repetition_immediate_same_actor(
+            current_actor=str(current_actor).strip(),
+            current_move=current_move,
+            recent_structured_moves=recent_structured_moves,
         )
 
     stall_score = min(
@@ -107,14 +141,14 @@ def compute_stall_score(
         (_STALL_WEIGHT_PLATEAU if same_phase else 0.0)
         + (_STALL_WEIGHT_HIGH_TENSION if high_tension else 0.0)
         + (_STALL_WEIGHT_ISSUE_STABILITY if issue_stability else 0.0)
-        + (_STALL_WEIGHT_LOW_CONSEQUENCE if low_consequence_variety else 0.0),
+        + (_STALL_WEIGHT_EXACT_REPETITION if exact_repetition else 0.0),
     )
 
     components = {
         "same_phase": same_phase,
         "high_tension": high_tension,
         "issue_stability": issue_stability,
-        "low_consequence_variety": low_consequence_variety,
+        "exact_structural_repetition": exact_repetition,
     }
     return stall_score, components
 

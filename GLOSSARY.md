@@ -62,7 +62,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Progression advisory (MVP)** — Deterministic, **non-authoritative** layer: computes **`stall_score`** from existing scene signals, maps to **`progression_pressure`**, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
 
-**Stall score** — Float 0.0–1.0 from weighted boolean components (phase plateau snapshots, high tension, stable issue statuses, optional low consequence variety). Same signal can lower the bar for **beat-shift** activation (`beat_shift_state.py`); not LLM-classified.
+**Stall score** — Float 0.0–1.0 from weighted boolean components (phase plateau snapshots, high tension, stable issue statuses, optional exact structural repetition vs the immediate prior same-actor move). Same signal arms **beat-shift** (`beat_shift_state.py`) and **progression enforcement** when at or above the threshold; not LLM-classified.
 
 **Session** — Persisted RP state (chat, team, character states, continuity snapshot, audit pointers, etc.) in `python/data/sessions/` (`session_manager.py`, `session_lifecycle_*`).
 

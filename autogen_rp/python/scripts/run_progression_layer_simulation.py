@@ -32,6 +32,7 @@ from continuity_state import IssueState, IssueStatus  # noqa: E402
 from orchestration_helpers import resolve_progression_override_actor  # noqa: E402
 from progression_enforcement import (  # noqa: E402
     collect_issue_signatures,
+    progression_delta_required,
     progression_enforcement_gate_active,
     qualifies_as_progression_delta,
 )
@@ -75,13 +76,14 @@ def _orch_high_tension() -> dict:
     }
 
 
-def _orch_beat_shift() -> dict:
-    o = _orch_high_tension()
-    pbs = o["pending_beat_shift"]
-    pbs["active"] = True
-    pbs["reason"] = "short_user_message"
-    pbs["source_turn_id"] = "sim_user_round_1"
-    return o
+def _orch_low_stall_pending_only() -> dict:
+    """Low stall_score; pending_beat_shift flag alone must not open enforcement."""
+    return {
+        "scene_state": {"current_tension_level": "low", "scene_phase": "opening"},
+        "recent_structured_moves": [],
+        "beat_shift_scene_snapshots": [],
+        "pending_beat_shift": default_pending_beat_shift(),
+    }
 
 
 def run_all() -> list[tuple[str, str, dict]]:
@@ -142,17 +144,20 @@ def run_all() -> list[tuple[str, str, dict]]:
         )
     )
 
-    # --- S3: gate active via beat-shift OR ---
-    orch_bs = _orch_beat_shift()
+    # --- S3: pending_beat_shift alone does NOT gate (stall_score is sole trigger) ---
+    orch_bs = _orch_low_stall_pending_only()
     ensure_beat_shift_fields(orch_bs)
-    gate_bs = progression_enforcement_gate_active(
+    pbs3 = orch_bs["pending_beat_shift"]
+    pbs3["active"] = True
+    pbs3["reason"] = "manual_test_flag"
+    gate_bs = progression_delta_required(
         orchestration_state=orch_bs, continuity_manager=m2
     )
     out.append(
         (
-            "S3_gate_beat_shift_active",
-            "PASS" if gate_bs else "FAIL",
-            {"progression_enforcement_gate_active": gate_bs},
+            "S3_gate_pending_beat_shift_irrelevant_without_stall",
+            "PASS" if not gate_bs else "FAIL",
+            {"progression_delta_required": gate_bs},
         )
     )
 

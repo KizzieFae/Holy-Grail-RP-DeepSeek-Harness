@@ -48,19 +48,46 @@ def test_stall_score_low_when_no_signals() -> None:
     assert comp["same_phase"] is False
 
 
-def test_low_consequence_variety_component() -> None:
-    moves = [
-        {"consequences": ["escalation"]},
-        {"consequences": ["escalation"]},
-        {"consequences": ["escalation"]},
-    ]
+def test_exact_structural_repetition_component() -> None:
+    prev = {
+        "speaker": "A",
+        "action": "nods",
+        "dialogue": "Yes.",
+        "motivation": {"goal": "agree", "tactic": "nod"},
+    }
+    cur_move = {
+        "action": "nods",
+        "dialogue": "Yes.",
+        "motivation": {"goal": "agree", "tactic": "nod"},
+    }
     _, comp = compute_stall_score(
-        scene_state={"current_tension_level": "moderate"},
-        recent_structured_moves=moves,
+        scene_state={"current_tension_level": "low"},
+        recent_structured_moves=[prev],
         active_issues=[],
         beat_shift_snapshots=[],
+        current_actor="A",
+        current_move=cur_move,
     )
-    assert comp["low_consequence_variety"] is True
+    assert comp["exact_structural_repetition"] is True
+
+
+def test_exact_repetition_false_when_immediate_prior_is_other_actor() -> None:
+    prev = {
+        "speaker": "B",
+        "action": "nods",
+        "dialogue": "Yes.",
+        "motivation": {},
+    }
+    cur_move = {"action": "nods", "dialogue": "Yes.", "motivation": {}}
+    _, comp = compute_stall_score(
+        scene_state={"current_tension_level": "low"},
+        recent_structured_moves=[prev],
+        active_issues=[],
+        beat_shift_snapshots=[],
+        current_actor="A",
+        current_move=cur_move,
+    )
+    assert comp["exact_structural_repetition"] is False
 
 
 def test_pressure_buckets() -> None:
@@ -107,7 +134,7 @@ def test_character_suffix_gate() -> None:
     )
 
 
-def test_maybe_activate_uses_progression_stall_not_duplicate_plateau() -> None:
+def test_maybe_activate_uses_progression_stall_from_stall_score_only() -> None:
     orch = {
         "scene_state": {"scene_phase": "climax", "current_tension_level": "extreme"},
         "beat_shift_scene_snapshots": [
@@ -115,11 +142,7 @@ def test_maybe_activate_uses_progression_stall_not_duplicate_plateau() -> None:
             {"phase": "climax", "tension": "extreme"},
         ],
         "pending_beat_shift": default_pending_beat_shift(),
-        "recent_structured_moves": [
-            {"consequences": ["a"]},
-            {"consequences": ["a"]},
-            {"consequences": ["a"]},
-        ],
+        "recent_structured_moves": [],
     }
     maybe_activate_pending_beat_shift(
         orch,

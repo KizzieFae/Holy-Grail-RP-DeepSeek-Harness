@@ -9,7 +9,7 @@ Run:
 
 Manual follow-up (not LLM-judge automatable here): after a live play session, open the latest
 Director ``*_full.json`` under ``rp_app/data/rp_audits/`` and confirm ``metadata.beat_shift_active``
-matches rounds where you used a short/OOC trigger or hit plateau detection; skim the following
+matches rounds where ``stall_score`` reached the beat-shift threshold; skim the following
 character/narrator moves for an observable state change vs. pure reframing.
 """
 
@@ -58,7 +58,11 @@ class FakeDirector:
 def _minimal_orch(*, beat_active: bool) -> dict:
     pbs = default_pending_beat_shift()
     if beat_active:
-        pbs = {"active": True, "reason": "short_user_message", "source_turn_id": "user_round_3"}
+        pbs = {
+            "active": True,
+            "reason": "progression_stall",
+            "source_turn_id": "user_round_3",
+        }
     return {
         "pending_beat_shift": pbs,
         "spotlight_history": ["Ayame"],
@@ -71,20 +75,30 @@ def _minimal_orch(*, beat_active: bool) -> dict:
             "offstage_characters": [],
         },
         "recent_structured_moves": [],
+        "beat_shift_scene_snapshots": [],
     }
 
 
 @pytest.mark.asyncio
-async def test_validation_activation_short_message_matches_turn_runner_contract() -> None:
+async def test_validation_activation_stall_score_matches_turn_runner_contract() -> None:
     orch = {
         "pending_beat_shift": default_pending_beat_shift(),
-        "beat_shift_scene_snapshots": [],
+        "beat_shift_scene_snapshots": [
+            {"phase": "climax", "tension": "extreme"},
+            {"phase": "climax", "tension": "extreme"},
+        ],
+        "scene_state": {"scene_phase": "climax", "current_tension_level": "extreme"},
+        "recent_structured_moves": [],
     }
     maybe_activate_pending_beat_shift(
-        orch, trigger_text="Knot!", source_turn_id="user_round_5"
+        orch,
+        trigger_text="Knot!",
+        source_turn_id="user_round_5",
+        active_issues=[{"status": "escalating"}],
+        recent_structured_moves=[],
     )
     assert orch["pending_beat_shift"]["active"] is True
-    assert orch["pending_beat_shift"]["reason"] == "short_user_message"
+    assert orch["pending_beat_shift"]["reason"] == "progression_stall"
 
 
 def test_validation_director_json_omits_hints_but_prefix_present() -> None:

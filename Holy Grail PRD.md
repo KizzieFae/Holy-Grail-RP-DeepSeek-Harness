@@ -229,7 +229,7 @@ A **minimal, deterministic, advisory-only** layer reduces **scene-level plateau 
 
 **What it does**
 
-- Computes a bounded **`stall_score`** (0.0–1.0) from **existing** signals only: same-phase plateau snapshots, high or extreme tension, stable active issue statuses, and (optionally) low variety in recent structured-move consequence categories.
+- Computes a bounded **`stall_score`** (0.0–1.0) from **existing** signals only: same-phase plateau snapshots, high or extreme tension, stable active issue statuses, and (when evaluating a parsed character move) exact structural repetition versus the immediate prior structured move from the same actor (whitespace-normalized action/dialogue; sorted JSON for motivation).
 - Emits **`progression_advisory`** metadata (stall score, pressure band, template-sourced **recommended_channels**, human-readable **note**) for observability and prompt hints.
 - **Template-grounded:** optional static **`progression_profile`** on scene templates (`advancement_channels`, `common_stall_pattern`); if absent, a small default profile is used. No runtime inference of channels.
 

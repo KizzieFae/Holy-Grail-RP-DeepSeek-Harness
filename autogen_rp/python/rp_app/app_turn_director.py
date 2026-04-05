@@ -30,6 +30,7 @@ from progression_advisory import (
     build_progression_director_prompt_prefix,
     sync_progression_advisory_for_prompts,
 )
+from progression_enforcement import progression_delta_required
 from scene_grounding import format_grounding_prompt_prefix
 from perception_audibility import (
     AUDIBILITY_DIRECTED,
@@ -1087,8 +1088,9 @@ async def choose_next_actor(
     if st_module.session_state.get("progression_enforcement_disabled"):
         progression_enforcement_gate = False
     else:
-        progression_enforcement_gate = beat_shift_active or (
-            progression_advisory_snapshot.get("progression_pressure") == "high"
+        progression_enforcement_gate = progression_delta_required(
+            orchestration_state=orchestration_state,
+            continuity_manager=continuity_manager,
         )
 
     actor_before_progression_override = actor_after_semantic

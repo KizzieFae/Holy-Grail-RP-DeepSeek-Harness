@@ -8,7 +8,7 @@ from continuity_manager import ContinuityManager
 from progression_advisory import get_cached_progression_advisory
 from progression_enforcement import (
     collect_issue_signatures,
-    progression_enforcement_gate_active,
+    progression_delta_required,
     qualifies_as_progression_delta,
 )
 from progression_run_metrics import maybe_record_sim_progression_metric
@@ -67,6 +67,7 @@ async def execute_character_turn(
     progression_retry_triggered = False
     progression_retry_reason = ""
     continuity_applied_in_execute = False
+    continuity_transaction_snapshot: dict[str, Any] | None = None
 
     for attempt_index in range(2):
         continuity_manager = get_continuity_manager_fn()
@@ -158,6 +159,7 @@ async def execute_character_turn(
                 else None
             ),
             scene_state,
+            continuity_manager,
         )
         semantic_presence_assessment = None
 
@@ -239,11 +241,13 @@ async def execute_character_turn(
         continuity_applied_in_execute = False
         cm_exec = get_continuity_manager_fn()
         if cm_exec is not None and cm_exec.scene_state is not None:
-            snapshot = cm_exec.to_dict()
+            pre_process_snapshot = cm_exec.to_dict()
             issues_before = collect_issue_signatures(cm_exec)
-            gate = progression_enforcement_gate_active(
+            gate = progression_delta_required(
                 orchestration_state=orchestration_state,
                 continuity_manager=cm_exec,
+                current_actor=next_actor,
+                current_move=dict(move),
             )
             enforcement_disabled = bool(
                 st_module.session_state.get("progression_enforcement_disabled")
@@ -258,7 +262,7 @@ async def execute_character_turn(
                 )
             except Exception:
                 st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
-                    snapshot
+                    pre_process_snapshot
                 )
                 sync_orchestration_state_from_continuity_fn()
                 raise
@@ -277,7 +281,7 @@ async def execute_character_turn(
             )
             if gate_effective and not qualifies:
                 st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
-                    snapshot
+                    pre_process_snapshot
                 )
                 sync_orchestration_state_from_continuity_fn()
                 progression_retry_reason = (
@@ -353,6 +357,7 @@ async def execute_character_turn(
                 )
                 return None
             continuity_applied_in_execute = True
+            continuity_transaction_snapshot = pre_process_snapshot
             maybe_record_sim_progression_metric(
                 st_module,
                 {
@@ -437,6 +442,11 @@ async def execute_character_turn(
             beat_shift_narrator_suffix=beat_shift_narrator_suffix,
         )
     except Exception as exc:
+        if continuity_applied_in_execute and continuity_transaction_snapshot is not None:
+            st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
+                continuity_transaction_snapshot
+            )
+            sync_orchestration_state_from_continuity_fn()
         actors_failed_this_round.append(next_actor)
         log_turn_failure_fn(
             round_number=round_number,
@@ -489,6 +499,11 @@ async def execute_character_turn(
             }
         )
     except Exception as exc:
+        if continuity_applied_in_execute and continuity_transaction_snapshot is not None:
+            st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
+                continuity_transaction_snapshot
+            )
+            sync_orchestration_state_from_continuity_fn()
         actors_failed_this_round.append(next_actor)
         log_turn_failure_fn(
             round_number=round_number,

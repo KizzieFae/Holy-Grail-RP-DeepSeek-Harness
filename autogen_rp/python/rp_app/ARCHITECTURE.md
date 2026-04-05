@@ -512,3 +512,116 @@ This is the most important path for improving story quality over long sessions b
 - **Deliberate orchestration**: director balances spotlight and scene pressure
 - **Identity retention**: persistent voice/reaction anchors reduce character convergence
 - **Extensible**: foundation for secrets, private knowledge, relationship systems
+
+## Issue Tracking & Investigation Workflow
+
+### A. System of record
+
+- **GitHub Issues** are the system of record for:
+  - bugs
+  - observed behavior problems
+  - simulation anomalies
+  - investigations and research threads
+  - approved improvements and refactors
+  - validation and follow-up work
+
+- **Project files** (for example `RP_SETUP_TODO.md` at `autogen_rp/python/RP_SETUP_TODO.md`) remain responsible for:
+  - roadmap and phase structure
+  - architecture and system design
+  - completion criteria and milestones
+
+- **Do not** duplicate detailed issue logs in project files.
+
+### B. Standard workflow
+
+Use this lifecycle; record progress in the Issue (description updates, comments, checklists).
+
+1. **Observation** — Something unexpected is seen in runs, tests, or review. Note repro context and severity. Open or update an Issue when it may outlive the current session.
+
+2. **Investigation** — Narrow cause, gather evidence (logs, audits, scenario IDs). Document hypotheses and ruled-out layers in comments.
+
+3. **Consensus** — Agree on whether to fix, defer, or monitor; align on suspected layer and scope.
+
+4. **Implementation** — Land changes; reference the Issue in commits (`#123`).
+
+5. **Validation** — Confirm with tests, scenario reruns, or checklists defined in the Issue. **Closure happens after validation**, not merely after merge.
+
+6. **Closure** — Close when validated, or close as **monitor** when no fix is required but the thread should remain discoverable.
+
+**Rules of thumb:**
+
+- Create an Issue when work may **persist beyond the current session**.
+- Close Issues **only after validation** (or explicit **monitor** / **won’t fix** with rationale).
+- Issues may be closed as **monitor** when no code change is required but observation is recorded.
+
+### C. Standard labels (explicit)
+
+**Default label set** (do not expand without good reason):
+
+- `bug`
+- `improvement`
+- `research`
+- `tech-debt`
+- `blocked`
+
+**Optional** (add only when needed):
+
+- `validation`
+- `docs`
+- `needs-reproduction`
+
+Avoid growing the label set unnecessarily; prefer a small, consistent vocabulary.
+
+### D. Issue structure (explicit template)
+
+Use this as the **standard** issue body format:
+
+- **Summary** — One short paragraph.
+- **Type** — Bug, improvement, research, etc. (aligned with labels).
+- **Suspected layer** — Single value from the convention below (body field, not a label).
+- **Scenario / context** — How to reproduce or where it showed up (scenario id, UI path, command).
+- **Observed behavior** — What actually happened.
+- **Expected behavior** — What should happen instead (or success criteria for research).
+- **Evidence** — Pointers to audits, commits, transcripts, metrics files.
+- **Current assessment** — Confirmed / likely / unknown; brief rationale.
+- **Next step** — Who does what next (investigate, implement, rerun sim, etc.).
+- **Validation criteria** — How we will know the Issue is truly done (tests, scenarios, sign-off).
+
+### E. Suspected layer convention
+
+Record **Suspected layer** in the issue body (not as a label). Use one of:
+
+- `progression`
+- `continuity`
+- `director`
+- `grounding`
+- `perception/audibility`
+- `narrator`
+- `memory/episodic`
+- `orchestration`
+- `audit/simulation`
+- `unknown`
+
+### F. Title conventions
+
+Prefix titles for scanability:
+
+- `[BUG]` — defects and incorrect behavior
+- `[IMPROVEMENT]` — intentional behavior changes or enhancements
+- `[RESEARCH]` — open investigation, spike, or pattern hunt
+- `[TECH-DEBT]` — cleanup, refactors, maintainability
+
+Example: `[BUG] Director skips addressee under low pressure`.
+
+### G. Guiding principles
+
+- Do **not** open Issues for trivial or disposable thoughts.
+- **Do** open Issues for anything that may need investigation, implementation, validation, or **later reference**.
+- Keep roadmap files **clean and phase-oriented**; avoid turning them into issue logs.
+- Keep **high-churn investigative history** in Issues (comments and edits), not in duplicated markdown.
+- **Reference Issues in commits** (`#nnn` or `Fixes #nnn` when appropriate).
+- **Avoid duplicating** long narratives between Issues and repo markdown; link out instead.
+
+### H. Flexibility clause
+
+> These conventions represent the current standard workflow for this project and may be refined over time as the system evolves.

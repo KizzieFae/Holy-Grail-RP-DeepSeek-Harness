@@ -13,6 +13,15 @@ This roadmap reflects the correct execution order:
 
 ---
 
+## Issue Tracking
+
+All bugs, investigations, and follow-up work are tracked in GitHub Issues.
+
+This file does not maintain a running issue log.  
+Refer to the repository's Issues tab for active and historical investigations.
+
+---
+
 # Phase 0 — Stabilization & Validation (**complete — v1 checkpoint**; progression: `tests/Testing TODOs/progression layer validation status v1.md`, repo root `SCENARIO_VALIDATION_FRAMEWORK.md`; player-text perception closure: section **G**; turn selection v1 policy: section **I** below)
 
 ## A. Structured scenario validation

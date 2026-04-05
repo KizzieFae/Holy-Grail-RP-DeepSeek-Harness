@@ -72,54 +72,51 @@ def maybe_activate_pending_beat_shift(
     active_issues: list[dict[str, Any]] | None = None,
     recent_structured_moves: list[dict[str, Any]] | None = None,
 ) -> None:
+    """Arm pending beat-shift only when stall_score >= threshold (same signal as enforcement).
+
+    ``trigger_text`` is retained for API compatibility; it does not affect activation.
+    """
+    _ = trigger_text
     ensure_beat_shift_fields(orchestration_state)
     snaps = orchestration_state.get("beat_shift_scene_snapshots")
     if not isinstance(snaps, list):
         snaps = []
         orchestration_state["beat_shift_scene_snapshots"] = snaps
 
-    hit, reason = user_message_suggests_beat_shift(trigger_text)
-    if not hit:
-        from progression_advisory import (  # noqa: PLC0415 — avoid import cycle
-            STALL_BEAT_SHIFT_THRESHOLD,
-            compute_stall_score,
-        )
+    from progression_advisory import (  # noqa: PLC0415 — avoid import cycle
+        STALL_BEAT_SHIFT_THRESHOLD,
+        compute_stall_score,
+    )
 
-        scene_state = orchestration_state.get("scene_state")
-        if not isinstance(scene_state, dict):
-            scene_state = {}
-        moves = recent_structured_moves
-        if moves is None:
-            rm = orchestration_state.get("recent_structured_moves")
-            moves = rm if isinstance(rm, list) else []
-        issues = active_issues if isinstance(active_issues, list) else []
+    scene_state = orchestration_state.get("scene_state")
+    if not isinstance(scene_state, dict):
+        scene_state = {}
+    moves = recent_structured_moves
+    if moves is None:
+        rm = orchestration_state.get("recent_structured_moves")
+        moves = rm if isinstance(rm, list) else []
+    issues = active_issues if isinstance(active_issues, list) else []
 
-        stall_score, stall_components = compute_stall_score(
-            scene_state=scene_state,
-            recent_structured_moves=moves,
-            active_issues=issues,
-            beat_shift_snapshots=snaps,
-        )
-        if stall_score >= STALL_BEAT_SHIFT_THRESHOLD:
-            hit, reason = True, "progression_stall"
-            logger.info(
-                "[beat_shift] progression_stall activates beat_shift "
-                "stall_score=%s components=%s source_turn_id=%s",
-                round(stall_score, 4),
-                stall_components,
-                source_turn_id,
-            )
-
-    if not hit:
+    stall_score, stall_components = compute_stall_score(
+        scene_state=scene_state,
+        recent_structured_moves=moves,
+        active_issues=issues,
+        beat_shift_snapshots=snaps,
+        current_actor=None,
+        current_move=None,
+    )
+    if stall_score < STALL_BEAT_SHIFT_THRESHOLD:
         return
 
     pbs = orchestration_state["pending_beat_shift"]
     pbs["active"] = True
-    pbs["reason"] = reason
+    pbs["reason"] = "progression_stall"
     pbs["source_turn_id"] = source_turn_id
     logger.info(
-        "[beat_shift] set active reason=%s source_turn_id=%s",
-        reason,
+        "[beat_shift] set active reason=progression_stall stall_score=%s components=%s "
+        "source_turn_id=%s",
+        round(stall_score, 4),
+        stall_components,
         source_turn_id,
     )
 

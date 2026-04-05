@@ -9,6 +9,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from progression_enforcement import (  # noqa: E402
+    ENFORCEMENT_THRESHOLD,
+    progression_delta_required,
+    progression_enforcement_gate_active,
     qualifies_as_progression_delta,
 )
 
@@ -196,3 +199,45 @@ def test_empty_turn_does_not_qualify() -> None:
         )
         is False
     )
+
+
+def test_progression_delta_required_matches_stall_threshold_only() -> None:
+    orch_low = {
+        "scene_state": {"current_tension_level": "low", "scene_phase": "opening"},
+        "recent_structured_moves": [],
+        "beat_shift_scene_snapshots": [],
+    }
+    assert progression_delta_required(
+        orchestration_state=orch_low,
+        continuity_manager=None,
+    ) is False
+
+    orch_high = {
+        "scene_state": {"current_tension_level": "extreme", "scene_phase": "climax"},
+        "recent_structured_moves": [],
+        "beat_shift_scene_snapshots": [
+            {"phase": "climax", "tension": "extreme"},
+            {"phase": "climax", "tension": "extreme"},
+        ],
+    }
+    assert progression_delta_required(
+        orchestration_state=orch_high,
+        continuity_manager=None,
+    ) is True
+
+
+def test_progression_enforcement_gate_active_alias() -> None:
+    orch = {
+        "scene_state": {"current_tension_level": "low"},
+        "recent_structured_moves": [],
+        "beat_shift_scene_snapshots": [],
+    }
+    assert progression_enforcement_gate_active(
+        orchestration_state=orch, continuity_manager=None
+    ) == progression_delta_required(
+        orchestration_state=orch, continuity_manager=None
+    )
+
+
+def test_enforcement_threshold_constant() -> None:
+    assert ENFORCEMENT_THRESHOLD == 0.6

@@ -9,8 +9,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from beat_shift_state import is_pending_beat_shift_active
-from progression_advisory import sync_progression_advisory_for_prompts
+from progression_advisory import (
+    STALL_BEAT_SHIFT_THRESHOLD,
+    compute_stall_score,
+)
 
 ALLOWED_SCENE_STATE_UPDATE_KEYS = frozenset(
     {
@@ -22,6 +24,56 @@ ALLOWED_SCENE_STATE_UPDATE_KEYS = frozenset(
 )
 
 _PRESENCE_CONSEQUENCE_MARKERS = frozenset({"exit", "arrival"})
+
+# Single enforcement threshold (must match beat-shift / advisory high band).
+ENFORCEMENT_THRESHOLD = STALL_BEAT_SHIFT_THRESHOLD
+
+
+def _active_issue_dicts_for_stall(continuity_manager: Any | None) -> list[dict[str, Any]]:
+    if continuity_manager is None:
+        return []
+    ctx = continuity_manager.get_orchestration_context(
+        active_issue_limit=4,
+        recent_event_limit=4,
+        summary_limit=3,
+    )
+    out: list[dict[str, Any]] = []
+    for iss in ctx.get("active_issues") or []:
+        if hasattr(iss, "to_dict"):
+            out.append(iss.to_dict())
+    return out
+
+
+def progression_delta_required(
+    *,
+    orchestration_state: dict[str, Any],
+    continuity_manager: Any,
+    current_actor: str | None = None,
+    current_move: dict[str, Any] | None = None,
+) -> bool:
+    """Sole hard predicate: require Q1–Q4 progression delta when True.
+
+    Strictly ``stall_score >= ENFORCEMENT_THRESHOLD`` — no OR branches.
+    """
+    scene_state = orchestration_state.get("scene_state")
+    if not isinstance(scene_state, dict):
+        scene_state = {}
+    moves = orchestration_state.get("recent_structured_moves")
+    if not isinstance(moves, list):
+        moves = []
+    snaps = orchestration_state.get("beat_shift_scene_snapshots")
+    if not isinstance(snaps, list):
+        snaps = []
+    issues = _active_issue_dicts_for_stall(continuity_manager)
+    stall_score, _ = compute_stall_score(
+        scene_state=scene_state,
+        recent_structured_moves=moves,
+        active_issues=issues,
+        beat_shift_snapshots=snaps,
+        current_actor=current_actor,
+        current_move=current_move,
+    )
+    return bool(stall_score >= ENFORCEMENT_THRESHOLD)
 
 # Issue snapshot for Q2: status, participants, status_reason, last_change (normalized strings).
 IssueSignature = tuple[str, frozenset[str], str, str]
@@ -167,11 +219,10 @@ def progression_enforcement_gate_active(
     orchestration_state: dict[str, Any],
     continuity_manager: Any,
 ) -> bool:
-    """v1: require delta when beat-shift pending OR progression_pressure is high."""
-    if is_pending_beat_shift_active(orchestration_state):
-        return True
-    advisory = sync_progression_advisory_for_prompts(
+    """Compatibility alias: same as ``progression_delta_required`` without parsed move."""
+    return progression_delta_required(
         orchestration_state=orchestration_state,
         continuity_manager=continuity_manager,
+        current_actor=None,
+        current_move=None,
     )
-    return str(advisory.get("progression_pressure") or "") == "high"
