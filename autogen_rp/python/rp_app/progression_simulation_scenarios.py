@@ -38,6 +38,12 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
                 f"Scenario {scenario_id!r}: expected_pressure_profile must be one of "
                 f"{sorted(_EXPECTED_PRESSURE_PROFILES)}, got {raw['expected_pressure_profile']!r}"
             )
+    if "scene_template_id" in raw and raw["scene_template_id"] is not None:
+        tid = str(raw["scene_template_id"]).strip()
+        if not tid:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: scene_template_id must be a non-empty string when present"
+            )
 
 
 def scenarios_dir() -> Path:
@@ -80,7 +86,7 @@ def audit_owner_slug(scenario_id: str) -> str:
 
 def scenario_prepare_kwargs(raw: dict[str, Any]) -> dict[str, Any]:
     """Kwargs for ``prepare_headless_session`` from scenario dict."""
-    return {
+    out: dict[str, Any] = {
         "character_card_ids": list(raw["character_card_ids"]),
         "opening_description": str(raw["opening_description"]),
         "location": str(raw["location"]),
@@ -99,3 +105,6 @@ def scenario_prepare_kwargs(raw: dict[str, Any]) -> dict[str, Any]:
             else None
         ),
     }
+    if raw.get("scene_template_id") is not None and str(raw.get("scene_template_id") or "").strip():
+        out["scene_template_id"] = str(raw["scene_template_id"]).strip()
+    return out

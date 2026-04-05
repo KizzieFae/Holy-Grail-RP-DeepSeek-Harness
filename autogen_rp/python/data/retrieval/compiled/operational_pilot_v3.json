@@ -1,0 +1,519 @@
+{
+  "characters": {
+    "Harley_Quinn": [
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "0ee0c825047a51dd7f9cfbf779d948f69aa0d2265a48bc3f4c87d734571227de",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Harley_Quinn:lore_facts#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Harley_Quinn"
+        },
+        "temporal_scope": {},
+        "text": "DC-patterned Harley Quinn; established inmate in Arkham's female ward.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "254218161f9394bebdc8573d03083af85c8e732df817f833b7e639f81df05b87",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Harley_Quinn:lore_facts#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Harley_Quinn"
+        },
+        "temporal_scope": {},
+        "text": "Boredom becomes public provocation; she escalates when the room goes flat.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "235a9048f8075d33c599c48d9ebba4dfa9bc107a3402d69e6c3346089eabfdc3",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Harley_Quinn:lore_facts#2",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Harley_Quinn"
+        },
+        "temporal_scope": {},
+        "text": "Poison Ivy often steers or sharpens her chaos when they operate together.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "1dac974d29abf3f37100258091634e375b593df3879aadf6ce7ec9560f3a14a7",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Harley_Quinn:lore_facts#3",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Harley_Quinn"
+        },
+        "temporal_scope": {},
+        "text": "Joker fixation ('Puddin') spikes when she feels abandoned, defensive, or humiliated.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "116f89452b60ca00905d431f0937536a0557c279c7d2c40d181b50b32ff06961",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Harley_Quinn:lore_facts#4",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Harley_Quinn"
+        },
+        "temporal_scope": {},
+        "text": "Crowded lines, showers, and cafeterias turn volatile if she spots an opening.",
+        "visibility": "character_scoped"
+      }
+    ],
+    "Magpie": [
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "824df15e3046788efb409d42f83566e4ec1bdf12249ee27e4728bc1c77a356fd",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Magpie:lore_facts#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Magpie"
+        },
+        "temporal_scope": {},
+        "text": "DC-patterned Magpie; Arkham female ward inmate.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "b92e41c6b1822414b527fe79616af7d77a30b4ed1ac1f2c9ae8527f08646dd2a",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Magpie:lore_facts#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Magpie"
+        },
+        "temporal_scope": {},
+        "text": "Shiny metal, jewelry, or small valuables trigger compulsive fixation and theft risk.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "f0b6596f58c1d19d3a83a0868541734ce96a4104b40c2577a4c9ea4b7afc974c",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Magpie:lore_facts#2",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Magpie"
+        },
+        "temporal_scope": {},
+        "text": "Ward visibility punishes petty theft hard—panic spikes if her hoard is challenged.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "eb91f012b8d9672cbac95a27f8210136b12d3a98efd3fc2a2f5c85ceb80501f6",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Magpie:lore_facts#3",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Magpie"
+        },
+        "temporal_scope": {},
+        "text": "Sounds fragile until cornered; compulsion can destabilize a whole room fast.",
+        "visibility": "character_scoped"
+      }
+    ],
+    "Poison_Ivy": [
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "a8a8b822fc33f734aacba6ef620be47dcff2fb0d3b1d06fa3a1a3102629c275d",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Poison_Ivy:lore_facts#0",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Poison_Ivy"
+        },
+        "temporal_scope": {},
+        "text": "DC-patterned Poison Ivy; established inmate in Arkham's female ward.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "a1879c7bf90953f676fc65de504ae40d936a3f923ca464531eeb91c0ea194342",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Poison_Ivy:lore_facts#1",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Poison_Ivy"
+        },
+        "temporal_scope": {},
+        "text": "Plant-linked abilities need living material (vines, fungi, spores)—not omnipotent indoors.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "d756dd848541fb60508e2ca2dd85b81487d09aef4ddb0e6bd9007e596ae7bfac",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Poison_Ivy:lore_facts#2",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Poison_Ivy"
+        },
+        "temporal_scope": {},
+        "text": "Affection reads as possession and leverage; she favors calm pressure over loud threats.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "bb762aabdf983b1e02543366596eaa23c509fa1b13e0e58cf0c81f2242e45eda",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Poison_Ivy:lore_facts#3",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Poison_Ivy"
+        },
+        "temporal_scope": {},
+        "text": "Harley is her frequent loud counterpart; Ivy uses intimacy as claim-marking, not comfort.",
+        "visibility": "character_scoped"
+      },
+      {
+        "authority_class": "reference_only",
+        "knowledge_id": "a457f8512394230fa3194ae70caa3696c65f99f08c9c0a5f0698f9cd05e6d2df",
+        "knowledge_type": "lore_reference",
+        "priority": 50,
+        "relationship_relevant": false,
+        "relevance_tags": [],
+        "scope": "character_local",
+        "source_kind": "character_card",
+        "source_ref": "char:Poison_Ivy:lore_facts#4",
+        "structured_payload": null,
+        "subject_scope": {
+          "character_id": "Poison_Ivy"
+        },
+        "temporal_scope": {},
+        "text": "She exploits institutional blind spots more than she respects the official chain.",
+        "visibility": "character_scoped"
+      }
+    ]
+  },
+  "compile_metadata": {
+    "authority_clamps": 0,
+    "dense_caps": 0,
+    "fallback_uses": 0,
+    "schema_version_target": 3,
+    "warnings": []
+  },
+  "lore": [],
+  "schema_version": 3,
+  "setup_notes": [],
+  "templates": {
+    "arkham_asylum_cafeteria_harley_ivy_conflict": [
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "f0900849c072c98434bdcc1c1fcc407fea48d30677fc477bcaccf1ddee8cf0cd",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:premise",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "Witnesses raise the cost of backing down, so pairwise challenges tend to accelerate versus a private setting. Peripheral cast can hijack momentum by tying the conflict to a visible object or slight the room will treat as shared evidence.",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "400905ce1cfe35afae8d992e91e7cd8fc1e6a7c6b0512e7b12cbb0ced88d28f1",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:guard_or_staff_response",
+        "structured_payload": {
+          "authority": "high",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "guard_or_staff_response"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"high\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"guard_or_staff_response\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "162d83cc59abba9055dba9660474ab287877f3280d3b7eb0abadf30a62497ce1",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:instigator",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "instigator"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"instigator\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "857a11a9817fad003d01ace8317bb254c4cfd680d99d8e2f35738d831c62bef4",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:new_arrival",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": false,
+          "role_name": "new_arrival"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": false, \"role_name\": \"new_arrival\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "4eae874c25d292bf0d8d6c8df8f422d2855b7086fcaaa1b7ae4fa6b6307201d7",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:possessive_counterforce",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "possessive_counterforce"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"possessive_counterforce\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "10ade3aa41b429db93a99b091b6e116a2337aabd48aa21c734dd61966857f9b4",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:witness_or_intervenor",
+        "structured_payload": {
+          "authority": "medium",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "witness_or_intervenor"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"witness_or_intervenor\"}",
+        "visibility": "template_participants"
+      }
+    ],
+    "arkham_asylum_cell_intake": [
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "bccfc6d60460e1569282536ce6c8b3e76b332109a7340c9ea0548af1a8ca4c97",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cell_intake"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cell_intake:premise",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "arkham_asylum_cell_intake"
+        },
+        "temporal_scope": {},
+        "text": "Before staff intervene, interaction follows informal hierarchy over intake labels—whoever frames the space as already governed sets tempo. A conspicuous disruption or safety-risk beat is what most reliably pulls formal enforcement to reset or ratify control.",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "c2d9aba0100cd036d6d09751c13f3af17a9b544c106cc6e838702f678c09900e",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cell_intake"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:cell_anchor",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "cell_anchor"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cell_intake"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"cell_anchor\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "ebe9050440081beb442394153be444ab47e06c01dc497828a1d9ea1c59d66f74",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cell_intake"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:officer_or_clinician",
+        "structured_payload": {
+          "authority": "high",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "officer_or_clinician"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cell_intake"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"high\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"officer_or_clinician\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "753e48de7edae07f75790a1c9bf38dc78a49eaf25bbd732fa1156f37735056e9",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cell_intake"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:ward_enforcer",
+        "structured_payload": {
+          "authority": "medium",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "ward_enforcer"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cell_intake"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"ward_enforcer\"}",
+        "visibility": "template_participants"
+      }
+    ]
+  },
+  "version": 3
+}

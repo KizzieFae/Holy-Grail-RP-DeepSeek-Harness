@@ -587,6 +587,7 @@ def prepare_headless_session(
     expected_pressure_profile: str | None = None,
     deep_simulation_turns: bool = False,
     enable_episodic_memory: bool = False,
+    scene_template_id: str | None = None,
 ) -> Any:
     """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents.
 
@@ -594,6 +595,9 @@ def prepare_headless_session(
     prompts merge continuity-backed episodic lines into the retrieved bundle (same as shell export).
     Issue seed participants use **agent keys** (card ``agent_name`` or ``make_agent_identifier``)
     so ``select_episodic_items_for_character`` visibility matches ``next_actor`` from the turn runner.
+
+    When ``scene_template_id`` is set, writes it to ``ContinuityManager.scene_state`` (same field
+    Streamlit sets via scene setup) so template-linked authored retrieval can run unchanged.
     """
     if enable_episodic_memory:
         os.environ["RP_EPISODIC_MEMORY"] = "1"
@@ -687,6 +691,8 @@ def prepare_headless_session(
     cm = state_helpers.get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     if cm is not None and cm.scene_state is not None:
         cm.scene_state.location = location
+        _tpl = str(scene_template_id or "").strip()
+        cm.scene_state.scene_template_id = _tpl or None
         if initial_tension is not None:
             cm.scene_state.current_tension_level = str(initial_tension)
         else:

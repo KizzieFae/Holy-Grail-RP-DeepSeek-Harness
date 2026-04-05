@@ -378,6 +378,39 @@ This milestone was **intentionally narrow:** **validation and enforcement**, not
 
 ---
 
+# Operational retrieval pilot — real manifest / v3 index (**closed — accepted baseline documented**)
+
+**Status:** Evaluation branch **closed**. The **accepted** operational retrieval baseline is **locked in manifest + compiled artifact**; **template-aware headless** parity is **implemented and validated**; **refined template premise** is **retained** in source templates and index. A **low-tension situational cap** on `scene_template` rows (premise-first trim) was **prototyped, evaluated, and not adopted** — it is **not** in the codebase (reverted); see **Rejected experiments** below.
+
+- **Runbook (current truth):** `data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`
+- **Manifest:** `data/retrieval/manifests/operational_pilot.json`
+- **Compiled artifact:** `data/retrieval/compiled/operational_pilot_v3.json` (regenerate: `python scripts/compile_authored_retrieval_index.py --manifest data/retrieval/manifests/operational_pilot.json --output data/retrieval/compiled/operational_pilot_v3.json --schema-version 3` from `autogen_rp/python`)
+
+### Accepted baseline (operational pilot)
+
+| Lane | Content |
+|------|--------|
+| **Character** | Minimal **`lore_facts`** (allowlisted per card in manifest) |
+| **Template** | **`role_slots`** + **refined `premise`** (mechanics-focused prose; not scene-setup duplication) |
+| **Authority** | Retrieval remains **non-authoritative**; bundle-driven; continuity / grounding / binding stay authoritative |
+
+### Completed in this branch
+
+- [x] **Operational A/B matrix** — `scripts/run_operational_pilot_eval_matrix.py` (retrieval OFF vs ON; subprocess env for `RP_RETRIEVED_CONTEXT_INDEX`; ON verification requires `RETRIEVED REFERENCE MATERIAL` + template lines including **`:premise | scene_template]`**).
+- [x] **Template-aware headless** — `prepare_headless_session(..., scene_template_id=...)`; scenario JSON **`scene_template_id`** and CLI **`--scene-template-id`**; `tests/test_prepare_headless_scene_template_id.py`.
+- [x] **Premise refinement** — `data/scene_templates/arkham_asylum_*.json` premise text + recompiled index (no extra template fields beyond `role_slots` + `premise` for pilot).
+
+### Rejected experiments (not in repo default)
+
+- **Low-tension template row cap / premise-first subcap** — Explored to reduce noise in calm beats; **not clearly beneficial** vs baseline across matrix runs; **reverted** from `retrieved_context_select.py` / `app_turn_prompting.py` so **selector matches accepted baseline** (fixed per-`source_kind` subcaps only).
+
+### Next-step pointer
+
+- **Product / scale:** Broader scenario matrices, token/cost monitoring, or **Phase 4+** retrieval work **only** with a new scoped spec (no implicit continuation of the pilot branch).
+- **Optional revisit:** Situational template trimming could be re-proposed behind a **flag** if a future phase wants it; keep **manifest + premise** as the stable content contract until then.
+
+---
+
 # Phase 2 — Retrieval (Controlled Introduction) (**complete — authored index only**)
 
 ## HARD GATE

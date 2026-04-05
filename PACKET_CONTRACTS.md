@@ -56,6 +56,8 @@ This packet **does not** replace the continuity manager’s full internal state;
 
 **Retrieval-lock (Phase 1 — scoped validation, complete):** On the **character** path, retrieval enters the runtime **only** through the validated seam: the bundle is built in **`app_turn_prompting.build_character_turn_prompt`**, stored on **`CharacterPromptInputAssembly.retrieved_bundle`**, and the prompt string **`retrieved_context_section`** is **always** derived via **`format_retrieved_context_for_prompt(live_bundle_from_character_prompt_assembly(...))`** — **no parallel retrieval path**, **no seam bypass**. Phase 1 added **assembly invariant**, **bundle composition** snapshots/goldens, **prompt-shape** / **authority** placement tests, and **shadow** pytest coverage; it did **not** introduce new retrieval architecture, selector behavior, or lanes.
 
+**Operational pilot baseline (accepted, documented):** The **reference** manifest compiles to **`schema_version` 3** and retrieves **minimal character `lore_facts`** plus **template `role_slots` + `premise`** (refined premise text in source templates). **Headless** supplies **`scene_template_id`** so template-scoped rows are selected on the same path as Streamlit. Retrieval stays **non-authoritative** and **bundle-driven**. A **low-tension template-row cap** experiment was **not adopted** and is **not** in the default selector. See `autogen_rp/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md` and `autogen_rp/python/RP_SETUP_TODO.md`.
+
 **Placement:** formatted block is injected **after** scene grounding and **before** `CURRENT SCENE STATE` in `prompt_builders.build_character_turn_prompt`, with explicit **non-authoritative** instructions. Selection runs **only** in `app_turn_prompting.build_character_turn_prompt`.
 
 Typical contents (all subject to token budget and relevance gates):
@@ -79,4 +81,4 @@ Typical contents (all subject to token budget and relevance gates):
 2. Extend packaging so **Director / Narrator** (and any other consumers) can use the same packet discipline; runtime eventually reads packets as the primary input boundary instead of ad hoc assembly.
 3. Wire retrieval outputs only into `RetrievedContextBundle` (character path: **done** via `app_turn_prompting`).
 
-Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 scoped **retrieval-lock** validation **closed**; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic).
+Track tasks: `autogen_rp/python/RP_SETUP_TODO.md` (Phase 1 scoped **retrieval-lock** validation **closed**; Phase 0.5 character path **closed**; Phase 2 retrieval, Phase 3.1 authored compile, Phase 3.2 bounded episodic; **operational retrieval pilot closed** — `autogen_rp/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`).

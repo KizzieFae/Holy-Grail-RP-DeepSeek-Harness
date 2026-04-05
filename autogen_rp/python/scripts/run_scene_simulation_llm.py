@@ -17,6 +17,9 @@ From ``autogen_rp/python``::
     # Scenario runs use deep simulation by default (full max_turns, repeat speakers). Match UI cap:
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-deep-simulation-turns
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --beat-shift --turns 3 --audit
+    # Template-linked retrieval (sets Continuity scene_template_id; same field as Streamlit):
+    python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1
+    python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --audit --turns 1
 """
 
 from __future__ import annotations
@@ -99,6 +102,15 @@ def main() -> None:
         help="Opening description (ad-hoc only).",
     )
     p.add_argument("--location", default=None, help="Continuity location (ad-hoc only).")
+    p.add_argument(
+        "--scene-template-id",
+        default=None,
+        metavar="ID",
+        help=(
+            "Set Continuity scene_template_id for template-linked authored retrieval "
+            "(ad-hoc only; scenarios may set scene_template_id in JSON)."
+        ),
+    )
     p.add_argument(
         "--beat-shift",
         action="store_true",
@@ -222,6 +234,7 @@ def main() -> None:
         if args.no_deep_simulation_turns and args.deep_simulation_turns:
             p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
         deep_turns = bool(args.deep_simulation_turns)
+        adhoc_tpl = str(args.scene_template_id or "").strip() or None
         st = prepare_headless_session(
             character_card_ids=ids,
             opening_description=args.opening or default_opening,
@@ -234,6 +247,7 @@ def main() -> None:
             arch_quality_variant=args.arch_quality_variant,
             deep_simulation_turns=deep_turns,
             enable_episodic_memory=args.episodic_memory,
+            scene_template_id=adhoc_tpl,
         )
 
     async def _run() -> None:

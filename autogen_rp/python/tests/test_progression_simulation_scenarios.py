@@ -51,6 +51,37 @@ def test_validate_optional_expected_pressure_profile() -> None:
         validate_optional_scenario_fields({"expected_pressure_profile": "extreme"}, "bad")
 
 
+def test_validate_optional_scene_template_id() -> None:
+    validate_optional_scenario_fields({"scene_template_id": "arkham_asylum_cell_intake"}, "x")
+    validate_optional_scenario_fields({}, "x")
+    with pytest.raises(ValueError, match="scene_template_id"):
+        validate_optional_scenario_fields({"scene_template_id": ""}, "bad")
+    with pytest.raises(ValueError, match="scene_template_id"):
+        validate_optional_scenario_fields({"scene_template_id": "   "}, "bad")
+
+
+def test_scenario_prepare_kwargs_scene_template_id_only_when_set() -> None:
+    base = {
+        "id": "x",
+        "title": "t",
+        "intent": "i",
+        "character_card_ids": ["a"],
+        "opening_description": "o",
+        "location": "l",
+        "trigger_text": "tr",
+        "max_turns": 1,
+        "seed_escalating_issue": False,
+        "beat_shift_active": False,
+        "initial_tension": "low",
+        "initial_phase": "opening",
+    }
+    assert "scene_template_id" not in scenario_prepare_kwargs(dict(base))
+    with_tpl = dict(base)
+    with_tpl["scene_template_id"] = "  tpl  "
+    prep = scenario_prepare_kwargs(with_tpl)
+    assert prep["scene_template_id"] == "tpl"
+
+
 def test_parse_scene_phase() -> None:
     assert _parse_scene_phase("rising") == ScenePhase.RISING
     assert _parse_scene_phase("OPENING") == ScenePhase.OPENING

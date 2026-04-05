@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "type": "character",
+      "path": "../../autogen_characters/harley_quinn.json",
+      "character_id": "Harley_Quinn",
+      "allowlist_keys": ["lore_facts"]
+    },
+    {
+      "type": "character",
+      "path": "../../autogen_characters/poison_ivy.json",
+      "character_id": "Poison_Ivy",
+      "allowlist_keys": ["lore_facts"]
+    },
+    {
+      "type": "character",
+      "path": "../../autogen_characters/magpie.json",
+      "character_id": "Magpie",
+      "allowlist_keys": ["lore_facts"]
+    },
+    {
+      "type": "template",
+      "path": "../../scene_templates/arkham_asylum_cell_intake.json",
+      "template_id": "arkham_asylum_cell_intake",
+      "allowlist_keys": ["role_slots", "premise"]
+    },
+    {
+      "type": "template",
+      "path": "../../scene_templates/arkham_asylum_cafeteria_harley_ivy_conflict.json",
+      "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+      "allowlist_keys": ["role_slots", "premise"]
+    }
+  ]
+}

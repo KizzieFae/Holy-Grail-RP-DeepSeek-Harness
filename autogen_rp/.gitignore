@@ -205,6 +205,12 @@ registry.json
 !/python/data/retrieval/
 /python/data/retrieval/*
 !/python/data/retrieval/authored_manifest.example.json
+# Operational retrieval pilot (tracked baseline; see OPERATIONAL_RETRIEVAL_PILOT.md)
+!/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md
+!/python/data/retrieval/manifests/
+!/python/data/retrieval/manifests/operational_pilot.json
+!/python/data/retrieval/compiled/
+!/python/data/retrieval/compiled/operational_pilot_v3.json
 
 # files created by the gitty agent in python/samples/gitty
 .gitty/
