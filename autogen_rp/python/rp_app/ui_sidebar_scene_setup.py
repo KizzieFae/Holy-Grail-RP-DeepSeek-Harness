@@ -2,6 +2,7 @@ import asyncio
 from typing import Any, Awaitable, Callable
 
 from app_state_session import get_bot_reply_limit_widget_key
+from ui_runtime_status import runtime_evaluation_status_markdown
 from ui_sidebar_opening import load_character_names, render_opening_controls
 
 
@@ -17,6 +18,16 @@ def render_scene_setup_controls(
     resolve_character_file_fn: Callable[[Any, str], str | None],
     start_scene_fn: Callable[[list[str]], Awaitable[bool]],
 ) -> None:
+    st_module.subheader("Runtime / Evaluation Status")
+    st_module.caption(
+        "Read-only. Uses the same rules as the runtime: `get_index_path_from_env()`, "
+        "`is_episodic_memory_enabled()`, and your choices below. "
+        "Restart the Streamlit app if you change environment variables outside the app."
+    )
+    st_module.markdown(runtime_evaluation_status_markdown(st_module=st_module))
+
+    st_module.divider()
+
     st_module.subheader("NPCs in Scene")
     st_module.caption("Select the characters that should respond in this scene")
 
@@ -137,6 +148,12 @@ def render_scene_setup_controls(
     selected_template_id = None
     if templates:
         st_module.subheader("Scene Template")
+        st_module.caption(
+            "Sets the continuity template id, role slots, and opener path. When authored retrieval is ON "
+            "(env `RP_RETRIEVED_CONTEXT_INDEX`), it also selects **template-scoped** index rows "
+            "(`role_slots`, `premise`) for matching templates. "
+            "“(legacy opener flow)” means **no** template id — template lane retrieval does not apply."
+        )
         template_options = ["(legacy opener flow)"] + [
             template.template_id for template in templates
         ]
@@ -274,11 +291,15 @@ def render_scene_setup_controls(
         st_module.session_state["audit_enabled"] = audit_enabled
     if audit_enabled:
         st_module.caption(
-            "This scene will write full, light, and summary audit artifacts."
+            "Writes full, light, and summary audit artifacts. Character turns may include "
+            "**metadata.retrieval_summary** (counts/refs only) when authored retrieval produced a bundle. "
+            "Run-level **retrieval_session** merged into `_audit_summary.json` is produced on the **headless** "
+            "simulation path today — Streamlit refresh of `_audit_summary` does not add that block."
         )
     else:
         st_module.caption(
-            "This scene will not write audit files unless you enable logging before starting it."
+            "No audit files for this scene unless you enable the toggle above before **Start Scene**. "
+            "Audit is **locked at scene start**."
         )
 
     if selected_chars and st_module.button("Start Scene", type="primary"):

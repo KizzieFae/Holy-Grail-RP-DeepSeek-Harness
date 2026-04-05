@@ -1,5 +1,7 @@
 from typing import Any
 
+from ui_runtime_status import runtime_evaluation_status_markdown
+
 
 def render_debug_panel(*, st_module: Any) -> None:
     st_module.subheader("Debug Panel")
@@ -10,6 +12,10 @@ def render_debug_panel(*, st_module: Any) -> None:
 
     if debug_mode:
         st_module.caption("Debug information for troubleshooting")
+
+        st_module.markdown("**Runtime / evaluation (same as sidebar strip):**")
+        st_module.markdown(runtime_evaluation_status_markdown(st_module=st_module))
+        st_module.divider()
 
         selector_decisions = st_module.session_state.get("selector_decisions", [])
         st_module.markdown("**Selector Decisions:**")

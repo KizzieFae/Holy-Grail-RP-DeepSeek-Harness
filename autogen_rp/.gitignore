@@ -200,6 +200,16 @@ artifacts
 # project data
 registry.json
 
+# Local progression / sim eval dumps (autogen_rp/python root only; not scenarios or fixtures)
+/python/_eval_*.json
+/python/phase1_metrics_*.json
+/python/phase1_log_*.txt
+/python/_arkham_kb_*.txt
+/python/_willow_eval_*.txt
+
+# Operational pilot eval matrix output (`scripts/run_operational_pilot_eval_matrix.py`)
+/python/rp_app/data/pilot_evaluation_metrics/
+
 # User content - RP characters, lorebooks, sessions
 /python/data/*
 !/python/data/retrieval/

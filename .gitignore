@@ -1,0 +1,3 @@
+# Repo root — autogen_rp/.gitignore does not apply above that directory.
+.env
+**/.streamlit/secrets.toml

@@ -28,6 +28,11 @@ def render_opening_controls(
     template_manager_cls: Any,
     resolve_character_file_fn: Callable[[Any, str], str | None],
 ) -> None:
+    if selected_template_id:
+        st_module.caption(
+            "Opening mode chooses **prose source** only. The **template id** above still applies to "
+            "continuity roles and, when authored retrieval is ON, template-scoped retrieval rows."
+        )
     if opening_mode == "template" and selected_template_id:
         if selected_template is None:
             selected_template = next(
