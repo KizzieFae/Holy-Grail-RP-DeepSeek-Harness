@@ -24,6 +24,7 @@ Do not rely on tool memory as the only source of important project behavior.
 - Prefer extending existing modules and workflows before inventing new ones.
 - Keep important guidance in repo files, not only in tool-specific settings.
 - If code behavior, architecture constraints, or test expectations change, update the relevant docs.
+- When the user asks to **file** a GitHub Issue (not draft-only), follow `python/rp_app/ARCHITECTURE.md` **§B.1** (`gh issue create` from the repo git root; labels and body template in **§C–§F**).
 - Do not overwrite environment or secret files without explicit user confirmation.
 
 ## Where to start

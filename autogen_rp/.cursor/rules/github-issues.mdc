@@ -1,0 +1,14 @@
+---
+description: File GitHub issues via CLI when the user requests it
+globs:
+alwaysApply: true
+---
+
+# GitHub Issues
+
+When the user asks to **create**, **file**, **open**, or **track** a GitHub Issue (or supplies title/body for that purpose):
+
+- Follow `python/rp_app/ARCHITECTURE.md` **§B.1** for `gh issue create`, auth checks, and when *draft-only* is enough.
+- Use **§C–§F** in the same file for labels, issue body template, suspected layer, and title prefixes.
+
+If the user explicitly wants a **draft only**, skip `gh` and provide markdown following **§D–§F**.

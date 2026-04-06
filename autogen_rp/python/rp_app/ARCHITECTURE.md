@@ -536,7 +536,7 @@ This is the most important path for improving story quality over long sessions b
 
 Use this lifecycle; record progress in the Issue (description updates, comments, checklists).
 
-1. **Observation** — Something unexpected is seen in runs, tests, or review. Note repro context and severity. Open or update an Issue when it may outlive the current session.
+1. **Observation** — Something unexpected is seen in runs, tests, or review. Note repro context and severity. Open or update an Issue when it may outlive the current session. When the issue should exist on GitHub and you are not only drafting text, create it using **§B.1** (CLI) or the web UI with the template in **§D**.
 
 2. **Investigation** — Narrow cause, gather evidence (logs, audits, scenario IDs). Document hypotheses and ruled-out layers in comments.
 
@@ -553,6 +553,17 @@ Use this lifecycle; record progress in the Issue (description updates, comments,
 - Create an Issue when work may **persist beyond the current session**.
 - Close Issues **only after validation** (or explicit **monitor** / **won’t fix** with rationale).
 - Issues may be closed as **monitor** when no code change is required but observation is recorded.
+
+### B.1 Filing issues via GitHub CLI (humans and agents)
+
+Use this when creating the Issue on GitHub from a terminal—for example when an agent is asked to *file*, *create*, *open*, or *track* an issue, not merely to produce draft markdown.
+
+1. Run commands from the **git root** of this repository (the directory that contains `.git` and whose `origin` remote is the GitHub repo where Issues live).
+2. Run `gh auth status`. If authentication fails or `gh` is missing, say so and still provide the full issue body (**§D–§F**); the user can paste into the web UI or run `gh auth login`.
+3. Prefer `gh issue create --title "..." --body-file path/to/body.md` over inline `--body` to avoid escaping problems. Align `--title` with **§F** and `--label` with **§C** (repeat `--label` for each label).
+4. After a successful create, share the returned issue URL.
+
+Unless the user explicitly asked for a **draft only**, treating the task as done means opening the issue on GitHub when `gh` is available and authenticated—not only pasting issue text in chat.
 
 ### C. Standard labels (explicit)
 

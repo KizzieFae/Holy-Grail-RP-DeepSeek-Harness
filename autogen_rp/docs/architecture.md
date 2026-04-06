@@ -2,7 +2,7 @@
 
 This document captures architecture guardrails that both Windsurf and Cursor should follow.
 
-For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`.
+For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md` (including **§B.1** for filing Issues on GitHub via `gh` from the git root when requested).
 
 ## Repo-level architecture stance
 
