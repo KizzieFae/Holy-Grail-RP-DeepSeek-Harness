@@ -168,6 +168,7 @@ def log_character_turn_audit(
     turn_execution_metadata: dict[str, Any] | None = None,
     progression_advisory: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
+    character_audit_v1: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -235,6 +236,11 @@ def log_character_turn_audit(
                     **(
                         {"retrieval_summary": retrieval_summary}
                         if isinstance(retrieval_summary, dict)
+                        else {}
+                    ),
+                    **(
+                        {"character_audit_v1": character_audit_v1}
+                        if isinstance(character_audit_v1, dict)
                         else {}
                     ),
                 },

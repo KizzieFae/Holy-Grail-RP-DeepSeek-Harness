@@ -18,6 +18,7 @@ from narrator_audits_v1 import (
     build_prose_dialogue_audit_v1,
     prior_assistant_rendered_content,
 )
+from character_audits_v1 import build_character_audit_v1
 from turn_runner_audit import log_character_turn_audit
 from perception_audibility import normalize_move_audibility
 
@@ -246,6 +247,7 @@ async def execute_character_turn(
 
         continuity_applied_in_execute = False
         cm_exec = get_continuity_manager_fn()
+        character_audit_v1: dict[str, Any] | None = None
         if cm_exec is not None and cm_exec.scene_state is not None:
             pre_process_snapshot = cm_exec.to_dict()
             issues_before = collect_issue_signatures(cm_exec)
@@ -259,6 +261,19 @@ async def execute_character_turn(
                 st_module.session_state.get("progression_enforcement_disabled")
             )
             gate_effective = gate and not enforcement_disabled
+            character_audit_v1 = build_character_audit_v1(
+                move=dict(move),
+                decision=decision,
+                next_actor=next_actor,
+                char_names=list(char_names),
+                trigger_text=trigger_text,
+                attempt_index=attempt_index,
+                orchestration_state=orchestration_state,
+                continuity_scope="continuity_enabled",
+                scene_state_pre_source_dict=cm_exec.scene_state.to_dict(),
+                issues_before_signatures=issues_before,
+                cm_exec=cm_exec,
+            )
             try:
                 cm_exec.process_turn(
                     acting_character=next_actor,
@@ -377,6 +392,23 @@ async def execute_character_turn(
                     "next_actor": next_actor,
                 },
             )
+        else:
+            orch_scene = orchestration_state.get("scene_state")
+            if not isinstance(orch_scene, dict):
+                orch_scene = {}
+            character_audit_v1 = build_character_audit_v1(
+                move=dict(move),
+                decision=decision,
+                next_actor=next_actor,
+                char_names=list(char_names),
+                trigger_text=trigger_text,
+                attempt_index=attempt_index,
+                orchestration_state=orchestration_state,
+                continuity_scope="orchestration_only",
+                scene_state_pre_source_dict=orch_scene,
+                issues_before_signatures=None,
+                cm_exec=None,
+            )
 
         turn_execution_metadata = {
             "attempt_index": attempt_index,
@@ -417,6 +449,7 @@ async def execute_character_turn(
             get_audit_context_fn=get_audit_context_fn,
             get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_fn,
             get_character_scene_audit_context_fn=get_character_scene_audit_context_fn,
+            character_audit_v1=character_audit_v1,
         )
 
         rendered_move_result = {
