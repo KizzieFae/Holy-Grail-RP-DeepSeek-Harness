@@ -22,6 +22,8 @@ This allows for:
 
 Audit artifacts observe **different layers**: per-bot prompts and **parsed** model outputs; **continuity commits** and **`_narrative.json`** (orchestration-enriched trace); Director **decision** JSON; Narrator render path. Do not treat the **character’s parsed move** as the full source of structured scene truth. Fields such as **`issue_updates`**, scene-level **`tension_shift`**, and **`consequences`** in the **session narrative** reflect **continuity classification and orchestration history**, not a requirement that the character model emit them on every move.
 
+Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
+
 ### Progression advisory (MVP) in audits
 
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), template-sourced **`recommended_channels`**, human-readable **`note`**, **`stall_components`** (booleans: same phase, high tension, issue stability, exact structural repetition), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
@@ -74,6 +76,100 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 **Session summary (`_audit_summary.json`):** Top-level **`retrieval_session`** (same shape as structured_eval: mode, path, `retrieval_verified_active`, fingerprint) is **merged after headless simulation** completes (`headless_scene_simulation.run_headless_llm_scene`). **Streamlit** refresh of `_audit_summary.json` does **not** currently add this block — for run-level retrieval metadata in the UI path, rely on **per-turn** `retrieval_summary` and logs, or run the **headless** scenario with `--audit`.
 
 **Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration).
+
+## Audit interpretation and issue tracking
+
+### Audit pipeline
+
+**Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.**
+
+Headless or in-app runs with audit logging produce artifacts under `rp_app/data/rp_audits/`. **Interpretation** (human and/or AI-assisted) compares layers—`_audit_summary.json`, `_narrative.json`, granular `*_full.json`—before filing work. After a fix, **re-run the same or equivalent scenarios** with audit enabled and confirm the reported pattern is resolved without regressions on adjacent signals.
+
+### Roles
+
+**AI-assisted (agents / tooling):**
+
+- Run simulations (e.g. `--audit`, headless CLI).
+- Generate and refresh audit artifacts.
+- Interpret outputs: reconcile narrative trace, continuity fields, progression retries, narrator/character audit blocks.
+- Propose **candidate issues** with evidence (session id, paths, field names/values).
+
+**Human:**
+
+- Approve or reject filing or scope of an issue.
+- Assign priority.
+- Steer validation and implementation.
+
+### Issue definition
+
+> An issue is a **recurring or high-impact** pattern in audit outputs indicating **undesirable or non-useful** system behavior.
+
+Do not file on **single occurrences** unless the impact is **severe** (e.g. hard contradiction across truth layers, data integrity, or safety).
+
+### Issue classification
+
+Classify each item in the GitHub issue body (labels alone are not enough for nuance):
+
+| Class | Meaning | Typical tracking |
+|-------|---------|------------------|
+| **Bug** | Incorrect runtime behavior; contradictions between continuity, Director, narrator, or rendered prose; broken enforcement relative to spec. | Actionable; prioritize when integrity- or user-facing. |
+| **Behavior** | Outcome may be correct but **unvalidated** or needs **calibration** (thresholds, proxy definitions). May become a bug after confirmation. | Measurement, reproduction, design discussion. |
+| **Limitation** | Known **heuristic** or design constraint (often stated as `limitations` in audit payloads). High false-positive rate can be **expected**. | Watchlist / research / improvement; not a defect by default. |
+
+**Not every tracked GitHub Issue is a defect.** Limitations and calibration threads are valid long-lived records.
+
+### Tracking policy
+
+- **GitHub Issues** are the system of record (see `rp_app/ARCHITECTURE.md`, Issue Tracking).
+- **Bugs** → implement, then validate with audited re-runs.
+- **Behavior** → confirm whether to treat as bug, tune signal, or document intent.
+- **Limitations** → document; avoid treating heuristic **`fail`/`border`** noise as proof of bad narrator or character output without independent evidence.
+
+### Evidence requirements
+
+Issues should cite, where possible:
+
+- **Session identifiers** (e.g. `session_380`, owner slug).
+- **Artifact paths** (e.g. `round_001/..._turn07_*_full.json`, `_narrative.json` turn index).
+- **Observed behavior** (concrete fields and values).
+- **Pattern** (when it appears; what conditions held in the sample).
+- **Impact** (scene quality, operator trust, audit usability).
+
+### Validation loop (post-fix)
+
+1. Re-run the **same** or agreed regression scenario with audit logging.
+2. Verify the issue’s **signature** no longer appears (or meets agreed reduction).
+3. Spot-check **related** dimensions (continuity, progression, narrator validation) for regressions.
+
+### Audit outputs vs runtime
+
+- Artifacts are **observational**; they **require interpretation** into filed issues and validation criteria.
+- **Character Audit v1**, **Narrator Audit v1**, and **Audit v2** deterministic bundles (when present on character/narrator turn metadata) are **logging-only** and **advisory**: they **do not** alter model output, continuity commits, or gate acceptance unless a separate documented mechanism says otherwise.
+- **LLM validation** steps reflected in audit JSON (e.g. narrator semantic validation) are **advisory** relative to the render path unless explicitly defined as blocking.
+
+### Audit v2 (deterministic, advisory)
+
+Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and the appropriate **suspected layer** (`continuity` vs `audit/simulation` vs `narrator`, etc.).
+
+### Audit signal limitations
+
+Many dimensions are **heuristic**: token overlap, substring scope proxies, short-window attribution tests, etc. They may be **conservative** by design and produce **high false-positive** rates on otherwise healthy runs.
+
+Examples from baseline audits:
+
+- **Prose attribution** / attribution proxies — pronoun-led or implicit attribution often fails fixed-window name tests.
+- **CA1 (`char_ca1_motivation_action`)** — low lexical overlap between motivation text and action/dialogue on coherent, subtext-heavy moves.
+
+Treat chronic **`fail`** on these as **limitations** or **calibration** topics unless separate evidence shows incorrect **runtime** behavior. They inform evolution of metrics; they **should not** alone trigger immediate “fix the narrator/character” work.
+
+### GitHub issue usage (this repo)
+
+- Use **labels** defined in `ARCHITECTURE.md` §C (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, optional `validation`, `docs`, `needs-reproduction`). Keep the label set small; put subsystem detail in the body.
+- Follow the **issue body template** in `ARCHITECTURE.md` §D. Additionally embed:
+  - **Type (taxonomy):** `bug` | `behavior` | `limitation` (clarifies intent alongside the GitHub label).
+  - **Area:** e.g. `continuity`, `progression`, `director`, `narrator`, `character`, `prose`, `audit/simulation`.
+  - **Severity:** when useful (`high` / `medium` / `low` or narrative equivalent).
+- Title prefixes `[BUG]`, `[IMPROVEMENT]`, `[RESEARCH]`, `[TECH-DEBT]` per `ARCHITECTURE.md` §F. **Limitation** and **behavior** items often use `improvement` or `research` until promoted to a confirmed **bug**.
 
 ## Directory Structure
 
@@ -544,6 +640,8 @@ Check `_narrative.json` → `complete_narrative`
 Check `_narrative.json` → `turns[].character_motivation` across all rounds for that character
 
 ## File Reference for AI Assistants
+
+For workflow from raw artifacts to GitHub issues (classification, evidence, re-test), read **Audit interpretation and issue tracking** above.
 
 When asked to audit a scene:
 

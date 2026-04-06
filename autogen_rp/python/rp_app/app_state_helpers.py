@@ -1,6 +1,7 @@
 from app_state_audit import (
     get_audit_context,
     is_audit_enabled,
+    is_llm_audit_enabled,
     refresh_audit_summary_report,
     set_audit_turn,
     start_audit_round,
@@ -46,6 +47,7 @@ __all__ = [
     "get_orchestration_state",
     "init_session_state",
     "is_audit_enabled",
+    "is_llm_audit_enabled",
     "rebuild_character_agents",
     "refresh_audit_summary_report",
     "reset_agents",

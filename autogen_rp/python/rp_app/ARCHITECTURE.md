@@ -534,6 +534,10 @@ This is the most important path for improving story quality over long sessions b
 
 - **Do not** duplicate detailed issue logs in project files.
 
+### A.1 Audit-driven workflow (reference)
+
+Simulation and audit logging produce JSON under `rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Methodology—pipeline (**Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test**), roles (AI-assisted vs human), taxonomy (**bug** / **behavior** / **limitation**), evidence standards, heuristic signal limitations, and GitHub body fields—is documented in **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** for observability unless explicitly documented as runtime gates.
+
 ### B. Standard workflow
 
 Use this lifecycle; record progress in the Issue (description updates, comments, checklists).
@@ -590,15 +594,17 @@ Avoid growing the label set unnecessarily; prefer a small, consistent vocabulary
 Use this as the **standard** issue body format:
 
 - **Summary** — One short paragraph.
-- **Type** — Bug, improvement, research, etc. (aligned with labels).
+- **Type** — GitHub label alignment (`bug`, `improvement`, `research`, …). Optionally add a **taxonomy** line: **bug** (defect), **behavior** (needs validation or calibration), or **limitation** (known heuristic/design constraint)—see **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. **Not all Issues are defects.**
 - **Suspected layer** — Single value from the convention below (body field, not a label).
+- **Area** — Optional but recommended: subsystem tag in prose (e.g. `continuity`, `progression`, `narrator`, `character`, `prose`, `audit/simulation`).
+- **Severity** — Optional: `high` / `medium` / `low` (or narrative equivalent) when it helps triage.
 - **Scenario / context** — How to reproduce or where it showed up (scenario id, UI path, command).
 - **Observed behavior** — What actually happened.
 - **Expected behavior** — What should happen instead (or success criteria for research).
-- **Evidence** — Pointers to audits, commits, transcripts, metrics files.
-- **Current assessment** — Confirmed / likely / unknown; brief rationale.
+- **Evidence** — Pointers to audits, commits, transcripts, metrics files (session id, artifact paths, fields).
+- **Current assessment** — Confirmed / likely / unknown / watchlist; brief rationale.
 - **Next step** — Who does what next (investigate, implement, rerun sim, etc.).
-- **Validation criteria** — How we will know the Issue is truly done (tests, scenarios, sign-off).
+- **Validation criteria** — How we will know the Issue is truly done (tests, scenarios, audited re-runs, sign-off).
 
 ### E. Suspected layer convention
 

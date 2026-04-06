@@ -424,6 +424,9 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         "build_character_turn_prompt_fn": build_character_turn_prompt_fn,
         "parse_character_move_fn": parse_character_move,
         "is_audit_enabled_fn": is_audit_on,
+        "is_llm_audit_enabled_fn": lambda: state_helpers.is_llm_audit_enabled(
+            st_module=st_module
+        ),
         "get_audit_logger_fn": get_audit_logger,
         "get_audit_context_fn": lambda: state_helpers.get_audit_context(
             st_module=st_module,
@@ -599,6 +602,7 @@ def prepare_headless_session(
     progression_enforcement_disabled: bool = False,
     arch_quality_variant: str = "baseline",
     audit_enabled: bool = False,
+    llm_audit_enabled: bool = False,
     audit_session_owner: str = "headless_sim",
     scenario_id: str | None = None,
     scenario_title: str | None = None,
@@ -652,10 +656,12 @@ def prepare_headless_session(
         st.session_state["audit_round_number"] = 0
         st.session_state["audit_turn_number"] = 0
         st.session_state["audit_summary_report_path"] = None
+        st.session_state["llm_audit_enabled"] = bool(llm_audit_enabled)
     else:
         st.session_state["audit_enabled"] = False
         st.session_state["audit_session_number"] = None
         st.session_state["audit_session_owner"] = None
+        st.session_state["llm_audit_enabled"] = False
 
     loader = CharacterLoader()
     resolved_files: list[str] = []

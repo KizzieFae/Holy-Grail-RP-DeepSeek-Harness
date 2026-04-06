@@ -5,6 +5,10 @@ def is_audit_enabled(*, st_module: Any) -> bool:
     return bool(st_module.session_state.get("audit_enabled", False))
 
 
+def is_llm_audit_enabled(*, st_module: Any) -> bool:
+    return bool(st_module.session_state.get("llm_audit_enabled", False))
+
+
 def refresh_audit_summary_report(
     *,
     st_module: Any,

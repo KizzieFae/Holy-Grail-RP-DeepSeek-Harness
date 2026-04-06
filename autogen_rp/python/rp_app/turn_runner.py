@@ -32,6 +32,7 @@ async def run_character_turns(
     ],
     parse_character_move_fn: Callable[[str], tuple[dict[str, Any] | None, str]],
     is_audit_enabled_fn: Callable[[], bool],
+    is_llm_audit_enabled_fn: Callable[[], bool],
     get_audit_logger_fn: Callable[[], Any],
     get_audit_context_fn: Callable[[], tuple[str, int, int, int]],
     get_scene_audit_logging_kwargs_fn: Callable[[Any | None], dict[str, Any]],
@@ -257,6 +258,7 @@ async def run_character_turns(
                     parse_character_move_fn=parse_character_move_fn,
                     get_continuity_manager_fn=get_continuity_manager_fn,
                     is_audit_enabled_fn=is_audit_enabled_fn,
+                    is_llm_audit_enabled_fn=is_llm_audit_enabled_fn,
                     get_audit_logger_fn=get_audit_logger_fn,
                     get_audit_context_fn=get_audit_context_fn,
                     get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_fn,
@@ -289,6 +291,7 @@ async def run_character_turns(
                 narrator_output_audit_v1 = turn_result["narrator_output_audit_v1"]
                 narrator_validation_audit_v1 = turn_result["narrator_validation_audit_v1"]
                 prose_dialogue_audit_v1 = turn_result["prose_dialogue_audit_v1"]
+                audit_v2_narrator = turn_result.get("audit_v2_narrator")
                 skip_continuity_process_turn = bool(
                     turn_result.get("continuity_applied_in_execute", False)
                 )
@@ -310,6 +313,9 @@ async def run_character_turns(
                     narrator_output_audit_v1=narrator_output_audit_v1,
                     narrator_validation_audit_v1=narrator_validation_audit_v1,
                     prose_dialogue_audit_v1=prose_dialogue_audit_v1,
+                    audit_v2_narrator=audit_v2_narrator
+                    if isinstance(audit_v2_narrator, dict)
+                    else None,
                     round_number=round_number,
                     turn_number=turn_number,
                     state_manager=state_manager,

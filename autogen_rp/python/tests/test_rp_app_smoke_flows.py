@@ -458,6 +458,7 @@ async def test_execute_character_turn_smoke_uses_semantic_presence_override_and_
         parse_character_move_fn=lambda _raw: (move, ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: False,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
         get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -574,6 +575,7 @@ async def test_execute_character_turn_narrator_guardrail_without_llm_fallback_fl
         parse_character_move_fn=lambda _raw: (move, ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: False,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
         get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -668,6 +670,7 @@ async def test_execute_character_turn_no_narrator_fallback_when_semantics_clean(
         parse_character_move_fn=lambda _raw: (move, ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: False,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
         get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -761,6 +764,7 @@ async def test_execute_character_turn_character_audit_v1_orchestration_only_logg
         parse_character_move_fn=lambda _raw: (move, ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: True,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: CapturingAuditLogger(),
         get_audit_context_fn=lambda: ("Owner", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -785,6 +789,11 @@ async def test_execute_character_turn_character_audit_v1_orchestration_only_logg
     assert len(audit_entries) == 1
     entry = audit_entries[0]
     metadata = entry["metadata"]
+    assert "audit_v2" in metadata
+    av2 = metadata["audit_v2"]
+    assert av2["schema_version"] == 1
+    assert "character_decision" in av2
+    assert av2["character_decision"]["llm"]["status"] == "skipped"
     assert "character_audit_v1" in metadata
     audit_v1 = metadata["character_audit_v1"]
     assert isinstance(audit_v1, dict)
@@ -849,6 +858,7 @@ async def test_execute_character_turn_string_should_use_fallback_does_not_trigge
         parse_character_move_fn=lambda _raw: (move, ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: False,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
         get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -943,6 +953,7 @@ async def test_execute_character_turn_retries_once_on_duplicate_and_succeeds(
         parse_character_move_fn=lambda raw: (json.loads(raw), ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: False,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: None,
         get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},
@@ -1049,6 +1060,7 @@ async def test_execute_character_turn_logs_retry_lineage_in_character_audit_meta
         parse_character_move_fn=lambda raw: (json.loads(raw), ""),
         get_continuity_manager_fn=lambda: None,
         is_audit_enabled_fn=lambda: True,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=lambda: FakeAuditLogger(),
         get_audit_context_fn=lambda: ("Owner", 1, 1, 1),
         get_scene_audit_logging_kwargs_fn=lambda _scene: {},

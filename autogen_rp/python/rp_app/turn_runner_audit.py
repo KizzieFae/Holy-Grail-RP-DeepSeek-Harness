@@ -169,6 +169,7 @@ def log_character_turn_audit(
     progression_advisory: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
     character_audit_v1: dict[str, Any] | None = None,
+    audit_v2: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -243,6 +244,11 @@ def log_character_turn_audit(
                         if isinstance(character_audit_v1, dict)
                         else {}
                     ),
+                    **(
+                        {"audit_v2": audit_v2}
+                        if isinstance(audit_v2, dict) and audit_v2
+                        else {}
+                    ),
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,
@@ -276,6 +282,7 @@ def log_narrator_render_audit(
     turn_number: int,
     progression_advisory: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
+    audit_v2: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -342,6 +349,11 @@ def log_narrator_render_audit(
                     "narrator_output_audit_v1": narrator_output_audit_v1,
                     "narrator_validation_audit_v1": narrator_validation_audit_v1,
                     "prose_dialogue_audit_v1": prose_dialogue_audit_v1,
+                    **(
+                        {"audit_v2": audit_v2}
+                        if isinstance(audit_v2, dict) and audit_v2
+                        else {}
+                    ),
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,

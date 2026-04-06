@@ -51,6 +51,7 @@ def init_session_state(*, st_module: Any) -> None:
         "bot_reply_limit": None,
         "bot_reply_limit_widget_nonce": 0,
         "audit_enabled": False,
+        "llm_audit_enabled": False,
         "audit_round_number": 0,
         "audit_turn_number": 0,
         "audit_session_number": None,

@@ -12,6 +12,7 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --list-scenarios
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
+    python scripts/run_scene_simulation_llm.py --chars ayame,celina --audit --llm-audit --turns 1 --no-deep-simulation-turns
     # Continuity-backed episodic recall in character prompts (requires flag or RP_EPISODIC_MEMORY=1):
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 2 --episodic-memory
     # Scenario runs use deep simulation by default (full max_turns, repeat speakers). Match UI cap:
@@ -130,6 +131,14 @@ def main() -> None:
         help="Enable audit logging to rp_app/data/rp_audits/ (same as Streamlit with auditing on).",
     )
     p.add_argument(
+        "--llm-audit",
+        action="store_true",
+        help=(
+            "Enable Audit V2 LLM advisory passes (requires --audit). Same as session "
+            "llm_audit_enabled in the app; runs sync LLM calls when escalation qualifies."
+        ),
+    )
+    p.add_argument(
         "--retrieved-context-index",
         nargs="?",
         const="",
@@ -215,6 +224,9 @@ def main() -> None:
             print(sid)
         return
 
+    if args.llm_audit and not args.audit:
+        p.error("--llm-audit requires --audit")
+
     if not os.environ.get("DEEPSEEK_API_KEY"):
         print("DEEPSEEK_API_KEY is not set; cannot run live LLM simulation.", file=sys.stderr)
         sys.exit(1)
@@ -240,6 +252,7 @@ def main() -> None:
         st = prepare_headless_session(
             **prep_kw,
             audit_enabled=args.audit,
+            llm_audit_enabled=args.llm_audit,
             audit_session_owner=audit_owner,
             progression_enforcement_disabled=args.no_progression_enforcement,
             arch_quality_variant=args.arch_quality_variant,
@@ -261,6 +274,7 @@ def main() -> None:
             seed_escalating_issue=not args.no_seed_issue,
             beat_shift_active=args.beat_shift,
             audit_enabled=args.audit,
+            llm_audit_enabled=args.llm_audit,
             audit_session_owner="headless_adhoc",
             progression_enforcement_disabled=args.no_progression_enforcement,
             arch_quality_variant=args.arch_quality_variant,

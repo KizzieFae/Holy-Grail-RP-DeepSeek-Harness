@@ -195,6 +195,10 @@ def is_audit_enabled() -> bool:
     return state_helpers.is_audit_enabled(st_module=st)
 
 
+def is_llm_audit_enabled() -> bool:
+    return state_helpers.is_llm_audit_enabled(st_module=st)
+
+
 def refresh_audit_summary_report() -> None:
     state_helpers.refresh_audit_summary_report(
         st_module=st,
@@ -655,6 +659,7 @@ async def run_character_turns(
         build_character_turn_prompt_fn=build_character_turn_prompt,
         parse_character_move_fn=parse_character_move,
         is_audit_enabled_fn=is_audit_enabled,
+        is_llm_audit_enabled_fn=is_llm_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
         get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_for_audit,

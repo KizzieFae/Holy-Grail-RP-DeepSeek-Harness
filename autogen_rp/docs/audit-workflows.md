@@ -4,6 +4,8 @@ This document turns important audit guidance into a shared repo procedure.
 
 For artifact details, see `python/rp_app/AUDIT_DOCUMENTATION.md`.
 
+For turning audit findings into GitHub Issues (classification **bug** / **behavior** / **limitation**, evidence, re-test loop, heuristic caveats), see the same file → **Audit interpretation and issue tracking**, and `python/rp_app/ARCHITECTURE.md` (Issue Tracking §A.1, §D).
+
 ## When to use this
 
 Use this workflow for:

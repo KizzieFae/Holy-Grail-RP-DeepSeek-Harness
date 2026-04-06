@@ -175,6 +175,7 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
             "narrator_output_audit_v1": {},
             "narrator_validation_audit_v1": {},
             "prose_dialogue_audit_v1": {},
+            "audit_v2_narrator": None,
         }
 
     def apply_successful_turn_updates_stub(**kwargs):
@@ -214,6 +215,7 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
         build_character_turn_prompt_fn=build_character_turn_prompt_fn,
         parse_character_move_fn=parse_character_move_fn,
         is_audit_enabled_fn=is_audit_enabled_fn,
+        is_llm_audit_enabled_fn=lambda: False,
         get_audit_logger_fn=get_audit_logger_fn,
         get_audit_context_fn=get_audit_context_fn,
         get_scene_audit_logging_kwargs_fn=get_scene_audit_logging_kwargs_fn,
