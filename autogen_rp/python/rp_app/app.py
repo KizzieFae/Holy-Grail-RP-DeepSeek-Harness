@@ -479,7 +479,7 @@ async def render_character_move(
     director_decision: dict[str, Any],
     cancellation_token,
     beat_shift_narrator_suffix: str = "",
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, bool]:
     return await turn_helpers.render_character_move(
         narrator=narrator,
         char_name=char_name,

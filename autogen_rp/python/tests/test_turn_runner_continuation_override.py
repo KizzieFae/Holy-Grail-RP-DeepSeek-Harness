@@ -136,7 +136,7 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
         return "", {}
 
     async def render_character_move_fn(**_kwargs):
-        return "", "", ""
+        return "", "", "", False
 
     def fallback_render_move_fn(*_args, **_kwargs) -> str:
         return ""
@@ -169,8 +169,12 @@ async def test_continuation_override_does_not_bypass_used_actor_restriction(
             "rendered": "",
             "narrator_raw": "",
             "narrator_prompt": "",
-            "narrator_summary_block_audit": None,
+            "narrator_summary_block_audit": {},
             "narrator_semantic_assessment": None,
+            "continuity_applied_in_execute": False,
+            "narrator_output_audit_v1": {},
+            "narrator_validation_audit_v1": {},
+            "prose_dialogue_audit_v1": {},
         }
 
     def apply_successful_turn_updates_stub(**kwargs):

@@ -419,7 +419,7 @@ async def test_execute_character_turn_smoke_uses_semantic_presence_override_and_
         return {"is_valid": True, "reason": "left side refers to an injury location"}
 
     async def fake_render_character_move(*_args, **_kwargs):
-        return ("Celina spoke for Kizzie.", "Celina spoke for Kizzie.", "prompt")
+        return ("Celina spoke for Kizzie.", "Celina spoke for Kizzie.", "prompt", False)
 
     async def fake_assess_narrator_render_semantics(**_kwargs):
         return {
@@ -500,6 +500,282 @@ async def test_execute_character_turn_smoke_uses_semantic_presence_override_and_
         for item in session_state["selector_decisions"]
     )
     assert failures == []
+    nv = result["narrator_validation_audit_v1"]
+    assert nv["derived"]["semantic_fallback_deterministic_critical"] is True
+    assert nv["derived"]["semantic_fallback_llm_requested"] is True
+    assert nv["derived"]["semantic_fallback_effective"] is True
+
+
+@pytest.mark.asyncio
+async def test_execute_character_turn_narrator_guardrail_without_llm_fallback_flag(
+    fake_streamlit: FakeStreamlit,
+) -> None:
+    session_state = init_fake_session(fake_streamlit)
+    move = {
+        "action": "held perfectly still",
+        "dialogue": "Hai.",
+        "motivation": {
+            "goal": "cooperate",
+            "tactic": "stay still",
+            "emotional_driver": "trust",
+            "risk_level": "low",
+        },
+    }
+    failures: list[str] = []
+
+    class FakeAgent:
+        async def on_messages(self, _messages, _cancellation_token):
+            return SimpleNamespace(
+                chat_message=SimpleNamespace(content=json.dumps(move))
+            )
+
+    async def fake_assess_presence_violation_semantics(**_kwargs):
+        return {"is_valid": True, "reason": "left side refers to an injury location"}
+
+    async def fake_render_character_move(*_args, **_kwargs):
+        return ("Celina spoke for Kizzie.", "Celina spoke for Kizzie.", "prompt", False)
+
+    async def fake_assess_narrator_render_semantics(**_kwargs):
+        return {
+            "valid": False,
+            "should_use_fallback": False,
+            "dialogue_preserved": True,
+            "stayed_in_scope": True,
+            "issues": ["scope"],
+        }
+
+    def fake_log_turn_failure(**kwargs) -> None:
+        failures.append(str(kwargs.get("reason", "")))
+
+    result = await execute_character_turn(
+        st_module=fake_streamlit,
+        agent=FakeAgent(),
+        narrator=object(),
+        next_actor="Kizzie",
+        char_names=["Celina", "Kizzie"],
+        decision={
+            "next_actor": "Kizzie",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        trigger_text="Celina reaches toward Kizzie's left side.",
+        user_name="Alex",
+        cancellation_token=object(),
+        round_number=1,
+        turn_number=1,
+        orchestration_state={"scene_state": {}},
+        actors_failed_this_round=[],
+        state_manager=None,
+        build_character_turn_prompt_fn=lambda *_args, **_kwargs: (
+            "prompt",
+            {"prompt_evaluations": 0},
+        ),
+        parse_character_move_fn=lambda _raw: (move, ""),
+        get_continuity_manager_fn=lambda: None,
+        is_audit_enabled_fn=lambda: False,
+        get_audit_logger_fn=lambda: None,
+        get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
+        get_scene_audit_logging_kwargs_fn=lambda _scene: {},
+        get_character_scene_audit_context_fn=lambda _name, _scene: {},
+        validate_bot_response_fn=lambda *_args, **_kwargs: (
+            False,
+            "[SCENE_PRESENCE] Move contradicts must_remain presence for Celina",
+        ),
+        get_model_client_fn=lambda: object(),
+        assess_presence_violation_semantics_fn=fake_assess_presence_violation_semantics,
+        should_override_presence_rejection_fn=lambda reason, assessment: bool(
+            reason.startswith("[SCENE_PRESENCE]")
+            and assessment
+            and assessment.get("is_valid")
+        ),
+        build_recent_scene_context_fn=lambda *_args, **_kwargs: (
+            "scene context",
+            {"prompt_evaluations": 0},
+        ),
+        render_character_move_fn=fake_render_character_move,
+        fallback_render_move_fn=lambda char_name, rendered_move, _decision: f'{char_name} {rendered_move["action"]}.\n\n"{rendered_move["dialogue"]}"',
+        assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
+        log_turn_failure_fn=fake_log_turn_failure,
+        get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
+    )
+
+    assert result is not None
+    assert result["rendered"] == 'Kizzie held perfectly still.\n\n"Hai."'
+    assert any(
+        "Narrator fallback render used for Kizzie" in item
+        for item in session_state["selector_decisions"]
+    )
+    nv = result["narrator_validation_audit_v1"]
+    assert nv["derived"]["semantic_fallback_deterministic_critical"] is True
+    assert nv["derived"]["semantic_fallback_llm_requested"] is False
+    assert nv["derived"]["semantic_fallback_effective"] is True
+    assert failures == []
+
+
+@pytest.mark.asyncio
+async def test_execute_character_turn_no_narrator_fallback_when_semantics_clean(
+    fake_streamlit: FakeStreamlit,
+) -> None:
+    session_state = init_fake_session(fake_streamlit)
+    move = {
+        "action": "nods once",
+        "dialogue": "Ok.",
+        "motivation": {"goal": "x", "tactic": "y"},
+    }
+
+    class FakeAgent:
+        async def on_messages(self, _messages, _cancellation_token):
+            return SimpleNamespace(
+                chat_message=SimpleNamespace(content=json.dumps(move))
+            )
+
+    async def fake_render_character_move(*_args, **_kwargs):
+        return ("MODEL_RENDERED", "RAW", "prompt", False)
+
+    async def fake_assess_narrator_render_semantics(**_kwargs):
+        return {
+            "valid": True,
+            "should_use_fallback": False,
+            "issues": [],
+        }
+
+    result = await execute_character_turn(
+        st_module=fake_streamlit,
+        agent=FakeAgent(),
+        narrator=object(),
+        next_actor="Celina",
+        char_names=["Celina"],
+        decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        trigger_text="test",
+        user_name="Alex",
+        cancellation_token=object(),
+        round_number=1,
+        turn_number=1,
+        orchestration_state={"scene_state": {}},
+        actors_failed_this_round=[],
+        state_manager=None,
+        build_character_turn_prompt_fn=lambda *_args, **_kwargs: (
+            "prompt",
+            {"prompt_evaluations": 0},
+        ),
+        parse_character_move_fn=lambda _raw: (move, ""),
+        get_continuity_manager_fn=lambda: None,
+        is_audit_enabled_fn=lambda: False,
+        get_audit_logger_fn=lambda: None,
+        get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
+        get_scene_audit_logging_kwargs_fn=lambda _scene: {},
+        get_character_scene_audit_context_fn=lambda _name, _scene: {},
+        validate_bot_response_fn=lambda *_args, **_kwargs: (True, ""),
+        get_model_client_fn=lambda: object(),
+        assess_presence_violation_semantics_fn=lambda **_kwargs: None,
+        should_override_presence_rejection_fn=lambda *_args, **_kwargs: False,
+        build_recent_scene_context_fn=lambda *_args, **_kwargs: (
+            "scene context",
+            {"prompt_evaluations": 0},
+        ),
+        render_character_move_fn=fake_render_character_move,
+        fallback_render_move_fn=lambda *_args, **_kwargs: "FALLBACK_TEMPLATE",
+        assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
+        log_turn_failure_fn=lambda **_kwargs: None,
+        get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
+    )
+
+    assert result is not None
+    assert result["rendered"] == "MODEL_RENDERED"
+    assert not any(
+        "Narrator fallback render used for Celina" in item
+        for item in session_state["selector_decisions"]
+    )
+    nv = result["narrator_validation_audit_v1"]
+    assert nv["derived"]["semantic_fallback_effective"] is False
+
+
+@pytest.mark.asyncio
+async def test_execute_character_turn_string_should_use_fallback_does_not_trigger(
+    fake_streamlit: FakeStreamlit,
+) -> None:
+    session_state = init_fake_session(fake_streamlit)
+    move = {
+        "action": "nods once",
+        "dialogue": "Ok.",
+        "motivation": {"goal": "x", "tactic": "y"},
+    }
+
+    class FakeAgent:
+        async def on_messages(self, _messages, _cancellation_token):
+            return SimpleNamespace(
+                chat_message=SimpleNamespace(content=json.dumps(move))
+            )
+
+    async def fake_render_character_move(*_args, **_kwargs):
+        return ("MODEL_RENDERED", "RAW", "prompt", False)
+
+    async def fake_assess_narrator_render_semantics(**_kwargs):
+        return {
+            "valid": True,
+            "should_use_fallback": "false",
+            "issues": [],
+        }
+
+    result = await execute_character_turn(
+        st_module=fake_streamlit,
+        agent=FakeAgent(),
+        narrator=object(),
+        next_actor="Celina",
+        char_names=["Celina"],
+        decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        trigger_text="test",
+        user_name="Alex",
+        cancellation_token=object(),
+        round_number=1,
+        turn_number=1,
+        orchestration_state={"scene_state": {}},
+        actors_failed_this_round=[],
+        state_manager=None,
+        build_character_turn_prompt_fn=lambda *_args, **_kwargs: (
+            "prompt",
+            {"prompt_evaluations": 0},
+        ),
+        parse_character_move_fn=lambda _raw: (move, ""),
+        get_continuity_manager_fn=lambda: None,
+        is_audit_enabled_fn=lambda: False,
+        get_audit_logger_fn=lambda: None,
+        get_audit_context_fn=lambda: ("Ayame", 1, 1, 1),
+        get_scene_audit_logging_kwargs_fn=lambda _scene: {},
+        get_character_scene_audit_context_fn=lambda _name, _scene: {},
+        validate_bot_response_fn=lambda *_args, **_kwargs: (True, ""),
+        get_model_client_fn=lambda: object(),
+        assess_presence_violation_semantics_fn=lambda **_kwargs: None,
+        should_override_presence_rejection_fn=lambda *_args, **_kwargs: False,
+        build_recent_scene_context_fn=lambda *_args, **_kwargs: (
+            "scene context",
+            {"prompt_evaluations": 0},
+        ),
+        render_character_move_fn=fake_render_character_move,
+        fallback_render_move_fn=lambda *_args, **_kwargs: "FALLBACK_TEMPLATE",
+        assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
+        log_turn_failure_fn=lambda **_kwargs: None,
+        get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
+    )
+
+    assert result is not None
+    assert result["rendered"] == "MODEL_RENDERED"
+    nv = result["narrator_validation_audit_v1"]
+    assert nv["derived"]["semantic_fallback_llm_requested"] is False
 
 
 @pytest.mark.asyncio
@@ -535,7 +811,7 @@ async def test_execute_character_turn_retries_once_on_duplicate_and_succeeds(
     async def fake_render_character_move(*_args, **_kwargs):
         move = _args[2]
         rendered = f'Celina {move["action"]}.\n\n"{move["dialogue"]}"'
-        return (rendered, rendered, "prompt")
+        return (rendered, rendered, "prompt", False)
 
     async def fake_assess_narrator_render_semantics(**_kwargs):
         return {"valid": True, "should_use_fallback": False, "issues": []}
@@ -634,7 +910,7 @@ async def test_execute_character_turn_logs_retry_lineage_in_character_audit_meta
     async def fake_render_character_move(*_args, **_kwargs):
         move = _args[2]
         rendered = f'Celina {move["action"]}.\n\n"{move["dialogue"]}"'
-        return (rendered, rendered, "prompt")
+        return (rendered, rendered, "prompt", False)
 
     async def fake_assess_narrator_render_semantics(**_kwargs):
         return {"valid": True, "should_use_fallback": False, "issues": []}

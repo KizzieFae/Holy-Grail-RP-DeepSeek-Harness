@@ -263,6 +263,9 @@ def log_narrator_render_audit(
     narrator_prompt: str,
     narrator_summary_block_audit: dict[str, Any],
     narrator_semantic_assessment: dict[str, Any] | None,
+    narrator_output_audit_v1: dict[str, Any],
+    narrator_validation_audit_v1: dict[str, Any],
+    prose_dialogue_audit_v1: dict[str, Any],
     round_number: int,
     turn_number: int,
     progression_advisory: dict[str, Any] | None = None,
@@ -319,6 +322,8 @@ def log_narrator_render_audit(
                 "scene_state_after": scene_state_after,
                 **actor_scene_context,
             },
+            # Narrator audit v1 layers are additive, non-mutating, and must remain
+            # separate from semantic_validation (distinct metadata keys).
             metadata=_merge_character_audit_metadata(
                 base={
                     "rendered_length": len(rendered),
@@ -328,6 +333,9 @@ def log_narrator_render_audit(
                     "consequences": consequences,
                     "summary_blocks": narrator_summary_block_audit,
                     "semantic_validation": narrator_semantic_assessment or {},
+                    "narrator_output_audit_v1": narrator_output_audit_v1,
+                    "narrator_validation_audit_v1": narrator_validation_audit_v1,
+                    "prose_dialogue_audit_v1": prose_dialogue_audit_v1,
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,

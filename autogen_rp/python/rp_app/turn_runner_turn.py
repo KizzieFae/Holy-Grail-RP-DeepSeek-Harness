@@ -12,6 +12,12 @@ from progression_enforcement import (
     qualifies_as_progression_delta,
 )
 from progression_run_metrics import maybe_record_sim_progression_metric
+from narrator_audits_v1 import (
+    build_narrator_output_audit_v1,
+    build_narrator_validation_audit_v1,
+    build_prose_dialogue_audit_v1,
+    prior_assistant_rendered_content,
+)
 from turn_runner_audit import log_character_turn_audit
 from perception_audibility import normalize_move_audibility
 
@@ -432,7 +438,12 @@ async def execute_character_turn(
         beat_shift_narrator_suffix = build_narrator_beat_shift_suffix()
 
     try:
-        rendered, narrator_raw, narrator_prompt = await render_character_move_fn(
+        (
+            rendered,
+            narrator_raw,
+            narrator_prompt,
+            deterministic_dialogue_fallback_applied,
+        ) = await render_character_move_fn(
             narrator,
             next_actor,
             move,
@@ -441,6 +452,7 @@ async def execute_character_turn(
             cancellation_token,
             beat_shift_narrator_suffix=beat_shift_narrator_suffix,
         )
+        rendered_after_render_call = rendered
     except Exception as exc:
         if continuity_applied_in_execute and continuity_transaction_snapshot is not None:
             st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(
@@ -479,13 +491,63 @@ async def execute_character_turn(
         scene_context=scene_context,
         cancellation_token=cancellation_token,
     )
-    if narrator_semantic_assessment is not None and narrator_semantic_assessment.get(
-        "should_use_fallback"
-    ):
+    if narrator_semantic_assessment is None:
+        use_narrator_semantic_fallback = False
+        semantic_fallback_llm_requested = False
+        semantic_fallback_deterministic_critical = False
+    else:
+        a = narrator_semantic_assessment
+        parse_error_nonempty = (str(a.get("parse_error", "") or "").strip() != "")
+        valid = bool(a.get("valid", True))
+        dialogue_preserved = bool(a.get("dialogue_preserved", True))
+        stayed_in_scope = bool(a.get("stayed_in_scope", True))
+        deterministic_critical = (
+            parse_error_nonempty
+            or (not valid)
+            or (not dialogue_preserved)
+            or (not stayed_in_scope)
+        )
+        llm_wants_fallback = a.get("should_use_fallback") is True
+        use_narrator_semantic_fallback = deterministic_critical or llm_wants_fallback
+        semantic_fallback_llm_requested = llm_wants_fallback
+        semantic_fallback_deterministic_critical = deterministic_critical
+
+    if use_narrator_semantic_fallback:
         rendered = fallback_render_move_fn(next_actor, move, decision)
         st_module.session_state["selector_decisions"].append(
             f"Narrator fallback render used for {next_actor} after semantic review."
         )
+
+    rendered_final = rendered
+    acting_display = get_character_display_name_fn(next_actor)
+    prior_rendered = prior_assistant_rendered_content(
+        st_module.session_state["chat_history"]
+    )
+    narrator_output_audit_v1 = build_narrator_output_audit_v1(
+        next_actor=next_actor,
+        move=move,
+        decision=decision,
+        rendered_final=rendered_final,
+        char_names=char_names,
+        acting_display_name=acting_display,
+    )
+    narrator_validation_audit_v1 = build_narrator_validation_audit_v1(
+        narrator_raw=narrator_raw,
+        rendered_after_render_call=rendered_after_render_call,
+        rendered_final=rendered_final,
+        deterministic_dialogue_fallback_applied=deterministic_dialogue_fallback_applied,
+        narrator_semantic_assessment=narrator_semantic_assessment,
+        semantic_fallback_effective=use_narrator_semantic_fallback,
+        semantic_fallback_llm_requested=semantic_fallback_llm_requested,
+        semantic_fallback_deterministic_critical=semantic_fallback_deterministic_critical,
+    )
+    prose_dialogue_audit_v1 = build_prose_dialogue_audit_v1(
+        next_actor=next_actor,
+        move=move,
+        rendered_final=rendered_final,
+        prior_assistant_content=prior_rendered,
+        acting_display_name=acting_display,
+    )
 
     try:
         st_module.session_state["chat_history"].append(
@@ -528,4 +590,7 @@ async def execute_character_turn(
         "narrator_summary_block_audit": narrator_summary_block_audit,
         "narrator_semantic_assessment": narrator_semantic_assessment,
         "continuity_applied_in_execute": continuity_applied_in_execute,
+        "narrator_output_audit_v1": narrator_output_audit_v1,
+        "narrator_validation_audit_v1": narrator_validation_audit_v1,
+        "prose_dialogue_audit_v1": prose_dialogue_audit_v1,
     }

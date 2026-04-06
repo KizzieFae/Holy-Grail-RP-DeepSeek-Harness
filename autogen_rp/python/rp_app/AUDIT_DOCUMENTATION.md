@@ -416,6 +416,27 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 4. Review render prompt and rules given
 5. If scene templates are active, confirm the acting character's role metadata is present in the narrator audit
 
+### Narrator Audit v1 (per-turn metadata)
+
+Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may include **three advisory or observational layers** under `metadata`, **alongside** the existing `semantic_validation` block. They are **separate keys** and must not be confused with runtime validation:
+
+| Key | Role |
+|-----|------|
+| `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue, single-actor scope proxies. |
+| `narrator_validation_audit_v1` | Observational: captures raw render path, deterministic fallback flag, semantic validator payload, and **derived** flags (`fallback_triggered`, `output_replaced`, etc.). Does **not** re-run validation. |
+| `prose_dialogue_audit_v1` | Heuristic advisory: readability/redundancy/dialogue/attribution/tone proxies. |
+
+**Non-mutating:** These blobs are computed for logging only. They do **not** change narrator output, fallbacks, or continuity.
+
+**v1 limitations (read audits with these in mind):**
+
+- **Output and prose layers are heuristic-only** (no LLM scoring in v1); false positives/negatives are expected.
+- **No narrator audit row** (and thus no v1 blobs) when `log_narrator_render_audit` early-returns because `narrator_raw` is falsy or audits are disabled—same guard as before v1.
+- **Single-actor scope** uses **substring** matching of other cast names in the final render; legitimate mentions can flag.
+- **Redundancy** compares against the **prior assistant** message only (last assistant `content` in `chat_history` before the current append), not a long window.
+
+**Scope:** Per-turn narrator renders only; scene-opening narrator calls are **not** covered by v1.
+
 ### Debug Summary Retrieval and Prompt Compression
 1. Open `_audit_summary.json`
 2. Review `summary_block_visibility`

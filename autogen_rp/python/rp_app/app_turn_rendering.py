@@ -35,7 +35,7 @@ async def render_character_move(
     build_narrator_render_prompt_fn,
     fallback_render_move_fn,
     beat_shift_narrator_suffix: str = "",
-) -> tuple[str, str, str]:
+) -> tuple[str, str, str, bool]:
     action = move.get("action", "")
     dialogue = move.get("dialogue", "")
     environment_event = director_decision.get("environment_event", "")
@@ -57,6 +57,6 @@ async def render_character_move(
 
     if dialogue and f'"{dialogue}"' not in rendered:
         fallback = fallback_render_move_fn(char_name, move, director_decision)
-        return fallback, raw_response, render_prompt
+        return fallback, raw_response, render_prompt, True
 
-    return rendered, raw_response, render_prompt
+    return rendered, raw_response, render_prompt, False

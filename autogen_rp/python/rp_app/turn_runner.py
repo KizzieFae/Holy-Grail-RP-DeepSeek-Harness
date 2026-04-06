@@ -48,7 +48,7 @@ async def run_character_turns(
     build_recent_scene_context_fn: Callable[
         [list[dict[str, Any]], dict[str, Any]], tuple[str, dict[str, Any]]
     ],
-    render_character_move_fn: Callable[..., Awaitable[tuple[str, str, str]]],
+    render_character_move_fn: Callable[..., Awaitable[tuple[str, str, str, bool]]],
     fallback_render_move_fn: Callable[[str, dict[str, Any], dict[str, Any]], str],
     assess_narrator_render_semantics_fn: Callable[
         ..., Awaitable[dict[str, Any] | None]
@@ -286,6 +286,9 @@ async def run_character_turns(
                 narrator_semantic_assessment = turn_result.get(
                     "narrator_semantic_assessment"
                 )
+                narrator_output_audit_v1 = turn_result["narrator_output_audit_v1"]
+                narrator_validation_audit_v1 = turn_result["narrator_validation_audit_v1"]
+                prose_dialogue_audit_v1 = turn_result["prose_dialogue_audit_v1"]
                 skip_continuity_process_turn = bool(
                     turn_result.get("continuity_applied_in_execute", False)
                 )
@@ -304,6 +307,9 @@ async def run_character_turns(
                     narrator_prompt=narrator_prompt,
                     narrator_summary_block_audit=narrator_summary_block_audit,
                     narrator_semantic_assessment=narrator_semantic_assessment,
+                    narrator_output_audit_v1=narrator_output_audit_v1,
+                    narrator_validation_audit_v1=narrator_validation_audit_v1,
+                    prose_dialogue_audit_v1=prose_dialogue_audit_v1,
                     round_number=round_number,
                     turn_number=turn_number,
                     state_manager=state_manager,

@@ -390,7 +390,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         cancellation_token: Any,
         *,
         beat_shift_narrator_suffix: str = "",
-    ) -> tuple[str, str, str]:
+    ) -> tuple[str, str, str, bool]:
         return await turn_helpers.render_character_move(
             narrator=narrator,
             char_name=char_name,
