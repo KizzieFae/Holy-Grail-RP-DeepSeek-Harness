@@ -18,6 +18,10 @@ This allows for:
 - State-change and consequence tracking
 - Summary-block visibility and retrieval analysis
 
+### Layers of truth in audits
+
+Audit artifacts observe **different layers**: per-bot prompts and **parsed** model outputs; **continuity commits** and **`_narrative.json`** (orchestration-enriched trace); Director **decision** JSON; Narrator render path. Do not treat the **character’s parsed move** as the full source of structured scene truth. Fields such as **`issue_updates`**, scene-level **`tension_shift`**, and **`consequences`** in the **session narrative** reflect **continuity classification and orchestration history**, not a requirement that the character model emit them on every move.
+
 ### Progression advisory (MVP) in audits
 
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), template-sourced **`recommended_channels`**, human-readable **`note`**, **`stall_components`** (booleans: same phase, high tension, issue stability, exact structural repetition), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
@@ -341,6 +345,8 @@ for that turn.
    - Which issues moved (`issue_updates`)
    - Final rendered output (`rendered_output`)
 
+Turn rows in **`_narrative.json`** aggregate **post-commit** continuity and orchestration fields; they are **not** a spec for mandatory fields on the raw **`{character}_full.json`** `parsed_output` move.
+
 `character_dialogue` here is the **acting character’s full structured `dialogue`** for that beat (canonical story trace). It is **not** a per-viewer view: other characters’ prompts may omit or stub private/directed lines. For perception audits, open each subject’s `{character}_full.json` and compare `input_messages` on the same round/turn, and/or the parsed `move`’s `audibility` / `audience` in ground-truth artifacts.
 
 ### Audit Continuity and State Transitions
@@ -416,6 +422,26 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 4. Review render prompt and rules given
 5. If scene templates are active, confirm the acting character's role metadata is present in the narrator audit
 
+### Character Audit v1 (`metadata.character_audit_v1`)
+
+**Scope:** Advisory, deterministic, **no LLM**. Built from the **validated parsed character move**, the **Director decision**, orchestration snapshots (`recent_structured_moves` tail, optional `continuity_active_issues`), and continuity-backed digests when `continuity_scope` is `continuity_enabled`. **Not** a verdict on continuity correctness.
+
+**What v1 evaluates:** Heuristic dimensions under `derived`: motivation↔action overlap (`motivation_action_alignment`), dialogue↔action token overlap (`dialogue_action_consistency`), issue engagement proxy (`issue_engagement`), self-repetition vs prior structured moves (`repetition_vs_prior_self`), cast-vs-present substring flags (`scene_plausibility_flags`), Director tension/environment (`pressure_director`), and move-emitted pressure fields if present (`pressure_move`).
+
+**CA3 (`issue_engagement`) and CA7 (`pressure_move`):** These read **`issue_updates` / `tension_shift` / `consequences` only if present on the parsed move.** The runtime does **not** require the character contract to emit those. Absence or classifications such as `possibly_passive` or `none` therefore indicate an **observability / contract mismatch for this check**, not by itself **character-agent failure**. Prefer **`_narrative.json`**, Director audits, and continuity signals for whether pressure actually moved.
+
+**Known limitations (v1):**
+
+- **CA1 / CA2** — Token overlap only; metaphor, subtext, and reported speech are not modeled (lexical noise; false weak or “disconnected” bands).
+- **CA3 / CA7** — As above; do not infer engagement or pressure from missing move fields alone.
+- **CA5 (`scene_plausibility_flags`)** — Name vs `present_characters` matching is imperfect (display vs internal ids); **informational only**, not a correctness signal.
+- **`continuity_scope: orchestration_only`** — Used when the continuity manager is absent on the path that still logs character audit; **rare in normal Streamlit**; less exercised than `continuity_enabled` in typical `--audit` runs (see **Validation (tests)** below for CI coverage).
+
+**Validation (tests):**
+
+- **`orchestration_only` wiring** (`turn_runner_turn` → `build_character_audit_v1` → `log_character_turn_audit`): `tests/test_rp_app_smoke_flows.py::test_execute_character_turn_character_audit_v1_orchestration_only_logged` (no continuity manager; asserts `metadata.character_audit_v1.observed.continuity_scope` and `scene_state_pre_source` on a captured audit entry).
+- **`repetition_vs_prior_self` (CA4):** `tests/test_character_audits_v1.py` (`test_ca4_repetition_no_prior_same_speaker`, `test_ca4_repetition_prior_same_speaker_dissimilar_wording`, `test_ca4_repetition_high_similarity_identical_action_dialogue`) use synthetic `orchestration_state.recent_structured_moves`. Short LLM `--audit` runs may still show `prior_turns_compared: 0` when same-speaker structured history is thin — that reflects run length / cast rotation, not necessarily a bug.
+
 ### Narrator Audit v1 (per-turn metadata)
 
 Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may include **three advisory or observational layers** under `metadata`, **alongside** the existing `semantic_validation` block. They are **separate keys** and must not be confused with runtime validation:
@@ -432,7 +458,8 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 
 - **Output and prose layers are heuristic-only** (no LLM scoring in v1); false positives/negatives are expected.
 - **No narrator audit row** (and thus no v1 blobs) when `log_narrator_render_audit` early-returns because `narrator_raw` is falsy or audits are disabled—same guard as before v1.
-- **Single-actor scope** uses **substring** matching of other cast names in the final render; legitimate mentions can flag.
+- **Single-actor scope** (`narrator_output_audit_v1`) uses **substring** matching of other cast names in the final render; legitimate mentions can flag — **heuristic limit**, not proof of narrator failure.
+- **`prose_dialogue_audit_v1` → `attribution_proxy`:** Pronoun-only or implicit attribution can yield **false negatives** (`passes_bar`); see the `limitations` string in the logged blob.
 - **Redundancy** compares against the **prior assistant** message only (last assistant `content` in `chat_history` before the current append), not a long window.
 
 **Scope:** Per-turn narrator renders only; scene-opening narrator calls are **not** covered by v1.

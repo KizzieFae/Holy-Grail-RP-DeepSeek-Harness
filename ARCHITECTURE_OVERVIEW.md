@@ -43,6 +43,8 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
 | Authoritative scene/issue/knowledge-boundary state | RP runtime (continuity engine today) |
 | Settled-scene **prompt projection** (facts/locks, read-only, derived from continuity) | RP runtime → prompts (Scene Grounding MVP — [spec](./autogen_rp/docs/scene-grounding-layer.md)) |
 
+**Turn-time roles (truth vs voice):** **Character** emits the **contractual** structured move (e.g. action, dialogue, motivation; optional perception fields). **Director** owns **turn selection** and **decision** fields such as **`tension_shift`** / **`environment_event`** in its JSON. **Continuity** owns **authoritative** issue lifecycle, state changes, and classification that feed **`_narrative.json`** and summaries. **Orchestration** merges **enriched** structured history (e.g. for prompts and tails). **Narrator** owns **rendering** only. Do not assign continuity outcomes to the character layer **solely** because a heuristic audit read an empty field on the **raw move** (see `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` — Character Audit v1).
+
 PRD alignment: vector retrieval is for **similarity and suggestions**, not authoritative truth ([Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §7).
 
 ---

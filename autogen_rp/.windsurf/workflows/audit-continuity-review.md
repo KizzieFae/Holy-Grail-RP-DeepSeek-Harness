@@ -45,6 +45,8 @@ From the audit files, explicitly evaluate:
 - whether `presence_changes` and scene presence state reflect exits, entries, and absences correctly
 - whether `summary_block_visibility` / `summary_block_quality` suggest prompt compression is helping or hiding important context
 
+**Character Audit v1 vs narrative:** `metadata.character_audit_v1` dimensions such as **`issue_engagement`** and **`pressure_move`** key off **parsed move** fields that are **not contractually required**. A “passive” or “none” classification there is an **observability signal** for the audit heuristic, not automatic evidence of character negligence if **`_narrative.json`** and Director artifacts show normal pressure movement. See `python/rp_app/AUDIT_DOCUMENTATION.md` (*Character Audit v1*).
+
 ### Offstage / membership / eligibility / perceptual scope (checklist)
 
 Treat **`present_characters` as cast membership** for orchestration, not literal sensory co-presence. **On-stage** for a beat means present and **not** listed in **`offstage_characters`**.

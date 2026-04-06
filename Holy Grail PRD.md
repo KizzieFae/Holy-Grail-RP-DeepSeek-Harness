@@ -210,7 +210,7 @@ Supports:
 
 ### 5.6 Audit System
 
-Logs:
+Logs (recorded **per layer** — e.g. continuity-enriched narrative vs per-bot prompts and parsed output):
 - turn selection
 - validation events
 - state updates
@@ -220,6 +220,8 @@ Purpose:
 - debugging architecture
 - regression tracking
 - system calibration
+
+Audits **observe** behavior at **multiple layers**; **structured authoritative state** lives in the **continuity/orchestration** path, not solely in the character’s parsed JSON. Heuristic audit dimensions (e.g. Character Audit v1 in `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`) are **advisory** and may flag **observability gaps** where a check expects fields the contract does not require.
 
 ---
 

@@ -114,6 +114,8 @@ Characters now return:
 
 Optional fields **`audibility`** (`public` \| `directed` \| `private`) and **`audience`** (names, for non-public) are parsed from character JSON when present, then **normalized** in `perception_audibility.py` (including deterministic whisper-style heuristics on structured `action`/`dialogue` only). **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what.
 
+The JSON above is the **stable** self-only core. The pipeline may accept **additional** optional keys; **issue pressure and consequence structure** for the scene are **primarily** produced by **continuity** and reflected in **narrative/orchestration** artifacts. Missing optional keys on the move must **not** be read as “no story pressure changed.”
+
 ### 3. Director Agent
 
 Director receives structured orchestration inputs and returns:

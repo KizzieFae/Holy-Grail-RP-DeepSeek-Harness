@@ -699,6 +699,103 @@ async def test_execute_character_turn_no_narrator_fallback_when_semantics_clean(
 
 
 @pytest.mark.asyncio
+async def test_execute_character_turn_character_audit_v1_orchestration_only_logged(
+    fake_streamlit: FakeStreamlit,
+) -> None:
+    """No continuity manager → turn_runner_turn else branch → orchestration_only audit blob in metadata."""
+    init_fake_session(fake_streamlit)
+    audit_entries: list[dict[str, object]] = []
+    move = {
+        "action": "nods once",
+        "dialogue": "Ok.",
+        "motivation": {"goal": "x", "tactic": "y"},
+    }
+
+    class FakeAgent:
+        async def on_messages(self, _messages, _cancellation_token):
+            return SimpleNamespace(
+                chat_message=SimpleNamespace(content=json.dumps(move))
+            )
+
+    class CapturingAuditLogger:
+        def create_entry(self, **kwargs):
+            return kwargs
+
+        def log_bot_interaction(self, entry):
+            audit_entries.append(entry)
+
+    async def fake_render_character_move(*_args, **_kwargs):
+        return ("MODEL_RENDERED", "RAW", "prompt", False)
+
+    async def fake_assess_narrator_render_semantics(**_kwargs):
+        return {
+            "valid": True,
+            "should_use_fallback": False,
+            "issues": [],
+        }
+
+    result = await execute_character_turn(
+        st_module=fake_streamlit,
+        agent=FakeAgent(),
+        narrator=object(),
+        next_actor="Celina",
+        char_names=["Celina"],
+        decision={
+            "next_actor": "Celina",
+            "environment_event": "",
+            "tension_shift": "",
+            "reason": "test",
+        },
+        trigger_text="test",
+        user_name="Alex",
+        cancellation_token=object(),
+        round_number=1,
+        turn_number=1,
+        orchestration_state={"scene_state": {}},
+        actors_failed_this_round=[],
+        state_manager=None,
+        build_character_turn_prompt_fn=lambda *_args, **_kwargs: (
+            "prompt",
+            {"prompt_evaluations": 0},
+        ),
+        parse_character_move_fn=lambda _raw: (move, ""),
+        get_continuity_manager_fn=lambda: None,
+        is_audit_enabled_fn=lambda: True,
+        get_audit_logger_fn=lambda: CapturingAuditLogger(),
+        get_audit_context_fn=lambda: ("Owner", 1, 1, 1),
+        get_scene_audit_logging_kwargs_fn=lambda _scene: {},
+        get_character_scene_audit_context_fn=lambda _name, _scene: {},
+        validate_bot_response_fn=lambda *_args, **_kwargs: (True, ""),
+        get_model_client_fn=lambda: object(),
+        assess_presence_violation_semantics_fn=lambda **_kwargs: None,
+        should_override_presence_rejection_fn=lambda *_args, **_kwargs: False,
+        build_recent_scene_context_fn=lambda *_args, **_kwargs: (
+            "scene context",
+            {"prompt_evaluations": 0},
+        ),
+        render_character_move_fn=fake_render_character_move,
+        fallback_render_move_fn=lambda *_args, **_kwargs: "FALLBACK_TEMPLATE",
+        assess_narrator_render_semantics_fn=fake_assess_narrator_render_semantics,
+        log_turn_failure_fn=lambda **_kwargs: None,
+        get_character_display_name_fn=lambda name: name,
+        sync_orchestration_state_from_continuity_fn=lambda: None,
+    )
+
+    assert result is not None
+    assert len(audit_entries) == 1
+    entry = audit_entries[0]
+    metadata = entry["metadata"]
+    assert "character_audit_v1" in metadata
+    audit_v1 = metadata["character_audit_v1"]
+    assert isinstance(audit_v1, dict)
+    assert audit_v1["observed"]["continuity_scope"] == "orchestration_only"
+    assert (
+        audit_v1["observed"]["scene_state_pre_source"]
+        == "orchestration_state.scene_state_allowlist"
+    )
+
+
+@pytest.mark.asyncio
 async def test_execute_character_turn_string_should_use_fallback_does_not_trigger(
     fake_streamlit: FakeStreamlit,
 ) -> None:
