@@ -18,6 +18,19 @@ _GEOMETRY_TURN_VERB = re.compile(r"\bturn(?:ed|s|ing)?\b", re.IGNORECASE)
 # REFUSAL legacy: standalone words only (avoids "nothing", "notice", "know", "snow", etc.).
 _REFUSAL_LEGACY_NO_OR_NOT_WORD = re.compile(r"\b(?:no|not)\b", re.IGNORECASE)
 
+# ACCESS_GRANTED: "can" must not match inside "can't" (ASCII or Unicode apostrophe).
+_ACCESS_GRANTED_CAN_WORD = re.compile(
+    r"\bcan\b(?!['\u2019]t\b)",
+    re.IGNORECASE,
+)
+# AGREEMENT: whole-word only (avoids yes/yesterday, agree/disagree, fine/refine).
+_AGREEMENT_BOUNDARY_WORDS = re.compile(
+    r"\b(?:yes|agree|fine|alright)\b",
+    re.IGNORECASE,
+)
+# COMMITMENT: "will" must not match inside compounds like "goodwill".
+_COMMITMENT_WILL_WORD = re.compile(r"\bwill\b", re.IGNORECASE)
+
 try:
     from continuity_resolved_outcomes import extract_sleeping_surface_candidates
 except ImportError:
@@ -788,8 +801,8 @@ class ConsequenceClassifier:
                 )
 
         # AGREEMENT: comply intent + explicit acceptance language
-        if intent["comply"] and any(
-            acc in dialogue for acc in ["yes", "agree", "accept", "fine", "alright"]
+        if intent["comply"] and (
+            _AGREEMENT_BOUNDARY_WORDS.search(dialogue) or "accept" in dialogue
         ):
             results.append(
                 DetectedConsequence(
@@ -801,8 +814,9 @@ class ConsequenceClassifier:
             )
 
         # COMMITMENT: control intent + future-oriented language
-        if intent["control"] and any(
-            com in dialogue for com in ["will", "promise", "commit", "shall"]
+        if intent["control"] and (
+            _COMMITMENT_WILL_WORD.search(dialogue)
+            or any(com in dialogue for com in ["promise", "commit", "shall"])
         ):
             results.append(
                 DetectedConsequence(
@@ -826,11 +840,19 @@ class ConsequenceClassifier:
         """Detect access granted/denied patterns."""
         results = []
 
+        # Same phrases for denied and for suppressing false "enter" grant evidence.
+        access_denial_markers = (
+            "can't",
+            "can\u2019t",
+            "cannot",
+            "not allowed",
+            "stay out",
+            "no access",
+        )
+        denial_in_dialogue = any(m in dialogue for m in access_denial_markers)
+
         # ACCESS_DENIED: control/resist intent + blocking language
-        if (intent["control"] or intent["resist"]) and any(
-            block in dialogue
-            for block in ["can't", "cannot", "not allowed", "stay out", "no access"]
-        ):
+        if (intent["control"] or intent["resist"]) and denial_in_dialogue:
             results.append(
                 DetectedConsequence(
                     category=ConsequenceCategory.ACCESS_DENIED,
@@ -841,9 +863,14 @@ class ConsequenceClassifier:
             )
 
         # ACCESS_GRANTED: control/comply intent + permission language
-        if (intent["control"] or intent["comply"]) and any(
-            allow in dialogue
-            for allow in ["can", "allowed", "permission", "go ahead", "enter"]
+        enter_grant_evidence = "enter" in dialogue and not denial_in_dialogue
+        if (intent["control"] or intent["comply"]) and (
+            _ACCESS_GRANTED_CAN_WORD.search(dialogue)
+            or any(
+                allow in dialogue
+                for allow in ["allowed", "permission", "go ahead"]
+            )
+            or enter_grant_evidence
         ):
             results.append(
                 DetectedConsequence(

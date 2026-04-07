@@ -294,6 +294,132 @@ class TestMultiTagAndDedupe:
         assert refusal_count <= 1
 
 
+def _move_comply_dialogue(dialogue: str) -> dict:
+    """Comply intent via goal/tactic seeds (AGREEMENT / ACCESS_GRANTED positive paths)."""
+    return {
+        "action": "nods slightly.",
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": "accept the arrangement",
+            "tactic": "follow through calmly",
+            "emotional_driver": "neutral",
+            "risk_level": "low",
+        },
+    }
+
+
+def _move_control_dialogue(dialogue: str) -> dict:
+    """Control intent for COMMITMENT paths."""
+    return {
+        "action": "holds eye contact.",
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": "maintain control of the situation",
+            "tactic": "assert presence without yielding",
+            "emotional_driver": "firm",
+            "risk_level": "medium",
+        },
+    }
+
+
+def _move_cooperate_access_dialogue(dialogue: str) -> dict:
+    """Comply intent suitable for ACCESS_GRANTED (cooperate / allow)."""
+    return {
+        "action": "steps aside at the threshold.",
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": "cooperate with security protocol",
+            "tactic": "allow entry when cleared",
+            "emotional_driver": "neutral",
+            "risk_level": "low",
+        },
+    }
+
+
+class TestSubstringCollisionGuards:
+    """Word-boundary fixes: can/can't, agreement tokens, will/goodwill."""
+
+    def test_access_granted_false_positive_cant_enter_ascii_apostrophe(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_cooperate_access_dialogue("You can't enter."))
+        assert ConsequenceCategory.ACCESS_GRANTED.value not in cats
+
+    def test_access_granted_false_positive_cant_enter_unicode_apostrophe(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_cooperate_access_dialogue("You can\u2019t enter."))
+        assert ConsequenceCategory.ACCESS_GRANTED.value not in cats
+
+    def test_agreement_false_positive_yesterday(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("That was yesterday."))
+        assert ConsequenceCategory.AGREEMENT.value not in cats
+
+    def test_agreement_false_positive_disagree(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("I disagree."))
+        assert ConsequenceCategory.AGREEMENT.value not in cats
+
+    def test_agreement_false_positive_refine(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("We should refine the plan."))
+        assert ConsequenceCategory.AGREEMENT.value not in cats
+
+    def test_commitment_false_positive_goodwill(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_control_dialogue("This is pure goodwill."))
+        assert ConsequenceCategory.COMMITMENT.value not in cats
+
+    def test_access_granted_true_positive_can_enter(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_cooperate_access_dialogue("You can enter."))
+        assert ConsequenceCategory.ACCESS_GRANTED.value in cats
+
+    def test_access_granted_true_positive_may_enter(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_cooperate_access_dialogue("You may enter."))
+        assert ConsequenceCategory.ACCESS_GRANTED.value in cats
+
+    def test_access_granted_true_positive_enter_only(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_cooperate_access_dialogue("Enter."))
+        assert ConsequenceCategory.ACCESS_GRANTED.value in cats
+
+    def test_agreement_true_positive_yes(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("Yes."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+    def test_agreement_true_positive_i_agree(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("I agree."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+    def test_agreement_true_positive_fine(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("Fine."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+    def test_agreement_true_positive_alright(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("Alright."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+    def test_commitment_true_positive_will(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_control_dialogue("I will do it."))
+        assert ConsequenceCategory.COMMITMENT.value in cats
+
+    def test_agreement_true_positive_accept_unchanged(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("I accept."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+    def test_agreement_true_positive_accepted_unchanged(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_comply_dialogue("I accepted."))
+        assert ConsequenceCategory.AGREEMENT.value in cats
+
+
 class TestRegressionCalm:
     def test_low_motion_observation_minimal_tags(self) -> None:
         clf = ConsequenceClassifier()
