@@ -166,7 +166,7 @@ When **`stall_score`** is at or above the enforcement threshold (`progression_en
 
 Regression coverage: `python/tests/test_continuity_consequence_classifier.py`.
 
-**Known coverage gap (low priority):** Deterministic rules still omit **`consequences`** for some **low-intensity** beats (passive compliance, soft interaction shifts without geometry or strong stance signals). That is consistent with current design and does not imply incorrect labels when enforcement is stable; broadening sensitivity without inflating Q1 or calm-scene noise is **future work**. See [`autogen_rp/docs/quality-soft-progression-consequence-coverage.md`](../../docs/quality-soft-progression-consequence-coverage.md).
+**Known coverage gap (low priority):** Deterministic rules still omit **`consequences`** for some **low-intensity** beats (passive compliance, soft interaction shifts without geometry or strong stance signals). That is consistent with current design and does not imply incorrect labels when enforcement is stable; broadening sensitivity without inflating Q1 or calm-scene noise is **future work**. Tracked on GitHub: https://github.com/KizzieFae/Holy_Grail_RP/issues/23
 
 #### Scene Grounding layer (MVP)
 
