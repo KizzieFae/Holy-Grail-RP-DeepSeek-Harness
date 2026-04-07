@@ -15,6 +15,9 @@ _GEOMETRY_NEGATED_TURN_PHRASE = re.compile(
 )
 _GEOMETRY_TURN_VERB = re.compile(r"\bturn(?:ed|s|ing)?\b", re.IGNORECASE)
 
+# REFUSAL legacy: standalone words only (avoids "nothing", "notice", "know", "snow", etc.).
+_REFUSAL_LEGACY_NO_OR_NOT_WORD = re.compile(r"\b(?:no|not)\b", re.IGNORECASE)
+
 try:
     from continuity_resolved_outcomes import extract_sleeping_surface_candidates
 except ImportError:
@@ -296,7 +299,8 @@ class ConsequenceClassifier:
         "non-compliant",
     ]
 
-    # Legacy substring gate (still requires resist/challenge intent via merged logic).
+    # Legacy dialogue gate (still requires resist/challenge intent via merged logic).
+    # "no"/"not" use word-boundary matching in _detect_agreement; other tokens stay substring.
     REFUSAL_LEGACY_DIALOGUE_MARKERS = ["no", "not", "won't", "refuse", "deny"]
 
     def classify_turn(
@@ -760,9 +764,13 @@ class ConsequenceClassifier:
         intent_refusal = intent["resist"] or intent["challenge"]
         combined_gt = f"{goal} {tactic}"
         if intent_refusal:
-            legacy_hit = any(
-                ref in dialogue for ref in self.REFUSAL_LEGACY_DIALOGUE_MARKERS
+            legacy_short = bool(_REFUSAL_LEGACY_NO_OR_NOT_WORD.search(dialogue))
+            legacy_other = any(
+                ref in dialogue
+                for ref in self.REFUSAL_LEGACY_DIALOGUE_MARKERS
+                if ref not in ("no", "not")
             )
+            legacy_hit = legacy_short or legacy_other
             curated_hit = any(
                 tok in dialogue for tok in self.REFUSAL_DIALOGUE_MARKERS
             )

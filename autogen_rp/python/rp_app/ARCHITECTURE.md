@@ -160,13 +160,19 @@ When **`stall_score`** is at or above the enforcement threshold (`progression_en
 **Long-session / progression-retry instability (resolved posture):** Spurious **`validation_progression_retry`** cases where the structured move was materially progressive but **`consequences`** was empty or Q1 was tripped by single-tag repetition were fixed by **improving deterministic consequence classification**, not by weakening enforcement or changing Q1–Q4. Concretely:
 
 - **`REPOSITIONING`** uses bounded movement, locus, and transition substring rules; **`turn`** counts as locomotion only with **word-boundary** verb matching, and **negated** phrases such as “did not turn” / “didn’t turn” / “not turning” are scrubbed so they do not falsely satisfy movement.
-- **`REFUSAL`** / stance uses **intent-aligned** rules on goal/tactic (**resist** / **challenge** / extended seeds) plus curated dialogue tokens or strong intent phrases—**not** dialogue alone.
+- **`REFUSAL`** / stance uses **intent-aligned** rules on goal/tactic (**resist** / **challenge** / extended seeds) plus curated dialogue tokens, **legacy** dialogue markers (`won't`, `refuse`, `deny` remain substring-based), or strong intent phrases—**not** dialogue alone. In the **legacy** path only, **`no`** and **`not`** match as **standalone words** (word-boundary / token style), not raw substrings, so words like "nothing" or "know" do not trigger REFUSAL via those two markers.
 - **Multi-tag** emission per turn is preserved (duplicate **categories** deduped); richer tag sets support **Q1** without altering Q1–Q4 definitions.
 - **`progression_enforcement.py`** and advisory **thresholds** were **not** relaxed to mask thin classification.
 
 Regression coverage: `python/tests/test_continuity_consequence_classifier.py`.
 
 **Known coverage gap (low priority):** Deterministic rules still omit **`consequences`** for some **low-intensity** beats (passive compliance, soft interaction shifts without geometry or strong stance signals). That is consistent with current design and does not imply incorrect labels when enforcement is stable; broadening sensitivity without inflating Q1 or calm-scene noise is **future work**. Tracked on GitHub: https://github.com/KizzieFae/Holy_Grail_RP/issues/23
+
+#### Exit narrative vs effective on-stage presence
+
+**Resolution (GitHub #18):** **`ContinuityManager.process_turn`** finalizes scene presence (reconcile / invariants) **before** creating **`PublicEvent`**. When **`exit`** is classified but the actor **remains** in **`present_characters`** (e.g. **`must_remain`** or soft exit skip), **`_align_exit_narrative_with_effective_presence`** replaces definitive **“left the immediate scene”**-style **`state_changes`** / matching **`summary`** / standard EXIT **`actionable_implications`** with wording that reflects **retained on-stage presence**. **True** departures (actor **not** on **`present_characters`**) keep the original EXIT phrasing. Classifier, rendering, prompts, and **`tags` / `consequences`** lists were unchanged in that fix.
+
+**Watch:** **`exit`** may still appear in **`tags`** or **`consequences`** when the actor stays on the roster. **`present_characters`** (and related **`SceneState`**) are **authoritative** for whether someone has actually left; do **not** infer physical removal from the **`exit`** tag alone.
 
 #### Scene Grounding layer (MVP)
 

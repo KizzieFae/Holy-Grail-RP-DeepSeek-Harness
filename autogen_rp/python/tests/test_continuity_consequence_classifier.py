@@ -23,6 +23,20 @@ def _cats(classifier: ConsequenceClassifier, move: dict) -> list[str]:
     return [d.category.value for d in raw]
 
 
+def _move_resist_challenge_dialogue(dialogue: str) -> dict:
+    """Goal/tactic seed resist + challenge so REFUSAL legacy/curated paths are reachable."""
+    return {
+        "action": "holds her ground.",
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": "push back on the demand",
+            "tactic": "challenge their framing",
+            "emotional_driver": "defiant",
+            "risk_level": "high",
+        },
+    }
+
+
 class TestRepositioningGeometry:
     def test_boundary_crossing_table_chair_triggers(self) -> None:
         clf = ConsequenceClassifier()
@@ -169,6 +183,69 @@ class TestRefusalStance:
             },
         }
         cats = _cats(clf, move)
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+
+class TestRefusalLegacyNoNotWordBoundaries:
+    """REFUSAL legacy: 'no'/'not' as whole words only (BUG 1 substring false positives)."""
+
+    def test_refusal_not_triggered_for_nothing_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("This is nothing to me."))
+        assert ConsequenceCategory.REFUSAL.value not in cats
+
+    def test_refusal_not_triggered_for_notice_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("Did you notice the door?"))
+        assert ConsequenceCategory.REFUSAL.value not in cats
+
+    def test_refusal_not_triggered_for_know_substring_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("I know that already."))
+        assert ConsequenceCategory.REFUSAL.value not in cats
+
+    def test_refusal_not_triggered_for_snow_substring_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("The snow keeps falling."))
+        assert ConsequenceCategory.REFUSAL.value not in cats
+
+    def test_refusal_not_triggered_for_nobody_substring_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("Nobody asked you."))
+        assert ConsequenceCategory.REFUSAL.value not in cats
+
+    def test_refusal_triggers_for_no_period_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("no."))
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+    def test_refusal_triggers_for_no_comma_mixed_case_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("No,"))
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+    def test_refusal_triggers_for_not_all_caps_period_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("NOT."))
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+    def test_refusal_triggers_for_no_bang_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(clf, _move_resist_challenge_dialogue("no!"))
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+    def test_refusal_triggers_for_im_not_doing_that_with_intent(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(
+            clf, _move_resist_challenge_dialogue("I'm not doing that, not for you.")
+        )
+        assert ConsequenceCategory.REFUSAL.value in cats
+
+    def test_refusal_not_happening_curated_still_triggers(self) -> None:
+        clf = ConsequenceClassifier()
+        cats = _cats(
+            clf, _move_resist_challenge_dialogue("This is not happening here.")
+        )
         assert ConsequenceCategory.REFUSAL.value in cats
 
 

@@ -1064,6 +1064,55 @@ def test_process_turn_updates_scene_presence_on_exit() -> None:
     assert manager.scene_state.recent_delta == "Mira left the immediate scene."
 
 
+def test_process_turn_must_remain_exit_softens_state_changes_when_still_present() -> None:
+    """Issue #18: exit tag + must_remain (no presence removal) must not claim full departure."""
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Confrontation.",
+        present_characters=["Celina", "Ayame"],
+    )
+    assert manager.scene_state is not None
+    manager.scene_state.character_presence_constraints = {
+        "Celina": "must_remain",
+        "Ayame": "must_remain",
+    }
+    manager.process_turn(
+        acting_character="Celina",
+        move={
+            "action": "turned and left the room without another word",
+            "dialogue": "",
+            "motivation": {
+                "goal": "leave",
+                "tactic": "exit",
+                "emotional_driver": "rage",
+                "risk_level": "high",
+            },
+        },
+        director_decision={
+            "next_actor": "Ayame",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Beat continues.",
+        },
+        other_characters=["Ayame"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:02:00"),
+    )
+    assert "Celina" in manager.scene_state.present_characters
+    assert "exit" in manager.turn_metadata_by_index[1].get("tags", [])
+    assert "Celina left the immediate scene." not in (
+        manager.turn_metadata_by_index[1].get("state_changes") or []
+    )
+    assert manager.public_events[0].state_changes == [
+        "Celina took departure-oriented action; "
+        "on-stage presence is retained per scene constraints."
+    ]
+    assert manager.scene_state.recent_delta == (
+        "Celina took departure-oriented action; "
+        "on-stage presence is retained per scene constraints."
+    )
+
+
 def test_process_turn_propagates_told_knowledge_to_addressed_character() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(

@@ -739,6 +739,14 @@ class ContinuityManager:
             director_decision,
         )
 
+        self._update_scene_state(
+            acting_character,
+            move,
+            director_decision,
+            None,
+            turn_consequences,
+        )
+
         event = self._maybe_create_event(
             acting_character,
             move,
@@ -751,14 +759,6 @@ class ContinuityManager:
             self.public_events.append(event)
             self.scene_state.recent_event_ids.append(event.event_id)
             self.scene_state.recent_event_ids = self.scene_state.recent_event_ids[-10:]
-
-        self._update_scene_state(
-            acting_character,
-            move,
-            director_decision,
-            event,
-            turn_consequences,
-        )
 
         self._maybe_create_issue(
             acting_character,
@@ -946,6 +946,14 @@ class ContinuityManager:
 
         self._update_scene_phase()
 
+        self._reconcile_presence_lists()
+        self._assert_presence_invariant_after_reconcile()
+        self._ensure_at_least_one_present_character()
+
+        self._align_exit_narrative_with_effective_presence(
+            acting_character, turn_consequences
+        )
+
         consequence_delta = next(
             (
                 str(change)
@@ -966,9 +974,56 @@ class ContinuityManager:
             or str(move.get("action", "character action"))
         )
 
-        self._reconcile_presence_lists()
-        self._assert_presence_invariant_after_reconcile()
-        self._ensure_at_least_one_present_character()
+    def _align_exit_narrative_with_effective_presence(
+        self,
+        acting_character: str,
+        turn_consequences: dict[str, Any],
+    ) -> None:
+        """If exit was tagged but the actor remains on-stage, soften event-facing lines.
+
+        Avoids authoritative contradiction: ``present_characters`` still includes the
+        actor (e.g. ``must_remain`` / soft skip) while ``state_changes`` claimed full
+        departure.
+        """
+        if self.scene_state is None:
+            return
+        actor = str(acting_character or "").strip()
+        if not actor:
+            return
+        raw_tags = turn_consequences.get("tags", [])
+        if not isinstance(raw_tags, list):
+            return
+        if "exit" not in {str(t).strip().lower() for t in raw_tags}:
+            return
+        if actor not in self.scene_state.present_characters:
+            return
+
+        old_change = f"{actor} left the immediate scene."
+        new_change = (
+            f"{actor} took departure-oriented action; "
+            "on-stage presence is retained per scene constraints."
+        )
+        sc = turn_consequences.get("state_changes")
+        if isinstance(sc, list):
+            for i, item in enumerate(sc):
+                if str(item).strip() == old_change:
+                    sc[i] = new_change
+                    break
+
+        summ = turn_consequences.get("summary")
+        if str(summ).strip() == old_change:
+            turn_consequences["summary"] = new_change
+
+        old_impl = "The remaining cast must proceed without the departed character."
+        new_impl = (
+            "On-stage roster unchanged; this character remains structurally present."
+        )
+        im = turn_consequences.get("actionable_implications")
+        if isinstance(im, list):
+            for i, item in enumerate(im):
+                if str(item).strip() == old_impl:
+                    im[i] = new_impl
+                    break
 
     def _reconcile_presence_lists(self) -> None:
         """Drop absent entries that are still present; dedupe both lists."""

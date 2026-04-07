@@ -150,6 +150,7 @@ Maintains authoritative state.
 - promote dialogue/actions to structured events
 - update state deterministically
 - enforce knowledge boundaries
+- deterministic **consequence-category** tags from structured moves (`continuity_consequence_classifier.py`; REFUSAL **legacy** **`no` / `not`** dialogue cues use **standalone-word** matching—see `autogen_rp/python/rp_app/ARCHITECTURE.md`)
 
 ---
 

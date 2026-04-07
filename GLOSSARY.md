@@ -40,6 +40,8 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay. **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** via `public_safe_event_summary` at promotion time.
 
+**Consequence classification** — Deterministic tagging of structured character moves into categories such as **`refusal`** and **`repositioning`** (`continuity_consequence_classifier.py` → `ContinuityManager._classify_turn_consequences`), feeding turn metadata and progression Q1. For **REFUSAL**, **legacy** dialogue markers **`no` / `not`** match as **standalone tokens** (word boundaries), not raw substrings, avoiding false positives inside words like "nothing" or "know"; other legacy markers (`won't`, `refuse`, `deny`), curated REFUSAL phrases, and strong-intent phrases are unchanged. See `autogen_rp/python/rp_app/ARCHITECTURE.md` (*Progression enforcement vs continuity classification*).
+
 **Scene state** — Participants, environment, phase, recent beats—portion of continuity scoped to the current scene (`continuity_scene_helpers.py`, `scene_lifecycle_*`).
 
 ---
