@@ -63,6 +63,8 @@ Character `*_full.json` prompts include a fixed **`EVIDENCE & AUTHORITY DISCIPLI
 
 **Cast / others roster (character prompt):** In `*_full.json`, the acting character should **not** appear under **`OTHER PRESENT CHARACTERS`**, and **`CAST ROLE MAP`** should **not** list the same person twice under different id vs display spellings. Live and reconstruction use the same display-name resolver (`get_character_display_name_fn`) for this assembly path.
 
+**Recorded check (2026-04-07):** Post–**#24** validation wave used headless audits **`session_388`–`session_393`** with mandatory first/last/actor-switch sampling on character `*_full.json` prompts — **no** self-in-others or id/display duplicate **CAST ROLE MAP** findings. Structured metrics: `autogen_rp/python/validation_runs/plan_execution/*.json`. Narrative cross-check for exit vs on-stage presence on **`long_session`** (session **393**). See **`SCENARIO_VALIDATION_FRAMEWORK.md`** for the full scenario list and phase outcomes.
+
 ### Episodic memory (Phase 3.2) in audits
 
 Continuity-backed episodic recall is **off by default**. It is merged into the character system prompt under **RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE)** when enabled.

@@ -344,6 +344,27 @@ Written assessment, limitations, and historical phase notes also live in:
 
 `autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md` → sections **“Validation checkpoint — initial LLM runs”**, **Phase 2**, **Phase 2b**, etc.
 
+### Post–GitHub #24 prompt-integrity validation wave (closed **2026-04-07**)
+
+Headless runs from `autogen_rp/python` with **`--audit`** and **`--metrics-out`** (`validation_runs/plan_execution/*.json`). Audit sessions **`session_388`**–**`session_393`**.
+
+| Scenario | Turns (capped) | Audit session |
+|----------|----------------|---------------|
+| `willow_dorm_binding_stress` | 7 | 388 |
+| `conflict_3char` | 7 | 389 |
+| `emotional_loop_2char` (×2) | 6 each | 390, 391 |
+| `arkham_multi_character_stress_long` | 11 | 392 |
+| `long_session` | 12 | 393 |
+
+**Outcomes (phase close):**
+
+- **#24 (prompt integrity):** Sampled character `*_full.json` prompts — **no regression** (actor exclusion from **OTHER PRESENT CHARACTERS**; **CAST ROLE MAP** id/display dedupe). See **`AUDIT_DOCUMENTATION.md`** (cast roster verification) and GitHub **#24**.
+- **Classifier gate:** `pytest tests/test_continuity_consequence_classifier.py tests/test_progression_enforcement.py` — **51 passed** (run at close of wave).
+- **Exit vs presence:** **`long_session`** provided **exit/expulsion language** stimulus; `present_characters_after` in narrative remained consistent with both characters on-stage for checked turns — **pass** for this wave (not inconclusive).
+- **Progression:** **No** `progression_retries` in structured metrics for these runs; **watch** — one **non_qualifying** accepted turn on **`emotional_loop_2char` run 2** (run 1 all qualifying). Lack of retries does **not** prove enforcement-boundary completeness.
+- **#1 (identity bleed):** **Not reproduced** in this wave; issue **stays open** — absence of reproduction is not verification.
+- **Director/orchestration:** Advisory noise (semantic turn_selection, addressee mismatch notes, fairness rotation) observed in some runs — **not** filed as separate issues for this phase; treat as **watch** in issue comments / future triage if recurring.
+
 ### Deep simulation (headless)
 
 By default, **`--scenario`** runs use **deep simulation**: the runner honors scenario **`max_turns`** (or `--turns`) for how many **successful character turns** to allow in **one** simulated user message, and the **same cast may speak multiple times** (unlike Streamlit’s one-reply-per-bot cap for a single user round). Use **`--no-deep-simulation-turns`** to match that short UI-style cap. Ad-hoc mode (`--chars`, no `--scenario`) stays short-cap unless you pass **`--deep-simulation-turns`**.

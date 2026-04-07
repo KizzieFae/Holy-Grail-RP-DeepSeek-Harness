@@ -20,6 +20,18 @@ All bugs, investigations, and follow-up work are tracked in GitHub Issues.
 This file does not maintain a running issue log.  
 Refer to the repository's Issues tab for active and historical investigations.
 
+### Closed validation wave — prompt integrity follow-up (**2026-04-07**)
+
+Scenario headless matrix + classifier pytest + mandatory audit sampling completed; phase **closed** (no code changes in the wave). Summary:
+
+- **GitHub #24:** Prompt integrity (id/display cast assembly) **re-validated** — **no regression** in sampled audits. **`session_388`–`session_393`** under `rp_app/data/rp_audits/`. Structured metrics: `autogen_rp/python/validation_runs/plan_execution/*.json`.
+- **Pytest:** `tests/test_continuity_consequence_classifier.py`, `tests/test_progression_enforcement.py` — **51 passed** at wave close.
+- **Exit vs presence:** Exercised with stimulus on **`long_session`** (session **393**).
+- **Progression:** No retries in metrics; **watch** — one non_qualifying turn on second **`emotional_loop_2char`** run.
+- **GitHub #1:** Not reproduced; **remains open**. Director advisory noise logged as **watch** only (no new issue).
+
+Details: **`SCENARIO_VALIDATION_FRAMEWORK.md`** → *Post–GitHub #24 prompt-integrity validation wave*.
+
 ---
 
 # Phase 0 — Stabilization & Validation (**complete — v1 checkpoint**; progression: `tests/Testing TODOs/progression layer validation status v1.md`, repo root `SCENARIO_VALIDATION_FRAMEWORK.md`; player-text perception closure: section **G**; turn selection v1 policy: section **I** below)
