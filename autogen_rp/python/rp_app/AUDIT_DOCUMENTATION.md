@@ -34,6 +34,12 @@ Director turn metadata may include **`anti_regression_advisory`**: **`active`** 
 
 **Character** and **Narrator** per-turn audit metadata also include **`progression_advisory`** and **`anti_regression_advisory`** snapshots read from orchestration cache at log time (same fields as above, where present). That lets you correlate each rendered beat with stall pressure, ping-pong flags, and post-break window state without relying on Director JSON alone.
 
+### Progression enforcement and `consequences` in audits
+
+When progression enforcement is on, a character failure log may show **`validation_progression_retry`**: the move passed parse/presence checks but **Q1–Q4** in **`progression_enforcement.py`** failed after continuity **`process_turn`**, so continuity was rolled back and the turn retried. **Q1–Q4 logic is unchanged;** they consume **`turn_metadata_by_index[*]["consequences"]`** and related continuity outputs.
+
+Structured **`consequences`** (and the enriched narrative mirror of them) are emitted by **`continuity_consequence_classifier.py`** via **`ContinuityManager._classify_turn_consequences`**. **Fixes for false retries** from empty or overly thin consequence lists are **continuity-side classification** improvements—**not** enforcement weakening. **`REPOSITIONING`** uses bounded movement/locus/transition rules and excludes **negated `turn`** phrasing as locomotion; **`REFUSAL`** / stance uses deterministic intent-aligned rules. **Multi-tag** categories per turn remain supported (per-category dedupe only). See **`ARCHITECTURE.md`** (*Progression enforcement vs continuity classification*).
+
 ### Scene Grounding (MVP) in audits
 
 Audits may record a compact **`scene_grounding`** snapshot (or **`scene_grounding_summary`**) per relevant turn: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This is **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).

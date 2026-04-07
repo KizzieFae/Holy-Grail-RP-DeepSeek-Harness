@@ -153,6 +153,19 @@ When the deterministic **progression advisory** layer detects elevated **stall p
 
 Beat-shift activation uses the **same** computed **`stall_score`** threshold as this advisory layer (alongside the existing short-user-message path), so there is a **single** plateau-related signal rather than duplicate detectors.
 
+#### Progression enforcement vs continuity classification
+
+When **`stall_score`** is at or above the enforcement threshold (`progression_enforcement.py` / `progression_advisory.STALL_BEAT_SHIFT_THRESHOLD`), the character turn runner may **require** a qualifying structural delta after continuity **`process_turn`**. Qualification uses **Q1–Q4** in **`progression_enforcement.py`**, which read **`turn_metadata_by_index[turn_index]["consequences"]`** and related continuity fields (issues, presence markers, allowlisted `scene_state_updates`). **Continuity remains authoritative:** those consequence strings are produced by **`ContinuityManager._classify_turn_consequences`** → **`ConsequenceClassifier.classify_turn`** (`continuity_consequence_classifier.py`), not by progression enforcement.
+
+**Long-session / progression-retry instability (resolved posture):** Spurious **`validation_progression_retry`** cases where the structured move was materially progressive but **`consequences`** was empty or Q1 was tripped by single-tag repetition were fixed by **improving deterministic consequence classification**, not by weakening enforcement or changing Q1–Q4. Concretely:
+
+- **`REPOSITIONING`** uses bounded movement, locus, and transition substring rules; **`turn`** counts as locomotion only with **word-boundary** verb matching, and **negated** phrases such as “did not turn” / “didn’t turn” / “not turning” are scrubbed so they do not falsely satisfy movement.
+- **`REFUSAL`** / stance uses **intent-aligned** rules on goal/tactic (**resist** / **challenge** / extended seeds) plus curated dialogue tokens or strong intent phrases—**not** dialogue alone.
+- **Multi-tag** emission per turn is preserved (duplicate **categories** deduped); richer tag sets support **Q1** without altering Q1–Q4 definitions.
+- **`progression_enforcement.py`** and advisory **thresholds** were **not** relaxed to mask thin classification.
+
+Regression coverage: `python/tests/test_continuity_consequence_classifier.py`.
+
 #### Scene Grounding layer (MVP)
 
 A **read-only** **SETTLED SCENE FACTS** block is injected into Director and character prompts when facts exist. Facts are a **deterministic, capped, allowlisted** projection **derived from** `PublicEvent.grounding_markers` (computed in continuity classification) — not a second authority (PRD §5.8). See `scene_grounding.py` and `autogen_rp/docs/scene-grounding-layer.md`. Rebuilt in `turn_runner_updates` after each successful continuity `process_turn`; **no** writes to `CharacterState` or continuity.
