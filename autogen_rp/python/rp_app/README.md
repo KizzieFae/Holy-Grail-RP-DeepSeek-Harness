@@ -333,6 +333,7 @@ Current design direction for long-session continuity:
 - **Session list** - see and resume previous sessions
 - **Auto-generated session IDs** based on characters and timestamp
 - **Audit logging** - enable in sidebar to capture scene data for analysis
+- **Hybrid tension pacing** — Director-primary `tension_shift`; when neutral, consequence tags may nudge tension up or down. **Saturation gate:** consequence-driven escalation is suppressed at maximum tension (`extreme`) to prevent no-op pacing activations. Director `escalate`/`soften` and consequence `down` are unchanged (see `ARCHITECTURE.md`, Hybrid tension pacing).
 
 ## Stage 4 Infrastructure (Completed)
 

@@ -104,7 +104,8 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `continuity_manager.py` | Promote moves to events; issues; scene; interpretations; knowledge | `continuity_*_helpers`, `continuity_state`, `perception_audibility` | Authoritative narrative state; `PublicEvent` knowability via `known_by`/`observed_by`; safe summaries for non-public dialogue |
+| `continuity_manager.py` | Promote moves to events; issues; scene; interpretations; knowledge | `continuity_*_helpers`, `continuity_state`, `perception_audibility`, `tension_pacing_policy` | Authoritative narrative state; `PublicEvent` knowability via `known_by`/`observed_by`; safe summaries for non-public dialogue; hybrid tension pacing + saturation gate in `_update_scene_state` |
+| `tension_pacing_policy.py` | Director-neutral vs directional `tension_shift`; consequence tag → `up`/`down`/`hold`; `resolve_hybrid_pacing`; `apply_consequence_up_saturation_gate` | `continuity_manager` | Consequence `up` suppressed at `extreme`; Director / `down` unchanged |
 | `continuity_state.py` | Dataclasses: issues, events, interpretations, anchors, snapshots | — | `PublicEvent.knowledge_level_for` gates on `known_by` first |
 | `continuity_issue_helpers.py` | Issue lifecycle, matching, summaries | `continuity_consequence_classifier` | |
 | `continuity_knowledge_helpers.py` | Knowledge propagation, boundaries, `told`/inference | events, interpretations, `perception_audibility` | Dialogue-mediated propagation and interpretation quotes respect `viewer_may_perceive_dialogue` |

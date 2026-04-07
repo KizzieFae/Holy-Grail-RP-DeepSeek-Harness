@@ -83,6 +83,10 @@ from continuity_state import (
 )
 
 from continuity_consequence_classifier import ConsequenceClassifier
+from tension_pacing_policy import (
+    apply_consequence_up_saturation_gate,
+    resolve_hybrid_pacing,
+)
 
 MAX_ACTIVE_ISSUES = 3
 DEFAULT_SUMMARY_INTERVAL = 12
@@ -910,16 +914,46 @@ class ContinuityManager:
         if self.scene_state is None:
             return
 
-        tension_shift = director_decision.get("tension_shift", "")
-        environment_event = director_decision.get("environment_event", "")
+        tension_shift_raw = ""
+        if isinstance(director_decision, dict):
+            tension_shift_raw = str(director_decision.get("tension_shift", "") or "").strip()
+
+        environment_event = (
+            director_decision.get("environment_event", "")
+            if isinstance(director_decision, dict)
+            else ""
+        )
         consequence_tags = {
             str(item) for item in turn_consequences.get("tags", []) if str(item).strip()
         }
 
-        if tension_shift == "escalate":
+        pacing_source, pacing_direction, director_neutral = resolve_hybrid_pacing(
+            director_decision=director_decision
+            if isinstance(director_decision, dict)
+            else {},
+            turn_consequences=turn_consequences
+            if isinstance(turn_consequences, dict)
+            else {},
+        )
+        pacing_source, pacing_direction, suppressed_consequence_up = (
+            apply_consequence_up_saturation_gate(
+                pacing_source=pacing_source,
+                pacing_direction=pacing_direction,
+                current_tension_level=self.scene_state.current_tension_level,
+            )
+        )
+        if pacing_direction == "up":
             self._escalate_tension()
-        elif tension_shift == "soften":
+        elif pacing_direction == "down":
             self._reduce_tension()
+        hybrid_meta: dict[str, Any] = {
+            "pacing_source": pacing_source,
+            "pacing_direction": pacing_direction,
+            "director_neutral": director_neutral,
+        }
+        if suppressed_consequence_up:
+            hybrid_meta["consequence_up_suppressed_saturation"] = True
+        turn_consequences["hybrid_pacing"] = hybrid_meta
 
         if environment_event:
             self.scene_state.recent_environment_events.append(environment_event)
@@ -970,7 +1004,7 @@ class ContinuityManager:
             consequence_delta
             or (event.summary if event else "")
             or environment_event
-            or tension_shift
+            or tension_shift_raw
             or str(move.get("action", "character action"))
         )
 

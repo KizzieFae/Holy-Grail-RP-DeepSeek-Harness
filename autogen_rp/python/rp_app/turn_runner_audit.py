@@ -36,6 +36,21 @@ def promote_character_binding_fields_for_audit_metadata(
     return base
 
 
+def _hybrid_pacing_for_audit(continuity_manager: Any) -> dict[str, Any] | None:
+    """Copy ``hybrid_pacing`` from the current turn bucket for persisted audit metadata."""
+    if continuity_manager is None:
+        return None
+    idx = int(getattr(continuity_manager, "turn_counter", 0) or 0)
+    meta = getattr(continuity_manager, "turn_metadata_by_index", None)
+    if not isinstance(meta, dict):
+        return None
+    bucket = meta.get(idx)
+    if not isinstance(bucket, dict):
+        return None
+    hp = bucket.get("hybrid_pacing")
+    return dict(hp) if isinstance(hp, dict) else None
+
+
 def _merge_character_audit_metadata(
     *,
     base: dict[str, Any],
@@ -205,6 +220,7 @@ def log_character_turn_audit(
         actor_scene_context = get_character_scene_audit_context_fn(
             next_actor, scene_audit_kwargs
         )
+        hybrid_pacing = _hybrid_pacing_for_audit(continuity_manager)
         char_entry = audit_logger.create_entry(
             session_owner=session_owner,
             session_number=session_num,
@@ -230,6 +246,11 @@ def log_character_turn_audit(
                     "issue_updates": issue_updates,
                     "presence_changes": presence_changes,
                     "consequences": consequences,
+                    **(
+                        {"hybrid_pacing": hybrid_pacing}
+                        if isinstance(hybrid_pacing, dict)
+                        else {}
+                    ),
                     "summary_blocks": summary_blocks_audit,
                     "has_binding_constraints": has_binding_constraints,
                     "scene_binding_constraints_section": binding_constraints_section,

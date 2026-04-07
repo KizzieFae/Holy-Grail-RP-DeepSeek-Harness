@@ -147,6 +147,10 @@ Director selection policy is prompt-guided rather than hard-coded. It is instruc
 
 The Director does not write prose.
 
+#### Hybrid tension pacing (continuity application)
+
+When the Director is **neutral** on directional `tension_shift` (no valid `escalate` / `soften` token), classified consequence tags may recommend a tension nudge **`up`** or **`down`** via `tension_pacing_policy.resolve_hybrid_pacing`, applied in `ContinuityManager._update_scene_state`. **Saturation gate:** consequence-driven **`up`** is **suppressed** when `current_tension_level` is already **`extreme`** (effective `none` / `hold`; character audit `metadata.hybrid_pacing` may set `consequence_up_suppressed_saturation: true`). **Director** explicit `escalate` / `soften` and consequence **`down`** are unaffected. **No** phase- or climax-specific logic in this gate.
+
 **Deterministic selection gates (before / after Director):** `app_turn_director.py` applies **forced speaker** and **continuation override** when eligible. **v1 policy:** if continuation override targets an actor who is already the **last spotlight** speaker, continuation is **skipped** (C2) and the Director runs instead — see `RP_SETUP_TODO.md` Phase 0 §I. After Director output, **progression override** and **participation fairness** may adjust the pick; they are explicitly gated so they do not apply when continuation already fired.
 
 #### Progression advisory (MVP)

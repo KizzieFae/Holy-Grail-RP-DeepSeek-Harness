@@ -180,3 +180,8 @@ docs/src/reference
 
 # Headless LLM simulation outputs (`--metrics-out`); see testing todo for paths
 runs/
+
+# Local validation / replay artifacts (metrics JSON, replay_out trees); keep `validation_runs/**/*.py` if present
+tmp_progression_smoke/
+validation_runs/**/*.json
+validation_runs/**/replay_out/

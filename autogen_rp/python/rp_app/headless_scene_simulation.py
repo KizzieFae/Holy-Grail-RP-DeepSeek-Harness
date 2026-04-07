@@ -575,6 +575,9 @@ async def run_headless_llm_scene(
             "simulation_expected_pressure_profile"
         ),
         retrieval_session=session_retrieval,
+        sim_progression_metrics_events=(
+            list(metrics_list) if isinstance(metrics_list, list) else []
+        ),
     )
     return HeadlessSimulationResult(
         chat_history=list(st_module.session_state.get("chat_history") or []),

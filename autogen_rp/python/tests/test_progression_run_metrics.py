@@ -74,6 +74,7 @@ def test_build_structured_eval_payload() -> None:
         metrics=m,
         audit_session_number=5,
         audit_summary_report_path=None,
+        sim_progression_metrics_events=[{"kind": "accepted_turn", "qualifies": True}],
     )
     assert p["scenario_id"] == "emotional_loop_2char"
     assert p["verdict"] == "WARN"
@@ -81,6 +82,7 @@ def test_build_structured_eval_payload() -> None:
     assert p["metrics"]["progression_enforcement_enabled"] is False
     assert p["expected_pressure_profile"] is None
     assert "retrieval_session" not in p
+    assert p["sim_progression_metrics_events"][0]["kind"] == "accepted_turn"
 
     p2 = build_structured_eval_payload(
         scenario_id="s",
