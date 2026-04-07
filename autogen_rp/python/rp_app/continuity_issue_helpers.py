@@ -310,6 +310,83 @@ def maybe_create_issue(
     link_issue_interactions_fn(issue_id)
 
 
+REQUIRED_NEXT_STEP_PLATEAU_FIRE_STREAK = 2
+
+REQUIRED_NEXT_STEP_PLATEAU_ESCALATION_TEMPLATE = (
+    "Someone must break the stalemate with a binding act: commit, refuse with consequence, "
+    "or change the physical situation."
+)
+
+_PLATEAU_COUNTED_TRANSITIONS = frozenset({"advanced", "escalated"})
+
+
+def _normalize_required_next_step_key(value: Any) -> str:
+    return " ".join(_clean_text(value).lower().split())
+
+
+def apply_mixed_transition_plateau_refresh(
+    *,
+    issue: IssueState,
+    transition: str,
+    turn_profile: dict[str, Any],
+    current_turn_index: int,
+) -> None:
+    """Refresh ``required_next_step`` after repeated counted transitions with frozen obligation text.
+
+    Counted transitions: ``advanced``, ``escalated``. Fires when streak ≥ threshold, normalized
+    ``required_next_step`` unchanged across consecutive counted updates, and at least one
+    ``advanced`` occurred in the current streak window.
+
+    Does not alter status, ``last_change``, ``status_reason``, or consequence tags.
+    """
+    if transition not in _PLATEAU_COUNTED_TRANSITIONS:
+        issue.required_next_step_plateau_streak = 0
+        issue.required_next_step_plateau_has_advanced = False
+        return
+
+    norm = _normalize_required_next_step_key(issue.required_next_step)
+    prev_t = issue.required_next_step_plateau_last_turn_index
+    prev_norm = issue.required_next_step_plateau_last_norm
+
+    consecutive = prev_t is not None and int(current_turn_index) == int(prev_t) + 1
+    same_norm = bool(prev_norm) and norm == prev_norm
+
+    if not consecutive or not same_norm:
+        issue.required_next_step_plateau_streak = 1
+        issue.required_next_step_plateau_last_norm = norm
+        issue.required_next_step_plateau_last_turn_index = int(current_turn_index)
+        issue.required_next_step_plateau_has_advanced = transition == "advanced"
+    else:
+        issue.required_next_step_plateau_streak = (
+            int(issue.required_next_step_plateau_streak) + 1
+        )
+        issue.required_next_step_plateau_last_turn_index = int(current_turn_index)
+        if transition == "advanced":
+            issue.required_next_step_plateau_has_advanced = True
+
+    if (
+        issue.required_next_step_plateau_streak < REQUIRED_NEXT_STEP_PLATEAU_FIRE_STREAK
+        or not issue.required_next_step_plateau_has_advanced
+    ):
+        return
+
+    stale = issue.required_next_step
+    fresh = _clean_text(turn_profile.get("required_next_step", ""))
+    if fresh and _normalize_required_next_step_key(fresh) != _normalize_required_next_step_key(
+        stale
+    ):
+        issue.required_next_step = fresh
+    else:
+        issue.required_next_step = REQUIRED_NEXT_STEP_PLATEAU_ESCALATION_TEMPLATE
+
+    issue.required_next_step_plateau_streak = 0
+    issue.required_next_step_plateau_has_advanced = False
+    issue.required_next_step_plateau_last_norm = _normalize_required_next_step_key(
+        issue.required_next_step
+    )
+    issue.required_next_step_plateau_last_turn_index = int(current_turn_index)
+
+
 def update_issues(
     *,
     manager: Any,
@@ -398,6 +475,12 @@ def update_issues(
                 transition=transition,
                 issue_profile=issue_profile,
                 turn_profile=turn_profile,
+            )
+            apply_mixed_transition_plateau_refresh(
+                issue=issue,
+                transition=transition,
+                turn_profile=turn_profile,
+                current_turn_index=current_turn_index,
             )
             issue.last_updated = timestamp
             issue.last_turn_index = current_turn_index

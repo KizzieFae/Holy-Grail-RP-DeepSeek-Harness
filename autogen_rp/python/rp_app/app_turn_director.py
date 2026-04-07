@@ -5,6 +5,7 @@ from typing import Any
 from autogen_agentchat.messages import TextMessage
 
 from semantic_validation import (
+    apply_gated_addressee_alignment_under_progression_enforcement,
     filter_selection_issues_for_human_log,
     substitute_agent_keys_with_display_names,
 )
@@ -1093,6 +1094,37 @@ async def choose_next_actor(
             continuity_manager=continuity_manager,
         )
 
+    addressee_alignment_applied = False
+    addressee_alignment_previous = ""
+    addressee_alignment_next = ""
+    applied_addr, prev_addr, _resolved_addr = (
+        apply_gated_addressee_alignment_under_progression_enforcement(
+            decision=decision,
+            progression_enforcement_gate=progression_enforcement_gate,
+            effective_semantic_assessment=effective_semantic_assessment,
+            available_actors=available_actors,
+            participant_names=participant_names,
+            display_name_for_key=get_character_display_name_fn,
+        )
+    )
+    if applied_addr:
+        addressee_alignment_applied = True
+        addressee_alignment_previous = prev_addr
+        addressee_alignment_next = str(decision.get("next_actor") or "").strip()
+        actor_after_semantic = addressee_alignment_next
+        reconciled_turn_selection_issues = reconcile_turn_selection_issues_fn(
+            deterministic_turn_selection_issues,
+            semantic_turn_selection_assessment,
+            selected_actor=addressee_alignment_next,
+            participant_names=participant_names,
+            display_name_for_key=get_character_display_name_fn,
+        )
+        human_turn_selection_issues = filter_selection_issues_for_human_log(
+            base_issues=deterministic_turn_selection_issues,
+            reconciled_issues=reconciled_turn_selection_issues,
+            semantic_assessment=effective_semantic_assessment,
+        )
+
     actor_before_progression_override = actor_after_semantic
     progression_override_actor = None
     progression_override_high_candidate_available = False
@@ -1210,6 +1242,8 @@ async def choose_next_actor(
         attribution_chain.append("fallback")
     else:
         attribution_chain.append("director")
+    if addressee_alignment_applied:
+        attribution_chain.append("addressee_alignment")
     if progression_override_applied:
         attribution_chain.append("progression_override")
     if fairness_rotated:
@@ -1236,6 +1270,11 @@ async def choose_next_actor(
         "after_semantic_note": {
             "reason_amended": reason_amended_for_semantic,
             "next_actor": actor_after_semantic,
+        },
+        "after_addressee_alignment": {
+            "applied": addressee_alignment_applied,
+            "previous_actor": addressee_alignment_previous or None,
+            "next_actor": addressee_alignment_next or None,
         },
         "after_progression_override": {
             "applied": progression_override_applied,

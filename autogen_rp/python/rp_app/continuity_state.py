@@ -178,6 +178,10 @@ class IssueState:
     blocked_characters: list[str] = field(default_factory=list)
     last_change: str = ""
     required_next_step: str = ""
+    required_next_step_plateau_streak: int = 0
+    required_next_step_plateau_last_norm: str = ""
+    required_next_step_plateau_last_turn_index: int | None = None
+    required_next_step_plateau_has_advanced: bool = False
 
     def to_dict(self) -> dict:
         """Serialize the issue for persistence."""
@@ -203,6 +207,10 @@ class IssueState:
             "blocked_characters": self.blocked_characters,
             "last_change": self.last_change,
             "required_next_step": self.required_next_step,
+            "required_next_step_plateau_streak": self.required_next_step_plateau_streak,
+            "required_next_step_plateau_last_norm": self.required_next_step_plateau_last_norm,
+            "required_next_step_plateau_last_turn_index": self.required_next_step_plateau_last_turn_index,
+            "required_next_step_plateau_has_advanced": self.required_next_step_plateau_has_advanced,
         }
 
     @classmethod
@@ -242,6 +250,20 @@ class IssueState:
             ],
             last_change=str(data.get("last_change", "") or ""),
             required_next_step=str(data.get("required_next_step", "") or ""),
+            required_next_step_plateau_streak=int(
+                data.get("required_next_step_plateau_streak", 0) or 0
+            ),
+            required_next_step_plateau_last_norm=str(
+                data.get("required_next_step_plateau_last_norm", "") or ""
+            ),
+            required_next_step_plateau_last_turn_index=(
+                int(data["required_next_step_plateau_last_turn_index"])
+                if data.get("required_next_step_plateau_last_turn_index") is not None
+                else None
+            ),
+            required_next_step_plateau_has_advanced=bool(
+                data.get("required_next_step_plateau_has_advanced", False)
+            ),
         )
 
 

@@ -371,6 +371,62 @@ async def assess_narrator_render_semantics(
 SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD = 0.5
 
 
+def apply_gated_addressee_alignment_under_progression_enforcement(
+    *,
+    decision: dict[str, Any],
+    progression_enforcement_gate: bool,
+    effective_semantic_assessment: dict[str, Any] | None,
+    available_actors: list[str],
+    participant_names: list[str],
+    display_name_for_key: Callable[[str], str],
+) -> tuple[bool, str, str]:
+    """Override Director ``next_actor`` with resolved addressee when all gates pass.
+
+    Activation (all required): progression enforcement gate active; sanitized semantic
+    assessment has no ``parse_error``; ``confidence`` >=
+    :data:`SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD`; ``should_flag_direct_address_miss``
+    is true; resolved ``direct_address_target`` is non-empty and in ``available_actors``;
+    current pick differs from that target.
+
+    Returns ``(applied, previous_next_actor, resolved_target_or_empty)``. Mutates
+    ``decision['next_actor']`` and appends a machine-parsable reason suffix when applied.
+    """
+    if not progression_enforcement_gate:
+        return (False, "", "")
+    if not isinstance(decision, dict) or bool(decision.get("end_round")):
+        return (False, "", "")
+    sem = effective_semantic_assessment
+    if not isinstance(sem, dict) or sem.get("parse_error"):
+        return (False, "", "")
+    try:
+        conf = float(sem.get("confidence", 0.0) or 0.0)
+    except (TypeError, ValueError):
+        conf = 0.0
+    if conf < SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD:
+        return (False, "", "")
+    if not bool(sem.get("should_flag_direct_address_miss")):
+        return (False, "", "")
+    prev = str(decision.get("next_actor") or "").strip()
+    target_raw = str(sem.get("direct_address_target") or "").strip()
+    resolved = resolve_participant_key(
+        target_raw,
+        participant_names,
+        display_name_for_key=display_name_for_key,
+    )
+    if not resolved:
+        return (False, prev, "")
+    avail = {str(a or "").strip() for a in available_actors if str(a or "").strip()}
+    if resolved not in avail:
+        return (False, prev, "")
+    if resolved == prev:
+        return (False, prev, resolved)
+    decision["next_actor"] = resolved
+    suffix = f"| Addressee alignment (progression gate): {prev} -> {resolved}"
+    prior = str(decision.get("reason", "") or "").strip()
+    decision["reason"] = f"{prior} {suffix}".strip() if prior else suffix.strip()
+    return (True, prev, resolved)
+
+
 def filter_selection_issues_for_human_log(
     *,
     base_issues: list[str],

@@ -358,7 +358,7 @@ The following Stage 4 hardening work has been implemented and is ready for calib
 ### Issue Lifecycle & Scene Pressure
 - **Richer issue metadata** - `status_reason`, `matched_terms`, `related_event_ids`, `interaction_issue_ids`
 - **Issue interaction tracking** - linked when participants and terms overlap
-- **Pressure-shaped issue state** - `IssueState` now persists `pressure_kind`, `blocked_what`, `blocked_characters`, `last_change`, and `required_next_step`
+- **Pressure-shaped issue state** - `IssueState` now persists `pressure_kind`, `blocked_what`, `blocked_characters`, `last_change`, `required_next_step`, and plateau-tracking fields (`required_next_step_plateau_*`) used when mixed **`advanced`** / **`escalated`** issue transitions repeat without changing obligation text (`continuity_issue_helpers.apply_mixed_transition_plateau_refresh`)
 - **Pressure-first hybrid matching** - issue matching prioritizes participants, `pressure_kind`, blocked objective, and next-step compatibility, with token overlap retained as fallback
 - **Pressure-aware lifecycle reasons** - `status_reason` describes how pressure escalated, narrowed, advanced, stalled, or resolved
 - **Conservative stall threshold** - 3 turns without material reinforcement (configurable via `ISSUE_STALL_TURN_THRESHOLD`)

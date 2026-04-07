@@ -952,6 +952,11 @@ async def test_choose_next_actor_records_med_band_override_suppression_flags() -
     continuity_manager = _FakeContinuityManager()
     orchestration_state = {
         "pending_beat_shift": {"active": True, "reason": "test", "source_turn_id": None},
+        # progression_delta_required uses stall_score only; plateau + stable issues → >= threshold.
+        "beat_shift_scene_snapshots": [
+            {"phase": "standoff", "tension": "high"},
+            {"phase": "standoff", "tension": "high"},
+        ],
         "spotlight_history": ["Mira"],
         "scene_state": {
             "opening_description": "",

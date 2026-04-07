@@ -153,6 +153,8 @@ When the Director is **neutral** on directional `tension_shift` (no valid `escal
 
 **Deterministic selection gates (before / after Director):** `app_turn_director.py` applies **forced speaker** and **continuation override** when eligible. **v1 policy:** if continuation override targets an actor who is already the **last spotlight** speaker, continuation is **skipped** (C2) and the Director runs instead — see `RP_SETUP_TODO.md` Phase 0 §I. After Director output, **progression override** and **participation fairness** may adjust the pick; they are explicitly gated so they do not apply when continuation already fired.
 
+**Progression-gated addressee alignment:** When the **progression enforcement gate** is active for the beat, `semantic_validation.apply_gated_addressee_alignment_under_progression_enforcement` may **override** `decision["next_actor"]` with the resolved semantic **`direct_address_target`** if the semantic assessment is clean (no parse error), confidence ≥ `SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD`, `should_flag_direct_address_miss` is true, and the target is in the available pool. Hybrid pacing and other Director policies are unchanged; this path is **narrow** and **does not** subsume post-validation **fairness_rotation** or general validated-vs-final pick reconciliation (tracked separately: GitHub **#25**).
+
 #### Progression advisory (MVP)
 
 When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the scene template’s optional **`progression_profile`** (e.g. physical action, spatial shift, consequence). This is **guidance only**; it does not override selection logic or continuity.
@@ -480,6 +482,7 @@ about removing older fallback behavior.
   - `blocked_characters`
   - `last_change`
   - `required_next_step`
+  - `required_next_step_plateau_*` — streak / last-normalized text / last turn index / whether an **`advanced`** transition occurred in the current streak window; supports `continuity_issue_helpers.apply_mixed_transition_plateau_refresh` (fires after repeated **`advanced`** / **`escalated`** transitions when obligation text is frozen)
   - escalation / resolution compatibility signals
 - public event memory
   - event id

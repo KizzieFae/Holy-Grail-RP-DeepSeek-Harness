@@ -363,7 +363,7 @@ Headless runs from `autogen_rp/python` with **`--audit`** and **`--metrics-out`*
 - **Exit vs presence:** **`long_session`** provided **exit/expulsion language** stimulus; `present_characters_after` in narrative remained consistent with both characters on-stage for checked turns — **pass** for this wave (not inconclusive).
 - **Progression:** **No** `progression_retries` in structured metrics for these runs; **watch** — one **non_qualifying** accepted turn on **`emotional_loop_2char` run 2** (run 1 all qualifying). Lack of retries does **not** prove enforcement-boundary completeness.
 - **#1 (identity bleed):** **Not reproduced** in this wave; issue **stays open** — absence of reproduction is not verification.
-- **Director/orchestration:** Advisory noise (semantic turn_selection, addressee mismatch notes, fairness rotation) observed in some runs — **not** filed as separate issues for this phase; treat as **watch** in issue comments / future triage if recurring.
+- **Director/orchestration:** Advisory noise (semantic turn_selection, addressee mismatch notes, fairness rotation) observed in some runs — **not** filed as separate issues for this phase; treat as **watch** in issue comments / future triage if recurring. **Post-wave code:** progression-gated **addressee alignment** (`semantic_validation` + `app_turn_director`) and mixed-transition **`required_next_step` plateau refresh** (`continuity_issue_helpers`) are documented in **`autogen_rp/python/rp_app/ARCHITECTURE.md`**; validated-vs-final pick divergence remains **GitHub #25**.
 
 ### Deep simulation (headless)
 
