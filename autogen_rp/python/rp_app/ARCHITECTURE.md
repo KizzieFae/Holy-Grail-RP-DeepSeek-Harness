@@ -166,6 +166,8 @@ When **`stall_score`** is at or above the enforcement threshold (`progression_en
 
 Regression coverage: `python/tests/test_continuity_consequence_classifier.py`.
 
+**Known coverage gap (low priority):** Deterministic rules still omit **`consequences`** for some **low-intensity** beats (passive compliance, soft interaction shifts without geometry or strong stance signals). That is consistent with current design and does not imply incorrect labels when enforcement is stable; broadening sensitivity without inflating Q1 or calm-scene noise is **future work**. See [`autogen_rp/docs/quality-soft-progression-consequence-coverage.md`](../../docs/quality-soft-progression-consequence-coverage.md).
+
 #### Scene Grounding layer (MVP)
 
 A **read-only** **SETTLED SCENE FACTS** block is injected into Director and character prompts when facts exist. Facts are a **deterministic, capped, allowlisted** projection **derived from** `PublicEvent.grounding_markers` (computed in continuity classification) — not a second authority (PRD §5.8). See `scene_grounding.py` and `autogen_rp/docs/scene-grounding-layer.md`. Rebuilt in `turn_runner_updates` after each successful continuity `process_turn`; **no** writes to `CharacterState` or continuity.
@@ -547,6 +549,8 @@ This is the most important path for improving story quality over long sessions b
 
 - **Do not** duplicate detailed issue logs in project files.
 
+- **Reference markdown** in-repo (for example under `autogen_rp/docs/`) may capture background, constraints, and acceptance criteria, but it is **reference-only** for task tracking. **GitHub Issues remain the source of truth** for status, discussion, and closure.
+
 ### A.1 Audit-driven workflow (reference)
 
 Simulation and audit logging produce JSON under `rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Methodology—pipeline (**Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test**), roles (AI-assisted vs human), taxonomy (**bug** / **behavior** / **limitation**), evidence standards, heuristic signal limitations, and GitHub body fields—is documented in **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** for observability unless explicitly documented as runtime gates.
@@ -563,7 +567,7 @@ Use this lifecycle; record progress in the Issue (description updates, comments,
 
 4. **Implementation** — Land changes; reference the Issue in commits (`#123`).
 
-5. **Validation** — Confirm with tests, scenario reruns, or checklists defined in the Issue. **Closure happens after validation**, not merely after merge.
+5. **Validation** — Confirm with tests, scenario reruns, or checklists defined in the Issue. **Closure happens after validation**, not merely after merge. Before closing, complete any **documentation review** checklist items defined in the Issue (for example updates to architecture, audit, or operator-facing docs when behavior or contracts change).
 
 6. **Closure** — Close when validated, or close as **monitor** when no fix is required but the thread should remain discoverable.
 
