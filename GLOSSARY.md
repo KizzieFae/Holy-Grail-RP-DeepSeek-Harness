@@ -68,7 +68,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Session** — Persisted RP state (chat, team, character states, continuity snapshot, audit pointers, etc.) in `python/data/sessions/` (`session_manager.py`, `session_lifecycle_*`).
 
-**Packet** — Bounded runtime input projection (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle` — [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)). **Phase 0.5:** **Character** prompt path uses **`CharacterPromptInputAssembly`** and packet builders/reconstruction at the **`build_character_turn_prompt`** seam; Director/Narrator not yet on the same mechanical path.
+**Packet** — Bounded runtime input projection (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle` — [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)). **Phase 0.5:** **Character** prompt path uses **`CharacterPromptInputAssembly`** and packet builders/reconstruction at the **`build_character_turn_prompt`** seam; Director/Narrator not yet on the same mechanical path. **Cast / others lists** in the character prompt use **`get_character_display_name_fn`** for live and reconstructed bundles so **id vs display** labels do not duplicate roster rows or list the actor under **OTHER PRESENT CHARACTERS**.
 
 **Retrieved context** — **Non-authoritative** snippets from vector/graph search selected for a turn; must be gated and budgeted; never replaces continuity truth (PRD §7).
 

@@ -26,6 +26,7 @@ from scene_grounding import (
     format_character_grounding_section,
 )
 
+from prompt_builders import build_cast_and_scene_role_participants
 from prompt_derivations import (
     build_priority_ladder,
     select_relationship_prompt_names,
@@ -273,18 +274,25 @@ def build_character_turn_prompt(
         if isinstance(cross_session_memories, dict)
         else []
     )
-    cast = [
-        name for name in scene_state.get("present_characters", []) if name != char_name
+    present_list = [
+        str(x).strip()
+        for x in (scene_state.get("present_characters") or [])
+        if str(x or "").strip()
     ]
-    if not cast:
-        cast = [
-            agent.name
-            for agent in st_module.session_state.get("characters", [])
-            if agent.name != char_name
-        ]
+    session_names = [
+        str(getattr(a, "name", "") or "").strip()
+        for a in st_module.session_state.get("characters", [])
+        if str(getattr(a, "name", "") or "").strip()
+    ]
+    cast, role_participants = build_cast_and_scene_role_participants(
+        char_name,
+        present_list if present_list else None,
+        session_names,
+        get_character_display_name_fn,
+    )
     scene_roles = build_scene_role_prompt_context_fn(
         scene_state,
-        [char_name] + cast,
+        role_participants,
     )
     my_scene_role = next(
         (
@@ -457,6 +465,7 @@ def build_character_turn_prompt(
             scene_packet,
             char_packet,
             state=state,
+            get_character_display_name_fn=get_character_display_name_fn,
         )
         ok, detail = compare_character_prompt_bundles(
             character_prompt_kwargs, recon_bundle

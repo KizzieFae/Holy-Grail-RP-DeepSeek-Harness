@@ -7,10 +7,12 @@ from prompt_derivations import build_priority_ladder, select_relationship_prompt
 from character_state import CharacterState
 from beat_shift_state import build_director_beat_shift_prompt_prefix
 from prompt_builders import (
+    build_cast_and_scene_role_participants,
     build_character_turn_prompt,
     build_director_selection_prompt,
     build_narrator_render_prompt,
     build_scene_role_prompt_context,
+    prompt_identity_same,
 )
 from progression_advisory import build_progression_director_prompt_prefix
 from runtime_packets import (
@@ -756,3 +758,117 @@ def test_phase1_prompt_shape_grounding_retrieved_before_scene_state_binding_befo
     assert prompt.count("##PHASE1_GROUND_UNIQUE_q7w2##") == 1
     assert prompt.count("##PHASE1_BIND_UNIQUE_m4n8##") == 1
     assert prompt.count("RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE):") == 1
+
+
+def _stub_cardless_display(s: str) -> str:
+    return str(s or "").replace("_", " ")
+
+
+def test_prompt_identity_same_id_vs_display() -> None:
+    assert prompt_identity_same("Willow_Reeves", "Willow Reeves", _stub_cardless_display)
+    assert not prompt_identity_same("Willow_Reeves", "Kizzie", _stub_cardless_display)
+
+
+def test_build_cast_excludes_actor_when_id_and_display_differ() -> None:
+    cast, parts = build_cast_and_scene_role_participants(
+        "Willow_Reeves",
+        ["Kizzie", "Marlene Fletcher", "Willow Reeves"],
+        ["Willow_Reeves", "Kizzie", "Marlene_Fletcher"],
+        _stub_cardless_display,
+    )
+    assert cast == ["Kizzie", "Marlene Fletcher"]
+    assert parts == ["Willow_Reeves", "Kizzie", "Marlene Fletcher"]
+    assert "Willow Reeves" not in cast
+
+
+def test_build_cast_dedupes_non_actor_id_display_variants() -> None:
+    cast, parts = build_cast_and_scene_role_participants(
+        "Willow_Reeves",
+        ["Kizzie", "Marlene_Fletcher", "Marlene Fletcher"],
+        [],
+        _stub_cardless_display,
+    )
+    assert cast == ["Kizzie", "Marlene_Fletcher"]
+    assert parts[0] == "Willow_Reeves"
+    assert parts.count("Marlene Fletcher") == 0
+    assert sum(1 for p in parts if "Marlene" in p) == 1
+
+
+def test_build_cast_exact_match_actor_unchanged_for_single_token_ids() -> None:
+    cast, parts = build_cast_and_scene_role_participants(
+        "Kizzie",
+        ["Kizzie", "Marlene_Fletcher"],
+        [],
+        _stub_cardless_display,
+    )
+    assert cast == ["Marlene_Fletcher"]
+    assert parts == ["Kizzie", "Marlene_Fletcher"]
+
+
+def test_build_cast_fallback_session_when_present_empty() -> None:
+    cast, parts = build_cast_and_scene_role_participants(
+        "A",
+        None,
+        ["A", "B", "C"],
+        _stub_cardless_display,
+    )
+    assert cast == ["B", "C"]
+    assert parts == ["A", "B", "C"]
+
+
+def test_build_character_turn_prompt_other_present_excludes_display_actor() -> None:
+    """End-to-end: OTHER PRESENT and CAST ROLE MAP use corrected cast / participants."""
+    scene_state = {
+        "location": "university_dorm_triple",
+        "present_characters": ["Kizzie", "Marlene Fletcher", "Willow Reeves"],
+        "absent_but_relevant": [],
+        "offstage_characters": [],
+        "role_assignments": {},
+        "character_presence_constraints": {},
+        "character_authority_labels": {},
+    }
+    cast, role_participants = build_cast_and_scene_role_participants(
+        "Willow_Reeves",
+        ["Kizzie", "Marlene Fletcher", "Willow Reeves"],
+        ["Willow_Reeves", "Kizzie", "Marlene_Fletcher"],
+        _stub_cardless_display,
+    )
+    scene_roles = build_scene_role_prompt_context(scene_state, role_participants)
+    my_scene_role = next(
+        (
+            item
+            for item in scene_roles
+            if str(item.get("character", "") or "").strip() == "Willow_Reeves"
+        ),
+        {},
+    )
+    prompt = build_character_turn_prompt(
+        char_name="Willow_Reeves",
+        user_name="Traveler",
+        trigger_text="T",
+        director_decision={"next_actor": "Willow_Reeves", "reason": "r"},
+        scene_state=scene_state,
+        scene_template_context={"template_id": "", "premise": "", "location_entry_slots": []},
+        my_scene_role=my_scene_role,
+        scene_roles=scene_roles,
+        recent_moves=[],
+        recent_dialogue=[],
+        active_issues=[],
+        priority_ladder=[],
+        summary_blocks=[],
+        recent_public_events=[],
+        cross_session_user_memories=[],
+        cross_session_world_facts=[],
+        user_preferences=[],
+        my_interpretations=[],
+        canon_anchors=[],
+        state_context="Private.",
+        cast=cast,
+    )
+    assert "OTHER PRESENT CHARACTERS: Kizzie, Marlene Fletcher" in prompt
+    assert '"character": "Willow Reeves"' not in prompt
+    idx = prompt.index("CAST ROLE MAP:")
+    end = prompt.index("RECENT STRUCTURED ACTIONS", idx)
+    cast_block = prompt[idx:end]
+    assert cast_block.count('"character": "Willow_Reeves"') == 1
+    assert cast_block.count('"character": "Willow Reeves"') == 0

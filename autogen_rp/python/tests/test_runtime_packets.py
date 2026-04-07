@@ -13,7 +13,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 from character_state_model import CharacterState
 from memory_layer.retrieval import build_character_state_context_for_prompt
 from prompt_derivations import build_priority_ladder, select_relationship_prompt_names
-from prompt_builders import build_character_turn_prompt, build_scene_role_prompt_context
+from prompt_builders import (
+    build_cast_and_scene_role_participants,
+    build_character_turn_prompt,
+    build_scene_role_prompt_context,
+)
 from runtime_packets import (
     CharacterPromptInputAssembly,
     RetrievedContextBundle,
@@ -28,6 +32,11 @@ from runtime_packets import (
     runtime_packets_from_character_prompt_assembly,
     split_scene_state,
 )
+
+
+def _parity_test_display_fn(s: str) -> str:
+    """Matches card-less fallback: underscores → spaces (test / parity harness)."""
+    return str(s or "").replace("_", " ")
 
 
 def test_split_merge_roundtrip_preserves_scene_state() -> None:
@@ -158,9 +167,17 @@ def _assembly_from_scene_inputs(
         or scene_state.get("present_characters")
         or ["A", "B"]
     )
-    cast = [name for name in scene_state.get("present_characters", []) if name != char_name]
-    if not cast:
-        cast = [n for n in agents if n != char_name]
+    present_list = [
+        str(x).strip()
+        for x in (scene_state.get("present_characters") or [])
+        if str(x or "").strip()
+    ]
+    cast, role_participants = build_cast_and_scene_role_participants(
+        char_name,
+        present_list if present_list else None,
+        agents,
+        _parity_test_display_fn,
+    )
     scene_template_context = {
         "template_id": str(scene_state.get("scene_template_id", "") or ""),
         "premise": str(scene_state.get("scene_premise", "") or ""),
@@ -170,7 +187,7 @@ def _assembly_from_scene_inputs(
             if str(item or "").strip()
         ],
     }
-    scene_roles = build_scene_role_prompt_context(scene_state, [char_name] + cast)
+    scene_roles = build_scene_role_prompt_context(scene_state, role_participants)
     my_scene_role = next(
         (
             item
@@ -238,10 +255,17 @@ def _assembly_from_scene_inputs(
 def assert_assembly_bundle_parity(
     asm: CharacterPromptInputAssembly,
     state: CharacterState | None,
+    *,
+    display_fn=_parity_test_display_fn,
 ) -> None:
     live = live_bundle_from_character_prompt_assembly(asm)
     sp, cp = runtime_packets_from_character_prompt_assembly(asm)
-    recon = reconstruct_character_prompt_input_bundle(sp, cp, state=state)
+    recon = reconstruct_character_prompt_input_bundle(
+        sp,
+        cp,
+        state=state,
+        get_character_display_name_fn=display_fn,
+    )
     ok, msg = compare_character_prompt_bundles(live, recon)
     assert ok, msg
 
@@ -259,6 +283,7 @@ def assert_assembly_bundle_parity(
         "cross_session_memory_slices",
         "session_template_metadata_on_scene_packet",
         "stalled_and_active_issues_mixed",
+        "id_display_cast_parity",
     ],
 )
 def test_parity_corpus_bundle_equivalence(scenario_id: str) -> None:
@@ -408,6 +433,19 @@ def test_parity_corpus_bundle_equivalence(scenario_id: str) -> None:
             ],
         )
         assert_assembly_bundle_parity(asm, CharacterState(name="A", current_objective="Prioritize"))
+
+    elif scenario_id == "id_display_cast_parity":
+        asm = _assembly_from_scene_inputs(
+            scene_state=_scene_state_base(
+                present_characters=["Kizzie", "Marlene Fletcher", "Willow Reeves"],
+            ),
+            char_name="Willow_Reeves",
+            state=CharacterState(name="Willow_Reeves", current_objective="Hold ground"),
+            session_agent_names=["Willow_Reeves", "Kizzie", "Marlene_Fletcher"],
+        )
+        assert_assembly_bundle_parity(
+            asm, CharacterState(name="Willow_Reeves", current_objective="Hold ground")
+        )
     else:
         raise AssertionError(f"unknown scenario {scenario_id}")
 
@@ -423,7 +461,10 @@ def test_parity_corpus_core_prompt_text_when_bundle_matches() -> None:
     live = live_bundle_from_character_prompt_assembly(asm)
     sp, cp = runtime_packets_from_character_prompt_assembly(asm)
     recon = reconstruct_character_prompt_input_bundle(
-        sp, cp, state=CharacterState(name="A", current_objective="Observe")
+        sp,
+        cp,
+        state=CharacterState(name="A", current_objective="Observe"),
+        get_character_display_name_fn=_parity_test_display_fn,
     )
     assert compare_character_prompt_bundles(live, recon)[0]
     t_live = build_character_turn_prompt(**live)
@@ -458,7 +499,13 @@ def test_reconstruct_bundle_matches_coherent_live_inputs() -> None:
     char_name = "A"
     state = CharacterState(name=char_name, current_objective="Observe")
     present_for_moves = scene_state.get("present_characters") or ["A", "B"]
-    cast = [n for n in present_for_moves if n != char_name]
+    present_list = [str(x).strip() for x in present_for_moves if str(x or "").strip()]
+    cast, role_participants = build_cast_and_scene_role_participants(
+        char_name,
+        present_list if present_list else None,
+        ["A", "B"],
+        _parity_test_display_fn,
+    )
     scene_template_context = {
         "template_id": str(scene_state.get("scene_template_id", "") or ""),
         "premise": str(scene_state.get("scene_premise", "") or ""),
@@ -466,10 +513,7 @@ def test_reconstruct_bundle_matches_coherent_live_inputs() -> None:
             str(x) for x in scene_state.get("location_entry_slots", []) if str(x or "").strip()
         ],
     }
-    scene_roles = build_scene_role_prompt_context(
-        scene_state,
-        [char_name] + cast,
-    )
+    scene_roles = build_scene_role_prompt_context(scene_state, role_participants)
     my_scene_role = next(
         (
             item

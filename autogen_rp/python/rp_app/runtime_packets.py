@@ -12,10 +12,13 @@ from __future__ import annotations
 import difflib
 import json
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from memory_layer.retrieval import build_character_state_context_for_prompt
-from prompt_builders import build_scene_role_prompt_context
+from prompt_builders import (
+    build_cast_and_scene_role_participants,
+    build_scene_role_prompt_context,
+)
 from prompt_derivations import build_priority_ladder, select_relationship_prompt_names
 
 # Mirrors `SceneState.to_dict` keys in continuity_state.py — stable vs live/dynamic.
@@ -375,6 +378,7 @@ def reconstruct_character_prompt_input_bundle(
     char_packet: RuntimeCharacterPacket,
     *,
     state: Any,
+    get_character_display_name_fn: Callable[[str], str],
 ) -> dict[str, Any]:
     """Rebuild the live prompt-input bundle from packets + authoritative character state."""
     char_name = char_packet.character_name
@@ -382,11 +386,20 @@ def reconstruct_character_prompt_input_bundle(
     merged = merge_scene_state_from_packets(scene_packet, proj)
 
     present_for_moves = merged.get("present_characters") or proj.session_agent_names
-    cast = [
-        name for name in (merged.get("present_characters") or []) if name != char_name
+    present_list = [
+        str(x).strip()
+        for x in (merged.get("present_characters") or [])
+        if str(x or "").strip()
     ]
-    if not cast:
-        cast = [n for n in proj.session_agent_names if n != char_name]
+    session_names = [
+        str(x).strip() for x in (proj.session_agent_names or []) if str(x or "").strip()
+    ]
+    cast, role_participants = build_cast_and_scene_role_participants(
+        char_name,
+        present_list if present_list else None,
+        session_names,
+        get_character_display_name_fn,
+    )
 
     scene_template_context = {
         "template_id": str(merged.get("scene_template_id", "") or ""),
@@ -399,7 +412,7 @@ def reconstruct_character_prompt_input_bundle(
     }
     scene_roles = build_scene_role_prompt_context(
         merged,
-        [char_name] + cast,
+        role_participants,
     )
     my_scene_role = next(
         (

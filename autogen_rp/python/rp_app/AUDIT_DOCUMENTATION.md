@@ -61,6 +61,8 @@ Character `*_full.json` system prompts may include the heading `## **BINDING CON
 
 Character `*_full.json` prompts include a fixed **`EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY)`** section immediately before **`OUTPUT RULES:`** when using the current `prompt_builders.build_character_turn_prompt` template. It is not continuity-derived; presence is **always** expected for character turns (verify with a string search on `*_full.json`).
 
+**Cast / others roster (character prompt):** In `*_full.json`, the acting character should **not** appear under **`OTHER PRESENT CHARACTERS`**, and **`CAST ROLE MAP`** should **not** list the same person twice under different id vs display spellings. Live and reconstruction use the same display-name resolver (`get_character_display_name_fn`) for this assembly path.
+
 ### Episodic memory (Phase 3.2) in audits
 
 Continuity-backed episodic recall is **off by default**. It is merged into the character system prompt under **RETRIEVED REFERENCE MATERIAL (NON-AUTHORITATIVE)** when enabled.

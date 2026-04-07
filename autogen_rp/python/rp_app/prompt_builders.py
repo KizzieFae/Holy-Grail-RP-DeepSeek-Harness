@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Callable
 
 _EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK = """## **EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY)**
 
@@ -16,6 +16,58 @@ _EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK = """## **EVIDENCE & AUTHORITY DISCIPLINE (
 **Not allowed:** Unsupported particulars presented as **established truth** in **clinical**, **institutional**, or **recorded / noted** voice when those particulars are **not already stated as fact in this prompt**.
 
 """
+
+
+def prompt_identity_same(
+    a: str,
+    b: str,
+    display_fn: Callable[[str], str],
+) -> bool:
+    """True if two labels refer to the same character for prompt purposes (id vs display)."""
+    sa = str(a or "").strip()
+    sb = str(b or "").strip()
+    if not sa or not sb:
+        return False
+    if sa == sb:
+        return True
+    ca = str(display_fn(sa)).strip().casefold()
+    cb = str(display_fn(sb)).strip().casefold()
+    if not ca or not cb:
+        return False
+    return ca == cb
+
+
+def build_cast_and_scene_role_participants(
+    char_name: str,
+    present_characters: list[str] | None,
+    session_agent_names: list[str] | None,
+    display_fn: Callable[[str], str],
+) -> tuple[list[str], list[str]]:
+    """Filter others-only cast (ordered, deduped) and participant list for CAST ROLE MAP.
+
+    When ``present_characters`` is non-empty but all entries are the actor (under any label),
+    falls back to ``session_agent_names`` like the legacy ``if not cast`` branch.
+    """
+    actor = str(char_name or "").strip()
+    present = [str(x).strip() for x in (present_characters or []) if str(x or "").strip()]
+    session = [str(x).strip() for x in (session_agent_names or []) if str(x or "").strip()]
+
+    def _deduped_others(source: list[str]) -> list[str]:
+        cast_out: list[str] = []
+        for label in source:
+            if prompt_identity_same(label, actor, display_fn):
+                continue
+            if any(prompt_identity_same(label, ex, display_fn) for ex in cast_out):
+                continue
+            cast_out.append(label)
+        return cast_out
+
+    if present:
+        cast_out = _deduped_others(present)
+        if cast_out:
+            return cast_out, [actor] + cast_out
+    cast_out = _deduped_others(session)
+    return cast_out, [actor] + cast_out
 
 
 def build_responder_obligation_director_prompt_prefix(

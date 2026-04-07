@@ -290,6 +290,7 @@ def test_shadow_bundle_parity_with_retrieved() -> None:
         scene_packet,
         char_packet,
         state=state,
+        get_character_display_name_fn=lambda s: str(s or "").replace("_", " "),
     )
     ok, msg = compare_character_prompt_bundles(live, recon)
     assert ok, msg
