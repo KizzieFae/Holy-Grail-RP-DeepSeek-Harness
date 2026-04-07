@@ -28,6 +28,7 @@ This file is a quick orientation guide for humans and AI tools.
 - `python/rp_app/README.md` - runtime overview and module layout
 - `python/rp_app/ARCHITECTURE.md` - authoritative RP architecture notes
 - `python/rp_app/AUDIT_DOCUMENTATION.md` - audit artifact meanings and review procedure
+- `docs/quality-soft-progression-consequence-coverage.md` - backlog: low-intensity progression vs empty `consequences` (not a bug; future deterministic coverage)
 - `python/rp_app/CHARACTER_MIGRATION_GUIDE.md` - character-card migration guidance
 - `docs/rp-data-layout.md` - character cards, templates, sessions, audit paths
 
