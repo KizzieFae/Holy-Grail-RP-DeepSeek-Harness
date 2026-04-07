@@ -98,7 +98,7 @@ Headless or in-app runs with audit logging produce artifacts under `rp_app/data/
 - Run simulations (e.g. `--audit`, headless CLI).
 - Generate and refresh audit artifacts.
 - Interpret outputs: reconcile narrative trace, continuity fields, progression retries, narrator/character audit blocks.
-- Propose **candidate issues** with evidence (session id, paths, field names/values).
+- Propose **candidate issues** with mandatory evidence and a primary **Layer** (see `ARCHITECTURE.md` Issue Tracking).
 
 **Human:**
 
@@ -106,46 +106,37 @@ Headless or in-app runs with audit logging produce artifacts under `rp_app/data/
 - Assign priority.
 - Steer validation and implementation.
 
-### Issue definition
+### When to file a GitHub Issue
 
-> An issue is a **recurring or high-impact** pattern in audit outputs indicating **undesirable or non-useful** system behavior.
+File when **Pattern status** and **Type** are assigned per `ARCHITECTURE.md` **§I** and **§E**, mandatory evidence (**§D**) is complete, and work should outlive the session. **Pattern status** and **audit-only** discipline are defined there (single instance, escalation, audit-only notes).
 
-Do not file on **single occurrences** unless the impact is **severe** (e.g. hard contradiction across truth layers, data integrity, or safety).
+### Type and Layer (GitHub body)
 
-### Issue classification
-
-Classify each item in the GitHub issue body (labels alone are not enough for nuance):
-
-| Class | Meaning | Typical tracking |
-|-------|---------|------------------|
-| **Bug** | Incorrect runtime behavior; contradictions between continuity, Director, narrator, or rendered prose; broken enforcement relative to spec. | Actionable; prioritize when integrity- or user-facing. |
-| **Behavior** | Outcome may be correct but **unvalidated** or needs **calibration** (thresholds, proxy definitions). May become a bug after confirmation. | Measurement, reproduction, design discussion. |
-| **Limitation** | Known **heuristic** or design constraint (often stated as `limitations` in audit payloads). High false-positive rate can be **expected**. | Watchlist / research / improvement; not a defect by default. |
-
-**Not every tracked GitHub Issue is a defect.** Limitations and calibration threads are valid long-lived records.
+- **Type** — `bug` | `quality` | `design_gap` with **PRD/architecture as authority** (`ARCHITECTURE.md` **§E**). Labels alone are not enough.
+- **Layer** — Exactly one primary **Layer** from `ARCHITECTURE.md` **§F** (snake_case). Use **orchestration** vs **response_validation** per the explicit boundary in **§F**.
+- **Pattern status** — `single_instance` | `potential_pattern` | `confirmed_pattern` (**§I**).
+- **Current status** — Workflow line and allowed transitions: `ARCHITECTURE.md` **§H**.
 
 ### Tracking policy
 
-- **GitHub Issues** are the system of record (see `rp_app/ARCHITECTURE.md`, Issue Tracking).
-- **Bugs** → implement, then validate with audited re-runs.
-- **Behavior** → confirm whether to treat as bug, tune signal, or document intent.
-- **Limitations** → document; avoid treating heuristic **`fail`/`border`** noise as proof of bad narrator or character output without independent evidence.
+- **GitHub Issues** are the system of record (`ARCHITECTURE.md`, Issue Tracking).
+- **bug** → implement after **`consensus_reached`**, then validate with audited re-runs; cite PRD/architecture clause in the issue.
+- **quality** → calibration or UX; do not file as **bug** without an explicit spec violation.
+- **design_gap** → spec or design completion; may pair with **`DESIGN_GAP`** title prefix.
 
 ### Evidence requirements
 
-Issues should cite, where possible:
+Align with `ARCHITECTURE.md` **§D**:
 
-- **Session identifiers** (e.g. `session_380`, owner slug).
-- **Artifact paths** (e.g. `round_001/..._turn07_*_full.json`, `_narrative.json` turn index).
-- **Observed behavior** (concrete fields and values).
-- **Pattern** (when it appears; what conditions held in the sample).
-- **Impact** (scene quality, operator trust, audit usability).
+- **Scenario id**, **audit session path**, **turn index** (or `n/a` with reason) — mandatory.
+- Prefer structured move excerpt, consequence output, continuity snapshot excerpt.
+- Concrete **observed** fields/values and **deterministic reasoning** tying them to **Layer** and **Type**.
 
 ### Validation loop (post-fix)
 
 1. Re-run the **same** or agreed regression scenario with audit logging.
 2. Verify the issue’s **signature** no longer appears (or meets agreed reduction).
-3. Spot-check **related** dimensions (continuity, progression, narrator validation) for regressions.
+3. Spot-check related dimensions (e.g. **continuity_state**, **progression**, **rendering**, **response_validation**) for regressions—use **Layer** names from **§F** when recording notes.
 
 ### Audit outputs vs runtime
 
@@ -155,7 +146,7 @@ Issues should cite, where possible:
 
 ### Audit v2 (deterministic, advisory)
 
-Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and the appropriate **suspected layer** (`continuity` vs `audit/simulation` vs `narrator`, etc.).
+Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `ARCHITECTURE.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic).
 
 ### Audit signal limitations
 
@@ -166,16 +157,14 @@ Examples from baseline audits:
 - **Prose attribution** / attribution proxies — pronoun-led or implicit attribution often fails fixed-window name tests.
 - **CA1 (`char_ca1_motivation_action`)** — low lexical overlap between motivation text and action/dialogue on coherent, subtext-heavy moves.
 
-Treat chronic **`fail`** on these as **limitations** or **calibration** topics unless separate evidence shows incorrect **runtime** behavior. They inform evolution of metrics; they **should not** alone trigger immediate “fix the narrator/character” work.
+Treat chronic **`fail`** on these as **quality**-class signals or **design_gap** discussions for metrics unless **independent runtime evidence** shows incorrect behavior attributable to a concrete **Layer**. They **should not** alone trigger “fix the narrator/character” work without that evidence.
 
 ### GitHub issue usage (this repo)
 
-- Use **labels** defined in `ARCHITECTURE.md` §C (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, optional `validation`, `docs`, `needs-reproduction`). Keep the label set small; put subsystem detail in the body.
-- Follow the **issue body template** in `ARCHITECTURE.md` §D. Additionally embed:
-  - **Type (taxonomy):** `bug` | `behavior` | `limitation` (clarifies intent alongside the GitHub label).
-  - **Area:** e.g. `continuity`, `progression`, `director`, `narrator`, `character`, `prose`, `audit/simulation`.
-  - **Severity:** when useful (`high` / `medium` / `low` or narrative equivalent).
-- Title prefixes `[BUG]`, `[IMPROVEMENT]`, `[RESEARCH]`, `[TECH-DEBT]` per `ARCHITECTURE.md` §F. **Limitation** and **behavior** items often use `improvement` or `research` until promoted to a confirmed **bug**.
+- Optional GitHub **labels**: `ARCHITECTURE.md` **§C** (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, optional `validation`, `docs`, `needs-reproduction`). Labels do **not** replace **Type** or **Layer** in the body.
+- **Issue body:** `ARCHITECTURE.md` **§D** (canonical contract). **Layer** definitions and tie-breaks: **§F**. **Title** prefixes **`[BUG]`** | **`[QUALITY]`** | **`[DESIGN_GAP]`**: **§G**.
+- **Documentation** before terminal closure: checklist in **§D**; update architecture/audit/operator docs when behavior or contracts change.
+- **Root template:** `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` (repository git root) mirrors **§D** fields for the web UI.
 
 ## Directory Structure
 

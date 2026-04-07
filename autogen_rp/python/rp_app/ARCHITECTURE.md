@@ -534,130 +534,260 @@ This is the most important path for improving story quality over long sessions b
 
 ### A. System of record
 
-- **GitHub Issues** are the system of record for:
-  - bugs
-  - observed behavior problems
-  - simulation anomalies
-  - investigations and research threads
-  - approved improvements and refactors
-  - validation and follow-up work
-
-- **Project files** (for example `RP_SETUP_TODO.md` at `autogen_rp/python/RP_SETUP_TODO.md`) remain responsible for:
-  - roadmap and phase structure
-  - architecture and system design
-  - completion criteria and milestones
-
+- **GitHub Issues** are the system of record for bugs, quality/design work, simulation anomalies, investigations, refactors, and validation follow-up.
+- **Project files** (for example `RP_SETUP_TODO.md` at `autogen_rp/python/RP_SETUP_TODO.md`) remain responsible for roadmap, phase structure, architecture notes, and milestones—not for live issue logs.
 - **Do not** duplicate detailed issue logs in project files.
+- **Reference markdown** in-repo may capture background and acceptance criteria but is **reference-only** for task tracking. **GitHub Issues** hold status, discussion, and closure.
 
-- **Reference markdown** in-repo (for example under `autogen_rp/docs/`) may capture background, constraints, and acceptance criteria, but it is **reference-only** for task tracking. **GitHub Issues remain the source of truth** for status, discussion, and closure.
+**Non-negotiable tracking rules**
+
+1. GitHub Issues are the **single** source of truth for tracked work.
+2. Documentation is **reference only**, not a substitute for Issues.
+3. **No issue without evidence** (mandatory fields in **§D**).
+4. **One primary Layer** per issue (**§F**).
+5. **No implementation before consensus** (`Current status` must reach **`consensus_reached`** before code changes for that issue, except duplicate/withdrawn intake—**§H**).
+6. **Quality** and **design_gap** items are **not** silently filed as **bug**; **Type** follows **§E** (PRD authority).
+7. **Pattern status** is always explicit (**§I**).
+8. **Documentation reviewed and updated** where contracts or behavior changed **before** terminal closure (**§D** checklist).
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Methodology—pipeline (**Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test**), roles (AI-assisted vs human), taxonomy (**bug** / **behavior** / **limitation**), evidence standards, heuristic signal limitations, and GitHub body fields—is documented in **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** for observability unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Roles, **Type** / **Layer** / **Pattern status**, evidence standards, and heuristic caveats are in **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### B. Standard workflow
 
-Use this lifecycle; record progress in the Issue (description updates, comments, checklists).
+Record progress in the Issue (description updates, comments, checklists). **Status** line must follow **§H**.
 
-1. **Observation** — Something unexpected is seen in runs, tests, or review. Note repro context and severity. Open or update an Issue when it may outlive the current session. When the issue should exist on GitHub and you are not only drafting text, create it using **§B.1** (CLI) or the web UI with the template in **§D**.
-
-2. **Investigation** — Narrow cause, gather evidence (logs, audits, scenario IDs). Document hypotheses and ruled-out layers in comments.
-
-3. **Consensus** — Agree on whether to fix, defer, or monitor; align on suspected layer and scope.
-
-4. **Implementation** — Land changes; reference the Issue in commits (`#123`).
-
-5. **Validation** — Confirm with tests, scenario reruns, or checklists defined in the Issue. **Closure happens after validation**, not merely after merge. Before closing, complete any **documentation review** checklist items defined in the Issue (for example updates to architecture, audit, or operator-facing docs when behavior or contracts change).
-
-6. **Closure** — Close when validated, or close as **monitor** when no fix is required but the thread should remain discoverable.
-
-**Rules of thumb:**
-
-- Create an Issue when work may **persist beyond the current session**.
-- Close Issues **only after validation** (or explicit **monitor** / **won’t fix** with rationale).
-- Issues may be closed as **monitor** when no code change is required but observation is recorded.
+1. **Observation** — Unexpected behavior in runs, tests, or review. Open or update an Issue when work may outlive the session. Create on GitHub via **§B.1** (CLI) or the web UI using **`.github/ISSUE_TEMPLATE/holy_grail_rp.yml`** (repository root).
+2. **Investigation** — Gather evidence; set **`Current status: investigating`**. Document ruled-out **Layers** in comments.
+3. **Consensus** — Agree fix / defer / monitor / won’t fix; align on **Layer** and scope. Set **`Current status: consensus_reached`** before implementation.
+4. **Implementation** — Land changes; reference the Issue in commits (`#123`). Set **`Current status: implemented`** when merged or landed.
+5. **Validation** — Tests, scenario reruns, checklists in the Issue. Set **`Current status: validated`** when criteria pass.
+6. **Closure** — Set terminal **§H** status; GitHub closed when appropriate. Complete **§D** documentation checklist before **`closed`**.
 
 ### B.1 Filing issues via GitHub CLI (humans and agents)
 
-Use this when creating the Issue on GitHub from a terminal—for example when an agent is asked to *file*, *create*, *open*, or *track* an issue, not merely to produce draft markdown.
+Use when creating the Issue on GitHub from a terminal (e.g. agent asked to *file* / *create* / *open* / *track*, not draft-only).
 
-1. Run commands from the **git root** of this repository (the directory that contains `.git` and whose `origin` remote is the GitHub repo where Issues live).
-2. Run `gh auth status`. If authentication fails or `gh` is missing, say so and still provide the full issue body (**§D–§F**); the user can paste into the web UI or run `gh auth login`.
-3. Prefer `gh issue create --title "..." --body-file path/to/body.md` over inline `--body` to avoid escaping problems. Align `--title` with **§F** and `--label` with **§C** (repeat `--label` for each label).
-4. After a successful create, share the returned issue URL.
+1. Run commands from the **git root** (directory with `.git` whose `origin` hosts Issues).
+2. Run `gh auth status`. If auth fails or `gh` is missing, provide full body per **§D** (and semantics **§E–§I**); user may paste into the web UI or run `gh auth login`.
+3. Prefer `gh issue create --title "..." --body-file path/to/body.md`. Align **title** with **§G**; optional GitHub **labels** with **§C** (repeat `--label` per label).
+4. Share the returned issue URL after success.
 
-Unless the user explicitly asked for a **draft only**, treating the task as done means opening the issue on GitHub when `gh` is available and authenticated—not only pasting issue text in chat.
+Unless the user asked **draft only**, done means the Issue exists on GitHub when `gh` works—not only chat markdown.
 
-### C. Standard labels (explicit)
+### C. Standard GitHub labels (optional adjunct)
 
-**Default label set** (do not expand without good reason):
+Labels do **not** replace **Type** or **Layer** in the body. Default set (do not expand without reason): `bug`, `improvement`, `research`, `tech-debt`, `blocked`. Optional: `validation`, `docs`, `needs-reproduction`.
 
-- `bug`
-- `improvement`
-- `research`
-- `tech-debt`
-- `blocked`
+### D. Issue body template (canonical contract)
 
-**Optional** (add only when needed):
-
-- `validation`
-- `docs`
-- `needs-reproduction`
-
-Avoid growing the label set unnecessarily; prefer a small, consistent vocabulary.
-
-### D. Issue structure (explicit template)
-
-Use this as the **standard** issue body format:
+Use these sections **in order** (copy into `body.md` or the root issue form).
 
 - **Summary** — One short paragraph.
-- **Type** — GitHub label alignment (`bug`, `improvement`, `research`, …). Optionally add a **taxonomy** line: **bug** (defect), **behavior** (needs validation or calibration), or **limitation** (known heuristic/design constraint)—see **`AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. **Not all Issues are defects.**
-- **Suspected layer** — Single value from the convention below (body field, not a label).
-- **Area** — Optional but recommended: subsystem tag in prose (e.g. `continuity`, `progression`, `narrator`, `character`, `prose`, `audit/simulation`).
-- **Severity** — Optional: `high` / `medium` / `low` (or narrative equivalent) when it helps triage.
-- **Scenario / context** — How to reproduce or where it showed up (scenario id, UI path, command).
-- **Observed behavior** — What actually happened.
-- **Expected behavior** — What should happen instead (or success criteria for research).
-- **Evidence** — Pointers to audits, commits, transcripts, metrics files (session id, artifact paths, fields).
-- **Current assessment** — Confirmed / likely / unknown / watchlist; brief rationale.
-- **Next step** — Who does what next (investigate, implement, rerun sim, etc.).
-- **Validation criteria** — How we will know the Issue is truly done (tests, scenarios, audited re-runs, sign-off).
+- **Type** — One of **`bug`** | **`quality`** | **`design_gap`** (definitions **§E**).
+- **Layer** — One primary value from **§F** (body field, not a label). If **`other`**, include **justification** and **intended final Layer** per **§F**.
+- **Pattern status** — One of **`single_instance`** | **`potential_pattern`** | **`confirmed_pattern`** (rules **§I**).
+- **Current status** — Exactly one value from **§H** on a single line: `Current status: <value>`.
+- **Evidence (mandatory)** — **Scenario id**; **audit session path** (repo-relative or unambiguous); **turn index** or `n/a` with reason.
+- **Evidence (preferred)** — Structured move excerpt; consequence output if applicable; continuity snapshot excerpt if applicable.
+- **Expected behavior** — What should happen (cite PRD/architecture when **Type** is **bug** or **design_gap**).
+- **Observed behavior** — What happened (concrete fields/paths).
+- **Deterministic reasoning** — Why observed violates expected (rules, fields, code path—no hand-waving).
+- **System impact** — Operator/user-visible effect.
+- **Constraints** — e.g. no LLM-only fix; no prompt workaround; no weakening enforcement; continuity authoritative—or `none`.
+- **Affected modules** — Concrete paths (e.g. `autogen_rp/python/rp_app/continuity_consequence_classifier.py`).
+- **Validation criteria** — Tests / scenario ids / audit checks required to reach **`validated`**.
+- **Documentation** — Before terminal closure: `[ ]` Documentation reviewed and updated where behavior or contracts changed (list files in a closing comment).
 
-### E. Suspected layer convention
+Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / action).
 
-Record **Suspected layer** in the issue body (not as a label). Use one of:
+### E. Type (classification; PRD authority)
 
-- `progression`
-- `continuity`
-- `director`
-- `grounding`
-- `perception/audibility`
-- `narrator`
-- `memory/episodic`
-- `orchestration`
-- `audit/simulation`
-- `unknown`
+**Authority:** [Holy Grail PRD.md](../../../Holy%20Grail%20PRD.md) (repository root) and [ARCHITECTURE_OVERVIEW.md](../../../ARCHITECTURE_OVERVIEW.md) / this file for architecture expectations. If PRD/architecture are silent, prefer **`quality`** or **`design_gap`** until the spec is updated—not **`bug`**.
 
-### F. Title conventions
+| Type | Definition |
+|------|------------|
+| **bug** | Behavior **violates an explicit** must/should/owns expectation in PRD or linked architecture docs. |
+| **quality** | Undesirable but **not** specified as incorrect in those documents (calibration, UX, heuristic noise). |
+| **design_gap** | Required capability **missing**, or **implied by stated design** but not implemented. |
 
-Prefix titles for scanability:
+### F. Layer (primary; mutually exclusive)
 
-- `[BUG]` — defects and incorrect behavior
-- `[IMPROVEMENT]` — intentional behavior changes or enhancements
-- `[RESEARCH]` — open investigation, spike, or pattern hunt
-- `[TECH-DEBT]` — cleanup, refactors, maintainability
+Record **one** **Layer** in the issue body. Snake_case identifiers only.
 
-Example: `[BUG] Director skips addressee under low pressure`.
+**Boundary (orchestration vs response_validation)**
 
-### G. Guiding principles
+- If the bug affects **which actor is selected or allowed to act** → **`orchestration`**.
+- If the bug affects **validity of a produced character move or narrator structured output** → **`response_validation`** (not “who speaks next”).
+
+#### `consequence_classification`
+
+Deterministic mapping from a **validated structured character move** (and closely coupled exit signals) to **consequence labels** consumed downstream. Does **not** own authoritative state mutation.
+
+**Belongs:** Wrong/missing tags vs structured move; classifier/dedupe logic; `continuity_consequence_classifier.py`; `scene_exit_detection.py` when the fault is **classification from the move**, not applying state.
+
+**Does not belong:** Wrong issues/events/scene after tags are correct → **`continuity_state`**. Wrong Q interpretation → **`progression`**. Wrong prompt projection → **`grounding`**, **`perception`**, **`memory`**, or **`rendering`** as appropriate.
+
+**Examples:** False REFUSAL; missed REPOSITIONING; duplicate classifier emissions for one turn.
+
+#### `continuity_state`
+
+Authoritative **runtime narrative state** after a turn (events, issues, scene, interpretations, knowledge) in **`ContinuityManager`** and continuity helpers.
+
+**Belongs:** Wrong committed state given correct inputs/tags; issue lifecycle; `continuity_manager.py`, `continuity_*_helpers.py`, `turn_runner_updates.py` when **committed truth** is wrong.
+
+**Does not belong:** Tags wrong before commit → **`consequence_classification`**. Next actor wrong → **`orchestration`**. Move invalid → **`response_validation`**.
+
+**Examples:** Exit not applied offstage; stale active issues; wrong event from correct consequences.
+
+#### `progression`
+
+Deterministic **stall / advisory / enforcement** reading continuity-emitted signals. Does **not** author consequences or continuity truth.
+
+**Belongs:** Q1–Q4, retries, gates, `stall_score`, `progression_advisory`, beat-shift enforcement hooks.
+
+**Does not belong:** Wrong consequence strings → **`consequence_classification`**. Wrong continuity issues → **`continuity_state`**.
+
+**Examples:** Retry when Q satisfied; wrong qualification; `stall_score` inconsistent with committed scene signals.
+
+#### `orchestration`
+
+Turn flow: **who may act next**—address, continuation, spotlight, forced speaker, Director merge, **selection-path** validation whose purpose is **choosing or allowing the next actor** (including `response_validation_selection.py` when the defect is **selection outcome or eligibility**).
+
+**Belongs:** Wrong `next_actor` / pool / continuation; `orchestration_helpers.py`, `app_turn_director.py`, `semantic_validation.py` for selection reconciliation.
+
+**Does not belong:** Character/narrator **payload** validity (parse, presence, duplicate dialogue) → **`response_validation`**.
+
+**Examples:** Ineligible actor selected; addressee skipped against rules; selector decisions contradict policy.
+
+#### `response_validation`
+
+Validation of **character** and **narrator** **structured outputs**—whether a **produced move or narrator payload** is **valid** under rules—**excluding** the Director **selection** pipeline (**`orchestration`** owns that).
+
+**Belongs:** `response_validation_parsing.py`, `response_validation_content.py`, `response_validation_presence.py`, `response_validation_drift.py` (and peers) for character/narrator validation.
+
+**Does not belong:** Which actor Director picked → **`orchestration`**. Classifier tags → **`consequence_classification`**. Grounding text wrong with valid move → **`grounding`**.
+
+**Examples:** False must_remain; duplicate-line false positive; malformed move rejection when schema should pass.
+
+#### `grounding`
+
+Scene **grounding** read model: settled facts, binding constraints, **projection into prompts** (non-authoritative vs continuity).
+
+**Belongs:** `scene_grounding.py`; grounding-related prompt assembly when facts/bindings disagree with continuity snapshot.
+
+**Does not belong:** Continuity never updated truth → **`continuity_state`**. Dialogue visibility → **`perception`**.
+
+**Examples:** Missing BINDING CONSTRAINTS; stale SETTLED SCENE FACTS vs continuity.
+
+#### `perception`
+
+**Knowledge boundaries** for prompt assembly: who may see others’ dialogue / rendered text / filtered tails (`perception_audibility` and call sites).
+
+**Belongs:** Leaks or incorrect withholding in per-character prompts.
+
+**Does not belong:** Wrong continuity knowledge records → **`continuity_state`**. Retrieval bundle → **`memory`**.
+
+**Examples:** Whisper visible to wrong character; offstage sees full dialogue against rules.
+
+#### `memory`
+
+Episodic compile/select/cache and **retrieved context** merge into bundles and prompt sections (non-authoritative vs continuity).
+
+**Belongs:** `memory_layer/`, `episodic_memory_*.py`, merge/format of `RetrievedContextBundle` given continuity inputs.
+
+**Does not belong:** Continuity wrote wrong events → **`continuity_state`**. Perception gating → **`perception`**.
+
+**Examples:** Empty episodic when events exist; wrong merge caps/order; retrieval summary inconsistent with bundle passed to prompts.
+
+#### `rendering`
+
+Narrator / UI **presentation** path; dialogue verbatim contract in rendered output.
+
+**Belongs:** `app_turn_rendering.py`, narrator presentation bugs.
+
+**Does not belong:** Move validation → **`response_validation`**. Committed state wrong → **`continuity_state`**. Audit file shape → **`audit_simulation`**.
+
+**Examples:** Paraphrased dialogue in chat; render ordering bug.
+
+#### `audit_simulation`
+
+Observability and **behavioral harness**: headless runs, audit writers, metrics / `structured_eval` when the fault is **instrumentation or driver**, not runtime truth.
+
+**Belongs:** Missing/wrong audit fields; broken `--audit`; CLI/scenario driver bugs.
+
+**Does not belong:** Runtime wrong with correct audits → owning **Layer** above.
+
+**Examples:** `_audit_summary.json` missing promised blocks; misaligned turn indices in artifacts.
+
+#### `application_infrastructure`
+
+Cross-cutting: Streamlit shell, session plumbing, encoding/IO, env/deps, **authored asset loaders** when the bug is **mechanical** (path/schema load), not wrong narrative semantics after load.
+
+**Belongs:** `app.py` wiring; mojibake; broken data paths.
+
+**Does not belong:** Wrong scene semantics after clean load → domain **Layer**. Audit format → **`audit_simulation`**.
+
+**Examples:** Session key loss on rerun; bad encoding in saved JSON.
+
+#### `other`
+
+Allowed **only** when: **(1)** non-runtime (process/tooling/repo workflow outside the Layers above), **or** **(2)** **`Current status` is `investigating`** and the body includes a **target Layer hypothesis** (intended final Layer).
+
+**Always required for `other`:** **justification** (why no named runtime Layer applies yet, or why the issue is non-runtime) and **intended final Layer** (for triage: where the issue should land after investigation). **`other`** is **not** terminal for runtime bugs once **`consensus_reached`**—reclassify to a concrete **Layer**.
+
+**Tie-break order (deterministic):** wrong tags from move → **`consequence_classification`**; wrong state given correct tags → **`continuity_state`**; wrong gate/retry from metadata → **`progression`**; wrong next actor → **`orchestration`**; wrong move/narrator payload validity → **`response_validation`**; wrong facts/bindings in prompts, continuity correct → **`grounding`**; wrong visibility of others’ text → **`perception`**; wrong episodic/retrieved bundle → **`memory`**; wrong final prose path → **`rendering`**; wrong audit/sim artifact → **`audit_simulation`**; load/encoding/UI shell → **`application_infrastructure`**.
+
+### G. Title conventions
+
+Prefix by **Type**:
+
+- `[BUG]` — **bug**
+- `[QUALITY]` — **quality**
+- `[DESIGN_GAP]` — **design_gap**
+
+Example: `[BUG] Orchestration selects ineligible actor under continuation override`.
+
+### H. Status (single active; transitions)
+
+**Allowed values:** `open` | `investigating` | `consensus_reached` | `implemented` | `validated` | `closed` | `monitor` | `wont_fix`
+
+**Representation:** exactly one line in the body: `Current status: <value>`.
+
+**Allowed transitions**
+
+| From | To |
+|------|-----|
+| `open` | `investigating` |
+| `investigating` | `consensus_reached` |
+| `consensus_reached` | `implemented` |
+| `implemented` | `validated` |
+| `validated` | `closed` |
+| `investigating` | `monitor` |
+| `investigating` | `wont_fix` |
+
+**Exception:** `open` → `closed` only for **duplicate** or **withdrawn** filings (document in a comment). No other skips (e.g. do not jump from `open` to `implemented`).
+
+Terminal statuses: **`closed`**, **`monitor`**, **`wont_fix`**.
+
+### I. Pattern status (discipline)
+
+1. **Audit-only (no GitHub Issue):** Incomplete mandatory evidence (scenario id, audit session path, turn index or documented `n/a`) **or** purely heuristic audit noise without runtime contradiction—keep in audit notes until evidence is complete and **Pattern status** can be assigned.
+2. **`single_instance`:** Allowed only when mandatory evidence is complete **and** impact is **high** (integrity, safety, hard contradiction across truth layers, blocking repro), **or** the team explicitly accepts a one-shot fix with documented risk. Otherwise wait for repetition.
+3. **`potential_pattern`:** Two or more similar instances **or** one strong instance plus a clear code signature suggesting repeat risk.
+4. **`confirmed_pattern`:** Same signature across **distinct** scenarios or sessions (or repeated runs showing the same failure mode).
+5. **Escalation:** `single_instance` → `potential_pattern` when a second instance matches; `potential_pattern` → `confirmed_pattern` when the signature holds across distinct scenarios/sessions. Downgrade if evidence shows operator error or invalid run.
+6. **Type** is independent of **Pattern status**; do not use **bug** without **§E** and **consensus**.
+
+### J. Guiding principles
 
 - Do **not** open Issues for trivial or disposable thoughts.
-- **Do** open Issues for anything that may need investigation, implementation, validation, or **later reference**.
-- Keep roadmap files **clean and phase-oriented**; avoid turning them into issue logs.
-- Keep **high-churn investigative history** in Issues (comments and edits), not in duplicated markdown.
-- **Reference Issues in commits** (`#nnn` or `Fixes #nnn` when appropriate).
-- **Avoid duplicating** long narratives between Issues and repo markdown; link out instead.
+- **Do** open Issues when work may need investigation, implementation, validation, or later reference—subject to **§I**.
+- Keep roadmap files phase-oriented; keep investigative history in Issues.
+- **Reference Issues in commits** (`#nnn` / `Fixes #nnn` when appropriate).
+- **Avoid duplicating** long narratives between Issues and repo markdown; link out.
 
-### H. Flexibility clause
+### K. Flexibility clause
 
-> These conventions represent the current standard workflow for this project and may be refined over time as the system evolves.
+> These conventions are the current standard and may be refined by explicit doc change.

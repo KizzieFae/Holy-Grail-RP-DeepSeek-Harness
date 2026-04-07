@@ -1,0 +1,182 @@
+name: Holy Grail RP issue
+description: Canonical Type, Layer, Pattern status, and evidence (matches ARCHITECTURE.md Issue Tracking §D–§I).
+title: "[BUG] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Contract:** `autogen_rp/python/rp_app/ARCHITECTURE.md` → **Issue Tracking** (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern).
+
+        Set the **title** prefix to `[QUALITY]` or `[DESIGN_GAP]` when **Type** is not **bug**.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One short paragraph.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: PRD/architecture authority — see ARCHITECTURE.md §E.
+      options:
+        - bug
+        - quality
+        - design_gap
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer (primary)
+      description: One value only. If other, fill Justification + Intended final layer below. See ARCHITECTURE.md §F.
+      options:
+        - consequence_classification
+        - continuity_state
+        - progression
+        - orchestration
+        - response_validation
+        - grounding
+        - perception
+        - memory
+        - rendering
+        - audit_simulation
+        - application_infrastructure
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: other_fields
+    attributes:
+      label: If Layer is `other` — justification and intended final Layer
+      description: If Layer is not `other`, write `n/a`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pattern_status
+    attributes:
+      label: Pattern status
+      description: See ARCHITECTURE.md §I.
+      options:
+        - single_instance
+        - potential_pattern
+        - confirmed_pattern
+    validations:
+      required: true
+
+  - type: dropdown
+    id: current_status
+    attributes:
+      label: Current status
+      description: Single active value; transitions in ARCHITECTURE.md §H.
+      options:
+        - open
+        - investigating
+        - consensus_reached
+        - implemented
+        - validated
+        - closed
+        - monitor
+        - wont_fix
+    validations:
+      required: true
+
+  - type: input
+    id: scenario_id
+    attributes:
+      label: Evidence — Scenario id (mandatory)
+    validations:
+      required: true
+
+  - type: input
+    id: audit_path
+    attributes:
+      label: Evidence — Audit session path (mandatory)
+      description: Repo-relative or unambiguous path under rp_audits.
+    validations:
+      required: true
+
+  - type: input
+    id: turn_index
+    attributes:
+      label: Evidence — Turn index (mandatory or n/a)
+      description: Turn index, or `n/a` with reason in Evidence (preferred) if not applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence_preferred
+    attributes:
+      label: Evidence (preferred)
+      description: Structured move excerpt; consequence output; continuity snapshot excerpt.
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Cite PRD/architecture when Type is bug or design_gap.
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: reasoning
+    attributes:
+      label: Deterministic reasoning
+      description: Why observed violates expected (fields, rules, code path).
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: System impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: e.g. no LLM-only fix; no prompt workaround; continuity authoritative — or `none`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: modules
+    attributes:
+      label: Affected modules
+      description: Concrete file paths.
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation_criteria
+    attributes:
+      label: Validation criteria
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: documentation
+    attributes:
+      label: Documentation before closure
+      description: Complete before setting terminal closed status.
+      options:
+        - label: Documentation reviewed and updated where behavior or contracts changed (list files in a closing comment).
+          required: false

@@ -37,9 +37,9 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 ### Workflow
 
 1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant.
-2. Pick **one primary suspected layer** first (below). Do not spread the investigation across layers until the evidence chain is clear.
+2. Pick **one primary Layer** first (canonical list below; full definitions in [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) Issue Tracking **§F**). Do not spread the investigation across Layers until the evidence chain is clear.
 3. Walk **evidence order** once, top to bottom; stop when you can name what **committed** the bad state.
-4. Produce **suspected layer**, **verdict**, and **minimal repro** (scenario id, audit session folder, turn index if known).
+4. Produce **Layer**, **verdict**, and **minimal repro** (scenario id, audit session folder, turn index if known)—same fields as mandatory GitHub evidence in **§D** when filing.
 5. **Stop** — validation and triage end here (see **Validation vs Remediation Boundary** below). Do not implement fixes or alter runs in the same pass unless a human **explicitly** directs remediation.
 
 ### Validation vs Remediation Boundary
@@ -61,34 +61,38 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 4. **Selector / Director** — Orchestration notes, overrides, `selector_decisions` / audit selection stages (`orchestration_helpers.py`, `app_turn_director.py`, `response_validation_selection.py`).
 5. **Narrator / rendered chat last** — Confirms presentation and model tone; **do not** treat as proof of what continuity believed.
 
-### Primary suspected layer (pick one to start)
+### Primary Layer (pick one to start)
 
-Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. Examples:
+Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. The **Layer** value must match [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) Issue Tracking **§F** (file GitHub Issues with the same token). **Orchestration vs response_validation:** wrong **who acts next** → **`orchestration`**; wrong **validity of a produced move** (parse, presence, duplicate content, drift on character/narrator payload) → **`response_validation`**.
 
-| Label | Typical symptoms | First code to inspect |
+| Layer | Typical symptoms | First code to inspect |
 |-------|------------------|------------------------|
-| `presence_exit` | Cast shrinks or jumps offstage without a clear embodied beat | `scene_exit_detection.py`, `continuity_manager.py` (`_apply_canonical_exit_offstage_transition`), `response_validation_presence.py` |
-| `consequence_classifier` | Consequence list contradicts plain reading of action/dialogue | `continuity_consequence_classifier.py`, `scene_exit_detection.py` |
-| `continuity_commit` | Wrong issues/events/scene fields after a turn | `continuity_manager.py`, `continuity_*_helpers.py`, `turn_runner_updates.py` |
-| `director_selection` | Wrong next actor given available pool and address | `app_turn_director.py`, `orchestration_helpers.py`, `semantic_validation.py` |
-| `progression_enforcement` | Retry / gate / Q1–Q4 delta behavior | `progression_enforcement.py`, `turn_runner_turn.py` |
-| `narrator_render` | Prose garble, voice, dialogue not verbatim | `app_turn_rendering.py`, narrator prompts |
-| `encoding_io` | U+FFFD, mojibake in logs, files, or console | Encoding of JSON/triggers/terminal; separate from model “quality” |
-| `other` | After the above are ruled out | Narrow from audit timeline |
+| `consequence_classification` | Consequence list contradicts plain reading of structured move | `continuity_consequence_classifier.py`, `scene_exit_detection.py` (classification from move) |
+| `continuity_state` | Wrong issues/events/scene fields **after** a turn (committed truth) | `continuity_manager.py`, `continuity_*_helpers.py`, `turn_runner_updates.py` |
+| `progression` | Retry / gate / Q1–Q4 delta behavior | `progression_enforcement.py`, `turn_runner_turn.py` |
+| `orchestration` | Wrong next actor, pool, address, continuation | `app_turn_director.py`, `orchestration_helpers.py`, `response_validation_selection.py`, `semantic_validation.py` |
+| `response_validation` | Invalid/rejected character or narrator **payload** (presence, duplicate, parse, drift) | `response_validation_parsing.py`, `response_validation_content.py`, `response_validation_presence.py`, `response_validation_drift.py` |
+| `grounding` | SETTLED SCENE FACTS / BINDING CONSTRAINTS wrong vs continuity | `scene_grounding.py`, `app_turn_prompting.py`, `prompt_builders.py` |
+| `perception` | Wrong knowledge boundary in prompts (who sees dialogue/rendered text) | `perception_audibility.py`, `app_turn_prompting.py`, `prompt_builders.py` |
+| `memory` | Episodic or retrieved bundle wrong given continuity | `memory_layer/`, `episodic_memory_*.py`, `retrieved_context_select.py` |
+| `rendering` | Prose garble, voice, dialogue not verbatim in rendered output | `app_turn_rendering.py`, narrator prompts |
+| `audit_simulation` | Wrong or missing audit artifacts, harness, metrics | `headless_scene_simulation.py`, audit writers, scenario CLI |
+| `application_infrastructure` | Encoding, Streamlit shell, session I/O, loader/path mechanics | `app.py`, session lifecycle, env/paths |
+| `other` | Only per **§F** (`other`): non-runtime process/tooling, or **`investigating`** with target Layer hypothesis + justification | `ARCHITECTURE.md` **§F** |
 
 ### Verdict (record one)
 
 - **legitimate** — State change matches the structured move and rules; scene behaved as designed.
-- **legitimate but undesirable** — Rules and classifiers behaved as implemented, but the outcome is a **design or scenario weakness** (e.g. trigger phrasing, cast size, template pressure)—not a classifier bug. Fix may be **scenario**, **template**, or **product rule**, not “random prompt tweak.”
-- **bug** — Implementation misread authored content or wrote wrong continuity (e.g. false exit on negated phrasing); fix belongs in the **labeled layer**.
+- **legitimate but undesirable** — Rules and classifiers behaved as implemented, but the outcome is a **design or scenario weakness** (e.g. trigger phrasing, cast size, template pressure). Map to GitHub **Type** **`quality`** or **`design_gap`** when filing; fix may be scenario/template/product rule, not a random prompt tweak.
+- **bug** — Implementation contradicts PRD/architecture expectation; fix belongs in the **primary Layer** above when filing (**Type** **`bug`**).
 - **ambiguous** — Not enough evidence in one pass; re-run, add audit session, or isolate turn before coding.
 
 ### Success criteria
 
-- There is a **default path** from “simulation looked wrong” to **layer-labeled** investigation **before** any **approved** code change.
-- Oddities are **labeled by layer** before fixes; **progression** is not tuned for **presence/continuity/selection/encoding** bugs unless triage (then human-directed remediation) says so.
+- There is a **default path** from “simulation looked wrong” to **Layer-labeled** investigation **before** any **approved** code change.
+- Oddities are **labeled by Layer** before fixes; **`progression`** is not tuned for **`response_validation`**, **`continuity_state`**, **`orchestration`**, or **`application_infrastructure`** bugs unless triage (then human-directed remediation) says so.
 - Repros stay **small** (scenario + audit session + optional `structured_eval` path).
-- **Triage output is complete** when suspected layer, verdict, and repro are recorded and the validation pass **stops** — implementation is out of band.
+- **Triage output is complete** when **Layer**, **verdict**, and **minimal repro** are recorded and the validation pass **stops** — implementation is out of band.
 
 ---
 
