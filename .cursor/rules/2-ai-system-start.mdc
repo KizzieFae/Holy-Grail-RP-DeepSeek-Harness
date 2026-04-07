@@ -1,0 +1,372 @@
+---
+description: Holy Grail RP workflow wrapper for Cursor (bootstrap, reports, planning gates)
+alwaysApply: true
+---
+
+# Cursor Workflow Layer
+
+Use repo files as the source of truth.
+
+Do not treat this rule as a replacement for repo guidance. This rule exists only to enforce workflow behavior in Cursor.
+
+---
+
+# Two-tier tool model (order of operations)
+
+You **MAY** use **bootstrap-safe** tools to locate required files, confirm repo layout, and resolve paths.
+
+You **MUST NOT** perform **task-specific** investigation or execution until after the **SYSTEM UNDERSTANDING REPORT** is **completed** (written as the first substantive section of the reply).
+
+## Bootstrap-safe (allowed before the report)
+
+- Listing files and directories
+- Glob / search whose **only** purpose is locating `AGENTS.md`, mapping workspace roots, or resolving paths to **Minimum guidance reads** targets
+- `git` commands that **only** establish repo root, remotes, or structure (read-only)
+- **Reading** `AGENTS.md` and the files required by **Minimum guidance reads** for this task’s class(es)
+- **Reading** files/modules under the **User-referenced scope** exception below
+
+### User-referenced scope (exception)
+
+If the user **explicitly references** a file or module that is **necessary** to understand the task, you **MAY** include it in **pre-read** before the **SYSTEM UNDERSTANDING REPORT**, even if it is **not** listed in the **Minimum guidance reads** table.
+
+A file is considered **necessary** only if:
+- it is explicitly named by the user, OR
+- it is directly referenced by `AGENTS.md` or the **Minimum guidance reads** table for the task
+
+You may use **bootstrap-safe** path resolution (glob/list) **only** to locate what the user named.
+
+Do **NOT**:
+- expand this into broad exploratory search
+- use this exception to investigate the problem itself before bootstrap
+
+---
+
+## Task-specific (not allowed before the report)
+
+- **GitHub CLI** (`gh`) or other GitHub API use
+- Running **tests**, **linters**, or **build** commands
+- **Grep / semantic search / reads** of application code, audit trees, or scenario data **beyond** the **Minimum guidance reads** list and beyond any **User-referenced scope**, when done to advance the substantive answer (root-cause, fix design, backlog retrieval, etc.)
+
+After the report, task-specific tools are allowed (including parallel use).
+
+---
+
+# Resolving `AGENTS.md` (mandatory first file)
+
+Use **bootstrap-safe** tools as needed. Then read **`AGENTS.md`** in this order:
+
+1. **Git root** of the active workspace: `AGENTS.md`
+2. If missing: `autogen_rp/AGENTS.md`
+3. If still missing: glob `**/AGENTS.md` and prefer a match consistent with the AutoGen RP structure (`docs/`, `python/`)
+4. If none found:
+   - explicitly state this under **Constraints / Risks**
+   - do NOT silently proceed as if it was read
+
+Do not assume a single workspace root always contains `AGENTS.md`.
+
+---
+
+# Minimum guidance reads (in addition to `AGENTS.md`)
+
+After `AGENTS.md`, read **at least** what matches the task.
+
+Use:
+- `AGENTS.md → Where to start`
+- `AGENTS.md → Active project areas`
+
+as the authoritative guide.
+
+| Task class | Minimum extra reads |
+|------------|-------------------|
+| GitHub Issues / backlog / issue workflow | `autogen_rp/python/rp_app/ARCHITECTURE.md` — Issue Tracking & Investigation Workflow; optional `.github/ISSUE_TEMPLATE/` |
+| RP app behavior / continuity / Director / audits | `autogen_rp/docs/architecture.md`, `autogen_rp/python/rp_app/ARCHITECTURE.md`; if auditing: `autogen_rp/docs/audit-workflows.md` |
+| Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
+| Repo structure | `autogen_rp/docs/repo-map.md` |
+
+Do **NOT** treat “relevant docs” as optional when a row applies.
+
+Add additional paths:
+- after bootstrap, OR
+- if covered by the **User-referenced scope** exception
+
+---
+
+## Conciseness vs completeness
+
+- The **SYSTEM UNDERSTANDING REPORT** must be concise
+- The **pre-read must NOT be reduced** to keep the report short
+
+---
+
+# Fresh-chat rule
+
+This rule applies ONLY at the start of a new conversation session (i.e., the first assistant response after chat initialization).
+
+It does NOT re-trigger during the same conversation unless:
+
+- the user explicitly states that this should be treated as a fresh chat, OR
+- the user explicitly requests re-bootstrap or re-evaluation
+
+Within an ongoing conversation:
+
+- treat prior context as valid unless explicitly told otherwise
+- do NOT re-run bootstrap automatically
+- do NOT produce a new SYSTEM UNDERSTANDING REPORT unless required by the Bootstrap rule
+
+Treat every new chat session as starting with incomplete context.
+
+Do NOT assume:
+- prior chat memory
+- prior repo structure
+- prior conclusions
+
+## What counts as non-trivial
+
+Bootstrap is REQUIRED if any of the following apply:
+
+- Multi-step investigation, planning, or architecture reasoning
+- Any use of task-specific tools will be required
+- GitHub issues, backlog, debugging, validation, or prioritization
+- Work involving `python/rp_app/` or scenario/audit systems
+
+Trivial (bootstrap optional):
+- single-definition questions
+- formatting-only edits
+- one-line answers with no repo grounding
+
+When in doubt → perform full bootstrap.
+
+---
+
+# Bootstrap rule
+
+For non-trivial work:
+
+- Perform bootstrap **once per chat**
+- Do NOT repeat unless:
+  - scope changes significantly
+  - user requests re-evaluation
+
+---
+
+## Reply order (mandatory)
+
+1. Optional one-line greeting (if required)
+2. `=== SYSTEM UNDERSTANDING REPORT ===`
+3. `=== END REPORT ===`
+4. Then the rest of the response
+
+Do **NOT** include:
+- findings
+- issue lists
+- command output
+- analysis
+
+before the report.
+
+---
+
+## Required bootstrap output
+
+=== SYSTEM UNDERSTANDING REPORT ===
+
+Task Scope:
+...
+
+Relevant Repo Guidance Read:
+...
+
+Relevant Systems / Files:
+...
+
+Current Understanding:
+...
+
+Constraints / Risks:
+...
+
+=== END REPORT ===
+
+Requirements:
+
+- Must reflect **actual reads**
+- Must list **concrete paths**
+- Must explicitly state missing files if applicable
+
+Fake compliance is unacceptable.
+
+---
+
+# Problem ownership (CRITICAL)
+
+Do **NOT**:
+
+- select a GitHub issue
+- assume a target issue
+- treat a backlog item as the intended task
+
+Unless explicitly instructed.
+
+If no issue is provided:
+
+- ask for clarification, OR
+- provide a neutral investigation summary
+
+Problem selection belongs to the user and/or review AI.
+
+---
+
+# Planning rule
+
+For work that changes code or repo files:
+
+- produce an implementation plan before coding
+
+Skip plan for:
+- analysis-only tasks
+- bootstrap-only sessions
+
+---
+
+## Required plan output
+
+=== IMPLEMENTATION PLAN ===
+
+Problem Understanding:
+...
+
+Relevant Systems / Files:
+...
+
+Proposed Approach:
+...
+
+Why This Approach:
+...
+
+Tests:
+...
+
+Issue / Documentation Impact:
+...
+
+=== END PLAN ===
+
+---
+
+## Planning constraints
+
+- tie reasoning to the codebase
+- reference concrete files when possible
+- avoid vague reasoning
+- expose assumptions
+
+Do NOT:
+
+- implement before approval
+- assume approval
+- present a solution as final unless explicitly asked
+
+---
+
+# Approval gate
+
+Assume dual-AI workflow:
+
+- this AI = implementation agent
+- review AI = architectural validator
+
+Do NOT implement until user confirms approval.
+
+---
+
+# Implementation rules
+
+You MUST:
+
+- keep changes minimal
+- avoid unrelated refactors
+- preserve architecture
+- keep logic explicit and testable
+
+You MUST NOT:
+
+- introduce implicit or heuristic state unnecessarily
+- move authority away from continuity
+- treat retrieval/prompt context as authoritative
+
+If plan conflicts with code → stop and report.
+
+---
+
+# Post-implementation report
+
+=== IMPLEMENTATION REPORT ===
+
+Files Changed:
+...
+
+What Changed:
+...
+
+Tests Added or Run:
+...
+
+Known Risks / Follow-ups:
+...
+
+Issue / Documentation Impact:
+- GitHub issue action:
+- Documentation update needed:
+- Likely files:
+- Reason:
+
+=== END REPORT ===
+
+---
+
+# Copy-paste handoff support
+
+When appropriate, include:
+
+=== PROMPT FOR REVIEW AI ===
+...
+=== END PROMPT ===
+
+Use after:
+- planning
+- implementation
+- testing
+
+---
+
+# Behavior constraints
+
+- prefer small diffs
+- preserve patterns
+- focus only on relevant files
+- do not skip issue/documentation impact
+- do not rely on tool memory alone
+
+---
+
+# System model requirement
+
+Treat the repo as evolving.
+
+Do NOT assume:
+- fixed structure
+- stable modules
+- static storage strategy
+
+Rebuild understanding each chat.
+
+Focus on:
+
+- authoritative state
+- mutation pathways
+- orchestration logic
+- validation layers
+- memory/retrieval (if present)
+- testing and audit surfaces
+
