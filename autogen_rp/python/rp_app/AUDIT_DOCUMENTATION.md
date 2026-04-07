@@ -77,6 +77,16 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 **Logs:** at INFO, logger `rp_app.episodic_prompt` emits one line per character turn when the episodic merge path runs (`pool_len`, `selected_len`, `bundle_items`). Logger `rp_app.retrieved_context` logs when the post-merge bundle is non-empty (`log_retrieval_if_active`).
 
+### Effective user trigger (headless simulation harness)
+
+**Field:** Top-level **`effective_user_trigger`** on **full** per-turn audit records (Director, character, narrator success paths, and turn failure entries where the harness supplies it). It records the **simulated user trigger string actually used for that orchestration turn** in the production prompts for that beat (Director selection, character generation, narrator render path for that turn).
+
+**Interpretation:** Compare this field to **`by_orchestration_turn`** / CLI **`--trigger`** / scenario defaults when debugging “wrong user framing” in **headless** runs. Rules and JSON shape are documented in [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) (**Per-turn user trigger schedule**). The schedule file is **harness input only**—it is not written into continuity or scenario files.
+
+**Light vs full:** **`effective_user_trigger`** appears in **full** audit serialization (`entry_to_full_dict`). **Light** audit rows do **not** include it; use **`*_full.json`** when you need the per-turn line.
+
+**Triage:** If the key is absent from on-disk `*_full.json` for a run that used `--user-trigger-schedule`, confirm turn-level behavior with **`_round_index.json`**, **`structured_eval`**, or metrics before assuming continuity/runtime failure—artifact layout or writer path may not expose the field in every session.
+
 ### Authored index retrieval (standard evaluation mode — Phase 4A)
 
 **Activation:** **`RP_RETRIEVED_CONTEXT_INDEX`** only (path to compiled JSON, or unset / empty = OFF). Optional CLI: `scripts/run_scene_simulation_llm.py --retrieved-context-index [PATH]` (see [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) from repository root).

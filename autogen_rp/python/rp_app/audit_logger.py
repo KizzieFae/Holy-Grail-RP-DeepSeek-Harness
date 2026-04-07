@@ -63,6 +63,7 @@ class AuditEntry:
     parsed_output: dict[str, Any] = field(default_factory=dict)
     context_snapshot: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    effective_user_trigger: str | None = None
 
     def to_full_dict(self) -> dict[str, Any]:
         """Convert to full audit format."""
@@ -434,6 +435,7 @@ class AuditLogger:
         role_assignments: dict[str, str] | None = None,
         character_presence_constraints: dict[str, str] | None = None,
         character_authority_labels: dict[str, str] | None = None,
+        effective_user_trigger: str | None = None,
     ) -> AuditEntry:
         """Create an audit entry with current timestamp.
 
@@ -493,6 +495,7 @@ class AuditLogger:
             parsed_output=parsed_output,
             context_snapshot=normalized_context_snapshot,
             metadata=metadata or {},
+            effective_user_trigger=effective_user_trigger,
         )
 
     def update_narrative_summary(

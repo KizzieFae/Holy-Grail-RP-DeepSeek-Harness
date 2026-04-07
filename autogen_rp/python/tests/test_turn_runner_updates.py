@@ -99,6 +99,7 @@ def test_apply_successful_turn_updates_propagates_continuity_failure(
             director_decision_history_limit=10,
             environment_history_limit=10,
             tension_history_limit=10,
+            effective_user_trigger="",
         )
 
     assert grounding_calls == []
@@ -182,6 +183,7 @@ def test_apply_successful_turn_updates_skips_process_turn_when_flag_set(
         environment_history_limit=10,
         tension_history_limit=10,
         skip_continuity_process_turn=True,
+        effective_user_trigger="",
     )
 
     assert sync_calls == 1

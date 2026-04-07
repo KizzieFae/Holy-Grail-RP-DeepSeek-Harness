@@ -1,3 +1,10 @@
 # Repo root — autogen_rp/.gitignore does not apply above that directory.
 .env
 **/.streamlit/secrets.toml
+
+# One-off headless harness outputs under validation_runs/ root (keep plan_execution/*.json etc. tracked)
+autogen_rp/python/validation_runs/*.log
+autogen_rp/python/validation_runs/*metrics*.json
+autogen_rp/python/validation_runs/*repro*.json
+autogen_rp/python/validation_runs/*survival*.json
+autogen_rp/python/validation_runs/*_schedule.json

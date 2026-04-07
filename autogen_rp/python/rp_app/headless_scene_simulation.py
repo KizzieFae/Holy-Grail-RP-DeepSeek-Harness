@@ -8,6 +8,7 @@ of only hand-running Streamlit scenes.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 import os
 from contextlib import nullcontext
 from dataclasses import dataclass
@@ -498,6 +499,7 @@ async def run_headless_llm_scene(
     user_name: str,
     verdict: str | None = None,
     failure_classification: str | None = None,
+    get_effective_user_trigger: Callable[[int], str] | None = None,
 ) -> HeadlessSimulationResult:
     """Run ``run_character_turns_impl``; session must already hold model client and agents."""
     char_agents: list[Any] = list(st_module.session_state.get("characters") or [])
@@ -519,6 +521,7 @@ async def run_headless_llm_scene(
         trigger_text=trigger_text,
         user_name=user_name,
         max_turns=max_turns,
+        get_effective_user_trigger=get_effective_user_trigger,
         **kwargs,
     )
 

@@ -129,6 +129,7 @@ def log_turn_failure(
     parsed_output: dict[str, Any] | None = None,
     context_snapshot: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
+    effective_user_trigger: str | None = None,
 ) -> None:
     turn_helpers.log_turn_failure(
         st_module=st,
@@ -143,6 +144,7 @@ def log_turn_failure(
         parsed_output=parsed_output,
         context_snapshot=context_snapshot,
         metadata=metadata,
+        effective_user_trigger=effective_user_trigger,
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,

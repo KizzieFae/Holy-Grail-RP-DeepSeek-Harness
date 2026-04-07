@@ -87,6 +87,7 @@ def test_log_character_turn_audit_metadata_contains_hybrid_pacing_director() -> 
         get_audit_context_fn=lambda: ("o", 1, 0, 0),
         get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
         get_character_scene_audit_context_fn=lambda *_a, **_k: {},
+        effective_user_trigger="",
     )
     hp = (captured.get("metadata") or {}).get("hybrid_pacing") or {}
     assert hp.get("pacing_source") == "director"
@@ -150,6 +151,7 @@ def test_log_character_turn_audit_metadata_contains_hybrid_pacing_neutral_none()
         get_audit_context_fn=lambda: ("o", 1, 0, 0),
         get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
         get_character_scene_audit_context_fn=lambda *_a, **_k: {},
+        effective_user_trigger="",
     )
     hp = (captured.get("metadata") or {}).get("hybrid_pacing") or {}
     turn_bucket = m.turn_metadata_by_index[m.turn_counter]
@@ -225,6 +227,7 @@ def test_log_character_turn_audit_metadata_consequence_up_suppressed_at_extreme(
         get_audit_context_fn=lambda: ("o", 1, 0, 0),
         get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
         get_character_scene_audit_context_fn=lambda *_a, **_k: {},
+        effective_user_trigger="",
     )
     hp = (captured.get("metadata") or {}).get("hybrid_pacing") or {}
     assert hp.get("pacing_source") == "none"

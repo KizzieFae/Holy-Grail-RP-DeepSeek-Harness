@@ -185,6 +185,7 @@ def log_character_turn_audit(
     anti_regression_advisory: dict[str, Any] | None = None,
     character_audit_v1: dict[str, Any] | None = None,
     audit_v2: dict[str, Any] | None = None,
+    effective_user_trigger: str,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -238,6 +239,7 @@ def log_character_turn_audit(
                 "scene_state_after": scene_state_after,
                 **actor_scene_context,
             },
+            effective_user_trigger=effective_user_trigger,
             metadata=_merge_character_audit_metadata(
                 base={
                     "parse_error": "",
@@ -304,6 +306,7 @@ def log_narrator_render_audit(
     progression_advisory: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
     audit_v2: dict[str, Any] | None = None,
+    effective_user_trigger: str,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -356,6 +359,7 @@ def log_narrator_render_audit(
                 "scene_state_after": scene_state_after,
                 **actor_scene_context,
             },
+            effective_user_trigger=effective_user_trigger,
             # Narrator audit v1 layers are additive, non-mutating, and must remain
             # separate from semantic_validation (distinct metadata keys).
             metadata=_merge_character_audit_metadata(

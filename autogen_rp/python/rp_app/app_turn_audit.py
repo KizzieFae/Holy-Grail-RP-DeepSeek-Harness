@@ -25,6 +25,7 @@ def log_turn_failure(
     get_continuity_manager_fn,
     get_scene_audit_logging_kwargs_fn,
     get_character_scene_audit_context_fn,
+    effective_user_trigger: str | None = None,
 ) -> None:
     rejection = {
         "speaker": bot_name,
@@ -68,6 +69,7 @@ def log_turn_failure(
             raw_response=raw_response,
             parsed_output=parsed_output or {},
             context_snapshot=failure_context_snapshot,
+            effective_user_trigger=effective_user_trigger,
             metadata={
                 "failure_stage": stage,
                 "failure_reason": reason,

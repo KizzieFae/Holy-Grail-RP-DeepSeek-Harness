@@ -52,6 +52,11 @@ from progression_simulation_scenarios import (  # noqa: E402
     load_scenario,
     scenario_prepare_kwargs,
 )
+from user_trigger_schedule import (  # noqa: E402
+    UserTriggerScheduleError,
+    load_user_trigger_schedule,
+    make_resolve_effective_user_trigger,
+)
 
 
 def _configure_stdout_utf8() -> None:
@@ -196,6 +201,16 @@ def main() -> None:
         help="Write structured_eval JSON to this file (UTF-8).",
     )
     p.add_argument(
+        "--user-trigger-schedule",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional JSON file: per-orchestration-turn user trigger overrides (headless harness). "
+            "Validated before the run; see user_trigger_schedule / Issue tracking docs."
+        ),
+    )
+    p.add_argument(
         "--deep-simulation-turns",
         action="store_true",
         help=(
@@ -240,12 +255,46 @@ def main() -> None:
     default_trigger = "The standoff has looped on talk; something has to give."
     default_opening = "Two people face off in a cramped corridor; neither will back down first."
 
+    raw_scenario: dict | None = None
     if args.scenario:
-        raw = load_scenario(args.scenario)
+        raw_scenario = load_scenario(args.scenario)
+        max_turns = (
+            int(args.turns)
+            if args.turns is not None
+            else int(raw_scenario["max_turns"])
+        )
+        built_in_fallback = str(raw_scenario["trigger_text"])
+    else:
+        max_turns = int(args.turns) if args.turns is not None else 2
+        built_in_fallback = default_trigger
+
+    cli_trigger_provided = args.trigger is not None
+    cli_trigger_value = args.trigger if cli_trigger_provided else ""
+    trigger_text = cli_trigger_value if cli_trigger_provided else built_in_fallback
+
+    get_effective_user_trigger = None
+    if args.user_trigger_schedule is not None:
+        try:
+            by_turn, json_default = load_user_trigger_schedule(
+                args.user_trigger_schedule,
+                max_orchestration_turn=max_turns,
+            )
+        except UserTriggerScheduleError as exc:
+            print(f"user trigger schedule: {exc}", file=sys.stderr)
+            sys.exit(1)
+        get_effective_user_trigger = make_resolve_effective_user_trigger(
+            by_turn,
+            cli_trigger_provided=cli_trigger_provided,
+            cli_trigger_value=cli_trigger_value,
+            json_default=json_default,
+            built_in_fallback=built_in_fallback,
+        )
+
+    if args.scenario:
+        assert raw_scenario is not None
+        raw = raw_scenario
         prep_kw = scenario_prepare_kwargs(raw)
         audit_owner = audit_owner_slug(raw["id"])
-        max_turns = int(args.turns) if args.turns is not None else int(raw["max_turns"])
-        trigger_text = args.trigger if args.trigger is not None else str(raw["trigger_text"])
         if args.no_deep_simulation_turns and args.deep_simulation_turns:
             p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
         deep_turns = not args.no_deep_simulation_turns
@@ -261,8 +310,6 @@ def main() -> None:
         )
     else:
         ids = [x.strip() for x in (args.chars or "ayame,celina").split(",") if x.strip()]
-        max_turns = int(args.turns) if args.turns is not None else 2
-        trigger_text = args.trigger if args.trigger is not None else default_trigger
         if args.no_deep_simulation_turns and args.deep_simulation_turns:
             p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
         deep_turns = bool(args.deep_simulation_turns)
@@ -292,6 +339,7 @@ def main() -> None:
                 user_name=args.user_name,
                 verdict=args.verdict,
                 failure_classification=args.failure_class,
+                get_effective_user_trigger=get_effective_user_trigger,
             )
             print(format_simulation_audit_markdown(result))
             if args.metrics_out is not None and result.structured_eval is not None:

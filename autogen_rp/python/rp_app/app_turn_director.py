@@ -1338,6 +1338,7 @@ async def choose_next_actor(
                         "spotlight_history", []
                     )[-6:],
                 },
+                effective_user_trigger=trigger_text,
                 metadata={
                     "parse_error": error,
                     "is_fallback": bool(error),

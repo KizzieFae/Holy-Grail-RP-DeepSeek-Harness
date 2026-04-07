@@ -36,7 +36,7 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 
 ### Workflow
 
-1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant.
+1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant. If the run used **`--user-trigger-schedule`**, use **`effective_user_trigger`** on **full** per-turn audit JSON to see which simulated user line applied each turn (see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) for JSON shape, precedence, and validation).
 2. Pick **one primary Layer** first (canonical list below; full definitions in [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) Issue Tracking **§F**). Do not spread the investigation across Layers until the evidence chain is clear.
 3. Walk **evidence order** once, top to bottom; stop when you can name what **committed** the bad state.
 4. Produce **Layer**, **verdict**, and **minimal repro** (scenario id, audit session folder, turn index if known)—same fields as mandatory GitHub evidence in **§D** when filing.
@@ -170,5 +170,5 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 
 - [GLOSSARY.md](./GLOSSARY.md)
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future seam; do not implement retrieval as authoritative state
-- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — headless **authored retrieval OFF/ON** (`RP_RETRIEVED_CONTEXT_INDEX`, `--retrieved-context-index`) and **`structured_eval.retrieval_session`**
-- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (headless merge)
+- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — headless **authored retrieval OFF/ON** (`RP_RETRIEVED_CONTEXT_INDEX`, `--retrieved-context-index`) and **`structured_eval.retrieval_session`**; **per-turn user trigger schedule** (`--user-trigger-schedule`, JSON, precedence, orchestration turn index)
+- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (headless merge); **`effective_user_trigger`** (full audits only) for harness per-turn user lines

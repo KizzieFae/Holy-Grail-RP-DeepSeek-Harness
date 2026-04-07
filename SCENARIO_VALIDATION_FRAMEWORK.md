@@ -97,7 +97,7 @@ The **headless runner** drives the same code path as Streamlit: Director selecti
 
 **Requirements**
 
-- `DEEPSEEK_API_KEY` in the environment
+- `DEEPSEEK_API_KEY` in the environment **of the Python process** that runs `scripts/run_scene_simulation_llm.py` (set it in that shell before invoking Python, or inject it via your IDE/CI/automation config). Variables that exist only in a different interactive session or parent profile are **not** inherited—this is normal OS process isolation, not something the scenario JSON or user-trigger schedule changes.
 - Shell working directory: `autogen_rp/python`
 
 **Common commands**
@@ -148,7 +148,36 @@ python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char
 
 **Default scenario set for OFF/ON comparisons** (operational index): `headless_template_retrieval_smoke`, `operational_baseline_3char_cafeteria`, and optionally `arkham_multi_character_stress` / `_long` (large cast; template id set for cafeteria template). Scenarios such as `emotional_loop_2char` remain valid for non-indexed casts (retrieval ON may still be neutral/empty for those cards).
 
-**Ad-hoc runs** (no scenario file): use `--chars`, `--opening`, `--location`, `--trigger`, `--beat-shift`, `--no-seed-issue` as documented in `scripts/run_scene_simulation_llm.py`.
+**Ad-hoc runs** (no scenario file): use `--chars`, `--opening`, `--location`, `--trigger`, `--beat-shift`, `--no-seed-issue`, and optionally `--user-trigger-schedule` as documented in `scripts/run_scene_simulation_llm.py`.
+
+### Per-turn user trigger schedule (headless simulation harness only)
+
+Optional **`--user-trigger-schedule PATH`** on `scripts/run_scene_simulation_llm.py` loads a JSON file so **validation / simulation runs** can use **different simulated user lines on different orchestration turns**—for one-off establishment, probes, or scripted inputs—**without** repeating the same `--trigger` every turn or editing scenario JSON between runs. This path is **headless CLI only**; it is **not** a Streamlit or live product/runtime feature, and it does **not** extend scenario schema or continuity persistence.
+
+**JSON shape** (single object):
+
+- Optional **`default_trigger`**: non-empty string.
+- Optional **`by_orchestration_turn`**: object mapping **orchestration turn index** → non-empty string. Keys must be JSON integers or stringified integers **≥ 1**, **≤** the run’s effective turn cap (the same value as `--turns` when set, otherwise scenario `max_turns` or ad-hoc default). Duplicate keys are rejected. Any other top-level key is rejected.
+
+**Example:**
+
+```json
+{
+  "default_trigger": "Neutral line for turns not listed in by_orchestration_turn.",
+  "by_orchestration_turn": {
+    "1": "A sudden magical surge transforms Ayame into an anthro fox—ears, tail, and posture shift visibly.",
+    "12": "Celina, you notice her tail flick—ask her directly about still being in fox form."
+  }
+}
+```
+
+**Precedence** for orchestration turn *n*: entry in **`by_orchestration_turn`** for *n* (if present) → else **`--trigger`** if the CLI user **passed** `--trigger` → else **`default_trigger`** if present → else built-in text (scenario **`trigger_text`** or ad-hoc default).
+
+**Validation:** The file is read and validated **before** `prepare_headless_session` and **before any LLM calls**. Invalid JSON, unknown keys, empty strings, out-of-range turn indices, or duplicate keys produce a clear error and the process exits without starting the run.
+
+**Orchestration turn index:** The **1-based** accepted character-turn counter used in the production turn loop and recorded as audit **`turn_number`** for that beat (aligned with per-turn audit artifacts for that turn). Initial round prep (e.g. beat-shift activation and first application of the user line to offstage context) uses the resolver at turn **1** only.
+
+**Audits:** Per-turn **full** audit JSON includes top-level **`effective_user_trigger`** for the string actually used that turn. **Light** audit summaries do **not** include this field—use **`*_full.json`** when correlating probe lines to behavior. See **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`**.
 
 ---
 

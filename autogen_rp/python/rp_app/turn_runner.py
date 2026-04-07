@@ -1,4 +1,5 @@
-from typing import Any, Awaitable, Callable
+from collections.abc import Callable
+from typing import Any, Awaitable
 
 from beat_shift_state import maybe_activate_pending_beat_shift
 from turn_runner_audit import refresh_audit_summary_report_if_enabled
@@ -65,6 +66,7 @@ async def run_character_turns(
     director_decision_history_limit: int,
     environment_history_limit: int,
     tension_history_limit: int,
+    get_effective_user_trigger: Callable[[int], str] | None = None,
 ) -> None:
     from autogen_core import CancellationToken
 
@@ -72,6 +74,14 @@ async def run_character_turns(
         apply_user_trigger_to_offstage,
         release_pending_forced_speaker_from_offstage,
     )
+
+    resolve_effective_user_trigger: Callable[[int], str]
+    if get_effective_user_trigger is not None:
+        resolve_effective_user_trigger = get_effective_user_trigger
+    else:
+
+        def resolve_effective_user_trigger(n: int) -> str:  # noqa: ARG001
+            return trigger_text
 
     char_names = [agent.name for agent in char_agents]
     agent_lookup = {agent.name: agent for agent in char_agents}
@@ -90,7 +100,7 @@ async def run_character_turns(
         recent_moves_for_stall = []
     maybe_activate_pending_beat_shift(
         orchestration_state,
-        trigger_text=trigger_text,
+        trigger_text=resolve_effective_user_trigger(1),
         source_turn_id=f"user_round_{round_number}",
         active_issues=active_issue_dicts,
         recent_structured_moves=list(recent_moves_for_stall),
@@ -114,7 +124,7 @@ async def run_character_turns(
     if continuity_pre is not None and continuity_pre.scene_state is not None:
         apply_user_trigger_to_offstage(
             scene_state=continuity_pre.scene_state,
-            trigger_text=trigger_text,
+            trigger_text=resolve_effective_user_trigger(1),
             participant_names=char_names,
             get_character_display_name_fn=get_character_display_name_fn,
         )
@@ -187,11 +197,12 @@ async def run_character_turns(
                     break
 
                 turn_number = set_audit_turn_fn(successful_turns + 1)
+                effective_user_trigger = resolve_effective_user_trigger(turn_number)
 
                 decision = await choose_next_actor_fn(
                     director=director,
                     participant_names=char_names,
-                    trigger_text=trigger_text,
+                    trigger_text=effective_user_trigger,
                     cancellation_token=cancellation_token,
                     round_number=round_number,
                     turn_number=turn_number,
@@ -217,6 +228,7 @@ async def run_character_turns(
                             "available_actors": available_actors,
                             "character_names": char_names,
                         },
+                        effective_user_trigger=effective_user_trigger,
                     )
                     break
 
@@ -236,6 +248,7 @@ async def run_character_turns(
                             "available_actors": available_actors,
                             "character_names": char_names,
                         },
+                        effective_user_trigger=effective_user_trigger,
                     )
                     continue
 
@@ -246,7 +259,7 @@ async def run_character_turns(
                     next_actor=next_actor,
                     char_names=char_names,
                     decision=decision,
-                    trigger_text=trigger_text,
+                    trigger_text=effective_user_trigger,
                     user_name=user_name,
                     cancellation_token=cancellation_token,
                     round_number=round_number,
@@ -274,6 +287,7 @@ async def run_character_turns(
                     log_turn_failure_fn=log_turn_failure_fn,
                     get_character_display_name_fn=get_character_display_name_fn,
                     sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
+                    effective_user_trigger=effective_user_trigger,
                 )
                 if turn_result is None:
                     continue
@@ -333,6 +347,7 @@ async def run_character_turns(
                     director_decision_history_limit=director_decision_history_limit,
                     environment_history_limit=environment_history_limit,
                     tension_history_limit=tension_history_limit,
+                    effective_user_trigger=effective_user_trigger,
                     skip_continuity_process_turn=skip_continuity_process_turn,
                 )
 

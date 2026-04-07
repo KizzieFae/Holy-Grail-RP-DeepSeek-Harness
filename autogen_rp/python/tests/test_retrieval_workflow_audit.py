@@ -159,7 +159,9 @@ def test_log_character_turn_audit_includes_retrieval_summary() -> None:
         get_audit_context_fn=lambda: ("o", 1, 0, 0),
         get_scene_audit_logging_kwargs_fn=lambda *_a, **_k: {},
         get_character_scene_audit_context_fn=lambda *_a, **_k: {},
+        effective_user_trigger="user says hi",
     )
+    assert captured.get("effective_user_trigger") == "user says hi"
     meta = captured.get("metadata") or {}
     assert meta.get("retrieval_summary", {}).get("retrieved_item_count") == 2
     sb = meta.get("summary_blocks") or {}

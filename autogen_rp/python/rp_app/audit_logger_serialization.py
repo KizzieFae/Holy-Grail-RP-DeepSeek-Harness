@@ -3,7 +3,7 @@ from typing import Any
 
 
 def entry_to_full_dict(entry: Any) -> dict[str, Any]:
-    return {
+    out = {
         "timestamp": entry.timestamp,
         "session_owner": entry.session_owner,
         "session_number": entry.session_number,
@@ -17,6 +17,8 @@ def entry_to_full_dict(entry: Any) -> dict[str, Any]:
         "context_snapshot": entry.context_snapshot,
         "metadata": entry.metadata,
     }
+    out["effective_user_trigger"] = getattr(entry, "effective_user_trigger", None)
+    return out
 
 
 def entry_to_light_dict(entry: Any) -> dict[str, Any]:

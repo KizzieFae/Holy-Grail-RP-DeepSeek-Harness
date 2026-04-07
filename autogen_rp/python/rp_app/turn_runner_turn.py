@@ -64,6 +64,7 @@ async def execute_character_turn(
     log_turn_failure_fn,
     get_character_display_name_fn,
     sync_orchestration_state_from_continuity_fn,
+    effective_user_trigger: str,
 ) -> dict[str, Any] | None:
     task_prompt, character_summary_block_audit = build_character_turn_prompt_fn(
         next_actor,
@@ -128,6 +129,7 @@ async def execute_character_turn(
                     "attempt_index": attempt_index,
                 },
                 metadata={"summary_blocks": character_summary_block_audit},
+                effective_user_trigger=effective_user_trigger,
             )
             return None
 
@@ -150,6 +152,7 @@ async def execute_character_turn(
                     "attempt_index": attempt_index,
                 },
                 metadata={"summary_blocks": character_summary_block_audit},
+                effective_user_trigger=effective_user_trigger,
             )
             return None
 
@@ -221,6 +224,7 @@ async def execute_character_turn(
                     "summary_blocks": character_summary_block_audit,
                     "semantic_presence_assessment": semantic_presence_assessment or {},
                 },
+                effective_user_trigger=effective_user_trigger,
             )
             st_module.session_state["selector_decisions"].append(
                 f"Retrying {next_actor} after duplicate-output rejection."
@@ -248,6 +252,7 @@ async def execute_character_turn(
                     "summary_blocks": character_summary_block_audit,
                     "semantic_presence_assessment": semantic_presence_assessment or {},
                 },
+                effective_user_trigger=effective_user_trigger,
             )
             return None
 
@@ -346,6 +351,7 @@ async def execute_character_turn(
                             "semantic_presence_assessment": semantic_presence_assessment
                             or {},
                         },
+                        effective_user_trigger=effective_user_trigger,
                     )
                     st_module.session_state["selector_decisions"].append(
                         f"Retrying {next_actor} after progression-enforcement rejection."
@@ -381,6 +387,7 @@ async def execute_character_turn(
                         "summary_blocks": character_summary_block_audit,
                         "semantic_presence_assessment": semantic_presence_assessment or {},
                     },
+                    effective_user_trigger=effective_user_trigger,
                 )
                 return None
             continuity_applied_in_execute = True
@@ -472,6 +479,7 @@ async def execute_character_turn(
             get_character_scene_audit_context_fn=get_character_scene_audit_context_fn,
             character_audit_v1=character_audit_v1,
             audit_v2=audit_v2_metadata,
+            effective_user_trigger=effective_user_trigger,
         )
 
         rendered_move_result = {
@@ -534,6 +542,7 @@ async def execute_character_turn(
                 "has_dialogue": bool(move.get("dialogue")),
             },
             metadata={"summary_blocks": narrator_summary_block_audit},
+            effective_user_trigger=effective_user_trigger,
         )
         return None
 
@@ -665,6 +674,7 @@ async def execute_character_turn(
                 "director_decision": decision,
                 "rendered": rendered,
             },
+            effective_user_trigger=effective_user_trigger,
         )
         return None
 

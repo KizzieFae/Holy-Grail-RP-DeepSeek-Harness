@@ -49,6 +49,7 @@ def apply_successful_turn_updates(
     director_decision_history_limit: int,
     environment_history_limit: int,
     tension_history_limit: int,
+    effective_user_trigger: str,
     skip_continuity_process_turn: bool = False,
 ) -> dict[str, Any]:
     if state_manager:
@@ -156,6 +157,7 @@ def apply_successful_turn_updates(
         anti_regression_advisory=get_cached_anti_regression_advisory(
             orchestration_state
         ),
+        effective_user_trigger=effective_user_trigger,
         is_audit_enabled_fn=is_audit_enabled_fn,
         get_audit_logger_fn=get_audit_logger_fn,
         get_audit_context_fn=get_audit_context_fn,
