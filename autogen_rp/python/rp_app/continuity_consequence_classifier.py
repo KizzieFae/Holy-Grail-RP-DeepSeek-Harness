@@ -4,7 +4,16 @@ Uses structured move data (goal, tactic, action, dialogue) to detect
 semantic consequence categories via intent + behavior pattern matching.
 """
 
+import re
 from typing import Any
+
+# Geometry: "turn" only counts as movement when a standalone verb and not negated
+# (avoids "did not turn", "didn't turn", "not turning", etc.).
+_GEOMETRY_NEGATED_TURN_PHRASE = re.compile(
+    r"(?:did\s+not|didn't|does\s+not|don't)\s+turn(?:ed|s|ing)?\b|\bnot\s+turn(?:ed|s|ing)?\b",
+    re.IGNORECASE,
+)
+_GEOMETRY_TURN_VERB = re.compile(r"\bturn(?:ed|s|ing)?\b", re.IGNORECASE)
 
 try:
     from continuity_resolved_outcomes import extract_sleeping_surface_candidates
@@ -62,6 +71,18 @@ class ConsequenceClassifier:
         "not submit",
         "not comply",
         "stand ground",
+        "disengage",
+        "ultimatum",
+        "stalemate",
+        "walk away",
+        "walking away",
+        "withhold",
+        "noncompliant",
+        "non-compliant",
+        "break the stalemate",
+        "break stalemate",
+        "forcing a",
+        "force a",
     ]
     INTENT_MEDIATE = [
         "mediate",
@@ -79,6 +100,7 @@ class ConsequenceClassifier:
         "push limits",
         "assert self",
         "establish presence",
+        "call the bluff",
     ]
     INTENT_COMPLY = [
         "comply",
@@ -140,6 +162,143 @@ class ConsequenceClassifier:
         "walked in",
     ]
 
+    # Discrete loci for interaction-geometry repositioning (action/dialogue substrings).
+    INTERACTION_LOCUS_MARKERS = frozenset(
+        {
+            "table",
+            "chair",
+            "door",
+            "doorway",
+            "counter",
+            "kitchen",
+            "sink",
+            "window",
+            "hall",
+            "hallway",
+            "couch",
+            "sofa",
+            "bed",
+            "desk",
+            "wall",
+            "corner",
+            "backrest",
+            "apartment",
+            "room",
+        }
+    )
+
+    # Path / transition cues: movement between or around loci (primarily action).
+    INTERACTION_TRANSITION_MARKERS = [
+        " to the ",
+        " to ",
+        " from the ",
+        " off the ",
+        " off of ",
+        " around ",
+        " behind ",
+        " toward",
+        " towards",
+        " into the ",
+        " into ",
+        " across ",
+        " back to",
+        " away from",
+        " out of",
+        " over to",
+        " up to",
+        " onto ",
+        " around the",
+        " behind the",
+    ]
+
+    # Strong movement lemmas (substring match on action). "turn" handled via
+    # ``_geometry_movement_present`` (word-boundary + negation scrub).
+    GEOMETRY_MOVEMENT_MARKERS = [
+        "walk",
+        "step",
+        "mov",
+        "push",
+        "pull",
+        "cross",
+        "circl",
+        "retreat",
+        "advanc",
+        "withdraw",
+        "pace",
+        "rush",
+        "dart",
+        "stalk",
+        "stomp",
+        "lung",
+        "round the",
+        "straighten",
+        "rose ",
+        "rise ",
+    ]
+
+    # Stasis / cosmetic posture: no geometry path unless paired with movement markers above.
+    GEOMETRY_STASIS_LEADERS = (
+        "remained ",
+        "stayed ",
+        "still leaning",
+        "still seated",
+        "still sitting",
+    )
+    GEOMETRY_COSMETIC_ONLY_MARKERS = [
+        "exhaled",
+        "exhale",
+        "narrowed her",
+        "narrowed his",
+        "narrowed their",
+        "tilted her head",
+        "tilted his head",
+        "tapped the",
+        "smiled",
+        "nodded",
+        "shrugged",
+    ]
+
+    # REFUSAL: curated dialogue substrings (no bare "no"/"not" alone — those stay in legacy).
+    REFUSAL_DIALOGUE_MARKERS = [
+        "bullshit",
+        "ultimatum",
+        "no deal",
+        "won't",
+        "wont",
+        "done pretending",
+        "screw you",
+        "hell no",
+        "fat chance",
+        "not happening",
+        "not buying",
+        "over my dead",
+        "never going to",
+        "ain't going",
+        "aren't going",
+        "won't work",
+        "not your terms",
+        "not interested",
+    ]
+
+    # Strong refusal stance in goal/tactic only (second factor without dialogue markers).
+    REFUSAL_STRONG_INTENT_MARKERS = [
+        "ultimatum",
+        "disengage",
+        "withhold compliance",
+        "withhold agreement",
+        "reject terms",
+        "reject the terms",
+        "deny the demand",
+        "break off",
+        "walk away",
+        "walking away",
+        "noncompliant",
+        "non-compliant",
+    ]
+
+    # Legacy substring gate (still requires resist/challenge intent via merged logic).
+    REFUSAL_LEGACY_DIALOGUE_MARKERS = ["no", "not", "won't", "refuse", "deny"]
+
     def classify_turn(
         self,
         acting_character: str,
@@ -198,7 +357,9 @@ class ConsequenceClassifier:
 
         # Agreement/refusal
         consequences.extend(
-            self._detect_agreement(acting_character, intent, behavior, action, dialogue)
+            self._detect_agreement(
+                acting_character, intent, behavior, action, dialogue, goal, tactic
+            )
         )
 
         consequences.extend(
@@ -227,7 +388,7 @@ class ConsequenceClassifier:
         # Deterministic persistent scene-state signals (shared with scene_grounding)
         consequences.extend(self._detect_persistent_scene_state(move))
 
-        return consequences
+        return self._dedupe_detected_consequences(consequences)
 
     def _detect_persistent_scene_state(
         self, move: dict[str, Any]
@@ -300,6 +461,76 @@ class ConsequenceClassifier:
             "entry": any(marker in combined for marker in self.BEHAVIOR_ENTRY),
             "exit": False,
         }
+
+    def _geometry_movement_present(self, action: str) -> bool:
+        """True if action has a geometry-relevant movement cue (substring markers or non-negated *turn* verb)."""
+        lowered = action.lower()
+        for m in self.GEOMETRY_MOVEMENT_MARKERS:
+            if m in lowered:
+                return True
+        scrubbed = _GEOMETRY_NEGATED_TURN_PHRASE.sub(" ", lowered)
+        return bool(_GEOMETRY_TURN_VERB.search(scrubbed))
+
+    def _dedupe_detected_consequences(
+        self, items: list[DetectedConsequence]
+    ) -> list[DetectedConsequence]:
+        """Keep first occurrence per category; preserve multi-label distinct categories."""
+        seen: set[str] = set()
+        out: list[DetectedConsequence] = []
+        for item in items:
+            key = item.category.value
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(item)
+        return out
+
+    def _is_geometry_stasis_or_cosmetic_dominant(self, action: str) -> bool:
+        """True when action reads as in-place posture/micro-motion without locomotion."""
+        if any(leader in action for leader in self.GEOMETRY_STASIS_LEADERS):
+            if not self._geometry_movement_present(action):
+                return True
+        # Cosmetic-only markers without locomotion cues
+        if any(c in action for c in self.GEOMETRY_COSMETIC_ONLY_MARKERS):
+            if not self._geometry_movement_present(action):
+                return True
+        return False
+
+    def _action_indicates_geometry_repositioning(
+        self, action: str, dialogue: str
+    ) -> bool:
+        """Meaningful interaction-geometry change: locomotion + transition/locus."""
+        if self._is_geometry_stasis_or_cosmetic_dominant(action):
+            return False
+        if not self._geometry_movement_present(action):
+            return False
+        has_transition = any(t in action for t in self.INTERACTION_TRANSITION_MARKERS)
+        has_locus_action = any(
+            locus in action for locus in self.INTERACTION_LOCUS_MARKERS
+        )
+        has_locus_dialogue = any(
+            locus in dialogue for locus in self.INTERACTION_LOCUS_MARKERS
+        )
+        dialogue_path_transition = any(
+            t in dialogue for t in (" to the ", " into the ", " toward", " towards")
+        )
+
+        if has_transition and (has_locus_action or has_locus_dialogue):
+            return True
+        # Movement + locus in action + spatial relation (e.g. around/behind/toward chair)
+        if has_locus_action and (
+            " around " in action
+            or " behind " in action
+            or " toward" in action
+            or " towards" in action
+            or " off the " in action
+            or " off of " in action
+        ):
+            return True
+        # Optional: dialogue names locus + path language; action still shows locomotion
+        if has_locus_dialogue and dialogue_path_transition:
+            return True
+        return False
 
     def _detect_authority(
         self,
@@ -389,8 +620,14 @@ class ConsequenceClassifier:
                 )
             )
 
-        # REPOSITIONING: positional behavior without full mediation intent
-        if behavior["positional"] and not intent["mediate"]:
+        # REPOSITIONING: blocking/interposition OR meaningful geometry change; not exit/mediation
+        repositioning = False
+        if not intent["mediate"] and not behavior["exit"]:
+            if behavior["positional"]:
+                repositioning = True
+            elif self._action_indicates_geometry_repositioning(action, dialogue):
+                repositioning = True
+        if repositioning:
             results.append(
                 DetectedConsequence(
                     category=ConsequenceCategory.REPOSITIONING,
@@ -513,22 +750,34 @@ class ConsequenceClassifier:
         behavior: dict[str, bool],
         action: str,
         dialogue: str,
+        goal: str,
+        tactic: str,
     ) -> list[DetectedConsequence]:
         """Detect agreement, refusal, and commitment patterns."""
         results = []
 
-        # REFUSAL: resist intent + explicit refusal language
-        if intent["resist"] and any(
-            ref in dialogue for ref in ["no", "not", "won't", "refuse", "deny"]
-        ):
-            results.append(
-                DetectedConsequence(
-                    category=ConsequenceCategory.REFUSAL,
-                    confidence="strong",
-                    source_fields=["motivation.goal", "dialogue"],
-                    excerpt=dialogue[:80],
-                )
+        # REFUSAL: (resist OR challenge) intent from goal/tactic AND (dialogue OR strong intent)
+        intent_refusal = intent["resist"] or intent["challenge"]
+        combined_gt = f"{goal} {tactic}"
+        if intent_refusal:
+            legacy_hit = any(
+                ref in dialogue for ref in self.REFUSAL_LEGACY_DIALOGUE_MARKERS
             )
+            curated_hit = any(
+                tok in dialogue for tok in self.REFUSAL_DIALOGUE_MARKERS
+            )
+            strong_intent_hit = any(
+                tok in combined_gt for tok in self.REFUSAL_STRONG_INTENT_MARKERS
+            )
+            if legacy_hit or curated_hit or strong_intent_hit:
+                results.append(
+                    DetectedConsequence(
+                        category=ConsequenceCategory.REFUSAL,
+                        confidence="strong",
+                        source_fields=["motivation.goal", "motivation.tactic", "dialogue"],
+                        excerpt=dialogue[:80] or action[:80],
+                    )
+                )
 
         # AGREEMENT: comply intent + explicit acceptance language
         if intent["comply"] and any(
