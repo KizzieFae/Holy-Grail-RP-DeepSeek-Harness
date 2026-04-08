@@ -99,6 +99,99 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 **Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration).
 
+### Support Manifest (`metadata.support_manifest`)
+
+#### Purpose
+
+The support manifest provides **observability into prompt support**: what material was available to the character model via the bounded prompt assembly path (summaries, retrieval refs, binding section text, and the full system prompt as an opaque envelope). It allows you to determine:
+
+- what information was available to the model at a given turn, and
+- when previously available information is no longer present (by comparing manifests across turns).
+
+This exists to resolve ambiguity between:
+
+- **model failure** (the model had the signal but did not use it well), and
+- **context / support loss** (the signal was no longer in prompt support for that turn).
+
+The manifest is **not** continuity truth; compare to continuity and narrative layers separately when diagnosing persistence.
+
+#### Scope
+
+- Present only on **character `*_full.json` audit entries** (`metadata.support_manifest`).
+- **Not** present on Director or Narrator full entries (unchanged metadata shape for those bots).
+- **Audit-only:** it does **not** affect runtime, does **not** modify prompts, and does **not** interact with continuity authority. It is derived in the audit layer from the same `prompt_layer_audit` payload and `task_prompt` string already logged for the character turn.
+
+#### Schema
+
+- **`schema_version`:** `"support_manifest.v1"`
+- **`units`:** array of objects; each object has:
+  - **`type`** — closed enum (string)
+  - **`id`** — deterministic string identifier for that unit within the manifest
+  - **`content_fp`** — `sha256:` followed by 64 lowercase hex digits (fingerprint of the canonical payload for that unit)
+
+**Valid `type` values (closed set):**
+
+| `type` | Role |
+|--------|------|
+| `summary_block_selected` | A summary block id that was selected for this prompt |
+| `summary_block_excluded` | A summary block id that was available but not selected |
+| `retrieval_source_ref` | One retrieved source ref line (position in the capped ref list matters for `id`) |
+| `retrieval_aggregate` | Single aggregate over retrieval summary fields (`retr:agg:v1`) |
+| `binding_constraints_section` | Binding constraints section text (`bind:v1`) |
+| `prompt_envelope` | Entire character system prompt as one opaque unit (`prompt:envelope:character:v1`) |
+
+Implementation: `audit_support_manifest.py`; attached in `turn_runner_audit.log_character_turn_audit`.
+
+#### Determinism guarantees
+
+- Structured unit payloads use **canonical JSON:** `json.dumps(..., sort_keys=True, ensure_ascii=False, separators=(",", ":"))`, then **UTF-8** encoding, then **SHA-256** → `content_fp`.
+- **`prompt_envelope`** hashes **raw UTF-8 bytes** of `task_prompt` (no JSON wrapper).
+- **`units`** are sorted by **`(type, id)`** lexicographically before persistence.
+
+**Guarantee:** identical `prompt_layer_audit` + `task_prompt` inputs → identical manifest.
+
+#### How to use (critical)
+
+##### Step 1 — Locate divergence
+
+Find the first turn where behavior deviates from expectation (continuity vs output vs scene contract).
+
+##### Step 2 — Compare manifests
+
+Compare **`metadata.support_manifest`** for the **current** turn vs the **previous** character turn (same character when isolating per-actor support). Conceptually classify each `(type, id)` key:
+
+- **`support_absent`** — present at *t−1*, missing at *t*
+- **`support_new`** — present at *t*, missing at *t−1*
+- **`support_changed`** — same `(type, id)` but different `content_fp`
+
+Use the **`diff_support_manifests(previous, current)`** helper in `audit_support_manifest.py` for a deterministic diff shape (`support_absent`, `support_new`, `support_changed`). **Note:** the diff is **not** written into audit JSON by default; compute it offline or in tooling.
+
+##### Step 3 — Classify
+
+- **Case A — Support lost:** a unit (or envelope fingerprint) was present at *t−1* and is **absent** or **changed** in a way that removes signal at *t* → treat as a **system-side / support-path** hypothesis (retrieval, summarization window, binding text, or other content reflected in structured units or the envelope). Narrowing *which* subsystem requires other audit fields (e.g. `retrieval_summary`, `summary_blocks`, continuity), not the manifest alone.
+- **Case B — Support retained:** relevant units still present with stable fingerprints but behavior is wrong → lean toward **model or orchestration** (selection, validation, parsing) rather than “forgotten in prompt.”
+
+#### Limitations (important)
+
+- **Grounding, dialogue history, and structured moves are not separate unit types in v1.** They are represented only through **`prompt_envelope`** (hash of the full system prompt). You can detect **that** support changed turn-over-turn, but **not** which internal subsection changed without reading the full prompts in `input_messages` or other audit fields.
+- **No automatic diff persistence:** manifests are stored per turn; the diff helper exists but outputs are **not** stored in artifacts unless a future harness adds that (out of scope for v1).
+- Manifests reflect **prompt inputs only**, not internal model reasoning or hidden chain-of-thought.
+
+#### When to use
+
+**Use** when:
+
+- investigating “memory loss” or “forgetting” in long sessions,
+- diagnosing long-session instability tied to bounded context,
+- validating retrieval or summary **presence in prompt support**,
+- distinguishing **system/support** hypotheses from **model** hypotheses.
+
+**Do not use** for:
+
+- narrative quality evaluation,
+- subjective coherence judgments,
+- treating the manifest as authoritative continuity state.
+
 ## Audit interpretation and issue tracking
 
 ### Audit pipeline

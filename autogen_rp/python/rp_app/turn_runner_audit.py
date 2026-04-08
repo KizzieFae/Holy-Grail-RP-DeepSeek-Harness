@@ -1,6 +1,7 @@
 from typing import Any
 
 from audit_instrumentation import log_audit_exception
+from audit_support_manifest import build_support_manifest
 
 
 def split_character_prompt_audit_for_metadata(
@@ -222,6 +223,9 @@ def log_character_turn_audit(
             next_actor, scene_audit_kwargs
         )
         hybrid_pacing = _hybrid_pacing_for_audit(continuity_manager)
+        support_manifest = build_support_manifest(
+            dict(character_summary_block_audit), task_prompt
+        )
         char_entry = audit_logger.create_entry(
             session_owner=session_owner,
             session_number=session_num,
@@ -272,6 +276,7 @@ def log_character_turn_audit(
                         if isinstance(audit_v2, dict) and audit_v2
                         else {}
                     ),
+                    "support_manifest": support_manifest,
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,
