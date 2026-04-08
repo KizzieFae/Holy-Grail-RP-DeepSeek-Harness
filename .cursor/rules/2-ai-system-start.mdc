@@ -325,21 +325,6 @@ Issue / Documentation Impact:
 
 ---
 
-# Copy-paste handoff support
-
-When appropriate, include:
-
-=== PROMPT FOR REVIEW AI ===
-...
-=== END PROMPT ===
-
-Use after:
-- planning
-- implementation
-- testing
-
----
-
 # Behavior constraints
 
 - prefer small diffs
