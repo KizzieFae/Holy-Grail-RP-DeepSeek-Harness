@@ -1,0 +1,27 @@
+{
+  "id": "investigate_i29_multi_thread_dialogue",
+  "title": "Issue #29 — multi-thread recall (25+ turns)",
+  "intent": "THREAD_ISSUE29_A/B/C; recall turn 25 lists all three in structured move text.",
+  "character_card_ids": ["harley_quinn", "kizzie", "ayame"],
+  "opening_description": "Break room. Three parallel threads labeled THREAD_ISSUE29_A, THREAD_ISSUE29_B, THREAD_ISSUE29_C map to Harley, Kizzie, and Ayame respectively. Sports and noise will interleave; late beat must echo all three labels in one reply when probed.",
+  "location": "hospital_break_room_three",
+  "trigger_text": "Ayame closes the door. 'State the three THREAD_ISSUE29_* labels once, clearly.'",
+  "max_turns": 25,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "medium",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "medium",
+  "investigation_anchor_tokens": [
+    "THREAD_ISSUE29_A",
+    "THREAD_ISSUE29_B",
+    "THREAD_ISSUE29_C"
+  ],
+  "investigation": {
+    "establishment_turn_numbers": [1, 2, 3],
+    "behavior_kind": "multi_thread_recall",
+    "recall_turn_numbers": [25],
+    "min_character_rows": 25,
+    "schedule_file": "data/issue29_investigation_schedules/multi_thread_25.json"
+  }
+}

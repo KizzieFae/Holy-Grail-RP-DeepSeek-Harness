@@ -1,0 +1,9 @@
+{
+  "default_trigger": "Side note: the hallway lights flicker—ignore the wiring; stay on topic after.",
+  "by_orchestration_turn": {
+    "1": "Harley lays out the deal: rent split sixty-forty, guest policy two nights max, and a quiet-hours window. Codeword for the lease draft is ISSUE29_NEGOT_A7. Kizzie asks about the deposit. Ayame listens.",
+    "3": "Unrelated small talk: Harley complains about cafeteria Jell-O and Kizzie mentions a podcast—keep it brief, then back to logistics.",
+    "6": "Ayame steers back: we still need to lock the guest policy. Harley, confirm the codeword on the draft and the sixty-forty split for the record.",
+    "8": "Final recall check: state the codeword ISSUE29_NEGOT_A7, the exact rent split percentage, and the guest-night cap we agreed—no new terms."
+  }
+}

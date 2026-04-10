@@ -1,0 +1,31 @@
+{
+  "id": "investigate_i29_negotiation_harley_kizzie_ayame",
+  "title": "Issue #29 — negotiation baseline (25+ turns, deep sim)",
+  "intent": "Machine lane: ISSUE29_NEGOT_TERMS_V1 + ISSUE29_ROLE_ANCHOR_AY in establishment; drift mid; recall turns 20 and 25. Advisory lane spec only.",
+  "character_card_ids": ["harley_quinn", "kizzie", "ayame"],
+  "opening_description": "Harley's kitchen table: printed lease draft, three chairs. Host Harley, applicant Kizzie, neutral Ayame. Written terms include rent split and guest policy. Footer codewords for this exercise: ISSUE29_NEGOT_TERMS_V1 and ISSUE29_ROLE_ANCHOR_AY must stay coherent through side talk. Issue record id issue29_negotiation_carry ties the thread.",
+  "location": "harley_apartment_kitchen",
+  "trigger_text": "Harley taps the draft. 'Line by line. Ayame—keep us honest.'",
+  "max_turns": 25,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "medium",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "medium",
+  "seed_issue": {
+    "issue_id": "issue29_negotiation_carry",
+    "description": "Negotiation ISSUE29_NEGOT_TERMS_V1 participant roles ISSUE29_ROLE_ANCHOR_AY",
+    "participant_card_ids": ["harley_quinn", "kizzie", "ayame"]
+  },
+  "investigation_anchor_tokens": [
+    "ISSUE29_NEGOT_TERMS_V1",
+    "ISSUE29_ROLE_ANCHOR_AY"
+  ],
+  "investigation": {
+    "establishment_turn_numbers": [1, 2, 3],
+    "behavior_kind": "negotiation_dual_token_recall",
+    "recall_turn_numbers": [20, 25],
+    "min_character_rows": 25,
+    "schedule_file": "data/issue29_investigation_schedules/negotiation_25.json"
+  }
+}

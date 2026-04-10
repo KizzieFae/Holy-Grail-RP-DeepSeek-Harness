@@ -1,0 +1,9 @@
+{
+  "default_trigger": "A new room, new light—but continuity matters.",
+  "by_orchestration_turn": {
+    "1": "Carry-forward anchor from the prior (off-screen) scene: the handshake deal used phrase CROSS_SCENE_ISSUE29_PHRASE and assigned the blue binder to Ayame. This scene assumes that already happened.",
+    "3": "Distraction: discuss coffee strength and a broken chair—no binder talk.",
+    "6": "Work question: who holds the blue binder under the carry-forward, and what was the handshake phrase?",
+    "8": "Late recall: repeat CROSS_SCENE_ISSUE29_PHRASE and who owns the blue binder—do not retcon the prior scene."
+  }
+}

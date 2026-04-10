@@ -222,6 +222,10 @@ registry.json
 !/python/data/retrieval/compiled/
 !/python/data/retrieval/compiled/operational_pilot_v3.json
 
+# Issue #29 headless harness — user-trigger schedules (referenced by tests + run_issue29_suite.py)
+!/python/data/issue29_investigation_schedules/
+!/python/data/issue29_investigation_schedules/*.json
+
 # files created by the gitty agent in python/samples/gitty
 .gitty/
 .aider*

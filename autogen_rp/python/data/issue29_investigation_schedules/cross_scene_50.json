@@ -1,0 +1,7 @@
+{
+  "default_trigger": "[Issue #29 harness] Continue the scene; preserve continuity and thread markers.",
+  "by_orchestration_turn": {
+    "16": "[Issue #29 harness] Scene B: explicitly reference prior agreement or terms from the first segment.",
+    "31": "[Issue #29 harness] Scene C: reference carried object or instruction markers established earlier."
+  }
+}

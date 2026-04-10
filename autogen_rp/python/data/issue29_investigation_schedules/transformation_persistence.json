@@ -1,0 +1,9 @@
+{
+  "default_trigger": "The rain hammers the windows; the room smells of ozone.",
+  "by_orchestration_turn": {
+    "1": "Early anchor: Ayame is locked in HUMAN_FORM_ISSUE29 until the story explicitly releases the lock. Celina witnesses the binding phrase spoken aloud.",
+    "3": "Distraction: argue about who left the kettle on—no transformation talk for this beat.",
+    "6": "Pressure rises: something outside howls. Remind everyone which form Ayame is still bound to.",
+    "8": "Late recall: without inventing new lore, restate Ayame's locked form tag HUMAN_FORM_ISSUE29 and whether it was ever released in-scene."
+  }
+}

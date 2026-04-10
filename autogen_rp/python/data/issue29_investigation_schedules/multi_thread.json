@@ -1,0 +1,9 @@
+{
+  "default_trigger": "Three people, three topics—keep threads separate.",
+  "by_orchestration_turn": {
+    "1": "Thread A (Harley): medical follow-up code THREAD_A_ISSUE29MED. Thread B (Kizzie): visa deadline THREAD_B_ISSUE29VISA. Thread C (Ayame): lost laptop THREAD_C_ISSUE29PC. State all three labels once.",
+    "3": "Distraction: everyone talks about sports scores—do not resolve any thread.",
+    "6": "Check-in: one sentence each on THREAD_A_ISSUE29MED, THREAD_B_ISSUE29VISA, THREAD_C_ISSUE29PC without merging them.",
+    "8": "Recall: list the three thread codes and which person owns which thread."
+  }
+}

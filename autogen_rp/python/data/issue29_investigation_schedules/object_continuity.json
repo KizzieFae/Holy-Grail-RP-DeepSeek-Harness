@@ -1,0 +1,9 @@
+{
+  "default_trigger": "The table is cluttered with paperwork and cold coffee.",
+  "by_orchestration_turn": {
+    "1": "Establish the single canonical object: a brass key engraved OBJECT_ANCHOR_ISSUE29K—not a duplicate, not a spare. It unlocks the basement supply closet.",
+    "3": "Distraction: discuss train delays and a broken phone screen—do not introduce a second key.",
+    "6": "Someone needs supplies: the only key that matters is still OBJECT_ANCHOR_ISSUE29K—who has it?",
+    "8": "Recall: describe the engraving on OBJECT_ANCHOR_ISSUE29K and which door it belongs to—no new keys."
+  }
+}

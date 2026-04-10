@@ -1,0 +1,26 @@
+{
+  "id": "investigate_i29_cross_scene_carry",
+  "title": "Issue #29 — cross-scene act bands (50+ turns)",
+  "intent": "Single session; act breaks SCENE_BREAK_ISSUE29 at orch turns 16 and 31; carry tokens CARRY_ISSUE29_PHRASE and CARRY_ISSUE29_BINDER_BLUE; recall 45 and 50.",
+  "character_card_ids": ["ayame", "celina"],
+  "opening_description": "Act 1 (fiction): carry-forward phrases for later acts: handshake CARRY_ISSUE29_PHRASE and blue binder custody CARRY_ISSUE29_BINDER_BLUE. Celina and Ayame are in the first room; later user lines will inject SCENE_BREAK_ISSUE29 act=2 and act=3 without reloading the harness session.",
+  "location": "conference_room_act1",
+  "trigger_text": "Celina slides the blue binder toward Ayame. 'CARRY_ISSUE29_BINDER_BLUE stays with you per CARRY_ISSUE29_PHRASE.'",
+  "max_turns": 50,
+  "seed_escalating_issue": true,
+  "beat_shift_active": false,
+  "initial_tension": "medium",
+  "initial_phase": "rising",
+  "expected_pressure_profile": "medium",
+  "investigation_anchor_tokens": [
+    "CARRY_ISSUE29_PHRASE",
+    "CARRY_ISSUE29_BINDER_BLUE"
+  ],
+  "investigation": {
+    "establishment_turn_numbers": [1, 2, 3],
+    "behavior_kind": "cross_scene_carry_recall",
+    "recall_turn_numbers": [45, 50],
+    "min_character_rows": 50,
+    "schedule_file": "data/issue29_investigation_schedules/cross_scene_50.json"
+  }
+}

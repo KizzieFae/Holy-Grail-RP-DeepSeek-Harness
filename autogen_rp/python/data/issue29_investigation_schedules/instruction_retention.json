@@ -1,0 +1,9 @@
+{
+  "default_trigger": "Fluorescent buzz; both of you are tired.",
+  "by_orchestration_turn": {
+    "1": "Hard instructions for this scene: (1) Never open the red folder INSTR_ISSUE29_RED. (2) All written times use 24-hour clock. (3) Codeword INSTR_BLOCKER_Q9 must be spoken before any payment mention.",
+    "3": "Distraction: gossip about a mutual acquaintance's wedding—do not reference folders or payments.",
+    "6": "Back to business: Celina asks about scheduling—remember the clock format rule.",
+    "8": "Audit the rules: list all three instruction lines verbatim intent (red folder, 24-hour clock, codeword before payment)—no new rules."
+  }
+}
