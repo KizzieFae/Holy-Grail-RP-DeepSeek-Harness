@@ -99,6 +99,8 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 
 **MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`; do not treat it as a general second state system.
 
+**Narrow runtime enforcement (`sleeping_surface` only):** After promotion and projection, **`response_validation_binding_sleeping_surface`** may **reject** moves that **deny** or **incorrectly reassign** the settled sleeping surface (deterministic; **one** structured retry in `turn_runner_turn`). This is **not** a general contradiction engine for all facts. See `python/rp_app/ARCHITECTURE.md` (Scene Grounding — binding contradiction enforcement).
+
 ---
 
 ## 4. Promotion Rules (creation / update)

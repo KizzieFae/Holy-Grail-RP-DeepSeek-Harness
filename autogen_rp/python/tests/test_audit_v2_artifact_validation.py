@@ -164,6 +164,7 @@ def test_log_narrator_render_audit_merges_audit_v2_metadata() -> None:
         round_number=1,
         turn_number=1,
         audit_v2=audit_v2,
+        effective_user_trigger="",
         is_audit_enabled_fn=lambda: True,
         get_audit_logger_fn=lambda: _Logger(),
         get_audit_context_fn=lambda: ("o", 1, 1, 1),

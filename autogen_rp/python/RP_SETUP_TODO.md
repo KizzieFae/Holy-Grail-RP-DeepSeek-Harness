@@ -20,6 +20,8 @@ All bugs, investigations, and follow-up work are tracked in GitHub Issues.
 This file does not maintain a running issue log.  
 Refer to the repository's Issues tab for active and historical investigations.
 
+**Completed slice (milestone note only):** **`assignment:sleeping_surface` promotion → projection → deterministic contradiction enforcement** — first narrow binding-enforcement slice **landed and validated** (2026-04; short scenario + longer baseline comparison; retrieval **off**; automated tests are the primary proof of the contradiction path). See **`rp_app/ARCHITECTURE.md`** (Scene Grounding — binding contradiction enforcement), **`rp_app/AUDIT_DOCUMENTATION.md`**, and **`tests/test_response_validation_binding_sleeping_surface.py`**. Registry-slot **`sleeping_surface_assignment: invalid_surface_id`** is **out of scope** for that slice — see **GitHub #31**.
+
 ### Closed validation wave — prompt integrity follow-up (**2026-04-07**)
 
 Scenario headless matrix + classifier pytest + mandatory audit sampling completed; phase **closed** (no code changes in the wave). Summary:

@@ -57,6 +57,14 @@ Audits may record a compact **`scene_grounding`** snapshot (or **`scene_groundin
 
 Character `*_full.json` system prompts may include the heading `## **BINDING CONSTRAINTS (HIGH PRIORITY)**` when the active grounding state contains facts in the binding allowlist. Light audits and failure logging may surface `has_binding_constraints`, `scene_binding_constraints_section`, or related promoted fields (see `turn_runner_audit.py`, `audit_logger_serialization.py`). Use these to confirm injection on binding-stress scenarios without reading the entire system message.
 
+**Binding sleeping-surface contradiction enforcement (runtime validation)**
+
+When a move contradicts a **promoted** `assignment:sleeping_surface` binding, the first failed attempt may be logged with **`stage: validation_binding_retry`** and reason prefix **`[BINDING_SLEEPING_SURFACE]`** (see `turn_runner_turn.py`, `response_validation_binding_sleeping_surface.py`). The retry attempt’s system prompt may include a short **`[BINDING_RETRY]`** note. **`turn_execution_metadata`** can include **`binding_retry_triggered`**, **`binding_retry_reason`**, and related fields on successful turns after a retry.
+
+**Do not conflate** with **`[REGISTRY_SLOT] sleeping_surface_assignment: invalid_surface_id`**, which fires when **`scene_state_updates.sleeping_surface_assignment`** uses a **surface id** not allowed by the registry/template contract (`response_validation_registry_slots.py`, `resolved_outcome_registry.py`). That path has **no** binding-contradiction retry; it is ordinary validation failure. Repeated `invalid_surface_id` churn in long runs is tracked separately (**GitHub #31**; see **`ARCHITECTURE.md`** — Scene Grounding binding enforcement note).
+
+Automated coverage for the **contradiction** path: `autogen_rp/python/tests/test_response_validation_binding_sleeping_surface.py`.
+
 **EVIDENCE & AUTHORITY DISCIPLINE**
 
 Character `*_full.json` prompts include a fixed **`EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY)`** section immediately before **`OUTPUT RULES:`** when using the current `prompt_builders.build_character_turn_prompt` template. It is not continuity-derived; presence is **always** expected for character turns (verify with a string search on `*_full.json`).

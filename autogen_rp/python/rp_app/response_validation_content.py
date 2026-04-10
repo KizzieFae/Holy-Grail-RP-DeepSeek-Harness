@@ -18,6 +18,9 @@ from typing import Any
 from character_state import CharacterState
 from response_validation_drift import detect_character_drift
 from response_validation_presence import detect_scene_presence_violation
+from response_validation_binding_sleeping_surface import (
+    validate_binding_sleeping_surface_contradiction,
+)
 from response_validation_registry_slots import validate_registry_scene_state_updates
 
 # Fuzzy duplicate detection (prefix / substring only; exact matches always reject).
@@ -261,6 +264,7 @@ def validate_bot_response(
     canon_anchors: list[Any] | None = None,
     scene_state: dict[str, Any] | None = None,
     continuity_manager: Any | None = None,
+    scene_grounding: dict[str, Any] | None = None,
 ) -> tuple[bool, str]:
     ok, msg = _validate_bot_tier_structural(content, user_name)
     if not ok:
@@ -288,6 +292,16 @@ def validate_bot_response(
 
     ok, msg = _validate_bot_tier_scene_truth(
         content, speaker, move, scene_state, chat_history
+    )
+    if not ok:
+        return False, msg
+
+    ok, msg = validate_binding_sleeping_surface_contradiction(
+        move=move,
+        speaker=speaker,
+        scene_grounding=scene_grounding,
+        scene_state=scene_state,
+        continuity_manager=continuity_manager,
     )
     if not ok:
         return False, msg
