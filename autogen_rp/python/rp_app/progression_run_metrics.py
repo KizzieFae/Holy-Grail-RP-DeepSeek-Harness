@@ -79,6 +79,7 @@ def build_structured_eval_payload(
     expected_pressure_profile: str | None = None,
     retrieval_session: dict[str, Any] | None = None,
     sim_progression_metrics_events: list[dict[str, Any]] | None = None,
+    issue29_long_run_harness: bool = False,
 ) -> dict[str, Any]:
     """Single JSON-serializable object for run comparison (manual verdict/classification)."""
     out: dict[str, Any] = {
@@ -94,4 +95,6 @@ def build_structured_eval_payload(
         out["retrieval_session"] = dict(retrieval_session)
     if sim_progression_metrics_events is not None:
         out["sim_progression_metrics_events"] = [dict(x) for x in sim_progression_metrics_events]
+    if issue29_long_run_harness:
+        out["issue29_long_run_harness"] = True
     return out

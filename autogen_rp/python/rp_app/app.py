@@ -686,6 +686,7 @@ async def run_character_turns(
         director_decision_history_limit=ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT,
         environment_history_limit=ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT,
         tension_history_limit=ORCHESTRATION_TENSION_HISTORY_LIMIT,
+        ignore_director_end_round=False,
     )
 
 

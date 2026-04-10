@@ -86,6 +86,56 @@ ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
 
 
+def _issue29_resolve_synthetic_available_actors(
+    participant_names: list[str],
+    *,
+    last_successful_actor: str | None,
+    actors_used_this_round_tail: str | None,
+) -> list[str]:
+    """Single-actor pool when real availability is empty (Issue #29 long-run harness, headless only)."""
+    names = [str(n or "").strip() for n in participant_names if str(n or "").strip()]
+    if not names:
+        return []
+    ls = str(last_successful_actor or "").strip()
+    if ls and ls in names:
+        return [ls]
+    tu = str(actors_used_this_round_tail or "").strip()
+    if tu and tu in names:
+        return [tu]
+    return [names[0]]
+
+
+def _wrap_get_available_actors_for_issue29_long_run(
+    inner: Callable[..., list[str]],
+    *,
+    st_module: Any,
+) -> Callable[..., list[str]]:
+    """When ``issue29_long_run_harness`` is on and the inner pool is empty, inject one actor."""
+
+    def wrapped(
+        participant_names: list[str],
+        used_actors: list[str] | None,
+        eligible_participants: list[str] | None,
+        offstage_characters: list[str] | None,
+    ) -> list[str]:
+        out = inner(
+            participant_names,
+            used_actors,
+            eligible_participants,
+            offstage_characters,
+        )
+        sess = getattr(st_module, "session_state", {}) or {}
+        if not sess.get("issue29_long_run_harness") or out:
+            return out
+        return _issue29_resolve_synthetic_available_actors(
+            participant_names,
+            last_successful_actor=sess.get("issue29_last_successful_actor"),
+            actors_used_this_round_tail=sess.get("issue29_actors_used_this_round_tail"),
+        )
+
+    return wrapped
+
+
 def _rebuild_headless_agents_and_character_states(*, st_module: Any, model_client: Any) -> None:
     """Load agents once and register ``character_states`` + ``character_state_manager``.
 
@@ -181,11 +231,17 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         if deep
         else memory_helpers.resolve_bot_reply_limit
     )
-    available_actors_fn = (
+    base_available_actors_fn = (
         get_available_actors_allow_repeat_in_round
         if deep
         else get_available_actors
     )
+    available_actors_fn: Callable[..., list[str]] = base_available_actors_fn
+    if bool(sess.get("issue29_long_run_harness")):
+        available_actors_fn = _wrap_get_available_actors_for_issue29_long_run(
+            base_available_actors_fn,
+            st_module=st_module,
+        )
 
     def get_scene_audit_logging_kwargs_for_headless(scene_state: Any | None) -> dict[str, Any]:
         base = get_scene_audit_logging_kwargs(scene_state)
@@ -472,6 +528,11 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         "director_decision_history_limit": ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT,
         "environment_history_limit": ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT,
         "tension_history_limit": ORCHESTRATION_TENSION_HISTORY_LIMIT,
+        "ignore_director_end_round": bool(
+            (getattr(st_module, "session_state", {}) or {}).get(
+                "headless_ignore_director_end_round"
+            )
+        ),
     }
 
 
@@ -581,6 +642,9 @@ async def run_headless_llm_scene(
         sim_progression_metrics_events=(
             list(metrics_list) if isinstance(metrics_list, list) else []
         ),
+        issue29_long_run_harness=bool(
+            st_module.session_state.get("issue29_long_run_harness")
+        ),
     )
     return HeadlessSimulationResult(
         chat_history=list(st_module.session_state.get("chat_history") or []),
@@ -620,6 +684,8 @@ def prepare_headless_session(
     deep_simulation_turns: bool = False,
     enable_episodic_memory: bool = False,
     scene_template_id: str | None = None,
+    ignore_director_end_round: bool = False,
+    issue29_long_run_harness: bool = False,
 ) -> Any:
     """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents.
 
@@ -630,6 +696,11 @@ def prepare_headless_session(
 
     When ``scene_template_id`` is set, writes it to ``ContinuityManager.scene_state`` (same field
     Streamlit sets via scene setup) so template-linked authored retrieval can run unchanged.
+
+    When ``issue29_long_run_harness`` is True (headless CLI only, ``investigate_i29_*``), sets
+    session ``issue29_long_run_harness`` and enables synthetic availability / Director survivability
+    for long-horizon durability runs; also forces ``headless_ignore_director_end_round``. Does not
+    change continuity or Streamlit defaults.
     """
     if enable_episodic_memory:
         os.environ["RP_EPISODIC_MEMORY"] = "1"
@@ -637,6 +708,16 @@ def prepare_headless_session(
     state_helpers.init_session_state(st_module=st)
     st.session_state["scene_grounding"] = empty_grounding_dict()
     st.session_state["headless_deep_simulation_turns"] = bool(deep_simulation_turns)
+    long_h = bool(issue29_long_run_harness)
+    st.session_state["issue29_long_run_harness"] = long_h
+    if long_h:
+        st.session_state["headless_ignore_director_end_round"] = True
+        st.session_state["issue29_last_successful_actor"] = None
+        st.session_state["issue29_actors_used_this_round_tail"] = None
+    else:
+        st.session_state["headless_ignore_director_end_round"] = bool(
+            ignore_director_end_round
+        )
 
     st.session_state["simulation_scenario_id"] = scenario_id
     st.session_state["simulation_scenario_title"] = scenario_title
@@ -828,6 +909,8 @@ def format_simulation_audit_markdown(result: HeadlessSimulationResult) -> str:
         )
     if result.structured_eval:
         se = result.structured_eval
+        if se.get("issue29_long_run_harness"):
+            lines.append("* **Issue #29 long-run harness:** enabled (investigation-only)")
         if se.get("verdict") is not None:
             lines.append(f"* **Verdict (manual):** {se.get('verdict')!r}")
         if se.get("failure_classification") is not None:

@@ -192,6 +192,92 @@ Use the **`diff_support_manifests(previous, current)`** helper in `audit_support
 - subjective coherence judgments,
 - treating the manifest as authoritative continuity state.
 
+## Issue #29 Investigation Tooling
+
+This section documents **headless harnesses**, **deterministic audit analysis**, and **optional AI-assisted interpretation** introduced or formalized during **Issue #29** (long-session “forgetting” triage). It complements **§D / §F** discipline in **`ARCHITECTURE.md`**: machine-visible audit signals support **Type** / **Layer** hypotheses; advisory AI labels do **not** replace them.
+
+### 1. Long-run harness
+
+**CLI flag:** `--issue29-long-run-harness` on `scripts/run_scene_simulation_llm.py`.
+
+**Eligibility:** **Headless only.** Scenario id must start with **`investigate_i29_`**. The suite driver **`scripts/run_issue29_suite.py`** passes this flag for packaged Issue #29 scenarios. Streamlit and normal production sessions do **not** set `issue29_long_run_harness`.
+
+**Session flags:** Enabling the harness sets Streamlit session state **`issue29_long_run_harness`** and **forces** **`headless_ignore_director_end_round`** for that run (`prepare_headless_session` in `headless_scene_simulation.py`).
+
+**Behavior (orchestration survivability):**
+
+- **Ignores Director `end_round` termination** — When `ignore_director_end_round` is active, `turn_runner.py` clears **`end_round`** on the Director decision so the round loop can continue past a Director-chosen scene end while the investigation still needs more character turns.
+- **Continues scene execution beyond normal stopping conditions** — Together with synthetic availability (below), the harness reduces **premature round exit** that would truncate long-horizon persistence / recall measurements.
+- **Fills missing `next_actor` when necessary** — After clearing `end_round`, if `next_actor` is empty but **`available_actors`** is non-empty, the runner sets **`next_actor`** to the first available actor. When the harness is on and the Director returns an empty `next_actor` without `end_round`, the runner also picks **`available_actors[0]`**. If the **filtered** availability pool would otherwise be **empty**, `headless_scene_simulation.py` wraps **`get_available_actors`** so a **deterministic single-actor pool** is injected (order: **`issue29_last_successful_actor`**, then tail of **`issue29_actors_used_this_round_tail`**, then first participant key). This **does not** mutate continuity, retrieval bundles, or prompt builders.
+- **Tracks last successful turn for continuity of the harness** — After each successful character turn, session state **`issue29_last_successful_actor`** is updated; the tail of actors used in the round is kept in **`issue29_actors_used_this_round_tail`** for fallback selection.
+
+**Purpose:**
+
+- Enable **long-horizon persistence and recall** testing without losing the run to Director **`end_round`** or empty availability pools.
+- Prevent **premature scene termination** from **invalidating** Issue #29-style durability results.
+
+**Constraints:**
+
+- **Diagnostic / investigation use only** — Output is **not** a statement about correct scene ending, transitions, or on-stage presence under production rules.
+- **Do not** use for **standard** scenario validation, production simulations, or operator-facing “normal” runs unless explicitly scoped as harness work.
+
+**Run metadata:** Headless **`structured_eval`** JSON may include **`issue29_long_run_harness: true`**. Suite aggregate JSON under `autogen_rp/python/runs/` records the same per scenario row (`progression_run_metrics.py`).
+
+### 2. Support manifest tracking (Issue #29 machine lane)
+
+**Presence in audits:** Character **`*_full.json`** entries include **`metadata.support_manifest`** when audit logging is enabled (schema and diff helpers: **`audit_support_manifest.py`**, **`turn_runner_audit.py`**). See **Support Manifest (`metadata.support_manifest`)** under **Overview** above for the full v1 schema and comparison steps.
+
+**Role across turns:** Comparing manifests (or using **`diff_support_manifests`** offline) detects **when structured prompt support changes** between consecutive character rows—supporting hypotheses about **support loss** vs **support retained**.
+
+**Distinction used in Issue #29 tooling (`issue29_investigation.py`):**
+
+- **`support_manifest_diff_non_envelope`** — Returned as **`T_sup`** reason when the manifest diff shows **absent**, **new**, or **changed** units involving any **`type` other than `prompt_envelope`**. That flags **structural** support changes in the **typed units** (summaries, retrieval refs, binding section, etc.), not merely a hash drift of the opaque full-system **`prompt_envelope`**.
+- **Literal anchor disappearance (token-level)** — Detected separately when a scenario **anchor token** appears in the prior character system prompt (`input_messages[0].content`) but **not** in the current one (**`token_dropped_consecutive`** in **`compute_t_sup`**). Issue #29 long-session investigation **did not** treat **literal anchor drop-out** as the primary explanation where **`T_beh`** still showed anchors present; classify outcomes with both **manifest** and **prompt text** evidence.
+
+**`T_sup` (support / prompt-side event):** First index after the established baseline where **`compute_t_sup`** reports **token drop** across consecutive character rows, **missing manifest**, or **`support_manifest_diff_non_envelope`**. This marks a **machine-visible change in what was assembled into the prompt** (or loss of manifest integrity)—**not** by itself “bad output.”
+
+**Non-equivalence:** **`T_sup`** **does not** imply **behavioral failure**. Support can change or be noisily classified while the model still behaves acceptably; conversely, **`T_beh`** can show failure while support is **stable** (selection / salience — see **Workflow integration (machine vs AI)** below). Always pair **`T_sup`** / **`T_beh`** with **`context_snapshot`**, continuity, and narrative layers.
+
+### 3. AI-assisted causal analysis (advisory layer)
+
+**Purpose:** When **machine-layer** audit evidence (presence, absence, timing, diffs) is **necessary but not sufficient** to explain *why* output diverged, an **optional** AI-assisted pass can propose a **primary causal narrative** (e.g. competing dialogue pressure vs low salience of a token). This is **interpretation**, not a new runtime gate.
+
+**Inputs (typical bundle):**
+
+- **`input_messages[0].content`** — Character system prompt as logged.
+- **`parsed_output`** — Validated structured move (dialogue / action fields used by Issue #29 probes).
+- **Audit metadata** — Including **`T_beh`** location, anchor / probe tokens, **`metadata.support_manifest`**, **`effective_user_trigger`**, and related rows from the same session.
+
+**Output:** A **single primary-cause classification** label chosen from the **advisory taxonomy** below, plus short **human-readable rationale** tied to quoted spans where possible.
+
+**Classification system (advisory only):**
+
+| Label | Meaning (high level) |
+|-------|----------------------|
+| **`LOW_SALIENCE`** | Required material was present but **underweighted** vs other prompt content; weak coupling between instruction and generation. |
+| **`COMPETING_SIGNAL_OVERRIDE`** | **In-scene** dialogue, immediacy, or character intent **dominated** over **explicit anchor / recall** reuse. |
+| **`TASK_MISALIGNMENT`** | Model behavior **does not match** the stated task framing or probe despite readable instructions. |
+| **`INTERPRETATION_DRIFT`** | Model **reframes** or **misreads** constraints while surface text still contains anchors. |
+| **`GENERATION_DRIFT`** | **Stylistic / lexical** choices (paraphrase, omission) that drop required literals without a clear competing narrative signal. |
+
+**Constraints:**
+
+- **Advisory only** — Does **not** override **machine-layer** conclusions (e.g. **`T_sup`** / **`T_beh`**, manifest diffs, continuity commits).
+- **Not sole validation** — Do **not** file **`bug`** / **`quality`** / **`design_gap`** issues from AI labels alone; align with **`ARCHITECTURE.md` §D** evidence and **deterministic reasoning**.
+
+### 4. Workflow integration (machine vs AI)
+
+**Machine layer** (`issue29_investigation.py`, manifest diffs, harness metrics):
+
+- Detects **presence**, **absence**, **timing**, and **structured support change** in audit JSON.
+- Emits **`T_sup`** and **`T_beh`** (and related flags) for deterministic triage.
+
+**AI layer** (advisory causal pass):
+
+- Explains **prioritization and behavior** when outputs ignore **present** support—e.g. **`COMPETING_SIGNAL_OVERRIDE`** vs **`LOW_SALIENCE`**.
+
+**Together:** Use the machine layer to **distinguish persistence / support-loss failures** from **selection / utilization failures** (context **present** at **`T_beh`** but **not** reflected in the move). That split matches **GitHub Issue #29** disposition: **not** a memory-loss **bug** where anchors remain in prompt and continuity; **quality / design_gap** discussion when **utilization** is unreliable under competing narrative pressure (see **`ARCHITECTURE.md`** Issue Tracking **§E** / **§F**).
+
 ## Audit interpretation and issue tracking
 
 ### Audit pipeline

@@ -226,6 +226,25 @@ def main() -> None:
             "Overrides default deep mode for --scenario."
         ),
     )
+    p.add_argument(
+        "--ignore-end-round",
+        action="store_true",
+        help=(
+            "Headless only, Issue #29 scenarios (investigate_i29_*): do not stop the character loop "
+            "when the Director returns end_round. If next_actor is empty, use the first available "
+            "actor. Normal Streamlit sessions ignore this flag. Prefer --issue29-long-run-harness "
+            "for full Issue #29 durability harness (includes this behavior)."
+        ),
+    )
+    p.add_argument(
+        "--issue29-long-run-harness",
+        action="store_true",
+        help=(
+            "Headless only, Issue #29 scenarios (investigate_i29_*): enable issue29_long_run_harness "
+            "(synthetic available_actors when pool is empty, Director stalemate fallback, and "
+            "ignore end_round). Investigation-only; does not change continuity or Streamlit."
+        ),
+    )
     args = p.parse_args()
     _configure_stdout_utf8()
 
@@ -241,6 +260,24 @@ def main() -> None:
 
     if args.llm_audit and not args.audit:
         p.error("--llm-audit requires --audit")
+
+    _issue29_prefix = "investigate_i29_"
+    if args.ignore_end_round:
+        if not args.scenario:
+            p.error("--ignore-end-round requires --scenario")
+        if not str(args.scenario).startswith(_issue29_prefix):
+            p.error(
+                "--ignore-end-round is only allowed for Issue #29 scenarios "
+                f"(scenario id must start with {_issue29_prefix!r})"
+            )
+    if args.issue29_long_run_harness:
+        if not args.scenario:
+            p.error("--issue29-long-run-harness requires --scenario")
+        if not str(args.scenario).startswith(_issue29_prefix):
+            p.error(
+                "--issue29-long-run-harness is only allowed for Issue #29 scenarios "
+                f"(scenario id must start with {_issue29_prefix!r})"
+            )
 
     if not os.environ.get("DEEPSEEK_API_KEY"):
         print("DEEPSEEK_API_KEY is not set; cannot run live LLM simulation.", file=sys.stderr)
@@ -307,6 +344,8 @@ def main() -> None:
             arch_quality_variant=args.arch_quality_variant,
             deep_simulation_turns=deep_turns,
             enable_episodic_memory=args.episodic_memory,
+            ignore_director_end_round=bool(args.ignore_end_round),
+            issue29_long_run_harness=bool(args.issue29_long_run_harness),
         )
     else:
         ids = [x.strip() for x in (args.chars or "ayame,celina").split(",") if x.strip()]

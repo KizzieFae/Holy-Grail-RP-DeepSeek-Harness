@@ -66,6 +66,7 @@ async def run_character_turns(
     director_decision_history_limit: int,
     environment_history_limit: int,
     tension_history_limit: int,
+    ignore_director_end_round: bool = False,
     get_effective_user_trigger: Callable[[int], str] | None = None,
 ) -> None:
     from autogen_core import CancellationToken
@@ -140,6 +141,11 @@ async def run_character_turns(
         with st_module.spinner("Characters are responding..."):
             while successful_turns < turn_limit and attempt_count < max_attempts:
                 attempt_count += 1
+                if st_module.session_state.get("issue29_long_run_harness"):
+                    au = actors_used_this_round
+                    st_module.session_state["issue29_actors_used_this_round_tail"] = (
+                        str(au[-1]) if au else None
+                    )
                 continuity_manager = get_continuity_manager_fn()
                 eligible_participants: list[str] = []
                 continuity_scene_state = getattr(
@@ -210,6 +216,28 @@ async def run_character_turns(
                     continuation_override_actor=continuation_override_actor,
                     actors_used_this_round=list(actors_used_this_round),
                 )
+                if not isinstance(decision, dict):
+                    decision = {}
+                else:
+                    decision = dict(decision)
+
+                # Headless Issue #29 harness: Director may end_round early while investigation
+                # still requires N character turns. When enabled, clear end_round and pick a
+                # fallback actor if needed (production / Streamlit default: unchanged).
+                if ignore_director_end_round and bool(decision.get("end_round")):
+                    decision["end_round"] = False
+                    if not str(decision.get("next_actor", "") or "").strip() and available_actors:
+                        decision["next_actor"] = available_actors[0]
+
+                if st_module.session_state.get("issue29_long_run_harness"):
+                    na_pre = str(decision.get("next_actor", "") or "").strip()
+                    if (
+                        not na_pre
+                        and available_actors
+                        and not bool(decision.get("end_round"))
+                    ):
+                        decision["next_actor"] = available_actors[0]
+
                 next_actor = str(decision.get("next_actor", "") or "")
 
                 if bool(decision.get("end_round")):
@@ -312,6 +340,10 @@ async def run_character_turns(
 
                 actors_used_this_round.append(next_actor)
                 successful_turns += 1
+                if st_module.session_state.get("issue29_long_run_harness"):
+                    st_module.session_state["issue29_last_successful_actor"] = (
+                        str(next_actor or "").strip() or None
+                    )
 
                 orchestration_state = apply_successful_turn_updates(
                     st_module=st_module,
