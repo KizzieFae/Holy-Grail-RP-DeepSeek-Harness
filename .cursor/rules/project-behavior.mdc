@@ -1,0 +1,330 @@
+---
+
+description: Repo-wide working behavior and source-of-truth routing
+
+globs:
+
+alwaysApply: true
+
+---
+
+
+
+# Project Behavior
+
+
+
+Use repo files as the source of truth.
+
+
+
+Start with:
+
+
+
+- `AGENTS.md`
+
+- `docs/repo-map.md`
+
+- `docs/code-style.md`
+
+
+
+Follow these rules:
+
+
+
+- preserve existing architecture and patterns unless the user explicitly requests a redesign
+
+- prefer small, reviewable diffs over broad rewrites
+
+- focus on files relevant to the task
+
+- do not rely on tool memory as the only source of important behavior
+
+- prefer extending existing modules and workflows before inventing new ones
+
+- update shared docs when behavior, architecture constraints, or testing expectations materially change
+
+
+
+If the task is multi-file, architecture-sensitive, or workflow-sensitive, read the relevant shared docs before editing.
+
+
+
+---
+
+
+
+## Work Tracking Authority
+
+
+
+GitHub Issues are the authoritative record of:
+
+
+
+- all active work
+
+- investigation state
+
+- validation results
+
+- resolution status
+
+
+
+No work may progress beyond initial exploration unless it is:
+
+
+
+- linked to an existing Issue, or
+
+- recorded as a new Issue
+
+
+
+Chat reasoning is not considered persistent state.
+
+
+
+---
+
+
+
+## Issue State Transitions
+
+
+
+All Issues must move through explicit states:
+
+
+
+Investigating  
+
+→ Awaiting consensus  
+
+→ Ready to implement  
+
+→ Implemented  
+
+→ Validating  
+
+→ Closed  
+
+
+
+Before transitioning state, the following must be recorded:
+
+
+
+- Investigating → evidence logged
+
+- Awaiting consensus → classification + system layer
+
+- Ready to implement → consensus block
+
+- Implemented → summary of changes
+
+- Validating → simulation or test results
+
+
+
+---
+
+
+
+## Evidence Requirement
+
+
+
+An Issue is not valid without:
+
+
+
+- scenario or reproduction context
+
+- audit path or test reference
+
+- specific observed behavior
+
+
+
+Evidence must allow the issue to be understood without chat context.
+
+
+
+Vague descriptions are not acceptable.
+
+
+
+---
+
+
+
+## Consensus Gate
+
+
+
+No implementation may begin unless the Issue contains:
+
+
+
+- root cause
+
+- correct system layer
+
+- justification for that layer
+
+- what will change
+
+- what will NOT change
+
+
+
+This must be written before any implementation begins.
+
+
+
+---
+
+
+
+## Validation Logging Requirement
+
+
+
+After implementation, the Issue must include:
+
+
+
+- scenario rerun or test execution
+
+- audit session or test reference
+
+- result (pass/fail)
+
+- confirmation that the original failure is resolved
+
+- regression check
+
+
+
+An Issue cannot be closed without validation evidence.
+
+
+
+---
+
+
+
+## Workflow Drift Check
+
+
+
+If an Issue remains in one state for an extended period:
+
+
+
+- Investigating → likely missing evidence
+
+- Awaiting consensus → unclear reasoning
+
+- Implemented → validation not performed
+
+
+
+Resolve drift before continuing new work.
+
+
+
+---
+
+
+
+## Active Context Requirement
+
+
+
+Every new chat must begin with an Active Context block containing:
+
+
+
+- current Issue
+
+- current phase
+
+- current status
+
+- current hypothesis
+
+- key evidence
+
+- open questions
+
+
+
+This is the required mechanism for maintaining continuity across chats.
+
+
+
+---
+
+
+
+## Minimal System Constraint
+
+
+
+Do not:
+
+
+
+- introduce unnecessary workflow complexity
+
+- create redundant tracking systems
+
+- duplicate state across multiple tools
+
+
+
+GitHub is the single source of truth for execution state.
+
+
+
+---
+
+
+
+## Subsystem Scope Clarification
+
+
+
+Root-level rules and documentation define cross-project behavior and shared constraints.
+
+
+
+Subsystem-specific guidance must live in subtree-local rules and documents.
+
+
+
+Examples:
+
+
+
+- RP (AutoGen / runtime / scene system) rules belong under the RP subtree
+
+- Knowledge ingestion (future pipeline, graph/vector systems) rules will belong under their own subtree
+
+
+
+Do not apply subsystem-specific assumptions globally.
+
+
+
+Do not move subsystem-specific rules into root-level guidance.
+
+
+
+Root-level guidance must remain valid across all subsystems.
+

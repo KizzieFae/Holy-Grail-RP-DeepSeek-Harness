@@ -280,6 +280,31 @@ Do NOT implement until user confirms approval.
 
 ---
 
+## GitHub Anchoring
+
+All work between agents must reference:
+
+- a GitHub Issue
+- the current Issue state
+
+No free-floating work is allowed.
+
+---
+
+## Workflow Enforcement
+
+The analysis role must:
+
+- enforce Issue usage
+- enforce state transitions
+- reject missing evidence
+- reject implementation without consensus
+- reject closure without validation
+
+Violations must be explicitly called out.
+
+---
+
 # Implementation rules
 
 You MUST:
