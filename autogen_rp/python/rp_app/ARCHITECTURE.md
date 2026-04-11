@@ -566,6 +566,7 @@ This is the most important path for improving story quality over long sessions b
 6. **Quality** and **design_gap** items are **not** silently filed as **bug**; **Type** follows **§E** (PRD authority).
 7. **Pattern status** is always explicit (**§I**).
 8. **Documentation reviewed and updated** where contracts or behavior changed **before** terminal closure (**§D** checklist).
+9. **GitHub Project metadata** (**§B.1**–**§B.4**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**).
 
 ### A.1 Audit-driven workflow (reference)
 
@@ -580,22 +581,78 @@ Record progress in the Issue (description updates, comments, checklists). **Stat
 3. **Consensus** — Agree fix / defer / monitor / won’t fix; align on **Layer** and scope. Set **`Current status: consensus_reached`** before implementation.
 4. **Implementation** — Land changes; reference the Issue in commits (`#123`). Set **`Current status: implemented`** when merged or landed.
 5. **Validation** — Tests, scenario reruns, checklists in the Issue. Set **`Current status: validated`** when criteria pass.
-6. **Closure** — Set terminal **§H** status; GitHub closed when appropriate. Complete **§D** documentation checklist before **`closed`**.
+6. **Closure** — Set terminal **§H** status; GitHub closed when appropriate; align **Project** fields (**§B.3**) and run **§B.2**. Complete **§D** documentation checklist before **`closed`**.
 
 ### B.1 Filing issues via GitHub CLI (humans and agents)
 
 Use when creating the Issue on GitHub from a terminal (e.g. agent asked to *file* / *create* / *open* / *track*, not draft-only).
 
+**Exception — draft-only or duplicate/withdrawn intake:** If the user asked **draft only**, skip `gh` and provide markdown per **§D–§F**. For **duplicate** or **withdrawn** filings closed per **§H** exception, metadata requirements may be abbreviated if documented in a **comment** (still prefer full metadata when practical).
+
 1. Run commands from the **git root** (directory with `.git` whose `origin` hosts Issues).
-2. Run `gh auth status`. If auth fails or `gh` is missing, provide full body per **§D** (and semantics **§E–§I**); user may paste into the web UI or run `gh auth login`.
-3. Prefer `gh issue create --title "..." --body-file path/to/body.md`. Align **title** with **§G**; optional GitHub **labels** with **§C** (repeat `--label` per label).
-4. Share the returned issue URL after success.
+2. Run `gh auth status`. **`gh project`** subcommands need a token with **`project`** scope; if Projects commands fail, use the GitHub web UI for project steps and still run verification (**§B.2**). If `gh` is missing entirely, provide full body per **§D** for paste into the web UI.
+3. Create the issue with **mandatory labels** (**§C**), not optional:  
+   `gh issue create --title "..." --body-file path/to/body.md` with one or more `--label "<name>"` flags (repeat per label).
+4. Add the issue to the **RP System Workflow** project (owner/org that hosts the repo; discover number via `gh project list`):  
+   `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>`  
+   Use the URL returned from step 3.
+5. Set **initial Project fields** to match **`Current status:`** in **body.md** (**§B.3** default row for new issues — typically **Status** = **Todo**, **Workflow** = **Ready** when **`Current status: open`**). Use `gh project field-list` / `gh project item-edit` (single-select field and option IDs), or set fields in the **Projects** UI, then verify (**§B.2**).
+6. **Verify** before reporting completion (**§B.2**). **Do not** treat filing as complete without a passing verification.
 
-Unless the user asked **draft only**, done means the Issue exists on GitHub when `gh` works—not only chat markdown.
+Unless the user asked **draft only**, **completion** means: the Issue **exists** on GitHub **and** **§B.2** passes **and** **§B.3** is satisfied for the issue’s current **`Current status:`**.
 
-### C. Standard GitHub labels (optional adjunct)
+### B.2 Verification gate (mandatory)
 
-Labels do **not** replace **Type** or **Layer** in the body. Default set (do not expand without reason): `bug`, `improvement`, `research`, `tech-debt`, `blocked`. Optional: `validation`, `docs`, `needs-reproduction`.
+After **create** or any **metadata-affecting** update (labels, project membership, **§H** transition, closure), the actor **must** run a **deterministic check** and retain the output (paste into the Issue comment or session log as appropriate):
+
+```bash
+gh issue view <N> --json number,state,labels,projectItems
+```
+
+**Pass criteria (minimum):**
+
+- **`labels`**: JSON array **non-empty** (unless **§B.1** exception applies and is documented).
+- **`projectItems`**: JSON array **non-empty**, with an item for **RP System Workflow** (title/name as shown by `gh`).
+- **Project Status** and **Workflow**: Values must **not contradict** **`Current status:`** per **§B.3** (if JSON does not expose a field, confirm via **`gh project item-list`** / project board / `gh project item-edit` dry documentation and state the two field values explicitly in the completion note).
+
+**Completion is invalid** without this verification for tracked issues. Narrative-only confirmation (“issue filed”) is **not** sufficient.
+
+### B.3 Synchronization — `Current status:` (**§H**) vs GitHub Project fields
+
+**Two surfaces:** **`Current status:`** in the **issue body** (**§H**) is authoritative for **issue text** and transitions. **Project Status** and **Workflow** on **RP System Workflow** are authoritative for **board execution state**. They **must not contradict**.
+
+**On create:** Align initial Project fields with the body’s **`Current status:`** (usually **`open`** → **Status** = **Todo**, **Workflow** = **Ready**).
+
+**On phase transition:** Whenever **`Current status:`** is edited (including via Issue description update or comment checklist), **update Project fields** to the matching row **before** reporting that transition complete:
+
+| `Current status:` (**§H**) | Project **Status** (typical) | Project **Workflow** (typical) |
+|----------------------------|------------------------------|--------------------------------|
+| `open` | Todo | Ready |
+| `investigating` | In Progress | Investigating |
+| `consensus_reached` | In Progress | Awaiting consensus |
+| `implemented` | In Progress | Implemented |
+| `validated` | In Progress | Validating |
+| `closed` | Done | Done |
+| `monitor` | Done | Monitor |
+| `wont_fix` | Done | Won't fix |
+
+If the board uses different option labels, **map by intent** (investigation vs consensus vs implementation vs validation vs terminal) and document the mapping once in a **Project** wiki or comment on **#35**—do not leave issues on **Todo** while **`Current status:`** reads **`validated`**.
+
+**On closure:** When moving to **`closed`** (or **`monitor`** / **`wont_fix`**), set **Workflow** to the terminal row above, **close** the GitHub Issue when appropriate, and run **§B.2** again so **`projectItems`** and **labels** remain consistent.
+
+### B.4 Rejection rule (metadata)
+
+- **Missing** required **labels**, **project membership**, or **Project** **Status** / **Workflow** alignment with **§B.3** → the **task is incomplete**.
+- **No agent** (implementation or review) may report **completion** of filing, transition, or closure **without** passing **§B.2** and explicit confirmation that **§B.3** holds.
+- The **review** role **must reject** any completion report that omits verification output or shows empty **`labels`** / **`projectItems`** for a tracked issue.
+
+### C. Standard GitHub labels (mandatory adjunct)
+
+Labels do **not** replace **Type** or **Layer** in the body. For **Holy Grail RP tracked issues**, applying **at least one** label from the **default set** (or an established **`type:*`** / **`documentation`** / **`infrastructure`** label that matches **Type** / workstream) is **mandatory** on **create**, unless **§B.1** exception applies.
+
+**Default set** (do not expand without reason): `bug`, `improvement`, `research`, `tech-debt`, `blocked`. Additional common labels: `validation`, `docs`, `needs-reproduction`, `documentation`, `infrastructure`, and **`type:bug`** / **`type:quality`** / **`type:design_gap`** when used by the repository.
+
+**Alignment:** Prefer a **Type**-aligned label (e.g. **`type:design_gap`** for **design_gap**) plus scope where useful (**`documentation`**, **`infrastructure`**, **`bug`**, etc.).
 
 ### D. Issue body template (canonical contract)
 

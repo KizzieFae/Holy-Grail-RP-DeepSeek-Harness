@@ -25,6 +25,15 @@ Follow these rules:
 
 If the task is multi-file, architecture-sensitive, or workflow-sensitive, read the relevant shared docs before editing.
 
+## GitHub Issue metadata (mandatory)
+
+Aligned with `python/rp_app/ARCHITECTURE.md` **§B** and **§C**:
+
+- **Create:** At least one **§C** label, membership in **RP System Workflow**, **Project Status** + **Workflow** set per **§B.3** (initial row matching **`Current status:`**).
+- **Verify:** `gh issue view <N> --json number,state,labels,projectItems` — **pass** = non-empty `labels` and `projectItems` for tracked issues; align Project fields with **§H** / **§B.3**.
+- **Transitions / closure:** Update Project fields when **`Current status:`** changes; terminal closure → **Workflow**/**Status** **Done** (or row **§B.3**) + **§B.2** re-check.
+- **Rejection:** Missing metadata or failed verification ⇒ **incomplete** — implementation and review agents **must not** accept completion without **§B.2** output and **§B.3** consistency.
+
 ## Investigation workflow
 
 ### Multi-scenario default

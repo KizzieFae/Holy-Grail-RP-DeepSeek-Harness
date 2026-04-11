@@ -285,9 +285,12 @@ Do NOT implement until user confirms approval.
 All work between agents must reference:
 
 - a GitHub Issue
-- the current Issue state
+- the current Issue state (issue body **`Current status:`** per **§H** in `autogen_rp/python/rp_app/ARCHITECTURE.md`)
+- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow** per **§B.1**–**§B.3**
 
 No free-floating work is allowed.
+
+**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
 ---
 
@@ -296,10 +299,11 @@ No free-floating work is allowed.
 The analysis role must:
 
 - enforce Issue usage
-- enforce state transitions
+- enforce state transitions (issue **§H** and **Project** fields **together** — **§B.3**)
 - reject missing evidence
 - reject implementation without consensus
 - reject closure without validation
+- **reject** issue-management **completion reports** that omit **§B.2** verification or show metadata drift (**§B.4**)
 
 Violations must be explicitly called out.
 
@@ -345,6 +349,11 @@ Issue / Documentation Impact:
 - Documentation update needed:
 - Likely files:
 - Reason:
+
+If the work included **creating, updating, or closing** a GitHub Issue, also record (mandatory):
+- **Verification JSON** (paste or summarize `gh issue view <N> --json number,state,labels,projectItems`):
+- **Project Status** and **Workflow** (must match **§B.3** for **`Current status:`**):
+- **Pass / fail** against **§B.2** (if fail, work is **not** complete):
 
 === END REPORT ===
 

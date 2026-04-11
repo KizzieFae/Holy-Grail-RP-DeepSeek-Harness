@@ -88,6 +88,22 @@ Chat reasoning is not considered persistent state.
 
 
 
+## GitHub Projects metadata (mandatory)
+
+
+
+For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). Source of truth: `autogen_rp/python/rp_app/ARCHITECTURE.md` **§B.1**–**§B.4**, **§C**.
+
+
+
+- **Verification:** `gh issue view <N> --json number,state,labels,projectItems` — tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented.
+
+
+
+- **Rejection:** Do **not** treat filing, transition, or closure as complete without passing verification and **§B.3** mapping.
+
+
+
 ---
 
 

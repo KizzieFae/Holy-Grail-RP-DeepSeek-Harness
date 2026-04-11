@@ -24,7 +24,8 @@ Do not rely on tool memory as the only source of important project behavior.
 - Prefer extending existing modules and workflows before inventing new ones.
 - Keep important guidance in repo files, not only in tool-specific settings.
 - If code behavior, architecture constraints, or test expectations change, update the relevant docs.
-- When the user asks to **file** a GitHub Issue (not draft-only), follow `python/rp_app/ARCHITECTURE.md` **§B.1** (`gh issue create` from the repo git root; labels and body template in **§C–§F**).
+- When the user asks to **file** a GitHub Issue (not draft-only), follow `python/rp_app/ARCHITECTURE.md` **§B.1**–**§B.4** and **§C** (`gh issue create` from the repo git root; **mandatory** labels; **RP System Workflow** project; **Status** / **Workflow** fields per **§B.3**; **§B.2** verification before reporting done). Issue body template remains **§D–§F**.
+- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --json number,state,labels,projectItems`** (or equivalent proof) and explicit **Project Status** + **Workflow** consistent with **`Current status:`** — see **ARCHITECTURE.md §B.2**. Missing metadata ⇒ incomplete; do not report completion.
 - Do not overwrite environment or secret files without explicit user confirmation.
 
 ## Where to start

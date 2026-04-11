@@ -364,7 +364,7 @@ Treat chronic **`fail`** on these as **quality**-class signals or **design_gap**
 
 ### GitHub issue usage (this repo)
 
-- Optional GitHub **labels**: `ARCHITECTURE.md` **§C** (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, optional `validation`, `docs`, `needs-reproduction`). Labels do **not** replace **Type** or **Layer** in the body.
+- **Labels** (**§C**): **mandatory** on create for tracked issues (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, `validation`, `docs`, `needs-reproduction`, `documentation`, `infrastructure`, `type:*`, … per **§C**). Labels do **not** replace **Type** or **Layer** in the body. **Projects:** **§B.1**–**§B.3** (**RP System Workflow**, **Status**, **Workflow**); **§B.2** verification.
 - **Issue body:** `ARCHITECTURE.md` **§D** (canonical contract). **Layer** definitions and tie-breaks: **§F**. **Title** prefixes **`[BUG]`** | **`[QUALITY]`** | **`[DESIGN_GAP]`**: **§G**.
 - **Documentation** before terminal closure: checklist in **§D**; update architecture/audit/operator docs when behavior or contracts change.
 - **Root template:** `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` (repository git root) mirrors **§D** fields for the web UI.

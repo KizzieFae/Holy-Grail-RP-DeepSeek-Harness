@@ -34,7 +34,7 @@ Do not let important project behavior live only in this folder.
 - `architecture-protection.mdc` - architecture guardrails for Python and RP app work
 - `testing-expectations.mdc` - test expectations for Python changes
 - `rp-app-guidance.mdc` - RP app-specific runtime and audit guidance
-- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `python/rp_app/ARCHITECTURE.md` §B.1
+- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `python/rp_app/ARCHITECTURE.md` §B.1–§B.4
 
 ## Safe switching note
 
