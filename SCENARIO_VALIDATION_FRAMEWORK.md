@@ -122,6 +122,8 @@ python scripts/run_scene_simulation_llm.py --scenario strong_user_steer --audit 
 python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-progression-enforcement --metrics-out ./runs/baseline.json
 ```
 
+**Console captures (stdout / tee)** — When saving the printed markdown audit stream to a file (`>`, `Tee-Object`, etc.), **write under `autogen_rp/python`**, e.g. `./runs/<name>.log` or `./validation_runs/<name>.log`. **Do not** redirect output to the **Holy Grail repository root** (the folder that contains `Holy Grail PRD.md` and `README.md`); that mixes ad-hoc run transcripts with foundational documents. With `--audit`, authoritative JSON still lands under `rp_app/data/rp_audits/`. The repo root [`.gitignore`](./.gitignore) ignores patterns such as `/*_run*_audit.log`, but ignored files still clutter the working tree if created there.
+
 ### Authored retrieval (standard evaluation mode)
 
 Retrieval activation is **only** via environment variable `RP_RETRIEVED_CONTEXT_INDEX` (compiled JSON path). The headless runner can set it for a single process:
