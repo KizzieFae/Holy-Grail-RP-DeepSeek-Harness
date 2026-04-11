@@ -285,6 +285,35 @@ _FIRST_PERSON_DEPARTURE_COMMITMENT_RE = re.compile(
 )
 
 
+# Rhetorical / conditional / coercive toward another party — not embodied self-departure (Issue #18).
+# Uses action+dialogue only (see ``_authored_text_parts``); motivation alone cannot suppress.
+_RHETORICAL_OR_CONDITIONAL_PHYSICAL_DEPARTURE_SUPPRESSION_RE = re.compile(
+    r"(?:"
+    r"\byou\s+think\b.{0,240}?\bwalk(?:ed|ing)?\s+out\b"
+    r"|"
+    r"\bfine\.\s+walk\."
+    r"|"
+    r"\bso\s+if\s+you\s+want\s+to\s+withdraw,\s*withdraw\b"
+    r"|"
+    r"\bif\s+you\s+want\s+to\s+withdraw,\s*withdraw\b"
+    r"|"
+    r"\bif\s+you\s+want\s+to\s+withdraw\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def authored_prose_suppresses_physical_departure(move: dict[str, Any] | None) -> bool:
+    """True when authored action/dialogue uses exit wording rhetorically or toward others.
+
+    Deterministic guard: does **not** inspect ``presence_changes`` / ``state_changes`` on the move.
+    """
+    direct_text, _, _ = _authored_text_parts(move)
+    if not str(direct_text).strip():
+        return False
+    return bool(_RHETORICAL_OR_CONDITIONAL_PHYSICAL_DEPARTURE_SUPPRESSION_RE.search(direct_text))
+
+
 def _authored_departure_reads_as_directed_or_hypothetical(direct_text: str) -> bool:
     """True when exit-like wording commands another, threatens, or is conditional — not self-exit."""
     if not direct_text or not direct_text.strip():
@@ -348,9 +377,10 @@ def has_hard_scene_departure_evidence(
 
     explicit_after_skip = _explicit_departure_matches_after_negation_skip(direct_text)
     if explicit_after_skip:
-        if _authored_departure_reads_as_directed_or_hypothetical(
+        blocked = _authored_departure_reads_as_directed_or_hypothetical(
             direct_text
-        ) and not _authored_has_first_person_departure_commitment(direct_text):
+        ) or authored_prose_suppresses_physical_departure(move)
+        if blocked and not _authored_has_first_person_departure_commitment(direct_text):
             pass
         else:
             return True

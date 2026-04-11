@@ -1113,6 +1113,49 @@ def test_process_turn_must_remain_exit_softens_state_changes_when_still_present(
     )
 
 
+def test_process_turn_issue18_rhetorical_exit_language_retains_presence() -> None:
+    """Session 475-style: coercive 'walk out / withdraw' toward others; actor stays on stage."""
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm",
+        opening_description="Confrontation at the threshold.",
+        present_characters=["Celina", "Ayame", "Hannah"],
+    )
+    manager.process_turn(
+        acting_character="Celina",
+        move={
+            "action": (
+                "kept her hand on the doorframe, her eyes locked on Hannah, "
+                "then cut a sharp glance toward Ayame before returning her focus to Hannah"
+            ),
+            "dialogue": (
+                "You think walking out is a punishment? Fine. Walk. But you're not taking your "
+                "'protection' with you—you're leaving it here, with me. "
+                "And you're leaving her with me. So if you want to withdraw, withdraw. "
+                "But don't pretend it's a fucking prize."
+            ),
+            "motivation": {
+                "goal": "call Hannah's bluff and reassert territorial control",
+                "tactic": "reframe Hannah's exit as abandonment",
+                "emotional_driver": "cold, territorial anger and protective urgency",
+                "risk_level": "high",
+            },
+        },
+        director_decision={
+            "next_actor": "Hannah",
+            "environment_event": "",
+            "tension_shift": "steady",
+            "reason": "Beat continues.",
+        },
+        other_characters=["Ayame", "Hannah"],
+        timestamp=datetime.fromisoformat("2026-03-15T12:02:00"),
+    )
+    assert "Celina" in manager.scene_state.present_characters
+    assert "Celina" not in manager.scene_state.offstage_characters
+    meta = manager.turn_metadata_by_index[1]
+    assert "Celina left the immediate scene." not in (meta.get("state_changes") or [])
+
+
 def test_process_turn_propagates_told_knowledge_to_addressed_character() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(

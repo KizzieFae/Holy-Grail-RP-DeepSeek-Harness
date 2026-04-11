@@ -3,7 +3,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
-from scene_exit_detection import detect_exit_from_scene, has_hard_scene_departure_evidence
+from scene_exit_detection import (
+    authored_prose_suppresses_physical_departure,
+    detect_exit_from_scene,
+    has_hard_scene_departure_evidence,
+)
 
 
 def test_has_hard_scene_departure_explicit_action() -> None:
@@ -177,6 +181,25 @@ def test_negated_no_walking_out_on_me_no_hard_exit() -> None:
         "dialogue": "There's no walking out on me, not tonight.",
         "motivation": {"goal": "", "tactic": "", "emotional_driver": "", "risk_level": "low"},
     }
+    assert has_hard_scene_departure_evidence(move, None) is False
+
+
+def test_issue18_rhetorical_walking_out_conditional_not_hard_departure() -> None:
+    """Session 475 turn 7 pattern: exit language toward others; speaker stays on stage."""
+    move = {
+        "action": "kept her hand on the doorframe, her eyes locked on Hannah, then cut a sharp glance toward Ayame before returning her focus to Hannah",
+        "dialogue": (
+            "You think walking out is a punishment? Fine. Walk. But you're not taking your 'protection' with you—you're leaving it here, with me. "
+            "And you're leaving her with me. So if you want to withdraw, withdraw. But don't pretend it's a fucking prize."
+        ),
+        "motivation": {
+            "goal": "call Hannah's bluff and reassert territorial control",
+            "tactic": "reframe Hannah's exit as abandonment",
+            "emotional_driver": "cold, territorial anger and protective urgency",
+            "risk_level": "high",
+        },
+    }
+    assert authored_prose_suppresses_physical_departure(move) is True
     assert has_hard_scene_departure_evidence(move, None) is False
 
 

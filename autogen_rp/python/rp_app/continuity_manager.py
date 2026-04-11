@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from scene_exit_detection import (
+    authored_prose_suppresses_physical_departure,
     detect_exit_from_scene,
     has_hard_scene_departure_evidence,
     has_scene_reentry_evidence,
@@ -1152,6 +1153,10 @@ class ContinuityManager:
         structured_exit = structured_presence_exit_for_character(move, actor)
         raw_exit = exit_tag or detect or structured_exit
         if not raw_exit:
+            return
+
+        # Issue #18: rhetorical / conditional exit language toward others — do not mutate presence.
+        if not structured_exit and authored_prose_suppresses_physical_departure(move):
             return
 
         hard = has_hard_scene_departure_evidence(move, scene_dict)

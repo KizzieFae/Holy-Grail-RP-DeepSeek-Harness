@@ -172,6 +172,9 @@ docs/**/jupyter_execute
 # Temporary files
 tmp_code_*.py
 
+# Ad-hoc validation trigger scratch text (e.g. _val18_*_trigger.txt for headless runs)
+_val*.txt
+
 # .NET Development settings
 appsettings.Development.json
 
