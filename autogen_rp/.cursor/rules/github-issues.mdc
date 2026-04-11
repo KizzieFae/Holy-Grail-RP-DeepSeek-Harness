@@ -12,3 +12,13 @@ When the user asks to **create**, **file**, **open**, or **track** a GitHub Issu
 - Use **§C–§F** in the same file for labels, issue body template, suspected layer, and title prefixes.
 
 If the user explicitly wants a **draft only**, skip `gh` and provide markdown following **§D–§F**.
+
+## Pattern evidence (investigations)
+
+When framing suspected behavior in an Issue body or investigation notes:
+
+- **1 scenario** → **observation** only (not a confirmed pattern).
+- **2 scenarios** → **possible** pattern; label it as such until stronger evidence exists.
+- **3+ scenarios** with **consistent** behavior across them → **confirmed** pattern for investigation purposes.
+
+**Pattern confirmation** depends on **cross-scenario** consistency, not on repetition within a single long run alone.

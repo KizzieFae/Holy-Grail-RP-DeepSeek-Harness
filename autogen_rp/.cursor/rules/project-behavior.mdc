@@ -1,26 +1,46 @@
----
-description: Repo-wide working behavior and source-of-truth routing
-globs:
-alwaysApply: true
----
-
-# Project Behavior
-
-Use repo files as the source of truth.
-
-Start with:
-
-- `AGENTS.md`
-- `docs/repo-map.md`
-- `docs/code-style.md`
-
-Follow these rules:
-
-- preserve existing architecture and patterns unless the user explicitly requests a redesign
-- prefer small, reviewable diffs over broad rewrites
-- focus on files relevant to the task
-- do not rely on tool memory as the only source of important behavior
-- prefer extending existing modules and workflows before inventing new ones
-- update shared docs when behavior, architecture constraints, or testing expectations materially change
-
-If the task is multi-file, architecture-sensitive, or workflow-sensitive, read the relevant shared docs before editing.
+---
+description: Repo-wide working behavior and source-of-truth routing
+globs:
+alwaysApply: true
+---
+
+# Project Behavior
+
+Use repo files as the source of truth.
+
+Start with:
+
+- `AGENTS.md`
+- `docs/repo-map.md`
+- `docs/code-style.md`
+
+Follow these rules:
+
+- preserve existing architecture and patterns unless the user explicitly requests a redesign
+- prefer small, reviewable diffs over broad rewrites
+- focus on files relevant to the task
+- do not rely on tool memory as the only source of important behavior
+- prefer extending existing modules and workflows before inventing new ones
+- update shared docs when behavior, architecture constraints, or testing expectations materially change
+
+If the task is multi-file, architecture-sensitive, or workflow-sensitive, read the relevant shared docs before editing.
+
+## Investigation workflow
+
+### Multi-scenario default
+
+- Investigations default to **multiple scenarios**: include at least **one baseline**, **one stress**, and **one variant** (pick from existing scenario definitions; orientation: `../SCENARIO_VALIDATION_FRAMEWORK.md` from `autogen_rp/`).
+- **Single-scenario** evidence is **not** enough to **confirm** a pattern; it may support observations only (see `github-issues.mdc` for Issue-level wording).
+
+### Evidence collection order
+
+1. Run **simulations** (production-path / framework-aligned runs).
+2. Extract **quantitative metrics** from runs and audits.
+3. **Identify patterns** from those metrics across scenarios.
+4. Only if still needed: **qualitative review** (human or AI), subject to the advisory rules below.
+
+### AI assessment (advisory only)
+
+- AI qualitative judgment is **advisory**: it does **not** replace audit artifacts, metrics, or deterministic system outcomes.
+- It must **reference exact turns and artifacts** (paths, turn ids, audit files); it **must not override** deterministic behavior or logged facts.
+- Use it **only after** simulation + metrics + pattern identification—suited to “**was this the right design/layer choice?**”, not “**did this happen?**” (the latter comes from simulations and artifacts).

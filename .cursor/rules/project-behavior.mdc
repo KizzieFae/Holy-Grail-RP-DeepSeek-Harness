@@ -162,6 +162,50 @@ Vague descriptions are not acceptable.
 
 
 
+## Investigation workflow
+
+
+
+### Multi-scenario default
+
+
+
+- Investigations default to **multiple scenarios**: include at least **one baseline**, **one stress**, and **one variant** (pick from existing scenario definitions; orientation: `SCENARIO_VALIDATION_FRAMEWORK.md` at repository root, also linked from `autogen_rp/AGENTS.md`).
+
+- **Single-scenario** evidence is **not** enough to **confirm** a pattern; it may support observations only (see `autogen_rp/.cursor/rules/github-issues.mdc` for Issue-level wording).
+
+
+
+### Evidence collection order
+
+
+
+1. Run **simulations** (production-path / framework-aligned runs).
+
+2. Extract **quantitative metrics** from runs and audits.
+
+3. **Identify patterns** from those metrics across scenarios.
+
+4. Only if still needed: **qualitative review** (human or AI), subject to the advisory rules below.
+
+
+
+### AI assessment (advisory only)
+
+
+
+- AI qualitative judgment is **advisory**: it does **not** replace audit artifacts, metrics, or deterministic system outcomes.
+
+- It must **reference exact turns and artifacts** (paths, turn ids, audit files); it **must not override** deterministic behavior or logged facts.
+
+- Use it **only after** simulation + metrics + pattern identification—suited to “**was this the right design/layer choice?**”, not “**did this happen?**” (the latter comes from simulations and artifacts).
+
+
+
+---
+
+
+
 ## Consensus Gate
 
 
@@ -211,6 +255,62 @@ After implementation, the Issue must include:
 
 
 An Issue cannot be closed without validation evidence.
+
+
+
+---
+
+
+
+## Retroactive Issue Handling
+
+
+
+If an Issue is created after implementation has already occurred, it must still reflect the full workflow state progression.
+
+
+
+Retroactive Issues must include an explicit execution-state summary covering:
+
+
+
+- Investigating
+
+- Awaiting consensus
+
+- Ready to implement
+
+- Implemented
+
+- Validating
+
+
+
+This summary must:
+
+
+
+- indicate that each phase was completed
+
+- reference evidence where applicable
+
+- preserve traceability of reasoning and validation
+
+
+
+Retroactive Issues must NOT:
+
+
+
+- skip directly to Closed without documenting prior states
+
+- omit validation evidence
+
+- bypass the workflow model
+
+
+
+GitHub Issues remain the authoritative record and must reflect the full lifecycle even when recorded after the fact.
 
 
 
