@@ -44,6 +44,26 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
             raise ValueError(
                 f"Scenario {scenario_id!r}: scene_template_id must be a non-empty string when present"
             )
+    if raw.get("scene_template_role_assignments") is not None:
+        ra = raw["scene_template_role_assignments"]
+        if not isinstance(ra, dict):
+            raise ValueError(
+                f"Scenario {scenario_id!r}: scene_template_role_assignments must be an object"
+            )
+        cards = {str(x).strip() for x in raw.get("character_card_ids", []) if str(x).strip()}
+        for key, val in ra.items():
+            ck = str(key or "").strip()
+            rv = str(val or "").strip()
+            if not ck or not rv:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: scene_template_role_assignments "
+                    f"has empty key or value: {key!r} -> {val!r}"
+                )
+            if ck not in cards:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: scene_template_role_assignments "
+                    f"key {ck!r} is not in character_card_ids"
+                )
 
 
 def scenarios_dir() -> Path:
@@ -107,4 +127,12 @@ def scenario_prepare_kwargs(raw: dict[str, Any]) -> dict[str, Any]:
     }
     if raw.get("scene_template_id") is not None and str(raw.get("scene_template_id") or "").strip():
         out["scene_template_id"] = str(raw["scene_template_id"]).strip()
+    if raw.get("scene_template_role_assignments") is not None and isinstance(
+        raw.get("scene_template_role_assignments"), dict
+    ):
+        out["scene_template_role_assignments"] = {
+            str(k).strip(): str(v).strip()
+            for k, v in raw["scene_template_role_assignments"].items()
+            if str(k or "").strip() and str(v or "").strip()
+        }
     return out

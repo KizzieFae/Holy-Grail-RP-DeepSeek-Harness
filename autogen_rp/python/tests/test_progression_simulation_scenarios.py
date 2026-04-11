@@ -60,6 +60,25 @@ def test_validate_optional_scene_template_id() -> None:
         validate_optional_scenario_fields({"scene_template_id": "   "}, "bad")
 
 
+def test_validate_optional_scene_template_role_assignments() -> None:
+    base = {
+        "character_card_ids": ["kizzie", "marlene"],
+        "scene_template_role_assignments": {
+            "kizzie": "misassigned_omega_student",
+            "marlene": "alpha_roommate_marlene",
+        },
+    }
+    validate_optional_scenario_fields(dict(base), "x")
+    bad = dict(base)
+    bad["scene_template_role_assignments"] = {"unknown": "alpha_roommate_marlene"}
+    with pytest.raises(ValueError, match="scene_template_role_assignments"):
+        validate_optional_scenario_fields(bad, "bad")
+    bad2 = dict(base)
+    bad2["scene_template_role_assignments"] = "not_a_dict"
+    with pytest.raises(ValueError, match="scene_template_role_assignments"):
+        validate_optional_scenario_fields(bad2, "bad2")
+
+
 def test_scenario_prepare_kwargs_scene_template_id_only_when_set() -> None:
     base = {
         "id": "x",

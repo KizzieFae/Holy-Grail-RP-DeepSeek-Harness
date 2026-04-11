@@ -139,7 +139,7 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 
 - **Continuity-owned resolved outcome first** — inspect `resolved_outcome_registry.py`, `resolved_outcome_engine.py`, `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["sleeping_surface"]` before editing prompt wording. Identical-value reassertion surfaces as `no_op_existing_value`.
 - **Grounding projection second** — confirm `scene_grounding.py` reflects the active `assignment:sleeping_surface` outcome into SETTLED SCENE FACTS.
-- **Template slots / move field** — verify the scene exposes bounded `sleeping_surface_slots` and the structured move includes `scene_state_updates.sleeping_surface_assignment` only when the beat truly settles the assignment.
+- **Template slots / move field** — verify the scene exposes bounded `sleeping_surface_slots` and the structured move includes `scene_state_updates.sleeping_surface_assignment` only when the beat truly settles the assignment. In headless/simulation runs, those slots come from the scene template: set scenario `scene_template_id`, and if the template has required roles, add `scene_template_role_assignments` (see `SCENARIO_VALIDATION_FRAMEWORK.md`).
 
 ### Settled housing-call re-litigation
 

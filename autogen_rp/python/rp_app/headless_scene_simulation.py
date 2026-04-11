@@ -47,6 +47,11 @@ from response_validation import (
     validate_turn_selection_decision,
 )
 from scene_grounding import empty_grounding_dict
+from scene_template import (
+    SceneTemplateManager,
+    normalize_role_assignments,
+    validate_role_assignments,
+)
 from semantic_validation import (
     assess_narrator_render_semantics,
     assess_presence_violation_semantics,
@@ -84,6 +89,92 @@ ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
 ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
 ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
+
+
+def _apply_headless_scene_template_to_continuity(
+    *,
+    st_module: Any,
+    continuity_manager: ContinuityManager,
+    scene_template_id: str,
+    character_card_ids: list[str],
+    resolved_character_files: list[str],
+    display_character_names: list[str],
+    scene_template_role_assignments: dict[str, str] | None,
+    sync_orchestration_state_from_continuity_fn: Callable[[], None],
+) -> None:
+    """Load authored template and merge template contract into continuity ``scene_state``.
+
+    When ``scene_template_role_assignments`` is provided (card id -> template ``role_name``),
+    uses ``resolve_scene_template_setup`` + ``apply_scene_setup_to_scene_state`` (same as UI).
+    Otherwise applies template-derived ``sleeping_surface_slots`` / ``location_entry_slots`` /
+    ``premise`` / ``template_id`` only (no role inference).
+    """
+    tpl_id = str(scene_template_id or "").strip()
+    if not tpl_id or continuity_manager.scene_state is None:
+        return
+
+    st_module.session_state["selected_scene_template_id"] = tpl_id
+    if scene_template_role_assignments:
+        card_to_file = {
+            str(cid).strip(): resolved_character_files[i]
+            for i, cid in enumerate(character_card_ids)
+        }
+        file_roles: dict[str, str] = {}
+        for cid, role in scene_template_role_assignments.items():
+            ck = str(cid).strip()
+            rv = str(role).strip()
+            if ck not in card_to_file:
+                raise ValueError(
+                    f"scene_template_role_assignments key {ck!r} is not in character_card_ids "
+                    "for this headless session"
+                )
+            file_roles[card_to_file[ck]] = rv
+        st_module.session_state["scene_role_assignments"] = file_roles
+        names_by_file = dict(zip(resolved_character_files, display_character_names))
+        scene_setup, setup_err = state_helpers.resolve_scene_template_setup(
+            st_module=st_module,
+            selected_chars=resolved_character_files,
+            character_names_by_file=names_by_file,
+            scene_template_manager_cls=SceneTemplateManager,
+            normalize_role_assignments_fn=normalize_role_assignments,
+            validate_role_assignments_fn=validate_role_assignments,
+        )
+        if setup_err:
+            raise ValueError(
+                f"Headless scene template setup failed for template {tpl_id!r}: {setup_err}"
+            )
+        if not scene_setup:
+            raise ValueError(
+                f"Headless scene template setup returned empty setup for template {tpl_id!r}"
+            )
+        state_helpers.apply_scene_setup_to_scene_state(
+            scene_state=continuity_manager.scene_state,
+            scene_setup=scene_setup,
+            get_must_remain_characters_fn=get_must_remain_characters,
+        )
+        sync_orchestration_state_from_continuity_fn()
+        return
+
+    try:
+        template = SceneTemplateManager().load_template(tpl_id)
+    except (FileNotFoundError, ValueError, OSError) as exc:
+        raise ValueError(f"Headless failed to load scene template {tpl_id!r}: {exc}") from exc
+
+    minimal_setup: dict[str, Any] = {
+        "template_id": template.template_id,
+        "premise": template.premise,
+        "role_assignments": {},
+        "character_presence_constraints": {},
+        "character_authority_labels": {},
+        "sleeping_surface_slots": list(template.sleeping_surface_slots),
+        "location_entry_slots": list(template.location_entry_slots),
+    }
+    state_helpers.apply_scene_setup_to_scene_state(
+        scene_state=continuity_manager.scene_state,
+        scene_setup=minimal_setup,
+        get_must_remain_characters_fn=get_must_remain_characters,
+    )
+    sync_orchestration_state_from_continuity_fn()
 
 
 def _issue29_resolve_synthetic_available_actors(
@@ -684,6 +775,7 @@ def prepare_headless_session(
     deep_simulation_turns: bool = False,
     enable_episodic_memory: bool = False,
     scene_template_id: str | None = None,
+    scene_template_role_assignments: dict[str, str] | None = None,
     ignore_director_end_round: bool = False,
     issue29_long_run_harness: bool = False,
 ) -> Any:
@@ -694,8 +786,13 @@ def prepare_headless_session(
     Issue seed participants use **agent keys** (card ``agent_name`` or ``make_agent_identifier``)
     so ``select_episodic_items_for_character`` visibility matches ``next_actor`` from the turn runner.
 
-    When ``scene_template_id`` is set, writes it to ``ContinuityManager.scene_state`` (same field
-    Streamlit sets via scene setup) so template-linked authored retrieval can run unchanged.
+    When ``scene_template_id`` is set, loads the authored scene template and applies
+    ``sleeping_surface_slots`` (and related template fields) onto ``ContinuityManager.scene_state``
+    via ``apply_scene_setup_to_scene_state``. With optional ``scene_template_role_assignments``,
+    uses the same ``resolve_scene_template_setup`` path as Streamlit (card id → template role).
+
+    When ``scene_template_id`` is set without role assignments, applies template-derived slot
+    lists and premise only (no role inference).
 
     When ``issue29_long_run_harness`` is True (headless CLI only, ``investigate_i29_*``), sets
     session ``issue29_long_run_harness`` and enables synthetic availability / Director survivability
@@ -808,7 +905,20 @@ def prepare_headless_session(
     if cm is not None and cm.scene_state is not None:
         cm.scene_state.location = location
         _tpl = str(scene_template_id or "").strip()
-        cm.scene_state.scene_template_id = _tpl or None
+        if _tpl:
+            _apply_headless_scene_template_to_continuity(
+                st_module=st,
+                continuity_manager=cm,
+                scene_template_id=_tpl,
+                character_card_ids=list(character_card_ids),
+                resolved_character_files=resolved_files,
+                display_character_names=display_names,
+                scene_template_role_assignments=scene_template_role_assignments,
+                sync_orchestration_state_from_continuity_fn=_sync,
+            )
+            cm.scene_state.scene_template_id = _tpl
+        else:
+            cm.scene_state.scene_template_id = None
         if initial_tension is not None:
             cm.scene_state.current_tension_level = str(initial_tension)
         else:

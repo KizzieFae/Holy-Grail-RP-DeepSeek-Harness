@@ -2,6 +2,12 @@
   "id": "willow_dorm_binding_stress",
   "title": "Willow dorm binding stress (sleeping logistics)",
   "intent": "Three-way alpha/omega dorm pressure with explicit sleeping-surface stakes so continuity may promote assignment and character prompts receive BINDING CONSTRAINTS; stress Willow's control style without scripting outcomes.",
+  "scene_template_id": "marlene_willow_dorm_omega_misassignment",
+  "scene_template_role_assignments": {
+    "kizzie": "misassigned_omega_student",
+    "marlene": "alpha_roommate_marlene",
+    "willow": "alpha_roommate_willow"
+  },
   "character_card_ids": ["kizzie", "marlene", "willow"],
   "opening_description": "SCUC triple dorm, evening. Kizzie (omega, kitsune) stands near the door with a single bag while Marlene and Willow Reeves—roommates who run this space like a two-alpha household—block the narrow path between bunk ladder and couch. The room is already lived-in: Willow's tools on the desk, Marlene's art clutter, two bunks, a couch, floor space. Housing put a third body in here anyway. The air is sharp with territorial patience and the unspoken question of who sleeps where tonight.",
   "location": "university_dorm_triple",

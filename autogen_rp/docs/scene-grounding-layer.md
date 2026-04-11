@@ -61,7 +61,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 
 | `key` | `value` shape | Example `value_summary` |
 |-------|---------------|-------------------------|
-| `sleeping_surface` | `{ "assignee": "<participant_id>", "surface": "top_of_bunk_marlene" \| "floor" \| "willow_bunk" \| "marlene_bunk_lower" \| "unassigned" }` | `Kizzie: top of Marlene's bunk` |
+| `sleeping_surface` | `{ "assignee": "<participant_id>", "surface": "top_bunk_marlene" \| "lower_bunk_marlene" \| "top_bunk_willow" \| "lower_bunk_willow" \| "floor" \| "couch" \| "unassigned" }` | `Kizzie: top_bunk_marlene` |
 | `territory_claim` | `{ "zone": string_enum, "holder": "<participant_id>" }` | Limited enums per template later; **MVP:** omit if no rules yet. |
 
 #### B. `object_state` — durable prop state

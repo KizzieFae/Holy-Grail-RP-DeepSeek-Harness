@@ -8,6 +8,7 @@ autogen_rp/python/validation_runs/*metrics*.json
 autogen_rp/python/validation_runs/*repro*.json
 autogen_rp/python/validation_runs/*survival*.json
 autogen_rp/python/validation_runs/*_schedule.json
+autogen_rp/python/validation_runs/*_stdout.txt
 
 # Root: local headless LLM simulation tee logs (run_scene_simulation_llm.py)
 /*_run*_audit.log

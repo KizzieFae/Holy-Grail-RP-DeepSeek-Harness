@@ -80,7 +80,8 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 
 **Optional scenario fields**
 
-- **`scene_template_id`**: When set, headless prep writes `ContinuityManager.scene_state.scene_template_id` (same as Streamlit). Use for scenarios where **template** rows (`role_slots`, `premise`) from the authored index should apply. Omit for character-only expectations or casts outside the indexed templates.
+- **`scene_template_id`**: When set, headless prep loads the matching JSON under `python/data/scene_templates/` and applies **template-derived** fields onto `ContinuityManager.scene_state` (at minimum `sleeping_surface_slots` / `location_entry_slots` / `premise` / `scene_template_id`). Use for scenarios where template contract fields must match Streamlit-style setup. Omit for character-only expectations or casts outside the indexed templates.
+- **`scene_template_role_assignments`**: Optional object mapping **`character_card_ids` entries** → template **`role_name`** strings (same vocabulary as the template’s `role_slots`). When present with **`scene_template_id`**, headless prep uses the same **`resolve_scene_template_setup`** path as the UI so `role_assignments`, constraints, and labels align with the template. Omit when the template has no required roles or when using template id **only** for slot lists (minimal headless merge).
 
 **Manifest regression (no API):**
 

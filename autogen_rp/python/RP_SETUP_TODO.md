@@ -421,7 +421,7 @@ This milestone was **intentionally narrow:** **validation and enforcement**, not
 ### Completed in this branch
 
 - [x] **Operational A/B matrix** — `scripts/run_operational_pilot_eval_matrix.py` (retrieval OFF vs ON; subprocess env for `RP_RETRIEVED_CONTEXT_INDEX`; ON verification requires `RETRIEVED REFERENCE MATERIAL` + template lines including **`:premise | scene_template]`**).
-- [x] **Template-aware headless** — `prepare_headless_session(..., scene_template_id=...)`; scenario JSON **`scene_template_id`** and CLI **`--scene-template-id`**; `tests/test_prepare_headless_scene_template_id.py`.
+- [x] **Template-aware headless** — `prepare_headless_session` loads the template JSON when **`scene_template_id`** is set and merges fields into continuity (including **`sleeping_surface_slots`**); scenario JSON **`scene_template_id`** / optional **`scene_template_role_assignments`**, CLI **`--scene-template-id`**; `tests/test_prepare_headless_scene_template_id.py`.
 - [x] **Premise refinement** — `data/scene_templates/arkham_asylum_*.json` premise text + recompiled index (no extra template fields beyond `role_slots` + `premise` for pilot).
 
 ### Rejected experiments (not in repo default)
@@ -443,7 +443,7 @@ This milestone was **intentionally narrow:** **validation and enforcement**, not
 **Completed**
 
 - [x] **OFF / ON as standard simulation modes** — `RP_RETRIEVED_CONTEXT_INDEX` is the **only** runtime switch; optional **`--retrieved-context-index`** on `run_scene_simulation_llm.py` (omit flag = leave shell env unchanged; bare flag = empty index / OFF).
-- [x] **Template-aware headless** in scenario workflow — `scene_template_id` in scenario JSON / `prepare_headless_session` / CLI `--scene-template-id` (unchanged from pilot closeout; now documented as standard).
+- [x] **Template-aware headless** in scenario workflow — `scene_template_id` (and optional **`scene_template_role_assignments`**) in scenario JSON / `prepare_headless_session` loads template data into continuity (e.g. **`sleeping_surface_slots`**) / CLI `--scene-template-id` (unchanged from pilot closeout; now documented as standard).
 - [x] **Audit visibility** — per-turn **`metadata.retrieval_summary`** on character audits; run-level **`retrieval_session`** in **`structured_eval`** and merged into **`_audit_summary.json`** after **headless** simulation; optional index fingerprint.
 - [x] **Strict headless check** — retrieval **ON** + non-empty **`scene_template_id`** ⇒ run fails if no turn had a non-empty retrieved bundle.
 - [x] **No selector or prompt-structure change** — observability and CLI only; baseline remains **lore_facts** + **role_slots** + **premise**, non-authoritative.
