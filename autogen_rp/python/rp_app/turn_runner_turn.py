@@ -5,6 +5,7 @@ from autogen_agentchat.messages import TextMessage
 from beat_shift_state import build_narrator_beat_shift_suffix, is_pending_beat_shift_active
 from anti_regression_advisory import get_cached_anti_regression_advisory
 from continuity_manager import ContinuityManager
+from progression_simulation_scenarios import load_scenario
 from progression_advisory import get_cached_progression_advisory
 from progression_enforcement import (
     collect_issue_signatures,
@@ -29,6 +30,9 @@ from perception_audibility import normalize_move_audibility
 from response_validation_binding_sleeping_surface import (
     binding_sleeping_surface_id_for_actor,
     format_binding_sleeping_surface_retry_note,
+)
+from response_validation_investigation_recall import (
+    format_investigation_anchor_retry_note,
 )
 
 
@@ -87,6 +91,8 @@ async def execute_character_turn(
     progression_retry_reason = ""
     binding_retry_triggered = False
     binding_retry_reason = ""
+    investigation_retry_triggered = False
+    investigation_retry_reason = ""
     continuity_applied_in_execute = False
     continuity_transaction_snapshot: dict[str, Any] | None = None
 
@@ -120,6 +126,36 @@ async def execute_character_turn(
                 retry_notes.append(
                     format_binding_sleeping_surface_retry_note(sid or "unknown")
                 )
+            if investigation_retry_triggered:
+                inv_note = ""
+                sid = st_module.session_state.get("simulation_scenario_id")
+                if sid:
+                    try:
+                        raw = load_scenario(str(sid).strip())
+                        inv = raw.get("investigation") if isinstance(raw, dict) else {}
+                        toks_raw = (
+                            raw.get("investigation_anchor_tokens")
+                            if isinstance(raw, dict)
+                            else None
+                        )
+                        if isinstance(inv, dict) and isinstance(toks_raw, list):
+                            kind = str(inv.get("behavior_kind", "") or "")
+                            tk = [str(t).strip() for t in toks_raw if str(t).strip()]
+                            if kind and tk:
+                                inv_note = format_investigation_anchor_retry_note(
+                                    turn_number=turn_number,
+                                    behavior_kind=kind,
+                                    tokens=tk,
+                                )
+                    except (OSError, ValueError, KeyError, TypeError):
+                        inv_note = ""
+                if not inv_note:
+                    inv_note = (
+                        "IMPORTANT: Your previous attempt failed the scenario investigation recall contract. "
+                        "Include every required literal anchor token in your JSON dialogue and/or action "
+                        "exactly as written in the scene materials."
+                    )
+                retry_notes.append(inv_note)
             if retry_notes:
                 attempt_prompt = task_prompt + "\n\n" + "\n\n".join(retry_notes)
 
@@ -193,6 +229,12 @@ async def execute_character_turn(
             scene_state,
             continuity_manager,
             scene_grounding=st_module.session_state.get("scene_grounding"),
+            effective_user_trigger=effective_user_trigger,
+            character_system_prompt=attempt_prompt,
+            simulation_scenario_id=st_module.session_state.get(
+                "simulation_scenario_id"
+            ),
+            orchestration_turn_number=turn_number,
         )
         semantic_presence_assessment = None
 
@@ -278,6 +320,39 @@ async def execute_character_turn(
             )
             st_module.session_state["selector_decisions"].append(
                 f"Retrying {next_actor} after binding sleeping-surface rejection."
+            )
+            continue
+
+        if (
+            not is_valid
+            and rejection_reason.startswith("[INVESTIGATION_ANCHOR]")
+            and attempt_index == 0
+        ):
+            investigation_retry_triggered = True
+            investigation_retry_reason = rejection_reason
+            log_turn_failure_fn(
+                round_number=round_number,
+                turn_number=turn_number,
+                bot_name=next_actor,
+                bot_type="character",
+                stage="validation_investigation_anchor_retry",
+                reason=rejection_reason,
+                input_messages=[{"role": "system", "content": attempt_prompt}],
+                raw_response=char_raw_response,
+                parsed_output=move,
+                context_snapshot={
+                    "director_decision": decision,
+                    "character_names": char_names,
+                    "attempt_index": attempt_index,
+                },
+                metadata={
+                    "summary_blocks": character_summary_block_audit,
+                    "semantic_presence_assessment": semantic_presence_assessment or {},
+                },
+                effective_user_trigger=effective_user_trigger,
+            )
+            st_module.session_state["selector_decisions"].append(
+                f"Retrying {next_actor} after investigation anchor recall rejection."
             )
             continue
 
@@ -494,6 +569,13 @@ async def execute_character_turn(
             "binding_retry_outcome": (
                 "success_after_retry"
                 if binding_retry_triggered and attempt_index == 1
+                else "no_retry"
+            ),
+            "investigation_retry_triggered": investigation_retry_triggered,
+            "investigation_retry_reason": investigation_retry_reason,
+            "investigation_retry_outcome": (
+                "success_after_retry"
+                if investigation_retry_triggered and attempt_index == 1
                 else "no_retry"
             ),
         }

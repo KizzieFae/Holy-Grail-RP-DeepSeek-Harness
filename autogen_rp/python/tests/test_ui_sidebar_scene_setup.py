@@ -19,6 +19,9 @@ class FakeStreamlit:
     def caption(self, *_args, **_kwargs) -> None:
         return None
 
+    def markdown(self, *_args, **_kwargs) -> None:
+        return None
+
     def warning(self, *_args, **_kwargs) -> None:
         return None
 

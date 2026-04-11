@@ -21,6 +21,10 @@ from response_validation_presence import detect_scene_presence_violation
 from response_validation_binding_sleeping_surface import (
     validate_binding_sleeping_surface_contradiction,
 )
+from progression_simulation_scenarios import load_scenario
+from response_validation_investigation_recall import (
+    validate_investigation_recall_contract,
+)
 from response_validation_registry_slots import validate_registry_scene_state_updates
 
 # Fuzzy duplicate detection (prefix / substring only; exact matches always reject).
@@ -265,6 +269,10 @@ def validate_bot_response(
     scene_state: dict[str, Any] | None = None,
     continuity_manager: Any | None = None,
     scene_grounding: dict[str, Any] | None = None,
+    effective_user_trigger: str = "",
+    character_system_prompt: str | None = None,
+    simulation_scenario_id: str | None = None,
+    orchestration_turn_number: int | None = None,
 ) -> tuple[bool, str]:
     ok, msg = _validate_bot_tier_structural(content, user_name)
     if not ok:
@@ -305,5 +313,25 @@ def validate_bot_response(
     )
     if not ok:
         return False, msg
+
+    if (
+        simulation_scenario_id
+        and orchestration_turn_number is not None
+        and move is not None
+    ):
+        try:
+            scenario_raw = load_scenario(str(simulation_scenario_id).strip())
+        except (OSError, ValueError, KeyError, TypeError):
+            scenario_raw = None
+        if isinstance(scenario_raw, dict):
+            ok, msg = validate_investigation_recall_contract(
+                move=move,
+                orchestration_turn_number=int(orchestration_turn_number),
+                scenario_raw=scenario_raw,
+                effective_user_trigger=effective_user_trigger,
+                character_system_prompt=character_system_prompt,
+            )
+            if not ok:
+                return False, msg
 
     return True, ""
