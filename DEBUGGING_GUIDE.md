@@ -37,7 +37,7 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 ### Workflow
 
 1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant. If the run used **`--user-trigger-schedule`**, use **`effective_user_trigger`** on **full** per-turn audit JSON to see which simulated user line applied each turn (see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) for JSON shape, precedence, and validation).
-2. Pick **one primary Layer** first (canonical list below; full definitions in [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) Issue Tracking **§F**). Do not spread the investigation across Layers until the evidence chain is clear.
+2. Pick **one primary Layer** first (canonical list below; full definitions in [governance/rp-app/issue-tracking-workflow.md](./governance/rp-app/issue-tracking-workflow.md) **§F**). Do not spread the investigation across Layers until the evidence chain is clear.
 3. Walk **evidence order** once, top to bottom; stop when you can name what **committed** the bad state.
 4. Produce **Layer**, **verdict**, and **minimal repro** (scenario id, audit session folder, turn index if known)—same fields as mandatory GitHub evidence in **§D** when filing.
 5. **Stop** — validation and triage end here (see **Validation vs Remediation Boundary** below). Do not implement fixes or alter runs in the same pass unless a human **explicitly** directs remediation.
@@ -63,7 +63,7 @@ Use this when a **headless scenario run** or **Streamlit session** “looks wron
 
 ### Primary Layer (pick one to start)
 
-Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. The **Layer** value must match [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) Issue Tracking **§F** (file GitHub Issues with the same token). **Orchestration vs response_validation:** wrong **who acts next** → **`orchestration`**; wrong **validity of a produced move** (parse, presence, duplicate content, drift on character/narrator payload) → **`response_validation`**.
+Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. The **Layer** value must match [governance/rp-app/issue-tracking-workflow.md](./governance/rp-app/issue-tracking-workflow.md) **§F** (file GitHub Issues with the same token). **Orchestration vs response_validation:** wrong **who acts next** → **`orchestration`**; wrong **validity of a produced move** (parse, presence, duplicate content, drift on character/narrator payload) → **`response_validation`**.
 
 | Layer | Typical symptoms | First code to inspect |
 |-------|------------------|------------------------|
@@ -78,7 +78,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. The **Layer** v
 | `rendering` | Prose garble, voice, dialogue not verbatim in rendered output | `app_turn_rendering.py`, narrator prompts |
 | `audit_simulation` | Wrong or missing audit artifacts, harness, metrics | `headless_scene_simulation.py`, audit writers, scenario CLI |
 | `application_infrastructure` | Encoding, Streamlit shell, session I/O, loader/path mechanics | `app.py`, session lifecycle, env/paths |
-| `other` | Only per **§F** (`other`): non-runtime process/tooling, or **`investigating`** with target Layer hypothesis + justification | `ARCHITECTURE.md` **§F** |
+| `other` | Only per **§F** (`other`): non-runtime process/tooling, or **`investigating`** with target Layer hypothesis + justification | [governance/rp-app/issue-tracking-workflow.md](./governance/rp-app/issue-tracking-workflow.md) **§F** |
 
 ### Verdict (record one)
 

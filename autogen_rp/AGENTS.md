@@ -24,9 +24,17 @@ Do not rely on tool memory as the only source of important project behavior.
 - Prefer extending existing modules and workflows before inventing new ones.
 - Keep important guidance in repo files, not only in tool-specific settings.
 - If code behavior, architecture constraints, or test expectations change, update the relevant docs.
-- When the user asks to **file** a GitHub Issue (not draft-only), follow `python/rp_app/ARCHITECTURE.md` **§B.1**–**§B.4** and **§C** (`gh issue create` from the repo git root; **mandatory** labels; **RP System Workflow** project; **Status** / **Workflow** fields per **§B.3**; **§B.2** verification before reporting done). Issue body template remains **§D–§F**.
-- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --json number,state,labels,projectItems`** (or equivalent proof) and explicit **Project Status** + **Workflow** consistent with **`Current status:`** — see **ARCHITECTURE.md §B.2**. Missing metadata ⇒ incomplete; do not report completion.
+- When the user asks to **file** a GitHub Issue (not draft-only), follow `../governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.4** and **§C** (`gh issue create` from the repo git root; **mandatory** labels; **RP System Workflow** project; **Status** / **Workflow** fields per **§B.3**; **§B.2** verification before reporting done). Issue body template remains **§D–§F**.
+- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --json number,state,labels,projectItems`** (or equivalent proof) and explicit **Project Status** + **Workflow** consistent with **`Current status:`** — see **`../governance/rp-app/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
 - Do not overwrite environment or secret files without explicit user confirmation.
+
+## Governance layout (Issue #45)
+
+- **Bindings** (late-bound project values only): `../bindings/bindings.toml`
+- **Template sync manifest** (no binding payloads): `../governance/project-sync.toml`
+- **Workflow and Cursor governance** (canonical policy text): `../governance/policies/` and `../governance/rp-app/`
+
+Repository-root `.cursor/rules/*.mdc` and `autogen_rp/.cursor/rules/*.mdc` are thin wrappers that `@`-include files under `governance/`.
 
 ## Where to start
 
@@ -66,8 +74,8 @@ they still provide useful IDE automation, but do not let them become the only so
 
 ### Cursor
 
-Cursor should use `.cursor/rules/` only as a routing layer into this file and the shared docs in `docs/`.
-Avoid duplicating large rule blocks in Cursor-only files when a shared repo doc can hold the guidance.
+Cursor should use `.cursor/rules/` only as a routing layer into this file, the shared docs in `docs/`, and the canonical governance corpus under `../governance/` (included from `.mdc` stubs).
+Avoid duplicating large rule blocks in Cursor-only files when a shared repo doc or governance extract can hold the guidance.
 
 ## Safe switching rule
 

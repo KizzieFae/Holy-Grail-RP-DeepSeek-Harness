@@ -1,0 +1,16 @@
+# Architecture Protection
+
+Before making architecture-sensitive changes, read:
+
+- `docs/architecture.md`
+- `python/rp_app/ARCHITECTURE.md` when the task touches the RP app
+
+Apply these constraints:
+
+- do not move continuity, orchestration, validation, and rendering responsibilities into the wrong layer
+- do not treat Director prompt changes as the default fix for RP runtime problems
+- keep `app.py` as a thin composition layer unless the task explicitly says otherwise
+- preserve bounded-context strategies and avoid reintroducing unbounded hidden chat accumulation
+- prefer the smallest fix at the correct layer rather than adding a parallel subsystem
+
+If a change affects a central abstraction, identify the likely downstream consumers before editing.

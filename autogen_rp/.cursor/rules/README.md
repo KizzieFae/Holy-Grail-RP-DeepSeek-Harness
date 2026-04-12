@@ -7,6 +7,8 @@ These rules are a thin compatibility layer for using Cursor on this repository.
 The files in this folder are not intended to be the primary source of project behavior.
 Their job is to route Cursor into the shared repo docs that both Windsurf and Cursor can read.
 
+Canonical policy prose for several rules lives under **`../../governance/`** (Issue #45): each `*.mdc` here is a short stub whose body `@`-includes the matching `governance/policies/*.md` (or the issue workflow spec under `governance/rp-app/`).
+
 ## Source of truth
 
 Maintain this priority order:
@@ -30,11 +32,11 @@ Do not let important project behavior live only in this folder.
 
 ## Current rule set
 
-- `project-behavior.mdc` - repo-wide working behavior and shared-doc routing
-- `architecture-protection.mdc` - architecture guardrails for Python and RP app work
-- `testing-expectations.mdc` - test expectations for Python changes
-- `rp-app-guidance.mdc` - RP app-specific runtime and audit guidance
-- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `python/rp_app/ARCHITECTURE.md` §B.1–§B.4
+- `project-behavior.mdc` - repo-wide working behavior and shared-doc routing (`../../governance/policies/project-behavior-holy-grail.md`)
+- `architecture-protection.mdc` - architecture guardrails for Python and RP app work (`../../governance/policies/architecture-protection.md`)
+- `testing-expectations.mdc` - test expectations for Python changes (`../../governance/policies/testing-expectations.md`)
+- `rp-app-guidance.mdc` - RP app-specific runtime and audit guidance (`../../governance/policies/rp-app-guidance.md`)
+- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `../../governance/rp-app/issue-tracking-workflow.md` §B.1–§B.4 (policy body in `../../governance/policies/github-issues.md`, included via `@` from this stub)
 
 ## Safe switching note
 
@@ -51,5 +53,6 @@ If the task touches the RP app, also read:
 
 - `python/rp_app/README.md`
 - `python/rp_app/ARCHITECTURE.md`
+- `../../governance/rp-app/issue-tracking-workflow.md` (GitHub Issues / Projects workflow when filing or transitioning issues)
 - `python/rp_app/AUDIT_DOCUMENTATION.md`
 - `python/RP_SETUP_TODO.md`

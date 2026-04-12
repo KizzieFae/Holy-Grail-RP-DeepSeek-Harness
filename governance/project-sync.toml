@@ -1,0 +1,95 @@
+# Template sync manifest and meta configuration (Issue #45).
+# No runtime binding values here — those live in bindings/bindings.toml.
+
+[template]
+repository = "https://github.com/KizzieFae/development-system-template"
+# Set to a commit SHA or tag when this project pins a template revision.
+pinned_revision = ""
+# Optional: last revision successfully reconciled (maintainer-maintained).
+last_reconciled_revision = ""
+
+[safety]
+# Entire subtree is excluded from any template sync write path.
+autogen_rp_cursor_rules_glob = "autogen_rp/.cursor/rules/**"
+autogen_rp_cursor_rules_policy = "no_template_writes"
+
+# Root .cursor/rules/: only listed basenames may be overwritten by template sync.
+# Any other file in that directory is project-owned and must not be overwritten.
+[[root_cursor_rule_files]]
+basename = "2-ai-system-start.mdc"
+classification = "template_managed"
+
+[[root_cursor_rule_files]]
+basename = "github-issues.mdc"
+classification = "template_managed"
+
+[[root_cursor_rule_files]]
+basename = "github-project-usage.mdc"
+classification = "template_managed"
+
+[[root_cursor_rule_files]]
+basename = "project-behavior.mdc"
+classification = "template_managed"
+
+# .github/ISSUE_TEMPLATE/: per-file ownership for sync safety.
+[[github_issue_template_files]]
+basename = "bug.md"
+classification = "template_managed"
+
+[[github_issue_template_files]]
+basename = "general-issue.md"
+classification = "template_managed"
+
+[[github_issue_template_files]]
+basename = "holy_grail_rp.yml"
+classification = "project_owned"
+
+[[github_issue_template_files]]
+basename = "config.yml"
+classification = "project_owned"
+
+# Docs surfaces: template pack vs fork-owned subtree.
+[[docs_surfaces]]
+name = "template_workflow_docs"
+template_prefix = "docs/"
+destination_prefix = "docs/"
+classification = "template_managed"
+
+# Fork / RP subtree docs are never default template copy targets.
+[docs_policy]
+project_owned_docs_root = "autogen_rp/docs/"
+policy = "never_template_sync_target"
+
+# ---------------------------------------------------------------------------
+# Governance policy corpus (Issue #45 Stage 3). Canonical markdown included
+# by Cursor stubs under `.cursor/rules/` and `autogen_rp/.cursor/rules/`.
+# No binding values or template pins belong in these paths.
+# ---------------------------------------------------------------------------
+
+[[governance_policy_documents]]
+path = "governance/policies/cursor-workflow-layer.md"
+role = "cursor_bootstrap_dual_ai_workflow"
+
+[[governance_policy_documents]]
+path = "governance/policies/project-behavior-holy-grail.md"
+role = "repo_wide_tracking_and_docs_routing"
+
+[[governance_policy_documents]]
+path = "governance/policies/github-issues.md"
+role = "github_cli_issue_filing"
+
+[[governance_policy_documents]]
+path = "governance/policies/rp-app-guidance.md"
+role = "rp_app_subtree_guidance"
+
+[[governance_policy_documents]]
+path = "governance/policies/architecture-protection.md"
+role = "python_architecture_guardrails"
+
+[[governance_policy_documents]]
+path = "governance/policies/testing-expectations.md"
+role = "python_testing_expectations"
+
+[[governance_policy_documents]]
+path = "governance/rp-app/issue-tracking-workflow.md"
+role = "github_issues_projects_workflow_spec"

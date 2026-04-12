@@ -1,14 +1,14 @@
 name: Holy Grail RP issue
-description: Canonical Type, Layer, Pattern status, and evidence (matches ARCHITECTURE.md Issue Tracking §D–§I).
+description: Canonical Type, Layer, Pattern status, and evidence (matches governance/rp-app/issue-tracking-workflow.md §D–§I).
 title: "[BUG] "
 labels: []
 body:
   - type: markdown
     attributes:
       value: |
-        **Contract:** `autogen_rp/python/rp_app/ARCHITECTURE.md` → **Issue Tracking** (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern).
+        **Contract:** `governance/rp-app/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Runtime RP architecture remains in `autogen_rp/python/rp_app/ARCHITECTURE.md`.
 
-        **Cursor workflow bootstrap (system instructions; full text in `.cursor/rules/2-ai-system-start.mdc`, always applied):**
+        **Cursor workflow bootstrap (system instructions; canonical policy in `governance/policies/cursor-workflow-layer.md`, always applied via `.cursor/rules/2-ai-system-start.mdc`):**
 
         1. **Activation synchronization** — When **evidence extraction** or **analysis** on an issue **begins**, set **RP System Workflow** **Project Status** to **In Progress** and **Workflow** to **Investigating** (aligned with **`Current status: investigating`** per **§B.3**). **Do not** require this update when only **browsing** issues or **selecting** the next task without starting extraction or analysis.
 
@@ -32,7 +32,7 @@ body:
     id: type
     attributes:
       label: Type
-      description: PRD/architecture authority — see ARCHITECTURE.md §E.
+      description: PRD/architecture authority — see governance/rp-app/issue-tracking-workflow.md §E.
       options:
         - bug
         - quality
@@ -44,7 +44,7 @@ body:
     id: layer
     attributes:
       label: Layer (primary)
-      description: One value only. If other, fill Justification + Intended final layer below. See ARCHITECTURE.md §F.
+      description: One value only. If other, fill Justification + Intended final layer below. See governance/rp-app/issue-tracking-workflow.md §F.
       options:
         - consequence_classification
         - continuity_state
@@ -73,7 +73,7 @@ body:
     id: pattern_status
     attributes:
       label: Pattern status
-      description: See ARCHITECTURE.md §I.
+      description: See governance/rp-app/issue-tracking-workflow.md §I.
       options:
         - single_instance
         - potential_pattern
@@ -85,7 +85,7 @@ body:
     id: current_status
     attributes:
       label: Current status
-      description: Single active value; transitions in ARCHITECTURE.md §H.
+      description: Single active value; transitions in governance/rp-app/issue-tracking-workflow.md §H.
       options:
         - open
         - investigating

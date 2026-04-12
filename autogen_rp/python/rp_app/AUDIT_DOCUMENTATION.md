@@ -289,7 +289,7 @@ Use the **`diff_support_manifests(previous, current)`** helper in `audit_support
 
 ## Issue #29 Investigation Tooling
 
-This section documents **headless harnesses**, **deterministic audit analysis**, and **optional AI-assisted interpretation** introduced or formalized during **Issue #29** (long-session “forgetting” triage). It complements **§D / §F** discipline in **`ARCHITECTURE.md`**: machine-visible audit signals support **Type** / **Layer** hypotheses; advisory AI labels do **not** replace them.
+This section documents **headless harnesses**, **deterministic audit analysis**, and **optional AI-assisted interpretation** introduced or formalized during **Issue #29** (long-session “forgetting” triage). It complements **§D / §F** discipline in **`governance/rp-app/issue-tracking-workflow.md`**: machine-visible audit signals support **Type** / **Layer** hypotheses; advisory AI labels do **not** replace them.
 
 ### 1. Long-run harness
 
@@ -358,7 +358,7 @@ This section documents **headless harnesses**, **deterministic audit analysis**,
 **Constraints:**
 
 - **Advisory only** — Does **not** override **machine-layer** conclusions (e.g. **`T_sup`** / **`T_beh`**, manifest diffs, continuity commits).
-- **Not sole validation** — Do **not** file **`bug`** / **`quality`** / **`design_gap`** issues from AI labels alone; align with **`ARCHITECTURE.md` §D** evidence and **deterministic reasoning**.
+- **Not sole validation** — Do **not** file **`bug`** / **`quality`** / **`design_gap`** issues from AI labels alone; align with **`governance/rp-app/issue-tracking-workflow.md` §D** evidence and **deterministic reasoning**.
 
 ### 4. Workflow integration (machine vs AI)
 
@@ -371,7 +371,7 @@ This section documents **headless harnesses**, **deterministic audit analysis**,
 
 - Explains **prioritization and behavior** when outputs ignore **present** support—e.g. **`COMPETING_SIGNAL_OVERRIDE`** vs **`LOW_SALIENCE`**.
 
-**Together:** Use the machine layer to **distinguish persistence / support-loss failures** from **selection / utilization failures** (context **present** at **`T_beh`** but **not** reflected in the move). That split matches **GitHub Issue #29** disposition: **not** a memory-loss **bug** where anchors remain in prompt and continuity; **quality / design_gap** discussion when **utilization** is unreliable under competing narrative pressure (see **`ARCHITECTURE.md`** Issue Tracking **§E** / **§F**).
+**Together:** Use the machine layer to **distinguish persistence / support-loss failures** from **selection / utilization failures** (context **present** at **`T_beh`** but **not** reflected in the move). That split matches **GitHub Issue #29** disposition: **not** a memory-loss **bug** where anchors remain in prompt and continuity; **quality / design_gap** discussion when **utilization** is unreliable under competing narrative pressure (see **`governance/rp-app/issue-tracking-workflow.md`** **§E** / **§F**).
 
 ## Audit interpretation and issue tracking
 
@@ -388,7 +388,7 @@ Headless or in-app runs with audit logging produce artifacts under `rp_app/data/
 - Run simulations (e.g. `--audit`, headless CLI).
 - Generate and refresh audit artifacts.
 - Interpret outputs: reconcile narrative trace, continuity fields, progression retries, narrator/character audit blocks.
-- Propose **candidate issues** with mandatory evidence and a primary **Layer** (see `ARCHITECTURE.md` Issue Tracking).
+- Propose **candidate issues** with mandatory evidence and a primary **Layer** (see `governance/rp-app/issue-tracking-workflow.md`).
 
 **Human:**
 
@@ -398,25 +398,25 @@ Headless or in-app runs with audit logging produce artifacts under `rp_app/data/
 
 ### When to file a GitHub Issue
 
-File when **Pattern status** and **Type** are assigned per `ARCHITECTURE.md` **§I** and **§E**, mandatory evidence (**§D**) is complete, and work should outlive the session. **Pattern status** and **audit-only** discipline are defined there (single instance, escalation, audit-only notes).
+File when **Pattern status** and **Type** are assigned per `governance/rp-app/issue-tracking-workflow.md` **§I** and **§E**, mandatory evidence (**§D**) is complete, and work should outlive the session. **Pattern status** and **audit-only** discipline are defined there (single instance, escalation, audit-only notes).
 
 ### Type and Layer (GitHub body)
 
-- **Type** — `bug` | `quality` | `design_gap` with **PRD/architecture as authority** (`ARCHITECTURE.md` **§E**). Labels alone are not enough.
-- **Layer** — Exactly one primary **Layer** from `ARCHITECTURE.md` **§F** (snake_case). Use **orchestration** vs **response_validation** per the explicit boundary in **§F**.
+- **Type** — `bug` | `quality` | `design_gap` with **PRD/architecture as authority** (`governance/rp-app/issue-tracking-workflow.md` **§E**). Labels alone are not enough.
+- **Layer** — Exactly one primary **Layer** from `governance/rp-app/issue-tracking-workflow.md` **§F** (snake_case). Use **orchestration** vs **response_validation** per the explicit boundary in **§F**.
 - **Pattern status** — `single_instance` | `potential_pattern` | `confirmed_pattern` (**§I**).
-- **Current status** — Workflow line and allowed transitions: `ARCHITECTURE.md` **§H**.
+- **Current status** — Workflow line and allowed transitions: `governance/rp-app/issue-tracking-workflow.md` **§H**.
 
 ### Tracking policy
 
-- **GitHub Issues** are the system of record (`ARCHITECTURE.md`, Issue Tracking).
+- **GitHub Issues** are the system of record (`governance/rp-app/issue-tracking-workflow.md`, Issue Tracking §A).
 - **bug** → implement after **`consensus_reached`**, then validate with audited re-runs; cite PRD/architecture clause in the issue.
 - **quality** → calibration or UX; do not file as **bug** without an explicit spec violation.
 - **design_gap** → spec or design completion; may pair with **`DESIGN_GAP`** title prefix.
 
 ### Evidence requirements
 
-Align with `ARCHITECTURE.md` **§D**:
+Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
 - **Scenario id**, **audit session path**, **turn index** (or `n/a` with reason) — mandatory.
 - Prefer structured move excerpt, consequence output, continuity snapshot excerpt.
@@ -436,7 +436,7 @@ Align with `ARCHITECTURE.md` **§D**:
 
 ### Audit v2 (deterministic, advisory)
 
-Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `ARCHITECTURE.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**).
+Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `governance/rp-app/issue-tracking-workflow.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**).
 
 ### Audit signal limitations
 
@@ -452,7 +452,7 @@ Treat chronic **`fail`** on these as **quality**-class signals or **design_gap**
 ### GitHub issue usage (this repo)
 
 - **Labels** (**§C**): **mandatory** on create for tracked issues (`bug`, `improvement`, `research`, `tech-debt`, `blocked`, `validation`, `docs`, `needs-reproduction`, `documentation`, `infrastructure`, `type:*`, … per **§C**). Labels do **not** replace **Type** or **Layer** in the body. **Projects:** **§B.1**–**§B.3** (**RP System Workflow**, **Status**, **Workflow**); **§B.2** verification.
-- **Issue body:** `ARCHITECTURE.md` **§D** (canonical contract). **Layer** definitions and tie-breaks: **§F**. **Title** prefixes **`[BUG]`** | **`[QUALITY]`** | **`[DESIGN_GAP]`**: **§G**.
+- **Issue body:** `governance/rp-app/issue-tracking-workflow.md` **§D** (canonical contract). **Layer** definitions and tie-breaks: **§F**. **Title** prefixes **`[BUG]`** | **`[QUALITY]`** | **`[DESIGN_GAP]`**: **§G**.
 - **Documentation** before terminal closure: checklist in **§D**; update architecture/audit/operator docs when behavior or contracts change.
 - **Root template:** `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` (repository git root) mirrors **§D** fields for the web UI.
 
