@@ -24,7 +24,7 @@ The RP app uses a Director + Narrator + continuity-manager architecture.
 ### Core responsibilities
 
 - Character agents produce self-only structured moves.
-- Optional or model-supplied fields on the character move are **not** the authority boundary for **issues, tension trajectory, or consequences**; those are **continuity / Director / enriched history** concerns. Heuristic **Character Audit v1** metadata that keys off move-only fields measures **what was present on the parsed move**, not full scene truth (`python/rp_app/AUDIT_DOCUMENTATION.md`).
+- Optional or model-supplied fields on the character move are **not** the authority boundary for **issues, tension trajectory, or consequences**; those are **continuity / Director / enriched history** concerns. Heuristic **Character Audit v1** metadata that keys off move-only fields measures **move-level expression / observability** on the parsed move, not full scene truth — see `python/rp_app/AUDIT_DOCUMENTATION.md` (*Character Audit v1*, including **Interpretation and Intended Use**).
 - The Director selects who acts next.
 - The Narrator renders prose and should preserve character dialogue verbatim.
 - The continuity manager updates durable scene and issue state.

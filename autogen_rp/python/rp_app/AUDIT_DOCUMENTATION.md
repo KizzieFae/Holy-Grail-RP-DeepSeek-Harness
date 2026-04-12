@@ -720,14 +720,41 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 
 **Scope:** Advisory, deterministic, **no LLM**. Built from the **validated parsed character move**, the **Director decision**, orchestration snapshots (`recent_structured_moves` tail, optional `continuity_active_issues`), and continuity-backed digests when `continuity_scope` is `continuity_enabled`. **Not** a verdict on continuity correctness.
 
+**Advisory scope — all `derived` dimensions:** Every heuristic under `metadata.character_audit_v1`.`derived` (including dimensions commonly referenced as **CA1–CA7**) is **advisory** and **non-authoritative**. None of these fields are continuity correctness checks, quality metrics, engagement scores, or story-truth indicators on their own.
+
 **What v1 evaluates:** Heuristic dimensions under `derived`: motivation↔action overlap (`motivation_action_alignment`), dialogue↔action token overlap (`dialogue_action_consistency`), issue engagement proxy (`issue_engagement`), self-repetition vs prior structured moves (`repetition_vs_prior_self`), cast-vs-present substring flags (`scene_plausibility_flags`), Director tension/environment (`pressure_director`), and move-emitted pressure fields if present (`pressure_move`).
 
-**CA3 (`issue_engagement`) and CA7 (`pressure_move`):** These read **`issue_updates` / `tension_shift` / `consequences` only if present on the parsed move.** The runtime does **not** require the character contract to emit those. Absence or classifications such as `possibly_passive` or `none` therefore indicate an **observability / contract mismatch for this check**, not by itself **character-agent failure**. Prefer **`_narrative.json`**, Director audits, and continuity signals for whether pressure actually moved.
+**CA3 (`issue_engagement`):** A **heuristic proxy** for how issue-related information appears on the **validated parsed move**. It uses **move-emitted** fields when present — **`issue_updates`**, **`tension_shift`**, **`consequences`** — together with **textual / structural heuristics** (for example lexical overlap against continuity-backed issue digests exposed in the audit payload; see per-turn `limitations` strings in logged JSON). It is **not** a direct measure of whether the character **engaged the issue in the story** or whether continuity considers the beat high-pressure. Classifications such as **`possibly_passive`** mean the proxy did not score strong **move-level** linkage — **not** “no in-fiction engagement.” Any apparent mismatch with **`_narrative.json`** or continuity **requires cross-layer verification**; it is **not** automatic evidence of error or disengagement.
+
+**CA7 (`pressure_move`):** Reflects **only** **move-emitted** structured pressure-related fields on the parsed move (the same optional slots CA3 keys on, when they carry pressure-shaped content; see logged `fields_present` / `classification`). A value such as **`none`** means **no such move-emitted pressure structure was scored**, **not** that the scene lacked pressure in continuity. **Director-applied** pressure cues are reported separately under **`pressure_director`** in the same `derived` block — CA7 does **not** subsume Director or continuity pressure. **Continuity-level** pressure and consequences remain authoritative in continuity and **`_narrative.json`**.
+
+**Contract note (optional fields):** The runtime does **not** require the character contract to emit `issue_updates`, `tension_shift`, or `consequences` on every beat. “Low signal” CA3 / CA7 readings therefore often reflect **implicit versus explicit encoding on the move** (an **observability / contract alignment** question for these checks), not by itself **character-agent failure**.
+
+#### Interpretation and Intended Use
+
+- **Expression, not behavior:** CA3 and CA7 measure **move-level expression / observability** — how structured issue and pressure information appears on the **parsed move** — **not** story-level engagement or whether pressure “really” moved in the authoritative scene state.
+- **`possibly_passive` (CA3) and `none` (CA7):** Indicate **absence or weakness of explicit move-level structure** as scored by the heuristics — **not** absence of story activity, not absence of continuity issue pressure, and not a statement that the scene failed to progress.
+- **Authority:** **`_narrative.json`**, continuity snapshots, and Director audits carry **truth-layer** signals for issues and pressure. Use CA3 / CA7 for **explicit vs implicit comparison**, **schema and prompt evaluation**, and **structured-output debugging** — not as standalone quality or correctness verdicts.
+
+**Recommended analysis order:**
+
+1. Read **`_narrative.json`** and continuity-relevant slices for the beat (and Director audits when selection context matters).
+2. Read **CA3 / CA7** on the character `*_full.json` for the same turn.
+3. **Compare** move-level encoding to continuity-visible pressure. Divergence **requires cross-layer verification**; treat it as a **diagnostic** prompt to inspect layers, **not** as proof of over-declaration, under-engagement, or implementation error unless other evidence supports that.
+
+**Cross-layer quick reference (neutral framing):**
+
+| Continuity / narrative (truth layer) | CA3 / CA7 (move expression layer) | How to read it |
+|--------------------------------------|-----------------------------------|----------------|
+| Issue-shaped pressure visible | Strong move-level signals | Move encoding aligns with continuity snapshot; CA fields remain heuristic-only. |
+| Issue-shaped pressure visible | Weak CA3 and/or CA7 `none` | Often **implicit engagement** or optional fields omitted on the move — **verify** in narrative/continuity; **not** “ignored issues” by default. |
+| Little or no issue-shaped pressure in snapshot | Strong move-level signals | **Verify** in continuity — may reflect verbosity, a different beat shape, or snapshot timing; **not** proof of a defect without context. |
+| Little or no issue-shaped pressure in snapshot | Weak / `none` | Often consistent; still **not** a standalone quality score. |
 
 **Known limitations (v1):**
 
 - **CA1 / CA2** — Token overlap only; metaphor, subtext, and reported speech are not modeled (lexical noise; false weak or “disconnected” bands).
-- **CA3 / CA7** — As above; do not infer engagement or pressure from missing move fields alone.
+- **CA3 / CA7** — See **CA3**, **CA7**, and **Interpretation and Intended Use** above; do not infer in-fiction engagement or continuity pressure from these dimensions alone.
 - **CA5 (`scene_plausibility_flags`)** — Name vs `present_characters` matching is imperfect (display vs internal ids); **informational only**, not a correctness signal.
 - **`continuity_scope: orchestration_only`** — Used when the continuity manager is absent on the path that still logs character audit; **rare in normal Streamlit**; less exercised than `continuity_enabled` in typical `--audit` runs (see **Validation (tests)** below for CI coverage).
 
