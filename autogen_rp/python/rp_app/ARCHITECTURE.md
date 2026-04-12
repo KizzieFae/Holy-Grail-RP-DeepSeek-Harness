@@ -553,5 +553,5 @@ This is the most important path for improving story quality over long sessions b
 >
 > **§** references used across the repo (**§B.2**, **§H**, etc.) refer to that document. Runtime Director / RP app architecture sections above are unchanged.
 
-**Section index:** §A System of record · §A.1 Audit-driven workflow · §B Standard workflow · §B.1 GitHub CLI · §B.2 Verification · §B.3 Project sync · §B.4 Rejection · §C Labels · §D Body template · §E Type · §F Layer · §G Title · §H Status · §I Pattern status · §J Principles · §K Flexibility
+**Section index:** §A System of record · §A.1 Audit-driven workflow · §B Standard workflow · §B.0 Terminology · §B.1 GitHub CLI · §B.2 Verification · §B.3 Project sync (execution stages) · §B.4 Rejection · §B.5 Selection, Priority, comments, handoffs · §C Labels · §D Body template · §E Type · §F Layer · §G Title · §H Status / execution stages · §I Pattern status · §J Principles · §K Flexibility
 

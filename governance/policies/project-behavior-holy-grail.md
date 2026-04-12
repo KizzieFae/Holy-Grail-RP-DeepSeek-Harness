@@ -80,15 +80,15 @@ Chat reasoning is not considered persistent state.
 
 
 
-For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.4**, **§C**.
+For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain it for triage per **§B.5** (it does **not** replace **`Current status:`** or **Workflow**). Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.5**, **§C**.
 
 
 
-- **Verification:** `gh issue view <N> --json number,state,labels,projectItems` — tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented.
+- **Verification:** `gh issue view <N> --json number,state,labels,projectItems` — tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented. Confirm **Priority** via the **Projects** UI or GraphQL when JSON omits it (**§B.2**).
 
 
 
-- **Rejection:** Do **not** treat filing, transition, or closure as complete without passing verification and **§B.3** mapping.
+- **Rejection:** Do **not** treat filing, transition, or closure as complete without passing verification and **§B.3** mapping, or when **§B.5** requirements (comments, handoffs, **Active Context** alignment) are violated.
 
 
 
@@ -350,13 +350,21 @@ Resolve drift before continuing new work.
 
 
 
+**Authoritative record:** The GitHub **Issue body**, **Issue comments**, and **RP System Workflow** project fields (**Project Status**, **Workflow**, **Priority** when present) are the source of truth for execution state and decisions.
+
+
+
+**Active Context** in chat is a **derived summary** of that record—helpful for orientation, **not** a substitute for it. Before starting a **new** chat or handoff, add a **session boundary** comment on the Issue (per `governance/rp-app/issue-tracking-workflow.md` **§B.5**); the new chat’s Active Context should **reflect** that comment and the latest Issue state, **not replace** them.
+
+
+
 Every new chat must begin with an Active Context block containing:
 
 
 
 - current Issue
 
-- current phase
+- current **execution stage** / selection context (aligned with **`Current status:`** and project fields)
 
 - current status
 
@@ -368,7 +376,7 @@ Every new chat must begin with an Active Context block containing:
 
 
 
-This is the required mechanism for maintaining continuity across chats.
+This is the required mechanism for maintaining continuity across chats **when used as a mirror of GitHub**, not as independent state.
 
 
 

@@ -1,4 +1,4 @@
-# Issue tracking and investigation workflow
+﻿# Issue tracking and investigation workflow
 
 **Authority:** Canonical governance copy for GitHub Issues, Projects metadata, and body contract (**§A–§K**), relocated from `autogen_rp/python/rp_app/ARCHITECTURE.md` per Issue #45 Stage 3. **Runtime Director / RP architecture** remains in `autogen_rp/python/rp_app/ARCHITECTURE.md` above the stub section there.
 
@@ -21,7 +21,7 @@
 6. **Quality** and **design_gap** items are **not** silently filed as **bug**; **Type** follows **§E** (PRD authority).
 7. **Pattern status** is always explicit (**§I**).
 8. **Documentation reviewed and updated** where contracts or behavior changed **before** terminal closure (**§D** checklist).
-9. **GitHub Project metadata** (**§B.1**–**§B.4**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**).
+9. **GitHub Project metadata** (**§B.1**–**§B.5**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**). When **Priority** exists on the project (**§B.5**), set and maintain it for triage; it does **not** replace **`Current status:`** or **Workflow**.
 
 ### A.1 Audit-driven workflow (reference)
 
@@ -30,6 +30,13 @@ Simulation and audit logging produce JSON under `autogen_rp/python/rp_app/data/r
 ### B. Standard workflow
 
 Record progress in the Issue (description updates, comments, checklists). **Status** line must follow **§H**.
+
+### B.0 Terminology (execution stage vs phase-first selection)
+
+> The term "phase" in "phase-first selection" refers to external batching of work and must not be confused with execution stages represented by `Current status` and the Workflow field.
+
+- **Execution stage** — The lifecycle position in **§H** (`open`, `investigating`, …), reflected in the issue body as **`Current status:`** and on **RP System Workflow** as **Project Status** and **Workflow** per **§B.3**. Use **execution stage** (not “selection phase”) when referring to **§H** or that mapping.
+- **Phase-first selection** — External operator/AI behavior only: choose a work batch → filter issues → order by **Priority** within that batch (**§B.5**). It is **not** stored as a separate “phase” field on the issue or project and does **not** redefine **Workflow** or **`Current status:`**.
 
 1. **Observation** — Unexpected behavior in runs, tests, or review. Open or update an Issue when work may outlive the session. Create on GitHub via **§B.1** (CLI) or the web UI using **`.github/ISSUE_TEMPLATE/holy_grail_rp.yml`** (repository root).
 2. **Investigation** — Gather evidence; set **`Current status: investigating`**. Document ruled-out **Layers** in comments.
@@ -51,7 +58,7 @@ Use when creating the Issue on GitHub from a terminal (e.g. agent asked to *file
 4. Add the issue to the **RP System Workflow** project (owner/org that hosts the repo; discover number via `gh project list`):  
    `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>`  
    Use the URL returned from step 3.
-5. Set **initial Project fields** to match **`Current status:`** in **body.md** (**§B.3** default row for new issues — typically **Status** = **Todo**, **Workflow** = **Ready** when **`Current status: open`**). Use `gh project field-list` / `gh project item-edit` (single-select field and option IDs), or set fields in the **Projects** UI, then verify (**§B.2**).
+5. Set **initial Project fields** to match **`Current status:`** in **body.md** (**§B.3** default row for new issues — typically **Status** = **Todo**, **Workflow** = **Ready** when **`Current status: open`**). When the project defines **Priority** (**§B.5**), set an initial value (typically **P3** until triaged). Use `gh project field-list` / `gh project item-edit` (single-select field and option IDs), or set fields in the **Projects** UI, then verify (**§B.2**).
 6. **Verify** before reporting completion (**§B.2**). **Do not** treat filing as complete without a passing verification.
 
 Unless the user asked **draft only**, **completion** means: the Issue **exists** on GitHub **and** **§B.2** passes **and** **§B.3** is satisfied for the issue’s current **`Current status:`**.
@@ -69,16 +76,17 @@ gh issue view <N> --json number,state,labels,projectItems
 - **`labels`**: JSON array **non-empty** (unless **§B.1** exception applies and is documented).
 - **`projectItems`**: JSON array **non-empty**, with an item for **RP System Workflow** (title/name as shown by `gh`).
 - **Project Status** and **Workflow**: Values must **not contradict** **`Current status:`** per **§B.3** (if JSON does not expose a field, confirm via **`gh project item-list`** / project board / `gh project item-edit` dry documentation and state the two field values explicitly in the completion note).
+- **Priority** (when the project defines **Priority**, **§B.5**): Confirm the value via the **Projects** UI or a GraphQL `node` query on the project item—`gh issue view --json projectItems` may omit **Priority**; when material to the task, state **Priority** explicitly in the completion note.
 
 **Completion is invalid** without this verification for tracked issues. Narrative-only confirmation (“issue filed”) is **not** sufficient.
 
-### B.3 Synchronization — `Current status:` (**§H**) vs GitHub Project fields
+### B.3 Synchronization — `Current status:` (**§H**) vs GitHub Project fields (execution stages)
 
-**Two surfaces:** **`Current status:`** in the **issue body** (**§H**) is authoritative for **issue text** and transitions. **Project Status** and **Workflow** on **RP System Workflow** are authoritative for **board execution state**. They **must not contradict**.
+**Two surfaces:** **`Current status:`** in the **issue body** (**§H**) is authoritative for **issue text** and **execution-stage** transitions. **Project Status** and **Workflow** on **RP System Workflow** are authoritative for **board execution state** for those stages. They **must not contradict**.
 
 **On create:** Align initial Project fields with the body’s **`Current status:`** (usually **`open`** → **Status** = **Todo**, **Workflow** = **Ready**).
 
-**On phase transition:** Whenever **`Current status:`** is edited (including via Issue description update or comment checklist), **update Project fields** to the matching row **before** reporting that transition complete:
+**On execution-stage transition:** Whenever **`Current status:`** is edited (including via Issue description update or comment checklist), **update Project fields** to the matching row **before** reporting that transition complete:
 
 | `Current status:` (**§H**) | Project **Status** (typical) | Project **Workflow** (typical) |
 |----------------------------|------------------------------|--------------------------------|
@@ -100,14 +108,27 @@ If the board uses different option labels, **map by intent** (investigation vs c
 - **Missing** required **labels**, **project membership**, or **Project** **Status** / **Workflow** alignment with **§B.3** → the **task is incomplete**.
 - **No agent** (implementation or review) may report **completion** of filing, transition, or closure **without** passing **§B.2** and explicit confirmation that **§B.3** holds.
 - The **review** role **must reject** any completion report that omits verification output or shows empty **`labels`** / **`projectItems`** for a tracked issue.
+- The **review** role **must reject** workflows that show: missing **execution-stage** transition comment when **`Current status:`** changed (**§B.5**); missing **session / chat boundary** comment when a session ended or handoff occurred without an update (**§B.5**); **Active Context** or other chat-only text that **contradicts** the Issue body + comments + Project fields; use of **Priority** to skip **phase-first selection** batching rules; or **handoff** content that introduces facts absent from the Issue thread (**§B.5**).
+
+### B.5 Phase-first selection, Priority, execution-stage comments, session boundaries, handoffs
+
+1. **Phase-first selection (process rule)** — External to GitHub fields: the operator/AI chooses a work batch, filters issues, then orders by **Priority** **inside that batch only**. **Priority** must **not** override or replace this batching step (no “priority-first” shortcut around selection). This rule does **not** change **§B.3**: **Workflow** and **`Current status:`** still represent **execution stages** only.
+
+2. **Priority project field** — On **RP System Workflow**, **Priority** is a single-select when enabled: **P0** (do now), **P1** (next), **P2** (later), **P3** (backlog). It applies **only** within the current **phase-first selection** batch for ordering; it does **not** encode an execution stage and must **not** be treated as a substitute for **`Current status:`** or **Workflow**.
+
+3. **Execution-stage transition discipline** — On every **`Current status:`** (**§H**) change: (a) update **Project Status** and **Workflow** to the **§B.3** row **before** calling the transition done; (b) add an **Issue comment** recording: what completed in the prior execution stage, the resulting determination, and the **next execution stage** intended.
+
+4. **Session / chat boundary** — Before ending a work session, switching chats, or handing off to another AI: add an **Issue comment** with: current **execution stage** (and current **`Current status:`**), work completed this session, what remains, and the **next concrete step**. Chat-local **Active Context** (see `governance/policies/project-behavior-holy-grail.md`) must be a **derived summary** of the Issue + comments + Project fields, written **after** this comment when starting a new chat—not a replacement for it.
+
+5. **Handoff prompts (non-authoritative)** — Delegation may still use handoff prompts, but they are **transport only**. **Hard rule:** If information exists in a handoff prompt but not in the issue body or comments, the workflow is invalid until reconciled (copy authoritative facts into the Issue thread first).
 
 ### C. Standard GitHub labels (mandatory adjunct)
 
 Labels do **not** replace **Type** or **Layer** in the body. For **Holy Grail RP tracked issues**, applying **at least one** label from the **default set** (or an established **`type:*`** / **`documentation`** / **`infrastructure`** label that matches **Type** / workstream) is **mandatory** on **create**, unless **§B.1** exception applies.
 
-**Default set** (do not expand without reason): `bug`, `improvement`, `research`, `tech-debt`, `blocked`. Additional common labels: `validation`, `docs`, `needs-reproduction`, `documentation`, `infrastructure`, and **`type:bug`** / **`type:quality`** / **`type:design_gap`** when used by the repository.
+**Default set** (do not expand without reason): `bug`, `improvement`, `research`, `tech-debt`, `blocked`. Additional common labels: `validation`, `docs`, `needs-reproduction`, `documentation`, `infrastructure`, **`maintenance`** (optional scope tag on **`quality`** items—not a **Type**), and **`type:bug`** / **`type:quality`** / **`type:design_gap`** when used by the repository.
 
-**Alignment:** Prefer a **Type**-aligned label (e.g. **`type:design_gap`** for **design_gap**) plus scope where useful (**`documentation`**, **`infrastructure`**, **`bug`**, etc.).
+**Alignment:** Prefer a **Type**-aligned label (e.g. **`type:design_gap`** for **design_gap**) plus scope where useful (**`documentation`**, **`infrastructure`**, **`bug`**, **`maintenance`** on **quality** when appropriate, etc.).
 
 ### D. Issue body template (canonical contract)
 
@@ -278,7 +299,7 @@ Prefix by **Type**:
 
 Example: `[BUG] Orchestration selects ineligible actor under continuation override`.
 
-### H. Status (single active; transitions)
+### H. Status / execution stages (single active; transitions)
 
 **Allowed values:** `open` | `investigating` | `consensus_reached` | `implemented` | `validated` | `closed` | `monitor` | `wont_fix`
 

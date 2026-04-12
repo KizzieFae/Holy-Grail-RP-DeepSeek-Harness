@@ -12,13 +12,17 @@ body:
 
         1. **Activation synchronization** — When **evidence extraction** or **analysis** on an issue **begins**, set **RP System Workflow** **Project Status** to **In Progress** and **Workflow** to **Investigating** (aligned with **`Current status: investigating`** per **§B.3**). **Do not** require this update when only **browsing** issues or **selecting** the next task without starting extraction or analysis.
 
-        2. **Delegation** — Cursor (implementation) **must not** perform **analysis** or **evidence extraction** directly; **always** produce a **handoff prompt** for the **analysis AI** so that analysis is externalized.
+        2. **Delegation** — Cursor (implementation) **must not** perform **analysis** or **evidence extraction** directly; **always** produce a **handoff prompt** for the **analysis AI** so that analysis is externalized. Handoffs are **transport only**: if facts exist only in a handoff and not in the issue body/comments, the workflow is **invalid** until copied to the Issue (**§B.5**).
 
         3. **Fresh-chat** — On the **first** reply in a new chat: rebuild minimal context, tie in relevant issue(s), emit a concise **SYSTEM UNDERSTANDING REPORT** (target **4–8 lines** of substantive summary); **no** analysis before that step.
 
+        **Execution stages vs selection:** **`Current status:`** and **Workflow** are **execution stages** (**§B.3**). **Phase-first selection** (choose batch → filter → order by **Priority**) is an external **process rule** only (**§B.0**, **§B.5**). **Priority** (P0–P3) lives on the **RP System Workflow** project when enabled—not a **Type**. **`maintenance`** is an optional **label** on **quality** items, not a type.
+
+        **Session boundary:** Before ending a session or switching chats, add an **Issue comment** with progress and next step; **Active Context** in chat must **derive** from GitHub, not replace it (**§B.5**, `governance/policies/project-behavior-holy-grail.md`).
+
         Set the **title** prefix to `[QUALITY]` or `[DESIGN_GAP]` when **Type** is not **bug**.
 
-        **After submit (mandatory):** Add **labels** (**§C**), add this issue to the **RP System Workflow** project, and set **Project Status** + **Workflow** per **§B.3** (defaults for **`Current status: open`**: **Todo** / **Ready**). Run **`gh issue view <N> --json number,state,labels,projectItems`** and confirm **§B.2** pass criteria. See **§B.1**–**§B.4**.
+        **After submit (mandatory):** Add **labels** (**§C**), add this issue to the **RP System Workflow** project, set **Project Status** + **Workflow** per **§B.3** (defaults for **`Current status: open`**: **Todo** / **Ready**), and set **Priority** (typically **P3** until triaged) when the project defines it (**§B.5**). Run **`gh issue view <N> --json number,state,labels,projectItems`** and confirm **§B.2** pass criteria (confirm **Priority** via Projects UI / GraphQL if JSON omits it). See **§B.1**–**§B.5**.
 
   - type: textarea
     id: summary

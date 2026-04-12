@@ -2,7 +2,7 @@
 
 This document captures architecture guardrails that both Windsurf and Cursor should follow.
 
-For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`. For GitHub Issues / Projects workflow (**§A–§K**, including **§B.1**–**§B.4** and **§B.2** verification), see [`../../governance/rp-app/issue-tracking-workflow.md`](../../governance/rp-app/issue-tracking-workflow.md) (Issue #45 governance relocation).
+For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`. For GitHub Issues / Projects workflow (**§A–§K**, including **§B.0**–**§B.5** and **§B.2** verification), see [`../../governance/rp-app/issue-tracking-workflow.md`](../../governance/rp-app/issue-tracking-workflow.md) (Issue #45 governance relocation).
 
 ## Repo-level architecture stance
 

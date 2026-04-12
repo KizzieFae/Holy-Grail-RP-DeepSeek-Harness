@@ -73,7 +73,7 @@ as the authoritative guide.
 
 | Task class | Minimum extra reads |
 |------------|-------------------|
-| GitHub Issues / backlog / issue workflow | `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow; optional `.github/ISSUE_TEMPLATE/`; runtime app architecture in `autogen_rp/python/rp_app/ARCHITECTURE.md` |
+| GitHub Issues / backlog / issue workflow | `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**); optional `.github/ISSUE_TEMPLATE/`; runtime app architecture in `autogen_rp/python/rp_app/ARCHITECTURE.md` |
 | RP app behavior / continuity / Director / audits | `autogen_rp/docs/architecture.md`, `autogen_rp/python/rp_app/ARCHITECTURE.md`; if auditing: `autogen_rp/docs/audit-workflows.md` |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
 | Repo structure | `autogen_rp/docs/repo-map.md` |
@@ -296,6 +296,8 @@ You **MUST**:
 
 All **evidence extraction** and **analysis** must be **externalized** (analysis AI or human), not executed silently by Cursor.
 
+**Handoff prompts are non-authoritative (hard rule):** If information exists in a **handoff prompt** but **not** in the issue body **or** issue comments, the workflow is **invalid** until reconciled—copy authoritative facts into the Issue thread first (`governance/rp-app/issue-tracking-workflow.md` **§B.5**).
+
 ---
 
 ## GitHub Anchoring
@@ -304,11 +306,13 @@ All work between agents must reference:
 
 - a GitHub Issue
 - the current Issue state (issue body **`Current status:`** per **§H** in `governance/rp-app/issue-tracking-workflow.md`)
-- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow** per **§B.1**–**§B.3**
+- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.5**
 
 No free-floating work is allowed.
 
-**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
+**Active Context (chat)** is a **derived summary** of the Issue + comments + Project fields (`governance/policies/project-behavior-holy-grail.md`); it must **not** replace them. A **session boundary** comment on the Issue precedes relying on a new chat’s context alone (**§B.5**).
+
+**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, confirm it via the **Projects** UI or GraphQL if JSON is incomplete (**§B.2**). If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
 ---
 
@@ -329,6 +333,8 @@ When an issue becomes the **active subject of work** on **RP System Workflow**, 
 - **Browsing** issues or the backlog, or
 - **Selecting** the next issue / task **without** yet beginning extraction or analysis on it.
 
+**Phase-first selection** (choose batch → filter → order by **Priority**) is an external **process rule** only; it does **not** change **Workflow** or **`Current status:`** meanings (**§B.0**, **§B.5** in `governance/rp-app/issue-tracking-workflow.md`).
+
 ---
 
 ## Workflow Enforcement
@@ -336,11 +342,12 @@ When an issue becomes the **active subject of work** on **RP System Workflow**, 
 The analysis role must:
 
 - enforce Issue usage
-- enforce state transitions (issue **§H** and **Project** fields **together** — **§B.3**)
+- enforce state transitions (issue **§H** / **execution stages** and **Project** fields **together** — **§B.3**)
 - reject missing evidence
 - reject implementation without consensus
 - reject closure without validation
 - **reject** issue-management **completion reports** that omit **§B.2** verification or show metadata drift (**§B.4**)
+- **reject** workflows that violate **§B.5** (missing execution-stage or session-boundary comments when required, handoff invalidity, **Active Context** contradicting GitHub, **Priority** misused vs selection batching)
 
 Violations must be explicitly called out.
 

@@ -36,7 +36,7 @@ Do not let important project behavior live only in this folder.
 - `architecture-protection.mdc` - architecture guardrails for Python and RP app work (`../../governance/policies/architecture-protection.md`)
 - `testing-expectations.mdc` - test expectations for Python changes (`../../governance/policies/testing-expectations.md`)
 - `rp-app-guidance.mdc` - RP app-specific runtime and audit guidance (`../../governance/policies/rp-app-guidance.md`)
-- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `../../governance/rp-app/issue-tracking-workflow.md` §B.1–§B.4 (policy body in `../../governance/policies/github-issues.md`, included via `@` from this stub)
+- `github-issues.mdc` - file Issues on GitHub via `gh` when requested; canonical steps in `../../governance/rp-app/issue-tracking-workflow.md` §B.0–§B.5 (policy body in `../../governance/policies/github-issues.md`, included via `@` from this stub)
 
 ## Safe switching note
 
