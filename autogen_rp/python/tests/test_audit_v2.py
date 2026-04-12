@@ -170,6 +170,49 @@ def test_count_quoted_segments_regex() -> None:
     assert count_quoted_segments("no ascii dquotes") == 0
 
 
+def test_nar_scope_proxy_deprecated_does_not_border_escalate() -> None:
+    """GitHub #9: scope proxy metrics may show passes_bar false; tri-state must not gate."""
+    scored, esc, _ = compute_escalation_for_layer(
+        layer="narrator_output",
+        checks=[
+            {
+                "check_id": "nar_strict_action_overlap",
+                "dimension_id": "narrator_action_grounding",
+                "payload": {"action_token_overlap_ratio": 0.2, "action_empty": False},
+            },
+            {
+                "check_id": "nar_v1_action_passes_bar",
+                "dimension_id": "narrator_action_grounding",
+                "payload": {"passes_bar": True},
+            },
+            {
+                "check_id": "nar_environment_cue",
+                "dimension_id": "narrator_environment_cue",
+                "payload": {
+                    "environment_event_present": False,
+                    "token_hits_in_render": 0,
+                },
+            },
+            {
+                "check_id": "nar_scope_proxy",
+                "dimension_id": "narrator_scope_proxy",
+                "payload": {
+                    "passes_bar": False,
+                    "other_cast_names_found": ["OtherCast"],
+                },
+            },
+        ],
+    )
+    scope_rows = [r for r in scored if r.get("check_id") == "nar_scope_proxy"]
+    assert len(scope_rows) == 1
+    assert scope_rows[0]["result"] == "pass"
+    assert esc["qualified"] is False
+    assert not any(
+        r.get("code") == "border_band" and r.get("check_id") == "nar_scope_proxy"
+        for r in esc["reasons"]
+    )
+
+
 def test_scope_proxy_context_previous_turn() -> None:
     det1 = build_narrator_audit_v2_deterministic(
         next_actor="A",

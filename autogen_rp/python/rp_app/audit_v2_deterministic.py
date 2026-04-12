@@ -12,7 +12,11 @@ from character_audits_v1 import (
     _ca4_repetition,
     _ca7_pressure_move,
 )
-from narrator_audits_v1 import build_narrator_output_audit_v1, build_prose_dialogue_audit_v1
+from narrator_audits_v1 import (
+    SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
+    build_narrator_output_audit_v1,
+    build_prose_dialogue_audit_v1,
+)
 
 from audit_v2_escalation_policy import (
     CHECK_TO_DIMENSION,
@@ -186,6 +190,19 @@ def build_narrator_audit_v2_deterministic(
                 "passes_bar": bool(scope.get("passes_bar")),
                 "other_cast_names_found": list(
                     scope.get("other_cast_names_found", []) or []
+                ),
+                "status": scope.get("status", "deprecated"),
+                "interpretation": scope.get("interpretation", "do_not_use"),
+                "reason": scope.get(
+                    "reason",
+                    (
+                        "No evidence of meaningful ownership violations in reviewed corpus; "
+                        "high false-positive rate from treating other-cast name mention as failure."
+                    ),
+                ),
+                "tracked_by_issue": scope.get(
+                    "tracked_by_issue",
+                    SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
                 ),
             },
         },

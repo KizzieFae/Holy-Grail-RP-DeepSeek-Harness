@@ -17,6 +17,7 @@ DIM_CHARACTER_DECLARED_FIELDS = "character_declared_pressure_fields"
 # --- Dimension ids (narrator output) ---
 DIM_NARRATOR_ACTION_GROUNDING = "narrator_action_grounding"
 DIM_NARRATOR_ENVIRONMENT_CUE = "narrator_environment_cue"
+# Legacy dimension id retained for log shape; `nar_scope_proxy` is non-gating (GitHub #9).
 DIM_NARRATOR_SCOPE_PROXY = "narrator_scope_proxy"
 
 # --- Dimension ids (prose) ---
@@ -117,12 +118,13 @@ def _tri_state_nar_env(payload: dict[str, Any]) -> str:
     return "fail"
 
 
-def _tri_state_nar_scope(payload: dict[str, Any]) -> str:
-    if payload.get("passes_bar") is True:
-        return "pass"
-    other = payload.get("other_cast_names_found")
-    if isinstance(other, list) and len(other) > 0:
-        return "border"
+def _tri_state_nar_scope(_payload: dict[str, Any]) -> str:
+    """`nar_scope_proxy` / `single_actor_scope_heuristic` retired for gating (GitHub #9).
+
+    Raw `passes_bar` / `other_cast_names_found` remain in payloads for historical review;
+    escalation and dimension rollup always treat this check as **pass** so it cannot
+    qualify LLM audit escalation on scope noise alone.
+    """
     return "pass"
 
 
