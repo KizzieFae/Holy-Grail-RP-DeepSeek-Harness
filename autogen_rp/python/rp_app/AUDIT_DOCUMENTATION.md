@@ -349,7 +349,7 @@ Align with `ARCHITECTURE.md` **§D**:
 
 ### Audit v2 (deterministic, advisory)
 
-Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `ARCHITECTURE.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic).
+Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `ARCHITECTURE.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**).
 
 ### Audit signal limitations
 
@@ -742,7 +742,7 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 
 | Key | Role |
 |-----|------|
-| `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue, single-actor scope proxies. |
+| `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue; **`single_actor_scope_heuristic` is deprecated** (see below). |
 | `narrator_validation_audit_v1` | Observational: captures raw render path, deterministic fallback flag, semantic validator payload, and **derived** flags (`fallback_triggered`, `output_replaced`, etc.). Does **not** re-run validation. |
 | `prose_dialogue_audit_v1` | Heuristic advisory: readability/redundancy/dialogue/attribution/tone proxies. |
 
@@ -752,8 +752,9 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 
 - **Output and prose layers are heuristic-only** (no LLM scoring in v1); false positives/negatives are expected.
 - **No narrator audit row** (and thus no v1 blobs) when `log_narrator_render_audit` early-returns because `narrator_raw` is falsy or audits are disabled—same guard as before v1.
-- **Single-actor scope** (`narrator_output_audit_v1`) uses **substring** matching of other cast names in the final render; legitimate mentions can flag — **heuristic limit**, not proof of narrator failure.
-- **`prose_dialogue_audit_v1` → `attribution_proxy`:** Pronoun-only or implicit attribution can yield **false negatives** (`passes_bar`); see the `limitations` string in the logged blob.
+- **`single_actor_scope_heuristic` (deprecated, GitHub #9, removal GitHub #41):** **Non-authoritative**, **non-gating**, **not suitable for narrator quality evaluation.** It used substring presence of other cast names (not turn-ownership violations); corpus review found **no meaningful evidence** of real single-actor ownership breaks while the signal produced **high false-positive noise**. The blob is **retained temporarily** for compatibility and historical traceability; **`nar_scope_proxy`** in Audit V2 still logs the same raw fields but escalation **always passes** that check so it cannot qualify LLM escalation on scope alone. **Do not** treat `passes_bar: false` as a narrator defect. Physical removal is tracked on the maintenance issue above.
+- **`prose_dialogue_audit_v1` → `attribution_proxy`:** Pronoun-only or implicit attribution can yield **false negatives** (`passes_bar`); see the `limitations` string in the logged blob. This check is **advisory only**, **non-authoritative**, and **non-gating**; high `passes_bar: false` rates are **expected** under v1 and **must not** be read as narrator failure without corroborating signals (see also `interpretation: advisory_non_gating` on the blob when present).
+- **`prose_dialogue_audit_v1` → `readability_proxy` / `tone_consistency_local`:** Lexical heuristics only (word length, long-token ratio, simple present-tense token hits). **Heuristic-only**, **non-authoritative**, **non-gating**, **low-signal**; `passes_bar: false` is **not** narrator incorrectness and **must not** be used to assess narrator correctness, trigger escalation, or drive system decisions. Use for **monitoring / observability** only; expect threshold-adjacent noise and false positives (see `interpretation` / `note` on the blob when present; GitHub **#10**).
 - **Redundancy** compares against the **prior assistant** message only (last assistant `content` in `chat_history` before the current append), not a long window.
 
 **Scope:** Per-turn narrator renders only; scene-opening narrator calls are **not** covered by v1.

@@ -5,6 +5,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
+# Physical removal deferred; see GitHub issue (maintenance).
+SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE = 41
+
 _STOPWORDS = frozenset(
     {
         "a",
@@ -157,6 +160,13 @@ def build_narrator_output_audit_v1(
                 "other_cast_names_found": other_found,
                 "passes_bar": len(other_found) == 0,
                 "limitations": "Other names may appear legitimately in third-person narration.",
+                "status": "deprecated",
+                "interpretation": "do_not_use",
+                "reason": (
+                    "No evidence of meaningful ownership violations in reviewed corpus; "
+                    "high false-positive rate from treating other-cast name mention as failure."
+                ),
+                "tracked_by_issue": SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
             },
         },
     }
@@ -285,6 +295,8 @@ def build_prose_dialogue_audit_v1(
                 "avg_word_length": round(avg_word_length, 3),
                 "long_token_ratio": round(long_token_ratio, 4),
                 "passes_bar": passes_read,
+                "interpretation": "advisory_low_signal",
+                "note": "heuristic proxy for stylistic qualities; not indicative of system correctness",
             },
             "redundancy_vs_prior": {
                 "method": "heuristic_v1",
@@ -304,12 +316,15 @@ def build_prose_dialogue_audit_v1(
                 "acting_surname_or_display_token_near_quote": attribution_ok,
                 "passes_bar": attribution_ok,
                 "limitations": "Pronoun-only attribution yields false negatives.",
+                "interpretation": "advisory_non_gating",
             },
             "tone_consistency_local": {
                 "method": "heuristic_v1",
                 "present_tense_verb_hits": present_hits,
                 "passes_bar": passes_tone,
                 "limitations": "Crude past-tense proxy.",
+                "interpretation": "advisory_low_signal",
+                "note": "heuristic proxy for stylistic qualities; not indicative of system correctness",
             },
         },
     }

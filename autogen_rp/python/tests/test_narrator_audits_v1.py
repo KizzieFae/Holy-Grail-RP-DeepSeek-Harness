@@ -95,3 +95,10 @@ def test_prose_exact_quote_detection() -> None:
         out["checks"]["dialogue_integration_proxy"]["exact_dialogue_quoted_in_render"]
         is True
     )
+    assert (
+        out["checks"]["readability_proxy"]["interpretation"] == "advisory_low_signal"
+    )
+    assert (
+        out["checks"]["tone_consistency_local"]["interpretation"]
+        == "advisory_low_signal"
+    )
