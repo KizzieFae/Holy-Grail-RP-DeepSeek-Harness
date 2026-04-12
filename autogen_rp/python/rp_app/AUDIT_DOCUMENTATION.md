@@ -24,6 +24,93 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
+### Audit Signal Classification and Interpretation
+
+Audit signals do not all behave the same way and must not be interpreted uniformly.
+
+Each signal belongs to one of the following classes:
+
+#### 1. Always-on signals
+
+These signals are expected to apply on every turn or artifact of their type.
+
+- They evaluate structural correctness or required behavior
+- They should produce meaningful output consistently
+
+**Interpretation:**
+- Failure or absence is meaningful and indicates a potential issue
+- These signals can be used for strong validation and gating decisions
+
+---
+
+#### 2. Conditional signals
+
+These signals are only meaningful when specific upstream conditions are present.
+
+- They depend on optional or situational system features
+- They may not activate in many turns or entire runs
+
+Example:
+- Signals tied to optional Director outputs (e.g. `environment_event`)
+
+**Interpretation:**
+- Inactive signals are not evidence of correctness or failure
+- These signals must only be evaluated when their trigger condition is met
+- Corpus-level absence of firing is expected in many cases
+
+---
+
+#### 3. Heuristic / advisory signals
+
+These signals approximate behavior using simplified or surface-level logic.
+
+- They may rely on lexical patterns, counts, or partial proxies
+- They do not encode full semantic or narrative intent
+
+Examples:
+- Character Audit v1 CA1 / CA2 signals
+
+**Interpretation:**
+- These signals are non-authoritative and advisory only
+- They may produce false positives or false negatives
+- They must not be used as sole evidence of system failure
+- They should be correlated with continuity, narrative, or other signals
+
+---
+
+### Key interpretation rule
+
+A signal that does not fire is not evidence of correctness or failure unless it is defined as always-on.
+
+### Interpretation discipline (critical)
+
+No audit signal may be interpreted until it has been explicitly classified as one of:
+
+- always-on
+- conditional
+- heuristic / advisory
+
+Interpretation without classification is invalid and may lead to incorrect conclusions about system behavior.
+
+---
+
+### Evaluation guidance
+
+When analyzing audit output:
+
+1. Identify the signal class
+2. Determine whether the signal is applicable in the current context
+3. Interpret results according to signal type:
+   - Always-on → strong signal
+   - Conditional → only evaluate when triggered
+   - Heuristic → advisory, requires corroboration
+
+Failure to apply this distinction can result in:
+
+- misclassification of valid system behavior as failure
+- incorrect conclusions about system quality
+- misleading audit summaries and escalation outcomes
+
 ### Progression advisory (MVP) in audits
 
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), template-sourced **`recommended_channels`**, human-readable **`note`**, **`stall_components`** (booleans: same phase, high tension, issue stability, exact structural repetition), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
