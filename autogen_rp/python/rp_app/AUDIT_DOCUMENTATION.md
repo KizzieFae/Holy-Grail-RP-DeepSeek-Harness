@@ -70,6 +70,8 @@ These signals approximate behavior using simplified or surface-level logic.
 Examples:
 - Character Audit v1 CA1 / CA2 signals
 
+In **Audit v2 escalation**, CA1/CA2 scored checks use **`excluded_deprecated`** and do not participate in dimension rollup or **`qualified`** (see **Audit v2 (deterministic, advisory)** below; **GitHub #42**).
+
 **Interpretation:**
 - These signals are non-authoritative and advisory only
 - They may produce false positives or false negatives
@@ -436,7 +438,9 @@ Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
 ### Audit v2 (deterministic, advisory)
 
-Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`** together with **`limitations`** and assign a GitHub issue **Layer** from `governance/rp-app/issue-tracking-workflow.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**).
+Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`**, documented non-tri-state values (below), and **`limitations`** together when interpreting logs; assign a GitHub issue **Layer** from `governance/rp-app/issue-tracking-workflow.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**).
+
+For **`char_ca1_motivation_action`** and **`char_ca2_dialogue_action`** (Character Audit v1 **CA1 / CA2**, deprecated for escalation after corpus evaluation — **GitHub #13** / **#42**), the scored **`result`** is **`excluded_deprecated`**: raw payloads remain on the check row for observability, but these checks **do not** participate in dimension aggregation, escalation **`reasons`**, or **`qualified`**. They are **not** a successful **`pass`**. When no other checks contribute to **`character_intra_move_coherence`**, that dimension’s aggregate is **`not_applicable`** (not an empty-success **`pass`**). See **`intra_move_summary.pattern`** = **`intra_move_not_applicable`** and the human-readable explanation on character deterministic bundles.
 
 ### Audit signal limitations
 
@@ -445,9 +449,11 @@ Many dimensions are **heuristic**: token overlap, substring scope proxies, short
 Examples from baseline audits:
 
 - **Prose attribution** / attribution proxies — pronoun-led or implicit attribution often fails fixed-window name tests.
-- **CA1 (`char_ca1_motivation_action`)** — low lexical overlap between motivation text and action/dialogue on coherent, subtext-heavy moves.
+- **CA1 (`char_ca1_motivation_action`)** — low lexical overlap between motivation text and action/dialogue on coherent, subtext-heavy moves. **Audit v2 escalation:** excluded (**`excluded_deprecated`**); see Audit v2 paragraph above (**#42**).
 
-Treat chronic **`fail`** on these as **quality**-class signals or **design_gap** discussions for metrics unless **independent runtime evidence** shows incorrect behavior attributable to a concrete **Layer**. They **should not** alone trigger “fix the narrator/character” work without that evidence.
+**CA1 / CA2 vs Audit v2 post–#42:** Those checks **do not** produce intra-move **`fail`** or **`border`** escalation outcomes in **Audit v2**; **`character_intra_move_coherence`** is **`not_applicable`** when only those inputs would apply. **Character Audit v1** `derived` CA1/CA2 fields remain for **raw observability** and are separate from **Audit v2** escalation **`reasons`** / **`qualified`**.
+
+Except for that CA1/CA2 **Audit v2** intra path (retired per **#42**, above), treat chronic **`fail`** on these as **quality**-class signals or **design_gap** discussions for metrics unless **independent runtime evidence** shows incorrect behavior attributable to a concrete **Layer**. They **should not** alone trigger “fix the narrator/character” work without that evidence.
 
 ### GitHub issue usage (this repo)
 
@@ -840,7 +846,7 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 
 **Known limitations (v1):**
 
-- **CA1 / CA2** — Token overlap only; metaphor, subtext, and reported speech are not modeled (lexical noise; false weak or “disconnected” bands).
+- **CA1 / CA2** — Token overlap only; metaphor, subtext, and reported speech are not modeled (lexical noise; false weak or “disconnected” bands). **Audit v2 escalation** does not consume them (**#42**; scored **`excluded_deprecated`**).
 - **CA3 / CA7** — See **CA3**, **CA7**, and **Interpretation and Intended Use** above; do not infer in-fiction engagement or continuity pressure from these dimensions alone.
 - **CA5 (`scene_plausibility_flags`)** — Name vs `present_characters` matching is imperfect (display vs internal ids); **informational only**, not a correctness signal.
 - **`continuity_scope: orchestration_only`** — Used when the continuity manager is absent on the path that still logs character audit; **rare in normal Streamlit**; less exercised than `continuity_enabled` in typical `--audit` runs (see **Validation (tests)** below for CI coverage).

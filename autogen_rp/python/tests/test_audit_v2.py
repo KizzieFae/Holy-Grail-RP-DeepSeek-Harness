@@ -15,7 +15,11 @@ from audit_v2_deterministic import (
     build_prose_audit_v2_deterministic,
     count_quoted_segments,
 )
-from audit_v2_escalation_policy import compute_escalation_for_layer
+from audit_v2_escalation_policy import (
+    CHECK_RESULT_EXCLUDED_DEPRECATED,
+    DIMENSION_AGGREGATE_NOT_APPLICABLE,
+    compute_escalation_for_layer,
+)
 from audit_v2_llm import build_llm_skipped_payload, run_audit_v2_llm
 
 
@@ -40,18 +44,17 @@ def test_character_v2_deterministic_has_checks_and_escalation() -> None:
     assert det["layer"] == "character_decision"
     assert len(det["checks"]) == 4
     assert all("result" in c for c in det["checks"])
+    ca1 = next(c for c in det["checks"] if c["check_id"] == "char_ca1_motivation_action")
+    ca2 = next(c for c in det["checks"] if c["check_id"] == "char_ca2_dialogue_action")
+    assert ca1["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
+    assert ca2["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
     assert "intra_move_summary" in det
     summary = det["intra_move_summary"]
     assert summary["intra_move_aggregate"] == det["escalation"]["dimension_aggregate"][
         "character_intra_move_coherence"
     ]
-    assert summary["pattern"] in {
-        "intra_move_pass",
-        "intra_move_fail_aligned",
-        "intra_move_conflict",
-        "intra_move_border",
-        "intra_move_mixed",
-    }
+    assert summary["intra_move_aggregate"] == DIMENSION_AGGREGATE_NOT_APPLICABLE
+    assert summary["pattern"] == "intra_move_not_applicable"
     esc = det["escalation"]
     assert "qualified" in esc
     assert "reasons" in esc
@@ -129,10 +132,15 @@ def test_compound_intra_move_ambiguity_when_repetition_border() -> None:
         layer="character_decision", checks=checks
     )
     codes = [r["code"] for r in esc["reasons"]]
-    assert "compound_intra_move_ambiguity" in codes
+    # CA1/CA2 no longer drive intra-move fail; compound cannot qualify (#42).
+    assert "compound_intra_move_ambiguity" not in codes
     assert "border_band" in codes
     assert esc["qualified"] is True
     assert "intra_move_summary" in extras
+    assert (
+        esc["dimension_aggregate"]["character_intra_move_coherence"]
+        == DIMENSION_AGGREGATE_NOT_APPLICABLE
+    )
 
 
 def test_compound_blocked_when_repetition_fail_only() -> None:
@@ -168,6 +176,37 @@ def test_count_quoted_segments_regex() -> None:
     assert count_quoted_segments('Say "a" and "b" now') == 2
     assert count_quoted_segments('Say "a" now') == 1
     assert count_quoted_segments("no ascii dquotes") == 0
+
+
+def test_char_ca1_ca2_excluded_from_escalation_not_pass_tri_state() -> None:
+    """GitHub #42: CA1/CA2 payloads must not rollup to intra dimension or qualify escalation."""
+    scored, esc, extras = compute_escalation_for_layer(
+        layer="character_decision",
+        checks=[
+            {
+                "check_id": "char_ca1_motivation_action",
+                "dimension_id": "character_intra_move_coherence",
+                "payload": {"overlap_ratio": 0.0, "band": "weak"},
+            },
+            {
+                "check_id": "char_ca2_dialogue_action",
+                "dimension_id": "character_intra_move_coherence",
+                "payload": {"classification": "possibly_disconnected"},
+            },
+        ],
+    )
+    assert esc["dimension_aggregate"]["character_intra_move_coherence"] == (
+        DIMENSION_AGGREGATE_NOT_APPLICABLE
+    )
+    assert esc["qualified"] is False
+    assert esc["reasons"] == []
+    assert all(
+        row["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
+        for row in scored
+        if row["check_id"]
+        in ("char_ca1_motivation_action", "char_ca2_dialogue_action")
+    )
+    assert extras["intra_move_summary"]["pattern"] == "intra_move_not_applicable"
 
 
 def test_nar_scope_proxy_deprecated_does_not_border_escalate() -> None:

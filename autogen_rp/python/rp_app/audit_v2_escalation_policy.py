@@ -1,7 +1,8 @@
 """Single source of truth for Audit V2 dimension ids, check mapping, and escalation.
 
-Builders emit raw metrics; this module assigns pass/fail/border, detects same-dimension
-conflict, and lists escalation reasons. Thresholds live only here.
+Builders emit raw metrics; this module assigns pass/fail/border (and documented
+non-tri-state exclusions), detects same-dimension conflict, and lists escalation reasons.
+Thresholds live only here.
 """
 
 from __future__ import annotations
@@ -27,6 +28,15 @@ DIM_PROSE_DIALOGUE_INTEGRATION = "prose_dialogue_integration"
 DIM_PROSE_ATTRIBUTION = "prose_attribution"
 DIM_PROSE_TONE = "prose_tone_local"
 
+# --- GitHub #42: CA1/CA2 excluded from escalation (deprecated after Issue #13) ---
+# Logged on scored rows; omitted from dimension aggregation; not a success "pass".
+CHECK_RESULT_EXCLUDED_DEPRECATED = "excluded_deprecated"
+# Intra-move dimension has no escalation-active checks after CA1/CA2 exclusion.
+DIMENSION_AGGREGATE_NOT_APPLICABLE = "not_applicable"
+_CHECK_IDS_EXCLUDED_FROM_ESCALATION_AGGREGATION: frozenset[str] = frozenset(
+    {"char_ca1_motivation_action", "char_ca2_dialogue_action"}
+)
+
 CHECK_TO_DIMENSION: dict[str, str] = {
     "char_ca1_motivation_action": DIM_CHARACTER_INTRA_MOVE,
     "char_ca2_dialogue_action": DIM_CHARACTER_INTRA_MOVE,
@@ -43,37 +53,18 @@ CHECK_TO_DIMENSION: dict[str, str] = {
     "prose_tone": DIM_PROSE_TONE,
 }
 
-# Border bands (inclusive where noted) — character CA1 overlap_ratio
-CA1_BORDER_LOW = 0.06
-CA1_BORDER_HIGH = 0.12
-CA1_FAIL_BELOW = 0.06
-
 # Prose redundancy jaccard: border band for escalation
 PROSE_REDUNDANCY_BORDER_LOW = 0.55
 PROSE_REDUNDANCY_BORDER_HIGH = 0.65
 
 
-def _tri_state_ca1(payload: dict[str, Any]) -> str:
-    ratio = float(payload.get("overlap_ratio", 0.0) or 0.0)
-    band = str(payload.get("band", "") or "")
-    if band == "unknown":
-        return "pass"
-    if band == "strong" or ratio >= CA1_BORDER_HIGH:
-        return "pass"
-    if ratio < CA1_FAIL_BELOW and band == "weak":
-        return "fail"
-    if CA1_BORDER_LOW <= ratio < CA1_BORDER_HIGH or band == "weak":
-        return "border"
-    return "pass"
+def _tri_state_ca1_ca2_excluded(_payload: dict[str, Any]) -> str:
+    """Character Audit v1 CA1/CA2 are deprecated for Audit v2 escalation (Issues #13, #42).
 
-
-def _tri_state_ca2(payload: dict[str, Any]) -> str:
-    cls = str(payload.get("classification", "") or "")
-    if cls in ("consistent", "not_applicable"):
-        return "pass"
-    if cls == "possibly_disconnected":
-        return "fail"
-    return "border"
+    Raw payloads remain on scored rows for observability; this value is **not** a
+    successful pass and must not be aggregated into dimension rollup.
+    """
+    return CHECK_RESULT_EXCLUDED_DEPRECATED
 
 
 def _tri_state_ca4(payload: dict[str, Any]) -> str:
@@ -144,8 +135,8 @@ def _tri_state_prose_redundancy(payload: dict[str, Any]) -> str:
 
 
 _CHECK_EVALUATORS: dict[str, Any] = {
-    "char_ca1_motivation_action": _tri_state_ca1,
-    "char_ca2_dialogue_action": _tri_state_ca2,
+    "char_ca1_motivation_action": _tri_state_ca1_ca2_excluded,
+    "char_ca2_dialogue_action": _tri_state_ca1_ca2_excluded,
     "char_ca4_repetition": _tri_state_ca4,
     "char_ca7_declared_fields": _tri_state_ca7,
     "nar_strict_action_overlap": _tri_state_nar_strict_overlap,
@@ -201,9 +192,16 @@ def build_intra_move_summary(
     ca2_result: str,
     intra_move_aggregate: str,
 ) -> dict[str, Any]:
-    """P2: derived only from CA1 result, CA2 result, intra dimension aggregate."""
+    """P2: derived from CA1/CA2 scored results and intra dimension aggregate."""
     intra = intra_move_aggregate
-    if intra == "conflict":
+    if intra == DIMENSION_AGGREGATE_NOT_APPLICABLE:
+        pattern = "intra_move_not_applicable"
+        human_readable = (
+            "Character Audit v1 CA1/CA2 are excluded from Audit v2 escalation (deprecated, "
+            "Issues #13 / #42); character_intra_move_coherence has no active escalation "
+            "contributors. Raw CA1/CA2 metrics remain on checks[].payload for observability."
+        )
+    elif intra == "conflict":
         pattern = "intra_move_conflict"
         human_readable = (
             "CA1 and CA2 disagree on intra-move coherence (pass vs fail/border); "
@@ -302,7 +300,13 @@ def compute_escalation_for_layer(
 
     by_dim: dict[str, list[str]] = defaultdict(list)
     for row in scored:
-        by_dim[row["dimension_id"]].append(str(row["result"]))
+        cid = str(row.get("check_id", "") or "")
+        if cid in _CHECK_IDS_EXCLUDED_FROM_ESCALATION_AGGREGATION:
+            continue
+        dim_id = str(row.get("dimension_id", "") or "")
+        if not dim_id:
+            continue
+        by_dim[dim_id].append(str(row["result"]))
 
     reasons: list[dict[str, Any]] = []
     dim_agg: dict[str, str] = {}
@@ -319,6 +323,9 @@ def compute_escalation_for_layer(
                     "layer": layer,
                 }
             )
+
+    if layer == "character_decision" and DIM_CHARACTER_INTRA_MOVE not in dim_agg:
+        dim_agg[DIM_CHARACTER_INTRA_MOVE] = DIMENSION_AGGREGATE_NOT_APPLICABLE
 
     for row in scored:
         if row["result"] == "border":
