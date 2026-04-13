@@ -21,7 +21,7 @@
 6. **Quality** and **design_gap** items are **not** silently filed as **bug**; **Type** follows **§E** (PRD authority).
 7. **Pattern status** is always explicit (**§I**).
 8. **Documentation reviewed and updated** where contracts or behavior changed **before** terminal closure (**§D** checklist).
-9. **GitHub Project metadata** (**§B.1**–**§B.5**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**). When **Priority** exists on the project (**§B.5**), set and maintain it for triage; it does **not** replace **`Current status:`** or **Workflow**.
+9. **GitHub Project metadata** (**§B.1**–**§B.6**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**). When **Priority** exists on the project (**§B.5**), set and maintain a **non-empty** value (P0–P3) for triage; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** fails **§B.2** the same way as other required project metadata when the field is defined.
 
 ### A.1 Audit-driven workflow (reference)
 
@@ -71,12 +71,17 @@ After **create** or any **metadata-affecting** update (labels, project membershi
 gh issue view <N> --json number,state,labels,projectItems
 ```
 
+**`gh issue view --json projectItems` is not sufficient to verify Priority** (the JSON often omits it). Confirm **Priority** on the **RP System Workflow** item using **at least one** of: **`gh project item-list`** (locate the row for issue **`<N>`** and read the `priority` field), the **Projects** UI, or a **GraphQL** query on the project item. Retain that evidence in the same place as the issue-view output.
+
 **Pass criteria (minimum):**
 
 - **`labels`**: JSON array **non-empty** (unless **§B.1** exception applies and is documented).
 - **`projectItems`**: JSON array **non-empty**, with an item for **RP System Workflow** (title/name as shown by `gh`).
 - **Project Status** and **Workflow**: Values must **not contradict** **`Current status:`** per **§B.3** (if JSON does not expose a field, confirm via **`gh project item-list`** / project board / `gh project item-edit` dry documentation and state the two field values explicitly in the completion note).
-- **Priority** (when the project defines **Priority**, **§B.5**): Confirm the value via the **Projects** UI or a GraphQL `node` query on the project item—`gh issue view --json projectItems` may omit **Priority**; when material to the task, state **Priority** explicitly in the completion note.
+- **Priority** (when the project defines **Priority**, **§B.5**): The project item **must** have a **set** value (**P0**–**P3**). Missing or empty **Priority** → **§B.2 fails** (same enforcement tier as empty **`labels`** / **`projectItems`** or **§B.3** contradiction). Proof must come from **`gh project item-list`** / UI / GraphQL—not from **`projectItems`** JSON alone.
+- **Priority when material to the task:** If **Priority** matters to the outcome (examples: triage, backlog ordering, competing work, urgency, or any decision where P0–P3 is part of the rationale), the **completion record** (Issue comment or session log used as completion proof) **must** include **one line** that either states the current **Priority** and that it still applies, or states that **Priority** was **changed** and to which value with a brief reason. If **Priority** is **not** material to the task, no extra line is required beyond proving the field is set.
+
+**One-time backfill (operational prerequisite):** Before **§B.2** is treated as **fully effective** for **legacy** project items, maintainers run a **single operational pass** so every **active** **RP System Workflow** item in scope has **Priority** set (use **P3** when unknown). **No automation required** (Projects UI or repeated **`gh project item-edit`**). Record completion (**date**, **counts**, **method**) on the tracking issue or maintainer log. Until backfill is done, reviewers still **reject** missing **Priority** on any item that should already have been touched.
 
 **Completion is invalid** without this verification for tracked issues. Narrative-only confirmation (“issue filed”) is **not** sufficient.
 
@@ -106,6 +111,8 @@ If the board uses different option labels, **map by intent** (investigation vs c
 ### B.4 Rejection rule (metadata)
 
 - **Missing** required **labels**, **project membership**, or **Project** **Status** / **Workflow** alignment with **§B.3** → the **task is incomplete**.
+- **Missing** **Priority** on the **RP System Workflow** item when the project defines **Priority**, or **§B.2** proof that uses **`gh issue view --json projectItems` alone** for Priority → the **task is incomplete**.
+- **Missing** the **one-line Priority acknowledgment** when **§B.2** treats **Priority** as **material** to the task → the **task is incomplete** (same rejection tier as other **§B.2** failures).
 - **No agent** (implementation or review) may report **completion** of filing, transition, or closure **without** passing **§B.2** and explicit confirmation that **§B.3** holds.
 - The **review** role **must reject** any completion report that omits verification output or shows empty **`labels`** / **`projectItems`** for a tracked issue.
 - The **review** role **must reject** workflows that show: missing **execution-stage** transition comment when **`Current status:`** changed (**§B.5**); missing **session / chat boundary** comment when a session ended or handoff occurred without an update (**§B.5**); **Active Context** or other chat-only text that **contradicts** the Issue body + comments + Project fields; use of **Priority** to skip **phase-first selection** batching rules; or **handoff** content that introduces facts absent from the Issue thread (**§B.5**).
@@ -121,6 +128,20 @@ If the board uses different option labels, **map by intent** (investigation vs c
 4. **Session / chat boundary** — Before ending a work session, switching chats, or handing off to another AI: add an **Issue comment** with: current **execution stage** (and current **`Current status:`**), work completed this session, what remains, and the **next concrete step**. Chat-local **Active Context** (see `governance/policies/project-behavior-holy-grail.md`) must be a **derived summary** of the Issue + comments + Project fields, written **after** this comment when starting a new chat—not a replacement for it.
 
 5. **Handoff prompts (non-authoritative)** — Delegation may still use handoff prompts, but they are **transport only**. **Hard rule:** If information exists in a handoff prompt but not in the issue body or comments, the workflow is invalid until reconciled (copy authoritative facts into the Issue thread first).
+
+### B.6 Template repository parity (narrow, Issue #48)
+
+**Secondary integrity:** Holy Grail RP workflow behavior is also mirrored for reuse in **[development-system-template](https://github.com/KizzieFae/development-system-template)**. This rule is **narrow**—it does **not** require redesigning the template.
+
+**When it applies:** A PR or direct edit to **this repo** that changes **reusable workflow-governing** text in any of:
+
+- `governance/rp-app/issue-tracking-workflow.md` (template counterpart: `docs/issue-tracking-workflow.md` or the documented equivalent),
+- `governance/policies/cursor-workflow-layer.md` or `governance/policies/project-behavior-holy-grail.md` **when** the change alters **GitHub / Cursor workflow** requirements that the template is expected to copy,
+- `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` **when** the change alters **filing or verification** instructions that should stay aligned with template consumers.
+
+**Actor obligation:** In the Holy Grail PR **description** (or a linked comment), either (a) link a **template-repo PR** that applies the parallel change, or (b) state **`no template change`** with **one line** why (e.g. Holy-Grail–only).
+
+**Out of scope:** Application code under `autogen_rp/python/`, scenarios, audits, and RP-specific architecture—do **not** use this rule to broaden template work.
 
 ### C. Standard GitHub labels (mandatory adjunct)
 

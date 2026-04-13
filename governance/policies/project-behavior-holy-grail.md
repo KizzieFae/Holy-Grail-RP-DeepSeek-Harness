@@ -80,15 +80,15 @@ Chat reasoning is not considered persistent state.
 
 
 
-For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain it for triage per **§B.5** (it does **not** replace **`Current status:`** or **Workflow**). Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.5**, **§C**.
+For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain a **non-empty** value (P0–P3) per **§B.5**; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** or proof that relies only on **`gh issue view --json projectItems`** for Priority fails **§B.2**. Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**.
 
 
 
-- **Verification:** `gh issue view <N> --json number,state,labels,projectItems` — tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented. Confirm **Priority** via the **Projects** UI or GraphQL when JSON omits it (**§B.2**).
+- **Verification:** Run `gh issue view <N> --json number,state,labels,projectItems` **and** prove **Priority** with **`gh project item-list`**, the **Projects** UI, or **GraphQL** (see **§B.2**). Tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented. When **Priority** is **material** to the task, include the **§B.2** **one-line** acknowledgment or update in the completion record.
 
 
 
-- **Rejection:** Do **not** treat filing, transition, or closure as complete without passing verification and **§B.3** mapping, or when **§B.5** requirements (comments, handoffs, **Active Context** alignment) are violated.
+- **Rejection:** Do **not** treat filing, transition, or closure as complete without passing verification and **§B.3** mapping, when **Priority** is missing or unproven per **§B.2**, when **§B.2** material **Priority** acknowledgment is missing, or when **§B.5** requirements (comments, handoffs, **Active Context** alignment) are violated.
 
 
 

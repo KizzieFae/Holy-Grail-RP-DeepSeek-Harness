@@ -306,13 +306,13 @@ All work between agents must reference:
 
 - a GitHub Issue
 - the current Issue state (issue body **`Current status:`** per **§H** in `governance/rp-app/issue-tracking-workflow.md`)
-- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.5**
+- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.6**
 
 No free-floating work is allowed.
 
 **Active Context (chat)** is a **derived summary** of the Issue + comments + Project fields (`governance/policies/project-behavior-holy-grail.md`); it must **not** replace them. A **session boundary** comment on the Issue precedes relying on a new chat’s context alone (**§B.5**).
 
-**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, confirm it via the **Projects** UI or GraphQL if JSON is incomplete (**§B.2**). If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
+**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, **also** retain proof from **`gh project item-list`**, the **Projects** UI, or **GraphQL** that **Priority** is **set** (P0–P3)—**`projectItems` JSON alone is insufficient** (**§B.2**). When **Priority** is **material** to the task, the completion record **must** include the **one-line** acknowledgment or update described in **§B.2**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
 ---
 
@@ -346,7 +346,7 @@ The analysis role must:
 - reject missing evidence
 - reject implementation without consensus
 - reject closure without validation
-- **reject** issue-management **completion reports** that omit **§B.2** verification or show metadata drift (**§B.4**)
+- **reject** issue-management **completion reports** that omit **§B.2** verification, omit **Priority** proof when the field exists, omit **§B.2** material **Priority** acknowledgment when required, or show metadata drift (**§B.4**)
 - **reject** workflows that violate **§B.5** (missing execution-stage or session-boundary comments when required, handoff invalidity, **Active Context** contradicting GitHub, **Priority** misused vs selection batching)
 
 Violations must be explicitly called out.
@@ -397,6 +397,7 @@ Issue / Documentation Impact:
 If the work included **creating, updating, or closing** a GitHub Issue, also record (mandatory):
 - **Verification JSON** (paste or summarize `gh issue view <N> --json number,state,labels,projectItems`):
 - **Project Status** and **Workflow** (must match **§B.3** for **`Current status:`**):
+- **Priority** (when defined on the project): proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**—and material-task **one line** when **§B.2** requires it:
 - **Pass / fail** against **§B.2** (if fail, work is **not** complete):
 
 === END REPORT ===
