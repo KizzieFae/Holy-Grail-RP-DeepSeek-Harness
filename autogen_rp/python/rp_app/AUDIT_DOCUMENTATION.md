@@ -24,94 +24,196 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
-### Audit Signal Classification and Interpretation
+Normative applicability, authority, inventory, and examples for operators and tooling are defined under **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** below (**GitHub #59**).
 
-Audit signals do not all behave the same way and must not be interpreted uniformly.
+### Audit signal applicability (contract)
 
-Each signal belongs to one of the following classes:
+This section is the **repo-authoritative** contract for: (1) **authority** — whether any audit signal may influence runtime; (2) **classification** — the three applicability classes; (3) **granularity** — Option B (one class per inventory row); (4) **inventory** — every classified signal; (5) **worked examples**; (6) **runtime use allowlist** (empty by default).
 
-#### 1. Always-on signals
+#### Authority rules
 
-These signals are expected to apply on every turn or artifact of their type.
+##### A. Definitions
 
-- They evaluate structural correctness or required behavior
-- They should produce meaningful output consistently
+**Authoritative narrative truth**  
+Committed scene, issue, knowledge, and consequence state owned by **`ContinuityManager`** and any subsystem explicitly designated continuity-authoritative in **Holy Grail PRD** and **`autogen_rp/python/rp_app/ARCHITECTURE.md`**. Continuity is not overridden, repaired, or inferred into truth by audit heuristics.
 
-**Interpretation:**
-- Failure or absence is meaningful and indicates a potential issue
-- These signals can be used for strong validation and gating decisions
+**Observational audit layer**  
+Subsystems whose **primary purpose** is to record, summarize, or score scene and model artifacts **for operators, tooling, and post-hoc analysis**, including: Character Audit v1, Narrator / prose heuristic audits, Audit v2 deterministic and LLM-assisted audit bundles, support manifests, Issue #29 harness metadata, and analogous fields under per-turn `metadata`, **`_audit_summary.json`**, **`structured_eval`**, and **`_narrative.json`**, **when** those fields are interpretive or diagnostic (see **Runtime outcome records** below for exclusions).
 
----
+**Runtime authority**  
+Subsystems that **may** accept, reject, retry, reorder, or mutate committed narrative state on the live or headless **scene turn path**, including (illustrative, not exhaustive): structured move and Director JSON validation (`response_validation_*`, `semantic_validation` where applicable), progression enforcement (`progression_enforcement.py`), binding-contradiction retry paths, continuity `process_turn`, and any mechanism **explicitly documented** as blocking or mutating that path.
 
-#### 2. Conditional signals
+**Audit signal (subject of the three-class system)**  
+A **named** observational output that is **listed in the [Audit signal applicability inventory](#audit-signal-applicability-inventory)**. Each inventory row has a stable **Signal id** and exactly one applicability class.
 
-These signals are only meaningful when specific upstream conditions are present.
+**Runtime outcome record**  
+Values logged in audit JSON that **only mirror** a decision already taken by **runtime authority** (e.g. `stage`, validation rejection reason, progression retry flags, binding retry metadata on a committed path). These records are **not** audit signals under this contract: they inherit **authority from the runtime subsystem** that produced them, not from the three-class taxonomy. Do not assign them **always-on / conditional / heuristic**; interpret them via the owning runtime docs.
 
-- They depend on optional or situational system features
-- They may not activate in many turns or entire runs
+##### B. Absolute prohibition (default)
 
-Example:
-- Signals tied to optional Director outputs (e.g. `environment_event`)
+**No audit signal, as defined above, may be read as an input to any runtime authority decision** — including accept/reject/retry of a move, Director `next_actor` resolution, continuity commits or rollbacks, progression Q1–Q4, or injection/removal of prompt text — **unless** that signal’s id appears on the **[Runtime use allowlist](#runtime-use-allowlist)**.
 
-**Interpretation:**
-- Inactive signals are not evidence of correctness or failure
-- These signals must only be evaluated when their trigger condition is met
-- Corpus-level absence of firing is expected in many cases
+This is a **hard prohibition**. There is **no** implied exception for “always-on” quality signals, high-severity Audit v2 tri-states, or future dashboards.
 
----
+##### C. Positive exception mechanism (closed list, future-proof)
 
-#### 3. Heuristic / advisory signals
+The only way any listed audit signal may influence runtime is for its **Signal id** to be added to **[Runtime use allowlist](#runtime-use-allowlist)**, where each entry states **all** of:
 
-These signals approximate behavior using simplified or surface-level logic.
+1. **Signal id** (must match the inventory).  
+2. **Runtime subsystem** (exact module or documented seam name).  
+3. **Effect** (e.g. “hard fail character turn”, “advisory prefix only”, “metrics only”).  
+4. **Authoritative doc anchor** (PRD section or `ARCHITECTURE.md` / governance pointer) that explicitly authorizes that coupling.
 
-- They may rely on lexical patterns, counts, or partial proxies
-- They do not encode full semantic or narrative intent
+**Amendment rule:** Adding or removing an allowlist entry requires **(i)** an explicit edit to this document and **(ii)** a tracked GitHub Issue recording engineering and product rationale. Silent or ad-hoc coupling is **out of contract**.
 
-Examples:
-- Character Audit v1 CA1 / CA2 signals
+##### D. Non-contradiction with “always-on”
 
-In **Audit v2 escalation**, CA1/CA2 scored checks use **`excluded_deprecated`** and do not participate in dimension rollup or **`qualified`** (see **Audit v2 (deterministic, advisory)** below; **GitHub #42**).
+**Always-on** (classification below) governs **whether absence or default state is diagnostically meaningful when reading audit artifacts**. It does **not** grant authority to drive runtime. **Always-on ≠ runtime gate.**
 
-**Interpretation:**
-- These signals are non-authoritative and advisory only
-- They may produce false positives or false negatives
-- They must not be used as sole evidence of system failure
-- They should be correlated with continuity, narrative, or other signals
+##### E. Alignment summary
 
----
+| Layer | Role |
+|--------|------|
+| **Continuity / runtime authorities** | Sole sources of committed truth and of accept/reject/retry on the turn path. |
+| **Audit signals (inventory)** | Observational; inform **human** triage and **offline** tooling only, subject to class rules and the allowlist. |
+| **Runtime outcome records** | Factual log of what runtime already did; not classified by the three applicability classes. |
 
-### Key interpretation rule
+#### Classification contract (three classes)
 
-A signal that does not fire is not evidence of correctness or failure unless it is defined as always-on.
+##### 1. Always-on
 
-### Interpretation discipline (critical)
+**Definition:** For every turn or artifact of the declared **in-scope** type, the signal is **expected** to carry a defined evaluation or explicit **sentinel**; **absence** or **violation of the expected shape** is **meaningful** for audit diagnosis (logging defect, pipeline bug, or unexpected omission).
 
-No audit signal may be interpreted until it has been explicitly classified as one of:
+**Operator behavior:** If in-scope and missing or malformed, **investigate the audit/logging path or configuration** before treating the finding as story quality. Do **not** treat as a continuity defect without continuity evidence.
 
-- always-on
-- conditional
-- heuristic / advisory
+**Runtime:** **Prohibited** from driving runtime unless the Signal id is on **[Runtime use allowlist](#runtime-use-allowlist)**. Always-on does **not** imply a production gate.
 
-Interpretation without classification is invalid and may lead to incorrect conclusions about system behavior.
+##### 2. Conditional
 
----
+**Definition:** The signal is defined only when a **documented predicate** on session configuration, harness mode, feature flags, or upstream state is **true**. When the predicate is **false**, the signal is **out of scope**; absence is **neutral** (not pass, not fail, not evidence of a “clean scene”).
 
-### Evaluation guidance
+**Operator behavior:** Before interpreting value or silence, **evaluate the predicate**. Do not compute corpus-wide false-positive rates for the signal without conditioning on the predicate.
+
+**Runtime:** **Prohibited** from driving runtime unless the Signal id is on **[Runtime use allowlist](#runtime-use-allowlist)**.
+
+##### 3. Heuristic / advisory
+
+**Definition:** A deterministic or model-assisted **proxy** for narrative or presentation quality; **not** semantic truth; **not** continuity-competitive.
+
+**Operator behavior:** **Corroborate** with `_narrative.json`, continuity slices, prompts, or other runtime evidence before attributing bugs to a layer. **Never** sole proof of continuity or orchestration failure.
+
+**Runtime:** **Prohibited** from driving runtime unless the Signal id is on **[Runtime use allowlist](#runtime-use-allowlist)**.
+
+##### Mutual exclusion (contract logic)
+
+At **inventory granularity (Option B)**, each **Signal id** has exactly **one** of: **always-on** | **conditional** | **heuristic / advisory**. The classes differ by **silence semantics** and interpretability, **not** by runtime power (runtime coupling is **uniformly forbidden** except entries on the allowlist).
+
+#### Classification granularity (Option B)
+
+1. **Unit of classification** — Exactly **one** applicability class is assigned to **each row** in the **[Audit signal applicability inventory](#audit-signal-applicability-inventory)**. A row’s **Signal id** is the finest granularity at which classification applies.
+
+2. **Composite and nested fields** — If a published signal aggregates sub-scores or nested JSON, the **whole named signal** receives **one** class. Internal leaves are **not** separately classified unless promoted to their **own** inventory row in a future doc amendment.
+
+3. **Deterministic assignment** — For every Signal id in the inventory, its class is **fixed in the table**. If emitted behavior or interpretation rules change, update the **inventory row** (and surrounding contract text) in the **same** change set as the behavior or analysis change.
+
+4. **Character Audit v1** — One inventory row per **`metadata.character_audit_v1.derived`** key used as a quality signal, using the stable ids below. The **`observed`** envelope is a **single** inventory row (context for CA dimensions, not continuity truth).
+
+5. **Audit v2** — One inventory row per **check_id** emitted in deterministic bundles (`audit_v2_escalation_policy.CHECK_TO_DIMENSION` and `audit_v2_deterministic` builders).
+
+6. **Signals not in the inventory** — Must not support **strong** conclusions about system or narrative correctness until added and classified (prevents silent scope creep).
+
+#### Key interpretation rule
+
+A signal that does not fire is not evidence of correctness or failure **unless** it is defined as **always-on** for that inventory row (subject to any **predicate** for conditional rows).
+
+#### Interpretation discipline (critical)
+
+No **audit signal** may be interpreted using TP/FP or severity language until its **Signal id** has been located in the inventory and its **class** and **predicate** (if any) applied.
+
+#### Evaluation guidance
 
 When analyzing audit output:
 
-1. Identify the signal class
-2. Determine whether the signal is applicable in the current context
-3. Interpret results according to signal type:
-   - Always-on → strong signal
-   - Conditional → only evaluate when triggered
-   - Heuristic → advisory, requires corroboration
+1. Resolve **Signal id** → inventory row.  
+2. If the row is **conditional**, evaluate the **predicate**; if false, stop — silence is neutral.  
+3. If **always-on**, treat in-scope absence or malformed shape as an **audit-path** problem.  
+4. If **heuristic / advisory**, require **corroboration** before filing runtime **Layer** issues.  
+5. For **runtime outcome records**, use runtime documentation — not this three-class system.
 
-Failure to apply this distinction can result in:
+Failure to apply this distinction can result in mis-scoped issues, misleading dashboards, and incorrect attribution of continuity bugs to observational heuristics.
 
-- misclassification of valid system behavior as failure
-- incorrect conclusions about system quality
-- misleading audit summaries and escalation outcomes
+### Audit signal applicability inventory
+
+**Excluded from this table:** **Runtime outcome records** (see **Authority rules**). Examples: `stage: validation_progression_retry`, validation reason strings, successful `turn_execution_metadata` fields that mirror retry state — interpret via **`ARCHITECTURE.md`** and validation docs, not applicability class.
+
+| Signal id | Description | Class | Predicate (conditional only) | Silence semantics |
+|-----------|-------------|-------|-------------------------------|-------------------|
+| `cav1.schema_version` | `metadata.character_audit_v1.schema_version` when the v1 block is written | always-on | `metadata.character_audit_v1` object is present on the character audit row | When the predicate holds, missing `schema_version` indicates a serialization / contract defect in the audit path. When the v1 block is absent entirely, evaluate **`cav1.block`** first (conditional). |
+| `cav1.block` | Entire `metadata.character_audit_v1` advisory bundle | conditional | Per-turn character audit logging is enabled **and** the character turn produced a logged `*_full.json` / `*_light.json` row where v1 is attached | When audit logging is off or the row type omits v1, absence is **neutral**. When the predicate holds, absence of the block is an audit-path defect. |
+| `cav1.observed` | `metadata.character_audit_v1.observed` (Director excerpt, digests, tails; pre-continuity context) | heuristic / advisory | Same as `cav1.block` | Silence or empty excerpts are common on short prompts or redacted paths; interpret only in context of **`cav1.block`** and continuity. |
+| `cav1.derived.motivation_action_alignment` | CA1 — lexical / structural alignment (`character_audits_v1`) | heuristic / advisory | Same as `cav1.block` | High scores do not prove coherence; low scores do not prove continuity bugs. Audit v2 scored row uses **`excluded_deprecated`** (**#42**). |
+| `cav1.derived.dialogue_action_consistency` | CA2 — lexical / structural consistency | heuristic / advisory | Same as `cav1.block` | Same as CA1. **`excluded_deprecated`** in Audit v2. |
+| `cav1.derived.issue_engagement` | CA3 — move-level issue linkage proxy | heuristic / advisory | Same as `cav1.block` | `possibly_passive` means weak **move-level** linkage, not “no story engagement.” |
+| `cav1.derived.repetition_vs_prior_self` | CA4 — repetition vs prior self | heuristic / advisory | Same as `cav1.block` | Silence uncommon when block present; interpret with tail windows in `observed`. |
+| `cav1.derived.scene_plausibility_flags` | CA5 — plausibility flags | heuristic / advisory | Same as `cav1.block` | Advisory only; corroborate with scene state. |
+| `cav1.derived.pressure_director` | CA6 — Director pressure snapshot | heuristic / advisory | Same as `cav1.block` | Reflects decision excerpt, not full orchestration truth. |
+| `cav1.derived.pressure_move` | CA7 — declared pressure fields on move | heuristic / advisory | Same as `cav1.block` | `none` / weak readings reflect optional move fields, not absence of continuity pressure. |
+| `av2.check.char_ca1_motivation_action` | Audit v2 scored row for CA1 | heuristic / advisory | `metadata.audit_v2` present with character deterministic bundle | Tri-state is **`excluded_deprecated`** — not a pass; does not aggregate into intra-move dimension (**#13**, **#42**). |
+| `av2.check.char_ca2_dialogue_action` | Audit v2 scored row for CA2 | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Same as CA1 row. |
+| `av2.check.char_ca4_repetition` | Audit v2 CA4 repetition band | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | `fail` / `border` / `pass` are heuristic bands; corroborate with narrative. |
+| `av2.check.char_ca7_declared_fields` | Audit v2 CA7 declared fields | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Border/fail still advisory vs continuity. |
+| `av2.check.nar_strict_action_overlap` | Narrator strict action overlap | heuristic / advisory | `metadata.audit_v2_narrator` (or narrator bundle path used for prose) present | Absent when narrator v2 not built; neutral. |
+| `av2.check.nar_v1_action_passes_bar` | Narrator v1 action `passes_bar` rollup | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Heuristic narrator output check. |
+| `av2.check.nar_environment_cue` | Environment cue presence in render | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Conditional on Director/environment context; `environment_event` absent → check often inert (see payload). |
+| `av2.check.nar_scope_proxy` | Legacy scope proxy (non-gating) | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Escalation always **`pass`** for this check id (**#9**, **#41**); raw noise expected. |
+| `av2.check.prose_readability` | Prose readability proxy | heuristic / advisory | Prose bundle present in v2 path | High false-positive rate possible; not narrator correctness. |
+| `av2.check.prose_redundancy` | Prose redundancy Jaccard | heuristic / advisory | Same as `av2.check.prose_readability` | `prior_turns_used == 0` → scored **`pass`** path per policy; interpret with `limitations`. |
+| `av2.check.prose_dialogue_integration` | Prose dialogue integration proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Advisory only. |
+| `av2.check.prose_attribution` | Prose attribution proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Pronoun-led false negatives common (**#10** class noise). |
+| `av2.check.prose_tone` | Prose local tone proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Lexical heuristic only. |
+| `av2.llm_character` | LLM-assisted character audit v2 layer (when enabled) | conditional | LLM audit enabled for the run/build path | When disabled, absence is **neutral**. When enabled but missing where expected, investigate harness. |
+| `av2.llm_narrator` | LLM-assisted narrator audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. |
+| `av2.llm_prose` | LLM-assisted prose audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. |
+| `metadata.progression_advisory` | Stall / progression advisory snapshot (not continuity truth) | heuristic / advisory | Progression advisory MVP active for session | When feature off, absence is **neutral**. |
+| `metadata.anti_regression_advisory` | Anti-regression advisory snapshot | heuristic / advisory | Anti-regression path armed / used for session | When inactive, absence is **neutral**. |
+| `metadata.retrieval_summary` | Retrieved bundle summary (counts/refs) | conditional | Authored retrieval or merged episodic path produced a summary for the character turn | When retrieval OFF and no merge, absence is **neutral**. |
+| `metadata.scene_grounding` / `scene_grounding_summary` | Grounding observability snapshot | conditional | Scene grounding MVP produced facts for projection | When no promoted facts, absence or empty snapshot is **neutral**. |
+| `metadata.support_manifest` | Support manifest `support_manifest.v1` | conditional | Character `*_full.json` audit path attached manifest (`audit_support_manifest`) | Per **Support Manifest** section: absent on Director/Narrator rows by design — **neutral**. |
+| `audit.retrieval_session` | `_audit_summary.json` top-level `retrieval_session` | conditional | Headless simulation completed with post-merge summary refresh | Streamlit path may omit (**documented elsewhere**); absence then **neutral**, not a defect. |
+| `audit.effective_user_trigger` | Top-level `effective_user_trigger` on **full** per-turn rows | conditional | Headless harness used per-turn user trigger schedule **or** tooling expects harness field | Light audits omit by design; absence **neutral** for light rows. |
+| `structured_eval.bundle` | Headless `structured_eval` / metrics JSON (scenario id, metrics, `retrieval_session`, verdict flags when set) | conditional | Run requested metrics output (`--metrics-out` or suite aggregation) | Absent file or block means no metrics artifact — **neutral** for audit quality of the scene itself. |
+
+### Worked examples
+
+#### Example A — Always-on (`cav1.schema_version`)
+
+**Artifact:** `round_001/*_turn03_Celina_full.json` (character), `metadata.character_audit_v1` present.
+
+**Expectation:** `schema_version` is a non-empty string (current v1 schema).
+
+**If missing:** Treat as **audit serialization / contract failure** (logging pipeline), not as evidence Celina “broke” continuity. Open an **audit_simulation** or infrastructure issue with the file path and writer version.
+
+#### Example B — Conditional (`audit.effective_user_trigger`)
+
+**Artifact:** Same `*_full.json` row from a headless run using **`--user-trigger-schedule`**.
+
+**Predicate:** Full audit row + harness supplied an override line for this orchestration turn.
+
+**If key absent:** First confirm **`light` vs `full`** serialization (light omits the field by contract). Then confirm the schedule JSON and CLI actually targeted this turn index. If predicate true and full row still lacks the field, treat as **harness / writer** issue — **not** evidence the model ignored the user line in continuity.
+
+#### Example C — Heuristic / advisory (`cav1.derived.motivation_action_alignment` + `av2.check.char_ca1_motivation_action`)
+
+**Artifact:** `metadata.character_audit_v1.derived.motivation_action_alignment` shows weak overlap; Audit v2 row `check_id: "char_ca1_motivation_action"` has `result: "excluded_deprecated"`.
+
+**Interpretation:** The move may still be **semantically** coherent (subtext, indirect motivation). Do **not** infer a **response_validation** or **continuity_state** bug from CA1 alone. Read **`_narrative.json`** for the same turn; if continuity and narrative agree, file **quality** / calibration under **audit_simulation** if the metric is misleading — not a runtime regression without independent runtime evidence.
+
+### Runtime use allowlist
+
+**Status:** **Empty** — no inventory Signal id is currently authorized to drive **runtime authority** decisions.
+
+**How entries are added** — See **Authority rules → C. Positive exception mechanism**. Each new row must list Signal id, runtime subsystem, effect, and PRD/`ARCHITECTURE`/governance anchor, and must be paired with a tracked GitHub Issue.
+
+**How entries are removed** — Same process in reverse: doc edit + issue note so downstream tooling does not rely on stale coupling.
 
 ### Progression advisory (MVP) in audits
 
