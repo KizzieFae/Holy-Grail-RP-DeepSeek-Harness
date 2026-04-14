@@ -39,7 +39,7 @@ Repository-root `.cursor/rules/*.mdc` and `autogen_rp/.cursor/rules/*.mdc` are t
 ## Where to start
 
 - For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
-- For **behavioral / scenario validation** (headless simulation on the production path, structured metrics, audits, baseline vs enforcement): `../SCENARIO_VALIDATION_FRAMEWORK.md` at the Holy Grail RP repo root.
+- For **behavioral / scenario validation** (headless simulation on the production path, structured metrics, audits, baseline vs enforcement, optional offline **`--fact-spec`** fact-track companion — GitHub **#62**): `../SCENARIO_VALIDATION_FRAMEWORK.md` at the Holy Grail RP repo root.
 - Read `docs/repo-map.md` for repo structure.
 - Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).
 - Read `docs/code-style.md` for change-scope and coding expectations.
@@ -60,7 +60,7 @@ If a task touches the RP app, also read:
 - `docs/scene-grounding-layer.md` (Scene Grounding: facts contract, lifecycle, prompt integration — under `autogen_rp/`)
 - `python/rp_app/README.md`
 - `python/rp_app/ARCHITECTURE.md`
-- `python/rp_app/AUDIT_DOCUMENTATION.md` (including **Character Audit v1** — CA3/CA7 vs continuity; not character-contract requirements)
+- `python/rp_app/AUDIT_DOCUMENTATION.md` (including **Character Audit v1** — CA3/CA7 vs continuity; not character-contract requirements; **Offline fact tracking** / #59 authority vs **`run_fact_track_postprocess`** / companion artifacts)
 - `python/RP_SETUP_TODO.md`
 
 **Progression advisory (MVP):** deterministic, template-grounded prompt hints and a unified **`stall_score`** hook for beat-shift. Implemented under `python/rp_app/progression_advisory.py` with integration in `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, and audits. Does not write continuity or `CharacterState`.

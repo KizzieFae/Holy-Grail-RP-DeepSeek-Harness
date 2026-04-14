@@ -122,6 +122,28 @@ python scripts/run_scene_simulation_llm.py --scenario strong_user_steer --audit 
 python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-progression-enforcement --metrics-out ./runs/baseline.json
 ```
 
+### Optional offline fact-track (post-processing, GitHub #62)
+
+After a run that used **`--audit`**, you may attach an explicit **`fact_spec.v1`** probe in the **same** `run_scene_simulation_llm.py` invocation (default **off** — omit both flags):
+
+| Flag | Required | Role |
+|------|----------|------|
+| **`--fact-spec PATH`** | Requires **`--audit`** | Load JSON (`fact_spec.v1`); no implicit default spec. |
+| **`--fact-track-out PATH`** | Optional; requires **`--fact-spec`** | Write the companion JSON to this path instead of the default under the session directory. |
+
+**Output:** A **companion** UTF-8 JSON file (`fact_track__<probe_id>__<sha-prefix>.json` by default) next to other session artifacts. It is **not** merged into **`_audit_summary.json`** in v1 and is **not** part of the base audit logger contract.
+
+**Semantics:** **Observational / offline only** — same **#59** authority boundary as `AUDIT_DOCUMENTATION.md` → **Offline fact tracking** (not runtime; not on the runtime use allowlist). Deterministic; no LLM in the fact-track path.
+
+**Non-CLI orchestration:** Call **`run_fact_track_postprocess`** from `rp_app/audit_fact_tracking.py` with a resolved session directory and loaded spec dict (same behavior as the CLI adapter).
+
+**Example:**
+
+```bash
+cd autogen_rp/python
+python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec ./path/to/probe.json
+```
+
 **Console captures (stdout / tee)** — When saving the printed markdown audit stream to a file (`>`, `Tee-Object`, etc.), **write under `autogen_rp/python`**, e.g. `./runs/<name>.log` or `./validation_runs/<name>.log`. **Do not** redirect output to the **Holy Grail repository root** (the folder that contains `Holy Grail PRD.md` and `README.md`); that mixes ad-hoc run transcripts with foundational documents. With `--audit`, authoritative JSON still lands under `rp_app/data/rp_audits/`. The repo root [`.gitignore`](./.gitignore) ignores patterns such as `/*_run*_audit.log`, but ignored files still clutter the working tree if created there.
 
 ### Authored retrieval (standard evaluation mode)

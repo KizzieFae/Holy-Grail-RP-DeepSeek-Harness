@@ -2,7 +2,7 @@
 
 This document turns important audit guidance into a shared repo procedure.
 
-For artifact details, see `python/rp_app/AUDIT_DOCUMENTATION.md`.
+For artifact details, see `python/rp_app/AUDIT_DOCUMENTATION.md`. For optional **offline** `fact_spec.v1` post-processing (companion JSON, headless **`--fact-spec`**, **`run_fact_track_postprocess`**), see that file → **Offline fact tracking** and the repo-root **`SCENARIO_VALIDATION_FRAMEWORK.md`** (simulation execution).
 
 For turning audit findings into GitHub Issues (classification **bug** / **behavior** / **limitation**, evidence, re-test loop, heuristic caveats), see the same file → **Audit interpretation and issue tracking**, and `governance/rp-app/issue-tracking-workflow.md` (§A.1, §D).
 

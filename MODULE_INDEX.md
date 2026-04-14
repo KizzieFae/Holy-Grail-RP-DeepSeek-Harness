@@ -35,7 +35,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
 | **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py` |
-| **Scenario validation** (fixed manifests, headless LLM runs, `--audit`, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (2026-04-07 post–#24 wave); `autogen_rp/python/scripts/run_scene_simulation_llm.py` (**`--scene-template-id`**, **`--retrieved-context-index`** for authored retrieval OFF/ON); `headless_scene_simulation.py` (`prepare_headless_session` **`scene_template_id`**, **`retrieval_session`** / strict verify); `progression_simulation_scenarios.py`; `rp_app/data/progression_simulation_scenarios/*.json`; example metrics: `autogen_rp/python/validation_runs/plan_execution/*.json` |
+| **Scenario validation** (fixed manifests, headless LLM runs, `--audit`, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (2026-04-07 post–#24 wave); `autogen_rp/python/scripts/run_scene_simulation_llm.py` (**`--scene-template-id`**, **`--retrieved-context-index`** for authored retrieval OFF/ON; optional **`--fact-spec`** / **`--fact-track-out`** for offline fact-track companion — GitHub **#62**); `headless_scene_simulation.py` (`prepare_headless_session` **`scene_template_id`**, **`retrieval_session`** / strict verify); `progression_simulation_scenarios.py`; `rp_app/data/progression_simulation_scenarios/*.json`; example metrics: `autogen_rp/python/validation_runs/plan_execution/*.json` |
 | **OTHER PRESENT CHARACTERS** lists the acting character, or **CAST ROLE MAP** repeats the same person under id vs display | `prompt_builders.py` (`prompt_identity_same`, `build_cast_and_scene_role_participants`), `app_turn_prompting.py`, `runtime_packets.py` (`reconstruct_character_prompt_input_bundle` — pass the same **`get_character_display_name_fn`** as live assembly) |
 | Prompt wording only (after ruling out state) | `prompt_builders.py` |
 
@@ -166,6 +166,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
 | `model_client.py` | DeepSeek / agent construction | AutoGen stack | Env: API keys |
+| `audit_fact_tracking.py` | Offline `fact_spec.v1` post-processor: `failure_classification` over character `*_full.json` (**#58**); shared **`run_fact_track_postprocess`** + companion JSON (**#62**) | `issue29_investigation`, `audit_support_manifest` | **Not** runtime / not on #59 allowlist; CLIs `run_audit_fact_track.py` (stdout) and `run_scene_simulation_llm.py` **`--fact-spec`** (audited runs) |
 | `audit_logger.py` | Audit session/round/turn lifecycle | `audit_logger_paths`, writers | |
 | `audit_logger_paths.py` | Paths: `rp_app/data/rp_audits` | — | |
 | `audit_logger_writers.py` | Write JSON artifacts | — | |

@@ -21,6 +21,8 @@ From ``autogen_rp/python``::
     # Template-linked retrieval (sets Continuity scene_template_id; same field as Streamlit):
     python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1
     python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --audit --turns 1
+    # After an audited run, optional offline fact-track (GitHub #62; explicit fact_spec only):
+    # python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec path/to/spec.json
     # Authored retrieval ON/OFF (sets RP_RETRIEVED_CONTEXT_INDEX for this process; omit flag to leave env unchanged):
     python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1 --retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 1 --retrieved-context-index
@@ -40,6 +42,7 @@ _RP_APP = _PY_ROOT / "rp_app"
 if str(_RP_APP) not in sys.path:
     sys.path.insert(0, str(_RP_APP))
 
+from audit_fact_tracking import run_fact_track_postprocess  # noqa: E402
 from headless_scene_simulation import (  # noqa: E402
     format_simulation_audit_markdown,
     prepare_headless_session,
@@ -201,6 +204,27 @@ def main() -> None:
         help="Write structured_eval JSON to this file (UTF-8).",
     )
     p.add_argument(
+        "--fact-spec",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "After an audited run, load fact_spec.v1 JSON and write a companion fact-track "
+            "artifact under the audit session directory via run_fact_track_postprocess (requires "
+            "--audit). GitHub #62; no merge into _audit_summary.json."
+        ),
+    )
+    p.add_argument(
+        "--fact-track-out",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "Optional explicit path for fact-track companion JSON (UTF-8). Requires "
+            "--fact-spec. Default naming is under the session directory."
+        ),
+    )
+    p.add_argument(
         "--user-trigger-schedule",
         type=Path,
         default=None,
@@ -260,6 +284,10 @@ def main() -> None:
 
     if args.llm_audit and not args.audit:
         p.error("--llm-audit requires --audit")
+    if args.fact_spec is not None and not args.audit:
+        p.error("--fact-spec requires --audit")
+    if args.fact_track_out is not None and args.fact_spec is None:
+        p.error("--fact-track-out requires --fact-spec")
 
     _issue29_prefix = "investigate_i29_"
     if args.ignore_end_round:
@@ -388,6 +416,36 @@ def main() -> None:
                     + "\n",
                     encoding="utf-8",
                 )
+            if args.fact_spec is not None:
+                spec_file = args.fact_spec.resolve()
+                if not spec_file.is_file():
+                    print(f"--fact-spec not a file: {spec_file}", file=sys.stderr)
+                    sys.exit(1)
+                try:
+                    loaded = json.loads(spec_file.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                    print(f"--fact-spec: failed to read JSON: {exc}", file=sys.stderr)
+                    sys.exit(1)
+                if not isinstance(loaded, dict):
+                    print("--fact-spec: root JSON value must be an object", file=sys.stderr)
+                    sys.exit(1)
+                summary_path = result.audit_summary_report_path
+                if not summary_path:
+                    print(
+                        "--fact-spec requires an audit session with audit_summary_report_path "
+                        "(enable --audit and ensure the run produced a summary).",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                session_dir = Path(summary_path).resolve().parent
+                if args.fact_track_out is not None:
+                    run_fact_track_postprocess(
+                        session_dir,
+                        loaded,
+                        companion_path=args.fact_track_out,
+                    )
+                else:
+                    run_fact_track_postprocess(session_dir, loaded)
         finally:
             mc = st.session_state.get("model_client")
             if mc is not None and hasattr(mc, "close"):

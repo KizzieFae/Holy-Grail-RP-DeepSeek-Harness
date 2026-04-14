@@ -391,6 +391,42 @@ Use the **`diff_support_manifests(previous, current)`** helper in `audit_support
 - subjective coherence judgments,
 - treating the manifest as authoritative continuity state.
 
+### Offline fact tracking (`fact_spec.v1`, GitHub #58)
+
+**Purpose:** Deterministic **post-processing** over an existing character audit session (`*_full.json` only). Emits **`failure_classification`** in {`support_loss`, `utilization_failure`, `indeterminate`} plus turn anchors **`T_intro`**, **`T_support_last`**, **`T_divergence`**, **`support_state_at_divergence`**, and **`fact_spec_sha256`** for reproducibility.
+
+**Authority:** **Observational / offline only.** This tool is **not** an audit signal row in the applicability inventory; it **does not** write into live audit JSON and **must not** feed **runtime authority** (same hard prohibition as **[Audit signal applicability (contract)](#audit-signal-applicability-contract)**). It consumes **conditional** inventory-class inputs (`metadata.support_manifest` when present) and prompt/output literals under operator-defined rules.
+
+**Implementation:** `audit_fact_tracking.py` — **`analyze_fact_tracking`** (core), shared post-run **`run_fact_track_postprocess`** (writes companion file + returns result dict including `companion_artifact_path`; GitHub **#62**). **CLIs:** `python scripts/run_audit_fact_track.py --session-dir <path> --fact-spec <path.json>` (stdout JSON only). After audited headless simulation, `scripts/run_scene_simulation_llm.py` may take **`--fact-spec`** (requires **`--audit`**) and optionally **`--fact-track-out <path>`** to write the same companion JSON (default filename under the session directory). Orchestrators that do not use that script should call **`run_fact_track_postprocess`** directly. **v1:** companion only — **not** merged into `_audit_summary.json` in v1.
+
+#### `fact_spec.v1` (minimal rule kinds)
+
+Top-level fields:
+
+| Field | Required | Description |
+|--------|----------|-------------|
+| `schema_version` | yes | Must be `fact_spec.v1`. |
+| `probe_id` | yes | Stable string id for the probe (logged in output). |
+| `actor_scope` | no | `{"kind": "all_characters"}` (default) or `{"kind": "character_name", "name": "<bot_name>"}` to restrict rows. |
+| `establishment_rule` | yes | First matching character row is **`T_intro`**. |
+| `support_predicate` | yes | Evaluated on every character row from **`T_intro`** through **`T_divergence`** (inclusive). |
+| `behavior_rule` | yes | **Satisfied** rows are “behavior OK”; the first later row where the rule is **not** satisfied is **`T_divergence`**. |
+
+Each rule is an object:
+
+- **`kind`:** `prompt_literals_all` — all `literals` appear as substrings in the character system prompt (`input_messages[0].content`).
+- **`kind`:** `parsed_output_literals_all` — all `literals` appear in `dialogue` + `action` (parsed move).
+
+**Classification (deterministic):**
+
+1. If there is no establishment row → `indeterminate` (`no_establishment`).
+2. If no later behavior failure → `indeterminate` (`no_divergence`).
+3. Otherwise at **`T_divergence`**: if **any** row in **[`T_intro`, `T_divergence`]** fails `support_predicate`, or consecutive character rows show a **non-`prompt_envelope`** `diff_support_manifests` change on the path (Issue #29 family) → **`support_loss`**.
+4. Else if `support_predicate` holds on the full interval and at divergence → **`utilization_failure`**.
+5. Else → **`indeterminate`** (`ambiguous_support_at_divergence`).
+
+**Alignment with #59:** Interpret `support_manifest` and other inputs only per **inventory class and predicates**; tool output remains **offline** and is not on the **Runtime use allowlist**.
+
 ## Issue #29 Investigation Tooling
 
 This section documents **headless harnesses**, **deterministic audit analysis**, and **optional AI-assisted interpretation** introduced or formalized during **Issue #29** (long-session “forgetting” triage). It complements **§D / §F** discipline in **`governance/rp-app/issue-tracking-workflow.md`**: machine-visible audit signals support **Type** / **Layer** hypotheses; advisory AI labels do **not** replace them.
