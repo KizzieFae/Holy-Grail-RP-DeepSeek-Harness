@@ -8,6 +8,8 @@ body:
       value: |
         **Contract:** `governance/rp-app/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Runtime RP architecture remains in `autogen_rp/python/rp_app/ARCHITECTURE.md`.
 
+        **Audit wording:** Do not conflate **Issue #59** applicability (inventory signal class) with **Issue #70** engineering role (telemetry / guardrail / aggregation / detector). Interpretation: `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` → **Issue #70 — Engineering-role taxonomy (Tier 1 kernel)** and the **Audit signal applicability** contract.
+
         **Cursor workflow bootstrap (system instructions; canonical policy in `governance/policies/cursor-workflow-layer.md`, always applied via `.cursor/rules/2-ai-system-start.mdc`):**
 
         1. **Activation synchronization** — When **evidence extraction** or **analysis** on an issue **begins**, set **RP System Workflow** **Project Status** to **In Progress** and **Workflow** to **Investigating** (aligned with **`Current status: investigating`** per **§B.3**). **Do not** require this update when only **browsing** issues or **selecting** the next task without starting extraction or analysis.

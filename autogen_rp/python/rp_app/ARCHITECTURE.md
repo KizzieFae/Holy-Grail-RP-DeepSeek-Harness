@@ -7,6 +7,8 @@ per-character state.
 
 **Goal:** Each non-narrator bot writes only their own parts and progresses their own character objectives without cross-character writing bleed.
 
+**Audit contracts and engineering roles:** **Issue #59** applicability, **Issue #70** engineering-role taxonomy (Tier 1 kernel), and related audit operator contracts are maintained only in **`AUDIT_DOCUMENTATION.md`**—that file is the **source of truth** for the taxonomy table. **#59 applicability class** and **#70 `engineering_role`** are **orthogonal**; triage uses both when both apply. This architecture document does not duplicate the Tier 1 registry.
+
 ## Operating Rules
 
 ### Participant and control model

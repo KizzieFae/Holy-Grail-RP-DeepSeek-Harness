@@ -25,7 +25,7 @@
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `autogen_rp/python/rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Roles, **Type** / **Layer** / **Pattern status**, evidence standards, and heuristic caveats are in **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `autogen_rp/python/rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Roles, **Type** / **Layer** / **Pattern status**, evidence standards, and heuristic caveats are in **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. The same file holds the **Issue #70** Tier 1 engineering-role taxonomy (**orthogonal** to **Issue #59** applicability); do not duplicate that registry here. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### B. Standard workflow
 

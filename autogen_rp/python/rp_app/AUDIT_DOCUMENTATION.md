@@ -427,6 +427,46 @@ Each rule is an object:
 
 **Alignment with #59:** Interpret `support_manifest` and other inputs only per **inventory class and predicates**; tool output remains **offline** and is not on the **Runtime use allowlist**.
 
+## Issue #70 — Engineering-role taxonomy (Tier 1 kernel)
+
+This section is the **canonical Tier 1 kernel registry** for GitHub **Issue #70**: a small, curated set of **fully qualified surface instances** (`surface_id`) so operators do not conflate observability, guardrails, rollups, and offline detectors. **Normative Issue #59 rules** (applicability classes, inventory, allowlist) are **orthogonal** to **`engineering_role`** here: interpret both when both apply. **Outcome records** are audit mirrors of runtime authority; they are **not** #59 inventory signals—**omit `engineering_role` and `applicability_class`** for those rows (do not set them to `null`). A **`detector`** surface is **offline-first**, uses explicit **`predicate_id`** + **`judgment_schema`**, emits structured judgments, is **advisory** unless separately allowlisted under #59, and is **not** LLM-only at the core. **Runtime enforcement** (validation, progression Q1–Q4 gate, semantic overrides) is **`guardrail`**, never **`detector`**. Full methodology for evaluating signals lives under **Issue #71**; the offline evaluation layer specification lives under **Issue #66**.
+
+In the registry table, **`surface_kind: signal`** applies only to surfaces that correspond to **Issue #59** audit signal applicability **inventory** rows (stable Signal ids)—not to arbitrary `metadata.*` fields or other audit keys unless they are explicitly inventory-listed.
+
+### Tier 1 kernel registry
+
+| surface_id | layer | scope | surface_kind | engineering_role | authority_posture | applicability_class | judgment_semantics | mirror_of | predicate_id | judgment_schema | notes |
+|------------|-------|-------|--------------|------------------|-------------------|---------------------|-------------------|-----------|--------------|-----------------|-------|
+| `runtime.progression_advisory` | runtime | production, headless | subsystem | guardrail | advisory | — | none | — | — | — | `progression_advisory.py`; stall score and prompt/Director advisory; pairs with beat-shift threshold. |
+| `audit.metadata.progression_advisory` | audit | production, headless | signal | telemetry | observational | heuristic_advisory | proxy_score | — | — | — | #59 inventory `metadata.progression_advisory`; logged snapshot. **Derived from** `runtime.progression_advisory`. |
+| `runtime.anti_regression_advisory` | runtime | production, headless | subsystem | guardrail | advisory | — | none | — | — | — | `anti_regression_advisory.py`; Director ANTI-REGRESSION prefix path. |
+| `audit.metadata.anti_regression_advisory` | audit | production, headless | signal | telemetry | observational | heuristic_advisory | proxy_score | — | — | — | #59 inventory `metadata.anti_regression_advisory`; logged snapshot. **Derived from** `runtime.anti_regression_advisory`. |
+| `runtime.progression_enforcement` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | `progression_enforcement.py`; Q1–Q4 after `process_turn`; rollback/retry—not a detector. |
+| `runtime.response_validation.binding_sleeping_surface` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | `response_validation_binding_sleeping_surface.py`; binding contradiction retry path. |
+| `runtime.response_validation.duplicate_dialogue` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | `response_validation_content.py` duplicate detection; duplicate retry path in `turn_runner_turn.py`. |
+| `runtime.semantic_validation.presence_override` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | `semantic_validation.should_override_presence_rejection`; may clear presence rejection. |
+| `runtime.semantic_validation.gated_alignment` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | `apply_gated_addressee_alignment_under_progression_enforcement` (`app_turn_director.py`). |
+| `runtime.semantic_validation.narrator_fallback` | runtime | production, headless | subsystem | guardrail | runtime_authoritative | — | enforcement_decision | — | — | — | Narrator semantic review / fallback render path (`turn_runner_turn.py`). |
+| `artifact.structured_eval.bundle` | artifact | headless | artifact | aggregation | observational | not_applicable | derived_metric + human_annotation | — | — | — | `progression_run_metrics.build_structured_eval_payload`; metrics bundle; optional human `verdict` / `failure_classification`. |
+| `artifact._audit_summary` | artifact | production, headless | artifact | aggregation | observational | not_applicable | derived_metric | — | — | — | `_audit_summary.json` session rollup (`audit_logger_summary_report.py` stack). |
+| `offline_job.audit_fact_tracking` | offline_job | offline_tooling | subsystem | detector | advisory | not_applicable | structured_judgment | — | `audit_fact_tracking.analyze.v1` | `audit_fact_tracking.v1` | `audit_fact_tracking.analyze_fact_tracking` / `run_fact_track_postprocess`; companion JSON; GitHub #62. |
+| `audit.outcome_record.stage.validation_progression_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.progression_enforcement` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
+| `audit.outcome_record.stage.validation_binding_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.response_validation.binding_sleeping_surface` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
+| `audit.outcome_record.stage.validation_duplicate_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.response_validation.duplicate_dialogue` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
+
+**Table conventions:** `—` means the field does not apply. For **`outcome_record`** rows, **`engineering_role`** and **`applicability_class`** are intentionally **blank** (omitted from the registry row, not `null`).
+
+### Interpretation rules (summary)
+
+- **Fully qualified `surface_id` only** — bare names (e.g. `progression_advisory` alone) are not sufficient for classification.
+- **`signal` = #59 inventory only** — `surface_kind: signal` is for applicability-inventory Signal ids, not for every audit `metadata` field.
+- **`outcome_record` is not a signal** — not governed by #59 silence semantics; do not assign inventory applicability classes to outcome rows.
+- **`detector` is strict** — requires declared **`predicate_id`** and **`judgment_schema`**, offline-first default, structured judgments, not LLM-only core; see **Issue #66**.
+- **Runtime enforcement ≠ `detector`** — validation, progression enforcement, and effective semantic paths are **`guardrail`** even when they emit reasons.
+- **`derived_metric` / aggregation ≠ `detector`** — rollups and replay metrics are not detectors unless they meet the detector contract.
+- **Audit JSON ≠ the runtime subsystem** — `audit.*` rows describe representations; behavior lives under `runtime.*` or `offline_job.*`.
+- **#59 `applicability_class` is orthogonal to `engineering_role`** — always resolve inventory class and engineering role independently when both apply.
+
 ## Issue #29 Investigation Tooling
 
 This section documents **headless harnesses**, **deterministic audit analysis**, and **optional AI-assisted interpretation** introduced or formalized during **Issue #29** (long-session “forgetting” triage). It complements **§D / §F** discipline in **`governance/rp-app/issue-tracking-workflow.md`**: machine-visible audit signals support **Type** / **Layer** hypotheses; advisory AI labels do **not** replace them.

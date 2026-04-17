@@ -2,6 +2,10 @@
 .env
 **/.streamlit/secrets.toml
 
+# Python bytecode (root-level scripts / stray caches)
+__pycache__/
+*.py[cod]
+
 # One-off headless harness outputs under validation_runs/ root (keep plan_execution/*.json etc. tracked)
 autogen_rp/python/validation_runs/*.log
 autogen_rp/python/validation_runs/*metrics*.json
