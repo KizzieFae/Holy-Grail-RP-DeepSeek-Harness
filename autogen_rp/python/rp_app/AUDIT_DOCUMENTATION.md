@@ -24,6 +24,16 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
+### Offline evaluation layer (Issue #66 — v1)
+
+**Purpose:** Offline-only mechanism that reads existing audit artifacts and emits **structured judgments**. It does **not** define a detection layer, quality gate, or runtime authority.
+
+**Scope:** Implemented in `scene_eval_v1.py` (`run_scene_eval_v1`). **Fixed predicates only**; logic is **deterministic** and **artifact-driven** (character `*_full.json` via `load_character_audit_rows`, optional `structured_eval` JSON).
+
+**Critical constraints:** Judgments are **descriptive**, not pass/fail or system verdicts. They **must not** infer narrative or continuity correctness. They **must not** consume CA1–CA7 derived fields, Audit v2 heuristic bundles, narrator/prose heuristic audits, or LLM-generated audit layers. The layer **must not** modify runtime behavior, prompts, audit writers, or continuity state.
+
+**Interpretation:** `fired` means the predicate’s observable condition held — **not** failure. `clear` means that condition was not observed — **not** success or health. `inconclusive` means inputs were insufficient or out of scope for that predicate.
+
 Normative applicability, authority, inventory, and examples for operators and tooling are defined under **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** below (**GitHub #59**).
 
 ### Audit signal applicability (contract)
