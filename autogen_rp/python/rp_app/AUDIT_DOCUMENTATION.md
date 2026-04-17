@@ -152,6 +152,8 @@ When analyzing audit output:
 
 Failure to apply this distinction can result in mis-scoped issues, misleading dashboards, and incorrect attribution of continuity bugs to observational heuristics.
 
+For the **full** end-to-end procedure (corpus definition, independent validation, disposition, and **#66** alignment), see **[Audit Signal Evaluation Methodology](#audit-signal-evaluation-methodology)** (GitHub **Issue #71**).
+
 ### Audit signal applicability inventory
 
 **Excluded from this table:** **Runtime outcome records** (see **Authority rules**). Examples: `stage: validation_progression_retry`, validation reason strings, successful `turn_execution_metadata` fields that mirror retry state — interpret via **`ARCHITECTURE.md`** and validation docs, not applicability class.
@@ -437,9 +439,256 @@ Each rule is an object:
 
 **Alignment with #59:** Interpret `support_manifest` and other inputs only per **inventory class and predicates**; tool output remains **offline** and is not on the **Runtime use allowlist**.
 
+## Audit Signal Evaluation Methodology
+
+Canonical end-to-end procedure for evaluating **#59 inventory** **Signal ids** (GitHub **Issue #71**). Use this when classifying signal behavior, deciding dispositions, or aligning work with the **offline evaluation layer** (**Issue #66** / `scene_eval_v1.py`). This methodology does **not** change applicability class or runtime authority by itself; it informs **documentation**, **follow-on issues**, and **predicate** design.
+
+### Stage 1 — Evidence & corpus definition
+
+#### 1.1 Define the target
+
+- **Signal id under evaluation** (from the [Audit signal applicability inventory](#audit-signal-applicability-inventory); **GitHub #59**).
+
+#### 1.2 Define artifact scope
+
+Explicitly declare:
+
+- **Artifact class**
+  - per-turn (`*_full.json`, `*_light.json`)
+  - session-level (`_audit_summary.json`, `structured_eval`)
+  - offline outputs (e.g. **#66** evaluation artifacts; optional **#62**-style offline artifacts when relevant)
+- **Row types included**
+  - character
+  - narrator
+  - director
+
+#### 1.3 Loader / access path (critical)
+
+You **must** specify how data is loaded. Example:
+
+- `load_character_audit_rows` (`issue29_investigation.py`) → **character `*_full.json` only** (filters `bot_type == "character"`).
+
+If narrator or director rows are in scope, specify the **alternate access path** (read patterns, glob, or tooling) explicitly.
+
+**Important constraint:** **#66 v1** shipped predicates in `scene_eval_v1.py` operate on **character `*_full.json` rows only** (via `load_character_audit_rows`) unless a future change explicitly extends them.
+
+#### 1.4 Conditional predicate scope
+
+For **conditional** signals (per #59):
+
+- define the **predicate** explicitly;
+- restrict the corpus to **predicate-satisfying rows only**.
+
+#### 1.5 Corpus definition
+
+Document:
+
+- scenario ids / session paths;
+- loader(s) and access paths;
+- any corpus expansion performed and why.
+
+---
+
+### Stage 2 — Trigger evaluation
+
+For the **Signal id**:
+
+- identify **code path**, **JSON field(s)**, and **emission conditions**.
+
+Define:
+
+> **“Fired”** = the **observable condition** for that signal occurred.
+
+**Constraints:**
+
+- **Not** failure  
+- **Not** correctness  
+- **Not** a system judgment  
+
+Validate firing behavior on **real** artifacts.
+
+---
+
+### Stage 3 — Independent validation
+
+#### Goal
+
+Determine whether the **target phenomenon** exists **independently of the signal’s own output**.
+
+#### 3.1 Corpus constraint
+
+- Use a **predicate-conditioned corpus** (same predicate rules as Stage 1.4 when the signal is conditional).
+
+#### 3.2 Independence rules
+
+You **must**:
+
+- **not** rely on the signal’s own output as proof of the phenomenon;
+- **declare** all independence sources used.
+
+#### 3.3 Allowed independence sources
+
+| Signal class (#59) | Allowed sources |
+|--------------------|-----------------|
+| heuristic / advisory | `_narrative.json`, raw move data (`parsed_output` / structured move fields as present in audit rows), **declared** per-turn or session audit artifacts (paths/keys listed explicitly) |
+| conditional | same as above, **predicate-filtered** |
+| always-on | audit structure, emission **presence/absence** semantics (contract vs artifact shape) |
+
+#### 3.4 Aggregation constraint
+
+For aggregation artifacts (e.g. `structured_eval` / `structured_eval.bundle`):
+
+- **must** validate against **lower-level** per-turn or session data;
+- **must not** treat aggregation output as ground truth.
+
+#### 3.5 Signal dependency rule
+
+If another **inventory signal** (or derived audit score) is used as evidence:
+
+- **declare** it explicitly;
+- the result is **not fully independent** (dependency is documented).
+
+---
+
+### Stage 4 — Disposition
+
+Each evaluated signal receives **exactly one** disposition:
+
+- **deprecate**
+- **improve**
+- **hybrid candidate**
+- **no action**
+
+#### 4.1 Disposition meaning
+
+| Disposition | Meaning |
+|-------------|---------|
+| deprecate | Not useful as a signal in its current role (may remain for observability). |
+| improve | Signal needs redesign or refinement. |
+| hybrid candidate | Candidate for a structured + heuristic combination. |
+| no action | Signal is acceptable as-is for the evaluated scope. |
+
+#### 4.2 Follow-on actions (0..n)
+
+Each disposition may produce **zero or more** follow-ons:
+
+- documentation update;
+- classification update (**#67** or **successor** issue);
+- taxonomy alignment (**#70** or **successor** issue);
+- redesign work (**#68** or **successor** issue);
+- hybrid exploration (**#69** or **successor** issue);
+- evaluation predicate work (**#66** or **successor** issue);
+- **none** — explicit justification in the evaluation record.
+
+**Important:**
+
+- Deprecation does **not** require code removal.  
+- A **documentation-only** downgrade is valid.
+
+#### 4.3 Future-proofing
+
+If referenced umbrella issues are replaced, use the **successor** issue instead.
+
+---
+
+### Stage 5 — Evaluation layer alignment (Issue #66 v1)
+
+#### 5.1 Predicate definition
+
+Evaluation **predicates**:
+
+- are **independent** of **Signal ids** (many-to-many: one signal may map to zero or many predicates; one predicate may inform many signals);
+- may consume **raw audit artifacts** and **allowed metadata** per **#66** (see **Input constraints** below).
+
+Each predicate definition **must** include:
+
+- `predicate_id`;
+- `predicate_version`;
+- explicit **inputs** (artifact paths, fields, row filters);
+- **deterministic** evaluation logic.
+
+##### Input constraints (critical)
+
+Per **#66** / `scene_eval_v1.py`:
+
+- **must** follow existing **allowed** inputs for the evaluation layer;
+- **must not** use:
+  - CA1–CA7 **derived** fields (`metadata.character_audit_v1.derived`, etc.);
+  - Audit v2 heuristic bundles;
+  - narrator/prose audit signals as predicate inputs;
+  - LLM-generated audit layers.
+
+**Explicit clarification:** `context_snapshot` may be **present** on character rows loaded by `load_character_audit_rows`, but it is **not** used in **v1** predicates in `scene_eval_v1.py`.
+
+#### 5.2 Judgment emission (v1 — normative)
+
+All judgments **must** match this JSON shape. The `result` field is **one** of the three strings `fired`, `clear`, or `inconclusive` (not a combined literal).
+
+```json
+{
+  "predicate_id": "string",
+  "predicate_version": "string",
+  "result": "fired",
+  "subject": null,
+  "summary": "string",
+  "limitations": []
+}
+```
+
+**Interpretation:**
+
+- `fired` — condition **observed** (not failure, not “bad scene”).  
+- `clear` — condition **not** observed (not success or health).  
+- `inconclusive` — inputs insufficient or out of scope.
+
+Judgments are **descriptive only**; they are **not** pass/fail verdicts on the RP system.
+
+#### 5.3 Signal ↔ predicate relationship (evaluation role)
+
+Relationships between **inventory Signal ids** and **evaluation predicates** are **not** 1:1. Possibilities include:
+
+- one signal → multiple predicates;
+- one predicate → informs multiple signals;
+- signals with **no** associated predicate (evaluation role **excluded** or **supporting-only** only in narrative docs).
+
+Each Signal id under this methodology should be assigned an **evaluation role** for tracking:
+
+- **contributes to evaluation** — at least one predicate is defined or planned that consumes allowed inputs to characterize behavior relevant to this signal;
+- **supporting-only** — used as context for other signals or predicates but not the primary subject of a predicate set;
+- **excluded** — out of scope for **#66 v1** predicate work (document why).
+
+**Orthogonality (critical):** Evaluation role is **orthogonal** to **#59 applicability class** (`always-on`, `conditional`, `heuristic / advisory`) and **must not** be conflated with it. Applicability class governs **silence and inventory semantics**; evaluation role governs **relationship to offline predicates** only.
+
+#### 5.4 Optional extensions (non-normative)
+
+Additional fields (e.g. operator-facing **severity**):
+
+- allowed only as **non-normative** metadata **outside** the v1 judgment object unless a future versioned schema is adopted;
+- **must not** affect runtime, imply pass/fail, or bypass the **#59** allowlist rules.
+
+#### 5.5 Authority constraints (critical)
+
+- The evaluation layer is **offline / advisory** unless a signal is explicitly on the **[Runtime use allowlist](#runtime-use-allowlist)** with a documented coupling (**#59**).
+- Judgments **must not** override **continuity** truth or other **runtime authority**.
+
+---
+
+### Stage 6 — Documentation & integration
+
+When an evaluation completes, record outcomes where the team tracks work (e.g. GitHub issue comments or linked notes).
+
+**Doc and registry updates — scope (mandatory):**
+
+> Updates to **#59** (inventory / applicability text in this document), **#70** (Tier 1 registry / taxonomy in this document), and **`AUDIT_DOCUMENTATION.md` generally** are required **only when the disposition or selected follow-on necessitates them**, **not** for every evaluation.
+
+- Choosing follow-on **none** (with explicit justification) **typically** implies **no** required inventory edit, **#70** registry edit, or broad doc churn—unless a separate policy requires a minimal audit trail entry.
+- Optional pointers for operators: `autogen_rp/docs/audit-workflows.md` (scene triage procedure); issue template helper text may reference this section when filing **audit_simulation** / signal work.
+
+---
+
 ## Issue #70 — Engineering-role taxonomy (Tier 1 kernel)
 
-This section is the **canonical Tier 1 kernel registry** for GitHub **Issue #70**: a small, curated set of **fully qualified surface instances** (`surface_id`) so operators do not conflate observability, guardrails, rollups, and offline detectors. **Normative Issue #59 rules** (applicability classes, inventory, allowlist) are **orthogonal** to **`engineering_role`** here: interpret both when both apply. **Outcome records** are audit mirrors of runtime authority; they are **not** #59 inventory signals—**omit `engineering_role` and `applicability_class`** for those rows (do not set them to `null`). A **`detector`** surface is **offline-first**, uses explicit **`predicate_id`** + **`judgment_schema`**, emits structured judgments, is **advisory** unless separately allowlisted under #59, and is **not** LLM-only at the core. **Runtime enforcement** (validation, progression Q1–Q4 gate, semantic overrides) is **`guardrail`**, never **`detector`**. Full methodology for evaluating signals lives under **Issue #71**; the offline evaluation layer specification lives under **Issue #66**.
+This section is the **canonical Tier 1 kernel registry** for GitHub **Issue #70**: a small, curated set of **fully qualified surface instances** (`surface_id`) so operators do not conflate observability, guardrails, rollups, and offline detectors. **Normative Issue #59 rules** (applicability classes, inventory, allowlist) are **orthogonal** to **`engineering_role`** here: interpret both when both apply. **Outcome records** are audit mirrors of runtime authority; they are **not** #59 inventory signals—**omit `engineering_role` and `applicability_class`** for those rows (do not set them to `null`). A **`detector`** surface is **offline-first**, uses explicit **`predicate_id`** + **`judgment_schema`**, emits structured judgments, is **advisory** unless separately allowlisted under #59, and is **not** LLM-only at the core. **Runtime enforcement** (validation, progression Q1–Q4 gate, semantic overrides) is **`guardrail`**, never **`detector`**. Full methodology for evaluating signals: [Audit Signal Evaluation Methodology](#audit-signal-evaluation-methodology) (GitHub **Issue #71**); the offline evaluation layer specification: **Issue #66** / `scene_eval_v1.py`.
 
 In the registry table, **`surface_kind: signal`** applies only to surfaces that correspond to **Issue #59** audit signal applicability **inventory** rows (stable Signal ids)—not to arbitrary `metadata.*` fields or other audit keys unless they are explicitly inventory-listed.
 
