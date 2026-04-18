@@ -379,6 +379,20 @@ Structured **`consequences`** (and the enriched narrative mirror of them) are em
 
 **`exit` in audits vs on-stage roster:** Event-facing lines and **`recent_delta`** are aligned with **effective** **`present_characters`** when a classified exit does not remove the actor (see **`ARCHITECTURE.md`** — *Exit narrative vs effective on-stage presence*). The **`exit`** string may still appear in **`consequences` / tags** in **`turn_metadata`** for those turns. Interpret **physical presence** from **`SceneState`** (e.g. **`present_characters`**), not from **`exit`** alone.
 
+#### Classifier lane vs continuity truth (audit reading)
+
+- **Classifier lane** — **`metadata.consequences`** / **`turn_metadata["consequences"]`**: the **deterministic** tag list from **`continuity_consequence_classifier`** (via **`ContinuityManager._classify_turn_consequences`**). Use it for **Q1-style** progression signals and taxonomy, not as a full inventory of “what changed.”
+- **Continuity truth** — Committed **events**, **issue** deltas, **scene** / registry updates, and related continuity-owned fields after **`process_turn`**. These can move even when the classifier lane is empty.
+
+**Reading rule:** An **empty** **`metadata.consequences`** list does **not** imply **no progression** or **no structural change**; always cross-check **`context_snapshot.continuity_event`** (or narrative continuity slice), **`metadata.issue_updates`**, and allowlisted **`scene_state_updates`** / **`parsed_output`** when triaging audits. See **`ARCHITECTURE.md`** (*`turn_metadata["consequences"]` (classifier lane) vs continuity commits*).
+
+#### Masked progression (interpretation concept; GitHub **#73**)
+
+**Masked progression** names an **audit interpretation** pattern: continuity or progression-relevant paths advanced (e.g. issues, committed event fields, allowlisted registry updates; **Q2** / **Q4** can qualify) while the **classifier lane** stayed **empty**. It is a **label for operators and offline analysis**, not a runtime defect class by itself.
+
+- **#59 / authority:** Treat this concept as **non-authoritative** and **heuristic / advisory** in the spirit of **GitHub #59**—it **must not** be read as continuity truth, a production gate, or automatic evidence of classifier or continuity failure.
+- **Runtime:** It is **not** on the **[Runtime use allowlist](#runtime-use-allowlist)** and **must not** drive **`ContinuityManager`**, **progression_enforcement**, validators, or prompt injection. A future **Audit V2** visibility signal for this pattern (see **#73**) remains **observational-only** unless explicitly allowlisted with a documented contract.
+
 ### Scene Grounding (MVP) in audits
 
 **Signal id:** `metadata.scene_grounding` / `scene_grounding_summary` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry (partial); prompt-projection observability, not a defect detector).

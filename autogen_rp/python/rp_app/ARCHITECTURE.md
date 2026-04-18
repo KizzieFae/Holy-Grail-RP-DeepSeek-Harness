@@ -174,6 +174,12 @@ Beat-shift activation uses the **same** computed **`stall_score`** threshold as 
 
 When **`stall_score`** is at or above the enforcement threshold (`progression_enforcement.py` / `progression_advisory.STALL_BEAT_SHIFT_THRESHOLD`), the character turn runner may **require** a qualifying structural delta after continuity **`process_turn`**. Qualification uses **Q1–Q4** in **`progression_enforcement.py`**, which read **`turn_metadata_by_index[turn_index]["consequences"]`** and related continuity fields (issues, presence markers, allowlisted `scene_state_updates`). **Continuity remains authoritative:** those consequence strings are produced by **`ContinuityManager._classify_turn_consequences`** → **`ConsequenceClassifier.classify_turn`** (`continuity_consequence_classifier.py`), not by progression enforcement.
 
+##### `turn_metadata["consequences"]` (classifier lane) vs continuity commits
+
+- **`turn_metadata["consequences"]`** is the **deterministic classifier output only** (the string list from **`ConsequenceClassifier`**). It does **not** enumerate every change continuity recognizes or commits.
+- **Continuity commits**—**`PublicEvent`** / narrative state, **issue** lifecycle updates, **scene** / registry-backed fields (including allowlisted **`scene_state_updates`**), and related metadata—proceed through **`ContinuityManager.process_turn`** and helpers **independently** of whether the classifier emitted tags for that turn.
+- **Progression qualification** may still succeed when **`consequences == []`**: for example **Q2** (issue change) and **Q4** (allowlisted **`scene_state_updates`**) can satisfy the structural-delta gate alongside an empty **Q1** consequence list. An empty classifier list therefore does **not** mean “no structural progression” in the continuity sense.
+
 **Long-session / progression-retry instability (resolved posture):** Spurious **`validation_progression_retry`** cases where the structured move was materially progressive but **`consequences`** was empty or Q1 was tripped by single-tag repetition were fixed by **improving deterministic consequence classification**, not by weakening enforcement or changing Q1–Q4. Concretely:
 
 - **`REPOSITIONING`** uses bounded movement, locus, and transition substring rules; **`turn`** counts as locomotion only with **word-boundary** verb matching, and **negated** phrases such as “did not turn” / “didn’t turn” / “not turning” are scrubbed so they do not falsely satisfy movement.
