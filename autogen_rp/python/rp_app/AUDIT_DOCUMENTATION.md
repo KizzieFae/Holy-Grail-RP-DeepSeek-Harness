@@ -1142,6 +1142,13 @@ rp_audits/
 - `_full.json`: Complete prompt, raw response, parsed output, context snapshot
 - `_light.json`: Message summaries, previews, metadata (smaller, faster to scan)
 
+**Narrator `*_narrator_full.json` (prose fields):**
+
+- **`parsed_output.rendered`:** **Full final rendered narrator prose** for that beat—the string produced after the narrator/render pipeline (including deterministic dialogue fallback or semantic replacement when those paths apply). It is **not** a length-capped preview.
+- **`raw_response`:** The narrator model’s **raw** return. It may **differ** from `parsed_output.rendered` when a fallback or post-model replacement changes the text operators see in chat and in the narrative trace.
+- **Modern rows** typically include **`metadata.narrator_validation_audit_v1.observed.rendered_final`**, which records the same **final** rendered string for validation-audit observability.
+- **Legacy** narrator full rows may **lack** `narrator_validation_audit_v1`. For those historical artifacts, use **`_narrative.json`** (`turns[].rendered_output` for the matching `round` / `turn`) as the reliable source for **final** rendered prose on the beat.
+
 When scene templates are active, the granular `_full.json` logs also include `context_snapshot.scene_template`
 with the template ID, premise, role assignments, presence constraints, and authority labels that were active
 for that turn.

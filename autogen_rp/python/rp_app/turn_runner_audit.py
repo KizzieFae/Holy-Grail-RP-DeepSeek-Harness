@@ -350,11 +350,7 @@ def log_narrator_render_audit(
             bot_type="narrator",
             input_messages=[{"role": "system", "content": narrator_prompt}],
             raw_response=narrator_raw,
-            parsed_output={
-                "rendered": (
-                    rendered[:500] + "..." if len(rendered) > 500 else rendered
-                )
-            },
+            parsed_output={"rendered": rendered},
             context_snapshot={
                 "character": next_actor,
                 "action": move.get("action", ""),

@@ -178,6 +178,63 @@ def test_log_narrator_render_audit_merges_audit_v2_metadata() -> None:
     assert meta.get("audit_v2") == audit_v2
 
 
+def test_log_narrator_render_audit_parsed_output_rendered_is_full_prose() -> None:
+    """Issue #65: narrator parsed_output.rendered must not be capped (~500 + ...)."""
+    from turn_runner_audit import log_narrator_render_audit
+
+    captured: list[dict] = []
+
+    class _Logger:
+        def create_entry(self, **kwargs):
+            captured.append(kwargs)
+            return kwargs
+
+        def log_bot_interaction(self, _entry) -> None:
+            pass
+
+    long_rendered = "word " * 200  # 1000+ chars, well above former cap
+    assert len(long_rendered) > 500
+
+    nv1 = {
+        "schema_version": 1,
+        "observed": {"rendered_final": long_rendered},
+    }
+
+    log_narrator_render_audit(
+        continuity_manager=None,
+        next_actor="A",
+        move={"action": "x", "dialogue": ""},
+        decision={"environment_event": "", "reason": "r"},
+        rendered=long_rendered,
+        narrator_raw="raw",
+        narrator_prompt="p",
+        narrator_summary_block_audit={},
+        narrator_semantic_assessment=None,
+        narrator_output_audit_v1={"schema_version": 1},
+        narrator_validation_audit_v1=nv1,
+        prose_dialogue_audit_v1={},
+        round_number=1,
+        turn_number=1,
+        audit_v2=None,
+        effective_user_trigger="",
+        is_audit_enabled_fn=lambda: True,
+        get_audit_logger_fn=lambda: _Logger(),
+        get_audit_context_fn=lambda: ("o", 1, 1, 1),
+        get_scene_audit_logging_kwargs_fn=lambda _s: {},
+        get_character_scene_audit_context_fn=lambda _n, _k: {},
+    )
+
+    assert len(captured) == 1
+    po = captured[0]["parsed_output"]
+    assert po["rendered"] == long_rendered
+    assert not po["rendered"].endswith("...")
+    meta = captured[0]["metadata"]
+    assert meta["rendered_length"] == len(long_rendered)
+    assert meta["narrator_validation_audit_v1"]["observed"]["rendered_final"] == (
+        long_rendered
+    )
+
+
 def test_ca7_check_is_declared_fields_payload_only() -> None:
     move = {
         "action": "confronts",
