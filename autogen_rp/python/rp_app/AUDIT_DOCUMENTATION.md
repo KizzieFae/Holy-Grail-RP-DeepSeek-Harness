@@ -443,6 +443,56 @@ Each rule is an object:
 
 Canonical end-to-end procedure for evaluating **#59 inventory** **Signal ids** (GitHub **Issue #71**). Use this when classifying signal behavior, deciding dispositions, or aligning work with the **offline evaluation layer** (**Issue #66** / `scene_eval_v1.py`). This methodology does **not** change applicability class or runtime authority by itself; it informs **documentation**, **follow-on issues**, and **predicate** design.
 
+Empirical runs that follow the **Issue #60** pilot pattern use the **execution profile** below; that profile is **subordinate** to this section and **does not** replace or redefine Stages 1–6.
+
+### Audit Signal Evaluation — Empirical Execution Profile (Issue #60 Pilot)
+
+This subsection is an **execution profile** for how **empirical** signal evaluation was run during **GitHub Issue #60** (Phase 3 — Heuristic Evaluation). It is **not** a separate methodology. All work **still** follows **Stages 1–6** in this document.
+
+**Execution constraints (from Issue #60):**
+
+- **One signal at a time** — each cycle evaluates a single Signal id before moving on.
+- **Strict sequence** — advance in **locked inventory order**; do not skip or reorder rows ad hoc.
+- **Append-only evaluation state** — completed work and evidence accumulate; do not erase or rewrite prior completed evaluations as the norm.
+- **No reuse of completed signals as the next unit** — do not select an already-completed signal as the **next** evaluation target; supporting or comparative use of a signal in another cycle does **not** count as “next in sequence.”
+- **Evidence posted per evaluation** — record corpus, session/turn identifiers, paths, trigger (**fired**) definition, denominators, and tier/depth artifacts where the team tracks work (Issue #60 comments during the pilot).
+
+**Evaluation depth (terminology):**
+
+Use the term **evaluation depth** for pilot tiering (avoid bare “Tier 1” without qualifier):
+
+| Evaluation depth | Pilot label (historical) | Meaning |
+|------------------|---------------------------|---------|
+| **Evaluation depth 1** | Tier 1 (pilot) | **Full evaluation** — problem existence, detector quality with labeled sample and denominators as required, system-role inputs toward disposition. |
+| **Evaluation depth 2** | Tier 2 (pilot) | **Detector evaluation** — detector-quality evidence and interpretation; problem-existence brief optional when the signal is explicitly non-continuity, per Stage 2–3. |
+| **Evaluation depth 3** | Tier 3 (pilot) | **Observational** — qualitative usefulness; no mandatory FP-rate target. |
+
+**Rule — naming collision:** **Evaluation depth** (pilot Tier 1 / 2 / 3) **MUST NOT** be confused with the **Issue #70 Tier 1 kernel** registry / **`engineering_role`** taxonomy in [Issue #70 — Engineering-role taxonomy (Tier 1 kernel)](#issue-70--engineering-role-taxonomy-tier-1-kernel). In prose, prefer **evaluation depth** vs **#70 Tier-1 kernel** (or **engineering_role**).
+
+**Inventory authority:**
+
+- **During the pilot** — row order and locked list match the **heuristic inventory** fixed on **closed Issue #60** (issue body and thread).
+- **After promotion** — order and classes follow this document’s **[Audit signal applicability inventory](#audit-signal-applicability-inventory)** (**#59**), unless a **successor issue** documents a deliberate change.
+
+**Execution rules:**
+
+- **Finish the evaluation before switching signals** — satisfy Stage 1–6 requirements for the current signal (for its evaluation depth) before starting the next.
+- **Do not advance using a comparison-only signal** — a signal already used as **comparative / supporting** evidence must **not** be selected as the **next sequential** evaluation unit; continue with the **next unevaluated** inventory row (Issue #60 sequence correction precedent).
+- **Spawn / sub-issue criteria** — when scope would swamp a single thread or results imply design or policy work, follow the pilot’s **spawn assessment** and sub-issue rules recorded on **Issue #60**.
+
+### Methodology ↔ Execution Mapping
+
+| Stage | Execution behavior |
+|-------|-------------------|
+| **Stage 1** | Corpus definition (artifact classes, row types, loaders, predicates, sessions/scenarios). |
+| **Stage 2** | Trigger / **fired** definition (code path, JSON fields, observable condition — not failure or “correctness”). |
+| **Stage 3** | **Validation** — independence of evidence; allowed sources per **#59**; aggregation vs lower-level data; dependency disclosure; and **TP / FP / ambiguous** (or equivalent) labeling **when** detector-quality evaluation is required for the evaluation depth. |
+| **Stage 4** | **Disposition** (exactly one canonical disposition). |
+| **Stage 5** | Predicate mapping and evaluation-layer alignment (**Issue #66**). |
+| **Stage 6** | Documentation / registry updates (as disposition and follow-ons require). |
+
+**Rule:** **Evaluation depth** determines **which artifacts and evidence tables are required within** the stages (especially Stage 3); it is **not** a parallel stage sequence.
+
 ### Stage 1 — Evidence & corpus definition
 
 #### 1.1 Define the target
@@ -515,6 +565,8 @@ Validate firing behavior on **real** artifacts.
 
 Determine whether the **target phenomenon** exists **independently of the signal’s own output**.
 
+Stage 3 **always** requires: **independence of evidence** (no using the signal under evaluation as sole proof), use of **allowed evidence sources** per **#59** class (see §3.3), **aggregation validation** where rollups are in scope (see §3.4), and **dependency disclosure** when another signal or score contributes (see §3.5). **TP / FP / ambiguous** (or equivalent) row labeling is **additional** and **mandatory only when** detector-quality evaluation is required for the chosen **evaluation depth** (see §3.6). **Labeled rows do not replace** §3.1–3.5.
+
 #### 3.1 Corpus constraint
 
 - Use a **predicate-conditioned corpus** (same predicate rules as Stage 1.4 when the signal is conditional).
@@ -547,6 +599,10 @@ If another **inventory signal** (or derived audit score) is used as evidence:
 
 - **declare** it explicitly;
 - the result is **not fully independent** (dependency is documented).
+
+#### 3.6 Detector-quality labeling (when required)
+
+When the evaluation depth requires **detector-quality** evidence (typically **evaluation depth 1** or **2**), you **must** document **labeled rows** among applicable **fired** (or equivalent) instances — e.g. **true positive**, **false positive**, **ambiguous** — with **denominators**, using a rubric consistent with project precedent (e.g. semantic vs lexical guidance from **Issue #13** where referenced). When detector-quality tables are **out of scope** (typically **evaluation depth 3**), state **N/A with reason**; Stage 3 **still** requires §3.2–3.5 (including a **declared independence basis** and qualitative usefulness where applicable).
 
 ---
 
@@ -588,6 +644,18 @@ Each disposition may produce **zero or more** follow-ons:
 #### 4.3 Future-proofing
 
 If referenced umbrella issues are replaced, use the **successor** issue instead.
+
+#### 4.4 Appendix — Issue #60 outcome language → canonical disposition
+
+Issue #60 pilot summaries sometimes used **outcome buckets** for communication. Map them to the **four canonical dispositions only**:
+
+| Issue #60 outcome language (pilot) | Canonical disposition |
+|------------------------------------|------------------------|
+| **high value** | **no action** |
+| **weak but useful** | **improve** (use **hybrid candidate** instead when the evaluation record explicitly proposes a structured + heuristic combination) |
+| **noise / misleading** | **deprecate** |
+
+Do **not** introduce disposition categories outside **deprecate / improve / hybrid candidate / no action** in evaluation records or methodology text.
 
 ---
 
@@ -683,6 +751,48 @@ When an evaluation completes, record outcomes where the team tracks work (e.g. G
 
 - Choosing follow-on **none** (with explicit justification) **typically** implies **no** required inventory edit, **#70** registry edit, or broad doc churn—unless a separate policy requires a minimal audit trail entry.
 - Optional pointers for operators: `autogen_rp/docs/audit-workflows.md` (scene triage procedure); issue template helper text may reference this section when filing **audit_simulation** / signal work.
+
+### Evaluation Record Requirements
+
+Each **evaluation** (pilot thread, issue comment series, or internal record) **must** state explicitly, where the team tracks work:
+
+| Requirement | Notes |
+|-------------|--------|
+| **Stages satisfied** | Which of Stages **1–6** apply and are complete for this signal. |
+| **#59 applicability class** | **always-on**, **conditional**, or **heuristic / advisory** for the Signal id. |
+| **Evaluation depth** | **1 / 2 / 3** (pilot terminology); see **Empirical Execution Profile (Issue #60 Pilot)** in this methodology section. |
+| **Evidence type** | Aligned with **Stage 1.2** — artifact classes (per-turn, session-level, offline) and **row types** (character, narrator, director). |
+| **Independence basis** | Sources used for Stage 3; confirm signal-under-test is not sole proof. |
+| **Aggregation validation** | If rollups apply: which **lower-level** paths were checked (Stage 3.4); **N/A with reason** otherwise. |
+| **Dependency disclosure** | If another inventory signal or score was used as evidence (Stage 3.5); **none** if fully independent. |
+| **Disposition** | Exactly one of **deprecate / improve / hybrid candidate / no action**. |
+| **#66 predicate involvement** | Whether predicates or evaluation roles are touched; **none** if out of scope. |
+
+**Runtime authority rule:** Evaluations **MUST NOT** imply **runtime authority** for any audit signal **unless** that Signal id is on the **[Runtime use allowlist](#runtime-use-allowlist)** per **#59**. Methodology and dispositions are **offline / documentation / backlog** unless a separate tracked change allowlists runtime use.
+
+### Edge cases (methodology)
+
+#### Evaluation depth 3 (observational)
+
+- **Qualitative usefulness** is required (narrative of when the signal helped or misled operators).
+- **Independence** is still required: **declare** the independence basis per Stage 3.2–3.3; do **not** treat the signal’s own output as sole proof of the phenomenon. Detector-quality TP/FP tables are **not** mandatory unless you voluntarily expand scope.
+
+#### Aggregate signals
+
+- Claims about phenomena **represented in rollups** (**`structured_eval`**, **`structured_eval.bundle`**, session summaries) **must** be checked against **lower-level** per-turn or session artifacts (Stage 3.4). **Rollup-only** validation is **insufficient** for independent validation of those claims.
+
+#### Cross-signal dependency
+
+- Using another **inventory signal** (or derived score) as evidence **must** be **explicitly declared** (Stage 3.5). That path **cannot** be described as **fully independent** validation without that disclosure.
+
+### Promotion of the execution profile
+
+The **Empirical Execution Profile (Issue #60 Pilot)** text in this document is **derived from** **GitHub Issue #60**. It becomes **repo-canonical** for “how empirical evaluation runs” **only when**:
+
+- **Issue #60** **pilot exit criteria** are satisfied **and** recorded, **or**
+- a **successor issue** explicitly **promotes** the profile (waiving or replacing specific exit clauses with rationale).
+
+Until then, treat **Issue #60**’s locked body and thread as the **historical pilot record**; this subsection anticipates alignment and **must not** silently override **#59** or Stages 1–6.
 
 ---
 
