@@ -151,6 +151,7 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 ### Audit output / regression analysis
 
 - **Layout and file meanings** — `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`
+- **`scene_eval_v2` / narrator↔character joins** — If linkage fails or looks wrong, check **`context_snapshot.continuity_turn_index`** on **both** rows first (primary structural join). **Missing `continuity_event.event_id` is not a failure** when indices match; `event_id` is **optional** and used only as **legacy** fallback when top-level **`continuity_turn_index`** is absent on one or both sides.
 - **Workflow** — `autogen_rp/docs/audit-workflows.md`
 - **Writers** — `audit_logger*.py`
 

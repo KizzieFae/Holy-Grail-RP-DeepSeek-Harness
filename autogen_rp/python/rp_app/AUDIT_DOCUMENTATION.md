@@ -36,6 +36,51 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 
 Normative applicability, authority, inventory, and examples for operators and tooling are defined under **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** below (**GitHub #59**).
 
+### Offline evaluation layer (Issue #69 — `scene_eval_v2`)
+
+**Purpose:** **In-family** extension of Issue #66: same offline, artifact-driven judgment envelope, **not** a parallel evaluator system. **`scene_eval_v2`** adds versioned predicates that require **narrator `*_full.json`** rows and **deterministic cross-row joins** to character rows. Still **offline-only**; **not** runtime authority (**#59** allowlist remains the only runtime coupling path).
+
+**Implementation:** `scene_eval_v2.py` (`run_scene_eval_v2`). **Includes all Issue #66 v1 judgments** by delegating to `run_scene_eval_v1`, then appends v2 predicates (currently **`verbatim_dialogue_contract_v1`**).
+
+**Contract delta vs v1**
+
+| | v1 (#66) | v2 (#69) |
+|---|----------|----------|
+| Character `*_full.json` | Yes (sole row source for v1 predicates) | Yes (unchanged v1 predicates + join target) |
+| Narrator `*_full.json` | Not read by v1 | **Read** for v2 predicates |
+| `context_snapshot` | Not used by v1 predicate logic | **Used** for v2 **join proof**: **`continuity_turn_index`** (primary, Issue #72 — post-commit beat identity); legacy fallback **`continuity_event.event_id`** + optional embedded **`continuity_event.turn_index`** when top-level index absent; plus `character` |
+| `metadata.narrator_validation_audit_v1` | Listed as observational telemetry elsewhere | **Used as input** to `verbatim_dialogue_contract_v1` (`observed.rendered_final` only) |
+
+#### Canonical structural join contract (Issue #72)
+
+Normative rules for **deterministic cross-row joins** in **`scene_eval_v2`** (currently **`verbatim_dialogue_contract_v1`**):
+
+- **`context_snapshot.continuity_turn_index`** — **Primary structural join key** when **present** on both rows: integer **post-commit** beat identity (same value as **`ContinuityManager.turn_counter`** after a successful **`process_turn`** for that beat—see **`context_snapshot.continuity_turn_index` (field)** below). **Matching values** are the **authoritative** proof of beat linkage for evaluation. This identity is **independent** of whether a **`PublicEvent`** was created for the beat.
+- **`context_snapshot.continuity_event.event_id`** (when `continuity_event` embeds a serialized **`PublicEvent`**) — **Optional** and **semantic** (narrative tooling, knowability, grounding refs). **Legacy join fallback only:** use **only when** one or both rows **lack** top-level **`continuity_turn_index`**, and then **only** if **both** sides expose a **non-empty**, **equal** `event_id`. Missing `event_id` on a row is **not** a defect when primary join succeeds.
+
+**`verbatim_dialogue_contract_v1`** must **not** infer joins from **`(round_number, turn_number)`** alone or fabricate beat identity; pairing is **explicit** via the primary or legacy paths above.
+
+#### `context_snapshot.continuity_turn_index` (field)
+
+- **Definition:** On **character** and **narrator** `context_snapshot` objects, the integer **`ContinuityManager.turn_counter`** at audit snapshot time (same index family as **`turn_metadata_by_index`** and scene-grounding audit **`phase1.continuity_turn_index`**). The writers emit this key **only** when **`turn_runner_audit._get_turn_continuity_payload`** returns a **non-`None`** beat index, which **requires** **`continuity_manager` non-`None`** and **`continuity_manager.scene_state` non-`None`**—i.e. continuity snapshot input is **available**, not pre-commit or speculative. On the **dominant** **`execute_character_turn`** path, that snapshot follows a **successful** **`process_turn`** for the acting beat and **no** continuity rollback before **`log_character_turn_audit`**; the field is **omitted** on paths that only log **minimal** failure/retry snapshots **without** that payload.
+- **Source:** **`log_character_turn_audit`** and **`log_narrator_render_audit`** (**`turn_runner_audit`**) set **`context_snapshot.continuity_turn_index`** from that payload when the index is present.
+- **Guaranteed (current writers):** Full **`log_character_turn_audit`** / **`log_narrator_render_audit`** rows include this key **only when** the payload contract above holds. In the primary character turn path, that aligns with a **successful** **`process_turn`** and **no** continuity rollback before the full audit write (failed validation / progression rollback / similar paths emit **minimal** snapshots—e.g. **`log_turn_failure_fn`**—**without** this field). Offline evaluation uses matching values as the **primary** narrator↔character join **when both rows include the key**.
+- **Not implied / absent:** **`continuity_manager` or `scene_state` unavailable**, **pre-commit** or **non-committed** snapshots, **failure / retry** rows that omit the full continuity snapshot, **continuity inactive** for the session, **`*_light.json`**, **pre–#72** artifacts, or serialization defects. Evaluators may attempt **legacy** **`continuity_event.event_id`** only when both sides provide it; otherwise the join is **`inconclusive`** (not dialogue-contract **`fired`** / **`clear`**).
+
+**Invocation:** **Explicit only.** Headless simulation **does not** run `scene_eval_v2` automatically. Operators, CI, or scripts call `run_scene_eval_v2(session_dir, ...)` after audits exist.
+
+**Output artifact (stable path):** By default writes **`<session_dir>/_scene_eval_v2.json`** (JSON with `scene_eval_version`, `session_dir`, optional `structured_eval_path`, `judgments`, `artifact_path`). Per-turn judgments live **only** in the `judgments` array; **`structured_eval`** rollups (if any) remain **optional summaries** and must not be the sole record.
+
+**Predicate: `verbatim_dialogue_contract_v1` (`predicate_version` `1`)**
+
+- **Normalization:** `dialogue = str(parsed_output.get("dialogue") or "").strip()` on the **paired** character row only. **No** quote folding, punctuation normalization, or multiline tricks. Required literal substring: ASCII double quotes (U+0022) around `dialogue` — i.e. the substring `f'"{dialogue}"'` — must appear inside `rendered_final`.
+- **Outcomes:** empty `dialogue` → `skipped`; non-empty + literal present → `clear`; non-empty + absent → `fired`; join/linkage failure → `inconclusive`.
+- **Verbatim join (implements [canonical contract](#canonical-structural-join-contract-issue-72)):** **Primary join** = **equal** integer **`context_snapshot.continuity_turn_index`** on narrator and character rows (**no** dependency on **`PublicEvent`** existing). **Legacy join** = **equal** non-empty **`context_snapshot.continuity_event.event_id`** when top-level **`continuity_turn_index`** is missing on one or both sides, plus legacy **`continuity_event.turn_index`** agreement when **both** sides expose embedded `turn_index`. **No inferred joins** (including from **`(round_number, turn_number)`** alone). **Per narrator row:** `bot_type` narrator; **`context_snapshot.character`** non-empty; **exactly one** character `*_full.json` with same `round_number`, `turn_number`, `bot_name ==` acting character. Character `parsed_output` must be a **dict** with **`dialogue`**; narrator must expose **`metadata.narrator_validation_audit_v1.observed.rendered_final`** as a **string**. **Duplicates** or **any** failed check → **`inconclusive`** (no guessing).
+
+**Operator rule (telemetry vs evaluation layer):** For questions about this predicate, **`scene_eval_v2` judgments are the authoritative evaluation-layer record.** Dialogue-related **telemetry** (e.g. `prose_dialogue_audit_v1`, Audit v2 dialogue integration) remains **diagnostic context**. **Disagreement is not a system contradiction** — do not revert to “metric = verdict” (**Issue #60**).
+
+**Interpretation:** Same as v1: `fired` / `clear` / `skipped` / `inconclusive` are **not** continuity verdicts or runtime health.
+
 ### Audit signal applicability (contract)
 
 This section is the **repo-authoritative** contract for: (1) **authority** — whether any audit signal may influence runtime; (2) **classification** — the three applicability classes; (3) **granularity** — Option B (one class per inventory row); (4) **inventory** — every classified signal; (5) **worked examples**; (6) **runtime use allowlist** (empty by default).

@@ -38,6 +38,13 @@ per-character state.
 - Per-character interpretation summaries to reduce worldview convergence
 - Structured motivation in place of flat intent strings
 
+### Structural turn identity vs `PublicEvent` (Issue #72)
+
+- **Continuity beat index** — **`ContinuityManager.turn_counter`** (mirrored in full audits as **`context_snapshot.continuity_turn_index`**) is the **structural** “which turn committed” identity. It exists **without** requiring a **`PublicEvent`** row for that beat.
+- **`PublicEvent.event_id`** — **Semantic** id for knowability, retrieval, and grounding; **optional** at the beat level. It is **not** the primary offline join key for narrator↔character audit pairing.
+- **Audit / offline evaluation** — **`scene_eval_v2`** uses **structural turn identity** for cross-row joins; **`event_id`** is **legacy fallback** only when top-level **`continuity_turn_index`** is absent. Spec: **`AUDIT_DOCUMENTATION.md`** (*Canonical structural join contract*).
+- **Not runtime control** — These join fields are **observability / post-hoc tooling**; Director, validation, progression, and continuity commits **do not** branch on audit evaluation join keys.
+
 ## Architecture Changes
 
 ### Before (Free-form character prose)
