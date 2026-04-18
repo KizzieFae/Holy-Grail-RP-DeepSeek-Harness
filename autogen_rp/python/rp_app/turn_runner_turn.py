@@ -384,6 +384,7 @@ async def execute_character_turn(
         continuity_applied_in_execute = False
         cm_exec = get_continuity_manager_fn()
         character_audit_v1: dict[str, Any] | None = None
+        audit_v2_continuity_context: dict[str, Any] | None = None
         if cm_exec is not None and cm_exec.scene_state is not None:
             pre_process_snapshot = cm_exec.to_dict()
             issues_before = collect_issue_signatures(cm_exec)
@@ -517,6 +518,12 @@ async def execute_character_turn(
                 return None
             continuity_applied_in_execute = True
             continuity_transaction_snapshot = pre_process_snapshot
+            audit_v2_continuity_context = {
+                "continuity_manager": cm_exec,
+                "turn_index": turn_idx,
+                "turn_meta": turn_meta,
+                "issues_before": issues_before,
+            }
             maybe_record_sim_progression_metric(
                 st_module,
                 {
@@ -582,14 +589,23 @@ async def execute_character_turn(
 
         audit_v2_metadata: dict[str, Any] | None = None
         if is_audit_enabled_fn():
-            char_v2_bundle = await build_audit_v2_character_bundle(
-                move=dict(move),
-                next_actor=next_actor,
-                orchestration_state=orchestration_state,
-                llm_audit_enabled=is_llm_audit_enabled_fn(),
-                model_client=get_model_client_fn(),
-                cancellation_token=cancellation_token,
-            )
+            v2_kw: dict[str, Any] = {
+                "move": dict(move),
+                "next_actor": next_actor,
+                "orchestration_state": orchestration_state,
+                "llm_audit_enabled": is_llm_audit_enabled_fn(),
+                "model_client": get_model_client_fn(),
+                "cancellation_token": cancellation_token,
+            }
+            if audit_v2_continuity_context is not None:
+                v2_kw["continuity_manager"] = audit_v2_continuity_context[
+                    "continuity_manager"
+                ]
+                v2_kw["turn_index"] = audit_v2_continuity_context["turn_index"]
+                v2_kw["turn_meta"] = audit_v2_continuity_context["turn_meta"]
+                v2_kw["issues_before"] = audit_v2_continuity_context["issues_before"]
+                v2_kw["turn_execution"] = turn_execution_metadata
+            char_v2_bundle = await build_audit_v2_character_bundle(**v2_kw)
             audit_v2_metadata = {
                 "schema_version": 1,
                 **char_v2_bundle,

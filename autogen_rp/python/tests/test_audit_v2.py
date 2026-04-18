@@ -42,7 +42,12 @@ def test_character_v2_deterministic_has_checks_and_escalation() -> None:
     )
     assert det["schema_version"] == 2
     assert det["layer"] == "character_decision"
-    assert len(det["checks"]) == 4
+    assert len(det["checks"]) == 5
+    mp = next(
+        c for c in det["checks"] if c["check_id"] == "char_masked_progression_strict"
+    )
+    assert mp["result"] == "pass"
+    assert mp["payload"].get("observation") == "skipped"
     assert all("result" in c for c in det["checks"])
     ca1 = next(c for c in det["checks"] if c["check_id"] == "char_ca1_motivation_action")
     ca2 = next(c for c in det["checks"] if c["check_id"] == "char_ca2_dialogue_action")

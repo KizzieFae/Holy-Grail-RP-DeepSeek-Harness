@@ -29,11 +29,21 @@ async def build_audit_v2_character_bundle(
     llm_audit_enabled: bool,
     model_client: Any,
     cancellation_token: Any,
+    continuity_manager: Any | None = None,
+    turn_index: int | None = None,
+    turn_meta: dict[str, Any] | None = None,
+    issues_before: dict[str, Any] | None = None,
+    turn_execution: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     det = build_character_audit_v2_deterministic(
         move=move,
         next_actor=next_actor,
         orchestration_state=orchestration_state,
+        continuity_manager=continuity_manager,
+        turn_index=turn_index,
+        turn_meta=turn_meta,
+        issues_before=issues_before,
+        turn_execution=turn_execution,
     )
     esc = det.get("escalation") if isinstance(det.get("escalation"), dict) else {}
     qualified = bool(esc.get("qualified", False))

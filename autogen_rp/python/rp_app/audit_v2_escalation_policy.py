@@ -14,6 +14,8 @@ from typing import Any
 DIM_CHARACTER_INTRA_MOVE = "character_intra_move_coherence"
 DIM_CHARACTER_REPETITION = "character_structural_repetition"
 DIM_CHARACTER_DECLARED_FIELDS = "character_declared_pressure_fields"
+# Observability-only; check tri-state is always pass (GitHub #73 — no product escalation).
+DIM_CHARACTER_MASKED_PROGRESSION = "character_masked_progression_signal"
 
 # --- Dimension ids (narrator output) ---
 DIM_NARRATOR_ACTION_GROUNDING = "narrator_action_grounding"
@@ -42,6 +44,7 @@ CHECK_TO_DIMENSION: dict[str, str] = {
     "char_ca2_dialogue_action": DIM_CHARACTER_INTRA_MOVE,
     "char_ca4_repetition": DIM_CHARACTER_REPETITION,
     "char_ca7_declared_fields": DIM_CHARACTER_DECLARED_FIELDS,
+    "char_masked_progression_strict": DIM_CHARACTER_MASKED_PROGRESSION,
     "nar_strict_action_overlap": DIM_NARRATOR_ACTION_GROUNDING,
     "nar_v1_action_passes_bar": DIM_NARRATOR_ACTION_GROUNDING,
     "nar_environment_cue": DIM_NARRATOR_ENVIRONMENT_CUE,
@@ -119,6 +122,15 @@ def _tri_state_nar_scope(_payload: dict[str, Any]) -> str:
     return "pass"
 
 
+def _tri_state_masked_progression_observation(_payload: dict[str, Any]) -> str:
+    """Strict masked progression is log-only observability (GitHub #73).
+
+    Payload may record ``observation`` ``fired`` / ``clear`` / ``skipped``; tri-state for
+    escalation is always **pass** so this never qualifies LLM audit or product failure.
+    """
+    return "pass"
+
+
 def _tri_state_prose_bool_passes(payload: dict[str, Any]) -> str:
     return "pass" if payload.get("passes_bar") is True else "fail"
 
@@ -143,6 +155,7 @@ _CHECK_EVALUATORS: dict[str, Any] = {
     "nar_v1_action_passes_bar": _tri_state_nar_v1_passes,
     "nar_environment_cue": _tri_state_nar_env,
     "nar_scope_proxy": _tri_state_nar_scope,
+    "char_masked_progression_strict": _tri_state_masked_progression_observation,
     "prose_readability": _tri_state_prose_bool_passes,
     "prose_redundancy": _tri_state_prose_redundancy,
     "prose_dialogue_integration": _tri_state_prose_bool_passes,
@@ -369,6 +382,7 @@ def dimensions_for_layer(layer: str) -> list[str]:
             DIM_CHARACTER_INTRA_MOVE,
             DIM_CHARACTER_REPETITION,
             DIM_CHARACTER_DECLARED_FIELDS,
+            DIM_CHARACTER_MASKED_PROGRESSION,
         ]
     if layer == "narrator_output":
         return [

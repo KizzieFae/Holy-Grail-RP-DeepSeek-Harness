@@ -22,6 +22,11 @@ from audit_v2_escalation_policy import (
     CHECK_TO_DIMENSION,
     compute_escalation_for_layer,
 )
+from progression_enforcement import (
+    _q2_issue_material_change,
+    _q4_bounded_scene_state_updates,
+    _normalized_consequence_list,
+)
 
 _QUOTED_SEGMENT_RE = re.compile(r'"[^"]+"')
 
@@ -33,6 +38,173 @@ OPTIONAL_DETERMINISTIC_BLOCK_KEYS: frozenset[str] = frozenset(
         "ca7_surface",
     }
 )
+
+MASKED_PROGRESSION_CHECK_ID = "char_masked_progression_strict"
+MASKED_PROGRESSION_DIMENSION_ID = CHECK_TO_DIMENSION[MASKED_PROGRESSION_CHECK_ID]
+
+
+def _continuity_event_dict_for_turn(
+    continuity_manager: Any, turn_index: int, next_actor: str
+) -> dict[str, Any]:
+    public_events = list(getattr(continuity_manager, "public_events", []) or [])
+    if not public_events:
+        return {}
+    event = public_events[-1]
+    if int(getattr(event, "turn_index", 0) or 0) != turn_index:
+        return {}
+    participants = [
+        str(p).strip() for p in (getattr(event, "participants", []) or []) if str(p).strip()
+    ]
+    if next_actor not in participants:
+        return {}
+    return dict(event.to_dict()) if hasattr(event, "to_dict") else {}
+
+
+def _continuity_state_changes_non_empty(continuity_event: Mapping[str, Any]) -> bool:
+    sc = continuity_event.get("state_changes")
+    if not isinstance(sc, list):
+        return False
+    return any(str(x or "").strip() for x in sc)
+
+
+def _structured_intent_for_masked_progression(move: Mapping[str, Any]) -> bool:
+    """Non-dialogue-only structured intent: motivation goal/tactic, action, or Q4 keys."""
+    if _q4_bounded_scene_state_updates(dict(move)):
+        return True
+    mot = move.get("motivation")
+    if isinstance(mot, dict):
+        g = str(mot.get("goal", "") or "").strip()
+        t = str(mot.get("tactic", "") or "").strip()
+        if g or t:
+            return True
+    if str(move.get("action", "") or "").strip():
+        return True
+    return False
+
+
+def build_masked_progression_strict_payload(
+    *,
+    next_actor: str,
+    continuity_manager: Any | None,
+    turn_index: int,
+    turn_meta: Mapping[str, Any],
+    issues_before: Mapping[str, Any] | None,
+    move: Mapping[str, Any],
+    turn_execution: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Strict-tier masked progression observability (GitHub #73).
+
+    ``observation`` is ``fired`` | ``clear`` | ``skipped``. Escalation policy always maps
+    the scored check to **pass**; this payload is for operators only.
+    """
+    limitations: list[str] = []
+    reasons: list[str] = []
+    tex = turn_execution if isinstance(turn_execution, dict) else {}
+    attempt_index = int(tex.get("attempt_index", 0) or 0)
+
+    if continuity_manager is None:
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "skipped",
+            "limitations": ["continuity_manager_absent"],
+            "reasons": [],
+            "signals": {},
+        }
+
+    if attempt_index != 0:
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "skipped",
+            "limitations": ["non_initial_attempt_index"],
+            "reasons": [],
+            "signals": {"attempt_index": attempt_index},
+        }
+
+    if bool(tex.get("progression_retry_triggered")):
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "skipped",
+            "limitations": ["progression_retry_path"],
+            "reasons": [],
+            "signals": {},
+        }
+
+    cons = _normalized_consequence_list(dict(turn_meta))
+    classifier_lane_empty = len(cons) == 0
+    if not classifier_lane_empty:
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "clear",
+            "limitations": [],
+            "reasons": [],
+            "signals": {"classifier_lane_empty": False, "consequence_count": len(cons)},
+        }
+
+    structured = _structured_intent_for_masked_progression(move)
+    ib = dict(issues_before) if isinstance(issues_before, dict) else {}
+    q2 = _q2_issue_material_change(
+        continuity_manager=continuity_manager,
+        turn_index=turn_index,
+        issues_before=ib,
+    )
+    q4 = _q4_bounded_scene_state_updates(dict(move))
+    ev = _continuity_event_dict_for_turn(continuity_manager, turn_index, next_actor)
+    mat_state = _continuity_state_changes_non_empty(ev)
+    structural_proxy = bool(q2 or q4 or mat_state)
+
+    signals: dict[str, Any] = {
+        "classifier_lane_empty": True,
+        "structured_intent_present": structured,
+        "q2_issue_material_change": q2,
+        "q4_allowlisted_scene_state_updates": q4,
+        "continuity_event_state_changes_non_empty": mat_state,
+        "continuity_event_id": str(ev.get("event_id", "") or "") if ev else "",
+    }
+
+    if not structured:
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "clear",
+            "limitations": [],
+            "reasons": [],
+            "signals": signals,
+        }
+
+    if not structural_proxy:
+        return {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "clear",
+            "limitations": [],
+            "reasons": [],
+            "signals": signals,
+        }
+
+    if q2:
+        reasons.append("q2_issue_material_change")
+    if q4:
+        reasons.append("q4_allowlisted_scene_state_updates")
+    if mat_state:
+        reasons.append("continuity_event_state_changes_non_empty")
+
+    return {
+        "schema_version": 1,
+        "strict_tier": True,
+        "observation": "fired",
+        "limitations": limitations,
+        "reasons": reasons,
+        "signals": signals,
+        "interpretation": (
+            "Classifier lane empty while continuity/progression proxies advanced "
+            "(Q2 and/or Q4 and/or committed state_changes). Observational only — not a "
+            "runtime defect."
+        ),
+    }
 
 
 def count_quoted_segments(rendered_final: str) -> int:
@@ -60,12 +232,37 @@ def build_character_audit_v2_deterministic(
     move: Mapping[str, Any],
     next_actor: str,
     orchestration_state: Mapping[str, Any],
+    continuity_manager: Any | None = None,
+    turn_index: int | None = None,
+    turn_meta: Mapping[str, Any] | None = None,
+    issues_before: Mapping[str, Any] | None = None,
+    turn_execution: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """V2 character deterministic: intra-move, repetition, declared move fields only."""
+    """V2 character deterministic: intra-move, repetition, declared move fields, masked progression."""
     ca1 = _ca1_motivation_action(move)
     ca2 = _ca2_dialogue_action(move)
     ca4 = _ca4_repetition(move, next_actor, orchestration_state)
     ca7 = _ca7_pressure_move(move)
+    ti = int(turn_index) if turn_index is not None else -1
+    if continuity_manager is None or ti < 0 or not isinstance(turn_meta, dict):
+        masked_payload: dict[str, Any] = {
+            "schema_version": 1,
+            "strict_tier": True,
+            "observation": "skipped",
+            "limitations": ["continuity_context_not_applicable"],
+            "reasons": [],
+            "signals": {},
+        }
+    else:
+        masked_payload = build_masked_progression_strict_payload(
+            next_actor=next_actor,
+            continuity_manager=continuity_manager,
+            turn_index=ti,
+            turn_meta=turn_meta,
+            issues_before=issues_before,
+            move=move,
+            turn_execution=turn_execution,
+        )
     checks: list[dict[str, Any]] = [
         {
             "check_id": "char_ca1_motivation_action",
@@ -86,6 +283,11 @@ def build_character_audit_v2_deterministic(
             "check_id": "char_ca7_declared_fields",
             "dimension_id": CHECK_TO_DIMENSION["char_ca7_declared_fields"],
             "payload": dict(ca7),
+        },
+        {
+            "check_id": MASKED_PROGRESSION_CHECK_ID,
+            "dimension_id": MASKED_PROGRESSION_DIMENSION_ID,
+            "payload": masked_payload,
         },
     ]
     scored, escalation, layer_extras = compute_escalation_for_layer(
