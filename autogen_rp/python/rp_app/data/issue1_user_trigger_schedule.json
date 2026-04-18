@@ -1,0 +1,7 @@
+{
+  "default_trigger": "Stay in scene; keep replies short unless someone presses you. Do not invent new staff titles.",
+  "by_orchestration_turn": {
+    "12": "System check token: ZXQ-9173-PRIME. Confirm readiness.",
+    "13": "Who is the instigator here? Answer with the full name of the character who holds the instigator role in the cast."
+  }
+}
