@@ -154,46 +154,88 @@ Failure to apply this distinction can result in mis-scoped issues, misleading da
 
 For the **full** end-to-end procedure (corpus definition, independent validation, disposition, and **#66** alignment), see **[Audit Signal Evaluation Methodology](#audit-signal-evaluation-methodology)** (GitHub **Issue #71**).
 
+#### Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)
+
+<a id="issue67-operator-interpretation"></a>
+
+**Interpretation axes**
+
+| Axis | Governs | Meaning |
+|------|---------|--------|
+| **#59 applicability class** (`always-on` / `conditional` / `heuristic / advisory`) | **Silence, absence, and when silence is diagnostically meaningful** | Contract in this document (“Key interpretation rule”, “Interpretation discipline”): predicates, always-on shape expectations, heuristic corroboration rule. |
+| **Issue #67 engineering family** (`telemetry` / `guardrail` / `aggregation` / `heuristic proxy`) | **What the emitted JSON *is* as an engineering artifact** | Describes instrumentation vs rollup vs orchestration mechanism vs true quality proxy—not pass/fail and not substitute for continuity. |
+
+**What each axis governs**
+
+- **What the signal *is* (nature of the blob):** **Engineering family** (telemetry = trace/snapshot/config; aggregation = packaged metrics; guardrail = orchestration mechanism; heuristic proxy = scored/structured quality proxy such as CA* / Audit v2 bands when applicable).
+- **How silence/absence is interpreted:** **Only #59 applicability class** (plus stated predicate for `conditional`, shape rules for `always-on`, corroboration for `heuristic / advisory`). **Engineering family must not be used to invent new silence rules.**
+
+**Reading rule (when Class = `heuristic / advisory` and engineering family = `telemetry` for the same row)**
+
+1. **Step 1 — Silence:** Apply **#59** only (evaluate predicate; apply silence semantics from the inventory row).
+2. **Step 2 — Content:** Read the field as **telemetry** (pressure/config/trace/rollup snapshot), **not** as a labeled defect detector. **Do not** apply TP/FP or “detector fired” language to **telemetry** rows. Per **Interpretation discipline** below, TP/FP language applies only after locating the Signal id and applying class; **telemetry** rows are **not** “fired” as failures.
+3. **Gloss:** In this document, **`heuristic / advisory`** (applicability class) does **not** mean “this row is a narrative heuristic detector.” It means **#59 layer semantics** (non-authoritative; corroborate). **`Heuristic proxy`** (engineering family) is reserved for **true proxy/scoring-style** inventory rows (e.g. CA dimensions, Audit v2 checks)—**orthogonal wording** to avoid collapsing “heuristic” into “detector.”
+
+**Heuristic proxy (engineering family)** — standalone definition
+
+**Definition:** A **named, emitted score, band, or structured judgment** whose **purpose** is to **stand in for** a qualitative property of the scene or output (e.g. alignment, repetition, prose checks) using **deterministic rules, lexical checks, or model-assisted scoring**—**without** being continuity truth and **without** being raw instrumentation or a rollup artifact.
+
+| Contrast | Meaning |
+|----------|--------|
+| **vs telemetry** | Telemetry is **state/trace/config serialization** (what was present, counts, fingerprints, snapshots). It does **not** assign a **scene-quality proxy score**; it records **what happened** in the logging pipeline. |
+| **vs aggregation** | Aggregation is **packaged rollups** (metrics bundles, session summaries). It may combine numbers but is **not** itself a per-turn **proxy score** row unless the inventory lists that rollup as a separate Signal id. |
+| **vs guardrail** | Guardrail is **runtime orchestration or enforcement** (selection, retries, validation gates). It **acts** on the turn path. A **heuristic proxy** in audits **observes**; it does **not** enforce. |
+| **vs #59 `heuristic / advisory` class** | That **class** governs **silence and corroboration obligations** for an inventory row (“not continuity-competitive; corroborate before runtime bugs”). It does **not** mean the row is an **engineering-family `heuristic proxy`**—many rows are **`heuristic / advisory` in #59** but **`telemetry` in engineering family** (see reading rule above). **`Heuristic proxy` (family)** is reserved for **actual proxy/scoring-style** inventory rows (e.g. CA-derived dimensions, Audit v2 checks named in the table). |
+
+**Anti-ambiguity:** The word **“heuristic”** in documentation **must** be read with its **modifier**: either **“#59 applicability: heuristic/advisory”** (silence semantics) or **“engineering family: heuristic proxy”** (proxy score nature)—**never** as shorthand for **“detector.”**
+
+**Normative rule**
+
+**Operators MUST NOT infer detector behavior, defect detection, pass/fail scene verdicts, or TP/FP labels from the #59 applicability class alone.** Applicability class **only** constrains **silence/absence interpretation** and **corroboration rules** per the inventory row; **detector-like conclusions** require an **explicit** engineering-family **`heuristic proxy`** (or a documented offline **`detector`** / evaluation layer **outside** this inventory rule) **and** a **declared** evaluation methodology—**never** from **`conditional`**, **`always-on`**, or **`heuristic / advisory`** **by themselves**.
+
+**Anti-drift (normative)** — Except for this subsection and the **inventory table** below (including **Engineering family** column and per-row **Description**), **no other section of this document may define, redefine, or qualify the meaning of** `#59 applicability class`, **`heuristic proxy` (engineering family)**, **`telemetry`**, **`aggregation`**, **`guardrail`**, or **detector-like reading rules** for inventory-listed fields. Other sections **must** use **one sentence + link** to this subsection and the relevant **Signal id** row.
+
 ### Audit signal applicability inventory
 
 **Excluded from this table:** **Runtime outcome records** (see **Authority rules**). Examples: `stage: validation_progression_retry`, validation reason strings, successful `turn_execution_metadata` fields that mirror retry state — interpret via **`ARCHITECTURE.md`** and validation docs, not applicability class.
 
-| Signal id | Description | Class | Predicate (conditional only) | Silence semantics |
-|-----------|-------------|-------|-------------------------------|-------------------|
-| `cav1.schema_version` | `metadata.character_audit_v1.schema_version` when the v1 block is written | always-on | `metadata.character_audit_v1` object is present on the character audit row | When the predicate holds, missing `schema_version` indicates a serialization / contract defect in the audit path. When the v1 block is absent entirely, evaluate **`cav1.block`** first (conditional). |
-| `cav1.block` | Entire `metadata.character_audit_v1` advisory bundle | conditional | Per-turn character audit logging is enabled **and** the character turn produced a logged `*_full.json` / `*_light.json` row where v1 is attached | When audit logging is off or the row type omits v1, absence is **neutral**. When the predicate holds, absence of the block is an audit-path defect. |
-| `cav1.observed` | `metadata.character_audit_v1.observed` (Director excerpt, digests, tails; pre-continuity context) | heuristic / advisory | Same as `cav1.block` | Silence or empty excerpts are common on short prompts or redacted paths; interpret only in context of **`cav1.block`** and continuity. |
-| `cav1.derived.motivation_action_alignment` | CA1 — lexical / structural alignment (`character_audits_v1`) | heuristic / advisory | Same as `cav1.block` | High scores do not prove coherence; low scores do not prove continuity bugs. Audit v2 scored row uses **`excluded_deprecated`** (**#42**). |
-| `cav1.derived.dialogue_action_consistency` | CA2 — lexical / structural consistency | heuristic / advisory | Same as `cav1.block` | Same as CA1. **`excluded_deprecated`** in Audit v2. |
-| `cav1.derived.issue_engagement` | CA3 — move-level issue linkage proxy | heuristic / advisory | Same as `cav1.block` | `possibly_passive` means weak **move-level** linkage, not “no story engagement.” |
-| `cav1.derived.repetition_vs_prior_self` | CA4 — repetition vs prior self | heuristic / advisory | Same as `cav1.block` | Silence uncommon when block present; interpret with tail windows in `observed`. |
-| `cav1.derived.scene_plausibility_flags` | CA5 — plausibility flags | heuristic / advisory | Same as `cav1.block` | Advisory only; corroborate with scene state. |
-| `cav1.derived.pressure_director` | CA6 — Director pressure snapshot | heuristic / advisory | Same as `cav1.block` | Reflects decision excerpt, not full orchestration truth. |
-| `cav1.derived.pressure_move` | CA7 — declared pressure fields on move | heuristic / advisory | Same as `cav1.block` | `none` / weak readings reflect optional move fields, not absence of continuity pressure. |
-| `av2.check.char_ca1_motivation_action` | Audit v2 scored row for CA1 | heuristic / advisory | `metadata.audit_v2` present with character deterministic bundle | Tri-state is **`excluded_deprecated`** — not a pass; does not aggregate into intra-move dimension (**#13**, **#42**). |
-| `av2.check.char_ca2_dialogue_action` | Audit v2 scored row for CA2 | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Same as CA1 row. |
-| `av2.check.char_ca4_repetition` | Audit v2 CA4 repetition band | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | `fail` / `border` / `pass` are heuristic bands; corroborate with narrative. |
-| `av2.check.char_ca7_declared_fields` | Audit v2 CA7 declared fields | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Border/fail still advisory vs continuity. |
-| `av2.check.nar_strict_action_overlap` | Narrator strict action overlap | heuristic / advisory | `metadata.audit_v2_narrator` (or narrator bundle path used for prose) present | Absent when narrator v2 not built; neutral. |
-| `av2.check.nar_v1_action_passes_bar` | Narrator v1 action `passes_bar` rollup | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Heuristic narrator output check. |
-| `av2.check.nar_environment_cue` | Environment cue presence in render | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Conditional on Director/environment context; `environment_event` absent → check often inert (see payload). |
-| `av2.check.nar_scope_proxy` | Legacy scope proxy (non-gating) | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Escalation always **`pass`** for this check id (**#9**, **#41**); raw noise expected. |
-| `av2.check.prose_readability` | Prose readability proxy | heuristic / advisory | Prose bundle present in v2 path | High false-positive rate possible; not narrator correctness. |
-| `av2.check.prose_redundancy` | Prose redundancy Jaccard | heuristic / advisory | Same as `av2.check.prose_readability` | `prior_turns_used == 0` → scored **`pass`** path per policy; interpret with `limitations`. |
-| `av2.check.prose_dialogue_integration` | Prose dialogue integration proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Advisory only. |
-| `av2.check.prose_attribution` | Prose attribution proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Pronoun-led false negatives common (**#10** class noise). |
-| `av2.check.prose_tone` | Prose local tone proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Lexical heuristic only. |
-| `av2.llm_character` | LLM-assisted character audit v2 layer (when enabled) | conditional | LLM audit enabled for the run/build path | When disabled, absence is **neutral**. When enabled but missing where expected, investigate harness. |
-| `av2.llm_narrator` | LLM-assisted narrator audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. |
-| `av2.llm_prose` | LLM-assisted prose audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. |
-| `metadata.progression_advisory` | Stall / progression advisory snapshot (not continuity truth) | heuristic / advisory | Progression advisory MVP active for session | When feature off, absence is **neutral**. |
-| `metadata.anti_regression_advisory` | Anti-regression advisory snapshot | heuristic / advisory | Anti-regression path armed / used for session | When inactive, absence is **neutral**. |
-| `metadata.retrieval_summary` | Retrieved bundle summary (counts/refs) | conditional | Authored retrieval or merged episodic path produced a summary for the character turn | When retrieval OFF and no merge, absence is **neutral**. |
-| `metadata.scene_grounding` / `scene_grounding_summary` | Grounding observability snapshot | conditional | Scene grounding MVP produced facts for projection | When no promoted facts, absence or empty snapshot is **neutral**. |
-| `metadata.support_manifest` | Support manifest `support_manifest.v1` | conditional | Character `*_full.json` audit path attached manifest (`audit_support_manifest`) | Per **Support Manifest** section: absent on Director/Narrator rows by design — **neutral**. |
-| `audit.retrieval_session` | `_audit_summary.json` top-level `retrieval_session` | conditional | Headless simulation completed with post-merge summary refresh | Streamlit path may omit (**documented elsewhere**); absence then **neutral**, not a defect. |
-| `audit.effective_user_trigger` | Top-level `effective_user_trigger` on **full** per-turn rows | conditional | Headless harness used per-turn user trigger schedule **or** tooling expects harness field | Light audits omit by design; absence **neutral** for light rows. |
-| `structured_eval.bundle` | Headless `structured_eval` / metrics JSON (scenario id, metrics, `retrieval_session`, verdict flags when set) | conditional | Run requested metrics output (`--metrics-out` or suite aggregation) | Absent file or block means no metrics artifact — **neutral** for audit quality of the scene itself. |
+| Signal id | Description | Class | Predicate (conditional only) | Silence semantics | Engineering family |
+|-----------|-------------|-------|-------------------------------|-------------------|---------------------|
+| `cav1.schema_version` | `metadata.character_audit_v1.schema_version` when the v1 block is written | always-on | `metadata.character_audit_v1` object is present on the character audit row | When the predicate holds, missing `schema_version` indicates a serialization / contract defect in the audit path. When the v1 block is absent entirely, evaluate **`cav1.block`** first (conditional). | telemetry |
+| `cav1.block` | Entire `metadata.character_audit_v1` advisory bundle | conditional | Per-turn character audit logging is enabled **and** the character turn produced a logged `*_full.json` / `*_light.json` row where v1 is attached | When audit logging is off or the row type omits v1, absence is **neutral**. When the predicate holds, absence of the block is an audit-path defect. | telemetry |
+| `cav1.observed` | `metadata.character_audit_v1.observed` (Director excerpt, digests, tails; pre-continuity context) | heuristic / advisory | Same as `cav1.block` | Silence or empty excerpts are common on short prompts or redacted paths; interpret only in context of **`cav1.block`** and continuity. | heuristic proxy |
+| `cav1.derived.motivation_action_alignment` | CA1 — lexical / structural alignment (`character_audits_v1`) | heuristic / advisory | Same as `cav1.block` | High scores do not prove coherence; low scores do not prove continuity bugs. Audit v2 scored row uses **`excluded_deprecated`** (**#42**). | heuristic proxy |
+| `cav1.derived.dialogue_action_consistency` | CA2 — lexical / structural consistency | heuristic / advisory | Same as `cav1.block` | Same as CA1. **`excluded_deprecated`** in Audit v2. | heuristic proxy |
+| `cav1.derived.issue_engagement` | CA3 — move-level issue linkage proxy | heuristic / advisory | Same as `cav1.block` | `possibly_passive` means weak **move-level** linkage, not “no story engagement.” | heuristic proxy |
+| `cav1.derived.repetition_vs_prior_self` | CA4 — repetition vs prior self | heuristic / advisory | Same as `cav1.block` | Silence uncommon when block present; interpret with tail windows in `observed`. | heuristic proxy |
+| `cav1.derived.scene_plausibility_flags` | CA5 — plausibility flags | heuristic / advisory | Same as `cav1.block` | Advisory only; corroborate with scene state. | heuristic proxy |
+| `cav1.derived.pressure_director` | CA6 — Director pressure snapshot | heuristic / advisory | Same as `cav1.block` | Reflects decision excerpt, not full orchestration truth. | heuristic proxy |
+| `cav1.derived.pressure_move` | CA7 — declared pressure fields on move | heuristic / advisory | Same as `cav1.block` | `none` / weak readings reflect optional move fields, not absence of continuity pressure. | heuristic proxy |
+| `av2.check.char_ca1_motivation_action` | Audit v2 scored row for CA1 | heuristic / advisory | `metadata.audit_v2` present with character deterministic bundle | Tri-state is **`excluded_deprecated`** — not a pass; does not aggregate into intra-move dimension (**#13**, **#42**). | heuristic proxy |
+| `av2.check.char_ca2_dialogue_action` | Audit v2 scored row for CA2 | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Same as CA1 row. | heuristic proxy |
+| `av2.check.char_ca4_repetition` | Audit v2 CA4 repetition band | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | `fail` / `border` / `pass` are heuristic bands; corroborate with narrative. | heuristic proxy |
+| `av2.check.char_ca7_declared_fields` | Audit v2 CA7 declared fields | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Border/fail still advisory vs continuity. | heuristic proxy |
+| `av2.check.nar_strict_action_overlap` | Narrator strict action overlap | heuristic / advisory | `metadata.audit_v2_narrator` (or narrator bundle path used for prose) present | Absent when narrator v2 not built; neutral. | heuristic proxy |
+| `av2.check.nar_v1_action_passes_bar` | Narrator v1 action `passes_bar` rollup | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Heuristic narrator output check. | heuristic proxy |
+| `av2.check.nar_environment_cue` | Environment cue presence in render | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Conditional on Director/environment context; `environment_event` absent → check often inert (see payload). | heuristic proxy |
+| `av2.check.nar_scope_proxy` | Legacy scope proxy (non-gating) | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Escalation always **`pass`** for this check id (**#9**, **#41**); raw noise expected. | heuristic proxy |
+| `av2.check.prose_readability` | Prose readability proxy | heuristic / advisory | Prose bundle present in v2 path | High false-positive rate possible; not narrator correctness. | heuristic proxy |
+| `av2.check.prose_redundancy` | Prose redundancy Jaccard | heuristic / advisory | Same as `av2.check.prose_readability` | `prior_turns_used == 0` → scored **`pass`** path per policy; interpret with `limitations`. | heuristic proxy |
+| `av2.check.prose_dialogue_integration` | Prose dialogue integration proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Advisory only. | heuristic proxy |
+| `av2.check.prose_attribution` | Prose attribution proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Pronoun-led false negatives common (**#10** class noise). | heuristic proxy |
+| `av2.check.prose_tone` | Prose local tone proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Lexical heuristic only. | heuristic proxy |
+| `av2.llm_character` | LLM-assisted character audit v2 layer (when enabled) | conditional | LLM audit enabled for the run/build path | When disabled, absence is **neutral**. When enabled but missing where expected, investigate harness. | heuristic proxy |
+| `av2.llm_narrator` | LLM-assisted narrator audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. | heuristic proxy |
+| `av2.llm_prose` | LLM-assisted prose audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. | heuristic proxy |
+| `metadata.progression_advisory` | Stall / progression advisory snapshot (not continuity truth) | heuristic / advisory | Progression advisory MVP active for session | When feature off, absence is **neutral**. | telemetry |
+| `metadata.anti_regression_advisory` | Anti-regression advisory snapshot | heuristic / advisory | Anti-regression path armed / used for session | When inactive, absence is **neutral**. | guardrail + telemetry |
+| `metadata.retrieval_summary` | Retrieved bundle summary (counts/refs) | conditional | Authored retrieval or merged episodic path produced a summary for the character turn | When retrieval OFF and no merge, absence is **neutral**. | telemetry |
+| `metadata.scene_grounding` / `scene_grounding_summary` | Grounding observability snapshot | conditional | Scene grounding MVP produced facts for projection | When no promoted facts, absence or empty snapshot is **neutral**. | telemetry (partial) |
+| `metadata.support_manifest` | Support manifest `support_manifest.v1` | conditional | Character `*_full.json` audit path attached manifest (`audit_support_manifest`) | Per **Support Manifest** section: absent on Director/Narrator rows by design — **neutral**. | telemetry |
+| `audit.retrieval_session` | `_audit_summary.json` top-level `retrieval_session` | conditional | Headless simulation completed with post-merge summary refresh | Streamlit path may omit (**documented elsewhere**); absence then **neutral**, not a defect. | telemetry |
+| `audit.effective_user_trigger` | Top-level `effective_user_trigger` on **full** per-turn rows | conditional | Headless harness used per-turn user trigger schedule **or** tooling expects harness field | Light audits omit by design; absence **neutral** for light rows. | telemetry |
+| `context_snapshot` | Top-level continuity/scene/orchestration snapshot for the turn (not continuity truth) | conditional | Parsed artifact is a **full** per-turn audit row: filename matches `*_full.json` **and** root `bot_type` ∈ {`character`, `director`, `narrator`} | If predicate **false** (`*_light.json` or invalid row): **neutral**. If predicate **true**: **absence** of top-level `context_snapshot` is **neutral**; **presence** is telemetry only. | telemetry |
+| `structured_eval.bundle` | Headless `structured_eval` / metrics JSON (scenario id, metrics, `retrieval_session`, verdict flags when set) | conditional | Run requested metrics output (`--metrics-out` or suite aggregation) | Absent file or block means no metrics artifact — **neutral** for audit quality of the scene itself. | aggregation |
 
 ### Worked examples
 
@@ -229,9 +271,13 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 
 ### Progression advisory (MVP) in audits
 
+**Signal id:** `metadata.progression_advisory` — interpretation axes and silence rules: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry; not a discriminative scene-failure detector).
+
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), template-sourced **`recommended_channels`**, human-readable **`note`**, **`stall_components`** (booleans: same phase, high tension, issue stability, exact structural repetition), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
 
 ### Anti-regression advisory (MVP) in audits
+
+**Signal id:** `metadata.anti_regression_advisory` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** guardrail + telemetry; runtime orchestration guardrail in `anti_regression_advisory.py`, audit row is a snapshot).
 
 Director turn metadata may include **`anti_regression_advisory`**: **`active`** (whether the ANTI-REGRESSION Director prefix was injected this call), **`ping_pong_detected`**, **`post_break_window_active`**, **`low_player_agency`**, **`ping_pong_actors`** (the two alternating `next_actor` ids when detected), and **`ticks_after_decrement`** (remaining post-break window ticks after this Director step). This mirrors orchestration cache fields from `anti_regression_advisory.py` and is not continuity truth. Application logs under **`rp_app.anti_regression_advisory`** record injection and post-break arming when enabled.
 
@@ -246,6 +292,8 @@ Structured **`consequences`** (and the enriched narrative mirror of them) are em
 **`exit` in audits vs on-stage roster:** Event-facing lines and **`recent_delta`** are aligned with **effective** **`present_characters`** when a classified exit does not remove the actor (see **`ARCHITECTURE.md`** — *Exit narrative vs effective on-stage presence*). The **`exit`** string may still appear in **`consequences` / tags** in **`turn_metadata`** for those turns. Interpret **physical presence** from **`SceneState`** (e.g. **`present_characters`**), not from **`exit`** alone.
 
 ### Scene Grounding (MVP) in audits
+
+**Signal id:** `metadata.scene_grounding` / `scene_grounding_summary` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry (partial); prompt-projection observability, not a defect detector).
 
 Audits may record a compact **`scene_grounding`** snapshot (or **`scene_grounding_summary`**) per relevant turn: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This is **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).
 
@@ -290,15 +338,19 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 ### Effective user trigger (headless simulation harness)
 
+**Signal id:** `audit.effective_user_trigger` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry).
+
 **Field:** Top-level **`effective_user_trigger`** on **full** per-turn audit records (Director, character, narrator success paths, and turn failure entries where the harness supplies it). It records the **simulated user trigger string actually used for that orchestration turn** in the production prompts for that beat (Director selection, character generation, narrator render path for that turn).
 
-**Interpretation:** Compare this field to **`by_orchestration_turn`** / CLI **`--trigger`** / scenario defaults when debugging “wrong user framing” in **headless** runs. Rules and JSON shape are documented in [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) (**Per-turn user trigger schedule**). The schedule file is **harness input only**—it is not written into continuity or scenario files.
+Compare this field to **`by_orchestration_turn`** / CLI **`--trigger`** / scenario defaults when debugging “wrong user framing” in **headless** runs. Rules and JSON shape are documented in [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) (**Per-turn user trigger schedule**). The schedule file is **harness input only**—it is not written into continuity or scenario files.
 
 **Light vs full:** **`effective_user_trigger`** appears in **full** audit serialization (`entry_to_full_dict`). **Light** audit rows do **not** include it; use **`*_full.json`** when you need the per-turn line.
 
 **Triage:** If the key is absent from on-disk `*_full.json` for a run that used `--user-trigger-schedule`, confirm turn-level behavior with **`_round_index.json`**, **`structured_eval`**, or metrics before assuming continuity/runtime failure—artifact layout or writer path may not expose the field in every session.
 
 ### Authored index retrieval (standard evaluation mode — Phase 4A)
+
+**Signal ids:** `metadata.retrieval_summary`, `audit.retrieval_session` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and [inventory rows](#audit-signal-applicability-inventory) (**engineering family:** telemetry for both).
 
 **Activation:** **`RP_RETRIEVED_CONTEXT_INDEX`** only (path to compiled JSON, or unset / empty = OFF). Optional CLI: `scripts/run_scene_simulation_llm.py --retrieved-context-index [PATH]` (see [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) from repository root).
 
@@ -310,9 +362,15 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 **Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration).
 
+### Structured eval bundle (headless metrics)
+
+**Signal id:** `structured_eval.bundle` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** aggregation; optional human `verdict` / `failure_classification` are external annotations, not system detection). Validate rollups against lower-level artifacts per **Stage 3.4** in [Audit Signal Evaluation Methodology](#audit-signal-evaluation-methodology).
+
 ### Support Manifest (`metadata.support_manifest`)
 
 #### Purpose
+
+**Signal id:** `metadata.support_manifest` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry).
 
 The support manifest provides **observability into prompt support**: what material was available to the character model via the bounded prompt assembly path (summaries, retrieval refs, binding section text, and the full system prompt as an opaque envelope). It allows you to determine:
 
@@ -588,7 +646,7 @@ You **must**:
 
 #### 3.4 Aggregation constraint
 
-For aggregation artifacts (e.g. `structured_eval` / `structured_eval.bundle`):
+For aggregation artifacts (e.g. `structured_eval` / `structured_eval.bundle`), **engineering family** and applicability semantics are defined in **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the **`structured_eval.bundle`** [inventory row](#audit-signal-applicability-inventory)—do not redefine them here.
 
 - **must** validate against **lower-level** per-turn or session data;
 - **must not** treat aggregation output as ground truth.
@@ -686,7 +744,7 @@ Per **#66** / `scene_eval_v1.py`:
   - narrator/prose audit signals as predicate inputs;
   - LLM-generated audit layers.
 
-**Explicit clarification:** `context_snapshot` may be **present** on character rows loaded by `load_character_audit_rows`, but it is **not** used in **v1** predicates in `scene_eval_v1.py`.
+**Explicit clarification:** `context_snapshot` may be **present** on character rows loaded by `load_character_audit_rows`, but it is **not** used in **v1** predicates in `scene_eval_v1.py`. Silence and applicability for this field are defined by the **[inventory row `context_snapshot`](#audit-signal-applicability-inventory)** and **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)**—do not redefine them here.
 
 #### 5.2 Judgment emission (v1 — normative)
 
@@ -799,6 +857,8 @@ Until then, treat **Issue #60**’s locked body and thread as the **historical p
 ## Issue #70 — Engineering-role taxonomy (Tier 1 kernel)
 
 This section is the **canonical Tier 1 kernel registry** for GitHub **Issue #70**: a small, curated set of **fully qualified surface instances** (`surface_id`) so operators do not conflate observability, guardrails, rollups, and offline detectors. **Normative Issue #59 rules** (applicability classes, inventory, allowlist) are **orthogonal** to **`engineering_role`** here: interpret both when both apply. **Outcome records** are audit mirrors of runtime authority; they are **not** #59 inventory signals—**omit `engineering_role` and `applicability_class`** for those rows (do not set them to `null`). A **`detector`** surface is **offline-first**, uses explicit **`predicate_id`** + **`judgment_schema`**, emits structured judgments, is **advisory** unless separately allowlisted under #59, and is **not** LLM-only at the core. **Runtime enforcement** (validation, progression Q1–Q4 gate, semantic overrides) is **`guardrail`**, never **`detector`**. Full methodology for evaluating signals: [Audit Signal Evaluation Methodology](#audit-signal-evaluation-methodology) (GitHub **Issue #71**); the offline evaluation layer specification: **Issue #66** / `scene_eval_v1.py`.
+
+**Issue #67 alignment:** Applicability-class vs **engineering family** reading rules (telemetry, guardrail, aggregation, heuristic proxy) are **normative** only in **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the **[Audit signal applicability inventory](#audit-signal-applicability-inventory)**. This registry **does not** redefine those axes; use it together with that subsection when both apply.
 
 In the registry table, **`surface_kind: signal`** applies only to surfaces that correspond to **Issue #59** audit signal applicability **inventory** rows (stable Signal ids)—not to arbitrary `metadata.*` fields or other audit keys unless they are explicitly inventory-listed.
 
@@ -1262,6 +1322,8 @@ rp_audits/
 When scene templates are active, the granular `_full.json` logs also include `context_snapshot.scene_template`
 with the template ID, premise, role assignments, presence constraints, and authority labels that were active
 for that turn.
+
+**`context_snapshot` (Signal id):** Silence and engineering-family semantics are **only** in the **[inventory row](#audit-signal-applicability-inventory)** and **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)**—this section documents **field usage** for debugging only.
 
 ## How to Audit a Scene
 
