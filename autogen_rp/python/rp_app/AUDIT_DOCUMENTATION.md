@@ -269,6 +269,49 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 
 **How entries are removed** — Same process in reverse: doc edit + issue note so downstream tooling does not rely on stale coupling.
 
+### Signal interpretation envelope (`metadata.signal_interpretation`) — Issue #68
+
+**Purpose:** Machine-readable **operator interpretation** for a **partial** set of advisory/grounding audit blocks. This object is **not** a **#59 Signal id**, **not** narrative truth, **not** on the **[Runtime use allowlist](#runtime-use-allowlist)**, and **must not** be read as input to any **runtime authority** decision. Runtime code **does not** consume this field.
+
+**Shape (v1):**
+
+- `metadata.signal_interpretation.schema_version` — integer, **`1`**.
+- `metadata.signal_interpretation.signals` — object map **`signal_id` → `{ "role": "telemetry" | "guardrail" | "aggregation" }`** (closed enum).
+
+**v1 registry (partial — not exhaustive over all metadata):**
+
+| `signal_id` (map key) | `role` | Audit blocks covered |
+|------------------------|--------|----------------------|
+| `progression_advisory` | `telemetry` | `metadata.progression_advisory` |
+| `anti_regression_advisory` | `guardrail` | `metadata.anti_regression_advisory` |
+| `scene_grounding` | `telemetry` | `metadata.scene_grounding` (Phase 1 family: `phase1` + optional `summary`) |
+
+An id appears under **`signals`** only when the corresponding **`metadata`** block is present on that row. **No implicit role** for unregistered keys; **no** inference from naming alone.
+
+**`role` vs #59 / #67:** These strings are **reading hints** for operators. They are **not** #59 applicability classes (`always-on` / `conditional` / `heuristic / advisory`). **`guardrail`** here means “this audit blob reflects **narrow orchestration guardrail** visibility,” not “runtime guardrail enforcement reads this audit field.” See **[Operator interpretation — #59 applicability class vs Issue #67 engineering family](#issue67-operator-interpretation)** for inventory-backed signals.
+
+**Coverage gaps (normative):**
+
+- **STOP-REGISTRY-GAP:** A registered payload exists (e.g. `progression_advisory`) but **`signal_interpretation.signals` omits that id** → treat as **audit writer / rollout defect**, not as story meaning.
+- **STOP-UNREG:** A metadata block exists whose **interpretation is not** in the v1 registry → apply **observational-only** rules from this contract and #59; **do not** assign a `signal_interpretation` role by guesswork.
+- **STOP-4:** **`signal_interpretation` absent** on a row → v1 role map **not in force** for that row; fall back to **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** and **[Progression advisory](#progression-advisory-mvp-in-audits)** / **[Anti-regression](#anti-regression-advisory-mvp-in-audits)** / **[Scene Grounding](#scene-grounding-mvp-in-audits)** sections **observational-only**. Do not infer correctness or failure from absence of this envelope alone.
+
+**Absence rule (progression / anti-regression):** **Absence** of `progression_advisory` or `anti_regression_advisory` (or of the whole envelope) **must not** be read as evidence of correct/incorrect scene health, stall, regression, or grounding pass/fail. **Presence** does not imply a verdict either.
+
+#### Deterministic operator recipe (Issue #68)
+
+Use **continuity-backed state** and **runtime outcome records** for any **verdict-style** claim (stall, regression bug, grounding wrong). Use **telemetry / guardrail / aggregation** blocks only as **mechanism or pressure** visibility.
+
+1. Load **continuity** slice / **`_narrative.json`** / committed **`consequences`** as needed for the question.
+2. Load **runtime outcome records** for the turn (`stage`, retry flags, validation reasons — factual log only).
+3. Open **`metadata`** for the audit row.
+4. If **`signal_interpretation` missing** → **STOP-4**; continue with #59 observational rules only (no v1 role map).
+5. If present, confirm **`schema_version === 1`**. If unsupported version → stop applying v1 role semantics; treat as **documentation / writer mismatch**.
+6. For **verdict questions** (“is the scene stalled?”, “is grounding broken?”): **do not** answer from **`progression_advisory`**, **`anti_regression_advisory`**, or **`scene_grounding`** alone; require **continuity** (+ **runtime outcome records** when the question is about validation path). If insufficient → **no verdict**.
+7. For **`metadata.scene_grounding.phase1`:** use as **non-authoritative mirror** only; **`grounding_derivation_refs`** lists **continuity-native** ids when emitted; if the key is **omitted**, no clean refs were available at write time (**reduced scope**, not proof of absence of promotion). On conflict, **continuity wins**.
+
+**Phase 2:** Full prompt-projection parity for grounding in audits is **out of scope for #68** (explicit non-goal unless a later issue promotes it).
+
 ### Progression advisory (MVP) in audits
 
 **Signal id:** `metadata.progression_advisory` — interpretation axes and silence rules: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry; not a discriminative scene-failure detector).
@@ -295,7 +338,14 @@ Structured **`consequences`** (and the enriched narrative mirror of them) are em
 
 **Signal id:** `metadata.scene_grounding` / `scene_grounding_summary` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** telemetry (partial); prompt-projection observability, not a defect detector).
 
-Audits may record a compact **`scene_grounding`** snapshot (or **`scene_grounding_summary`**) per relevant turn: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This is **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).
+**Issue #68 — audit metadata family (`extend`, not replace):** On Director, character, and narrator rows, **`metadata.scene_grounding`** may include:
+
+- **`phase1`** — minimal observability derived only from the existing session **`scene_grounding`** dict (same pipeline as prompts): `continuity_turn_index`, `fact_count`, `binding_fact_count`, `non_binding_fact_count`, and optionally **`grounding_derivation_refs`** (sorted unique **`PublicEvent.event_id`** and/or fact **`source.ref`** values when present). The **`grounding_derivation_refs` key is omitted** when no continuity-native refs could be collected cleanly (no invented ids).
+- **`summary`** — optional one-line count summary when facts are non-empty.
+
+This does **not** duplicate full session `scene_grounding` facts in audit metadata (bounded payload); it is **not** a second source of truth.
+
+Audits may also record legacy compact **`scene_grounding`** / **`scene_grounding_summary`** shapes per older notes: **active fact count**, **categories** present, **`fact_id`** list or hashed fingerprint of `(category, key)` pairs, and optionally the **exact `value_summary` lines** injected into prompts. This remains **observability** for the prompt projection — **not** continuity truth (continuity remains authoritative; facts are derived).
 
 **What to verify in audits**
 

@@ -1,6 +1,10 @@
 from typing import Any
 
 from audit_instrumentation import log_audit_exception
+from audit_interpretation_metadata import (
+    attach_signal_interpretation_v1,
+    merge_scene_grounding_audit_family,
+)
 from audit_support_manifest import build_support_manifest
 
 
@@ -57,6 +61,7 @@ def _merge_character_audit_metadata(
     base: dict[str, Any],
     progression_advisory: dict[str, Any] | None,
     anti_regression_advisory: dict[str, Any] | None = None,
+    scene_grounding_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     out = dict(base)
     if progression_advisory:
@@ -80,6 +85,9 @@ def _merge_character_audit_metadata(
                 "ticks_after_decrement"
             ),
         }
+    if isinstance(scene_grounding_audit, dict) and scene_grounding_audit:
+        out["scene_grounding"] = dict(scene_grounding_audit)
+    attach_signal_interpretation_v1(out)
     return out
 
 
@@ -186,6 +194,7 @@ def log_character_turn_audit(
     anti_regression_advisory: dict[str, Any] | None = None,
     character_audit_v1: dict[str, Any] | None = None,
     audit_v2: dict[str, Any] | None = None,
+    scene_grounding_state: Any = None,
     effective_user_trigger: str,
     is_audit_enabled_fn,
     get_audit_logger_fn,
@@ -205,6 +214,17 @@ def log_character_turn_audit(
     ) = _get_turn_continuity_payload(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
+    )
+
+    turn_idx = (
+        int(getattr(continuity_manager, "turn_counter", 0) or 0)
+        if continuity_manager is not None
+        else 0
+    )
+    scene_grounding_audit = merge_scene_grounding_audit_family(
+        scene_grounding_state=scene_grounding_state,
+        continuity_turn_index=turn_idx,
+        continuity_event=continuity_event if isinstance(continuity_event, dict) else {},
     )
 
     char_audit = dict(character_summary_block_audit)
@@ -280,6 +300,7 @@ def log_character_turn_audit(
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,
+                scene_grounding_audit=scene_grounding_audit,
             ),
             **scene_audit_kwargs,
         )
@@ -311,6 +332,7 @@ def log_narrator_render_audit(
     progression_advisory: dict[str, Any] | None = None,
     anti_regression_advisory: dict[str, Any] | None = None,
     audit_v2: dict[str, Any] | None = None,
+    scene_grounding_state: Any = None,
     effective_user_trigger: str,
     is_audit_enabled_fn,
     get_audit_logger_fn,
@@ -330,6 +352,17 @@ def log_narrator_render_audit(
     ) = _get_turn_continuity_payload(
         continuity_manager=continuity_manager,
         next_actor=next_actor,
+    )
+
+    turn_idx = (
+        int(getattr(continuity_manager, "turn_counter", 0) or 0)
+        if continuity_manager is not None
+        else 0
+    )
+    scene_grounding_audit = merge_scene_grounding_audit_family(
+        scene_grounding_state=scene_grounding_state,
+        continuity_turn_index=turn_idx,
+        continuity_event=continuity_event if isinstance(continuity_event, dict) else {},
     )
 
     try:
@@ -383,6 +416,7 @@ def log_narrator_render_audit(
                 },
                 progression_advisory=progression_advisory,
                 anti_regression_advisory=anti_regression_advisory,
+                scene_grounding_audit=scene_grounding_audit,
             ),
             **scene_audit_kwargs,
         )

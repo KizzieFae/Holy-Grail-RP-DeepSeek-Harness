@@ -95,3 +95,25 @@ def test_merge_character_audit_metadata_includes_progression_note() -> None:
     assert merged["progression_advisory"]["note"] == (
         "Advance through a concrete change in state."
     )
+    si = merged["signal_interpretation"]
+    assert si["schema_version"] == 1
+    assert si["signals"]["progression_advisory"]["role"] == "telemetry"
+
+
+def test_merge_character_audit_metadata_signal_interpretation_with_grounding() -> None:
+    merged = _merge_character_audit_metadata(
+        base={},
+        progression_advisory=None,
+        anti_regression_advisory=None,
+        scene_grounding_audit={
+            "phase1": {
+                "continuity_turn_index": 2,
+                "fact_count": 0,
+                "binding_fact_count": 0,
+                "non_binding_fact_count": 0,
+            }
+        },
+    )
+    assert merged["signal_interpretation"]["signals"]["scene_grounding"]["role"] == (
+        "telemetry"
+    )

@@ -157,6 +157,7 @@ def apply_successful_turn_updates(
         anti_regression_advisory=get_cached_anti_regression_advisory(
             orchestration_state
         ),
+        scene_grounding_state=st_module.session_state.get("scene_grounding"),
         effective_user_trigger=effective_user_trigger,
         is_audit_enabled_fn=is_audit_enabled_fn,
         get_audit_logger_fn=get_audit_logger_fn,

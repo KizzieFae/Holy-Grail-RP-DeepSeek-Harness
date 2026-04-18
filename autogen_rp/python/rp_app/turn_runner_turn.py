@@ -618,6 +618,7 @@ async def execute_character_turn(
             get_character_scene_audit_context_fn=get_character_scene_audit_context_fn,
             character_audit_v1=character_audit_v1,
             audit_v2=audit_v2_metadata,
+            scene_grounding_state=st_module.session_state.get("scene_grounding"),
             effective_user_trigger=effective_user_trigger,
         )
 

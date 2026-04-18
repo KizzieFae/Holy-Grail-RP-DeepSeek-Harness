@@ -16,6 +16,10 @@ from arch_quality_variants import (
     arch_quality_variant,
 )
 from audit_instrumentation import log_audit_exception
+from audit_interpretation_metadata import (
+    attach_signal_interpretation_v1,
+    merge_scene_grounding_audit_family,
+)
 from beat_shift_state import (
     build_director_beat_shift_prompt_prefix,
     is_pending_beat_shift_active,
@@ -1321,6 +1325,56 @@ async def choose_next_actor(
                 else None
             )
 
+            dir_turn_idx = (
+                int(getattr(continuity_manager, "turn_counter", 0) or 0)
+                if continuity_manager is not None
+                else 0
+            )
+            last_public_event_dict: dict[str, Any] = {}
+            if continuity_manager is not None:
+                pe_list = getattr(continuity_manager, "public_events", []) or []
+                if pe_list:
+                    last_ev = pe_list[-1]
+                    last_public_event_dict = (
+                        last_ev.to_dict() if hasattr(last_ev, "to_dict") else {}
+                    )
+            sg_fam_dir = merge_scene_grounding_audit_family(
+                scene_grounding_state=st_module.session_state.get("scene_grounding"),
+                continuity_turn_index=dir_turn_idx,
+                continuity_event=last_public_event_dict,
+            )
+            director_metadata: dict[str, Any] = {
+                "parse_error": error,
+                "is_fallback": bool(error),
+                "beat_shift_active": beat_shift_active,
+                "progression_advisory": {
+                    "stall_score": progression_advisory_snapshot.get("stall_score"),
+                    "progression_pressure": progression_advisory_snapshot.get(
+                        "progression_pressure"
+                    ),
+                    "recommended_channels": progression_advisory_snapshot.get(
+                        "recommended_channels"
+                    ),
+                    "note": progression_advisory_snapshot.get("note"),
+                    "stall_components": progression_advisory_snapshot.get(
+                        "stall_components"
+                    ),
+                },
+                "anti_regression_advisory": dict(anti_blob),
+                "turn_selection_issues": reconciled_turn_selection_issues,
+                "turn_selection_diagnostics": turn_selection_diag,
+                "semantic_turn_selection_assessment": semantic_turn_selection_assessment
+                or {},
+                "semantic_turn_selection_assessment_effective": effective_semantic_assessment
+                or {},
+                "summary_blocks": summary_block_audit,
+                "director_selection_metrics": director_selection_audit_metrics,
+                "selection_attribution": selection_attribution_record,
+            }
+            if sg_fam_dir:
+                director_metadata["scene_grounding"] = sg_fam_dir
+            attach_signal_interpretation_v1(director_metadata)
+
             entry = audit_logger.create_entry(
                 session_owner=session_owner,
                 session_number=session_num,
@@ -1339,34 +1393,7 @@ async def choose_next_actor(
                     )[-6:],
                 },
                 effective_user_trigger=trigger_text,
-                metadata={
-                    "parse_error": error,
-                    "is_fallback": bool(error),
-                    "beat_shift_active": beat_shift_active,
-                    "progression_advisory": {
-                        "stall_score": progression_advisory_snapshot.get("stall_score"),
-                        "progression_pressure": progression_advisory_snapshot.get(
-                            "progression_pressure"
-                        ),
-                        "recommended_channels": progression_advisory_snapshot.get(
-                            "recommended_channels"
-                        ),
-                        "note": progression_advisory_snapshot.get("note"),
-                        "stall_components": progression_advisory_snapshot.get(
-                            "stall_components"
-                        ),
-                    },
-                    "anti_regression_advisory": dict(anti_blob),
-                    "turn_selection_issues": reconciled_turn_selection_issues,
-                    "turn_selection_diagnostics": turn_selection_diag,
-                    "semantic_turn_selection_assessment": semantic_turn_selection_assessment
-                    or {},
-                    "semantic_turn_selection_assessment_effective": effective_semantic_assessment
-                    or {},
-                    "summary_blocks": summary_block_audit,
-                    "director_selection_metrics": director_selection_audit_metrics,
-                    "selection_attribution": selection_attribution_record,
-                },
+                metadata=director_metadata,
                 **scene_audit_kwargs,
             )
             audit_logger.log_bot_interaction(entry)
