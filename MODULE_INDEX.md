@@ -175,6 +175,9 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `audit_logger_summary_report.py` | `_audit_summary` aggregation | — | |
 | `audit_logger_summary_output.py` | Output formatting helpers | — | |
 | `summary_audit_helpers.py` | Prompt/audit bridges for summaries | continuity | |
+| `audit_v2_deterministic.py` | **Audit v2** deterministic envelopes (character / narrator / prose); **`char_masked_progression_strict`** masked-progression observability (**#73**) | `audit_v2_escalation_policy`, `audit_v2_pipeline`, `turn_runner_turn` | Log-only; masked check escalation always **`pass`** |
+| `audit_v2_escalation_policy.py` | V2 **check_id** → dimension mapping; tri-state scoring; escalation rollup | `audit_v2_deterministic`, `audit_v2_pipeline` | **`char_masked_progression_strict`** is non-gating |
+| `audit_v2_pipeline.py` | Async V2 bundle assembly (deterministic + optional LLM) | `audit_v2_deterministic`, `audit_v2_llm` | |
 
 ---
 
