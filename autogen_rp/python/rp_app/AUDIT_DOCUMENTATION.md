@@ -1620,6 +1620,12 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 
 **Scope:** Per-turn narrator renders only; scene-opening narrator calls are **not** covered by v1.
 
+## Schema changes
+
+### Issue #76 — Removal of `action_coverage_heuristic.passes_bar`
+
+`action_coverage_heuristic.passes_bar` was removed (**Issue #76**). Nothing in the repository consumed it; the related v2 signal **`nar_v1_action_passes_bar`** was removed in **Issue #75**, and the field duplicated v1-only summary logic that did not align with v2 **`nar_strict_action_overlap`**. Use v1 **`action_token_overlap_ratio`** (and, on older rows, `action_non_stopword_hits` / `acting_name_in_render` as context) plus Audit v2 **`nar_strict_action_overlap`** for tri-state interpretation. **Compatibility:** historical narrator audit JSON may still contain `passes_bar`; new outputs do not.
+
 ### Debug Summary Retrieval and Prompt Compression
 1. Open `_audit_summary.json`
 2. Review `summary_block_visibility`
