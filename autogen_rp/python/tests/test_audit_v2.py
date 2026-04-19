@@ -13,7 +13,6 @@ from audit_v2_deterministic import (
     build_character_audit_v2_deterministic,
     build_narrator_audit_v2_deterministic,
     build_prose_audit_v2_deterministic,
-    count_quoted_segments,
 )
 from audit_v2_escalation_policy import (
     DIMENSION_AGGREGATE_NOT_APPLICABLE,
@@ -157,12 +156,6 @@ def test_compound_blocked_when_repetition_fail_only() -> None:
     )
 
 
-def test_count_quoted_segments_regex() -> None:
-    assert count_quoted_segments('Say "a" and "b" now') == 2
-    assert count_quoted_segments('Say "a" now') == 1
-    assert count_quoted_segments("no ascii dquotes") == 0
-
-
 def test_char_ca1_ca2_never_emitted_in_character_deterministic() -> None:
     """Issue #44: removed CA1/CA2 checks must not appear in current deterministic output."""
     det = build_character_audit_v2_deterministic(
@@ -201,22 +194,33 @@ def test_narrator_v2_deterministic_emits_two_checks_only() -> None:
     assert det["escalation"]["qualified"] is False
 
 
-def test_prose_attribution_ambiguity_hint_active() -> None:
-    # First-quote window must omit acting_display_name tokens; exact dialogue substring.
+def test_prose_layer_dimensions_exclude_attribution() -> None:
+    """Issue #40: prose_attribution check and dimension removed."""
+    dims = dimensions_for_layer("prose_dialogue")
+    assert "prose_attribution" not in dims
+    assert dims == [
+        "prose_readability",
+        "prose_redundancy_vs_prior",
+        "prose_dialogue_integration",
+        "prose_tone_local",
+    ]
+
+
+def test_prose_v2_deterministic_emits_four_checks_no_attribution_hint() -> None:
     det = build_prose_audit_v2_deterministic(
-        next_actor="ZebraActor",
-        move={"action": "nods", "dialogue": "One."},
-        rendered_final=(
-            "The room was quiet before anyone spoke. Then suddenly \"One.\" "
-            'A moment later "Two."'
-        ),
+        next_actor="A",
+        move={"action": "nods", "dialogue": "Hi."},
+        rendered_final='A smiled. "Hi."',
         prior_assistant_content=None,
-        acting_display_name="ZebraActor",
+        acting_display_name="A",
     )
-    hint = det["attribution_ambiguity_hint"]
-    assert hint["active"] is True
-    assert hint["signals"]["quoted_segment_count"] >= 2
-    assert hint["level"] == "possible_speaker_ambiguity"
+    assert "attribution_ambiguity_hint" not in det
+    assert [c["check_id"] for c in det["checks"]] == [
+        "prose_readability",
+        "prose_redundancy",
+        "prose_dialogue_integration",
+        "prose_tone",
+    ]
 
 
 @pytest.mark.asyncio

@@ -243,14 +243,6 @@ def build_prose_dialogue_audit_v1(
         prior_turns_used = 0
     passes_redundancy = prior_turns_used == 0 or jaccard < 0.65
 
-    quote_idx = rendered_final.find('"')
-    window_start = max(0, quote_idx - 80)
-    pre_quote = rendered_final[window_start:quote_idx].lower()
-    name_tokens = {next_actor.lower(), acting_display_name.lower()}
-    attribution_ok = (not dialogue_non_empty) or quote_idx < 0 or any(
-        n in pre_quote for n in name_tokens if n
-    )
-
     present_hits = len(_PRESENT_MARKERS.findall(rendered_final))
     passes_tone = present_hits <= 2
 
@@ -281,13 +273,6 @@ def build_prose_dialogue_audit_v1(
                 "dialogue_non_empty": dialogue_non_empty,
                 "exact_dialogue_quoted_in_render": exact_quoted,
                 "passes_bar": passes_dialogue,
-            },
-            "attribution_proxy": {
-                "method": "heuristic_v1",
-                "acting_surname_or_display_token_near_quote": attribution_ok,
-                "passes_bar": attribution_ok,
-                "limitations": "Pronoun-only attribution yields false negatives.",
-                "interpretation": "advisory_non_gating",
             },
             "tone_consistency_local": {
                 "method": "heuristic_v1",

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import Any, Mapping
 
 from character_audits_v1 import (
@@ -25,12 +24,9 @@ from progression_enforcement import (
     _normalized_consequence_list,
 )
 
-_QUOTED_SEGMENT_RE = re.compile(r'"[^"]+"')
-
 OPTIONAL_DETERMINISTIC_BLOCK_KEYS: frozenset[str] = frozenset(
     {
         "intra_move_summary",
-        "attribution_ambiguity_hint",
         "ca7_surface",
     }
 )
@@ -201,11 +197,6 @@ def build_masked_progression_strict_payload(
             "runtime defect."
         ),
     }
-
-
-def count_quoted_segments(rendered_final: str) -> int:
-    """P4: exact count of substrings matching /\"[^\"]+\"/ (ASCII double quotes only)."""
-    return len(_QUOTED_SEGMENT_RE.findall(str(rendered_final or "")))
 
 
 def build_character_audit_v2_deterministic(
@@ -397,11 +388,6 @@ def build_prose_audit_v2_deterministic(
             "payload": _pl("dialogue_integration_proxy"),
         },
         {
-            "check_id": "prose_attribution",
-            "dimension_id": CHECK_TO_DIMENSION["prose_attribution"],
-            "payload": _pl("attribution_proxy"),
-        },
-        {
             "check_id": "prose_tone",
             "dimension_id": CHECK_TO_DIMENSION["prose_tone"],
             "payload": _pl("tone_consistency_local"),
@@ -410,66 +396,11 @@ def build_prose_audit_v2_deterministic(
     scored, escalation, _ = compute_escalation_for_layer(
         layer="prose_dialogue", checks=checks
     )
-    hint = _build_attribution_ambiguity_hint(
-        scored=scored, rendered_final=rendered_final
-    )
-    out: dict[str, Any] = {
+    return {
         "schema_version": 2,
         "layer": "prose_dialogue",
         "checks": scored,
         "escalation": escalation,
-        "attribution_ambiguity_hint": hint,
-    }
-    return out
-
-
-def _build_attribution_ambiguity_hint(
-    *,
-    scored: list[dict[str, Any]],
-    rendered_final: str,
-) -> dict[str, Any]:
-    """P4: prose-only; uses scored prose checks + quoted segment count rule."""
-    att_pl: dict[str, Any] = {}
-    dlg_pl: dict[str, Any] = {}
-    for row in scored:
-        cid = row.get("check_id")
-        pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
-        if cid == "prose_attribution":
-            att_pl = dict(pl)
-        elif cid == "prose_dialogue_integration":
-            dlg_pl = dict(pl)
-    att_ok = bool(att_pl.get("passes_bar"))
-    dlg_ok = bool(dlg_pl.get("passes_bar"))
-    qcount = count_quoted_segments(rendered_final)
-    lim = str(att_pl.get("limitations", "") or "")
-    if att_ok:
-        return {"schema_version": 1, "active": False}
-    if dlg_ok and qcount >= 2:
-        level = "possible_speaker_ambiguity"
-        human_readable = (
-            "Attribution heuristic failed while dialogue integration passed and "
-            f"two or more double-quoted segments were found (count={qcount}); "
-            "possible speaker ambiguity in render."
-        )
-    else:
-        level = "heuristic_limitation"
-        human_readable = (
-            "Attribution heuristic failed; likely pronoun-only or formatting limitation "
-            f"(quoted_segment_count={qcount})."
-        )
-        if lim:
-            human_readable = f"{human_readable} ({lim})"
-    return {
-        "schema_version": 1,
-        "active": True,
-        "level": level,
-        "human_readable": human_readable[:512],
-        "signals": {
-            "attribution_passes_bar": att_ok,
-            "dialogue_integration_passes_bar": dlg_ok,
-            "quoted_segment_count": qcount,
-            "limitations_note": lim,
-        },
     }
 
 

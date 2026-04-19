@@ -262,7 +262,7 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 | `av2.check.prose_readability` | Prose readability proxy | heuristic / advisory | Prose bundle present in v2 path | High false-positive rate possible; not narrator correctness. | heuristic proxy |
 | `av2.check.prose_redundancy` | Prose redundancy Jaccard | heuristic / advisory | Same as `av2.check.prose_readability` | `prior_turns_used == 0` → scored **`pass`** path per policy; interpret with `limitations`. | heuristic proxy |
 | `av2.check.prose_dialogue_integration` | Prose dialogue integration proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Advisory only. | heuristic proxy |
-| `av2.check.prose_attribution` | Prose attribution proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Pronoun-led false negatives common (**#10** class noise). | heuristic proxy |
+| `av2.check.prose_attribution` | **Removed (GitHub #40).** Legacy v2 check (lexical proximity near quoted dialogue; fed from v1 `attribution_proxy`). | heuristic / advisory | Historical `*_full.json` only | **New outputs:** absent — **neutral**. **Historical rows:** legacy telemetry only; do **not** treat as attribution truth (see **Issue #40 — Deprecation of narrator attribution heuristic**). | **removed** |
 | `av2.check.prose_tone` | Prose local tone proxy | heuristic / advisory | Same as `av2.check.prose_readability` | Lexical heuristic only. | heuristic proxy |
 | `av2.llm_character` | LLM-assisted character audit v2 layer (when enabled) | conditional | LLM audit enabled for the run/build path | When disabled, absence is **neutral**. When enabled but missing where expected, investigate harness. | heuristic proxy |
 | `av2.llm_narrator` | LLM-assisted narrator audit v2 layer | conditional | Same as `av2.llm_character` | Same silence semantics. | heuristic proxy |
@@ -1604,7 +1604,7 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 |-----|------|
 | `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue. **`action_coverage_heuristic` does not include `passes_bar`** (removed, GitHub **#76**); use `action_token_overlap_ratio`, `action_non_stopword_hits`, and `acting_name_in_render` with Audit v2 `nar_strict_action_overlap` for tri-state. |
 | `narrator_validation_audit_v1` | Observational: captures raw render path, deterministic fallback flag, semantic validator payload, and **derived** flags (`fallback_triggered`, `output_replaced`, etc.). Does **not** re-run validation. |
-| `prose_dialogue_audit_v1` | Heuristic advisory: readability/redundancy/dialogue/attribution/tone proxies. |
+| `prose_dialogue_audit_v1` | Heuristic advisory: readability/redundancy/dialogue/tone proxies. |
 
 **Non-mutating:** These blobs are computed for logging only. They do **not** change narrator output, fallbacks, or continuity.
 
@@ -1613,13 +1613,46 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 - **Output and prose layers are heuristic-only** (no LLM scoring in v1); false positives/negatives are expected.
 - **No narrator audit row** (and thus no v1 blobs) when `log_narrator_render_audit` early-returns because `narrator_raw` is falsy or audits are disabled—same guard as before v1.
 - **Legacy narrator scope heuristic (removed, GitHub #41):** Historical rows may still contain **`single_actor_scope_heuristic`** (v1) and/or Audit v2 **`nar_scope_proxy`** / **`scope_proxy_context`**; **ignore** for current contract interpretation (retirement rationale: closed **#9**).
-- **`prose_dialogue_audit_v1` → `attribution_proxy`:** Pronoun-only or implicit attribution can yield **false negatives** (`passes_bar`); see the `limitations` string in the logged blob. This check is **advisory only**, **non-authoritative**, and **non-gating**; high `passes_bar: false` rates are **expected** under v1 and **must not** be read as narrator failure without corroborating signals (see also `interpretation: advisory_non_gating` on the blob when present).
+- **`prose_dialogue_audit_v1` → `attribution_proxy`:** **Removed (GitHub #40).** Historical rows may still contain this key; treat as **legacy only** (see **Issue #40 — Deprecation of narrator attribution heuristic**).
 - **`prose_dialogue_audit_v1` → `readability_proxy` / `tone_consistency_local`:** Lexical heuristics only (word length, long-token ratio, simple present-tense token hits). **Heuristic-only**, **non-authoritative**, **non-gating**, **low-signal**; `passes_bar: false` is **not** narrator incorrectness and **must not** be used to assess narrator correctness, trigger escalation, or drive system decisions. Use for **monitoring / observability** only; expect threshold-adjacent noise and false positives (see `interpretation` / `note` on the blob when present; GitHub **#10**).
 - **Redundancy** compares against the **prior assistant** message only (last assistant `content` in `chat_history` before the current append), not a long window.
 
 **Scope:** Per-turn narrator renders only; scene-opening narrator calls are **not** covered by v1.
 
+## Issue #40 — Deprecation of narrator attribution heuristic
+
+### A. What the heuristic did
+
+The narrator attribution path attempted to infer **attribution clarity** using **lexical proximity**: whether an acting-character token appeared in a short window **before the first ASCII double-quoted segment** in the rendered narration. That v1 `attribution_proxy` fed Audit v2 **`av2.check.prose_attribution`**, and v2 could emit **`attribution_ambiguity_hint`** (including a `possible_speaker_ambiguity` tier when dialogue integration passed but multiple quotes were present).
+
+### B. Why it was removed
+
+Offline evaluation (**Issue #40**) on a multi-scenario audit corpus (sessions **598–610**, **93** join-valid narrator turns after structural pairing) found:
+
+- **`prose_attribution` heuristic fail rate ~91%** (85/93 scored turns) on that corpus.
+- **Reader-fidelity AI review** (blind to heuristics; dual-pass agreement) labeled **0** turns **problematic** and **0** **ambiguous** — all agreed labels were **clear**.
+
+The signal therefore **misaligned** with reader-level attribution failure: it measured **explicit lexical attribution patterns**, not whether a reader could follow who was speaking.
+
+### C. Key conclusion
+
+> The heuristic measured explicit attribution patterns, not actual attribution failure.
+
+### D. Replacement
+
+> No direct replacement. Attribution failure is better detected via:
+> - audit inspection
+> - manual tagging of real ambiguity cases
+
+### E. Archival note
+
+> This signal may appear in historical audit artifacts but is not present in new outputs.
+
 ## Schema changes
+
+### Issue #40 — Removal of narrator attribution heuristic (v1 + v2)
+
+**Removed:** `prose_dialogue_audit_v1.checks.attribution_proxy` (new narrator audit rows); Audit v2 deterministic check **`prose_attribution`**; prose deterministic block **`attribution_ambiguity_hint`**; escalation dimension **`prose_attribution`**. **Compatibility:** historical `*_narrator_full.json` may still list the removed keys; treat as legacy only (retirement rationale: **Issue #40 — Deprecation of narrator attribution heuristic**).
 
 ### Issue #76 — Removal of `action_coverage_heuristic.passes_bar`
 

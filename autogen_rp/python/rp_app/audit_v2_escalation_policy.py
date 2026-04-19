@@ -25,7 +25,6 @@ DIM_NARRATOR_ENVIRONMENT_CUE = "narrator_environment_cue"
 DIM_PROSE_READABILITY = "prose_readability"
 DIM_PROSE_REDUNDANCY = "prose_redundancy_vs_prior"
 DIM_PROSE_DIALOGUE_INTEGRATION = "prose_dialogue_integration"
-DIM_PROSE_ATTRIBUTION = "prose_attribution"
 DIM_PROSE_TONE = "prose_tone_local"
 
 DIMENSION_AGGREGATE_NOT_APPLICABLE = "not_applicable"
@@ -39,7 +38,6 @@ CHECK_TO_DIMENSION: dict[str, str] = {
     "prose_readability": DIM_PROSE_READABILITY,
     "prose_redundancy": DIM_PROSE_REDUNDANCY,
     "prose_dialogue_integration": DIM_PROSE_DIALOGUE_INTEGRATION,
-    "prose_attribution": DIM_PROSE_ATTRIBUTION,
     "prose_tone": DIM_PROSE_TONE,
 }
 
@@ -119,7 +117,6 @@ _CHECK_EVALUATORS: dict[str, Any] = {
     "prose_readability": _tri_state_prose_bool_passes,
     "prose_redundancy": _tri_state_prose_redundancy,
     "prose_dialogue_integration": _tri_state_prose_bool_passes,
-    "prose_attribution": _tri_state_prose_bool_passes,
     "prose_tone": _tri_state_prose_bool_passes,
 }
 
@@ -270,7 +267,6 @@ def dimensions_for_layer(layer: str) -> list[str]:
             DIM_PROSE_READABILITY,
             DIM_PROSE_REDUNDANCY,
             DIM_PROSE_DIALOGUE_INTEGRATION,
-            DIM_PROSE_ATTRIBUTION,
             DIM_PROSE_TONE,
         ]
     return []
