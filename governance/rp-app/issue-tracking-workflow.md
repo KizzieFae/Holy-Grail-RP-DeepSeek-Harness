@@ -27,6 +27,104 @@
 
 Simulation and audit logging produce JSON under `autogen_rp/python/rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Roles, **Type** / **Layer** / **Pattern status**, evidence standards, and heuristic caveats are in **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. The same file holds the **Issue #70** Tier 1 engineering-role taxonomy (**orthogonal** to **Issue #59** applicability); do not duplicate that registry here. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
+### A.2 Incidental findings / adjacent discoveries (evaluation depth 1 completion records)
+
+**Canonical term**  
+Use **`evaluation depth 1`** as the only scoped term. Optional single gloss: **“(pilot ‘Tier 1’ in Issue #60; not Issue #70 ‘Tier 1 kernel’)”.**
+
+**Definitions**
+
+1. **Evaluation Record** — The **full** set of fields required by **`Audit Signal Evaluation Methodology` → `Evaluation Record Requirements`** in `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` (including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory row/column in that table for the evaluation being closed).
+
+2. **Primary Evaluation Record block** — A **single** contiguous markdown region **on a Holy Grail RP GitHub Issue** (repository that hosts Issues for this work) that contains the **complete Evaluation Record** and appears **only** in:
+   - the **Issue `body`**, or  
+   - a **single Issue `comment` `body`**.
+
+   External-only storage (gist-only, pastebin-only, chat-only) **does not** qualify.
+
+3. **Completed evaluation publication (deterministic)** — A **Primary Evaluation Record block** that **simultaneously** satisfies **all** of:
+   - **Evaluation depth** = **`1`**;  
+   - **Stages satisfied** explicitly lists **Stage 6** as **complete** for the **Signal id under evaluation**;  
+   - **Disposition** is present and **exactly one** methodology disposition value (per `Evaluation Record Requirements`);  
+   - the block is **already present** in **Issue `body`** or **Issue `comment`** (i.e. the completion is **recorded on the GitHub Issue**, not only implied elsewhere).
+
+   Until those four hold **in** `issue.body` or a **`comment.body`**, the evaluation is **not** “recorded on the GitHub Issue as a completed evaluation” for purposes of this rule.
+
+**Trigger (applies if and only if)**
+
+The **Incidental findings / adjacent discoveries** obligation **activates** when **both**:
+
+- **T1 — Methodology closure:** A **Completed evaluation publication** exists for one **Signal id** at **evaluation depth 1** (definitions above).  
+- **T2 — GitHub system-of-record:** That **Completed evaluation publication** is **materialized** as a **Primary Evaluation Record block** in **`issue.body`** or **one** **`comment.body`** on the **tracking GitHub Issue** (the Issue used as the **system of record** for that evaluation work per `governance/rp-app/issue-tracking-workflow.md` **§A**).
+
+If **T1** is true but the record exists only outside GitHub Issue `body`/comments, **the trigger does not activate** (no requirement to add the section until the completion is **published** on the Issue as above).
+
+**Placement (unambiguous)**
+
+The heading **`## Incidental findings / adjacent discoveries`** must appear in **exactly one** of:
+
+- **P1 — Same block:** The **same** `body` or **same** `comment` as the **Primary Evaluation Record block**, **immediately after** the Evaluation Record table (or equivalent structured fields)—**no** intervening other top-level `##` sections between the end of the Evaluation Record and this heading.
+
+- **P2 — Directly linked continuation block:** A **different** Issue `comment` **only if** that comment’s **first non-empty line** is **exactly**:
+
+  `Continuation of Evaluation Record: <PERMALINK>`
+
+  where **`<PERMALINK>`** is:
+  - if the Primary Evaluation Record block is in a **comment**: the **GitHub permalink URL** of **that** comment (`…/issues/<N>#issuecomment-<id>`);  
+  - if the Primary Evaluation Record block is in the **Issue description**: the **canonical Issue URL** for **that** Issue (`…/issues/<N>`).
+
+  The **`## Incidental findings / adjacent discoveries`** section **must** appear **only** in this continuation comment, **after** that first line. No other placement qualifies as **directly linked**.
+
+**Not allowed:** The section only in a third comment, or in a comment without **`Continuation of Evaluation Record:`** + valid **`<PERMALINK>`** as above.
+
+**Section contents**
+
+Whenever the trigger applies, the required section must appear and must contain:
+
+- for each adjacent finding:
+  1. **Scope** — what is being described outside the primary **Signal id** under evaluation
+  2. **Evidence** — same evidence discipline as `issue-tracking-workflow.md` §D: **scenario id**, **audit session path**, **turn index**, or **`n/a` with reason**
+  3. **Disposition** — exactly one of:
+     - `none`
+     - `monitor`
+     - `defer`
+     - `file_issue`
+
+If there are **zero** adjacent findings, the section must still appear and contain:
+
+- **`None`**
+
+Optional sub-line:
+
+- `(reviewed Stages 1–6 for non-primary signals; no follow-on recorded)`
+
+**Constraints**
+
+This section must **not**:
+
+1. imply or create runtime authority
+2. alter or expand the **#59** runtime allowlist / authority contract
+3. override or silently revise the primary **Disposition** for the target **Signal id**
+
+It is **documentation of adjacent interpretive findings only**.
+
+### A.3 Enforcement — Incidental findings / adjacent discoveries
+
+**When this applies:** Only when **§A.2**’s trigger applies on **this** Issue (a **Completed evaluation publication** at **evaluation depth 1**, materialized on the Issue per **§A.2**). All definitions—**Primary Evaluation Record block**, **P1** / **P2**, **Disposition** values, continuation line format, **immediately after**, intervening **`##`** rules, permalink targets—are **only** in **§A.2**. This subsection adds **operator enforcement**; it does **not** restate **§A.2**.
+
+**Operator checklist** — Before editing **`Current status:`** to **`validated`**, the actor **must** evaluate every row below. Post **one** Issue **comment** on **this** Issue that contains the checklist (copy or same numbered items) and an explicit **pass**, **fail**, or **n/A** (with reason) for **each** row. **§B.5** applies.
+
+| # | Check | Pass criteria (fail otherwise; use **n/A** only where noted) |
+|---|--------|--------------------------------------------------------------|
+| 1 | **Section present** | The exact markdown heading `## Incidental findings / adjacent discoveries` appears in this Issue’s **`body`** or a **`comment`**. **Fail** if missing, misspelled, or not a `##` heading. |
+| 2 | **Valid `None` or findings** | **Either** the **zero-finding** case **or** the **non-empty findings** case per **§A.2**: zero-finding requires a line whose trimmed text is exactly `None` and allows **only** the **optional** sub-line **§A.2** permits; findings require each adjacent finding to have **Scope**, **Evidence**, and **Disposition**, with **Disposition** exactly one of the values **§A.2** enumerates under **Section contents**. |
+| 3 | **P1 or P2 placement** | **Exactly one** of **P1** or **P2** qualifies per **§A.2** (same block vs continuation comment). **Fail** if neither qualifies, both conflict, or **§A.2** placement rules are violated. |
+| 4 | **P2 permalink** | **n/A** if **P1** is the only qualifying placement. If **P2** is used, **pass** only if the continuation comment’s first non-empty line and permalink satisfy **§A.2**. |
+
+**Failure rule (§H)** — If any row is **fail**, or the required comment is missing, or any row lacks **pass** / **fail** / **n/A**: **`Current status:`** **must not** be **`validated`**. The Issue **stays** at **`implemented`** (or at **`consensus_reached`** if implementation is not yet claimed—**do not** advance to **`validated`**). Keep **§B.3** Project **Status** / **Workflow** consistent with the actual **`Current status:`** (do not show **`validated`** / **Validating** until this enforcement passes). **Recovery:** correct **`body`** or **`comment`**(s), add a **§B.5** comment describing the fix, re-post the checklist with all **pass** or justified **n/A**, then transition **`implemented`** → **`validated`** per **§H**.
+
+**Optional mechanical aid (non-authoritative)** — A **local** script or one-off check may assist with **mechanical** pattern checks only (e.g. literal heading, `None` line, continuation prefix, URL shape). It **must not** be treated as proof of **§A.2** compliance, **must not** interpret evaluation content or methodology, and **must not** become an authority layer. Operators and reviewers remain bound by this checklist and **§A.2**.
+
 ### B. Standard workflow
 
 Record progress in the Issue (description updates, comments, checklists). **Status** line must follow **§H**.
@@ -123,7 +221,7 @@ If the board uses different option labels, **map by intent** (investigation vs c
 
 2. **Priority project field** — On **RP System Workflow**, **Priority** is a single-select when enabled: **P0** (do now), **P1** (next), **P2** (later), **P3** (backlog). It applies **only** within the current **phase-first selection** batch for ordering; it does **not** encode an execution stage and must **not** be treated as a substitute for **`Current status:`** or **Workflow**.
 
-3. **Execution-stage transition discipline** — On every **`Current status:`** (**§H**) change: (a) update **Project Status** and **Workflow** to the **§B.3** row **before** calling the transition done; (b) add an **Issue comment** recording: what completed in the prior execution stage, the resulting determination, and the **next execution stage** intended.
+3. **Execution-stage transition discipline** — On every **`Current status:`** (**§H**) change: (a) update **Project Status** and **Workflow** to the **§B.3** row **before** calling the transition done; (b) add an **Issue comment** recording: what completed in the prior execution stage, the resulting determination, and the **next execution stage** intended. **When §A.2’s trigger applies to this Issue**, the comment posted **before** setting **`Current status: validated`** **must** also satisfy **§A.3** (checklist in the comment with explicit **pass** / **fail** / **n/A** per row). If **§A.3** is not yet satisfied, **do not** transition to **`validated`** (**§H**, **§A.3** failure rule).
 
 4. **Session / chat boundary** — Before ending a work session, switching chats, or handing off to another AI: add an **Issue comment** with: current **execution stage** (and current **`Current status:`**), work completed this session, what remains, and the **next concrete step**. Chat-local **Active Context** (see `governance/policies/project-behavior-holy-grail.md`) must be a **derived summary** of the Issue + comments + Project fields, written **after** this comment when starting a new chat—not a replacement for it.
 

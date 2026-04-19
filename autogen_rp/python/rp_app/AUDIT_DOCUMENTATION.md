@@ -919,6 +919,8 @@ When an evaluation completes, record outcomes where the team tracks work (e.g. G
 - Choosing follow-on **none** (with explicit justification) **typically** implies **no** required inventory edit, **#70** registry edit, or broad doc churn—unless a separate policy requires a minimal audit trail entry.
 - Optional pointers for operators: `autogen_rp/docs/audit-workflows.md` (scene triage procedure); issue template helper text may reference this section when filing **audit_simulation** / signal work.
 
+> **Governance:** **Incidental findings / adjacent discoveries** for **evaluation depth 1** GitHub completion records — canonical rule only in **`governance/rp-app/issue-tracking-workflow.md`** **§A.2** (do not duplicate here).
+
 ### Evaluation Record Requirements
 
 Each **evaluation** (pilot thread, issue comment series, or internal record) **must** state explicitly, where the team tracks work:
