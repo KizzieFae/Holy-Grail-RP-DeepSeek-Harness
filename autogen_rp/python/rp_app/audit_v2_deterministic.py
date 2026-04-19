@@ -7,8 +7,6 @@ import re
 from typing import Any, Mapping
 
 from character_audits_v1 import (
-    _ca1_motivation_action,
-    _ca2_dialogue_action,
     _ca4_repetition,
     _ca7_pressure_move,
 )
@@ -238,9 +236,7 @@ def build_character_audit_v2_deterministic(
     issues_before: Mapping[str, Any] | None = None,
     turn_execution: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """V2 character deterministic: intra-move, repetition, declared move fields, masked progression."""
-    ca1 = _ca1_motivation_action(move)
-    ca2 = _ca2_dialogue_action(move)
+    """V2 character deterministic: repetition, declared move fields, masked progression."""
     ca4 = _ca4_repetition(move, next_actor, orchestration_state)
     ca7 = _ca7_pressure_move(move)
     ti = int(turn_index) if turn_index is not None else -1
@@ -264,16 +260,6 @@ def build_character_audit_v2_deterministic(
             turn_execution=turn_execution,
         )
     checks: list[dict[str, Any]] = [
-        {
-            "check_id": "char_ca1_motivation_action",
-            "dimension_id": CHECK_TO_DIMENSION["char_ca1_motivation_action"],
-            "payload": dict(ca1),
-        },
-        {
-            "check_id": "char_ca2_dialogue_action",
-            "dimension_id": CHECK_TO_DIMENSION["char_ca2_dialogue_action"],
-            "payload": dict(ca2),
-        },
         {
             "check_id": "char_ca4_repetition",
             "dimension_id": CHECK_TO_DIMENSION["char_ca4_repetition"],

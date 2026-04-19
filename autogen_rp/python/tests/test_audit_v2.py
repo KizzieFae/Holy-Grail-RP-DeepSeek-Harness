@@ -16,7 +16,6 @@ from audit_v2_deterministic import (
     count_quoted_segments,
 )
 from audit_v2_escalation_policy import (
-    CHECK_RESULT_EXCLUDED_DEPRECATED,
     DIMENSION_AGGREGATE_NOT_APPLICABLE,
     compute_escalation_for_layer,
 )
@@ -42,17 +41,16 @@ def test_character_v2_deterministic_has_checks_and_escalation() -> None:
     )
     assert det["schema_version"] == 2
     assert det["layer"] == "character_decision"
-    assert len(det["checks"]) == 5
+    assert len(det["checks"]) == 3
+    check_ids = {c["check_id"] for c in det["checks"]}
+    assert "char_ca1_motivation_action" not in check_ids
+    assert "char_ca2_dialogue_action" not in check_ids
     mp = next(
         c for c in det["checks"] if c["check_id"] == "char_masked_progression_strict"
     )
     assert mp["result"] == "pass"
     assert mp["payload"].get("observation") == "skipped"
     assert all("result" in c for c in det["checks"])
-    ca1 = next(c for c in det["checks"] if c["check_id"] == "char_ca1_motivation_action")
-    ca2 = next(c for c in det["checks"] if c["check_id"] == "char_ca2_dialogue_action")
-    assert ca1["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
-    assert ca2["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
     assert "intra_move_summary" in det
     summary = det["intra_move_summary"]
     assert summary["intra_move_aggregate"] == det["escalation"]["dimension_aggregate"][
@@ -113,16 +111,6 @@ def test_same_dimension_conflict_triggers_escalation() -> None:
 def test_compound_intra_move_ambiguity_when_repetition_border() -> None:
     checks = [
         {
-            "check_id": "char_ca1_motivation_action",
-            "dimension_id": "character_intra_move_coherence",
-            "payload": {"overlap_ratio": 0.0, "band": "weak"},
-        },
-        {
-            "check_id": "char_ca2_dialogue_action",
-            "dimension_id": "character_intra_move_coherence",
-            "payload": {"classification": "possibly_disconnected"},
-        },
-        {
             "check_id": "char_ca4_repetition",
             "dimension_id": "character_structural_repetition",
             "payload": {"band": "moderate", "prior_turns_compared": 1},
@@ -151,16 +139,6 @@ def test_compound_intra_move_ambiguity_when_repetition_border() -> None:
 def test_compound_blocked_when_repetition_fail_only() -> None:
     checks = [
         {
-            "check_id": "char_ca1_motivation_action",
-            "dimension_id": "character_intra_move_coherence",
-            "payload": {"overlap_ratio": 0.0, "band": "weak"},
-        },
-        {
-            "check_id": "char_ca2_dialogue_action",
-            "dimension_id": "character_intra_move_coherence",
-            "payload": {"classification": "possibly_disconnected"},
-        },
-        {
             "check_id": "char_ca4_repetition",
             "dimension_id": "character_structural_repetition",
             "payload": {"band": "high", "prior_turns_compared": 2},
@@ -183,35 +161,16 @@ def test_count_quoted_segments_regex() -> None:
     assert count_quoted_segments("no ascii dquotes") == 0
 
 
-def test_char_ca1_ca2_excluded_from_escalation_not_pass_tri_state() -> None:
-    """GitHub #42: CA1/CA2 payloads must not rollup to intra dimension or qualify escalation."""
-    scored, esc, extras = compute_escalation_for_layer(
-        layer="character_decision",
-        checks=[
-            {
-                "check_id": "char_ca1_motivation_action",
-                "dimension_id": "character_intra_move_coherence",
-                "payload": {"overlap_ratio": 0.0, "band": "weak"},
-            },
-            {
-                "check_id": "char_ca2_dialogue_action",
-                "dimension_id": "character_intra_move_coherence",
-                "payload": {"classification": "possibly_disconnected"},
-            },
-        ],
+def test_char_ca1_ca2_never_emitted_in_character_deterministic() -> None:
+    """Issue #44: removed CA1/CA2 checks must not appear in current deterministic output."""
+    det = build_character_audit_v2_deterministic(
+        move={"action": "nods", "dialogue": "Yes.", "motivation": {"goal": "agree"}},
+        next_actor="A",
+        orchestration_state={"recent_structured_moves": []},
     )
-    assert esc["dimension_aggregate"]["character_intra_move_coherence"] == (
-        DIMENSION_AGGREGATE_NOT_APPLICABLE
-    )
-    assert esc["qualified"] is False
-    assert esc["reasons"] == []
-    assert all(
-        row["result"] == CHECK_RESULT_EXCLUDED_DEPRECATED
-        for row in scored
-        if row["check_id"]
-        in ("char_ca1_motivation_action", "char_ca2_dialogue_action")
-    )
-    assert extras["intra_move_summary"]["pattern"] == "intra_move_not_applicable"
+    ids = {c["check_id"] for c in det["checks"]}
+    assert "char_ca1_motivation_action" not in ids
+    assert "char_ca2_dialogue_action" not in ids
 
 
 def test_nar_scope_proxy_deprecated_does_not_border_escalate() -> None:

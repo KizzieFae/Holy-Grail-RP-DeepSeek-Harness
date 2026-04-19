@@ -186,65 +186,6 @@ def _recent_moves_tail(
     return slim
 
 
-def _ca1_motivation_action(move: Mapping[str, Any]) -> dict[str, Any]:
-    mot = move.get("motivation") or {}
-    if not isinstance(mot, dict):
-        mot = {}
-    mot_parts = " ".join(
-        str(mot.get(k, "") or "")
-        for k in ("goal", "tactic", "emotional_driver", "risk_level")
-    )
-    action = str(move.get("action", "") or "")
-    dialogue = str(move.get("dialogue", "") or "")
-    move_text = f"{action} {dialogue}"
-    a = set(_meaningful_tokens(mot_parts))
-    b = set(_meaningful_tokens(move_text))
-    ratio = _jaccard(a, b)
-    if not a or not b:
-        band = "unknown"
-    elif ratio >= 0.12:
-        band = "strong"
-    else:
-        band = "weak"
-    return {
-        "method": "heuristic_v1",
-        "overlap_ratio": round(ratio, 4),
-        "band": band,
-        "limitations": "Token overlap only; metaphorical or implicit alignment not scored.",
-    }
-
-
-def _ca2_dialogue_action(move: Mapping[str, Any]) -> dict[str, Any]:
-    dialogue = str(move.get("dialogue", "") or "").strip()
-    action = str(move.get("action", "") or "")
-    if not dialogue:
-        return {
-            "method": "heuristic_v1",
-            "classification": "not_applicable",
-            "limitations": "Empty dialogue.",
-        }
-    a = set(_meaningful_tokens(dialogue))
-    b = set(_meaningful_tokens(action))
-    inter = len(a & b)
-    if not a:
-        return {
-            "method": "heuristic_v1",
-            "classification": "not_applicable",
-            "limitations": "No dialogue tokens after stopword filter.",
-        }
-    if inter >= max(2, int(0.15 * len(a))):
-        cls = "consistent"
-    elif inter == 0:
-        cls = "possibly_disconnected"
-    else:
-        cls = "possibly_disconnected"
-    return {
-        "method": "heuristic_v1",
-        "classification": cls,
-        "limitations": "Crude token overlap; subtext and reported speech not modeled.",
-    }
-
-
 def _ca3_issue_engagement(
     move: Mapping[str, Any],
     active_digest: list[dict[str, Any]],
@@ -502,8 +443,6 @@ def build_character_audit_v1(
     }
 
     derived: dict[str, Any] = {
-        "motivation_action_alignment": _ca1_motivation_action(move),
-        "dialogue_action_consistency": _ca2_dialogue_action(move),
         "issue_engagement": _ca3_issue_engagement(move, active_digest),
         "repetition_vs_prior_self": _ca4_repetition(move, next_actor, orchestration_state),
         "scene_plausibility_flags": _ca5_plausibility(move, char_names, scene_trim),

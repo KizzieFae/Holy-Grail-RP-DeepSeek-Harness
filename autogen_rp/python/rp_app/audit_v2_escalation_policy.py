@@ -30,18 +30,9 @@ DIM_PROSE_DIALOGUE_INTEGRATION = "prose_dialogue_integration"
 DIM_PROSE_ATTRIBUTION = "prose_attribution"
 DIM_PROSE_TONE = "prose_tone_local"
 
-# --- GitHub #42: CA1/CA2 excluded from escalation (deprecated after Issue #13) ---
-# Logged on scored rows; omitted from dimension aggregation; not a success "pass".
-CHECK_RESULT_EXCLUDED_DEPRECATED = "excluded_deprecated"
-# Intra-move dimension has no escalation-active checks after CA1/CA2 exclusion.
 DIMENSION_AGGREGATE_NOT_APPLICABLE = "not_applicable"
-_CHECK_IDS_EXCLUDED_FROM_ESCALATION_AGGREGATION: frozenset[str] = frozenset(
-    {"char_ca1_motivation_action", "char_ca2_dialogue_action"}
-)
 
 CHECK_TO_DIMENSION: dict[str, str] = {
-    "char_ca1_motivation_action": DIM_CHARACTER_INTRA_MOVE,
-    "char_ca2_dialogue_action": DIM_CHARACTER_INTRA_MOVE,
     "char_ca4_repetition": DIM_CHARACTER_REPETITION,
     "char_ca7_declared_fields": DIM_CHARACTER_DECLARED_FIELDS,
     "char_masked_progression_strict": DIM_CHARACTER_MASKED_PROGRESSION,
@@ -59,15 +50,6 @@ CHECK_TO_DIMENSION: dict[str, str] = {
 # Prose redundancy jaccard: border band for escalation
 PROSE_REDUNDANCY_BORDER_LOW = 0.55
 PROSE_REDUNDANCY_BORDER_HIGH = 0.65
-
-
-def _tri_state_ca1_ca2_excluded(_payload: dict[str, Any]) -> str:
-    """Character Audit v1 CA1/CA2 are deprecated for Audit v2 escalation (Issues #13, #42).
-
-    Raw payloads remain on scored rows for observability; this value is **not** a
-    successful pass and must not be aggregated into dimension rollup.
-    """
-    return CHECK_RESULT_EXCLUDED_DEPRECATED
 
 
 def _tri_state_ca4(payload: dict[str, Any]) -> str:
@@ -147,8 +129,6 @@ def _tri_state_prose_redundancy(payload: dict[str, Any]) -> str:
 
 
 _CHECK_EVALUATORS: dict[str, Any] = {
-    "char_ca1_motivation_action": _tri_state_ca1_ca2_excluded,
-    "char_ca2_dialogue_action": _tri_state_ca1_ca2_excluded,
     "char_ca4_repetition": _tri_state_ca4,
     "char_ca7_declared_fields": _tri_state_ca7,
     "nar_strict_action_overlap": _tri_state_nar_strict_overlap,
@@ -188,52 +168,15 @@ def _dimension_aggregate(results: list[str]) -> str:
     return "pass"
 
 
-def _ca1_ca2_results(scored: list[dict[str, Any]]) -> tuple[str, str]:
-    r1, r2 = "unknown", "unknown"
-    for row in scored:
-        cid = str(row.get("check_id", "") or "")
-        if cid == "char_ca1_motivation_action":
-            r1 = str(row.get("result", "") or "")
-        elif cid == "char_ca2_dialogue_action":
-            r2 = str(row.get("result", "") or "")
-    return r1, r2
-
-
-def build_intra_move_summary(
-    *,
-    ca1_result: str,
-    ca2_result: str,
-    intra_move_aggregate: str,
-) -> dict[str, Any]:
-    """P2: derived from CA1/CA2 scored results and intra dimension aggregate."""
+def build_intra_move_summary(*, intra_move_aggregate: str) -> dict[str, Any]:
+    """Summary for character_intra_move_coherence (reserved dimension; CA1/CA2 removed #44)."""
     intra = intra_move_aggregate
     if intra == DIMENSION_AGGREGATE_NOT_APPLICABLE:
         pattern = "intra_move_not_applicable"
         human_readable = (
-            "Character Audit v1 CA1/CA2 are excluded from Audit v2 escalation (deprecated, "
-            "Issues #13 / #42); character_intra_move_coherence has no active escalation "
-            "contributors. Raw CA1/CA2 metrics remain on checks[].payload for observability."
+            "character_intra_move_coherence has no contributing checks in the current "
+            "character deterministic bundle (GitHub Issue #44 — lexical CA1/CA2 removed)."
         )
-    elif intra == "conflict":
-        pattern = "intra_move_conflict"
-        human_readable = (
-            "CA1 and CA2 disagree on intra-move coherence (pass vs fail/border); "
-            "treated as a conflict under escalation policy."
-        )
-    elif intra == "border":
-        pattern = "intra_move_border"
-        human_readable = (
-            "Intra-move aggregate is border (mixed pass/border on CA1/CA2)."
-        )
-    elif intra == "fail":
-        pattern = "intra_move_fail_aligned"
-        human_readable = (
-            "CA1 and CA2 both failed; intra-move aggregate is fail-only (aligned). "
-            "Escalation on intra-move alone does not apply; compound rules may still qualify."
-        )
-    elif intra == "pass":
-        pattern = "intra_move_pass"
-        human_readable = "CA1 and CA2 both pass intra-move coherence checks."
     else:
         pattern = "intra_move_mixed"
         human_readable = f"Unexpected intra-move aggregate state: {intra!r}."
@@ -241,44 +184,7 @@ def build_intra_move_summary(
         "schema_version": 1,
         "pattern": pattern,
         "human_readable": human_readable[:512],
-        "ca1_result": ca1_result,
-        "ca2_result": ca2_result,
         "intra_move_aggregate": intra,
-    }
-
-
-def _maybe_compound_intra_move_ambiguity(
-    *, layer: str, dim_agg: dict[str, str]
-) -> dict[str, Any] | None:
-    """P1: intra fail + other character dimension border|conflict; exclude repetition-fail-only."""
-    if layer != "character_decision":
-        return None
-    if dim_agg.get(DIM_CHARACTER_INTRA_MOVE) != "fail":
-        return None
-    rep = dim_agg.get(DIM_CHARACTER_REPETITION)
-    decl = dim_agg.get(DIM_CHARACTER_DECLARED_FIELDS)
-    # EXCLUDE: structural_repetition == "fail" alone does not satisfy B (no declared ambiguity).
-    if rep == "fail" and decl not in ("border", "conflict"):
-        return None
-    secondary: list[str] = []
-    for d in (DIM_CHARACTER_REPETITION, DIM_CHARACTER_DECLARED_FIELDS):
-        v = dim_agg.get(d)
-        if v in ("border", "conflict"):
-            secondary.append(d)
-    if not secondary:
-        return None
-    return {
-        "code": "compound_intra_move_ambiguity",
-        "layer": "character_decision",
-        "dimension_id": DIM_CHARACTER_INTRA_MOVE,
-        "detail": {
-            "intra_move_aggregate": "fail",
-            "secondary_ambiguous_dimensions": secondary,
-            "secondary_aggregates": {
-                DIM_CHARACTER_REPETITION: rep or "",
-                DIM_CHARACTER_DECLARED_FIELDS: decl or "",
-            },
-        },
     }
 
 
@@ -313,9 +219,6 @@ def compute_escalation_for_layer(
 
     by_dim: dict[str, list[str]] = defaultdict(list)
     for row in scored:
-        cid = str(row.get("check_id", "") or "")
-        if cid in _CHECK_IDS_EXCLUDED_FROM_ESCALATION_AGGREGATION:
-            continue
         dim_id = str(row.get("dimension_id", "") or "")
         if not dim_id:
             continue
@@ -353,19 +256,12 @@ def compute_escalation_for_layer(
 
     layer_extras: dict[str, Any] = {}
     if layer == "character_decision":
-        ca1_r, ca2_r = _ca1_ca2_results(scored)
         intra = dim_agg.get(DIM_CHARACTER_INTRA_MOVE, "")
         layer_extras["intra_move_summary"] = build_intra_move_summary(
-            ca1_result=ca1_r,
-            ca2_result=ca2_r,
             intra_move_aggregate=intra,
         )
 
     qualified = bool(reasons)
-    compound = _maybe_compound_intra_move_ambiguity(layer=layer, dim_agg=dim_agg)
-    if compound is not None:
-        reasons.append(compound)
-        qualified = True
 
     escalation_summary = {
         "qualified": qualified,

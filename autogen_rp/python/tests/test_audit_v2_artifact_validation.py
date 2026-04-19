@@ -38,7 +38,9 @@ def test_audit_v2_character_layer_shape() -> None:
     assert set(block.keys()) == {"deterministic", "escalation", "llm"}
     assert block["deterministic"]["layer"] == "character_decision"
     assert block["deterministic"]["schema_version"] == 2
-    assert "intra_move_summary" in block["deterministic"]
+    intra = block["deterministic"]["intra_move_summary"]
+    assert "ca1_result" not in intra and "ca2_result" not in intra
+    assert "intra_move_aggregate" in intra
     assert "qualified" in block["escalation"]
     assert block["llm"]["status"] == "skipped"
     meta = {"schema_version": 1, "character_decision": block}

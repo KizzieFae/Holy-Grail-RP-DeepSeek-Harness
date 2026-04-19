@@ -30,7 +30,7 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 
 **Scope:** Implemented in `scene_eval_v1.py` (`run_scene_eval_v1`). **Fixed predicates only**; logic is **deterministic** and **artifact-driven** (character `*_full.json` via `load_character_audit_rows`, optional `structured_eval` JSON).
 
-**Critical constraints:** Judgments are **descriptive**, not pass/fail or system verdicts. They **must not** infer narrative or continuity correctness. They **must not** consume CA1–CA7 derived fields, Audit v2 heuristic bundles, narrator/prose heuristic audits, or LLM-generated audit layers. The layer **must not** modify runtime behavior, prompts, audit writers, or continuity state.
+**Critical constraints:** Judgments are **descriptive**, not pass/fail or system verdicts. They **must not** infer narrative or continuity correctness. They **must not** consume Character Audit v1 **CA3–CA7** `derived` fields, Audit v2 heuristic bundles, narrator/prose heuristic audits, or LLM-generated audit layers. The layer **must not** modify runtime behavior, prompts, audit writers, or continuity state.
 
 **Interpretation:** `fired` means the predicate’s observable condition held — **not** failure. `clear` means that condition was not observed — **not** success or health. `inconclusive` means inputs were insufficient or out of scope for that predicate.
 
@@ -249,18 +249,14 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 | `cav1.schema_version` | `metadata.character_audit_v1.schema_version` when the v1 block is written | always-on | `metadata.character_audit_v1` object is present on the character audit row | When the predicate holds, missing `schema_version` indicates a serialization / contract defect in the audit path. When the v1 block is absent entirely, evaluate **`cav1.block`** first (conditional). | telemetry |
 | `cav1.block` | Entire `metadata.character_audit_v1` advisory bundle | conditional | Per-turn character audit logging is enabled **and** the character turn produced a logged `*_full.json` / `*_light.json` row where v1 is attached | When audit logging is off or the row type omits v1, absence is **neutral**. When the predicate holds, absence of the block is an audit-path defect. | telemetry |
 | `cav1.observed` | `metadata.character_audit_v1.observed` (Director excerpt, digests, tails; pre-continuity context) | heuristic / advisory | Same as `cav1.block` | Silence or empty excerpts are common on short prompts or redacted paths; interpret only in context of **`cav1.block`** and continuity. | heuristic proxy |
-| `cav1.derived.motivation_action_alignment` | CA1 — lexical / structural alignment (`character_audits_v1`) | heuristic / advisory | Same as `cav1.block` | High scores do not prove coherence; low scores do not prove continuity bugs. Audit v2 scored row uses **`excluded_deprecated`** (**#42**). | heuristic proxy |
-| `cav1.derived.dialogue_action_consistency` | CA2 — lexical / structural consistency | heuristic / advisory | Same as `cav1.block` | Same as CA1. **`excluded_deprecated`** in Audit v2. | heuristic proxy |
 | `cav1.derived.issue_engagement` | CA3 — move-level issue linkage proxy | heuristic / advisory | Same as `cav1.block` | `possibly_passive` means weak **move-level** linkage, not “no story engagement.” | heuristic proxy |
 | `cav1.derived.repetition_vs_prior_self` | CA4 — repetition vs prior self | heuristic / advisory | Same as `cav1.block` | Silence uncommon when block present; interpret with tail windows in `observed`. | heuristic proxy |
 | `cav1.derived.scene_plausibility_flags` | CA5 — plausibility flags | heuristic / advisory | Same as `cav1.block` | Advisory only; corroborate with scene state. | heuristic proxy |
 | `cav1.derived.pressure_director` | CA6 — Director pressure snapshot | heuristic / advisory | Same as `cav1.block` | Reflects decision excerpt, not full orchestration truth. | heuristic proxy |
 | `cav1.derived.pressure_move` | CA7 — declared pressure fields on move | heuristic / advisory | Same as `cav1.block` | `none` / weak readings reflect optional move fields, not absence of continuity pressure. | heuristic proxy |
-| `av2.check.char_ca1_motivation_action` | Audit v2 scored row for CA1 | heuristic / advisory | `metadata.audit_v2` present with character deterministic bundle | Tri-state is **`excluded_deprecated`** — not a pass; does not aggregate into intra-move dimension (**#13**, **#42**). | heuristic proxy |
-| `av2.check.char_ca2_dialogue_action` | Audit v2 scored row for CA2 | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Same as CA1 row. | heuristic proxy |
-| `av2.check.char_ca4_repetition` | Audit v2 CA4 repetition band | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | `fail` / `border` / `pass` are heuristic bands; corroborate with narrative. | heuristic proxy |
-| `av2.check.char_ca7_declared_fields` | Audit v2 CA7 declared fields | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Border/fail still advisory vs continuity. | heuristic proxy |
-| `av2.check.char_masked_progression_strict` | Audit v2 strict-tier **masked progression** observability (classifier lane empty + structural proxy) | heuristic / advisory | Same as `av2.check.char_ca1_motivation_action` | Payload `observation` is `fired` / `clear` / `skipped` — **not** continuity truth or a defect signal. Escalation tri-state is always **`pass`** (**#73**); does not qualify LLM audit or product escalation. | heuristic proxy |
+| `av2.check.char_ca4_repetition` | Audit v2 CA4 repetition band | heuristic / advisory | `metadata.audit_v2` present with character deterministic bundle | `fail` / `border` / `pass` are heuristic bands; corroborate with narrative. | heuristic proxy |
+| `av2.check.char_ca7_declared_fields` | Audit v2 CA7 declared fields | heuristic / advisory | Same as `av2.check.char_ca4_repetition` | Border/fail still advisory vs continuity. | heuristic proxy |
+| `av2.check.char_masked_progression_strict` | Audit v2 strict-tier **masked progression** observability (classifier lane empty + structural proxy) | heuristic / advisory | Same as `av2.check.char_ca4_repetition` | Payload `observation` is `fired` / `clear` / `skipped` — **not** continuity truth or a defect signal. Escalation tri-state is always **`pass`** (**#73**); does not qualify LLM audit or product escalation. | heuristic proxy |
 | `av2.check.nar_strict_action_overlap` | Narrator strict action overlap | heuristic / advisory | `metadata.audit_v2_narrator` (or narrator bundle path used for prose) present | Absent when narrator v2 not built; neutral. | heuristic proxy |
 | `av2.check.nar_v1_action_passes_bar` | Narrator v1 action `passes_bar` rollup | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Heuristic narrator output check. | heuristic proxy |
 | `av2.check.nar_environment_cue` | Environment cue presence in render | heuristic / advisory | Same as `av2.check.nar_strict_action_overlap` | Conditional on Director/environment context; `environment_event` absent → check often inert (see payload). | heuristic proxy |
@@ -301,11 +297,13 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 
 **If key absent:** First confirm **`light` vs `full`** serialization (light omits the field by contract). Then confirm the schedule JSON and CLI actually targeted this turn index. If predicate true and full row still lacks the field, treat as **harness / writer** issue — **not** evidence the model ignored the user line in continuity.
 
-#### Example C — Heuristic / advisory (`cav1.derived.motivation_action_alignment` + `av2.check.char_ca1_motivation_action`)
+#### Example C — Heuristic / advisory (`cav1.derived.repetition_vs_prior_self` + `av2.check.char_ca4_repetition`)
 
-**Artifact:** `metadata.character_audit_v1.derived.motivation_action_alignment` shows weak overlap; Audit v2 row `check_id: "char_ca1_motivation_action"` has `result: "excluded_deprecated"`.
+**Artifact:** `metadata.character_audit_v1.derived.repetition_vs_prior_self` shows elevated similarity vs the speaker’s prior structured move; Audit v2 row `check_id: "char_ca4_repetition"` may score `border` or `fail` per band rules.
 
-**Interpretation:** The move may still be **semantically** coherent (subtext, indirect motivation). Do **not** infer a **response_validation** or **continuity_state** bug from CA1 alone. Read **`_narrative.json`** for the same turn; if continuity and narrative agree, file **quality** / calibration under **audit_simulation** if the metric is misleading — not a runtime regression without independent runtime evidence.
+**Interpretation:** Repetition bands are **structural** similarity signals, not proof of a bad beat. Do **not** infer a **response_validation** or **continuity_state** bug from CA4 alone. Read **`_narrative.json`** and scene context; file **quality** / calibration under **audit_simulation** only with corroboration — not a runtime regression without independent runtime evidence.
+
+**Historical note:** Legacy CA1/CA2 lexical overlap fields and Audit v2 `char_ca1_*` / `char_ca2_*` rows are **removed** from current emission (**Issue #44**); older session JSON may still contain them.
 
 ### Runtime use allowlist
 
@@ -850,7 +848,7 @@ Per **#66** / `scene_eval_v1.py`:
 
 - **must** follow existing **allowed** inputs for the evaluation layer;
 - **must not** use:
-  - CA1–CA7 **derived** fields (`metadata.character_audit_v1.derived`, etc.);
+  - CA3–CA7 **derived** fields (`metadata.character_audit_v1.derived`, etc.; CA1/CA2 removed — **Issue #44**);
   - Audit v2 heuristic bundles;
   - narrator/prose audit signals as predicate inputs;
   - LLM-generated audit layers.
@@ -1160,7 +1158,7 @@ Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
 Per-turn logs may include **`audit_v2`** (character) and narrator-side **`audit_v2_narrator`** metadata with extra deterministic checks. Same non-mutating contract as v1 add-ons. Read **`pass` / `fail` / `border`**, documented non-tri-state values (below), and **`limitations`** together when interpreting logs; assign a GitHub issue **Layer** from `governance/rp-app/issue-tracking-workflow.md` **§F** (e.g. **audit_simulation** for harness/log shape issues; **rendering** or **response_validation** when separate runtime evidence shows a defect outside the audit heuristic). For **`nar_scope_proxy`**, the scored **`result`** is always **`pass`** for escalation purposes while raw scope metrics remain in the payload (**GitHub #9**, removal **#41**). For **`char_masked_progression_strict`** (**#73**), the scored **`result`** is always **`pass`** for escalation; interpret only the check **`payload.observation`** (`fired` / `clear` / `skipped`) and **`payload.signals`** — **not** a runtime failure or classifier bug.
 
-For **`char_ca1_motivation_action`** and **`char_ca2_dialogue_action`** (Character Audit v1 **CA1 / CA2**, deprecated for escalation after corpus evaluation — **GitHub #13** / **#42**), the scored **`result`** is **`excluded_deprecated`**: raw payloads remain on the check row for observability, but these checks **do not** participate in dimension aggregation, escalation **`reasons`**, or **`qualified`**. They are **not** a successful **`pass`**. When no other checks contribute to **`character_intra_move_coherence`**, that dimension’s aggregate is **`not_applicable`** (not an empty-success **`pass`**). See **`intra_move_summary.pattern`** = **`intra_move_not_applicable`** and the human-readable explanation on character deterministic bundles.
+**`character_intra_move_coherence`:** The reserved dimension id remains in **`dimension_aggregate`** for shape compatibility. Current character deterministic checks (**CA4**, **CA7**, **`char_masked_progression_strict`**) map to **other** dimensions; none map to intra-move, so the aggregate is **`not_applicable`**. See **`intra_move_summary`** on character deterministic bundles (**Issue #44** — lexical CA1/CA2 removed from computation and emission).
 
 ### Audit signal limitations
 
@@ -1169,11 +1167,9 @@ Many dimensions are **heuristic**: token overlap, substring scope proxies, short
 Examples from baseline audits:
 
 - **Prose attribution** / attribution proxies — pronoun-led or implicit attribution often fails fixed-window name tests.
-- **CA1 (`char_ca1_motivation_action`)** — low lexical overlap between motivation text and action/dialogue on coherent, subtext-heavy moves. **Audit v2 escalation:** excluded (**`excluded_deprecated`**); see Audit v2 paragraph above (**#42**).
+- **CA4 repetition** — structural similarity vs prior self can flag **`border`** / **`fail`** bands on otherwise acceptable dialogue; corroborate with narrative.
 
-**CA1 / CA2 vs Audit v2 post–#42:** Those checks **do not** produce intra-move **`fail`** or **`border`** escalation outcomes in **Audit v2**; **`character_intra_move_coherence`** is **`not_applicable`** when only those inputs would apply. **Character Audit v1** `derived` CA1/CA2 fields remain for **raw observability** and are separate from **Audit v2** escalation **`reasons`** / **`qualified`**.
-
-Except for that CA1/CA2 **Audit v2** intra path (retired per **#42**, above), treat chronic **`fail`** on these as **quality**-class signals or **design_gap** discussions for metrics unless **independent runtime evidence** shows incorrect behavior attributable to a concrete **Layer**. They **should not** alone trigger “fix the narrator/character” work without that evidence.
+**Prose attribution** and **other** heuristics listed above (for example CA4–CA7 where referenced in this doc): chronic **`fail`** or noise may inform **quality**-class or **design_gap** discussion of **metrics** when **corroborated**; they **should not** alone trigger “fix the narrator/character” work without **independent runtime evidence** for a concrete **Layer**. Historical logs may still show removed CA1/CA2 keys (**Issue #44**); do not treat them as current contract signals.
 
 ### GitHub issue usage (this repo)
 
@@ -1542,9 +1538,24 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 
 **Scope:** Advisory, deterministic, **no LLM**. Built from the **validated parsed character move**, the **Director decision**, orchestration snapshots (`recent_structured_moves` tail, optional `continuity_active_issues`), and continuity-backed digests when `continuity_scope` is `continuity_enabled`. **Not** a verdict on continuity correctness.
 
-**Advisory scope — all `derived` dimensions:** Every heuristic under `metadata.character_audit_v1`.`derived` (including dimensions commonly referenced as **CA1–CA7**) is **advisory** and **non-authoritative**. None of these fields are continuity correctness checks, quality metrics, engagement scores, or story-truth indicators on their own.
+**Advisory scope — all `derived` dimensions:** Every heuristic under `metadata.character_audit_v1`.`derived` (dimensions commonly referenced as **CA3–CA7**; CA1/CA2 removed — **Issue #44**) is **advisory** and **non-authoritative**. None of these fields are continuity correctness checks, quality metrics, engagement scores, or story-truth indicators on their own.
 
-**What v1 evaluates:** Heuristic dimensions under `derived`: motivation↔action overlap (`motivation_action_alignment`), dialogue↔action token overlap (`dialogue_action_consistency`), issue engagement proxy (`issue_engagement`), self-repetition vs prior structured moves (`repetition_vs_prior_self`), cast-vs-present substring flags (`scene_plausibility_flags`), Director tension/environment (`pressure_director`), and move-emitted pressure fields if present (`pressure_move`).
+### Issue #44 — CA1 / CA2 removed (interpretation contract)
+
+**Removed in Issue #44:** Character Audit v1 no longer computes **`motivation_action_alignment`** or **`dialogue_action_consistency`**. Audit v2 no longer emits **`char_ca1_motivation_action`** or **`char_ca2_dialogue_action`**. Escalation policy no longer references CA1/CA2; **`character_intra_move_coherence`** defaults to **`not_applicable`** when no check maps to that dimension.
+
+**Historical sessions:** Older `*_full.json` rows may still contain legacy `derived` keys or v2 check ids. Treat those as **archival**; do **not** assume current builds emit them.
+
+**Prior rationale (archived):** CA1/CA2 were lexical overlap proxies with a high false-positive rate vs semantic coherence (**#13**). They were excluded from escalation aggregation before removal (**#42**).
+
+#### Interpretation rule (audit output)
+
+When interpreting **current** logs:
+
+- Expect **`intra_move_summary.pattern: intra_move_not_applicable`** when the character bundle has no intra-move checks; read the human-readable string on the bundle for context.
+- Use **CA3–CA7** and Audit v2 checks named in the [inventory](#audit-signal-applicability-inventory) — not removed CA1/CA2 keys.
+
+**What v1 records under `derived`:** **CA3–CA7 and related entries:** issue engagement proxy (`issue_engagement`), self-repetition vs prior structured moves (`repetition_vs_prior_self`), cast-vs-present substring flags (`scene_plausibility_flags`), Director tension/environment (`pressure_director`), and move-emitted pressure fields if present (`pressure_move`).
 
 **CA3 (`issue_engagement`):** A **heuristic proxy** for how issue-related information appears on the **validated parsed move**. It uses **move-emitted** fields when present — **`issue_updates`**, **`tension_shift`**, **`consequences`** — together with **textual / structural heuristics** (for example lexical overlap against continuity-backed issue digests exposed in the audit payload; see per-turn `limitations` strings in logged JSON). It is **not** a direct measure of whether the character **engaged the issue in the story** or whether continuity considers the beat high-pressure. Classifications such as **`possibly_passive`** mean the proxy did not score strong **move-level** linkage — **not** “no in-fiction engagement.” Any apparent mismatch with **`_narrative.json`** or continuity **requires cross-layer verification**; it is **not** automatic evidence of error or disengagement.
 
@@ -1575,7 +1586,7 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 
 **Known limitations (v1):**
 
-- **CA1 / CA2** — Token overlap only; metaphor, subtext, and reported speech are not modeled (lexical noise; false weak or “disconnected” bands). **Audit v2 escalation** does not consume them (**#42**; scored **`excluded_deprecated`**).
+- **CA1 / CA2 (removed)** — No longer emitted (**Issue #44**). Legacy rows may still list old keys; ignore for current contract interpretation.
 - **CA3 / CA7** — See **CA3**, **CA7**, and **Interpretation and Intended Use** above; do not infer in-fiction engagement or continuity pressure from these dimensions alone.
 - **CA5 (`scene_plausibility_flags`)** — Name vs `present_characters` matching is imperfect (display vs internal ids); **informational only**, not a correctness signal.
 - **`continuity_scope: orchestration_only`** — Used when the continuity manager is absent on the path that still logs character audit; **rare in normal Streamlit**; less exercised than `continuity_enabled` in typical `--audit` runs (see **Validation (tests)** below for CI coverage).
