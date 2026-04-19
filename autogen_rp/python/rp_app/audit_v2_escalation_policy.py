@@ -37,7 +37,6 @@ CHECK_TO_DIMENSION: dict[str, str] = {
     "char_ca7_declared_fields": DIM_CHARACTER_DECLARED_FIELDS,
     "char_masked_progression_strict": DIM_CHARACTER_MASKED_PROGRESSION,
     "nar_strict_action_overlap": DIM_NARRATOR_ACTION_GROUNDING,
-    "nar_v1_action_passes_bar": DIM_NARRATOR_ACTION_GROUNDING,
     "nar_environment_cue": DIM_NARRATOR_ENVIRONMENT_CUE,
     "nar_scope_proxy": DIM_NARRATOR_SCOPE_PROXY,
     "prose_readability": DIM_PROSE_READABILITY,
@@ -80,10 +79,6 @@ def _tri_state_nar_strict_overlap(payload: dict[str, Any]) -> str:
     if ratio >= 0.05:
         return "border"
     return "fail"
-
-
-def _tri_state_nar_v1_passes(payload: dict[str, Any]) -> str:
-    return "pass" if payload.get("passes_bar") is True else "fail"
 
 
 def _tri_state_nar_env(payload: dict[str, Any]) -> str:
@@ -132,7 +127,6 @@ _CHECK_EVALUATORS: dict[str, Any] = {
     "char_ca4_repetition": _tri_state_ca4,
     "char_ca7_declared_fields": _tri_state_ca7,
     "nar_strict_action_overlap": _tri_state_nar_strict_overlap,
-    "nar_v1_action_passes_bar": _tri_state_nar_v1_passes,
     "nar_environment_cue": _tri_state_nar_env,
     "nar_scope_proxy": _tri_state_nar_scope,
     "char_masked_progression_strict": _tri_state_masked_progression_observation,

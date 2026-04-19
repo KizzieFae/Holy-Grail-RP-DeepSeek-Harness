@@ -89,6 +89,7 @@ def test_llm_skipped_when_no_escalation() -> None:
 
 
 def test_same_dimension_conflict_triggers_escalation() -> None:
+    """Fail from strict overlap + pass from an unregistered check_id (defaults to pass)."""
     checks = [
         {
             "check_id": "nar_strict_action_overlap",
@@ -96,9 +97,9 @@ def test_same_dimension_conflict_triggers_escalation() -> None:
             "payload": {"action_token_overlap_ratio": 0.01, "action_empty": False},
         },
         {
-            "check_id": "nar_v1_action_passes_bar",
+            "check_id": "synthetic_grounding_pass_stub",
             "dimension_id": "narrator_action_grounding",
-            "payload": {"passes_bar": True},
+            "payload": {},
         },
     ]
     scored, esc, _ = compute_escalation_for_layer(layer="narrator_output", checks=checks)
@@ -182,11 +183,6 @@ def test_nar_scope_proxy_deprecated_does_not_border_escalate() -> None:
                 "check_id": "nar_strict_action_overlap",
                 "dimension_id": "narrator_action_grounding",
                 "payload": {"action_token_overlap_ratio": 0.2, "action_empty": False},
-            },
-            {
-                "check_id": "nar_v1_action_passes_bar",
-                "dimension_id": "narrator_action_grounding",
-                "payload": {"passes_bar": True},
             },
             {
                 "check_id": "nar_environment_cue",

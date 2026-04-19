@@ -357,11 +357,6 @@ def build_narrator_audit_v2_deterministic(
             },
         },
         {
-            "check_id": "nar_v1_action_passes_bar",
-            "dimension_id": CHECK_TO_DIMENSION["nar_v1_action_passes_bar"],
-            "payload": {"passes_bar": bool(action.get("passes_bar"))},
-        },
-        {
             "check_id": "nar_environment_cue",
             "dimension_id": CHECK_TO_DIMENSION["nar_environment_cue"],
             "payload": {
