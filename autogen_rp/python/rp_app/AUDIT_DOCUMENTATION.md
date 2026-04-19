@@ -1603,7 +1603,7 @@ Per-turn narrator granular logs (`*_narrator_full.json` / `_light.json`) may inc
 
 | Key | Role |
 |-----|------|
-| `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue; **`single_actor_scope_heuristic` is deprecated** (see below). |
+| `narrator_output_audit_v1` | Heuristic advisory: action vs render, environment cue; **`single_actor_scope_heuristic` is deprecated** (see below). **`action_coverage_heuristic` does not include `passes_bar`** (removed, GitHub **#76**); use `action_token_overlap_ratio`, `action_non_stopword_hits`, and `acting_name_in_render` with Audit v2 `nar_strict_action_overlap` for tri-state. |
 | `narrator_validation_audit_v1` | Observational: captures raw render path, deterministic fallback flag, semantic validator payload, and **derived** flags (`fallback_triggered`, `output_replaced`, etc.). Does **not** re-run validation. |
 | `prose_dialogue_audit_v1` | Heuristic advisory: readability/redundancy/dialogue/attribution/tone proxies. |
 

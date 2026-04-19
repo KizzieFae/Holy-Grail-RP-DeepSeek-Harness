@@ -103,12 +103,6 @@ def build_narrator_output_audit_v1(
         action_empty = False
     rl = rendered_final.lower()
     acting_name_in_render = next_actor.lower() in rl or acting_display_name.lower() in rl
-    if action_empty:
-        passes_action = True
-    else:
-        passes_action = overlap_ratio >= 0.12 or (
-            hits >= 1 and acting_name_in_render
-        )
 
     env_raw = str(decision.get("environment_event", "") or "").strip()
     environment_event_present = bool(env_raw)
@@ -143,7 +137,6 @@ def build_narrator_output_audit_v1(
                 "action_token_overlap_ratio": round(overlap_ratio, 4),
                 "action_non_stopword_hits": hits,
                 "acting_name_in_render": acting_name_in_render,
-                "passes_bar": passes_action,
                 "limitations": "Token overlap only; ignores paraphrase quality; quoted dialogue stripped from render window.",
             },
             "environment_event_heuristic": {
