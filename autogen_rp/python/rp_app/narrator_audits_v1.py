@@ -5,9 +5,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# Physical removal deferred; see GitHub issue (maintenance).
-SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE = 41
-
 _STOPWORDS = frozenset(
     {
         "a",
@@ -120,12 +117,6 @@ def build_narrator_output_audit_v1(
             env_status = "not_found_in_render"
             passes_env = False
 
-    other_found = [
-        n
-        for n in char_names
-        if n and n != next_actor and str(n).lower() in rl
-    ]
-
     return {
         "schema_version": 1,
         "layer": "narrator_output",
@@ -147,19 +138,6 @@ def build_narrator_output_audit_v1(
                 "token_hits_in_render": token_hits,
                 "passes_bar": passes_env,
                 "limitations": "Substring token match only; tension_shift not scored.",
-            },
-            "single_actor_scope_heuristic": {
-                "method": "heuristic_v1",
-                "other_cast_names_found": other_found,
-                "passes_bar": len(other_found) == 0,
-                "limitations": "Other names may appear legitimately in third-person narration.",
-                "status": "deprecated",
-                "interpretation": "do_not_use",
-                "reason": (
-                    "No evidence of meaningful ownership violations in reviewed corpus; "
-                    "high false-positive rate from treating other-cast name mention as failure."
-                ),
-                "tracked_by_issue": SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
             },
         },
     }

@@ -19,7 +19,6 @@ from narrator_audits_v1 import (
     build_prose_dialogue_audit_v1,
     prior_assistant_rendered_content,
 )
-from audit_v2_deterministic import narrator_other_cast_names_frozenset_from_deterministic
 from audit_v2_pipeline import (
     build_audit_v2_character_bundle,
     build_audit_v2_narrator_prose_bundle,
@@ -771,11 +770,6 @@ async def execute_character_turn(
 
     audit_v2_narrator_metadata: dict[str, Any] | None = None
     if is_audit_enabled_fn():
-        prev_scope = st_module.session_state.get(
-            "audit_v2_last_narrator_other_cast_names"
-        )
-        if not isinstance(prev_scope, frozenset):
-            prev_scope = None
         nar_v2_bundle = await build_audit_v2_narrator_prose_bundle(
             next_actor=next_actor,
             move=dict(move),
@@ -787,18 +781,12 @@ async def execute_character_turn(
             llm_audit_enabled=is_llm_audit_enabled_fn(),
             model_client=get_model_client_fn(),
             cancellation_token=cancellation_token,
-            previous_narrator_other_cast_names=prev_scope,
         )
         audit_v2_narrator_metadata = {
             "schema_version": 1,
             "narrator_output": nar_v2_bundle["narrator_output"],
             "prose_dialogue": nar_v2_bundle["prose_dialogue"],
         }
-        nar_det = nar_v2_bundle["narrator_output"].get("deterministic")
-        if isinstance(nar_det, dict):
-            st_module.session_state["audit_v2_last_narrator_other_cast_names"] = (
-                narrator_other_cast_names_frozenset_from_deterministic(nar_det)
-            )
 
     try:
         st_module.session_state["chat_history"].append(

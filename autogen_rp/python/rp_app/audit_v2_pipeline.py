@@ -89,7 +89,6 @@ async def build_audit_v2_narrator_prose_bundle(
     llm_audit_enabled: bool,
     model_client: Any,
     cancellation_token: Any,
-    previous_narrator_other_cast_names: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     det_nar = build_narrator_audit_v2_deterministic(
         next_actor=next_actor,
@@ -98,7 +97,6 @@ async def build_audit_v2_narrator_prose_bundle(
         rendered_final=rendered_final,
         char_names=char_names,
         acting_display_name=acting_display_name,
-        previous_narrator_other_cast_names=previous_narrator_other_cast_names,
     )
     det_prose = build_prose_audit_v2_deterministic(
         next_actor=next_actor,

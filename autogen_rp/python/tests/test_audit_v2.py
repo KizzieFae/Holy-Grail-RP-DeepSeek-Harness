@@ -18,6 +18,7 @@ from audit_v2_deterministic import (
 from audit_v2_escalation_policy import (
     DIMENSION_AGGREGATE_NOT_APPLICABLE,
     compute_escalation_for_layer,
+    dimensions_for_layer,
 )
 from audit_v2_llm import build_llm_skipped_payload, run_audit_v2_llm
 
@@ -174,66 +175,30 @@ def test_char_ca1_ca2_never_emitted_in_character_deterministic() -> None:
     assert "char_ca2_dialogue_action" not in ids
 
 
-def test_nar_scope_proxy_deprecated_does_not_border_escalate() -> None:
-    """GitHub #9: scope proxy metrics may show passes_bar false; tri-state must not gate."""
-    scored, esc, _ = compute_escalation_for_layer(
-        layer="narrator_output",
-        checks=[
-            {
-                "check_id": "nar_strict_action_overlap",
-                "dimension_id": "narrator_action_grounding",
-                "payload": {"action_token_overlap_ratio": 0.2, "action_empty": False},
-            },
-            {
-                "check_id": "nar_environment_cue",
-                "dimension_id": "narrator_environment_cue",
-                "payload": {
-                    "environment_event_present": False,
-                    "token_hits_in_render": 0,
-                },
-            },
-            {
-                "check_id": "nar_scope_proxy",
-                "dimension_id": "narrator_scope_proxy",
-                "payload": {
-                    "passes_bar": False,
-                    "other_cast_names_found": ["OtherCast"],
-                },
-            },
-        ],
-    )
-    scope_rows = [r for r in scored if r.get("check_id") == "nar_scope_proxy"]
-    assert len(scope_rows) == 1
-    assert scope_rows[0]["result"] == "pass"
-    assert esc["qualified"] is False
-    assert not any(
-        r.get("code") == "border_band" and r.get("check_id") == "nar_scope_proxy"
-        for r in esc["reasons"]
-    )
+def test_narrator_output_layer_dimensions_exclude_removed_scope() -> None:
+    """Issue #41: narrator_scope_proxy dimension removed with nar_scope_proxy check."""
+    dims = dimensions_for_layer("narrator_output")
+    assert "narrator_scope_proxy" not in dims
+    assert dims == [
+        "narrator_action_grounding",
+        "narrator_environment_cue",
+    ]
 
 
-def test_scope_proxy_context_previous_turn() -> None:
-    det1 = build_narrator_audit_v2_deterministic(
+def test_narrator_v2_deterministic_emits_two_checks_only() -> None:
+    """Issue #41: nar_scope_proxy and scope_proxy_context removed from v2 bundle."""
+    det = build_narrator_audit_v2_deterministic(
         next_actor="A",
         move={"action": "nods", "dialogue": "Hi"},
         decision={"environment_event": ""},
         rendered_final="A looked at B.",
         char_names=["A", "B"],
         acting_display_name="A",
-        previous_narrator_other_cast_names=None,
     )
-    assert det1["scope_proxy_context"]["same_other_cast_set_as_previous_narrator_turn"] is None
-    prev = frozenset(["B"])
-    det2 = build_narrator_audit_v2_deterministic(
-        next_actor="A",
-        move={"action": "nods", "dialogue": "Hi"},
-        decision={"environment_event": ""},
-        rendered_final="A looked at B again.",
-        char_names=["A", "B"],
-        acting_display_name="A",
-        previous_narrator_other_cast_names=prev,
-    )
-    assert det2["scope_proxy_context"]["same_other_cast_set_as_previous_narrator_turn"] is True
+    assert "scope_proxy_context" not in det
+    ids = [c["check_id"] for c in det["checks"]]
+    assert ids == ["nar_strict_action_overlap", "nar_environment_cue"]
+    assert det["escalation"]["qualified"] is False
 
 
 def test_prose_attribution_ambiguity_hint_active() -> None:

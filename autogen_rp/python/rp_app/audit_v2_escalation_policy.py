@@ -20,8 +20,6 @@ DIM_CHARACTER_MASKED_PROGRESSION = "character_masked_progression_signal"
 # --- Dimension ids (narrator output) ---
 DIM_NARRATOR_ACTION_GROUNDING = "narrator_action_grounding"
 DIM_NARRATOR_ENVIRONMENT_CUE = "narrator_environment_cue"
-# Legacy dimension id retained for log shape; `nar_scope_proxy` is non-gating (GitHub #9).
-DIM_NARRATOR_SCOPE_PROXY = "narrator_scope_proxy"
 
 # --- Dimension ids (prose) ---
 DIM_PROSE_READABILITY = "prose_readability"
@@ -38,7 +36,6 @@ CHECK_TO_DIMENSION: dict[str, str] = {
     "char_masked_progression_strict": DIM_CHARACTER_MASKED_PROGRESSION,
     "nar_strict_action_overlap": DIM_NARRATOR_ACTION_GROUNDING,
     "nar_environment_cue": DIM_NARRATOR_ENVIRONMENT_CUE,
-    "nar_scope_proxy": DIM_NARRATOR_SCOPE_PROXY,
     "prose_readability": DIM_PROSE_READABILITY,
     "prose_redundancy": DIM_PROSE_REDUNDANCY,
     "prose_dialogue_integration": DIM_PROSE_DIALOGUE_INTEGRATION,
@@ -89,16 +86,6 @@ def _tri_state_nar_env(payload: dict[str, Any]) -> str:
     return "fail"
 
 
-def _tri_state_nar_scope(_payload: dict[str, Any]) -> str:
-    """`nar_scope_proxy` / `single_actor_scope_heuristic` retired for gating (GitHub #9).
-
-    Raw `passes_bar` / `other_cast_names_found` remain in payloads for historical review;
-    escalation and dimension rollup always treat this check as **pass** so it cannot
-    qualify LLM audit escalation on scope noise alone.
-    """
-    return "pass"
-
-
 def _tri_state_masked_progression_observation(_payload: dict[str, Any]) -> str:
     """Strict masked progression is log-only observability (GitHub #73).
 
@@ -128,7 +115,6 @@ _CHECK_EVALUATORS: dict[str, Any] = {
     "char_ca7_declared_fields": _tri_state_ca7,
     "nar_strict_action_overlap": _tri_state_nar_strict_overlap,
     "nar_environment_cue": _tri_state_nar_env,
-    "nar_scope_proxy": _tri_state_nar_scope,
     "char_masked_progression_strict": _tri_state_masked_progression_observation,
     "prose_readability": _tri_state_prose_bool_passes,
     "prose_redundancy": _tri_state_prose_redundancy,
@@ -278,7 +264,6 @@ def dimensions_for_layer(layer: str) -> list[str]:
         return [
             DIM_NARRATOR_ACTION_GROUNDING,
             DIM_NARRATOR_ENVIRONMENT_CUE,
-            DIM_NARRATOR_SCOPE_PROXY,
         ]
     if layer == "prose_dialogue":
         return [

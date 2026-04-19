@@ -11,7 +11,6 @@ from character_audits_v1 import (
     _ca7_pressure_move,
 )
 from narrator_audits_v1 import (
-    SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
     build_narrator_output_audit_v1,
     build_prose_dialogue_audit_v1,
 )
@@ -31,7 +30,6 @@ _QUOTED_SEGMENT_RE = re.compile(r'"[^"]+"')
 OPTIONAL_DETERMINISTIC_BLOCK_KEYS: frozenset[str] = frozenset(
     {
         "intra_move_summary",
-        "scope_proxy_context",
         "attribution_ambiguity_hint",
         "ca7_surface",
     }
@@ -210,21 +208,6 @@ def count_quoted_segments(rendered_final: str) -> int:
     return len(_QUOTED_SEGMENT_RE.findall(str(rendered_final or "")))
 
 
-def narrator_other_cast_names_frozenset_from_deterministic(
-    deterministic: Mapping[str, Any],
-) -> frozenset[str]:
-    """Extract nar_scope_proxy names from a narrator V2 deterministic envelope."""
-    for c in deterministic.get("checks") or []:
-        if not isinstance(c, dict) or c.get("check_id") != "nar_scope_proxy":
-            continue
-        pl = c.get("payload") if isinstance(c.get("payload"), dict) else {}
-        raw = pl.get("other_cast_names_found") or []
-        if isinstance(raw, list):
-            return frozenset(str(x) for x in raw)
-        return frozenset()
-    return frozenset()
-
-
 def build_character_audit_v2_deterministic(
     *,
     move: Mapping[str, Any],
@@ -326,7 +309,6 @@ def build_narrator_audit_v2_deterministic(
     rendered_final: str,
     char_names: list[str],
     acting_display_name: str,
-    previous_narrator_other_cast_names: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     v1 = build_narrator_output_audit_v1(
         next_actor=next_actor,
@@ -341,8 +323,6 @@ def build_narrator_audit_v2_deterministic(
     action = action if isinstance(action, dict) else {}
     env = ch.get("environment_event_heuristic") if isinstance(ch, dict) else {}
     env = env if isinstance(env, dict) else {}
-    scope = ch.get("single_actor_scope_heuristic") if isinstance(ch, dict) else {}
-    scope = scope if isinstance(scope, dict) else {}
 
     action_empty = not str(move.get("action", "") or "").strip()
     checks: list[dict[str, Any]] = [
@@ -366,58 +346,15 @@ def build_narrator_audit_v2_deterministic(
                 "token_hits_in_render": int(env.get("token_hits_in_render", 0) or 0),
             },
         },
-        {
-            "check_id": "nar_scope_proxy",
-            "dimension_id": CHECK_TO_DIMENSION["nar_scope_proxy"],
-            "payload": {
-                "passes_bar": bool(scope.get("passes_bar")),
-                "other_cast_names_found": list(
-                    scope.get("other_cast_names_found", []) or []
-                ),
-                "status": scope.get("status", "deprecated"),
-                "interpretation": scope.get("interpretation", "do_not_use"),
-                "reason": scope.get(
-                    "reason",
-                    (
-                        "No evidence of meaningful ownership violations in reviewed corpus; "
-                        "high false-positive rate from treating other-cast name mention as failure."
-                    ),
-                ),
-                "tracked_by_issue": scope.get(
-                    "tracked_by_issue",
-                    SINGLE_ACTOR_SCOPE_HEURISTIC_DEPRECATION_TRACKER_ISSUE,
-                ),
-            },
-        },
     ]
     scored, escalation, _ = compute_escalation_for_layer(
         layer="narrator_output", checks=checks
     )
-    scope_names: list[str] = []
-    for row in scored:
-        if row.get("check_id") == "nar_scope_proxy":
-            pl = row.get("payload") if isinstance(row.get("payload"), dict) else {}
-            raw = pl.get("other_cast_names_found") or []
-            if isinstance(raw, list):
-                scope_names = [str(x) for x in raw]
-            break
-    scope_set = frozenset(scope_names)
-    same_prev: bool | None
-    if previous_narrator_other_cast_names is None:
-        same_prev = None
-    else:
-        same_prev = scope_set == previous_narrator_other_cast_names
     return {
         "schema_version": 2,
         "layer": "narrator_output",
         "checks": scored,
         "escalation": escalation,
-        "scope_proxy_context": {
-            "schema_version": 1,
-            "other_cast_names_count": len(scope_names),
-            "other_cast_names_sorted": sorted(scope_names),
-            "same_other_cast_set_as_previous_narrator_turn": same_prev,
-        },
     }
 
 
