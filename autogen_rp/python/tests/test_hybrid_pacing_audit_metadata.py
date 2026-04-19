@@ -8,6 +8,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from tension_pacing_policy import consequence_tension_recommendation
 from turn_runner_audit import log_character_turn_audit
 
@@ -49,6 +50,7 @@ def test_log_character_turn_audit_metadata_contains_hybrid_pacing_director() -> 
         opening_description="Test",
         present_characters=["Alice"],
     )
+    complete_setup_seam_for_test_manager(m)
     m.process_turn(
         acting_character="Alice",
         move={
@@ -113,6 +115,7 @@ def test_log_character_turn_audit_metadata_contains_hybrid_pacing_neutral_none()
         opening_description="Test",
         present_characters=["Bob"],
     )
+    complete_setup_seam_for_test_manager(m)
     m.process_turn(
         acting_character="Bob",
         move={
@@ -185,6 +188,7 @@ def test_log_character_turn_audit_metadata_consequence_up_suppressed_at_extreme(
     assert m.scene_state
     m.scene_state.current_tension_level = "extreme"
 
+    complete_setup_seam_for_test_manager(m)
     with patch(
         "tension_pacing_policy.consequence_tension_recommendation",
         return_value="up",

@@ -1,5 +1,7 @@
 from typing import Any, Awaitable, Callable
 
+from continuity_setup_seam_v77 import ContinuitySetupSeamError
+
 
 async def load_existing_session(
     *,
@@ -117,13 +119,17 @@ async def load_existing_session(
         state_manager.register_character(name, state)
     st_module.session_state["character_state_manager"] = state_manager
     st_module.session_state["team_state"] = session_data.get("team_state", {})
-    restore_or_initialize_continuity_manager_fn(
-        session_data.get("metadata", {}).get("continuity_state"),
-        [agent.name for agent in agents],
-        st_module.session_state["team_state"]
-        .get("scene_state", {})
-        .get("opening_description", ""),
-    )
+    try:
+        restore_or_initialize_continuity_manager_fn(
+            session_data.get("metadata", {}).get("continuity_state"),
+            [agent.name for agent in agents],
+            st_module.session_state["team_state"]
+            .get("scene_state", {})
+            .get("opening_description", ""),
+        )
+    except ContinuitySetupSeamError as exc:
+        st_module.error(f"Continuity setup seam invalid: {exc}")
+        return
     continuity_manager = get_continuity_manager_fn()
     if continuity_manager is not None:
         continuity_manager.seed_character_canon_anchors(char_states)

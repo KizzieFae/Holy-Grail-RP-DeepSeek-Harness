@@ -1,5 +1,10 @@
 from typing import Any
 
+from continuity_setup_seam_v77 import (
+    finalize_continuity_setup_seam,
+    validate_completed_setup_seam,
+)
+
 
 def get_continuity_manager(
     *, st_module: Any, continuity_manager_cls: Any
@@ -53,12 +58,19 @@ def restore_or_initialize_continuity_manager(
             initial_issues=build_initial_scene_issues_fn(scene_setup),
         )
 
-    if not manager.scene_state.present_characters:
-        manager.scene_state.present_characters = character_names[:]
+    manager.bootstrap_present_characters_from_cast(character_names)
     if opening_description and not manager.scene_state.opening_description:
         manager.scene_state.opening_description = opening_description
     if scene_setup:
-        apply_scene_setup_to_scene_state_fn(manager.scene_state, scene_setup)
+        apply_scene_setup_to_scene_state_fn(
+            manager.scene_state, scene_setup, continuity_manager=manager
+        )
+
+    if isinstance(continuity_state, dict):
+        if manager.setup_seam_complete:
+            validate_completed_setup_seam(manager)
+        else:
+            finalize_continuity_setup_seam(manager, cast=character_names)
 
     st_module.session_state["continuity_manager"] = manager
     sync_orchestration_state_from_continuity_fn()

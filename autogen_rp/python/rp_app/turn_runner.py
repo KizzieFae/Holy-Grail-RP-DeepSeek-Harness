@@ -71,11 +71,6 @@ async def run_character_turns(
 ) -> None:
     from autogen_core import CancellationToken
 
-    from user_presence_signals import (
-        apply_user_trigger_to_offstage,
-        release_pending_forced_speaker_from_offstage,
-    )
-
     resolve_effective_user_trigger: Callable[[int], str]
     if get_effective_user_trigger is not None:
         resolve_effective_user_trigger = get_effective_user_trigger
@@ -123,18 +118,13 @@ async def run_character_turns(
 
     continuity_pre = get_continuity_manager_fn()
     if continuity_pre is not None and continuity_pre.scene_state is not None:
-        apply_user_trigger_to_offstage(
-            scene_state=continuity_pre.scene_state,
+        continuity_pre.apply_pre_turn_user_presence_routing(
             trigger_text=resolve_effective_user_trigger(1),
             participant_names=char_names,
             get_character_display_name_fn=get_character_display_name_fn,
-        )
-        release_pending_forced_speaker_from_offstage(
-            scene_state=continuity_pre.scene_state,
             pending_forced_speaker=st_module.session_state.get(
                 "pending_forced_speaker"
             ),
-            participant_names=char_names,
         )
 
     try:

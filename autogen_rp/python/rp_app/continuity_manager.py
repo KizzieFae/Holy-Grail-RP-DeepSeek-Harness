@@ -8,8 +8,10 @@ updating scene state, managing character interpretations, enforcing knowledge bo
 import logging
 import os
 import re
+import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from scene_exit_detection import (
     authored_prose_suppresses_physical_departure,
@@ -53,6 +55,7 @@ from continuity_resolved_outcomes import (
     build_sleeping_surface_state_change,
     build_suppressant_formulation_state_change,
 )
+from continuity_setup_seam_v77 import ContinuitySetupSeamIncompleteError
 from continuity_scene_helpers import (
     build_character_context,
     build_orchestration_context,
@@ -75,6 +78,8 @@ from continuity_state import (
     ConsequenceCategory,
     ContinuitySnapshot,
     DetectedConsequence,
+    ExcursionRecord,
+    ExcursionStatus,
     IssueState,
     IssueStatus,
     PublicEvent,
@@ -87,6 +92,10 @@ from continuity_consequence_classifier import ConsequenceClassifier
 from tension_pacing_policy import (
     apply_consequence_up_saturation_gate,
     resolve_hybrid_pacing,
+)
+from user_presence_signals import (
+    apply_user_trigger_to_offstage_on_scratch,
+    release_pending_forced_speaker_on_scratch,
 )
 
 MAX_ACTIVE_ISSUES = 3
@@ -129,6 +138,16 @@ ISSUE_TOKEN_STOPWORDS = {
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class PresenceAuthorityScratch:
+    """Mutable staging bundle for presence fields before a single sync to ``SceneState``."""
+
+    present_characters: list[str]
+    offstage_characters: list[str]
+    character_presence_status: dict[str, str]
+    absent_but_relevant: list[str]
+
+
 class ContinuityManager:
     """Manages conversion of transient scene activity into durable continuity.
 
@@ -164,6 +183,88 @@ class ContinuityManager:
         self.turn_metadata_by_index: dict[int, dict[str, Any]] = (
             {}
         )  # turn_index -> full consequences
+        self.anchor_character_id: Optional[str] = None
+        self.setup_seam_complete: bool = False
+        self.excursions: dict[str, ExcursionRecord] = {}
+
+    def open_excursion(
+        self,
+        *,
+        participant_character_ids: list[str],
+        excursion_id: Optional[str] = None,
+    ) -> str:
+        """Register an active excursion, then resync focal presence (excursion–focal boundary)."""
+        participants = [
+            str(x).strip()
+            for x in participant_character_ids
+            if str(x or "").strip()
+        ]
+        if not participants:
+            raise ValueError("open_excursion requires at least one participant")
+        eid = (str(excursion_id).strip() if excursion_id else "") or str(uuid.uuid4())
+        if eid in self.excursions:
+            raise ValueError(f"excursion_id already exists: {eid!r}")
+        self.excursions[eid] = ExcursionRecord(
+            excursion_id=eid,
+            participant_character_ids=participants,
+            status=ExcursionStatus.ACTIVE,
+            opened_at_turn=int(self.turn_counter),
+            closed_at_turn=None,
+        )
+        self._resync_presence_through_authority()
+        return eid
+
+    def update_excursion(
+        self,
+        excursion_id: str,
+        *,
+        participant_character_ids: Optional[list[str]] = None,
+    ) -> None:
+        """Update an active excursion; resyncs focal presence if participant membership changes."""
+        eid = str(excursion_id or "").strip()
+        rec = self.excursions.get(eid)
+        if rec is None:
+            raise KeyError(excursion_id)
+        if rec.status != ExcursionStatus.ACTIVE:
+            raise ValueError("cannot update a closed excursion")
+        if participant_character_ids is not None:
+            participants = [
+                str(x).strip()
+                for x in participant_character_ids
+                if str(x or "").strip()
+            ]
+            if not participants:
+                raise ValueError(
+                    "participant_character_ids must be non-empty when provided"
+                )
+            prior_ids = frozenset(rec.participant_character_ids)
+            rec.participant_character_ids = participants
+            if frozenset(participants) != prior_ids:
+                self._resync_presence_through_authority()
+
+    def close_excursion(self, excursion_id: str) -> None:
+        """Mark an excursion closed and resync focal presence (no excursion reintegration)."""
+        eid = str(excursion_id or "").strip()
+        rec = self.excursions.get(eid)
+        if rec is None:
+            raise KeyError(excursion_id)
+        if rec.status == ExcursionStatus.CLOSED:
+            return
+        rec.status = ExcursionStatus.CLOSED
+        rec.closed_at_turn = int(self.turn_counter)
+        self._resync_presence_through_authority()
+
+    def active_excursion_character_ids(self) -> set[str]:
+        """Union of participants on all active excursions (E_active); read-only."""
+        out: set[str] = set()
+        for rec in self.excursions.values():
+            if rec.status != ExcursionStatus.ACTIVE:
+                continue
+            for pid in rec.participant_character_ids:
+                n = str(pid).strip()
+                if n:
+                    out.add(n)
+        return out
 
     def _normalize_timestamp(self, timestamp: Optional[datetime] = None) -> datetime:
         if timestamp is None:
@@ -730,6 +831,12 @@ class ContinuityManager:
         if self.scene_state is None:
             raise RuntimeError("Scene not initialized. Call initialize_scene() first.")
 
+        if not self.setup_seam_complete:
+            raise ContinuitySetupSeamIncompleteError(
+                "D3: continuity setup seam incomplete; cannot process_turn before "
+                "finalize_continuity_setup_seam (Issue #77)."
+            )
+
         present_list = (
             list(self.scene_state.present_characters)
             if self.scene_state
@@ -903,6 +1010,316 @@ class ContinuityManager:
         """Return recent summary blocks for prompt assembly."""
         return get_summary_blocks_helper(manager=self, limit=limit)
 
+    def _presence_scratch_from_scene_state(self) -> PresenceAuthorityScratch:
+        assert self.scene_state is not None
+        ss = self.scene_state
+        return PresenceAuthorityScratch(
+            present_characters=list(ss.present_characters or []),
+            offstage_characters=list(ss.offstage_characters or []),
+            character_presence_status=dict(ss.character_presence_status or {}),
+            absent_but_relevant=list(ss.absent_but_relevant or []),
+        )
+
+    def _strip_active_excursions_from_focal_scratch(
+        self, scratch: PresenceAuthorityScratch
+    ) -> None:
+        """Enforce P_focal ∩ E_active = ∅ before committing presence."""
+        e_active = self.active_excursion_character_ids()
+        if not e_active:
+            return
+        scratch.present_characters = [
+            n
+            for n in scratch.present_characters
+            if str(n).strip() not in e_active
+        ]
+
+    def _resync_presence_through_authority(self) -> None:
+        """Full presence pipeline: reconcile → invariant → ensure-one → sync (single writer)."""
+        if self.scene_state is None:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        self._reconcile_presence_lists_scratch(scratch)
+        self._assert_presence_invariant_after_reconcile_scratch(scratch)
+        self._ensure_at_least_one_present_character_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
+    def _synchronize_presence_from_canonical_authority(
+        self, scratch: PresenceAuthorityScratch
+    ) -> None:
+        if self.scene_state is None:
+            return
+        self._strip_active_excursions_from_focal_scratch(scratch)
+        self.scene_state.present_characters = list(scratch.present_characters)
+        self.scene_state.offstage_characters = list(scratch.offstage_characters)
+        self.scene_state.character_presence_status = dict(scratch.character_presence_status)
+        self.scene_state.absent_but_relevant = list(scratch.absent_but_relevant)
+
+    def apply_pre_turn_user_presence_routing(
+        self,
+        *,
+        trigger_text: str,
+        participant_names: list[str],
+        get_character_display_name_fn: Callable[[str], str],
+        pending_forced_speaker: str | None,
+    ) -> None:
+        """Apply Traveler offstage hints through the single presence sync path."""
+        if self.scene_state is None:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        apply_user_trigger_to_offstage_on_scratch(
+            scratch=scratch,
+            trigger_text=trigger_text,
+            participant_names=participant_names,
+            get_character_display_name_fn=get_character_display_name_fn,
+        )
+        release_pending_forced_speaker_on_scratch(
+            scratch=scratch,
+            pending_forced_speaker=pending_forced_speaker,
+            participant_names=participant_names,
+        )
+        self._reconcile_presence_lists_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
+    def apply_must_remain_presence_from_fn(
+        self, get_must_remain_characters_fn: Callable[[dict[str, Any]], Any]
+    ) -> None:
+        if self.scene_state is None:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        scene_dict = self.scene_state.to_dict()
+        scene_dict["present_characters"] = list(scratch.present_characters)
+        scene_dict["offstage_characters"] = list(scratch.offstage_characters)
+        scene_dict["character_presence_status"] = dict(scratch.character_presence_status)
+        scene_dict["absent_but_relevant"] = list(scratch.absent_but_relevant)
+        must_remain = get_must_remain_characters_fn(scene_dict)
+        for character_name in must_remain:
+            ch = str(character_name or "").strip()
+            if ch:
+                self._apply_canonical_reentry_scratch(scratch, ch)
+        self._reconcile_presence_lists_scratch(scratch)
+        self._assert_presence_invariant_after_reconcile_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
+    def bootstrap_present_characters_from_cast(self, character_names: list[str]) -> None:
+        """If on-stage roster is empty, seed it from the cast list (restore / init guard)."""
+        if self.scene_state is None:
+            return
+        if self.scene_state.present_characters:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        scratch.present_characters = [
+            str(x).strip() for x in character_names if str(x or "").strip()
+        ]
+        self._reconcile_presence_lists_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
+    def _reconcile_presence_lists_scratch(self, scratch: PresenceAuthorityScratch) -> None:
+        seen_present: set[str] = set()
+        deduped_present: list[str] = []
+        for name in scratch.present_characters:
+            n = str(name).strip()
+            if not n or n in seen_present:
+                continue
+            seen_present.add(n)
+            deduped_present.append(n)
+        scratch.present_characters = deduped_present
+        present_set = set(scratch.present_characters)
+        filtered_absent = [
+            str(n).strip()
+            for n in scratch.absent_but_relevant
+            if str(n).strip() and str(n).strip() not in present_set
+        ]
+        seen_absent: set[str] = set()
+        deduped_absent: list[str] = []
+        for n in filtered_absent:
+            if n in seen_absent:
+                continue
+            seen_absent.add(n)
+            deduped_absent.append(n)
+        scratch.absent_but_relevant = deduped_absent
+
+        seen_off: set[str] = set()
+        deduped_off: list[str] = []
+        for n in scratch.offstage_characters:
+            n = str(n).strip()
+            if not n or n in seen_off:
+                continue
+            if n in present_set:
+                continue
+            seen_off.add(n)
+            deduped_off.append(n)
+        scratch.offstage_characters = deduped_off
+
+    def _process_structured_reentries_from_move_scratch(
+        self, move: dict[str, Any], scratch: PresenceAuthorityScratch
+    ) -> None:
+        seen: set[str] = set()
+        reentry_changes = frozenset({"entry", "return", "reenter", "re-entry"})
+        for item in move.get("presence_changes") or []:
+            if not isinstance(item, dict):
+                continue
+            ch = str(item.get("character", "") or "").strip()
+            chg = str(item.get("change", "") or "").lower().replace("_", "-")
+            if not ch or ch in seen or chg not in reentry_changes:
+                continue
+            seen.add(ch)
+            self._apply_canonical_reentry_scratch(scratch, ch)
+
+    def _apply_canonical_reentry_scratch(
+        self, scratch: PresenceAuthorityScratch, character_name: str
+    ) -> None:
+        name = str(character_name or "").strip()
+        if not name:
+            return
+        scratch.offstage_characters = [n for n in scratch.offstage_characters if n != name]
+        if name not in scratch.present_characters:
+            scratch.present_characters.append(name)
+        scratch.absent_but_relevant = [n for n in scratch.absent_but_relevant if n != name]
+        scratch.character_presence_status[name] = "onstage"
+
+    def _apply_canonical_exit_offstage_transition_scratch(
+        self,
+        acting_character: str,
+        move: dict[str, Any],
+        *,
+        consequence_tags: set[str],
+        scene_dict: dict[str, Any],
+        scratch: PresenceAuthorityScratch,
+    ) -> None:
+        if self.scene_state is None:
+            return
+        actor = str(acting_character or "").strip()
+        if not actor:
+            return
+
+        exit_tag = "exit" in consequence_tags
+        detect = detect_exit_from_scene(move, scene_dict, actor)
+        structured_exit = structured_presence_exit_for_character(move, actor)
+        raw_exit = exit_tag or detect or structured_exit
+        if not raw_exit:
+            return
+
+        if not structured_exit and authored_prose_suppresses_physical_departure(move):
+            return
+
+        hard = has_hard_scene_departure_evidence(move, scene_dict)
+        lexical_exit = hard or structured_exit
+        detect_soft = bool(detect and not lexical_exit)
+        tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
+        soft_style = detect_soft or tag_only_soft
+
+        constraints = self.scene_state.character_presence_constraints or {}
+        must_remain = str(constraints.get(actor, "") or "") == "must_remain"
+
+        if must_remain:
+            if soft_style:
+                return
+            if not structured_exit:
+                return
+            status_kind = "temporary_offstage"
+        elif soft_style:
+            if self._should_skip_soft_exit_presence_removal(actor, move):
+                return
+            status_kind = "temporary_offstage"
+        else:
+            status_kind = "departed"
+
+        scratch.present_characters = [name for name in scratch.present_characters if name != actor]
+        if actor not in scratch.absent_but_relevant:
+            scratch.absent_but_relevant.append(actor)
+        if actor not in scratch.offstage_characters:
+            scratch.offstage_characters.append(actor)
+        scratch.character_presence_status[actor] = status_kind
+
+    def _ensure_at_least_one_present_character_scratch(
+        self, scratch: PresenceAuthorityScratch
+    ) -> None:
+        if self.scene_state is None:
+            return
+        if scratch.present_characters:
+            return
+        cast = [
+            str(k).strip()
+            for k in self.scene_state.role_assignments.keys()
+            if str(k).strip()
+        ]
+        if not cast:
+            return
+        e_active = self.active_excursion_character_ids()
+
+        def eligible_for_focal(n: str) -> bool:
+            return str(n).strip() not in e_active
+
+        status_map = scratch.character_presence_status
+
+        def is_departed(n: str) -> bool:
+            return str(status_map.get(n, "") or "").strip() == "departed"
+
+        def is_temporary_offstage_equivalent(n: str) -> bool:
+            if is_departed(n):
+                return False
+            st = str(status_map.get(n, "") or "").strip()
+            return st == "temporary_offstage" or st == ""
+
+        off = list(scratch.offstage_characters)
+        tier1 = [
+            n
+            for n in off
+            if n in cast
+            and is_temporary_offstage_equivalent(n)
+            and eligible_for_focal(n)
+        ]
+        if tier1:
+            self._apply_canonical_reentry_scratch(scratch, tier1[0])
+            return
+        tier2 = [
+            n for n in off if n in cast and not is_departed(n) and eligible_for_focal(n)
+        ]
+        if tier2:
+            self._apply_canonical_reentry_scratch(scratch, tier2[0])
+            return
+        tier3 = [n for n in cast if not is_departed(n) and eligible_for_focal(n)]
+        if tier3:
+            self._apply_canonical_reentry_scratch(scratch, tier3[0])
+            return
+        if not any(not is_departed(n) for n in cast):
+            logger.critical(
+                "presence deadlock guard: present_characters empty and all cast are departed; "
+                "skipping re-entry (no implicit resurrection)"
+            )
+
+    def _assert_presence_invariant_after_reconcile_scratch(
+        self, scratch: PresenceAuthorityScratch
+    ) -> None:
+        present = set(scratch.present_characters)
+        absent = set(scratch.absent_but_relevant)
+        overlap = present & absent
+        if not overlap:
+            return
+        message = (
+            "continuity presence invariant failed after reconcile: "
+            f"present ∩ absent_but_relevant = {overlap!r}"
+        )
+        if os.environ.get("RP_CONTINUITY_STRICT_INVARIANTS", "").strip() == "1":
+            raise AssertionError(message)
+        logger.warning(message)
+
+    def _reconcile_presence_lists(self) -> None:
+        """Drop absent entries that are still present; dedupe both lists (synced write path)."""
+        if self.scene_state is None:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        self._reconcile_presence_lists_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
+    def _ensure_at_least_one_present_character(self) -> None:
+        """Deadlock guard via scratch + single sync (see scratch helper for tier rules)."""
+        if self.scene_state is None:
+            return
+        scratch = self._presence_scratch_from_scene_state()
+        self._ensure_at_least_one_present_character_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
+
     def _update_scene_state(
         self,
         acting_character: str,
@@ -963,27 +1380,34 @@ class ContinuityManager:
             )
             self.scene_state.environment_description = environment_event
 
-        self._process_structured_reentries_from_move(move)
+        scratch = self._presence_scratch_from_scene_state()
+        self._process_structured_reentries_from_move_scratch(move, scratch)
 
         if has_scene_reentry_evidence(move):
-            self._apply_canonical_reentry(acting_character)
+            self._apply_canonical_reentry_scratch(scratch, acting_character)
 
         if "entry" in consequence_tags:
-            self._apply_canonical_reentry(acting_character)
+            self._apply_canonical_reentry_scratch(scratch, acting_character)
 
         scene_dict = self.scene_state.to_dict()
-        self._apply_canonical_exit_offstage_transition(
+        scene_dict["present_characters"] = list(scratch.present_characters)
+        scene_dict["offstage_characters"] = list(scratch.offstage_characters)
+        scene_dict["character_presence_status"] = dict(scratch.character_presence_status)
+        scene_dict["absent_but_relevant"] = list(scratch.absent_but_relevant)
+        self._apply_canonical_exit_offstage_transition_scratch(
             acting_character,
             move,
             consequence_tags=consequence_tags,
             scene_dict=scene_dict,
+            scratch=scratch,
         )
 
         self._update_scene_phase()
 
-        self._reconcile_presence_lists()
-        self._assert_presence_invariant_after_reconcile()
-        self._ensure_at_least_one_present_character()
+        self._reconcile_presence_lists_scratch(scratch)
+        self._assert_presence_invariant_after_reconcile_scratch(scratch)
+        self._ensure_at_least_one_present_character_scratch(scratch)
+        self._synchronize_presence_from_canonical_authority(scratch)
 
         self._align_exit_narrative_with_effective_presence(
             acting_character, turn_consequences
@@ -1059,195 +1483,6 @@ class ContinuityManager:
                 if str(item).strip() == old_impl:
                     im[i] = new_impl
                     break
-
-    def _reconcile_presence_lists(self) -> None:
-        """Drop absent entries that are still present; dedupe both lists."""
-        if self.scene_state is None:
-            return
-        seen_present: set[str] = set()
-        deduped_present: list[str] = []
-        for name in self.scene_state.present_characters:
-            n = str(name).strip()
-            if not n or n in seen_present:
-                continue
-            seen_present.add(n)
-            deduped_present.append(n)
-        self.scene_state.present_characters = deduped_present
-        present_set = set(self.scene_state.present_characters)
-        filtered_absent = [
-            str(n).strip()
-            for n in self.scene_state.absent_but_relevant
-            if str(n).strip() and str(n).strip() not in present_set
-        ]
-        seen_absent: set[str] = set()
-        deduped_absent: list[str] = []
-        for n in filtered_absent:
-            if n in seen_absent:
-                continue
-            seen_absent.add(n)
-            deduped_absent.append(n)
-        self.scene_state.absent_but_relevant = deduped_absent
-
-        seen_off: set[str] = set()
-        deduped_off: list[str] = []
-        for n in self.scene_state.offstage_characters:
-            n = str(n).strip()
-            if not n or n in seen_off:
-                continue
-            if n in present_set:
-                continue
-            seen_off.add(n)
-            deduped_off.append(n)
-        self.scene_state.offstage_characters = deduped_off
-
-    def _process_structured_reentries_from_move(self, move: dict[str, Any]) -> None:
-        """Apply structured re-entry for any character named in presence_changes."""
-        if self.scene_state is None:
-            return
-        seen: set[str] = set()
-        reentry_changes = frozenset({"entry", "return", "reenter", "re-entry"})
-        for item in move.get("presence_changes") or []:
-            if not isinstance(item, dict):
-                continue
-            ch = str(item.get("character", "") or "").strip()
-            chg = str(item.get("change", "") or "").lower().replace("_", "-")
-            if not ch or ch in seen or chg not in reentry_changes:
-                continue
-            seen.add(ch)
-            self._apply_canonical_reentry(ch)
-
-    def _apply_canonical_reentry(self, character_name: str) -> None:
-        """Single path: onstage, present, not offstage, absent list trimmed."""
-        if self.scene_state is None:
-            return
-        name = str(character_name or "").strip()
-        if not name:
-            return
-        self.scene_state.offstage_characters = [
-            n for n in self.scene_state.offstage_characters if n != name
-        ]
-        if name not in self.scene_state.present_characters:
-            self.scene_state.present_characters.append(name)
-        self.scene_state.absent_but_relevant = [
-            n for n in self.scene_state.absent_but_relevant if n != name
-        ]
-        self.scene_state.character_presence_status[name] = "onstage"
-
-    def _apply_canonical_exit_offstage_transition(
-        self,
-        acting_character: str,
-        move: dict[str, Any],
-        *,
-        consequence_tags: set[str],
-        scene_dict: dict[str, Any],
-    ) -> None:
-        """Single path for exit / offstage: must_remain, soft/hard, temporary vs departed."""
-        if self.scene_state is None:
-            return
-        actor = str(acting_character or "").strip()
-        if not actor:
-            return
-
-        exit_tag = "exit" in consequence_tags
-        detect = detect_exit_from_scene(move, scene_dict, actor)
-        structured_exit = structured_presence_exit_for_character(move, actor)
-        raw_exit = exit_tag or detect or structured_exit
-        if not raw_exit:
-            return
-
-        # Issue #18: rhetorical / conditional exit language toward others — do not mutate presence.
-        if not structured_exit and authored_prose_suppresses_physical_departure(move):
-            return
-
-        hard = has_hard_scene_departure_evidence(move, scene_dict)
-        lexical_exit = hard or structured_exit
-        detect_soft = bool(detect and not lexical_exit)
-        tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
-        soft_style = detect_soft or tag_only_soft
-
-        constraints = self.scene_state.character_presence_constraints or {}
-        must_remain = str(constraints.get(actor, "") or "") == "must_remain"
-
-        if must_remain:
-            if soft_style:
-                return
-            if not structured_exit:
-                return
-            status_kind = "temporary_offstage"
-        elif soft_style:
-            if self._should_skip_soft_exit_presence_removal(actor, move):
-                return
-            status_kind = "temporary_offstage"
-        else:
-            status_kind = "departed"
-
-        self.scene_state.present_characters = [
-            name for name in self.scene_state.present_characters if name != actor
-        ]
-        if actor not in self.scene_state.absent_but_relevant:
-            self.scene_state.absent_but_relevant.append(actor)
-        if actor not in self.scene_state.offstage_characters:
-            self.scene_state.offstage_characters.append(actor)
-        self.scene_state.character_presence_status[actor] = status_kind
-
-    def _ensure_at_least_one_present_character(self) -> None:
-        """Deadlock guard: restore at least one on-stage actor when possible.
-
-        Never revives characters explicitly marked ``departed``. Missing
-        ``character_presence_status`` is treated as temporary-offstage-equivalent
-        for eligibility (not departed, does not block re-entry).
-        """
-        if self.scene_state is None:
-            return
-        if self.scene_state.present_characters:
-            return
-        cast = [str(k).strip() for k in self.scene_state.role_assignments.keys() if str(k).strip()]
-        if not cast:
-            return
-        status_map = self.scene_state.character_presence_status or {}
-
-        def is_departed(n: str) -> bool:
-            return str(status_map.get(n, "") or "").strip() == "departed"
-
-        def is_temporary_offstage_equivalent(n: str) -> bool:
-            if is_departed(n):
-                return False
-            st = str(status_map.get(n, "") or "").strip()
-            return st == "temporary_offstage" or st == ""
-
-        off = list(self.scene_state.offstage_characters)
-        tier1 = [n for n in off if n in cast and is_temporary_offstage_equivalent(n)]
-        if tier1:
-            self._apply_canonical_reentry(tier1[0])
-            return
-        tier2 = [n for n in off if n in cast and not is_departed(n)]
-        if tier2:
-            self._apply_canonical_reentry(tier2[0])
-            return
-        tier3 = [n for n in cast if not is_departed(n)]
-        if tier3:
-            self._apply_canonical_reentry(tier3[0])
-            return
-        logger.critical(
-            "presence deadlock guard: present_characters empty and all cast are departed; "
-            "skipping re-entry (no implicit resurrection)"
-        )
-
-    def _assert_presence_invariant_after_reconcile(self) -> None:
-        if self.scene_state is None:
-            return
-        present = set(self.scene_state.present_characters)
-        absent = set(self.scene_state.absent_but_relevant)
-        overlap = present & absent
-        if not overlap:
-            return
-        message = (
-            "continuity presence invariant failed after reconcile: "
-            f"present ∩ absent_but_relevant = {overlap!r}"
-        )
-        if os.environ.get("RP_CONTINUITY_STRICT_INVARIANTS", "").strip() == "1":
-            raise AssertionError(message)
-        logger.warning(message)
 
     def _acting_character_named_in_current_move(
         self, acting_character: str, move: dict[str, Any]

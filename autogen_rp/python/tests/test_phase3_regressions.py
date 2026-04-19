@@ -12,6 +12,7 @@ from app import (
 from audit_logger import AuditLogger
 from character_state import CharacterState
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from response_validation import detect_character_drift, validate_turn_selection_decision
 from session_manager import SessionManager
 
@@ -445,6 +446,7 @@ def test_phase3_one_on_one_scene_regression() -> None:
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move=_build_move(1),
@@ -471,6 +473,7 @@ def test_phase3_three_character_scene_regression() -> None:
         present_characters=["Ayame", "Celina", "Mira"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     for idx, actor in enumerate(["Ayame", "Celina", "Mira"], start=1):
         others = [name for name in ["Ayame", "Celina", "Mira"] if name != actor]
         manager.process_turn(
@@ -493,6 +496,7 @@ def test_phase3_long_session_regression_generates_summary_blocks() -> None:
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     for idx in range(1, 9):
         actor = "Ayame" if idx % 2 else "Celina"
         other = ["Celina"] if actor == "Ayame" else ["Ayame"]
@@ -519,6 +523,7 @@ def test_phase3_reload_after_save_regression_preserves_continuity_state(
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(continuity_manager)
     for idx in range(1, 5):
         actor = "Ayame" if idx % 2 else "Celina"
         other = ["Celina"] if actor == "Ayame" else ["Ayame"]

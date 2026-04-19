@@ -23,7 +23,13 @@ class FakeStreamlit:
 
 class FakeContinuityManager:
     def __init__(self, present_characters: list[str]) -> None:
-        self.scene_state = SimpleNamespace(present_characters=present_characters)
+        self.scene_state = SimpleNamespace(
+            present_characters=present_characters,
+            offstage_characters=[],
+        )
+
+    def apply_pre_turn_user_presence_routing(self, **_kwargs: object) -> None:
+        return None
 
     def get_active_issues(self, limit: int = 24) -> list[object]:
         return []

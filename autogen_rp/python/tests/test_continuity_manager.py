@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from character_state import CharacterState
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from continuity_summary_helpers import build_summary_block
 from continuity_state import IssueState, IssueStatus, PublicEvent
 from scene_grounding import rebuild_scene_grounding_from_continuity
@@ -153,6 +154,7 @@ def test_process_turn_creates_public_event_and_issue() -> None:
         present_characters=["Ayame", "Celina", "Mira"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     snapshot = manager.process_turn(
         acting_character="Ayame",
         move={
@@ -192,6 +194,7 @@ def test_process_turn_creates_outcome_focused_decision_event() -> None:
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -248,6 +251,7 @@ def test_issue_resolution_removes_resolved_issue_from_active_list() -> None:
     manager.issues[issue.issue_id] = issue
     manager.scene_state.active_issue_ids.append(issue.issue_id)
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move={
@@ -296,6 +300,7 @@ def test_issue_can_transition_to_stalled_when_not_reinforced() -> None:
     manager.scene_state.active_issue_ids.append(issue.issue_id)
     manager.turn_counter = 3
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move={
@@ -348,6 +353,7 @@ def test_sleeping_surface_promotes_on_resolved_issue() -> None:
     manager.issues[issue.issue_id] = issue
     manager.scene_state.active_issue_ids.append(issue.issue_id)
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Marlene_Fletcher",
         move=_build_sleeping_assignment_move(
@@ -381,6 +387,7 @@ def test_sleeping_surface_promotes_on_consequence_without_issue() -> None:
         present_characters=["Kizzie", "Marlene_Fletcher"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Marlene_Fletcher",
         move=_build_sleeping_assignment_move(
@@ -410,6 +417,7 @@ def test_sleeping_surface_rejects_competing_same_turn_assignments() -> None:
         present_characters=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow_Reeves",
         move={
@@ -447,6 +455,7 @@ def test_sleeping_surface_supersedes_on_reassignment() -> None:
     )
     manager.scene_state.sleeping_surface_slots = ["top_bunk_marlene"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Marlene_Fletcher",
         move=_build_sleeping_assignment_move(
@@ -487,6 +496,7 @@ def test_sleeping_surface_not_revoked_by_argument_alone() -> None:
         present_characters=["Kizzie", "Marlene_Fletcher"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Marlene_Fletcher",
         move=_build_sleeping_assignment_move(
@@ -530,6 +540,7 @@ def test_sleeping_surface_allows_fallback_surface_without_template_slot() -> Non
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move=_build_sleeping_assignment_move(
@@ -556,6 +567,7 @@ def test_sleeping_surface_does_not_promote_from_weak_conversational_movement() -
     )
     manager.scene_state.sleeping_surface_slots = ["top_bunk_marlene"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Marlene_Fletcher",
         move=_build_sleeping_assignment_move(
@@ -584,6 +596,7 @@ def test_housing_call_promotes_structured_terminal_outcome() -> None:
         present_characters=["Kizzie", "Marlene_Fletcher", "Willow_Reeves"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow_Reeves",
         move=_build_housing_call_outcome_move(
@@ -621,6 +634,7 @@ def test_housing_call_identical_terminal_outcome_is_no_op() -> None:
         dialogue="Housing got back to us. It's done.",
         action="sets the phone on the table",
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow_Reeves",
         move=move,
@@ -649,6 +663,7 @@ def test_housing_call_supersedes_failed_with_completed() -> None:
         present_characters=["Kizzie", "Willow_Reeves"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow_Reeves",
         move=_build_housing_call_outcome_move(
@@ -688,6 +703,7 @@ def test_suppressant_formulation_promotes_subject_scoped_attribute_state() -> No
         present_characters=["Kizzie", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Kizzie",
         move=_build_suppressant_formulation_outcome_move(
@@ -729,6 +745,7 @@ def test_suppressant_formulation_identical_value_is_no_op() -> None:
         dialogue="I said it already. This formulation is incompatible for me.",
         action="shakes her head once",
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Kizzie",
         move=move,
@@ -759,6 +776,7 @@ def test_suppressant_formulation_supersedes_incompatible_with_compatible() -> No
         present_characters=["Kizzie", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=_build_suppressant_formulation_outcome_move(
@@ -802,6 +820,7 @@ def test_suppressant_formulation_tracks_subject_slots_independently() -> None:
         present_characters=["Kizzie", "Harley_Quinn", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=_build_suppressant_formulation_outcome_move(
@@ -846,6 +865,7 @@ def test_suppressant_formulation_applies_multiple_subjects_from_one_move() -> No
         present_characters=["Kizzie", "Harley_Quinn", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move={
@@ -893,6 +913,7 @@ def test_location_entry_promotes_structured_permission_state() -> None:
     )
     manager.scene_state.location_entry_slots = ["clinic_room", "basement"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=_build_location_entry_outcome_move(
@@ -936,6 +957,7 @@ def test_location_entry_identical_value_is_no_op() -> None:
         dialogue="Kizzie can enter the clinic room.",
         action="holds the door open",
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=move,
@@ -965,6 +987,7 @@ def test_location_entry_supersedes_allowed_with_denied() -> None:
     )
     manager.scene_state.location_entry_slots = ["basement"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=_build_location_entry_outcome_move(
@@ -1009,6 +1032,7 @@ def test_location_entry_rejects_location_outside_bounded_set() -> None:
     )
     manager.scene_state.location_entry_slots = ["clinic_room"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move=_build_location_entry_outcome_move(
@@ -1036,6 +1060,7 @@ def test_process_turn_updates_scene_presence_on_exit() -> None:
         present_characters=["Ayame", "Celina", "Mira"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Mira",
         move={
@@ -1077,6 +1102,7 @@ def test_process_turn_must_remain_exit_softens_state_changes_when_still_present(
         "Celina": "must_remain",
         "Ayame": "must_remain",
     }
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move={
@@ -1121,6 +1147,7 @@ def test_process_turn_issue18_rhetorical_exit_language_retains_presence() -> Non
         opening_description="Confrontation at the threshold.",
         present_characters=["Celina", "Ayame", "Hannah"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Celina",
         move={
@@ -1177,6 +1204,7 @@ def test_process_turn_propagates_told_knowledge_to_addressed_character() -> None
         )
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -1255,6 +1283,7 @@ def test_continuity_manager_roundtrip_serialization() -> None:
         opening_description="The forge glows red.",
         present_characters=["Ayame", "Celina"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -1315,6 +1344,7 @@ def test_issue_creation_deduplicates_similar_pressure() -> None:
     manager.issues[existing_issue.issue_id] = existing_issue
     manager.scene_state.active_issue_ids.append(existing_issue.issue_id)
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -1359,6 +1389,7 @@ def test_issue_creation_respects_max_active_issue_limit() -> None:
         manager.issues[issue.issue_id] = issue
         manager.scene_state.active_issue_ids.append(issue.issue_id)
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Mira",
         move={
@@ -1484,6 +1515,7 @@ def test_summary_blocks_generate_at_strict_interval_and_compress_older_events() 
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     for idx in range(1, 5):
         manager.process_turn(
             acting_character="Ayame" if idx % 2 else "Celina",
@@ -1544,6 +1576,7 @@ def test_direct_route_risk_issue_can_resolve_while_broader_outside_threat_remain
         [route_issue.issue_id, outside_threat_issue.issue_id]
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Kizzie",
         move={
@@ -1754,6 +1787,7 @@ def test_get_orchestration_context_uses_continuity_accessors() -> None:
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     for idx in range(1, 5):
         manager.process_turn(
             acting_character="Ayame" if idx % 2 else "Celina",
@@ -1807,6 +1841,7 @@ def test_scene_template_fields_flow_through_snapshot_orchestration_and_character
         "Mira": "medium",
     }
 
+    complete_setup_seam_for_test_manager(manager)
     for idx in range(1, 5):
         actor = "Ayame" if idx % 2 else "Celina"
         others = ["Celina", "Mira"] if actor == "Ayame" else ["Ayame", "Mira"]
@@ -1895,6 +1930,7 @@ def test_twenty_four_turn_continuity_stability_preserves_template_and_prompt_con
         }
     )
 
+    complete_setup_seam_for_test_manager(manager)
     turn_order = ["Ayame", "Celina", "Mira"]
     for idx in range(1, 25):
         actor = turn_order[(idx - 1) % len(turn_order)]
@@ -2148,6 +2184,7 @@ def test_process_turn_under_strict_presence_invariant_env(
         opening_description="Test.",
         present_characters=["Ayame", "Celina"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -2183,6 +2220,7 @@ def test_phone_broken_persists_public_event_and_grounding_fact() -> None:
         opening_description="Quiet hallway.",
         present_characters=["Willow", "Kizzie"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow",
         move={
@@ -2224,6 +2262,7 @@ def test_marker_only_promotion_when_classifier_empty(monkeypatch: object) -> Non
         opening_description="Test.",
         present_characters=["Willow", "Kizzie"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Willow",
         move={
@@ -2260,6 +2299,7 @@ def test_bandage_applied_persists_grounding_fact() -> None:
         opening_description="First aid.",
         present_characters=["Ayame", "Celina"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={
@@ -2295,6 +2335,7 @@ def test_plain_greeting_does_not_create_noisy_public_event() -> None:
         opening_description="Morning.",
         present_characters=["Ayame", "Celina"],
     )
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Ayame",
         move={

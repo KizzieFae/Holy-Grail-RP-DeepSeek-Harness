@@ -28,6 +28,9 @@ from autogen_core import CancellationToken
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from continuity_manager import ContinuityManager  # noqa: E402
+from continuity_seam_test_helpers import (  # noqa: E402
+    complete_setup_seam_for_test_manager,
+)
 from continuity_state import IssueState, IssueStatus  # noqa: E402
 from model_client import create_director_agent  # noqa: E402
 from progression_advisory import (  # noqa: E402
@@ -179,6 +182,8 @@ async def test_llm_character_move_passes_progression_delta_after_process_turn(
         initial_issues=[issue],
     )
     cm.scene_state.current_tension_level = "high"
+
+    complete_setup_seam_for_test_manager(cm)
 
     system_message = """You are Blake in a structured RP engine.
 Output exactly one JSON object and no other text.

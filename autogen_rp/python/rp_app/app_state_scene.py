@@ -307,6 +307,7 @@ def apply_scene_setup_to_scene_state(
     scene_state: Any,
     scene_setup: dict[str, Any] | None,
     get_must_remain_characters_fn,
+    continuity_manager: Any | None = None,
 ) -> None:
     if scene_state is None or not isinstance(scene_setup, dict):
         return
@@ -336,6 +337,11 @@ def apply_scene_setup_to_scene_state(
         for item in scene_setup.get("location_entry_slots", [])
         if str(item or "").strip()
     ]
+    if continuity_manager is not None and continuity_manager.scene_state is scene_state:
+        continuity_manager.apply_must_remain_presence_from_fn(
+            get_must_remain_characters_fn
+        )
+        return
     must_remain = get_must_remain_characters_fn(scene_state.to_dict())
     for character_name in must_remain:
         if character_name not in scene_state.present_characters:
@@ -354,16 +360,9 @@ def enforce_must_remain_presence(
 ) -> None:
     continuity_manager = get_continuity_manager_fn()
     if continuity_manager is not None and continuity_manager.scene_state is not None:
-        continuity_scene_state = continuity_manager.scene_state
-        must_remain = get_must_remain_characters_fn(continuity_scene_state.to_dict())
-        for character_name in must_remain:
-            if character_name not in continuity_scene_state.present_characters:
-                continuity_scene_state.present_characters.append(character_name)
-        continuity_scene_state.absent_but_relevant = [
-            name
-            for name in continuity_scene_state.absent_but_relevant
-            if name not in must_remain
-        ]
+        continuity_manager.apply_must_remain_presence_from_fn(
+            get_must_remain_characters_fn
+        )
 
     orchestration_state = get_orchestration_state_fn()
     orchestration_scene_state = orchestration_state.setdefault("scene_state", {})

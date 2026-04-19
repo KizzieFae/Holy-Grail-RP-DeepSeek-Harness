@@ -21,6 +21,10 @@ import app_turn_helpers as turn_helpers
 from character_loader import CharacterLoader, make_agent_identifier
 from character_state_manager import CharacterStateManager
 from continuity_manager import ContinuityManager
+from continuity_setup_seam_v77 import (
+    ensure_interim_anchor_role_fallback_for_finalize,
+    finalize_continuity_setup_seam,
+)
 from continuity_state import IssueState, IssueStatus, ScenePhase
 from model_client import create_deepseek_client, create_director_agent, create_narrator_agent
 from orchestration_helpers import (
@@ -151,6 +155,7 @@ def _apply_headless_scene_template_to_continuity(
             scene_state=continuity_manager.scene_state,
             scene_setup=scene_setup,
             get_must_remain_characters_fn=get_must_remain_characters,
+            continuity_manager=continuity_manager,
         )
         sync_orchestration_state_from_continuity_fn()
         return
@@ -173,6 +178,7 @@ def _apply_headless_scene_template_to_continuity(
         scene_state=continuity_manager.scene_state,
         scene_setup=minimal_setup,
         get_must_remain_characters_fn=get_must_remain_characters,
+        continuity_manager=continuity_manager,
     )
     sync_orchestration_state_from_continuity_fn()
 
@@ -966,6 +972,8 @@ def prepare_headless_session(
             )
             cm.issues[issue.issue_id] = issue
         _sync()
+        ensure_interim_anchor_role_fallback_for_finalize(cm, cast=display_names)
+        finalize_continuity_setup_seam(cm, cast=display_names)
 
     if beat_shift_active:
         orch = state_helpers.get_orchestration_state(

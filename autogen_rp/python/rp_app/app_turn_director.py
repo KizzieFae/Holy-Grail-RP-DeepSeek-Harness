@@ -24,6 +24,7 @@ from beat_shift_state import (
     build_director_beat_shift_prompt_prefix,
     is_pending_beat_shift_active,
 )
+from continuity_prompt_projection_v77 import build_continuity_prompt_projection_v77
 from orchestration_helpers import (
     assign_progression_band_for_actor,
     apply_participation_fairness_to_decision,
@@ -652,8 +653,9 @@ async def choose_next_actor(
     state_manager = st_module.session_state.get("character_state_manager")
     chat_history = st_module.session_state.get("chat_history", [])
     continuity_manager = get_continuity_manager_fn()
-    continuity_snapshot = (
-        continuity_manager.get_snapshot() if continuity_manager is not None else None
+    v77_projection = build_continuity_prompt_projection_v77(
+        continuity_manager,
+        orchestration_scene_state_fallback=orchestration_state.get("scene_state", {}),
     )
     orchestration_continuity_context = (
         continuity_manager.get_orchestration_context(
@@ -664,11 +666,7 @@ async def choose_next_actor(
         if continuity_manager is not None
         else None
     )
-    continuity_scene_state = (
-        continuity_snapshot.scene_state.to_dict()
-        if continuity_snapshot is not None
-        else orchestration_state.get("scene_state", {})
-    )
+    continuity_scene_state = v77_projection.scene_state_dict
     scene_state_for_prompt = (
         continuity_scene_state
         if continuity_scene_state
@@ -677,9 +675,7 @@ async def choose_next_actor(
     scene_roles = build_scene_role_prompt_context_fn(
         scene_state_for_prompt, participant_names
     )
-    continuity_tension_history = orchestration_state.get("scene_state", {}).get(
-        "tension_history", []
-    )
+    continuity_tension_history = scene_state_for_prompt.get("tension_history", []) or []
     generated_summary_blocks = (
         continuity_manager.summary_blocks[:] if continuity_manager is not None else []
     )
@@ -729,28 +725,22 @@ async def choose_next_actor(
     )
     director_payload = {
         "current_scene_state": {
-            "opening_description": continuity_scene_state.get(
-                "opening_description",
-                orchestration_state.get("scene_state", {}).get(
-                    "opening_description", ""
-                ),
+            "opening_description": scene_state_for_prompt.get(
+                "opening_description", ""
             ),
-            "recent_environment_events": continuity_scene_state.get(
-                "recent_environment_events",
-                orchestration_state.get("scene_state", {}).get(
-                    "recent_environment_events", []
-                ),
+            "recent_environment_events": (
+                scene_state_for_prompt.get("recent_environment_events", []) or []
             )[-4:],
             "tension_history": continuity_tension_history[-4:],
-            "resolved_events": orchestration_state.get("scene_state", {}).get(
-                "resolved_events", []
+            "resolved_events": (
+                scene_state_for_prompt.get("resolved_events", []) or []
             )[-4:],
-            "location": continuity_scene_state.get("location"),
-            "scene_phase": continuity_scene_state.get("phase"),
-            "current_tension_level": continuity_scene_state.get(
+            "location": scene_state_for_prompt.get("location"),
+            "scene_phase": scene_state_for_prompt.get("phase"),
+            "current_tension_level": scene_state_for_prompt.get(
                 "current_tension_level"
             ),
-            "recent_delta": continuity_scene_state.get("recent_delta", ""),
+            "recent_delta": scene_state_for_prompt.get("recent_delta", ""),
             "latest_trigger": trigger_text,
             "present_characters": scene_state_for_prompt.get(
                 "present_characters", participant_names

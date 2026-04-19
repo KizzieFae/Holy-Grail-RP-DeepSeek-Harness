@@ -1,6 +1,11 @@
 import json
 from typing import Any, Awaitable, Callable
 
+from continuity_setup_seam_v77 import (
+    ContinuitySetupSeamError,
+    finalize_continuity_setup_seam,
+)
+
 
 def _role_text(value: Any) -> str:
     return str(value or "").strip().lower()
@@ -239,7 +244,7 @@ async def start_scene(
     refresh_audit_summary_report_fn: Callable[[], None],
     run_character_turns_fn: Callable[..., Awaitable[None]],
     save_current_session_fn: Callable[..., Awaitable[None]],
-    apply_scene_setup_to_scene_state_fn: Callable[[Any, dict[str, Any] | None], None],
+    apply_scene_setup_to_scene_state_fn: Callable[..., None],
     sync_orchestration_state_from_continuity_fn: Callable[[], None],
     get_orchestration_state_fn: Callable[[], dict[str, Any]],
     build_scene_role_prompt_context_fn: Callable[
@@ -392,7 +397,9 @@ Describe the setting, atmosphere, and where each character is positioned. End wi
         continuity_manager.scene_state.environment_description = opening_description
         if scene_setup:
             apply_scene_setup_to_scene_state_fn(
-                continuity_manager.scene_state, scene_setup
+                continuity_manager.scene_state,
+                scene_setup,
+                continuity_manager=continuity_manager,
             )
         if opener is not None:
             if opener.location:
@@ -400,6 +407,13 @@ Describe the setting, atmosphere, and where each character is positioned. End wi
             if opener.time:
                 continuity_manager.scene_state.time_of_day = opener.time
         sync_orchestration_state_from_continuity_fn()
+
+    if continuity_manager is not None and continuity_manager.scene_state is not None:
+        try:
+            finalize_continuity_setup_seam(continuity_manager, cast=char_names)
+        except ContinuitySetupSeamError as exc:
+            st_module.error(str(exc))
+            return False
 
     if is_audit_enabled_fn():
         try:
@@ -468,6 +482,20 @@ async def recreate_team_from_state(
             .get("scene_state", {})
             .get("opening_description", ""),
         )
+    cm = get_continuity_manager_fn()
+    if (
+        cm is not None
+        and cm.scene_state is not None
+        and not cm.setup_seam_complete
+    ):
+        orch = get_orchestration_state_fn()
+        ra = orch.get("scene_state", {}).get("role_assignments")
+        if isinstance(ra, dict) and ra:
+            merged = dict(cm.scene_state.role_assignments or {})
+            for k, v in ra.items():
+                merged[str(k)] = str(v) if v is not None else ""
+            cm.scene_state.role_assignments = merged
+        finalize_continuity_setup_seam(cm, cast=[agent.name for agent in characters])
     narrator = create_narrator_agent_fn(model_client)
     director = create_director_agent_fn(model_client)
     return characters, narrator, director, model_client

@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from continuity_state import IssueState, IssueStatus
 from continuity_summary_helpers import build_summary_block
 
@@ -17,6 +18,7 @@ def test_pressure_engine_creates_plan_execution_issue_from_refusal() -> None:
         present_characters=["Ayame", "Celina"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     snapshot = manager.process_turn(
         acting_character="Ayame",
         move={
@@ -87,6 +89,7 @@ def test_pressure_engine_resolves_information_gap_without_collapsing_broader_ris
     manager.issues[safety_issue.issue_id] = safety_issue
     manager.scene_state.active_issue_ids.extend([info_issue.issue_id, safety_issue.issue_id])
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Kizzie",
         move={
@@ -124,6 +127,7 @@ def test_summary_blocks_preserve_pressure_metadata_for_access_conflict() -> None
     )
     timestamp = datetime.fromisoformat("2026-03-15T12:00:00")
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Mira",
         move={

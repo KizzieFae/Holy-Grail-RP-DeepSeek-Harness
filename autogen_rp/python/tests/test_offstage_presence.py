@@ -5,6 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from continuity_state import SceneState
 from offstage_prompt_filter import (
     filter_dialogue_for_offstage_character,
@@ -134,6 +135,7 @@ def test_replay_slice_must_remain_hard_exit_keeps_present_no_offstage() -> None:
     assert manager.scene_state is not None
     manager.scene_state.character_presence_constraints["Alpha_Cast"] = "must_remain"
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Alpha_Cast",
         move={
@@ -170,6 +172,7 @@ def test_replay_slice_embodied_reentry_clears_offstage() -> None:
     assert manager.scene_state is not None
     manager.scene_state.offstage_characters = ["Alpha_Cast"]
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Alpha_Cast",
         move={

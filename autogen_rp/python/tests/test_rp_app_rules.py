@@ -100,6 +100,15 @@ def test_restore_or_initialize_continuity_manager_passes_seeded_initial_issues()
                 opening_description=opening_description,
             )
 
+        def bootstrap_present_characters_from_cast(
+            self, character_names: list[str]
+        ) -> None:
+            if self.scene_state is None:
+                return
+            cur = getattr(self.scene_state, "present_characters", None) or []
+            if not cur and character_names:
+                self.scene_state.present_characters = list(character_names)
+
     fake_st = SimpleNamespace(session_state={})
     manager = restore_or_initialize_continuity_manager(
         st_module=fake_st,

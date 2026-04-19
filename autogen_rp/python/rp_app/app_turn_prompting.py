@@ -4,6 +4,7 @@ from typing import Any, Callable
 
 from arch_quality_variants import arch_quality_b_no_character_progression_suffix
 from beat_shift_state import build_character_beat_shift_suffix, is_pending_beat_shift_active
+from continuity_prompt_projection_v77 import build_continuity_prompt_projection_v77
 from progression_advisory import (
     PROGRESSION_CHARACTER_SUFFIX,
     should_append_progression_character_suffix,
@@ -109,6 +110,10 @@ def build_character_turn_prompt(
         orchestration_state=orchestration_state,
         continuity_manager=continuity_manager,
     )
+    v77_projection = build_continuity_prompt_projection_v77(
+        continuity_manager,
+        orchestration_scene_state_fallback=orchestration_state.get("scene_state", {}),
+    )
     state = state_manager.get_state(char_name) if state_manager else None
     raw_moves = orchestration_state.get("recent_structured_moves", [])[
         -prompt_structured_move_limit:
@@ -119,11 +124,9 @@ def build_character_turn_prompt(
         if continuity_manager is not None
         else None
     )
-    scene_state = (
-        continuity_context["scene_state"].to_dict()
-        if continuity_context is not None
-        else orchestration_state.get("scene_state", {})
-    )
+    scene_state = v77_projection.scene_state_dict
+    if not scene_state:
+        scene_state = orchestration_state.get("scene_state", {})
     present_for_moves = scene_state.get("present_characters") or [
         str(a.name)
         for a in st_module.session_state.get("characters", [])

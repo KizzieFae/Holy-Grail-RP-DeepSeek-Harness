@@ -79,6 +79,30 @@ class FakeContinuityManager:
     def __init__(self, scene_state: SimpleNamespace) -> None:
         self.scene_state = scene_state
         self.seeded_character_states: dict[str, object] | None = None
+        self.anchor_character_id: str | None = None
+        self.setup_seam_complete: bool = False
+
+    def bootstrap_present_characters_from_cast(self, character_names: list[str]) -> None:
+        if self.scene_state is None:
+            return
+        cur = getattr(self.scene_state, "present_characters", None) or []
+        if not cur and character_names:
+            self.scene_state.present_characters = list(character_names)
+
+    def apply_must_remain_presence_from_fn(self, get_must_remain_characters_fn) -> None:
+        if self.scene_state is None:
+            return
+        if not hasattr(self.scene_state, "present_characters"):
+            self.scene_state.present_characters = []
+        to_dict = getattr(self.scene_state, "to_dict", None)
+        d = to_dict() if callable(to_dict) else {}
+        try:
+            must = get_must_remain_characters_fn(d)
+        except Exception:
+            return
+        for n in must:
+            if n not in self.scene_state.present_characters:
+                self.scene_state.present_characters.append(n)
 
     def seed_character_canon_anchors(self, char_states: dict[str, object]) -> None:
         self.seeded_character_states = dict(char_states)
@@ -134,6 +158,8 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
             environment_description="",
             location="",
             time_of_day="",
+            present_characters=["Ayame"],
+            absent_but_relevant=[],
             scene_template_id=None,
             scene_premise="",
             role_assignments={},
@@ -236,7 +262,7 @@ async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_temp
             scene_state.character_presence_constraints
         ),
         "character_authority_labels": dict(scene_state.character_authority_labels),
-        "present_characters": [],
+        "present_characters": list(scene_state.present_characters),
     }
     continuity_manager = FakeContinuityManager(scene_state)
 

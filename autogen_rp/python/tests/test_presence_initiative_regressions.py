@@ -6,6 +6,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from continuity_manager import ContinuityManager
+from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from orchestration_helpers import ensure_orchestration_state, resolve_continuation_override_actor
 
 
@@ -17,6 +18,7 @@ def test_descriptive_exit_updates_authoritative_presence_state() -> None:
         present_characters=["Ayame", "Celina", "Mira"],
     )
 
+    complete_setup_seam_for_test_manager(manager)
     manager.process_turn(
         acting_character="Mira",
         move={

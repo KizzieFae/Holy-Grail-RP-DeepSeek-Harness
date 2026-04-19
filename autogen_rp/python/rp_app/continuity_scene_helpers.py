@@ -5,6 +5,7 @@ from continuity_state import (
     CanonAnchor,
     CharacterInterpretation,
     ContinuitySnapshot,
+    ExcursionRecord,
     IssueState,
     PublicEvent,
     ResolvedOutcome,
@@ -38,6 +39,14 @@ def serialize_manager_state(*, manager: Any) -> dict[str, Any]:
         "recent_event_window": manager.recent_event_window,
         "turn_metadata_by_index": {
             str(k): v for k, v in manager.turn_metadata_by_index.items()
+        },
+        "anchor_character_id": getattr(manager, "anchor_character_id", None),
+        "setup_seam_complete": bool(
+            getattr(manager, "setup_seam_complete", False)
+        ),
+        "excursions": {
+            eid: rec.to_dict()
+            for eid, rec in getattr(manager, "excursions", {}).items()
         },
     }
 
@@ -106,6 +115,22 @@ def restore_manager_state(
         for k, v in data.get("turn_metadata_by_index", {}).items()
         if isinstance(v, dict)
     }
+    _raw_anchor = data.get("anchor_character_id")
+    manager.anchor_character_id = (
+        str(_raw_anchor).strip()
+        if _raw_anchor is not None and str(_raw_anchor).strip()
+        else None
+    )
+    manager.setup_seam_complete = bool(data.get("setup_seam_complete", False))
+    raw_excursions = data.get("excursions")
+    if isinstance(raw_excursions, dict):
+        manager.excursions = {
+            str(eid): ExcursionRecord.from_dict(rec)
+            for eid, rec in raw_excursions.items()
+            if isinstance(rec, dict)
+        }
+    else:
+        manager.excursions = {}
     return manager
 
 
@@ -138,6 +163,10 @@ def initialize_scene_state(
         for issue in initial_issues:
             manager.issues[issue.issue_id] = issue
             manager.scene_state.active_issue_ids.append(issue.issue_id)
+
+    manager.anchor_character_id = None
+    manager.setup_seam_complete = False
+    manager.excursions = {}
 
 
 def build_snapshot(

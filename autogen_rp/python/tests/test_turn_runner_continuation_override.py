@@ -25,7 +25,13 @@ class FakeContinuityManager:
     def __init__(self, present_characters: list[str]) -> None:
         self.turn_counter = 0
         self.turn_metadata_by_index: dict[int, dict[str, object]] = {}
-        self.scene_state = SimpleNamespace(present_characters=present_characters)
+        self.scene_state = SimpleNamespace(
+            present_characters=present_characters,
+            offstage_characters=[],
+        )
+
+    def apply_pre_turn_user_presence_routing(self, **_kwargs: object) -> None:
+        return None
 
     def get_active_issues(self, limit: int = 24) -> list[object]:
         return []

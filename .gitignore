@@ -2,6 +2,9 @@
 .env
 **/.streamlit/secrets.toml
 
+# Local issue drafting / one-off GitHub helpers (not intended as tracked source)
+.github/issue_drafts/
+
 # Python bytecode (root-level scripts / stray caches)
 __pycache__/
 *.py[cod]

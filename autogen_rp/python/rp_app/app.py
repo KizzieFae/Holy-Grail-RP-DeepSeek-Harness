@@ -220,11 +220,14 @@ def get_orchestration_state() -> dict[str, Any]:
 def apply_scene_setup_to_scene_state(
     scene_state: Any,
     scene_setup: dict[str, Any] | None,
+    *,
+    continuity_manager: Any | None = None,
 ) -> None:
     state_helpers.apply_scene_setup_to_scene_state(
         scene_state=scene_state,
         scene_setup=scene_setup,
         get_must_remain_characters_fn=get_must_remain_characters,
+        continuity_manager=continuity_manager,
     )
 
 

@@ -45,6 +45,13 @@ class ScenePhase(Enum):
     RESOLUTION = "resolution"
 
 
+class ExcursionStatus(str, Enum):
+    """Excursion lifecycle (Issue #77 excursion authority scaffolding)."""
+
+    ACTIVE = "active"
+    CLOSED = "closed"
+
+
 class ConsequenceCategory(Enum):
     """Semantic consequence types detected from structured move analysis.
 
@@ -148,6 +155,56 @@ class CanonAnchor:
             source=str(data.get("source", "")),
             established_at=_parse_datetime(data.get("established_at")),
             protected=bool(data.get("protected", True)),
+        )
+
+
+@dataclass
+class ExcursionRecord:
+    """Canonical excursion thread (Issue #77); does not duplicate focal presence."""
+
+    excursion_id: str
+    participant_character_ids: list[str]
+    status: ExcursionStatus
+    opened_at_turn: int
+    closed_at_turn: Optional[int] = None
+
+    def to_dict(self) -> dict:
+        return {
+            "excursion_id": self.excursion_id,
+            "participant_character_ids": list(self.participant_character_ids),
+            "status": self.status.value,
+            "opened_at_turn": int(self.opened_at_turn),
+            "closed_at_turn": (
+                int(self.closed_at_turn)
+                if self.closed_at_turn is not None
+                else None
+            ),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ExcursionRecord":
+        st = str(data.get("status", "") or "").strip().lower()
+        status = (
+            ExcursionStatus.ACTIVE
+            if st == ExcursionStatus.ACTIVE.value
+            else ExcursionStatus.CLOSED
+        )
+        raw_closed = data.get("closed_at_turn")
+        closed: Optional[int]
+        if raw_closed is None or raw_closed == "":
+            closed = None
+        else:
+            closed = int(raw_closed)
+        return cls(
+            excursion_id=str(data.get("excursion_id", "") or ""),
+            participant_character_ids=[
+                str(x).strip()
+                for x in (data.get("participant_character_ids") or [])
+                if str(x or "").strip()
+            ],
+            status=status,
+            opened_at_turn=int(data.get("opened_at_turn", 0)),
+            closed_at_turn=closed,
         )
 
 
