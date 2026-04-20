@@ -20,6 +20,22 @@ from audit_logger_summary_rounds import (
     load_json,
     process_audit_files,
 )
+from continuity_observability_summary import (
+    CONTINUITY_OBSERVABILITY_STATUS_REASON_CONTINUITY_MANAGER_NOT_PROVIDED,
+    build_continuity_observability_status_v1_unavailable,
+    build_continuity_observability_summary_v1,
+)
+
+
+def _enforce_continuity_observability_exclusivity(report: dict[str, Any]) -> None:
+    """``continuity_observability_summary_v1`` and ``continuity_observability_status_v1`` are mutually exclusive."""
+    has_summary = "continuity_observability_summary_v1" in report
+    has_status = "continuity_observability_status_v1" in report
+    if has_summary and has_status:
+        raise RuntimeError(
+            "audit invariant violated: continuity_observability_summary_v1 and "
+            "continuity_observability_status_v1 must not both be present on _audit_summary.json"
+        )
 
 
 def _load_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
@@ -195,6 +211,7 @@ def write_summary_report(
     prompt_reference,
     append_limited,
     utc_timestamp,
+    continuity_manager: Any | None = None,
 ) -> str:
     manifest = _load_json(session_path / "_manifest.json", {})
     index = _load_json(session_path / "_round_index.json", {"rounds": []})
@@ -271,6 +288,21 @@ def write_summary_report(
         utc_timestamp=utc_timestamp,
         index_rounds=index.get("rounds", []),
     )
+    if continuity_manager is not None:
+        # Replace-only block for Issue #79 Slice 4 (no merge with prior file contents).
+        report.pop("continuity_observability_status_v1", None)
+        report["continuity_observability_summary_v1"] = (
+            build_continuity_observability_summary_v1(continuity_manager)
+        )
+    else:
+        # Explicit availability marker — do not emit empty or zero-filled summary rollup.
+        report.pop("continuity_observability_summary_v1", None)
+        report["continuity_observability_status_v1"] = (
+            build_continuity_observability_status_v1_unavailable(
+                reason=CONTINUITY_OBSERVABILITY_STATUS_REASON_CONTINUITY_MANAGER_NOT_PROVIDED,
+            )
+        )
+    _enforce_continuity_observability_exclusivity(report)
     with open(report_path, "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2, ensure_ascii=False)
     return str(report_path)

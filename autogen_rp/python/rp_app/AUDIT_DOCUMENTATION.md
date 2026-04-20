@@ -24,6 +24,88 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
+### Continuity observability (Issue #79 — closed)
+
+**Runtime truth** remains **`ContinuityManager`**, **`SceneState`**, and the excursion store (**#81**). **Issue #79** adds **named audit surfaces** so operators can inspect committed behavior without treating audit JSON as authority (**#59**).
+
+| Surface | Where it appears | Role |
+|--------|------------------|------|
+| **CTAR** (`metadata.ctar`) | Character / narrator **`*_full.json`** | Primary structured projection of **`turn_metadata`** for the beat: **`continuity_turn_index`**, optional sorted **`consequences`**, optional canonicalized **`continuity_mutation_resolution`**. **Not** duplicated under **`context_snapshot`**. |
+| **`context_snapshot.scene_state_after`** | Same rows | **Direct** **`SceneState.to_dict()`** mirror (no derived presence). |
+| **`metadata.excursion_audit_digest_v1`** | Same rows | Sorted id + status only; full records stay in **`ContinuityManager.excursions`**. |
+| **`metadata.continuity_audit_origin`** | Same rows | **`pipeline_turn`** when the row corresponds to a committed **`process_turn`** for the current **`turn_counter`** (pending marker match). **Not** used for bypass-only labeling per row; bypass kinds accumulate session-level (see below). |
+| **`continuity_observability_summary_v1`** | **`_audit_summary.json`** (top-level when **`ContinuityManager`** is passed into **`write_summary_report`**) | Session rollup only: counts, **`beats_with_mutation_resolution`**, and **`session_audit_origin`** (`has_bypass`, **`bypass_beats`** — bypass kinds only; **`pipeline_turn`** never appears in **`bypass_beats`**). **Mutually exclusive** with **`continuity_observability_status_v1`** for the same write. |
+| **`continuity_observability_status_v1`** | **`_audit_summary.json`** (top-level when **no** **`ContinuityManager`** was passed) | Explicit **`{ "status": "unavailable", "reason": "continuity_manager_not_provided" }`** — documents that the continuity-backed rollup was **not** emitted (not a silent omission). **No** fabricated or zero-filled **`continuity_observability_summary_v1`**. Allowed **`reason`** values are defined only in code as **`CONTINUITY_OBSERVABILITY_STATUS_REASONS`** (`continuity_observability_summary.py`). |
+
+**`session_audit_origin`:** Populated via **`flush_continuity_audit_origin_export_payload`**, which is invoked from **`build_continuity_observability_summary_v1`** when the rollup is built. That call **clears** **`continuity_audit_origin_log`** after producing **`has_bypass`** / **`bypass_beats`** for the summary file.
+
+### Continuity turn-level audit record (CTAR) — Issue #79 (Slice 1)
+
+**Purpose:** Per-turn **observability** for continuity metadata tied to the same beat as **`ContinuityManager.turn_counter`** after a successful continuity commit on the logging path, without duplicating full **`turn_metadata_by_index`**.
+
+**Location:** Character and narrator **`*_full.json`** rows expose **`metadata.ctar`** (not under **`context_snapshot`**).
+
+**Slice 1 contents (bounded):**
+
+- **`continuity_turn_index`** — integer beat index (same family as **`turn_metadata_by_index`** keys).
+- **`consequences`** — included when present on the turn bucket; classifier lane only (see [Progression enforcement and `consequences` in audits](#progression-enforcement-and-consequences-in-audits)); values are **sorted lexicographically** at write time for deterministic diffing.
+- **`continuity_mutation_resolution`** — included **only** when the runtime attached a non-empty resolution object for that beat (Issue **#81** pipeline); **`mutation_type`**, **`source`**, **`payload`** preserved; **`payload`** is **opaque** to audit semantics (do not infer narrative truth from it). Object and nested **`payload`** dict keys are **sorted lexicographically** at write time.
+
+**Authority:** CTAR fields **mirror** runtime **`ContinuityManager`** turn metadata for that beat; they are **not** a separate **Signal id** layer and are **not** on the **#59** runtime use allowlist. Do not treat CTAR as a substitute for **`scene_state`** / **`excursions`** for physical presence or excursion truth—use those stores when debugging committed state.
+
+### Scene state mirror and excursion digest — Issue #79 (Slice 2)
+
+**Purpose:** Per-turn **`*_full.json`** rows expose a **direct runtime mirror** of committed **`SceneState`** after the beat, and a **compact excursion pointer** so operators can see which excursions exist and their lifecycle status **without** duplicating full **`ExcursionRecord`** payloads on every row.
+
+**`context_snapshot.scene_state_after`**
+
+- **Source:** **`SceneState.to_dict()`** only (`audit_runtime_mirrors.scene_state_after_runtime_mirror`). **No** recomputation of presence, **no** alternate presence projections (including **`E_active`**), **no** derived “excursion presence” fields in this object.
+- **Expected keys** (from the runtime object): **`location`**, **`present_characters`**, **`offstage_characters`**, **`character_presence_status`** — treat as **authoritative** for what the continuity layer committed for that snapshot.
+
+**`metadata.excursion_audit_digest_v1`**
+
+- **Location:** Character and narrator **`*_full.json`** rows — **`metadata` only** (not under **`context_snapshot`**, not inside CTAR).
+- **Shape:** When present, a **sorted** list of **`{"excursion_id": str, "status": str}`** entries (`ExcursionStatus` values, e.g. **`active`** / **`closed`**). **No** participant lists, **no** full excursion dicts, **no** reintegration payloads.
+- **Absence:** Omitted when there are **no** excursions on the manager ( **`None`** at write time — not an empty list).
+- **Authority:** Full excursion records remain in **`ContinuityManager.excursions`** / session-level continuity artifacts only; per-turn audit rows must **not** become a second source of truth for excursion bodies.
+
+### Continuity audit origin — Issue #79 (Slice 3)
+
+**Purpose:** Classify whether continuity-affecting work ran through the **`process_turn`** / mutation pipeline (**`pipeline_turn`**) or through a **bypass** path, and expose that for per-turn audits and a session-level accumulator (Slice **#79**). **Observational only** — does **not** influence runtime validation or decisions (**#59**).
+
+**Closed kind enum**
+
+| Kind | Meaning |
+|------|---------|
+| **`pipeline_turn`** | Commit went through **`ContinuityManager.process_turn`** (mutation pipeline). |
+| **`bypass_direct_excursion_api`** | **`open_excursion`** / **`update_excursion`** / **`close_excursion`** invoked while **not** in a pipeline excursion commit (direct API). |
+| **`bypass_raw_location`** | **`scene_state.location`** assigned outside the pipeline; callers invoke **`notify_raw_location_bypass_for_audit()`** after the write (e.g. Streamlit opener, headless sim seed). |
+| **`bypass_oor_reintegration`** | **`apply_excursion_close_reintegration_mutation`** invoked while **not** inside **`process_turn`** (out-of-pipeline reintegration apply / close). |
+
+**Session accumulator:** **`ContinuityManager.continuity_audit_origin_log`** — append-only list of **`{ "continuity_turn_index": int, "kind": str }`** (includes **`pipeline_turn`** entries). **`flush_continuity_audit_origin_export_payload(continuity_manager)`** returns **`{ "has_bypass": bool, "bypass_beats": [...] }`** (**`bypass_beats`**: bypass kinds only) and **clears** the full log. It is **called from** **`build_continuity_observability_summary_v1`** when **`_audit_summary.json`** is written with a continuity manager, so the log is consumed as part of that rollup (not a separate manual export step).
+
+**Per-turn `metadata.continuity_audit_origin`:** When present on character/narrator **`*_full.json`** rows, **`{ "kind": "pipeline_turn", "continuity_turn_index": int }`** — emitted **only** when the manager’s pending pipeline marker matches **`turn_counter`** (avoids labeling non-commit audit paths as pipeline). Omitted when not applicable.
+
+### `continuity_observability_summary_v1` — Issue #79 (Slice 4)
+
+**Location:** Optional **top-level** key on **`_audit_summary.json`** only (not merged into unrelated sections).
+
+**Purpose:** Session-level **rollup** of continuity observability: turn index, mutation-resolution coverage, excursion counts, and **Slice 3** **`session_audit_origin`** (via **`flush_continuity_audit_origin_export_payload`**). **Summary only** — no full CTAR, **`turn_metadata_by_index`**, **`excursions`**, or **`scene_state`**.
+
+**Allowed fields (strict):** **`schema_version`**, **`continuity_turn_count_observed`**, **`beats_with_mutation_resolution`** (sorted ascending), **`excursion_record_count`**, **`excursion_active_count`**, **`excursion_closed_count`**, **`session_audit_origin`** (`has_bypass`, **`bypass_beats`** sorted by **`continuity_turn_index`** then **`kind`**; **`pipeline_turn`** never appears in **`bypass_beats`**).
+
+**Write behavior:** On each summary write, the block is **replaced** in full (no incremental merge of a prior **`continuity_observability_summary_v1`** from disk). Other top-level keys remain owned by existing summary logic.
+
+### `continuity_observability_status_v1` — Issue #79 (availability marker)
+
+**Location:** Optional **top-level** key on **`_audit_summary.json`** only, written **instead of** **`continuity_observability_summary_v1`** when **`audit_logger.write_summary_report`** runs **without** a **`ContinuityManager`**.
+
+**Purpose:** Make non-rollup writes **explicit** so absence of **`continuity_observability_summary_v1`** is not mistaken for a broken audit path.
+
+**Allowed shape (strict):** **`{ "status": "unavailable", "reason": "<closed_enum>" }`**. The closed set of **`reason`** strings is **`CONTINUITY_OBSERVABILITY_STATUS_REASONS`** in **`continuity_observability_summary.py`** (currently **`continuity_manager_not_provided`** only). **No** empty or synthetic summary block.
+
+**Canonical key order:** **`status`**, then **`reason`** (enforced at write time). **`continuity_observability_summary_v1`** and **`continuity_observability_status_v1`** are **mutually exclusive** on the same report (enforced in **`audit_logger_summary_report.write_summary_report`**).
+
 ### Offline evaluation layer (Issue #66 — v1)
 
 **Purpose:** Offline-only mechanism that reads existing audit artifacts and emits **structured judgments**. It does **not** define a detection layer, quality gate, or runtime authority.
@@ -1524,7 +1606,7 @@ textual fallback, that should be read as a continuity safety-net path rather tha
 3. Review full prompt in `input_messages`
 4. Check identity anchors were present
 5. Check `turns[].character_role` and `turns[].character_presence_constraint`
-6. Check `context_snapshot.continuity_event` and `scene_state_after` to see what state the turn created
+6. Check `context_snapshot.continuity_event` and **`context_snapshot.scene_state_after`** (committed **`SceneState`** mirror — Issue **#79**) for what continuity attached after the beat
 
 ### Debug Narrator Rendering
 1. Compare `turns[].character_dialogue` vs `turns[].rendered_output`

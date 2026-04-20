@@ -404,6 +404,7 @@ Describe the setting, atmosphere, and where each character is positioned. End wi
         if opener is not None:
             if opener.location:
                 continuity_manager.scene_state.location = opener.location
+                continuity_manager.notify_raw_location_bypass_for_audit()
             if opener.time:
                 continuity_manager.scene_state.time_of_day = opener.time
         sync_orchestration_state_from_continuity_fn()

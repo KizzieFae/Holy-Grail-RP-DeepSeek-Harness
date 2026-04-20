@@ -62,6 +62,11 @@ from continuity_mutation_pipeline import (
     resolved_mutations_audit_payload,
     validate_resolved_mutations_globally,
 )
+from continuity_audit_origin import (
+    CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
+    CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION,
+    CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN,
+)
 from continuity_setup_seam_v77 import ContinuitySetupSeamIncompleteError
 from continuity_scene_helpers import (
     build_character_context,
@@ -193,6 +198,37 @@ class ContinuityManager:
         self.anchor_character_id: Optional[str] = None
         self.setup_seam_complete: bool = False
         self.excursions: dict[str, ExcursionRecord] = {}
+        # Issue #79 Slice 3 — session audit origin log (read/flush at export only).
+        self.continuity_audit_origin_log: list[dict[str, Any]] = []
+        self._continuity_pipeline_turn_active: bool = False
+        self._continuity_in_reintegration_apply: bool = False
+        self._pending_pipeline_audit_origin_index: Optional[int] = None
+
+    def _suppress_direct_excursion_bypass_audit(self) -> bool:
+        return bool(
+            self._continuity_pipeline_turn_active
+            or self._continuity_in_reintegration_apply
+        )
+
+    def _record_continuity_audit_event(
+        self, kind: str, continuity_turn_index: int
+    ) -> None:
+        self.continuity_audit_origin_log.append(
+            {"continuity_turn_index": int(continuity_turn_index), "kind": str(kind)}
+        )
+
+    def notify_raw_location_bypass_for_audit(
+        self, *, continuity_turn_index: Optional[int] = None
+    ) -> None:
+        """Call after assigning ``scene_state.location`` outside ``process_turn`` (Slice 3)."""
+        idx = (
+            int(continuity_turn_index)
+            if continuity_turn_index is not None
+            else int(self.turn_counter)
+        )
+        self._record_continuity_audit_event(
+            CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION, idx
+        )
 
     def open_excursion(
         self,
@@ -225,6 +261,10 @@ class ContinuityManager:
             closed_at_turn=None,
         )
         self._resync_presence_through_authority()
+        if not self._suppress_direct_excursion_bypass_audit():
+            self._record_continuity_audit_event(
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API, opened_turn
+            )
         return eid
 
     def update_excursion(
@@ -254,6 +294,11 @@ class ContinuityManager:
             rec.participant_character_ids = participants
             if frozenset(participants) != prior_ids:
                 self._resync_presence_through_authority()
+        if not self._suppress_direct_excursion_bypass_audit():
+            self._record_continuity_audit_event(
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
+                int(self.turn_counter),
+            )
 
     def close_excursion(
         self,
@@ -275,6 +320,11 @@ class ContinuityManager:
             else int(self.turn_counter)
         )
         self._resync_presence_through_authority()
+        closed_idx = int(rec.closed_at_turn or self.turn_counter)
+        if not self._suppress_direct_excursion_bypass_audit():
+            self._record_continuity_audit_event(
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API, closed_idx
+            )
 
     def active_excursion_character_ids(self) -> set[str]:
         """Union of participants on all active excursions (E_active); read-only."""
@@ -881,83 +931,93 @@ class ContinuityManager:
             acting_character,
             continuity_manager=self,
         )
-        apply_resolved_mutations(
-            resolved_mutations,
-            scene_state=self.scene_state,
-            continuity_manager=self,
-            commit_turn_index=turn_index,
-            commit_timestamp=timestamp,
-        )
-
-        turn_consequences = self._classify_turn_consequences(
-            acting_character,
-            move,
-            director_decision,
-        )
-        if resolved_mutations:
-            turn_consequences["continuity_mutation_resolution"] = (
-                resolved_mutations_audit_payload(resolved_mutations)
+        self._pending_pipeline_audit_origin_index = None
+        self._continuity_pipeline_turn_active = True
+        try:
+            apply_resolved_mutations(
+                resolved_mutations,
+                scene_state=self.scene_state,
+                continuity_manager=self,
+                commit_turn_index=turn_index,
+                commit_timestamp=timestamp,
             )
 
-        self._update_scene_state(
-            acting_character,
-            move,
-            director_decision,
-            None,
-            turn_consequences,
-        )
+            turn_consequences = self._classify_turn_consequences(
+                acting_character,
+                move,
+                director_decision,
+            )
+            if resolved_mutations:
+                turn_consequences["continuity_mutation_resolution"] = (
+                    resolved_mutations_audit_payload(resolved_mutations)
+                )
 
-        event = self._maybe_create_event(
-            acting_character,
-            move,
-            director_decision,
-            timestamp,
-            turn_index,
-            turn_consequences,
-        )
-        if event:
-            self.public_events.append(event)
-            self.scene_state.recent_event_ids.append(event.event_id)
-            self.scene_state.recent_event_ids = self.scene_state.recent_event_ids[-10:]
+            self._update_scene_state(
+                acting_character,
+                move,
+                director_decision,
+                None,
+                turn_consequences,
+            )
 
-        self._maybe_create_issue(
-            acting_character,
-            move,
-            director_decision,
-            event,
-            timestamp,
-            turn_consequences,
-        )
+            event = self._maybe_create_event(
+                acting_character,
+                move,
+                director_decision,
+                timestamp,
+                turn_index,
+                turn_consequences,
+            )
+            if event:
+                self.public_events.append(event)
+                self.scene_state.recent_event_ids.append(event.event_id)
+                self.scene_state.recent_event_ids = self.scene_state.recent_event_ids[-10:]
 
-        self._update_issues(
-            acting_character,
-            move,
-            event,
-            turn_consequences,
-        )
+            self._maybe_create_issue(
+                acting_character,
+                move,
+                director_decision,
+                event,
+                timestamp,
+                turn_consequences,
+            )
 
-        resolved_outcome_debug = apply_registered_resolved_outcome_updates(
-            manager=self,
-            move=move,
-            event=event,
-            turn_consequences=turn_consequences,
-            turn_index=turn_index,
-        )
-        turn_consequences.setdefault("resolved_outcomes", {}).update(
-            resolved_outcome_debug
-        )
+            self._update_issues(
+                acting_character,
+                move,
+                event,
+                turn_consequences,
+            )
 
-        self._update_interpretations(
-            acting_character, move, director_decision, other_characters, timestamp
-        )
+            resolved_outcome_debug = apply_registered_resolved_outcome_updates(
+                manager=self,
+                move=move,
+                event=event,
+                turn_consequences=turn_consequences,
+                turn_index=turn_index,
+            )
+            turn_consequences.setdefault("resolved_outcomes", {}).update(
+                resolved_outcome_debug
+            )
 
-        self._propagate_knowledge_from_turn(acting_character, move, other_characters)
+            self._update_interpretations(
+                acting_character, move, director_decision, other_characters, timestamp
+            )
 
-        self.turn_counter = turn_index
-        self.turn_metadata_by_index[turn_index] = turn_consequences
-        self._maybe_generate_summary_block(timestamp)
+            self._propagate_knowledge_from_turn(acting_character, move, other_characters)
 
-        return self.get_snapshot(timestamp)
+            self.turn_counter = turn_index
+            self.turn_metadata_by_index[turn_index] = turn_consequences
+            self._maybe_generate_summary_block(timestamp)
+
+            self._pending_pipeline_audit_origin_index = turn_index
+            self._record_continuity_audit_event(
+                CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN, turn_index
+            )
+
+            return self.get_snapshot(timestamp)
+        finally:
+            self._continuity_pipeline_turn_active = False
 
     def _maybe_create_event(
         self,

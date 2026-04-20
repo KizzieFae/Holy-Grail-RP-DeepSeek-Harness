@@ -15,15 +15,22 @@ def refresh_audit_summary_report(
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
+    get_continuity_manager_fn: Any | None = None,
 ) -> None:
     if not is_audit_enabled_fn():
         return
 
     audit_logger = get_audit_logger_fn()
     session_owner, session_num, _, _ = get_audit_context_fn()
+    cm = (
+        get_continuity_manager_fn()
+        if get_continuity_manager_fn is not None
+        else None
+    )
     report_path = audit_logger.write_summary_report(
         session_owner=session_owner,
         session_number=session_num,
+        continuity_manager=cm,
     )
     st_module.session_state["audit_summary_report_path"] = report_path
 

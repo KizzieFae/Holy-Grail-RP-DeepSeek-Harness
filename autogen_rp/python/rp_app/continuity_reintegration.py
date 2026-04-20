@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
+from continuity_audit_origin import (
+    CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_OOR_REINTEGRATION,
+)
 from continuity_state import (
     ExcursionRecord,
     ExcursionStatus,
@@ -450,116 +453,132 @@ def apply_excursion_close_reintegration_mutation(
 ) -> None:
     """Commit phase: close + merge + identity, with rollback on failure."""
     Exc = _err()
-    reint = payload.get("reintegration")
-    if reint is None:
-        manager.close_excursion(excursion_id, closed_at_turn=commit_turn_index)
-        return
-
-    eid = excursion_id
-    rec = manager.excursions.get(eid)
-    if rec is None:
-        raise Exc(f"unknown excursion_id: {eid!r}")
-    commit_id = reint["reintegration_commit_id"]
-
-    if (
-        rec.status == ExcursionStatus.CLOSED
-        and rec.reintegration_commit_id_applied == commit_id
-    ):
-        return
-
-    bundle = _prepare_bundle(
-        manager=manager,
-        excursion_id=eid,
-        reintegration=reint,
-        turn_index=commit_turn_index,
-        timestamp=timestamp,
-    )
-
-    pe_len = len(manager.public_events)
-    ro_len = len(manager.resolved_outcomes)
-    recent_ids = (
-        list(manager.scene_state.recent_event_ids)
-        if manager.scene_state is not None
-        else []
-    )
-    event_ctr = int(getattr(manager, "event_counter", 0))
-    issues_snap = {
-        k: copy.deepcopy(v)
-        for k, v in manager.issues.items()
-        if k in {c["issue_id"] for c in bundle.issue_creates}
-        or k in set(bundle.issue_resolves)
-    }
-    active_ids_snap = (
-        list(manager.scene_state.active_issue_ids)
-        if manager.scene_state is not None
-        else []
-    )
-    ex_snap = _snapshot_excursion(rec)
-    created_issue_ids: list[str] = []
-
+    prev_inside = getattr(manager, "_continuity_in_reintegration_apply", False)
+    manager._continuity_in_reintegration_apply = True
     try:
-        if rec.status == ExcursionStatus.ACTIVE:
-            manager.close_excursion(eid, closed_at_turn=commit_turn_index)
-
-        for ev in bundle.events:
-            manager.public_events.append(ev)
-            manager.event_counter = int(manager.event_counter) + 1
-            if manager.scene_state is not None:
-                manager.scene_state.recent_event_ids.append(ev.event_id)
-                manager.scene_state.recent_event_ids = (
-                    manager.scene_state.recent_event_ids[-10:]
+        reint = payload.get("reintegration")
+        if reint is None:
+            if not getattr(manager, "_continuity_pipeline_turn_active", False):
+                manager._record_continuity_audit_event(
+                    CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_OOR_REINTEGRATION,
+                    int(commit_turn_index),
                 )
+            manager.close_excursion(excursion_id, closed_at_turn=commit_turn_index)
+            return
 
-        for c in bundle.issue_creates:
-            iid = c["issue_id"]
-            manager.issues[iid] = IssueState(
-                issue_id=iid,
-                description=c["description"],
-                participants=list(c["participants"]),
-                status=c["status"],
-                created_at=timestamp,
-                last_updated=timestamp,
-                last_turn_index=commit_turn_index,
+        eid = excursion_id
+        rec = manager.excursions.get(eid)
+        if rec is None:
+            raise Exc(f"unknown excursion_id: {eid!r}")
+        commit_id = reint["reintegration_commit_id"]
+
+        if (
+            rec.status == ExcursionStatus.CLOSED
+            and rec.reintegration_commit_id_applied == commit_id
+        ):
+            return
+
+        if not getattr(manager, "_continuity_pipeline_turn_active", False):
+            manager._record_continuity_audit_event(
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_OOR_REINTEGRATION,
+                int(commit_turn_index),
             )
-            created_issue_ids.append(iid)
+
+        bundle = _prepare_bundle(
+            manager=manager,
+            excursion_id=eid,
+            reintegration=reint,
+            turn_index=commit_turn_index,
+            timestamp=timestamp,
+        )
+
+        pe_len = len(manager.public_events)
+        ro_len = len(manager.resolved_outcomes)
+        recent_ids = (
+            list(manager.scene_state.recent_event_ids)
+            if manager.scene_state is not None
+            else []
+        )
+        event_ctr = int(getattr(manager, "event_counter", 0))
+        issues_snap = {
+            k: copy.deepcopy(v)
+            for k, v in manager.issues.items()
+            if k in {c["issue_id"] for c in bundle.issue_creates}
+            or k in set(bundle.issue_resolves)
+        }
+        active_ids_snap = (
+            list(manager.scene_state.active_issue_ids)
+            if manager.scene_state is not None
+            else []
+        )
+        ex_snap = _snapshot_excursion(rec)
+        created_issue_ids: list[str] = []
+
+        try:
+            if rec.status == ExcursionStatus.ACTIVE:
+                manager.close_excursion(eid, closed_at_turn=commit_turn_index)
+
+            for ev in bundle.events:
+                manager.public_events.append(ev)
+                manager.event_counter = int(manager.event_counter) + 1
+                if manager.scene_state is not None:
+                    manager.scene_state.recent_event_ids.append(ev.event_id)
+                    manager.scene_state.recent_event_ids = (
+                        manager.scene_state.recent_event_ids[-10:]
+                    )
+
+            for c in bundle.issue_creates:
+                iid = c["issue_id"]
+                manager.issues[iid] = IssueState(
+                    issue_id=iid,
+                    description=c["description"],
+                    participants=list(c["participants"]),
+                    status=c["status"],
+                    created_at=timestamp,
+                    last_updated=timestamp,
+                    last_turn_index=commit_turn_index,
+                )
+                created_issue_ids.append(iid)
+                if manager.scene_state is not None:
+                    if iid not in manager.scene_state.active_issue_ids:
+                        manager.scene_state.active_issue_ids.append(iid)
+
+            for iid in bundle.issue_resolves:
+                issue = manager.issues[iid]
+                issue.status = IssueStatus.RESOLVED
+                issue.resolved_at = timestamp
+                issue.last_updated = timestamp
+                issue.last_turn_index = commit_turn_index
+
             if manager.scene_state is not None:
-                if iid not in manager.scene_state.active_issue_ids:
-                    manager.scene_state.active_issue_ids.append(iid)
+                manager.scene_state.active_issue_ids = [
+                    x
+                    for x in manager.scene_state.active_issue_ids
+                    if x in manager.issues
+                    and manager.issues[x].status
+                    in (IssueStatus.ACTIVE, IssueStatus.ESCALATING)
+                ]
 
-        for iid in bundle.issue_resolves:
-            issue = manager.issues[iid]
-            issue.status = IssueStatus.RESOLVED
-            issue.resolved_at = timestamp
-            issue.last_updated = timestamp
-            issue.last_turn_index = commit_turn_index
+            for out in bundle.outcomes:
+                manager.resolved_outcomes.append(out)
 
-        if manager.scene_state is not None:
-            manager.scene_state.active_issue_ids = [
-                x
-                for x in manager.scene_state.active_issue_ids
-                if x in manager.issues
-                and manager.issues[x].status
-                in (IssueStatus.ACTIVE, IssueStatus.ESCALATING)
-            ]
-
-        for out in bundle.outcomes:
-            manager.resolved_outcomes.append(out)
-
-        rec.reintegration_commit_id_applied = commit_id
-    except Exception:
-        manager.public_events[:] = manager.public_events[:pe_len]
-        manager.resolved_outcomes[:] = manager.resolved_outcomes[:ro_len]
-        manager.event_counter = event_ctr
-        if manager.scene_state is not None:
-            manager.scene_state.recent_event_ids = recent_ids
-            manager.scene_state.active_issue_ids = active_ids_snap
-        for iid in created_issue_ids:
-            manager.issues.pop(iid, None)
-        for k, v in issues_snap.items():
-            manager.issues[k] = v
-        _restore_excursion(rec, ex_snap)
-        manager._resync_presence_through_authority()
-        raise
+            rec.reintegration_commit_id_applied = commit_id
+        except Exception:
+            manager.public_events[:] = manager.public_events[:pe_len]
+            manager.resolved_outcomes[:] = manager.resolved_outcomes[:ro_len]
+            manager.event_counter = event_ctr
+            if manager.scene_state is not None:
+                manager.scene_state.recent_event_ids = recent_ids
+                manager.scene_state.active_issue_ids = active_ids_snap
+            for iid in created_issue_ids:
+                manager.issues.pop(iid, None)
+            for k, v in issues_snap.items():
+                manager.issues[k] = v
+            _restore_excursion(rec, ex_snap)
+            manager._resync_presence_through_authority()
+            raise
+    finally:
+        manager._continuity_in_reintegration_apply = prev_inside
 
 
 def validate_reintegration_move_shape(move: dict[str, Any] | None) -> tuple[bool, str]:

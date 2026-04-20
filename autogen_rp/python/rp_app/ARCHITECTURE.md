@@ -45,6 +45,12 @@ per-character state.
 - **Audit / offline evaluation** — **`scene_eval_v2`** uses **structural turn identity** for cross-row joins; **`event_id`** is **legacy fallback** only when top-level **`continuity_turn_index`** is absent. Spec: **`AUDIT_DOCUMENTATION.md`** (*Canonical structural join contract*).
 - **Not runtime control** — These join fields are **observability / post-hoc tooling**; Director, validation, progression, and continuity commits **do not** branch on audit evaluation join keys.
 
+### Continuity mutation audit surfaces (Issues #81 / #79)
+
+**Runtime (#81):** Spatial and excursion lifecycle commits on the **`process_turn`** path flow through **`continuity_mutation_pipeline`**; **`turn_metadata_by_index[beat]`** may include **`continuity_mutation_resolution`** (composer output; authoritative for what committed on that beat).
+
+**Audit (#79, observational — not #59 runtime authority):** Per-turn **`*_full.json`** rows expose **CTAR** under **`metadata.ctar`** (projection of that turn bucket, not a full dump of **`turn_metadata_by_index`**), **`context_snapshot.scene_state_after`** as a **direct** **`SceneState.to_dict()`** mirror, optional **`metadata.excursion_audit_digest_v1`**, and optional **`metadata.continuity_audit_origin`** for **`pipeline_turn`** provenance when applicable. Session-level **`_audit_summary.json`** includes **`continuity_observability_summary_v1`** (strict schema rollup, including **`session_audit_origin`** for bypass beats) when a **`ContinuityManager`** is passed into **`write_summary_report`**, else **`continuity_observability_status_v1`** (**`unavailable`**). Normative field definitions and #59 boundaries: **`AUDIT_DOCUMENTATION.md`** (*Continuity observability (Issue #79)* and subsections).
+
 ## Architecture Changes
 
 ### Before (Free-form character prose)

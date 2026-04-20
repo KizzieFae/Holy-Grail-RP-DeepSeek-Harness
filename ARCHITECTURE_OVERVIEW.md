@@ -65,6 +65,8 @@ PRD alignment: vector retrieval is for **similarity and suggestions**, not autho
 - **Orchestration:** Final speaker resolution combines address, continuation override, Director, validation/reconciliation (PRD §5.3); implemented in `orchestration_helpers.py` and turn pipeline.
 - **Behavioral Validation Layer:** Scenario manifests, headless runs on the same path as Streamlit, optional audit JSON, structured metrics (`structured_eval`), and baseline vs treatment (e.g. `--no-progression-enforcement`). Canonical spec: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md).
 
+- **Continuity audit observability (Issue #79, closed):** Per-turn audit rows can carry **CTAR** (`metadata.ctar`), **`scene_state_after`** mirrors, excursion digest, and pipeline **`continuity_audit_origin`**; **`_audit_summary.json`** includes **`continuity_observability_summary_v1`** when **`write_summary_report`** receives a **`ContinuityManager`**, otherwise **`continuity_observability_status_v1`** (**`unavailable`**) — never a silent omission. These surfaces are **observational** only (**#59**); committed state remains **`ContinuityManager` / `SceneState` / excursions**. Details: [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) (*Continuity observability (Issue #79)*).
+
 Details: `autogen_rp/python/rp_app/ARCHITECTURE.md`, `autogen_rp/docs/architecture.md`.
 
 ---

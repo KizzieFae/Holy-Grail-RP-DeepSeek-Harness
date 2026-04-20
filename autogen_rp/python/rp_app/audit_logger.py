@@ -606,6 +606,8 @@ class AuditLogger:
         self,
         session_owner: str,
         session_number: int,
+        *,
+        continuity_manager: Any | None = None,
     ) -> str:
         """Write a generated session-level audit summary report.
 
@@ -626,6 +628,7 @@ class AuditLogger:
             prompt_reference=_prompt_reference,
             append_limited=_append_limited,
             utc_timestamp=utc_timestamp,
+            continuity_manager=continuity_manager,
         )
 
 

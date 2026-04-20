@@ -1,6 +1,12 @@
 from typing import Any
 
+from audit_ctar import build_ctar_projection_for_audit
+from continuity_audit_origin import build_continuity_audit_origin_row_metadata
 from audit_instrumentation import log_audit_exception
+from audit_runtime_mirrors import (
+    build_excursion_audit_digest_v1,
+    scene_state_after_runtime_mirror,
+)
 from audit_interpretation_metadata import (
     attach_signal_interpretation_v1,
     merge_scene_grounding_audit_family,
@@ -127,11 +133,7 @@ def _get_turn_continuity_payload(*, continuity_manager: Any, next_actor: str) ->
             if consequences and "consequences" not in continuity_event:
                 continuity_event["consequences"] = consequences
 
-    scene_state_after = (
-        continuity_manager.scene_state.to_dict()
-        if hasattr(continuity_manager.scene_state, "to_dict")
-        else {}
-    )
+    scene_state_after = scene_state_after_runtime_mirror(continuity_manager.scene_state)
 
     issue_updates: list[dict[str, Any]] = []
     for issue in getattr(continuity_manager, "issues", {}).values():
@@ -246,6 +248,9 @@ def log_character_turn_audit(
         support_manifest = build_support_manifest(
             dict(character_summary_block_audit), task_prompt
         )
+        ctar = build_ctar_projection_for_audit(continuity_manager)
+        excursion_digest = build_excursion_audit_digest_v1(continuity_manager)
+        audit_origin = build_continuity_audit_origin_row_metadata(continuity_manager)
         char_entry = audit_logger.create_entry(
             session_owner=session_owner,
             session_number=session_num,
@@ -272,6 +277,17 @@ def log_character_turn_audit(
                     "issue_updates": issue_updates,
                     "presence_changes": presence_changes,
                     "consequences": consequences,
+                    **({"ctar": ctar} if isinstance(ctar, dict) else {}),
+                    **(
+                        {"excursion_audit_digest_v1": excursion_digest}
+                        if excursion_digest is not None
+                        else {}
+                    ),
+                    **(
+                        {"continuity_audit_origin": audit_origin}
+                        if isinstance(audit_origin, dict)
+                        else {}
+                    ),
                     **(
                         {"hybrid_pacing": hybrid_pacing}
                         if isinstance(hybrid_pacing, dict)
@@ -374,6 +390,9 @@ def log_narrator_render_audit(
         actor_scene_context = get_character_scene_audit_context_fn(
             next_actor, scene_audit_kwargs
         )
+        ctar = build_ctar_projection_for_audit(continuity_manager)
+        excursion_digest = build_excursion_audit_digest_v1(continuity_manager)
+        audit_origin = build_continuity_audit_origin_row_metadata(continuity_manager)
         narrator_entry = audit_logger.create_entry(
             session_owner=session_owner,
             session_number=session_num,
@@ -403,6 +422,17 @@ def log_narrator_render_audit(
                     "issue_updates": issue_updates,
                     "presence_changes": presence_changes,
                     "consequences": consequences,
+                    **({"ctar": ctar} if isinstance(ctar, dict) else {}),
+                    **(
+                        {"excursion_audit_digest_v1": excursion_digest}
+                        if excursion_digest is not None
+                        else {}
+                    ),
+                    **(
+                        {"continuity_audit_origin": audit_origin}
+                        if isinstance(audit_origin, dict)
+                        else {}
+                    ),
                     "summary_blocks": narrator_summary_block_audit,
                     "semantic_validation": narrator_semantic_assessment or {},
                     "narrator_output_audit_v1": narrator_output_audit_v1,

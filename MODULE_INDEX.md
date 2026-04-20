@@ -34,7 +34,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Unsupported specifics** as clinical / institutional / “chart” truth | `prompt_builders.py` (`_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK`); rule out perception/grounding bugs first (`perception_audibility.py`, `scene_grounding.py`) |
 | Scene start/end / template roles | `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
-| **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py` |
+| **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py`; **#79 continuity observability:** `audit_ctar.py`, `audit_runtime_mirrors.py`, `continuity_audit_origin.py`, `continuity_observability_summary.py` |
 | **Scenario validation** (fixed manifests, headless LLM runs, `--audit`, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (2026-04-07 post–#24 wave); `autogen_rp/python/scripts/run_scene_simulation_llm.py` (**`--scene-template-id`**, **`--retrieved-context-index`** for authored retrieval OFF/ON; optional **`--fact-spec`** / **`--fact-track-out`** for offline fact-track companion — GitHub **#62**); `headless_scene_simulation.py` (`prepare_headless_session` **`scene_template_id`**, **`retrieval_session`** / strict verify); `progression_simulation_scenarios.py`; `rp_app/data/progression_simulation_scenarios/*.json`; example metrics: `autogen_rp/python/validation_runs/plan_execution/*.json` |
 | **OTHER PRESENT CHARACTERS** lists the acting character, or **CAST ROLE MAP** repeats the same person under id vs display | `prompt_builders.py` (`prompt_identity_same`, `build_cast_and_scene_role_participants`), `app_turn_prompting.py`, `runtime_packets.py` (`reconstruct_character_prompt_input_bundle` — pass the same **`get_character_display_name_fn`** as live assembly) |
 | Prompt wording only (after ruling out state) | `prompt_builders.py` |
@@ -76,7 +76,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `turn_runner.py` | Orchestrates multi-bot turns per user round | `turn_runner_turn`, `turn_runner_updates`, audit, `beat_shift_state` | Passes active issues + recent moves into beat-shift; main loop entry |
 | `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation`, `perception_audibility` | Normalizes move audibility after parse; chat append includes `actor` id |
 | `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | |
-| `turn_runner_audit.py` | Audit summary refresh hooks | `audit_logger*` | |
+| `turn_runner_audit.py` | Character/narrator audit payloads, CTAR / scene mirror / excursion digest / **`continuity_audit_origin`** merge | `audit_ctar`, `audit_runtime_mirrors`, `continuity_audit_origin`, `audit_logger*` | |
 | `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Advisory only; no continuity writes |
 | `progression_enforcement.py` | v1 **structural delta** contract (Q1–Q4) after `process_turn`; gate = beat-shift **or** high progression pressure | `turn_runner_turn`, `beat_shift_state`, `progression_advisory` | No continuity writes; snapshot/restore on retry; reads continuity **`consequences`** only—thin/empty tags are fixed in **`continuity_consequence_classifier.py`**, not by changing Q1–Q4 |
 | `anti_regression_advisory.py` | Ping-pong + post-break / low player-agency → short Director ANTI-REGRESSION block | `progression_advisory` (stall read-only), `director_decisions`, `recent_structured_moves`, session `player_character` / `user_name` | Option A trigger: no `high_stall` OR; orchestration cache only |
@@ -176,9 +176,13 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `audit_logger_writers.py` | Write JSON artifacts | — | |
 | `audit_logger_serialization.py` | Serialize payloads | — | |
 | `audit_logger_summary_rounds.py` | Round-level summary data | — | |
-| `audit_logger_summary_report.py` | `_audit_summary` aggregation | — | |
+| `audit_logger_summary_report.py` | `_audit_summary.json` aggregation; **`continuity_observability_summary_v1`** when `write_summary_report` receives **`continuity_manager`**, else **`continuity_observability_status_v1`** (unavailable — no synthetic summary) | `continuity_observability_summary`, `audit_logger_summary_output` | |
 | `audit_logger_summary_output.py` | Output formatting helpers | — | |
 | `summary_audit_helpers.py` | Prompt/audit bridges for summaries | continuity | |
+| `audit_ctar.py` | CTAR projection for **`metadata.ctar`** (**#79**) | `turn_runner_audit` | |
+| `audit_runtime_mirrors.py` | **`scene_state_after`** mirror; **`excursion_audit_digest_v1`** (**#79**) | `turn_runner_audit` | |
+| `continuity_audit_origin.py` | Bypass vs pipeline classification; **`flush_continuity_audit_origin_export_payload`** (**#79**) | `continuity_manager`, `continuity_observability_summary` | |
+| `continuity_observability_summary.py` | **`continuity_observability_summary_v1`** rollup and **`continuity_observability_status_v1`** (unavailable marker) for **`_audit_summary.json`** (**#79**) | `continuity_audit_origin`, `audit_logger_summary_report` | |
 | `audit_v2_deterministic.py` | **Audit v2** deterministic envelopes (character / narrator / prose); **`char_masked_progression_strict`** masked-progression observability (**#73**) | `audit_v2_escalation_policy`, `audit_v2_pipeline`, `turn_runner_turn` | Log-only; masked check escalation always **`pass`** |
 | `audit_v2_escalation_policy.py` | V2 **check_id** → dimension mapping; tri-state scoring; escalation rollup | `audit_v2_deterministic`, `audit_v2_pipeline` | **`char_masked_progression_strict`** is non-gating |
 | `audit_v2_pipeline.py` | Async V2 bundle assembly (deterministic + optional LLM) | `audit_v2_deterministic`, `audit_v2_llm` | |

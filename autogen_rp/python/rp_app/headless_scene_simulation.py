@@ -489,6 +489,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
                     is_audit_enabled_fn=is_audit_on,
                     get_audit_logger_fn=get_audit_logger,
                 ),
+                get_continuity_manager_fn=get_continuity_manager_fn,
             ),
             build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
             prompt_dialogue_history_limit=PROMPT_DIALOGUE_HISTORY_LIMIT,
@@ -614,6 +615,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
                 is_audit_enabled_fn=is_audit_on,
                 get_audit_logger_fn=get_audit_logger,
             ),
+            get_continuity_manager_fn=get_continuity_manager_fn,
         ),
         "reset_agents_fn": reset_agents_fn,
         "get_character_display_name_fn": get_character_display_name_fn,
@@ -910,6 +912,7 @@ def prepare_headless_session(
     cm = state_helpers.get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     if cm is not None and cm.scene_state is not None:
         cm.scene_state.location = location
+        cm.notify_raw_location_bypass_for_audit()
         _tpl = str(scene_template_id or "").strip()
         if _tpl:
             _apply_headless_scene_template_to_continuity(

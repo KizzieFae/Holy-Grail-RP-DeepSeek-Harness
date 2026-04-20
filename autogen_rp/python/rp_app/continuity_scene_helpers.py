@@ -48,6 +48,9 @@ def serialize_manager_state(*, manager: Any) -> dict[str, Any]:
             eid: rec.to_dict()
             for eid, rec in getattr(manager, "excursions", {}).items()
         },
+        "continuity_audit_origin_log": list(
+            getattr(manager, "continuity_audit_origin_log", []) or []
+        ),
     }
 
 
@@ -131,6 +134,13 @@ def restore_manager_state(
         }
     else:
         manager.excursions = {}
+    raw_origin = data.get("continuity_audit_origin_log")
+    if isinstance(raw_origin, list):
+        manager.continuity_audit_origin_log = [
+            dict(x) for x in raw_origin if isinstance(x, dict)
+        ]
+    else:
+        manager.continuity_audit_origin_log = []
     return manager
 
 
@@ -167,6 +177,7 @@ def initialize_scene_state(
     manager.anchor_character_id = None
     manager.setup_seam_complete = False
     manager.excursions = {}
+    manager.continuity_audit_origin_log = []
 
 
 def build_snapshot(

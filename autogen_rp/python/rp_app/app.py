@@ -207,6 +207,7 @@ def refresh_audit_summary_report() -> None:
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,
+        get_continuity_manager_fn=get_continuity_manager,
     )
 
 
