@@ -135,6 +135,11 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 - **Session / continuity blobs** — `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py`
 - **Scene state fields** — check `SceneState` and `ContinuityManager.to_dict()` / `.from_dict()` paths before blaming prompt assembly.
 
+### Scene start / first-round simulated user line (UI vs headless)
+
+- **Canonical fresh-scene bootstrap (GitHub #83)** — `scene_start_bootstrap.py`, `app_state_continuity.py` (`restore_or_initialize_continuity_manager`); UI entry `scene_lifecycle_start.py`; headless prep `headless_scene_simulation.py` (`prepare_headless_session`).
+- **Scenario contract** — `startup_trigger_mode` + `effective_round1_trigger_text_headless` in `progression_simulation_scenarios.py`; regression coverage `tests/test_issue83_scene_start_contract.py`.
+
 ### Settled sleeping assignment re-litigation
 
 - **Continuity-owned resolved outcome first** — inspect `resolved_outcome_registry.py`, `resolved_outcome_engine.py`, `continuity_resolved_outcomes.py`, `continuity_manager.py`, and `turn_metadata_by_index[*]["resolved_outcomes"]["sleeping_surface"]` before editing prompt wording. Identical-value reassertion surfaces as `no_op_existing_value`.
@@ -174,4 +179,4 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 - [GLOSSARY.md](./GLOSSARY.md)
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future seam; do not implement retrieval as authoritative state
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — headless **authored retrieval OFF/ON** (`RP_RETRIEVED_CONTEXT_INDEX`, `--retrieved-context-index`) and **`structured_eval.retrieval_session`**; **per-turn user trigger schedule** (`--user-trigger-schedule`, JSON, precedence, orchestration turn index)
-- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (headless merge); **`effective_user_trigger`** (full audits only) for harness per-turn user lines; **Issue #79** continuity surfaces (**`metadata.ctar`**, **`scene_state_after`**, **`continuity_observability_summary_v1`** or **`continuity_observability_status_v1`**)
+- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (Streamlit + headless merge); **`effective_user_trigger`** (full audits only; schedule overrides are headless harness-only); **Issue #79** continuity surfaces (**`metadata.ctar`**, **`scene_state_after`**, **`continuity_observability_summary_v1`** or **`continuity_observability_status_v1`**)

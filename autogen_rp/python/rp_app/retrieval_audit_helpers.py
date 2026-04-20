@@ -75,7 +75,11 @@ def verify_retrieval_strict_or_raise(
 def merge_retrieval_session_into_audit_summary(
     report_path: str | None, session: dict[str, Any]
 ) -> None:
-    """Append retrieval_session to existing _audit_summary.json (headless / Streamlit)."""
+    """Write ``retrieval_session`` into an existing ``_audit_summary.json`` on disk.
+
+    Prefer :func:`apply_retrieval_session_to_audit_summary` for the full
+    build-from-session-state + merge flow (Streamlit and headless).
+    """
     if not report_path:
         return
     p = Path(report_path)
@@ -94,3 +98,23 @@ def merge_retrieval_session_into_audit_summary(
         json.dumps(out, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+
+
+def apply_retrieval_session_to_audit_summary(
+    report_path: str | None,
+    *,
+    saw_nonempty_bundle: bool,
+) -> dict[str, Any]:
+    """Build run-level retrieval observability and merge it into ``_audit_summary.json``.
+
+    Uses :func:`build_retrieval_session_audit` and
+    :func:`merge_retrieval_session_into_audit_summary`. Call after
+    ``write_summary_report`` when the audit summary file exists (Streamlit
+    ``refresh_audit_summary_report`` and headless ``run_headless_llm_scene``).
+
+    Returns the same dict written under ``retrieval_session`` (for headless-only
+    consumers such as ``verify_retrieval_strict_or_raise`` and ``structured_eval``).
+    """
+    session = build_retrieval_session_audit(saw_nonempty_bundle=saw_nonempty_bundle)
+    merge_retrieval_session_into_audit_summary(report_path, session)
+    return session

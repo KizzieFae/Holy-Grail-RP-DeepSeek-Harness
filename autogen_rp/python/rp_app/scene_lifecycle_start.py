@@ -1,9 +1,14 @@
-import json
 from typing import Any, Awaitable, Callable
 
 from continuity_setup_seam_v77 import (
     ContinuitySetupSeamError,
+    ensure_interim_anchor_role_fallback_for_finalize,
     finalize_continuity_setup_seam,
+)
+from scene_start_bootstrap import (
+    apply_opener_location_time_to_continuity,
+    mirror_opening_into_scene_state,
+    resolve_streamlit_opening_narrative,
 )
 
 
@@ -244,7 +249,6 @@ async def start_scene(
     refresh_audit_summary_report_fn: Callable[[], None],
     run_character_turns_fn: Callable[..., Awaitable[None]],
     save_current_session_fn: Callable[..., Awaitable[None]],
-    apply_scene_setup_to_scene_state_fn: Callable[..., None],
     sync_orchestration_state_from_continuity_fn: Callable[[], None],
     get_orchestration_state_fn: Callable[[], dict[str, Any]],
     build_scene_role_prompt_context_fn: Callable[
@@ -302,16 +306,55 @@ async def start_scene(
         len(char_agents), existing_bot_reply_limit
     )
     display_char_names = get_character_display_names_fn(char_names)
+    user_name = st_module.session_state.get("user_name", "Traveler")
+
+    scene_owner = st_module.session_state.get(
+        "scene_owner", display_char_names[0] if display_char_names else "Unknown"
+    )
+    st_module.session_state["scene_owner"] = scene_owner
+    st_module.session_state["audit_session_owner"] = (
+        scene_owner if is_audit_enabled_fn() else None
+    )
+    opening_mode = st_module.session_state.get("opening_mode", "character")
+    selected_opener_id = st_module.session_state.get("selected_opener_id")
+    custom_text = st_module.session_state.get("custom_opener_text", "")
+
+    opener_manager = opener_manager_cls()
+    opener = resolve_scene_opener_fn(
+        opener_manager=opener_manager,
+        selected_chars=selected_chars,
+        scene_owner=scene_owner,
+        opening_mode=opening_mode,
+        scene_template_id=(scene_setup.get("template_id") if scene_setup else None),
+        specific_opener_id=selected_opener_id,
+        custom_text=custom_text,
+    )
+
+    narrator = create_narrator_agent_fn(model_client)
+    with st_module.spinner("Narrator is setting the scene..."):
+        opening_description = await resolve_streamlit_opening_narrative(
+            scene_setup=scene_setup,
+            opener=opener,
+            resolve_opening_text_fn=resolve_opening_text_fn,
+            display_char_names=display_char_names,
+            char_names=char_names,
+            user_name=user_name,
+            scene_owner=scene_owner,
+            build_scene_role_prompt_context_fn=build_scene_role_prompt_context_fn,
+            narrator=narrator,
+        )
 
     restore_or_initialize_continuity_manager_fn(
-        None, char_names, scene_setup=scene_setup
+        None,
+        char_names,
+        opening_description,
+        scene_setup,
     )
 
     state_manager = character_state_manager_cls()
     for name, state in char_states.items():
         state_manager.register_character(name, state)
     st_module.session_state["character_state_manager"] = state_manager
-    user_name = st_module.session_state.get("user_name", "Traveler")
     cross_session_memories = load_cross_session_memories_fn(char_names, user_name)
     apply_cross_session_memories_fn(char_states, cross_session_memories, user_name)
     _seed_scene_role_character_priorities(
@@ -325,7 +368,6 @@ async def start_scene(
     if continuity_manager is not None:
         continuity_manager.seed_character_canon_anchors(char_states)
 
-    narrator = create_narrator_agent_fn(model_client)
     director = create_director_agent_fn(model_client)
 
     session_manager = session_manager_cls()
@@ -333,51 +375,20 @@ async def start_scene(
     st_module.session_state["session_id"] = session_id
     st_module.session_state["team_state"] = None
 
-    opener_manager = opener_manager_cls()
-    scene_owner = st_module.session_state.get(
-        "scene_owner", display_char_names[0] if display_char_names else "Unknown"
-    )
-    st_module.session_state["scene_owner"] = scene_owner
-    st_module.session_state["audit_session_owner"] = (
-        scene_owner if is_audit_enabled_fn() else None
-    )
-    opening_mode = st_module.session_state.get("opening_mode", "character")
-    selected_opener_id = st_module.session_state.get("selected_opener_id")
-    custom_text = st_module.session_state.get("custom_opener_text", "")
+    if continuity_manager and continuity_manager.scene_state:
+        mirror_opening_into_scene_state(continuity_manager, opening_description)
+        apply_opener_location_time_to_continuity(continuity_manager, opener)
+        sync_orchestration_state_from_continuity_fn()
 
-    opener = resolve_scene_opener_fn(
-        opener_manager=opener_manager,
-        selected_chars=selected_chars,
-        scene_owner=scene_owner,
-        opening_mode=opening_mode,
-        scene_template_id=(scene_setup.get("template_id") if scene_setup else None),
-        specific_opener_id=selected_opener_id,
-        custom_text=custom_text,
-    )
-
-    with st_module.spinner("Narrator is setting the scene..."):
-        from autogen_core import CancellationToken
-        from autogen_agentchat.messages import TextMessage
-
-        cancellation_token = CancellationToken()
-
-        opening_description = resolve_opening_text_fn(scene_setup, opener)
-        if not opening_description:
-            narrator_prompt = f"""Write an opening scene description.
-
-CHARACTERS PRESENT: {", ".join(display_char_names)}
-PLAYER CHARACTER NAME: {user_name}
-SCENE OWNER: {scene_owner}
-SCENE TEMPLATE ID: {str(scene_setup.get("template_id", "") or "") if scene_setup else ""}
-SCENE TEMPLATE PREMISE: {str(scene_setup.get("premise", "") or "") if scene_setup else ""}
-SCENE ROLE MAP: {json.dumps(build_scene_role_prompt_context_fn(scene_setup, char_names), ensure_ascii=False)}
-
-Describe the setting, atmosphere, and where each character is positioned. End with a hook that invites the characters to begin interacting. Keep it evocative but concise (3-5 sentences)."""
-            opening_task = TextMessage(content=narrator_prompt, source="user")
-            narrator_result = await narrator.on_messages(
-                [opening_task], cancellation_token
+    if continuity_manager is not None and continuity_manager.scene_state is not None:
+        try:
+            ensure_interim_anchor_role_fallback_for_finalize(
+                continuity_manager, cast=char_names
             )
-            opening_description = narrator_result.chat_message.content
+            finalize_continuity_setup_seam(continuity_manager, cast=char_names)
+        except ContinuitySetupSeamError as exc:
+            st_module.error(str(exc))
+            return False
 
     st_module.session_state["chat_history"].append(
         {
@@ -386,35 +397,6 @@ Describe the setting, atmosphere, and where each character is positioned. End wi
             "speaker": "Narrator",
         }
     )
-
-    orchestration_state = get_orchestration_state_fn()
-    orchestration_state["scene_state"]["opening_description"] = opening_description
-    st_module.session_state["team_state"] = orchestration_state
-
-    continuity_manager = get_continuity_manager_fn()
-    if continuity_manager and continuity_manager.scene_state:
-        continuity_manager.scene_state.opening_description = opening_description
-        continuity_manager.scene_state.environment_description = opening_description
-        if scene_setup:
-            apply_scene_setup_to_scene_state_fn(
-                continuity_manager.scene_state,
-                scene_setup,
-                continuity_manager=continuity_manager,
-            )
-        if opener is not None:
-            if opener.location:
-                continuity_manager.scene_state.location = opener.location
-                continuity_manager.notify_raw_location_bypass_for_audit()
-            if opener.time:
-                continuity_manager.scene_state.time_of_day = opener.time
-        sync_orchestration_state_from_continuity_fn()
-
-    if continuity_manager is not None and continuity_manager.scene_state is not None:
-        try:
-            finalize_continuity_setup_seam(continuity_manager, cast=char_names)
-        except ContinuitySetupSeamError as exc:
-            st_module.error(str(exc))
-            return False
 
     if is_audit_enabled_fn():
         try:
@@ -496,7 +478,15 @@ async def recreate_team_from_state(
             for k, v in ra.items():
                 merged[str(k)] = str(v) if v is not None else ""
             cm.scene_state.role_assignments = merged
+        ensure_interim_anchor_role_fallback_for_finalize(
+            cm, cast=[agent.name for agent in characters]
+        )
         finalize_continuity_setup_seam(cm, cast=[agent.name for agent in characters])
     narrator = create_narrator_agent_fn(model_client)
     director = create_director_agent_fn(model_client)
     return characters, narrator, director, model_client
+
+
+# Public aliases (e.g. headless imports shared seeding without duplicating helpers).
+seed_scene_role_character_priorities = _seed_scene_role_character_priorities
+seed_scene_role_relationship_context = _seed_scene_role_relationship_context

@@ -48,5 +48,6 @@
       "ingrid_karlsson",
       "jane_doe"
     ]
-  }
+  },
+  "startup_trigger_mode": "overlay"
 }

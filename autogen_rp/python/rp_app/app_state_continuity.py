@@ -4,6 +4,10 @@ from continuity_setup_seam_v77 import (
     finalize_continuity_setup_seam,
     validate_completed_setup_seam,
 )
+from scene_start_bootstrap import (
+    FreshContinuityInitParams,
+    initialize_fresh_continuity_scene_core,
+)
 
 
 def get_continuity_manager(
@@ -50,21 +54,16 @@ def restore_or_initialize_continuity_manager(
     else:
         manager = continuity_manager_cls()
 
-    if manager.scene_state is None:
-        manager.initialize_scene(
-            location=None,
+    initialize_fresh_continuity_scene_core(
+        manager,
+        params=FreshContinuityInitParams(
+            character_names=character_names,
             opening_description=opening_description,
-            present_characters=character_names,
-            initial_issues=build_initial_scene_issues_fn(scene_setup),
-        )
-
-    manager.bootstrap_present_characters_from_cast(character_names)
-    if opening_description and not manager.scene_state.opening_description:
-        manager.scene_state.opening_description = opening_description
-    if scene_setup:
-        apply_scene_setup_to_scene_state_fn(
-            manager.scene_state, scene_setup, continuity_manager=manager
-        )
+            scene_setup=scene_setup,
+        ),
+        build_initial_scene_issues_fn=build_initial_scene_issues_fn,
+        apply_scene_setup_to_scene_state_fn=apply_scene_setup_to_scene_state_fn,
+    )
 
     if isinstance(continuity_state, dict):
         if manager.setup_seam_complete:

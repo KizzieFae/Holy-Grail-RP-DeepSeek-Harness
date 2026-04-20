@@ -293,8 +293,9 @@ def render_scene_setup_controls(
         st_module.caption(
             "Writes full, light, and summary audit artifacts. Character turns may include "
             "**metadata.retrieval_summary** (counts/refs only) when authored retrieval produced a bundle. "
-            "Run-level **retrieval_session** merged into `_audit_summary.json` is produced on the **headless** "
-            "simulation path today — Streamlit refresh of `_audit_summary` does not add that block."
+            "Run-level **retrieval_session** is merged into `_audit_summary.json` on each summary refresh "
+            "(same behavior as headless simulation). "
+            "**structured_eval** metrics files and strict retrieval verification remain simulation/CLI-only."
         )
     else:
         st_module.caption(

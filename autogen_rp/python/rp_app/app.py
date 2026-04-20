@@ -630,7 +630,6 @@ async def start_scene(selected_chars: list[str]) -> bool:
         refresh_audit_summary_report_fn=refresh_audit_summary_report,
         run_character_turns_fn=run_character_turns,
         save_current_session_fn=save_current_session,
-        apply_scene_setup_to_scene_state_fn=apply_scene_setup_to_scene_state,
         sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity,
         get_orchestration_state_fn=get_orchestration_state,
         build_scene_role_prompt_context_fn=build_scene_role_prompt_context,

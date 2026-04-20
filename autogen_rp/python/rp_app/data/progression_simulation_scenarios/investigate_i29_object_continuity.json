@@ -2,7 +2,10 @@
   "id": "investigate_i29_object_continuity",
   "title": "Issue #29 — object UID continuity (25+ turns)",
   "intent": "OBJECT_ISSUE29_UID_BRASS canonical; decoy OBJECT_ISSUE29_ALTKEY only in drift schedule; recall 20 and 24.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "After-hours office. One brass key engraved OBJECT_ISSUE29_UID_BRASS opens the basement closet—no duplicate set on this desk. OBJECT_ISSUE29_ALTKEY is not valid for this closet (do not treat as canonical). Ayame and Celina inventory paperwork.",
   "location": "shared_workspace_after_hours",
   "trigger_text": "Ayame lifts the key. 'One UID, one closet—OBJECT_ISSUE29_UID_BRASS.'",
@@ -12,12 +15,22 @@
   "initial_tension": "low",
   "initial_phase": "opening",
   "expected_pressure_profile": "low",
-  "investigation_anchor_tokens": ["OBJECT_ISSUE29_UID_BRASS"],
+  "investigation_anchor_tokens": [
+    "OBJECT_ISSUE29_UID_BRASS"
+  ],
   "investigation": {
-    "establishment_turn_numbers": [1, 2, 3],
+    "establishment_turn_numbers": [
+      1,
+      2,
+      3
+    ],
     "behavior_kind": "object_uid_recall",
-    "recall_turn_numbers": [20, 24],
+    "recall_turn_numbers": [
+      20,
+      24
+    ],
     "min_character_rows": 25,
     "schedule_file": "data/issue29_investigation_schedules/object_25.json"
-  }
+  },
+  "startup_trigger_mode": "overlay"
 }

@@ -13,13 +13,15 @@ For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`. For GitHu
 
 ## Behavioral validation layer
 
-Scenario validation is a **core architectural layer**: fixed JSON scenarios, headless runs on the same path as Streamlit, optional audit JSON, structured metrics (`structured_eval`), and baseline vs treatment (e.g. `--no-progression-enforcement` for progression). It answers whether a change **actually improved** emergent behavior, not only whether unit tests pass.
+Scenario validation is a **core architectural layer**: fixed JSON scenarios, headless runs on the **same turn loop and fresh-scene bootstrap** as Streamlit (GitHub **#83**), optional audit JSON, structured metrics (`structured_eval`), and baseline vs treatment (e.g. `--no-progression-enforcement` for progression). It answers whether a change **actually improved** emergent behavior, not only whether unit tests pass.
 
 **Canonical spec:** [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md) (repo root). Do not churn that document without evidence from real runs; prefer executing the framework.
 
 ## RP app architecture rules
 
 The RP app uses a Director + Narrator + continuity-manager architecture.
+
+**Scene-start spine (GitHub #83):** **Fresh** scenes use one canonical continuity init/apply ordering (`scene_start_bootstrap`, `app_state_continuity.restore_or_initialize_continuity_manager`). Streamlit and headless simulation are **separate input surfaces** into that spine (UI flow vs scenario/CLI fields), not divergent template-application models. Template-derived setup merges on **first** continuity init; there is no second headless-only patch pass after partial startup.
 
 ### Core responsibilities
 

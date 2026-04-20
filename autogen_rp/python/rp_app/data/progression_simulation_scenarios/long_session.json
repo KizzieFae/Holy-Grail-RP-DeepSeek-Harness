@@ -2,7 +2,10 @@
   "id": "long_session",
   "title": "Long session stress",
   "intent": "Many turns in one response cycle; watch for duplicate continuity writes, stuck selectors, or audit/session drift.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "A long negotiation evening: offers, counters, silences, small concessions. The arc should hold without continuity corruption across many turns.",
   "location": "apartment",
   "trigger_text": "Ayame taps the table once. 'We keep going until this is settled—no walking out mid-sentence.'",
@@ -14,6 +17,10 @@
   "seed_issue": {
     "issue_id": "sim_long_negotiation",
     "description": "Extended back-and-forth; stakes must remain tracked.",
-    "participant_card_ids": ["ayame", "celina"]
-  }
+    "participant_card_ids": [
+      "ayame",
+      "celina"
+    ]
+  },
+  "startup_trigger_mode": "overlay"
 }

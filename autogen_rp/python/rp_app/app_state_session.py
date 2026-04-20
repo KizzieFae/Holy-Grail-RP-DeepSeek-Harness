@@ -57,6 +57,7 @@ def init_session_state(*, st_module: Any) -> None:
         "audit_session_number": None,
         "audit_session_owner": None,
         "audit_summary_report_path": None,
+        "sim_retrieval_saw_nonempty_bundle": False,
         "startup_recovery_completed": False,
         "recovered_session_ids": [],
         "continuity_manager": None,
@@ -108,6 +109,7 @@ def reset_state_for_new_scene(
     )
     st_module.session_state["audit_session_owner"] = None
     st_module.session_state["audit_summary_report_path"] = None
+    st_module.session_state["sim_retrieval_saw_nonempty_bundle"] = False
     st_module.session_state["continuity_manager"] = None
     st_module.session_state["cross_session_memories"] = {}
     st_module.session_state["cross_session_injection_report"] = None

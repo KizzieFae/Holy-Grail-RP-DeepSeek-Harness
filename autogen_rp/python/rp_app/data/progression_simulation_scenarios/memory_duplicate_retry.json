@@ -2,7 +2,10 @@
   "id": "memory_duplicate_retry",
   "title": "Duplicate retry (simulation-primary attempt)",
   "intent": "Natural run: opening nudges variety to reduce duplicate rejects; core asserts memory bounds and rejection hygiene. Reliable duplicate injection uses supplemental monkeypatch tests.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "Tense but focused negotiation. Each beat should advance a new detail—avoid repeating the same sentence twice.",
   "location": "apartment",
   "trigger_text": "Ayame: state one new concrete fact each time you speak—no repeating your previous line word-for-word.",
@@ -11,5 +14,6 @@
   "beat_shift_active": false,
   "initial_tension": "medium",
   "initial_phase": "rising",
-  "expected_pressure_profile": "medium"
+  "expected_pressure_profile": "medium",
+  "startup_trigger_mode": "overlay"
 }

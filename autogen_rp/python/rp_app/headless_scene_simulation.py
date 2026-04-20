@@ -16,12 +16,16 @@ from datetime import datetime, timezone
 from typing import Any
 
 import app_memory_helpers as memory_helpers
+import app_memory_cross_session
 import app_state_helpers as state_helpers
 import app_turn_helpers as turn_helpers
 from character_loader import CharacterLoader, make_agent_identifier
 from character_state_manager import CharacterStateManager
 from continuity_manager import ContinuityManager
-from continuity_setup_seam_v77 import finalize_continuity_setup_seam
+from continuity_setup_seam_v77 import (
+    ensure_interim_anchor_role_fallback_for_finalize,
+    finalize_continuity_setup_seam,
+)
 from continuity_state import IssueState, IssueStatus, ScenePhase
 from model_client import create_deepseek_client, create_director_agent, create_narrator_agent
 from orchestration_helpers import (
@@ -48,6 +52,15 @@ from response_validation import (
     validate_turn_selection_decision,
 )
 from scene_grounding import empty_grounding_dict
+from scene_lifecycle_start import (
+    seed_scene_role_character_priorities,
+    seed_scene_role_relationship_context,
+)
+from scene_start_bootstrap import (
+    append_scene_opening_chat_message,
+    headless_prepare_scene_setup_bundle,
+    mirror_opening_into_scene_state,
+)
 from scene_template import (
     SceneTemplateManager,
     normalize_role_assignments,
@@ -76,10 +89,10 @@ from progression_run_metrics import (
     summarize_sim_progression_metrics,
 )
 from retrieval_audit_helpers import (
-    build_retrieval_session_audit,
-    merge_retrieval_session_into_audit_summary,
+    apply_retrieval_session_to_audit_summary,
     verify_retrieval_strict_or_raise,
 )
+from session_manager import SessionManager
 from turn_runner import run_character_turns as run_character_turns_impl
 
 PROMPT_DIALOGUE_HISTORY_LIMIT = 6
@@ -90,95 +103,6 @@ ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
 ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
 ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
 ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
-
-
-def _apply_headless_scene_template_to_continuity(
-    *,
-    st_module: Any,
-    continuity_manager: ContinuityManager,
-    scene_template_id: str,
-    character_card_ids: list[str],
-    resolved_character_files: list[str],
-    display_character_names: list[str],
-    scene_template_role_assignments: dict[str, str] | None,
-    sync_orchestration_state_from_continuity_fn: Callable[[], None],
-) -> None:
-    """Load authored template and merge template contract into continuity ``scene_state``.
-
-    When ``scene_template_role_assignments`` is provided (card id -> template ``role_name``),
-    uses ``resolve_scene_template_setup`` + ``apply_scene_setup_to_scene_state`` (same as UI).
-    Otherwise applies template-derived ``sleeping_surface_slots`` / ``location_entry_slots`` /
-    ``premise`` / ``template_id`` only (no role inference).
-    """
-    tpl_id = str(scene_template_id or "").strip()
-    if not tpl_id or continuity_manager.scene_state is None:
-        return
-
-    st_module.session_state["selected_scene_template_id"] = tpl_id
-    if scene_template_role_assignments:
-        card_to_file = {
-            str(cid).strip(): resolved_character_files[i]
-            for i, cid in enumerate(character_card_ids)
-        }
-        file_roles: dict[str, str] = {}
-        for cid, role in scene_template_role_assignments.items():
-            ck = str(cid).strip()
-            rv = str(role).strip()
-            if ck not in card_to_file:
-                raise ValueError(
-                    f"scene_template_role_assignments key {ck!r} is not in character_card_ids "
-                    "for this headless session"
-                )
-            file_roles[card_to_file[ck]] = rv
-        st_module.session_state["scene_role_assignments"] = file_roles
-        names_by_file = dict(zip(resolved_character_files, display_character_names))
-        scene_setup, setup_err = state_helpers.resolve_scene_template_setup(
-            st_module=st_module,
-            selected_chars=resolved_character_files,
-            character_names_by_file=names_by_file,
-            scene_template_manager_cls=SceneTemplateManager,
-            normalize_role_assignments_fn=normalize_role_assignments,
-            validate_role_assignments_fn=validate_role_assignments,
-        )
-        if setup_err:
-            raise ValueError(
-                f"Headless scene template setup failed for template {tpl_id!r}: {setup_err}"
-            )
-        if not scene_setup:
-            raise ValueError(
-                f"Headless scene template setup returned empty setup for template {tpl_id!r}"
-            )
-        state_helpers.apply_scene_setup_to_scene_state(
-            scene_state=continuity_manager.scene_state,
-            scene_setup=scene_setup,
-            get_must_remain_characters_fn=get_must_remain_characters,
-            continuity_manager=continuity_manager,
-        )
-        sync_orchestration_state_from_continuity_fn()
-        return
-
-    try:
-        template = SceneTemplateManager().load_template(tpl_id)
-    except (FileNotFoundError, ValueError, OSError) as exc:
-        raise ValueError(f"Headless failed to load scene template {tpl_id!r}: {exc}") from exc
-
-    minimal_setup: dict[str, Any] = {
-        "template_id": template.template_id,
-        "premise": template.premise,
-        "anchor_role_name": template.anchor_role_name,
-        "role_assignments": {},
-        "character_presence_constraints": {},
-        "character_authority_labels": {},
-        "sleeping_surface_slots": list(template.sleeping_surface_slots),
-        "location_entry_slots": list(template.location_entry_slots),
-    }
-    state_helpers.apply_scene_setup_to_scene_state(
-        scene_state=continuity_manager.scene_state,
-        scene_setup=minimal_setup,
-        get_must_remain_characters_fn=get_must_remain_characters,
-        continuity_manager=continuity_manager,
-    )
-    sync_orchestration_state_from_continuity_fn()
 
 
 def _issue29_resolve_synthetic_available_actors(
@@ -691,17 +615,14 @@ async def run_headless_llm_scene(
         scene_tpl_id = (
             str(getattr(cm.scene_state, "scene_template_id", None) or "").strip() or None
         )
-    session_retrieval = build_retrieval_session_audit(
+    rep_path_pre = st_module.session_state.get("audit_summary_report_path")
+    session_retrieval = apply_retrieval_session_to_audit_summary(
+        str(rep_path_pre) if rep_path_pre else None,
         saw_nonempty_bundle=bool(
             st_module.session_state.get("sim_retrieval_saw_nonempty_bundle")
         ),
     )
     verify_retrieval_strict_or_raise(session_retrieval, scene_template_id=scene_tpl_id)
-    rep_path_pre = st_module.session_state.get("audit_summary_report_path")
-    merge_retrieval_session_into_audit_summary(
-        str(rep_path_pre) if rep_path_pre else None,
-        session_retrieval,
-    )
     ti = int(getattr(cm, "turn_counter", 0) or 0) if cm else 0
     meta = (
         (getattr(cm, "turn_metadata_by_index", {}) or {}).get(ti, {})
@@ -764,6 +685,7 @@ def prepare_headless_session(
     character_card_ids: list[str],
     opening_description: str,
     location: str,
+    user_name: str = "Traveler",
     seed_escalating_issue: bool = True,
     beat_shift_active: bool = False,
     progression_enforcement_disabled: bool = False,
@@ -785,27 +707,15 @@ def prepare_headless_session(
     ignore_director_end_round: bool = False,
     issue29_long_run_harness: bool = False,
 ) -> Any:
-    """Build ``HeadlessStreamlit`` session: continuity, orchestration sync, DeepSeek client, agents.
+    """Build ``HeadlessStreamlit`` session using the same continuity init/apply path as the app.
 
-    When ``enable_episodic_memory`` is True, sets process env ``RP_EPISODIC_MEMORY=1`` so character
-    prompts merge continuity-backed episodic lines into the retrieved bundle (same as shell export).
-    Issue seed participants use **agent keys** (card ``agent_name`` or ``make_agent_identifier``)
-    so ``select_episodic_items_for_character`` visibility matches ``next_actor`` from the turn runner.
+    Template: resolve ``scene_setup`` before ``restore_or_initialize_continuity_manager``;
+    ``scene_template_role_assignments`` is required when ``scene_template_id`` is set (Issue #80).
+    Opening is applied on first init; continuity narrative fields are mirrored before finalize;
+    role / cross-session / canon seeding runs in the pre-finalize block; then interim anchor
+    fallback, finalize, ``simulation_opening_final``, and a Scene Opening row in ``chat_history``.
 
-    When ``scene_template_id`` is set, loads the authored scene template and applies
-    ``sleeping_surface_slots`` (and related template fields) onto ``ContinuityManager.scene_state``
-    via ``apply_scene_setup_to_scene_state``. With optional ``scene_template_role_assignments``,
-    uses the same ``resolve_scene_template_setup`` path as Streamlit (card id → template role).
-
-    When ``scene_template_id`` is set without ``scene_template_role_assignments``,
-    only template slot lists / premise / ``anchor_role_name`` are merged; finalize still
-    requires complete role assignments for template-driven anchor resolution (use scenario
-    manifests with ``scene_template_role_assignments``, Issue #80).
-
-    When ``issue29_long_run_harness`` is True (headless CLI only, ``investigate_i29_*``), sets
-    session ``issue29_long_run_harness`` and enables synthetic availability / Director survivability
-    for long-horizon durability runs; also forces ``headless_ignore_director_end_round``. Does not
-    change continuity or Streamlit defaults.
+    ``simulation_opening_final`` supports CLI/scenario round-1 trigger resolution (``startup_trigger_mode``).
     """
     if enable_episodic_memory:
         os.environ["RP_EPISODIC_MEMORY"] = "1"
@@ -875,6 +785,10 @@ def prepare_headless_session(
         agent_keys.append(ak)
     st.session_state["selected_chars"] = resolved_files
 
+    opening_final = str(opening_description or "").strip()
+    if not opening_final:
+        raise ValueError("prepare_headless_session requires non-empty opening_description")
+
     def _sync() -> None:
         state_helpers.sync_orchestration_state_from_continuity(
             st_module=st,
@@ -897,15 +811,56 @@ def prepare_headless_session(
             ),
         )
 
+    def _apply_scene_setup_to_scene_state(
+        scene_state: Any,
+        scene_setup: dict[str, Any] | None,
+        *,
+        continuity_manager: Any | None = None,
+    ) -> None:
+        state_helpers.apply_scene_setup_to_scene_state(
+            scene_state=scene_state,
+            scene_setup=scene_setup,
+            get_must_remain_characters_fn=get_must_remain_characters,
+            continuity_manager=continuity_manager,
+        )
+
+    client = create_deepseek_client()
+    st.session_state["model_client"] = client
+    _rebuild_headless_agents_and_character_states(st_module=st, model_client=client)
+    char_states: dict[str, Any] = dict(st.session_state.get("character_states") or {})
+
+    def _resolve_template() -> tuple[Any, str]:
+        return state_helpers.resolve_scene_template_setup(
+            st_module=st,
+            selected_chars=resolved_files,
+            character_names_by_file=dict(zip(resolved_files, display_names)),
+            scene_template_manager_cls=SceneTemplateManager,
+            normalize_role_assignments_fn=normalize_role_assignments,
+            validate_role_assignments_fn=validate_role_assignments,
+        )
+
+    scene_setup, setup_err = headless_prepare_scene_setup_bundle(
+        st_module=st,
+        scene_template_id=scene_template_id,
+        scene_template_role_assignments=scene_template_role_assignments,
+        character_card_ids=list(character_card_ids),
+        resolved_character_files=resolved_files,
+        resolve_scene_template_setup_fn=_resolve_template,
+    )
+    if setup_err:
+        raise ValueError(f"Headless scene template setup failed: {setup_err}")
+
+    st.session_state["session_id"] = SessionManager().generate_session_id(display_names)
+
     state_helpers.restore_or_initialize_continuity_manager(
         st_module=st,
         continuity_state=None,
         character_names=display_names,
-        opening_description=opening_description,
-        scene_setup=None,
+        opening_description=opening_final,
+        scene_setup=scene_setup,
         continuity_manager_cls=ContinuityManager,
         build_initial_scene_issues_fn=state_helpers.build_initial_scene_issues,
-        apply_scene_setup_to_scene_state_fn=state_helpers.apply_scene_setup_to_scene_state,
+        apply_scene_setup_to_scene_state_fn=_apply_scene_setup_to_scene_state,
         sync_orchestration_state_from_continuity_fn=_sync,
     )
 
@@ -913,20 +868,7 @@ def prepare_headless_session(
     if cm is not None and cm.scene_state is not None:
         cm.scene_state.location = location
         cm.notify_raw_location_bypass_for_audit()
-        _tpl = str(scene_template_id or "").strip()
-        if _tpl:
-            _apply_headless_scene_template_to_continuity(
-                st_module=st,
-                continuity_manager=cm,
-                scene_template_id=_tpl,
-                character_card_ids=list(character_card_ids),
-                resolved_character_files=resolved_files,
-                display_character_names=display_names,
-                scene_template_role_assignments=scene_template_role_assignments,
-                sync_orchestration_state_from_continuity_fn=_sync,
-            )
-            cm.scene_state.scene_template_id = _tpl
-        else:
+        if not str(scene_template_id or "").strip():
             cm.scene_state.scene_template_id = None
         if initial_tension is not None:
             cm.scene_state.current_tension_level = str(initial_tension)
@@ -974,8 +916,37 @@ def prepare_headless_session(
                 status_reason="headless simulation seed",
             )
             cm.issues[issue.issue_id] = issue
+
+        mirror_opening_into_scene_state(cm, opening_final)
+
+        cross_payload = app_memory_cross_session.load_cross_session_memories(
+            st_module=st,
+            character_names=display_names,
+            user_name=user_name,
+            session_manager_cls=SessionManager,
+        )
+        app_memory_cross_session.apply_cross_session_memories(
+            char_states,
+            cross_payload,
+            user_name,
+            st_module=st,
+        )
+        st.session_state["cross_session_memories"] = cross_payload
+
+        seed_scene_role_character_priorities(char_states=char_states, scene_setup=scene_setup)
+        seed_scene_role_relationship_context(char_states=char_states, scene_setup=scene_setup)
+        cm.seed_character_canon_anchors(char_states)
+
         _sync()
+        ensure_interim_anchor_role_fallback_for_finalize(cm, cast=display_names)
         finalize_continuity_setup_seam(cm, cast=display_names)
+
+    st.session_state["simulation_opening_final"] = opening_final
+    append_scene_opening_chat_message(
+        st_module=st,
+        opening_final=opening_final,
+        user_name=user_name,
+    )
 
     if beat_shift_active:
         orch = state_helpers.get_orchestration_state(
@@ -987,9 +958,6 @@ def prepare_headless_session(
             pbs["reason"] = "short_user_message"
             pbs["source_turn_id"] = "headless_sim_user_round_1"
 
-    client = create_deepseek_client()
-    st.session_state["model_client"] = client
-    _rebuild_headless_agents_and_character_states(st_module=st, model_client=client)
     return st
 
 

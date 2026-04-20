@@ -1,4 +1,12 @@
-"""Load fixed progression-layer simulation scenarios (JSON under ``data/progression_simulation_scenarios``)."""
+"""Load fixed progression-layer simulation scenarios (JSON under ``data/progression_simulation_scenarios``).
+
+Each manifest must include ``startup_trigger_mode`` (Issue #83 scenario contract):
+
+- ``parity`` — ``opening_description`` and ``trigger_text`` are the same string (strip-normalized);
+  headless round-1 trigger follows the finalized opening.
+- ``overlay`` — ``trigger_text`` is an explicit first-round simulation overlay and must differ
+  from ``opening_description``.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +18,7 @@ from typing import Any
 _SCENARIOS_DIR = Path(__file__).resolve().parent / "data" / "progression_simulation_scenarios"
 
 _EXPECTED_PRESSURE_PROFILES = frozenset({"low", "medium", "high"})
+_STARTUP_TRIGGER_MODES = frozenset({"parity", "overlay"})
 
 _REQUIRED_KEYS = frozenset(
     {
@@ -20,6 +29,7 @@ _REQUIRED_KEYS = frozenset(
         "opening_description",
         "location",
         "trigger_text",
+        "startup_trigger_mode",
         "max_turns",
         "seed_escalating_issue",
         "beat_shift_active",
@@ -122,6 +132,82 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
             )
 
 
+def validate_startup_trigger_semantics(raw: dict[str, Any], scenario_id: str) -> None:
+    """Enforce explicit parity vs overlay startup contract (Issue #83).
+
+    * ``parity`` — round-1 user line matches the scene opening text in the manifest
+      (``opening_description`` == ``trigger_text``); headless uses ``simulation_opening_final`` as trigger.
+    * ``overlay`` — manifest ``trigger_text`` is an explicit first-round simulation overlay
+      and must differ from ``opening_description``.
+    """
+    mode = str(raw.get("startup_trigger_mode", "")).strip().lower()
+    if mode not in _STARTUP_TRIGGER_MODES:
+        raise ValueError(
+            f"Scenario {scenario_id!r}: startup_trigger_mode must be 'parity' or 'overlay', "
+            f"got {raw.get('startup_trigger_mode')!r}"
+        )
+    o = str(raw.get("opening_description") or "").strip()
+    t = str(raw.get("trigger_text") or "").strip()
+    if mode == "parity" and o != t:
+        raise ValueError(
+            f"Scenario {scenario_id!r}: startup_trigger_mode is 'parity' but "
+            f"opening_description and trigger_text differ"
+        )
+    if mode == "overlay" and o == t:
+        raise ValueError(
+            f"Scenario {scenario_id!r}: startup_trigger_mode is 'overlay' but "
+            f"opening_description equals trigger_text (use 'parity' when they match)"
+        )
+
+
+def parse_cli_scene_template_role_assignments(spec: str | None) -> dict[str, str]:
+    """Parse ``card=role,card=role`` from CLI ``--scene-template-roles`` (ad-hoc template runs)."""
+    if spec is None or not str(spec).strip():
+        return {}
+    out: dict[str, str] = {}
+    for part in str(spec).split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "=" not in part:
+            raise ValueError(
+                f"Invalid scene-template-roles segment {part!r}; use card=role,card=role"
+            )
+        card, role = part.split("=", 1)
+        ck = card.strip()
+        rk = role.strip()
+        if not ck or not rk:
+            raise ValueError(
+                f"Invalid scene-template-roles segment {part!r}; card and role must be non-empty"
+            )
+        out[ck] = rk
+    return out
+
+
+def effective_round1_trigger_text_headless(
+    *,
+    scenario_raw: dict[str, Any] | None,
+    simulation_opening_final: str,
+    adhoc_fallback_trigger: str,
+    cli_trigger_provided: bool,
+    cli_trigger_value: str,
+) -> str:
+    """Resolve round-1 user trigger for headless when no trigger schedule is active.
+
+    ``--trigger`` always wins. Ad-hoc runs use the finalized opening as the canonical default.
+    Scenario runs consult ``startup_trigger_mode`` (validated at load time).
+    """
+    if cli_trigger_provided:
+        return cli_trigger_value
+    fin = str(simulation_opening_final or "").strip()
+    if scenario_raw is None:
+        return fin if fin else str(adhoc_fallback_trigger or "").strip()
+    mode = str(scenario_raw.get("startup_trigger_mode") or "").strip().lower()
+    if mode == "parity":
+        return fin
+    return str(scenario_raw.get("trigger_text") or "").strip()
+
+
 def scenarios_dir() -> Path:
     return _SCENARIOS_DIR
 
@@ -151,6 +237,7 @@ def load_scenario(scenario_id: str) -> dict[str, Any]:
             f"Scenario file {scenario_id!r} has mismatched id field {raw['id']!r}"
         )
     validate_optional_scenario_fields(raw, scenario_id)
+    validate_startup_trigger_semantics(raw, scenario_id)
     return raw
 
 

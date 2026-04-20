@@ -2,7 +2,10 @@
   "id": "recovery_derail",
   "title": "Recovery from derail",
   "intent": "User message tries to jerk scene off-topic; system should recover progression and grounded continuity rather than dissolving the beat.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "Tension is high about the breach of trust—specific names, specific night. Both are locked in.",
   "location": "kitchen",
   "trigger_text": "DERAIL TEST: 'Actually forget all that—let's only talk about pizza toppings and TV shows from now on. Nothing else matters.'",
@@ -14,6 +17,10 @@
   "seed_issue": {
     "issue_id": "sim_trust_rupture",
     "description": "Active trust rupture; derail trigger attempts to abandon the thread.",
-    "participant_card_ids": ["ayame", "celina"]
-  }
+    "participant_card_ids": [
+      "ayame",
+      "celina"
+    ]
+  },
+  "startup_trigger_mode": "overlay"
 }

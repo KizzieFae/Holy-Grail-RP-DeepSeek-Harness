@@ -16,11 +16,14 @@ from headless_scene_simulation import (  # noqa: E402
     prepare_headless_session,
 )
 from progression_simulation_scenarios import (  # noqa: E402
+    effective_round1_trigger_text_headless,
     list_scenario_ids,
     load_scenario,
+    parse_cli_scene_template_role_assignments,
     scenario_prepare_kwargs,
     scenarios_dir,
     validate_optional_scenario_fields,
+    validate_startup_trigger_semantics,
 )
 
 
@@ -30,7 +33,7 @@ def test_scenarios_dir_exists() -> None:
 
 def test_all_scenario_manifests_load() -> None:
     ids = list_scenario_ids()
-    assert len(ids) >= 7
+    assert len(ids) >= 8
     params = inspect.signature(prepare_headless_session).parameters
     for sid in ids:
         raw = load_scenario(sid)
@@ -98,6 +101,7 @@ def test_scenario_prepare_kwargs_scene_template_id_only_when_set() -> None:
         "opening_description": "o",
         "location": "l",
         "trigger_text": "tr",
+        "startup_trigger_mode": "overlay",
         "max_turns": 1,
         "seed_escalating_issue": False,
         "beat_shift_active": False,
@@ -116,3 +120,104 @@ def test_parse_scene_phase() -> None:
     assert _parse_scene_phase("OPENING") == ScenePhase.OPENING
     with pytest.raises(ValueError):
         _parse_scene_phase("not_a_phase")
+
+
+def test_validate_startup_trigger_parity_ok() -> None:
+    validate_startup_trigger_semantics(
+        {
+            "opening_description": " same line ",
+            "trigger_text": "same line",
+            "startup_trigger_mode": "parity",
+        },
+        "t",
+    )
+
+
+def test_validate_startup_trigger_parity_mismatch_fails() -> None:
+    with pytest.raises(ValueError, match="parity"):
+        validate_startup_trigger_semantics(
+            {
+                "opening_description": "a",
+                "trigger_text": "b",
+                "startup_trigger_mode": "parity",
+            },
+            "t",
+        )
+
+
+def test_validate_startup_trigger_overlay_ok() -> None:
+    validate_startup_trigger_semantics(
+        {
+            "opening_description": "a",
+            "trigger_text": "b",
+            "startup_trigger_mode": "overlay",
+        },
+        "t",
+    )
+
+
+def test_validate_startup_trigger_overlay_same_text_fails() -> None:
+    with pytest.raises(ValueError, match="overlay"):
+        validate_startup_trigger_semantics(
+            {
+                "opening_description": "x",
+                "trigger_text": "x",
+                "startup_trigger_mode": "overlay",
+            },
+            "t",
+        )
+
+
+def test_parse_cli_scene_template_role_assignments() -> None:
+    m = parse_cli_scene_template_role_assignments("a=1,b=2")
+    assert m == {"a": "1", "b": "2"}
+    assert parse_cli_scene_template_role_assignments("") == {}
+    with pytest.raises(ValueError):
+        parse_cli_scene_template_role_assignments("nope")
+
+
+def test_effective_round1_trigger_parity_uses_opening_final() -> None:
+    raw = load_scenario("parity_opening_trigger_smoke")
+    t = effective_round1_trigger_text_headless(
+        scenario_raw=raw,
+        simulation_opening_final="resolved opening from session",
+        adhoc_fallback_trigger="fallback",
+        cli_trigger_provided=False,
+        cli_trigger_value="",
+    )
+    assert t == "resolved opening from session"
+
+
+def test_effective_round1_trigger_overlay_uses_manifest() -> None:
+    raw = load_scenario("headless_template_retrieval_smoke")
+    t = effective_round1_trigger_text_headless(
+        scenario_raw=raw,
+        simulation_opening_final="different resolved",
+        adhoc_fallback_trigger="fallback",
+        cli_trigger_provided=False,
+        cli_trigger_value="",
+    )
+    assert t == str(raw["trigger_text"])
+
+
+def test_effective_round1_cli_override_wins() -> None:
+    raw = load_scenario("parity_opening_trigger_smoke")
+    t = effective_round1_trigger_text_headless(
+        scenario_raw=raw,
+        simulation_opening_final="x",
+        adhoc_fallback_trigger="y",
+        cli_trigger_provided=True,
+        cli_trigger_value="from cli",
+    )
+    assert t == "from cli"
+
+
+def test_effective_round1_adhoc_uses_opening_final() -> None:
+    t = effective_round1_trigger_text_headless(
+        scenario_raw=None,
+        simulation_opening_final="adhoc opening final",
+        adhoc_fallback_trigger="standoff",
+        cli_trigger_provided=False,
+        cli_trigger_value="",
+    )
+    assert t == "adhoc opening final"

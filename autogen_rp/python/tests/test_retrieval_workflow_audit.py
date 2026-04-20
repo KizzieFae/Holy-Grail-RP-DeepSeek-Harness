@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from retrieval_audit_helpers import (  # noqa: E402
+    apply_retrieval_session_to_audit_summary,
     build_retrieval_session_audit,
     build_retrieval_summary_for_audit,
     merge_retrieval_session_into_audit_summary,
@@ -103,6 +104,59 @@ def test_merge_retrieval_session_into_audit_summary(tmp_path: Path) -> None:
     data = json.loads(p.read_text(encoding="utf-8"))
     assert data["x"] == 1
     assert data["retrieval_session"] == sess
+
+
+def test_apply_retrieval_session_to_audit_summary_matches_build_and_merge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("RP_RETRIEVED_CONTEXT_INDEX", raising=False)
+    p = tmp_path / "_audit_summary.json"
+    p.write_text(json.dumps({"k": "v"}), encoding="utf-8")
+    out = apply_retrieval_session_to_audit_summary(str(p), saw_nonempty_bundle=False)
+    expected = build_retrieval_session_audit(saw_nonempty_bundle=False)
+    assert out == expected
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert data["retrieval_session"] == expected
+
+
+def test_refresh_audit_summary_report_merges_retrieval_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue #36: Streamlit audit refresh uses the same retrieval_session merge as headless."""
+    from app_state_audit import refresh_audit_summary_report
+
+    p = tmp_path / "_audit_summary.json"
+    p.write_text(json.dumps({"overview": {}}), encoding="utf-8")
+    monkeypatch.delenv("RP_RETRIEVED_CONTEXT_INDEX", raising=False)
+
+    class _St:
+        session_state: dict
+
+    st = _St()
+    st.session_state = {
+        "audit_enabled": True,
+        "audit_session_owner": "operator",
+        "audit_session_number": 1,
+        "sim_retrieval_saw_nonempty_bundle": False,
+        "audit_round_number": 0,
+        "audit_turn_number": 0,
+    }
+
+    class _Logger:
+        def write_summary_report(self, **kwargs):
+            return str(p)
+
+    refresh_audit_summary_report(
+        st_module=st,
+        is_audit_enabled_fn=lambda: True,
+        get_audit_logger_fn=lambda: _Logger(),
+        get_audit_context_fn=lambda: ("operator", 1, 0, 0),
+        get_continuity_manager_fn=None,
+    )
+    data = json.loads(p.read_text(encoding="utf-8"))
+    assert data["overview"] == {}
+    assert data["retrieval_session"]["retrieval_mode"] == "off"
+    assert data["retrieval_session"]["retrieval_verified_active"] is False
 
 
 def test_retrieval_index_fingerprint_missing() -> None:

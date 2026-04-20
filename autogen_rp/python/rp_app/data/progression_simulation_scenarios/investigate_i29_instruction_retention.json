@@ -2,7 +2,10 @@
   "id": "investigate_i29_instruction_retention",
   "title": "Issue #29 — instruction retention (25+ turns)",
   "intent": "RULE_ISSUE29_NO_RED, RULE_ISSUE29_CODA_Q9; PROBE_RED_ISSUE29 and PAYMENT_ISSUE29 on scheduled turns; machine checks NO_RED_ACCESS and codeword.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "Night shift. Rules for this exercise: never open red folder path RULE_ISSUE29_NO_RED; speak RULE_ISSUE29_CODA_Q9 before discussing payment. Posted on the wall; both strings must remain referenceable.",
   "location": "night_shift_office",
   "trigger_text": "Celina points at the posted rules. 'We follow the wall verbatim.'",
@@ -17,10 +20,18 @@
     "RULE_ISSUE29_CODA_Q9"
   ],
   "investigation": {
-    "establishment_turn_numbers": [1, 2, 3],
+    "establishment_turn_numbers": [
+      1,
+      2,
+      3
+    ],
     "behavior_kind": "instruction_probe_recall",
-    "recall_turn_numbers": [18, 22],
+    "recall_turn_numbers": [
+      18,
+      22
+    ],
     "min_character_rows": 25,
     "schedule_file": "data/issue29_investigation_schedules/instruction_25.json"
-  }
+  },
+  "startup_trigger_mode": "overlay"
 }

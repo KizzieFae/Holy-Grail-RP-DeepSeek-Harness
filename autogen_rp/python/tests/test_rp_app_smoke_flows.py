@@ -107,6 +107,9 @@ class FakeContinuityManager:
     def seed_character_canon_anchors(self, char_states: dict[str, object]) -> None:
         self.seeded_character_states = dict(char_states)
 
+    def notify_raw_location_bypass_for_audit(self) -> None:
+        return None
+
     def to_dict(self) -> dict[str, object]:
         return {
             "scene_state": {
@@ -337,6 +340,13 @@ async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_temp
     )
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
     monkeypatch.setattr(app, "save_current_session", fake_save_current_session)
+    import scene_lifecycle_start as sls
+
+    def _noop_finalize(cm: FakeContinuityManager, *, cast: list[str] | None = None) -> None:
+        _ = cast
+        cm.setup_seam_complete = True
+
+    monkeypatch.setattr(sls, "finalize_continuity_setup_seam", _noop_finalize)
 
     started = await app.start_scene(["celina", "kizzie"])
 

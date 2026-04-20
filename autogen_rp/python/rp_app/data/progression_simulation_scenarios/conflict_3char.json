@@ -2,7 +2,11 @@
   "id": "conflict_3char",
   "title": "Three-character conflict",
   "intent": "Director selection and progression should keep coherence; no single voice should hog without cause; issues should advance.",
-  "character_card_ids": ["ayame", "celina", "hannah"],
+  "character_card_ids": [
+    "ayame",
+    "celina",
+    "hannah"
+  ],
   "opening_description": "Ayame and Celina are squared off; Hannah stands between them with palms out, voice tight. A decision in the next few beats will stick—there is no neutral corner left.",
   "location": "hallway",
   "trigger_text": "Hannah: 'Pick. One of you backs off or I walk and you explain this without me.' Neither Ayame nor Celina looks away.",
@@ -15,6 +19,11 @@
   "seed_issue": {
     "issue_id": "sim_triangle_pressure",
     "description": "Third party forced to choose sides; conflict cannot stay verbal.",
-    "participant_card_ids": ["ayame", "celina", "hannah"]
-  }
+    "participant_card_ids": [
+      "ayame",
+      "celina",
+      "hannah"
+    ]
+  },
+  "startup_trigger_mode": "overlay"
 }

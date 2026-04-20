@@ -1,5 +1,7 @@
 from typing import Any
 
+from retrieval_audit_helpers import apply_retrieval_session_to_audit_summary
+
 
 def is_audit_enabled(*, st_module: Any) -> bool:
     return bool(st_module.session_state.get("audit_enabled", False))
@@ -33,6 +35,12 @@ def refresh_audit_summary_report(
         continuity_manager=cm,
     )
     st_module.session_state["audit_summary_report_path"] = report_path
+    apply_retrieval_session_to_audit_summary(
+        report_path,
+        saw_nonempty_bundle=bool(
+            st_module.session_state.get("sim_retrieval_saw_nonempty_bundle")
+        ),
+    )
 
 
 def get_audit_context(

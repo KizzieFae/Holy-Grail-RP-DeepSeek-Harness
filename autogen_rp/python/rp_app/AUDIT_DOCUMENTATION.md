@@ -354,8 +354,8 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 | `metadata.retrieval_summary` | Retrieved bundle summary (counts/refs) | conditional | Authored retrieval or merged episodic path produced a summary for the character turn | When retrieval OFF and no merge, absence is **neutral**. | telemetry |
 | `metadata.scene_grounding` / `scene_grounding_summary` | Grounding observability snapshot | conditional | Scene grounding MVP produced facts for projection | When no promoted facts, absence or empty snapshot is **neutral**. | telemetry (partial) |
 | `metadata.support_manifest` | Support manifest `support_manifest.v1` | conditional | Character `*_full.json` audit path attached manifest (`audit_support_manifest`) | Per **Support Manifest** section: absent on Director/Narrator rows by design — **neutral**. | telemetry |
-| `audit.retrieval_session` | `_audit_summary.json` top-level `retrieval_session` | conditional | Headless simulation completed with post-merge summary refresh | Streamlit path may omit (**documented elsewhere**); absence then **neutral**, not a defect. | telemetry |
-| `audit.effective_user_trigger` | Top-level `effective_user_trigger` on **full** per-turn rows | conditional | Headless harness used per-turn user trigger schedule **or** tooling expects harness field | Light audits omit by design; absence **neutral** for light rows. | telemetry |
+| `audit.retrieval_session` | `_audit_summary.json` top-level `retrieval_session` | conditional | `write_summary_report` followed by `apply_retrieval_session_to_audit_summary` (Streamlit `refresh_audit_summary_report` and headless `run_headless_llm_scene`) | When audit is disabled or no summary file, **neutral**. | telemetry |
+| `audit.effective_user_trigger` | Top-level `effective_user_trigger` on **full** per-turn rows | conditional | Full per-turn row (`*_full.json`); key present on **all** such rows (Streamlit or headless). **Per-turn user-trigger schedule** (headless CLI) changes **values** only, not key presence | Light audits omit by design; absence **neutral** for light rows. | telemetry |
 | `context_snapshot` | Top-level continuity/scene/orchestration snapshot for the turn (not continuity truth) | conditional | Parsed artifact is a **full** per-turn audit row: filename matches `*_full.json` **and** root `bot_type` ∈ {`character`, `director`, `narrator`} | If predicate **false** (`*_light.json` or invalid row): **neutral**. If predicate **true**: **absence** of top-level `context_snapshot` is **neutral**; **presence** is telemetry only. | telemetry |
 | `structured_eval.bundle` | Headless `structured_eval` / metrics JSON (scenario id, metrics, `retrieval_session`, verdict flags when set) | conditional | Run requested metrics output (`--metrics-out` or suite aggregation) | Absent file or block means no metrics artifact — **neutral** for audit quality of the scene itself. | aggregation |
 
@@ -531,6 +531,8 @@ Continuity-backed episodic recall is **off by default**. It is merged into the c
 
 **Field:** Top-level **`effective_user_trigger`** on **full** per-turn audit records (Director, character, narrator success paths, and turn failure entries where the harness supplies it). It records the **simulated user trigger string actually used for that orchestration turn** in the production prompts for that beat (Director selection, character generation, narrator render path for that turn).
 
+**Streamlit UI:** There is **no** per-turn user-trigger schedule; every orchestration turn in a user round uses the **same** user message, so **`effective_user_trigger`** matches that string for each bot turn in the round.
+
 Compare this field to **`by_orchestration_turn`** / CLI **`--trigger`** / scenario defaults when debugging “wrong user framing” in **headless** runs. Rules and JSON shape are documented in [SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md) (**Per-turn user trigger schedule**). The schedule file is **harness input only**—it is not written into continuity or scenario files.
 
 **Light vs full:** **`effective_user_trigger`** appears in **full** audit serialization (`entry_to_full_dict`). **Light** audit rows do **not** include it; use **`*_full.json`** when you need the per-turn line.
@@ -547,9 +549,11 @@ Compare this field to **`by_orchestration_turn`** / CLI **`--trigger`** / scenar
 
 **Per-turn (character `*_full.json` / light):** `metadata` may include **`retrieval_summary`**: `retrieved_block_present`, `retrieved_item_count`, `retrieved_char_count`, `retrieved_source_refs` (capped list). **No** full retrieved text is stored. Populated from the **`RetrievedContextBundle`** at prompt build time (`app_turn_prompting` → `turn_runner_audit`).
 
-**Session summary (`_audit_summary.json`):** Top-level **`retrieval_session`** (same shape as structured_eval: mode, path, `retrieval_verified_active`, fingerprint) is **merged after headless simulation** completes (`headless_scene_simulation.run_headless_llm_scene`). **Streamlit** refresh of `_audit_summary.json` does **not** currently add this block — for run-level retrieval metadata in the UI path, rely on **per-turn** `retrieval_summary` and logs, or run the **headless** scenario with `--audit`.
+**Session summary (`_audit_summary.json`):** Top-level **`retrieval_session`** (same shape as `structured_eval.retrieval_session`: mode, path, `retrieval_verified_active`, fingerprint) is **merged** after **`write_summary_report`** via **`apply_retrieval_session_to_audit_summary`** — **both** Streamlit (`refresh_audit_summary_report`) and headless (`run_headless_llm_scene`). Same build/merge helper; **`sim_retrieval_saw_nonempty_bundle`** in session state mirrors whether any character turn saw a non-empty authored bundle.
 
-**Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration).
+**Simulation-only (not Streamlit):** **`structured_eval`** JSON, **`sim_progression_metrics`** event buffer, **`verify_retrieval_strict_or_raise`**, and **`--user-trigger-schedule`** remain headless/CLI harness features.
+
+**Strict verification (headless only):** If retrieval is **ON** and the continuity scene has **`scene_template_id`**, the headless run **raises** if no character turn had a non-empty retrieved bundle (guards silent misconfiguration). The UI does **not** run this gate.
 
 ### Structured eval bundle (headless metrics)
 
@@ -1486,7 +1490,7 @@ rp_audits/
 - `summary_block_quality`: availability/injection/fallback rates
 - `issue_categories` / `heuristic_issue_categories`: confirmed and text-derived pressure buckets
 - `regression_checks`: session-level pass/fail indicators
-- **`retrieval_session`** (when present): run-level authored-retrieval observability — **typically after headless simulation** with `--audit` (see *Authored index retrieval* above). Omitted when the session never ran through that merge step (e.g. Streamlit-only audits).
+- **`retrieval_session`**: run-level authored-retrieval observability (see *Authored index retrieval* above), merged whenever the audit summary is refreshed with auditing enabled — **Streamlit and headless**.
 
 ### 5. Granular Bot Logs
 **Naming**: `{owner}_session{###}_round{###}_turn{##}_{bot}_{level}.json`

@@ -2,7 +2,10 @@
   "id": "strong_user_steer",
   "title": "Strong user steer (beat shift)",
   "intent": "Pending beat-shift should activate progression gate OR path; next beats should show real change, not more loop.",
-  "character_card_ids": ["ayame", "celina"],
+  "character_card_ids": [
+    "ayame",
+    "celina"
+  ],
   "opening_description": "The same phrases have been traded for several beats. The scene is waiting on something external to break symmetry—or someone to force a hinge.",
   "location": "corridor",
   "trigger_text": "USER STEER (short): 'Enough talk. Something physical changes now—door, phone, third voice, or one of you crosses the line.'",
@@ -15,6 +18,10 @@
   "seed_issue": {
     "issue_id": "sim_steer_break",
     "description": "Stalled confrontation; user demands a hinge event.",
-    "participant_card_ids": ["ayame", "celina"]
-  }
+    "participant_card_ids": [
+      "ayame",
+      "celina"
+    ]
+  },
+  "startup_trigger_mode": "overlay"
 }

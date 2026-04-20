@@ -20,7 +20,7 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --beat-shift --turns 3 --audit
     # Template-linked retrieval (sets Continuity scene_template_id; same field as Streamlit):
     python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1
-    python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --audit --turns 1
+    python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --scene-template-roles harley_quinn=cell_anchor,magpie=new_arrival --audit --turns 1
     # After an audited run, optional offline fact-track (GitHub #62; explicit fact_spec only):
     # python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec path/to/spec.json
     # Authored retrieval ON/OFF (sets RP_RETRIEVED_CONTEXT_INDEX for this process; omit flag to leave env unchanged):
@@ -51,8 +51,10 @@ from headless_scene_simulation import (  # noqa: E402
 from progression_run_metrics import FAILURE_CLASSIFICATIONS  # noqa: E402
 from progression_simulation_scenarios import (  # noqa: E402
     audit_owner_slug,
+    effective_round1_trigger_text_headless,
     list_scenario_ids,
     load_scenario,
+    parse_cli_scene_template_role_assignments,
     scenario_prepare_kwargs,
 )
 from user_trigger_schedule import (  # noqa: E402
@@ -105,7 +107,10 @@ def main() -> None:
     p.add_argument(
         "--trigger",
         default=None,
-        help="User trigger text (default: scenario or built-in standoff line).",
+        help=(
+            "Override round-1 user trigger. If omitted: ad-hoc uses finalized opening; "
+            "scenarios use startup_trigger_mode (parity → opening, overlay → manifest trigger)."
+        ),
     )
     p.add_argument("--user-name", default="Traveler", help="User display name for prompts.")
     p.add_argument(
@@ -120,7 +125,17 @@ def main() -> None:
         metavar="ID",
         help=(
             "Set Continuity scene_template_id for template-linked authored retrieval "
-            "(ad-hoc only; scenarios may set scene_template_id in JSON)."
+            "(ad-hoc only; scenarios may set scene_template_id in JSON). "
+            "Requires --scene-template-roles."
+        ),
+    )
+    p.add_argument(
+        "--scene-template-roles",
+        default=None,
+        metavar="MAP",
+        help=(
+            "Ad-hoc only, required with --scene-template-id: comma-separated card=role "
+            "assignments (Issue #80). Example: harley_quinn=cell_anchor,magpie=new_arrival"
         ),
     )
     p.add_argument(
@@ -365,6 +380,7 @@ def main() -> None:
         deep_turns = not args.no_deep_simulation_turns
         st = prepare_headless_session(
             **prep_kw,
+            user_name=args.user_name,
             audit_enabled=args.audit,
             llm_audit_enabled=args.llm_audit,
             audit_session_owner=audit_owner,
@@ -381,10 +397,22 @@ def main() -> None:
             p.error("Use only one of --deep-simulation-turns and --no-deep-simulation-turns")
         deep_turns = bool(args.deep_simulation_turns)
         adhoc_tpl = str(args.scene_template_id or "").strip() or None
+        try:
+            adhoc_roles = parse_cli_scene_template_role_assignments(args.scene_template_roles)
+        except ValueError as exc:
+            p.error(str(exc))
+        if adhoc_tpl and not adhoc_roles:
+            p.error(
+                "--scene-template-id requires --scene-template-roles in ad-hoc mode "
+                "(Issue #80); e.g. harley_quinn=cell_anchor,magpie=new_arrival"
+            )
+        if adhoc_roles and not adhoc_tpl:
+            p.error("--scene-template-roles requires --scene-template-id")
         st = prepare_headless_session(
             character_card_ids=ids,
             opening_description=args.opening or default_opening,
             location=args.location or "corridor",
+            user_name=args.user_name,
             seed_escalating_issue=not args.no_seed_issue,
             beat_shift_active=args.beat_shift,
             audit_enabled=args.audit,
@@ -395,6 +423,19 @@ def main() -> None:
             deep_simulation_turns=deep_turns,
             enable_episodic_memory=args.episodic_memory,
             scene_template_id=adhoc_tpl,
+            scene_template_role_assignments=adhoc_roles if adhoc_roles else None,
+        )
+
+    opening_for_trigger = str(
+        st.session_state.get("simulation_opening_final") or ""
+    ).strip()
+    if get_effective_user_trigger is None:
+        trigger_text = effective_round1_trigger_text_headless(
+            scenario_raw=raw_scenario,
+            simulation_opening_final=opening_for_trigger,
+            adhoc_fallback_trigger=default_trigger,
+            cli_trigger_provided=cli_trigger_provided,
+            cli_trigger_value=cli_trigger_value,
         )
 
     async def _run() -> None:

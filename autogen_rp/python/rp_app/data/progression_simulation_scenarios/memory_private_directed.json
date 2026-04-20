@@ -2,7 +2,11 @@
   "id": "memory_private_directed",
   "title": "Private / directed memory boundary",
   "intent": "Simulation-driven check: Ayame whispers a unique token to Celina only; Hannah must not retain that token in episodic memory (perception-filtered writes).",
-  "character_card_ids": ["ayame", "celina", "hannah"],
+  "character_card_ids": [
+    "ayame",
+    "celina",
+    "hannah"
+  ],
   "opening_description": "Same room; the three are close enough to whisper. Ayame can step to Celina's ear without leaving the space.",
   "location": "apartment",
   "trigger_text": "Ayame leans in and whispers only to Celina, voice low: 'Codeword for tonight is ZEPHYR-OMEGA-NINE—tell no one else.' Hannah is in the room but not addressed and should not be told the codeword.",
@@ -11,5 +15,6 @@
   "beat_shift_active": false,
   "initial_tension": "medium",
   "initial_phase": "opening",
-  "expected_pressure_profile": "medium"
+  "expected_pressure_profile": "medium",
+  "startup_trigger_mode": "overlay"
 }

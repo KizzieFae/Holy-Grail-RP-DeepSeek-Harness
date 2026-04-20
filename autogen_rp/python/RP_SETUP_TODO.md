@@ -444,7 +444,7 @@ This milestone was **intentionally narrow:** **validation and enforcement**, not
 
 - [x] **OFF / ON as standard simulation modes** — `RP_RETRIEVED_CONTEXT_INDEX` is the **only** runtime switch; optional **`--retrieved-context-index`** on `run_scene_simulation_llm.py` (omit flag = leave shell env unchanged; bare flag = empty index / OFF).
 - [x] **Template-aware headless** in scenario workflow — `scene_template_id` (and optional **`scene_template_role_assignments`**) in scenario JSON / `prepare_headless_session` loads template data into continuity (e.g. **`sleeping_surface_slots`**) / CLI `--scene-template-id` (unchanged from pilot closeout; now documented as standard).
-- [x] **Audit visibility** — per-turn **`metadata.retrieval_summary`** on character audits; run-level **`retrieval_session`** in **`structured_eval`** and merged into **`_audit_summary.json`** after **headless** simulation; optional index fingerprint.
+- [x] **Audit visibility** — per-turn **`metadata.retrieval_summary`** on character audits; run-level **`retrieval_session`** in **`structured_eval`** (headless/CLI metrics) **and** merged into **`_audit_summary.json`** after **`write_summary_report`** (**Streamlit** audit refresh **and** headless simulation — **`apply_retrieval_session_to_audit_summary`**); optional index fingerprint.
 - [x] **Strict headless check** — retrieval **ON** + non-empty **`scene_template_id`** ⇒ run fails if no turn had a non-empty retrieved bundle.
 - [x] **No selector or prompt-structure change** — observability and CLI only; baseline remains **lore_facts** + **role_slots** + **premise**, non-authoritative.
 

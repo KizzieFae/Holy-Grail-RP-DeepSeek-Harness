@@ -2,7 +2,10 @@
   "id": "headless_template_retrieval_smoke",
   "title": "Headless template retrieval smoke (Phase 3a)",
   "intent": "Minimal cast and turns to verify scene_template_id flows into Continuity and template-tagged retrieval in audits.",
-  "character_card_ids": ["harley_quinn", "magpie"],
+  "character_card_ids": [
+    "harley_quinn",
+    "magpie"
+  ],
   "opening_description": "A bare intake cell: metal bench, scratched glass, the hum of the ward beyond the door. Harley and Magpie have been parked here while staff argue about paperwork nobody wants to sign.",
   "location": "arkham_intake_cell",
   "trigger_text": "Footsteps stop outside. A key scrapes in the lock. Magpie tilts her head; Harley's grin doesn't reach her eyes.",
@@ -16,5 +19,6 @@
   "scene_template_role_assignments": {
     "harley_quinn": "cell_anchor",
     "magpie": "new_arrival"
-  }
+  },
+  "startup_trigger_mode": "overlay"
 }

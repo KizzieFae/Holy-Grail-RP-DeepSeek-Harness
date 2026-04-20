@@ -2,7 +2,11 @@
   "id": "passive_observer",
   "title": "Passive observer",
   "intent": "Third character is present but not in the active conflict; enforcement should not force them into unnatural center-stage action.",
-  "character_card_ids": ["ayame", "celina", "hannah"],
+  "character_card_ids": [
+    "ayame",
+    "celina",
+    "hannah"
+  ],
   "opening_description": "Ayame and Celina argue in low voices by the window. Hannah sits on the couch with a book she is not reading—present, listening, deliberately not inserting herself unless safety breaks.",
   "location": "living_room",
   "trigger_text": "Celina glances toward Hannah once, then back to Ayame. 'This is between us.'",
@@ -15,6 +19,10 @@
   "seed_issue": {
     "issue_id": "sim_dyad_only",
     "description": "Interpersonal clash between two principals; observer is witness only unless escalated.",
-    "participant_card_ids": ["ayame", "celina"]
-  }
+    "participant_card_ids": [
+      "ayame",
+      "celina"
+    ]
+  },
+  "startup_trigger_mode": "overlay"
 }
