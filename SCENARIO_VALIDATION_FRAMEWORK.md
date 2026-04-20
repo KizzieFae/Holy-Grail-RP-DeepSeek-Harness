@@ -50,6 +50,8 @@ Each scenario defines:
 - **`startup_trigger_mode`** (required): `"parity"` \| `"overlay"` — **`parity`:** `opening_description` and `trigger_text` are the same string (strip-normalized); headless round-1 trigger follows the **finalized opening** (`simulation_opening_final`). **`overlay`:** `trigger_text` is an explicit first-round **simulation overlay** and must differ from `opening_description`. Validated in `progression_simulation_scenarios.py` at load time; resolution helper: `effective_round1_trigger_text_headless` (CLI `--trigger` always wins when provided).
 - **optional** `expected_pressure_profile`: `"low"` | `"medium"` | `"high"` — design-time hint for whether advisory/gate pressure should tend low or high (for future checks against missed gate activation or misclassified pressure; does not change runtime today). Omitted on older manifests is fine.
 
+**Streamlit UI vs scenario manifests:** The Streamlit app does not expose `startup_trigger_mode`. After **Start Scene**, the first-round user trigger passed into the turn loop is always the **finalized opening** from `scene_lifecycle_start.start_scene`—**parity-style** (same string as the resolved opening). The **`overlay`** mode applies to **scenario JSON and headless** first-round resolution via `effective_round1_trigger_text_headless` (CLI `--trigger` still wins when provided). It is not a separate control on the current Streamlit surface.
+
 **Storage path** (repository root = Holy Grail RP):
 
 `autogen_rp/python/rp_app/data/progression_simulation_scenarios/<scenario_id>.json`

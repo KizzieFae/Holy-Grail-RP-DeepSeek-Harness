@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable
 
+from audit_instrumentation import log_audit_exception
 from continuity_setup_seam_v77 import (
     ContinuitySetupSeamError,
     ensure_interim_anchor_role_fallback_for_finalize,
@@ -416,8 +417,17 @@ async def start_scene(
                 **scene_audit_kwargs,
             )
             refresh_audit_summary_report_fn()
-        except Exception:
-            pass
+        except Exception as exc:
+            log_audit_exception(
+                "audit: scene start write_session_manifest or "
+                "refresh_audit_summary_report failed",
+                exc,
+            )
+            st_module.error(
+                "Audit logging failed during scene start (manifest write or summary "
+                "refresh, including retrieval_session merge). The scene will continue, "
+                f"but audit artifacts may be incomplete. Details: {exc}"
+            )
 
     await run_character_turns_fn(
         char_agents=char_agents,
