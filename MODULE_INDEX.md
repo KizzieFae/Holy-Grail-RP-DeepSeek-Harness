@@ -102,6 +102,8 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 ## Continuity engine
 
+**#77 / #81 posture:** **#77** Slice **A** (validated) = foundational continuity seam + **`ContinuityPromptProjectionV77`** + API excursion scaffolding; **deferred** = in-session spatial transition (**#33**), offscreen reintegration (**#34**), production excursion orchestration (**#81**).
+
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
 | `continuity_manager.py` | Promote moves to events; issues; scene; interpretations; knowledge | `continuity_*_helpers`, `continuity_state`, `perception_audibility`, `tension_pacing_policy` | Authoritative narrative state; `PublicEvent` knowability via `known_by`/`observed_by`; safe summaries for non-public dialogue; hybrid tension pacing + saturation gate in `_update_scene_state` |

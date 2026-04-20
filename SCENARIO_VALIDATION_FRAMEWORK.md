@@ -94,7 +94,7 @@ pytest tests/test_progression_simulation_scenarios.py -q
 
 ### 2. Simulation Execution (live LLM)
 
-The **headless runner** drives the same code path as Streamlit: Director selection, character generation, validation, progression enforcement (when enabled), narrator render, continuity / orchestration updates. Character prompts are assembled through **`app_turn_prompting.build_character_turn_prompt`**, including **`build_character_state_context_for_prompt`** for **`state_context`** (same spine as Streamlit; see **`autogen_rp/docs/architecture.md`**).
+The **headless runner** drives the same code path as Streamlit: Director selection, character generation, validation, progression enforcement (when enabled), narrator render, continuity / orchestration updates. Character prompts are assembled through **`app_turn_prompting.build_character_turn_prompt`**, including **`build_character_state_context_for_prompt`** for **`state_context`** (same spine as Streamlit; see **`autogen_rp/docs/architecture.md`**). **Continuity scope:** scenario runs validate the **current** pipeline and scenarios in this matrix; they do **not** by themselves prove **full** Runtime Continuity Contract delivery (**GitHub #77**). **Slice A**-scoped foundation is validated separately; **#33 / #34**-class spatial/offscreen-merge behavior and deferred layers are tracked in **#81**.
 
 **Requirements**
 

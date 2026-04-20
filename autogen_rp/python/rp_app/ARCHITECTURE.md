@@ -363,6 +363,8 @@ state compiler that turns transient interaction into durable continuity.
 
 The current continuity design uses five durable structures plus one prompt policy.
 
+**Runtime Continuity Contract (GitHub #77 / #81):** Issue **#77** holds the agreed **contract text** (anchor/focal rules, **`ContinuityPromptProjectionV77`**, excursion store/invariants). **Validated Slice A** covers the **foundation** only—setup seam, anchor resolution with **#80**, focal **projection** parity, API-level excursions, **P_focal ∩ E_active = ∅** on covered paths. **Not** asserted here as shipped product behavior: first-class **in-session** location moves (**#33**), **runtime** offscreen **reintegration** (**#34**), or **turn-pipeline** excursion orchestration—tracked under **#81**.
+
 ##### Durable structures
 
 - `SceneState`
