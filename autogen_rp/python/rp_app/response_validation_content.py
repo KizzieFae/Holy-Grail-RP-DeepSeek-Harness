@@ -25,6 +25,11 @@ from progression_simulation_scenarios import load_scenario
 from response_validation_investigation_recall import (
     validate_investigation_recall_contract,
 )
+from continuity_mutation_pipeline import (
+    validate_excursion_lifecycle_move_shape,
+    validate_spatial_transition_move_shape,
+)
+from continuity_reintegration import validate_reintegration_move_shape
 from response_validation_registry_slots import validate_registry_scene_state_updates
 
 # Fuzzy duplicate detection (prefix / substring only; exact matches always reject).
@@ -283,6 +288,18 @@ def validate_bot_response(
         scene_state=scene_state,
         _continuity_manager=continuity_manager,
     )
+    if not ok:
+        return False, msg
+
+    ok, msg = validate_spatial_transition_move_shape(move)
+    if not ok:
+        return False, msg
+
+    ok, msg = validate_excursion_lifecycle_move_shape(move)
+    if not ok:
+        return False, msg
+
+    ok, msg = validate_reintegration_move_shape(move)
     if not ok:
         return False, msg
 

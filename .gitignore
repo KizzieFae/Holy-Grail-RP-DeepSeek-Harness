@@ -2,6 +2,13 @@
 .env
 **/.streamlit/secrets.toml
 
+# OS / editor noise (keep repo root clean)
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vs/
+
 # Local issue drafting / one-off GitHub helpers (not intended as tracked source)
 .github/issue_drafts/
 

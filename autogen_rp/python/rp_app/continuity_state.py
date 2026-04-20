@@ -167,6 +167,8 @@ class ExcursionRecord:
     status: ExcursionStatus
     opened_at_turn: int
     closed_at_turn: Optional[int] = None
+    """Set when Slice C reintegration merge succeeds; enforces idempotency per commit id."""
+    reintegration_commit_id_applied: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -177,6 +179,11 @@ class ExcursionRecord:
             "closed_at_turn": (
                 int(self.closed_at_turn)
                 if self.closed_at_turn is not None
+                else None
+            ),
+            "reintegration_commit_id_applied": (
+                str(self.reintegration_commit_id_applied)
+                if self.reintegration_commit_id_applied is not None
                 else None
             ),
         }
@@ -195,6 +202,12 @@ class ExcursionRecord:
             closed = None
         else:
             closed = int(raw_closed)
+        raw_rc = data.get("reintegration_commit_id_applied")
+        rc_applied: Optional[str]
+        if raw_rc is None or raw_rc == "":
+            rc_applied = None
+        else:
+            rc_applied = str(raw_rc).strip() or None
         return cls(
             excursion_id=str(data.get("excursion_id", "") or ""),
             participant_character_ids=[
@@ -205,6 +218,7 @@ class ExcursionRecord:
             status=status,
             opened_at_turn=int(data.get("opened_at_turn", 0)),
             closed_at_turn=closed,
+            reintegration_commit_id_applied=rc_applied,
         )
 
 

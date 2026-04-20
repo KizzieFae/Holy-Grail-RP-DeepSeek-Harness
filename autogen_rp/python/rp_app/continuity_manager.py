@@ -55,6 +55,13 @@ from continuity_resolved_outcomes import (
     build_sleeping_surface_state_change,
     build_suppressant_formulation_state_change,
 )
+from continuity_mutation_pipeline import (
+    MutationRequest,
+    apply_resolved_mutations,
+    compose_resolved_mutations,
+    resolved_mutations_audit_payload,
+    validate_resolved_mutations_globally,
+)
 from continuity_setup_seam_v77 import ContinuitySetupSeamIncompleteError
 from continuity_scene_helpers import (
     build_character_context,
@@ -192,6 +199,7 @@ class ContinuityManager:
         *,
         participant_character_ids: list[str],
         excursion_id: Optional[str] = None,
+        opened_at_turn: Optional[int] = None,
     ) -> str:
         """Register an active excursion, then resync focal presence (excursion–focal boundary)."""
         participants = [
@@ -204,11 +212,16 @@ class ContinuityManager:
         eid = (str(excursion_id).strip() if excursion_id else "") or str(uuid.uuid4())
         if eid in self.excursions:
             raise ValueError(f"excursion_id already exists: {eid!r}")
+        opened_turn = (
+            int(opened_at_turn)
+            if opened_at_turn is not None
+            else int(self.turn_counter)
+        )
         self.excursions[eid] = ExcursionRecord(
             excursion_id=eid,
             participant_character_ids=participants,
             status=ExcursionStatus.ACTIVE,
-            opened_at_turn=int(self.turn_counter),
+            opened_at_turn=opened_turn,
             closed_at_turn=None,
         )
         self._resync_presence_through_authority()
@@ -242,7 +255,12 @@ class ContinuityManager:
             if frozenset(participants) != prior_ids:
                 self._resync_presence_through_authority()
 
-    def close_excursion(self, excursion_id: str) -> None:
+    def close_excursion(
+        self,
+        excursion_id: str,
+        *,
+        closed_at_turn: Optional[int] = None,
+    ) -> None:
         """Mark an excursion closed and resync focal presence (no excursion reintegration)."""
         eid = str(excursion_id or "").strip()
         rec = self.excursions.get(eid)
@@ -251,7 +269,11 @@ class ContinuityManager:
         if rec.status == ExcursionStatus.CLOSED:
             return
         rec.status = ExcursionStatus.CLOSED
-        rec.closed_at_turn = int(self.turn_counter)
+        rec.closed_at_turn = (
+            int(closed_at_turn)
+            if closed_at_turn is not None
+            else int(self.turn_counter)
+        )
         self._resync_presence_through_authority()
 
     def active_excursion_character_ids(self) -> set[str]:
@@ -813,6 +835,8 @@ class ContinuityManager:
         director_decision: dict[str, Any],
         other_characters: list[str],
         timestamp: Optional[datetime] = None,
+        *,
+        session_mutation_candidates: Optional[list[MutationRequest]] = None,
     ) -> ContinuitySnapshot:
         """Process a completed turn and update continuity state.
 
@@ -845,11 +869,35 @@ class ContinuityManager:
         move = normalize_move_audibility(dict(move), acting_character, present_list)
 
         turn_index = self.turn_counter + 1
+        resolved_mutations = compose_resolved_mutations(
+            move=move,
+            director_decision=director_decision,
+            scene_state=self.scene_state,
+            session_mutation_candidates=session_mutation_candidates,
+        )
+        validate_resolved_mutations_globally(
+            resolved_mutations,
+            self.scene_state,
+            acting_character,
+            continuity_manager=self,
+        )
+        apply_resolved_mutations(
+            resolved_mutations,
+            scene_state=self.scene_state,
+            continuity_manager=self,
+            commit_turn_index=turn_index,
+            commit_timestamp=timestamp,
+        )
+
         turn_consequences = self._classify_turn_consequences(
             acting_character,
             move,
             director_decision,
         )
+        if resolved_mutations:
+            turn_consequences["continuity_mutation_resolution"] = (
+                resolved_mutations_audit_payload(resolved_mutations)
+            )
 
         self._update_scene_state(
             acting_character,
@@ -1033,6 +1081,26 @@ class ContinuityManager:
             if str(n).strip() not in e_active
         ]
 
+    def _purge_excursion_participants_from_offstage_scratch(
+        self, scratch: PresenceAuthorityScratch
+    ) -> None:
+        """Excursion participants must not be soft-offstage (Issue #81 Slice B).
+
+        Clears ``offstage_characters`` and presence-status rows for ``E_active`` in the
+        same scratch write as focal stripping — no partial excursion-without-presence-fix.
+        """
+        e_active = self.active_excursion_character_ids()
+        if not e_active:
+            return
+        banned = frozenset(str(x).strip() for x in e_active if str(x).strip())
+        scratch.offstage_characters = [
+            str(n).strip()
+            for n in scratch.offstage_characters
+            if str(n).strip() and str(n).strip() not in banned
+        ]
+        for pid in banned:
+            scratch.character_presence_status.pop(pid, None)
+
     def _resync_presence_through_authority(self) -> None:
         """Full presence pipeline: reconcile → invariant → ensure-one → sync (single writer)."""
         if self.scene_state is None:
@@ -1049,6 +1117,7 @@ class ContinuityManager:
         if self.scene_state is None:
             return
         self._strip_active_excursions_from_focal_scratch(scratch)
+        self._purge_excursion_participants_from_offstage_scratch(scratch)
         self.scene_state.present_characters = list(scratch.present_characters)
         self.scene_state.offstage_characters = list(scratch.offstage_characters)
         self.scene_state.character_presence_status = dict(scratch.character_presence_status)
