@@ -23,6 +23,17 @@
   "initial_phase": "rising",
   "expected_pressure_profile": "high",
   "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+  "scene_template_role_assignments": {
+    "harley_quinn": "instigator",
+    "poison_ivy": "possessive_counterforce",
+    "selina_kyle": "witness_or_intervenor",
+    "magpie": "new_arrival",
+    "nocturna": "witness_or_intervenor",
+    "aaron_cash": "guard_or_staff_response",
+    "jeremiah_arkham": "guard_or_staff_response",
+    "ingrid_karlsson": "witness_or_intervenor",
+    "jane_doe": "witness_or_intervenor"
+  },
   "seed_issue": {
     "issue_id": "sim_arkham_lockdown_rumor",
     "description": "Conflicting partial information about a perimeter or lockdown event; staff must assert control while patients test boundaries.",

@@ -140,7 +140,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 |--------|----------------|----------------|-------|
 | `scene_lifecycle_start.py` | Start scene, team setup | `scene_template`, `scene_opener` | |
 | `scene_lifecycle_actions.py` | End scene, skip, close, recreate team | `session_lifecycle`, continuity | |
-| `scene_template.py` | Load/validate templates, role assignments | `data/scene_templates` | Optional `progression_profile` on JSON templates |
+| `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80) | `data/scene_templates` | Optional `progression_profile` on JSON templates |
 | `scene_opener.py` | Opening text / initial message resolution | `autogen_characters` | |
 | `scene_exit_detection.py` | Hard departure signals for continuity | text / moves | |
 | `session_lifecycle_save.py` | Persist session + continuity + audit ids | `SessionManager` | |

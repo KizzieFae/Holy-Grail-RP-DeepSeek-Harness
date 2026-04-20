@@ -52,7 +52,17 @@ def test_validate_optional_expected_pressure_profile() -> None:
 
 
 def test_validate_optional_scene_template_id() -> None:
-    validate_optional_scenario_fields({"scene_template_id": "arkham_asylum_cell_intake"}, "x")
+    validate_optional_scenario_fields(
+        {
+            "character_card_ids": ["harley_quinn", "magpie"],
+            "scene_template_id": "arkham_asylum_cell_intake",
+            "scene_template_role_assignments": {
+                "harley_quinn": "cell_anchor",
+                "magpie": "new_arrival",
+            },
+        },
+        "x",
+    )
     validate_optional_scenario_fields({}, "x")
     with pytest.raises(ValueError, match="scene_template_id"):
         validate_optional_scenario_fields({"scene_template_id": ""}, "bad")

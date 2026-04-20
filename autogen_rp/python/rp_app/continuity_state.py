@@ -718,6 +718,13 @@ def _migrate_character_presence_status(
     return out
 
 
+def _scene_anchor_role_name_from_dict(data: dict) -> Optional[str]:
+    raw = data.get("anchor_role_name")
+    if raw is None or not str(raw or "").strip():
+        return None
+    return str(raw).strip()
+
+
 @dataclass
 class SceneState:
     """The current state of the scene including setting, participants, and active pressures.
@@ -732,6 +739,7 @@ class SceneState:
     environment_description: Optional[str] = None
     scene_template_id: Optional[str] = None
     scene_premise: str = ""
+    anchor_role_name: Optional[str] = None
     role_assignments: dict[str, str] = field(default_factory=dict)
     character_presence_constraints: dict[str, str] = field(default_factory=dict)
     character_authority_labels: dict[str, str] = field(default_factory=dict)
@@ -768,6 +776,7 @@ class SceneState:
             "environment_description": self.environment_description,
             "scene_template_id": self.scene_template_id,
             "scene_premise": self.scene_premise,
+            "anchor_role_name": self.anchor_role_name,
             "role_assignments": self.role_assignments,
             "character_presence_constraints": self.character_presence_constraints,
             "character_authority_labels": self.character_authority_labels,
@@ -805,6 +814,7 @@ class SceneState:
                 else None
             ),
             scene_premise=str(data.get("scene_premise", "") or ""),
+            anchor_role_name=_scene_anchor_role_name_from_dict(data),
             role_assignments=(
                 {
                     str(key): str(value)

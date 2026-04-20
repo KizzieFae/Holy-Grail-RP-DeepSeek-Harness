@@ -13,6 +13,11 @@
   "initial_phase": "rising",
   "expected_pressure_profile": "high",
   "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+  "scene_template_role_assignments": {
+    "harley_quinn": "instigator",
+    "poison_ivy": "possessive_counterforce",
+    "magpie": "new_arrival"
+  },
   "seed_issue": {
     "issue_id": "sim_cafeteria_triangle",
     "description": "Public space tension between three patients; staff proximity implied; no clean exit.",

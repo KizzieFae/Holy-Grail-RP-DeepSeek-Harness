@@ -16,7 +16,7 @@
   "scene_template_role_assignments": {
     "harley_quinn": "instigator",
     "poison_ivy": "possessive_counterforce",
-    "magpie": "witness_or_intervenor"
+    "magpie": "new_arrival"
   },
   "seed_issue": {
     "issue_id": "issue1_cafeteria_triangle",

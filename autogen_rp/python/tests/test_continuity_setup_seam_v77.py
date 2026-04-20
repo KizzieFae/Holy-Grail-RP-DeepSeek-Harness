@@ -14,6 +14,7 @@ from continuity_setup_seam_v77 import (
     ContinuitySetupSeamError,
     ContinuitySetupSeamIncompleteError,
     finalize_continuity_setup_seam,
+    resolve_authored_anchor_character_id,
     resolve_interim_anchor_character_id,
 )
 
@@ -100,3 +101,38 @@ def test_finalize_marks_complete_and_allows_process_turn() -> None:
         director_decision={"next_actor": "B"},
         other_characters=["B"],
     )
+
+
+def test_resolve_authored_anchor_character_id_single_match() -> None:
+    aid = resolve_authored_anchor_character_id(
+        ["A", "B"],
+        {"A": "new_arrival", "B": "instigator"},
+        "new_arrival",
+    )
+    assert aid == "A"
+
+
+def test_resolve_authored_anchor_character_id_zero_matches() -> None:
+    with pytest.raises(ContinuitySetupSeamError, match="No cast member"):
+        resolve_authored_anchor_character_id(
+            ["A", "B"],
+            {"A": "instigator", "B": "instigator"},
+            "new_arrival",
+        )
+
+
+def test_finalize_template_driven_uses_anchor_role_name() -> None:
+    m = ContinuityManager()
+    m.initialize_scene(
+        location="X",
+        opening_description="o",
+        present_characters=["P1", "P2"],
+    )
+    assert m.scene_state is not None
+    m.scene_state.scene_template_id = "arkham_asylum_cafeteria_harley_ivy_conflict"
+    m.scene_state.anchor_role_name = "new_arrival"
+    m.scene_state.role_assignments = {"P1": "new_arrival", "P2": "instigator"}
+    m.scene_state.present_characters = ["P1", "P2"]
+    finalize_continuity_setup_seam(m, cast=["P1", "P2"])
+    assert m.anchor_character_id == "P1"
+    assert m.setup_seam_complete

@@ -38,7 +38,7 @@ python/
 
 **Path:** `python/data/scene_templates/*.json`
 
-**Role:** Premise, `role_slots` (e.g. `presence_constraint`: `must_remain`), optional `opening_text`, and **bounded logistics anchors** such as `sleeping_surface_slots` and `location_entry_slots` (authoritative ids for registry-backed structured moves—not inferred from prose).
+**Role:** Premise, `role_slots` (e.g. `presence_constraint`: `must_remain`), required top-level **`anchor_role_name`** (one slot id for focal-thread setup; Issue #80), optional `opening_text`, and **bounded logistics anchors** such as `sleeping_surface_slots` and `location_entry_slots` (authoritative ids for registry-backed structured moves—not inferred from prose).
 
 **Read by:** `scene_template.py`, `scene_lifecycle_start.py`, prompts via `prompt_builders.py`. **Headless simulation:** when a scenario sets `scene_template_id` (and optional `scene_template_role_assignments` per [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md)), `prepare_headless_session` loads the same JSON and merges those fields into `ContinuityManager.scene_state` so validators and prompts see the same contract as Streamlit template setup.
 

@@ -314,6 +314,10 @@ def apply_scene_setup_to_scene_state(
 
     scene_state.scene_template_id = scene_setup.get("template_id") or None
     scene_state.scene_premise = str(scene_setup.get("premise", "") or "")
+    _arn = scene_setup.get("anchor_role_name")
+    scene_state.anchor_role_name = (
+        str(_arn).strip() if _arn is not None and str(_arn or "").strip() else None
+    )
     scene_state.role_assignments = {
         str(key): str(value)
         for key, value in scene_setup.get("role_assignments", {}).items()
@@ -423,6 +427,7 @@ def resolve_scene_template_setup(
         "template_id": template.template_id,
         "premise": template.premise,
         "opening_text": template.opening_text,
+        "anchor_role_name": template.anchor_role_name,
         "role_assignments": role_assignments,
         "character_presence_constraints": character_presence_constraints,
         "character_authority_labels": character_authority_labels,

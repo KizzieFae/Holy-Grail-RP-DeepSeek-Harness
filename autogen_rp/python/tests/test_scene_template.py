@@ -2,9 +2,34 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from scene_template import SceneTemplateManager, validate_role_assignments
+
+
+def test_scene_template_requires_anchor_role_name(tmp_path: Path) -> None:
+    (tmp_path / "t.json").write_text(
+        json.dumps(
+            {
+                "template_id": "t",
+                "premise": "p",
+                "opening_text": "o",
+                "role_slots": [
+                    {
+                        "role_name": "only",
+                        "required": True,
+                        "presence_constraint": "must_remain",
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="anchor_role_name"):
+        SceneTemplateManager(tmp_path).load_template("t")
 
 
 def test_scene_template_manager_loads_minimal_template(tmp_path: Path) -> None:
@@ -15,6 +40,7 @@ def test_scene_template_manager_loads_minimal_template(tmp_path: Path) -> None:
                 "template_id": "mansion_interview",
                 "premise": "A newcomer is evaluated inside a controlled household.",
                 "opening_text": "The interview begins under careful observation.",
+                "anchor_role_name": "host",
                 "role_slots": [
                     {
                         "role_name": "host",
@@ -41,6 +67,7 @@ def test_scene_template_manager_loads_minimal_template(tmp_path: Path) -> None:
     assert template.premise
     assert template.get_role_slot("host") is not None
     assert template.get_role_slot("guard") is not None
+    assert template.anchor_role_name == "host"
 
 
 def test_validate_role_assignments_requires_explicit_role_for_each_selected_character(
@@ -53,6 +80,7 @@ def test_validate_role_assignments_requires_explicit_role_for_each_selected_char
                 "template_id": "parlor_scene",
                 "premise": "A tense meeting in the parlor.",
                 "opening_text": "Everyone gathers in the parlor.",
+                "anchor_role_name": "host",
                 "role_slots": [
                     {
                         "role_name": "host",
@@ -94,6 +122,7 @@ def test_validate_role_assignments_accepts_valid_explicit_assignments(
                 "template_id": "parlor_scene",
                 "premise": "A tense meeting in the parlor.",
                 "opening_text": "Everyone gathers in the parlor.",
+                "anchor_role_name": "host",
                 "role_slots": [
                     {
                         "role_name": "host",
@@ -133,6 +162,7 @@ def test_scene_template_manager_ignores_template_owned_initial_message_files(
                 "template_id": "arkham_asylum_cell_intake",
                 "premise": "A new arrival is locked into a cell.",
                 "opening_text": "The cell door closes.",
+                "anchor_role_name": "new_arrival",
                 "role_slots": [
                     {
                         "role_name": "new_arrival",

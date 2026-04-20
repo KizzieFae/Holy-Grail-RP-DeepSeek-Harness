@@ -1,5 +1,8 @@
-"""Issue #77 — setup seam: interim anchor resolution and completion boundary (pre-#80).
+"""Issue #77 / #80 — setup seam: anchor resolution and completion boundary.
 
+Template-driven scenes (``scene_template_id`` set) resolve the anchor from authored
+``anchor_role_name`` + ``role_assignments`` (Issue #80). Scenes without a template
+still use interim protagonist-class heuristics until fully migrated.
 See GitHub #77 invalid-state rows A1, A2, D3.
 """
 
@@ -78,6 +81,41 @@ def resolve_interim_anchor_character_id(
     )
 
 
+def _scene_template_id_set(scene_state: Any) -> bool:
+    return bool(str(getattr(scene_state, "scene_template_id", None) or "").strip())
+
+
+def resolve_authored_anchor_character_id(
+    cast: list[str],
+    role_assignments: Mapping[str, Any],
+    anchor_role_name: str,
+) -> str:
+    """Exactly one cast member must have ``role_assignments[c]`` equal to anchor (case-insensitive)."""
+    anchor = str(anchor_role_name or "").strip()
+    if not anchor:
+        raise ContinuitySetupSeamError(
+            "Template-driven scene requires anchor_role_name on scene_state (Issue #80)."
+        )
+    names = [str(c).strip() for c in cast if str(c or "").strip()]
+    if not names:
+        raise ContinuitySetupSeamError("A1: empty cast; cannot resolve anchor character")
+    matches = [
+        n
+        for n in names
+        if str(role_assignments.get(n, "") or "").strip().lower() == anchor.lower()
+    ]
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) == 0:
+        raise ContinuitySetupSeamError(
+            f"No cast member assigned anchor role {anchor!r}; "
+            f"role_assignments={dict(role_assignments)}"
+        )
+    raise ContinuitySetupSeamError(
+        f"Multiple cast members assigned anchor role {anchor!r}: {sorted(matches)}"
+    )
+
+
 def ensure_interim_anchor_role_fallback_for_finalize(
     manager: Any, *, cast: list[str]
 ) -> None:
@@ -129,7 +167,7 @@ def validate_completed_setup_seam(manager: Any) -> None:
 
 
 def finalize_continuity_setup_seam(manager: Any, *, cast: list[str]) -> None:
-    """Resolve interim anchor, require anchor ∈ present_characters, mark seam complete."""
+    """Resolve anchor, require anchor ∈ present_characters, mark seam complete."""
     if manager.scene_state is None:
         raise ContinuitySetupSeamError("Cannot finalize setup seam: scene_state is None")
     if getattr(manager, "setup_seam_complete", False):
@@ -138,7 +176,17 @@ def finalize_continuity_setup_seam(manager: Any, *, cast: list[str]) -> None:
     role_assignments = manager.scene_state.role_assignments or {}
     if not isinstance(role_assignments, dict):
         role_assignments = {}
-    anchor = resolve_interim_anchor_character_id(cast, role_assignments)
+    if _scene_template_id_set(manager.scene_state):
+        arn = getattr(manager.scene_state, "anchor_role_name", None)
+        arn_str = str(arn or "").strip()
+        if not arn_str:
+            raise ContinuitySetupSeamError(
+                "Template-driven scene requires anchor_role_name on scene_state before "
+                "finalize_continuity_setup_seam (Issue #80)."
+            )
+        anchor = resolve_authored_anchor_character_id(cast, role_assignments, arn_str)
+    else:
+        anchor = resolve_interim_anchor_character_id(cast, role_assignments)
     present = [
         str(x).strip()
         for x in (manager.scene_state.present_characters or [])

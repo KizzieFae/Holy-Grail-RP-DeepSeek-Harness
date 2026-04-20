@@ -70,6 +70,7 @@ class SceneTemplate:
     premise: str
     opening_text: str
     role_slots: list[SceneRoleSlot]
+    anchor_role_name: str = ""
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
     progression_profile: dict[str, Any] | None = None
     sleeping_surface_slots: list[str] = field(default_factory=list)
@@ -81,6 +82,7 @@ class SceneTemplate:
             "premise": self.premise,
             "opening_text": self.opening_text,
             "role_slots": [slot.to_dict() for slot in self.role_slots],
+            "anchor_role_name": self.anchor_role_name,
             "initial_messages": [msg.to_dict() for msg in self.initial_messages],
             "sleeping_surface_slots": list(self.sleeping_surface_slots),
             "location_entry_slots": list(self.location_entry_slots),
@@ -129,11 +131,27 @@ class SceneTemplate:
             for item in data.get("location_entry_slots", [])
             if str(item or "").strip()
         ]
+        anchor_raw = str(data.get("anchor_role_name", "") or "").strip()
+        if not anchor_raw:
+            raise ValueError(
+                f"Scene template '{template_id}' is missing required anchor_role_name."
+            )
+        anchor_slot = None
+        for slot in role_slots:
+            if slot.role_name.lower() == anchor_raw.lower():
+                anchor_slot = slot
+                break
+        if anchor_slot is None:
+            raise ValueError(
+                f"Scene template '{template_id}': anchor_role_name {anchor_raw!r} "
+                "does not match any role_slots[].role_name."
+            )
         return cls(
             template_id=template_id,
             premise=str(data.get("premise", "") or "").strip(),
             opening_text=str(data.get("opening_text", "") or "").strip(),
             role_slots=role_slots,
+            anchor_role_name=anchor_slot.role_name,
             initial_messages=initial_messages,
             progression_profile=progression_profile,
             sleeping_surface_slots=sleeping_surface_slots,

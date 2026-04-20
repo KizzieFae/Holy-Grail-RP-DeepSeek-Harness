@@ -1822,6 +1822,7 @@ def test_scene_template_fields_flow_through_snapshot_orchestration_and_character
 
     assert manager.scene_state is not None
     manager.scene_state.scene_template_id = "household_entry_evaluation"
+    manager.scene_state.anchor_role_name = "applicant"
     manager.scene_state.scene_premise = (
         "A host evaluates a newcomer while a guard remains present."
     )
@@ -1893,6 +1894,7 @@ def test_twenty_four_turn_continuity_stability_preserves_template_and_prompt_con
 
     assert manager.scene_state is not None
     manager.scene_state.scene_template_id = "household_entry_evaluation"
+    manager.scene_state.anchor_role_name = "applicant"
     manager.scene_state.scene_premise = (
         "A host evaluates a newcomer while a guard remains present."
     )

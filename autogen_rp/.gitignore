@@ -226,6 +226,10 @@ registry.json
 !/python/data/issue29_investigation_schedules/
 !/python/data/issue29_investigation_schedules/*.json
 
+# Scene template JSON (Issue #80 — tracked authored templates; not user-local RP data)
+!/python/data/scene_templates/
+!/python/data/scene_templates/*.json
+
 # files created by the gitty agent in python/samples/gitty
 .gitty/
 .aider*

@@ -21,10 +21,7 @@ import app_turn_helpers as turn_helpers
 from character_loader import CharacterLoader, make_agent_identifier
 from character_state_manager import CharacterStateManager
 from continuity_manager import ContinuityManager
-from continuity_setup_seam_v77 import (
-    ensure_interim_anchor_role_fallback_for_finalize,
-    finalize_continuity_setup_seam,
-)
+from continuity_setup_seam_v77 import finalize_continuity_setup_seam
 from continuity_state import IssueState, IssueStatus, ScenePhase
 from model_client import create_deepseek_client, create_director_agent, create_narrator_agent
 from orchestration_helpers import (
@@ -168,6 +165,7 @@ def _apply_headless_scene_template_to_continuity(
     minimal_setup: dict[str, Any] = {
         "template_id": template.template_id,
         "premise": template.premise,
+        "anchor_role_name": template.anchor_role_name,
         "role_assignments": {},
         "character_presence_constraints": {},
         "character_authority_labels": {},
@@ -797,8 +795,10 @@ def prepare_headless_session(
     via ``apply_scene_setup_to_scene_state``. With optional ``scene_template_role_assignments``,
     uses the same ``resolve_scene_template_setup`` path as Streamlit (card id → template role).
 
-    When ``scene_template_id`` is set without role assignments, applies template-derived slot
-    lists and premise only (no role inference).
+    When ``scene_template_id`` is set without ``scene_template_role_assignments``,
+    only template slot lists / premise / ``anchor_role_name`` are merged; finalize still
+    requires complete role assignments for template-driven anchor resolution (use scenario
+    manifests with ``scene_template_role_assignments``, Issue #80).
 
     When ``issue29_long_run_harness`` is True (headless CLI only, ``investigate_i29_*``), sets
     session ``issue29_long_run_harness`` and enables synthetic availability / Director survivability
@@ -972,7 +972,6 @@ def prepare_headless_session(
             )
             cm.issues[issue.issue_id] = issue
         _sync()
-        ensure_interim_anchor_role_fallback_for_finalize(cm, cast=display_names)
         finalize_continuity_setup_seam(cm, cast=display_names)
 
     if beat_shift_active:

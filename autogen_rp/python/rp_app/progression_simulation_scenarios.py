@@ -38,6 +38,7 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
                 f"Scenario {scenario_id!r}: expected_pressure_profile must be one of "
                 f"{sorted(_EXPECTED_PRESSURE_PROFILES)}, got {raw['expected_pressure_profile']!r}"
             )
+    tid: str | None = None
     if "scene_template_id" in raw and raw["scene_template_id"] is not None:
         tid = str(raw["scene_template_id"]).strip()
         if not tid:
@@ -64,6 +65,61 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
                     f"Scenario {scenario_id!r}: scene_template_role_assignments "
                     f"key {ck!r} is not in character_card_ids"
                 )
+    opt_anchor = raw.get("anchor_role_name")
+    if opt_anchor is not None and str(opt_anchor).strip():
+        if not tid:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: anchor_role_name is only valid with scene_template_id"
+            )
+
+    if tid:
+        from scene_template import SceneTemplateManager, validate_role_assignments
+
+        try:
+            template = SceneTemplateManager().load_template(tid)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: cannot load scene template {tid!r}: {exc}"
+            ) from exc
+        if opt_anchor is not None and str(opt_anchor).strip():
+            oa = str(opt_anchor).strip()
+            if oa != template.anchor_role_name:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: anchor_role_name must match template "
+                    f"{tid!r} ({template.anchor_role_name!r}), got {oa!r}"
+                )
+        ra = raw.get("scene_template_role_assignments")
+        if not isinstance(ra, dict) or not ra:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: scene_template_role_assignments is required "
+                f"when scene_template_id is set (Issue #80)"
+            )
+        cards_list = [
+            str(x).strip() for x in raw.get("character_card_ids", []) if str(x).strip()
+        ]
+        for cid in cards_list:
+            if cid not in ra:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: scene_template_role_assignments "
+                    f"missing entry for character_card_id {cid!r}"
+                )
+        issues = validate_role_assignments(template, cards_list, ra)
+        if issues:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: invalid template role assignments: "
+                + "; ".join(issues)
+            )
+        anchor = template.anchor_role_name
+        n_anchor = sum(
+            1
+            for cid in cards_list
+            if str(ra.get(cid, "") or "").strip().lower() == anchor.lower()
+        )
+        if n_anchor != 1:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: exactly one character must be assigned "
+                f"anchor role {anchor!r} for template {tid!r} (found {n_anchor})"
+            )
 
 
 def scenarios_dir() -> Path:

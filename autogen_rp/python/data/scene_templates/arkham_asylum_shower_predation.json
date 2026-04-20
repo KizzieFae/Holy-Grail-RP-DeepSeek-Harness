@@ -1,0 +1,39 @@
+{
+  "template_id": "arkham_asylum_shower_predation",
+  "anchor_role_name": "new_arrival",
+  "premise": "A mandatory shower block in Arkham's female ward leaves a new arrival exposed in a known blind-spot environment while predatory inmates test boundaries under the cover of routine.",
+  "opening_text": "Steam, tiled blind spots, and mandatory vulnerability turn the ward showers into one of Arkham's most dangerous routine spaces. The new arrival enters exposed, predators close distance fast, and staff oversight matters more in theory than in practice.",
+  "initial_messages": [
+    {
+      "file": "arkham_asylum_shower_predation_initial_message.json",
+      "label": "Shower Block - Predation",
+      "description": "A new arrival is exposed in the shower block while predatory inmates test boundaries."
+    }
+  ],
+  "role_slots": [
+    {
+      "role_name": "new_arrival",
+      "required": false,
+      "presence_constraint": "must_remain",
+      "authority": "low"
+    },
+    {
+      "role_name": "predator_primary",
+      "required": true,
+      "presence_constraint": "must_remain",
+      "authority": "low"
+    },
+    {
+      "role_name": "predator_secondary",
+      "required": false,
+      "presence_constraint": "must_remain",
+      "authority": "low"
+    },
+    {
+      "role_name": "observer_or_staff_interrupt",
+      "required": false,
+      "presence_constraint": "flexible",
+      "authority": "medium"
+    }
+  ]
+}

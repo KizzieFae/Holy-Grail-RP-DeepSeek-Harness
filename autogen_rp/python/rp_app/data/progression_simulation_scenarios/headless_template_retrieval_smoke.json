@@ -12,5 +12,9 @@
   "initial_tension": "low",
   "initial_phase": "opening",
   "expected_pressure_profile": "low",
-  "scene_template_id": "arkham_asylum_cell_intake"
+  "scene_template_id": "arkham_asylum_cell_intake",
+  "scene_template_role_assignments": {
+    "harley_quinn": "cell_anchor",
+    "magpie": "new_arrival"
+  }
 }

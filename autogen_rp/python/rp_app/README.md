@@ -112,6 +112,8 @@ Role-slot fields are intentionally minimal in V1:
 - `presence_constraint`
 - optional informational `authority`
 
+**`anchor_role_name`** (required in template JSON): exactly one `role_slots[].role_name` designated as the focal anchor for setup-seam resolution (Issue #80); must match a slot string on disk.
+
 ### Sidebar workflow
 
 1. Select the participating characters.
