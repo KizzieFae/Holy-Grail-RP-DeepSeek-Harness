@@ -24,6 +24,8 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
+**Disk layout vs session restore:** Audit JSON under **`rp_audits/session_*`** may **mirror** committed **`SceneState`** / continuity-related fields for a turn (for example **`context_snapshot.scene_state_after`**), but those mirrors exist for **operators and tooling**, not as a parallel store of truth. **Authoritative runtime state** remains in **`ContinuityManager`** and **`SceneState`** in memory, persisted for resume via **`python/data/sessions/*.json`** (see `docs/rp-data-layout.md`). **Session restore reads only `python/data/sessions/*.json` and does not depend on `rp_audits/`.** Removing or omitting audit files does **not** roll back or change continuity; it only removes **observational artifacts**.
+
 ### Continuity observability (Issue #79 — closed)
 
 **Runtime truth** remains **`ContinuityManager`**, **`SceneState`**, and the excursion store (**#81**). **Issue #79** adds **named audit surfaces** so operators can inspect committed behavior without treating audit JSON as authority (**#59**).

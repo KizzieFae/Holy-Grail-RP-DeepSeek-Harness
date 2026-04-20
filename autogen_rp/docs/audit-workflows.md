@@ -24,6 +24,12 @@ Use this workflow for:
 - Prefer the smallest correct fix at the correct layer.
 - Do not propose new subsystems unless the user explicitly asks for them.
 
+### Audit artifacts vs runtime (operational note)
+
+- **Audit artifacts are optional for runtime:** The live turn loop and **session save/resume** do not require `python/rp_app/data/rp_audits/` to exist. Treat **`python/data/sessions/*.json`** as the persistence bundle for continuity-backed resume (`continuity_state`, etc.); see [`docs/rp-data-layout.md`](./rp-data-layout.md) → **Persistence vs Audit Artifacts**.
+- **Cleanup of `rp_audits/`** is permitted under agreed policy (see **Archival & retention policy** below and GitHub **[#86](https://github.com/KizzieFae/Holy_Grail_RP/issues/86)**). Deleting audit sessions does not corrupt saved UI sessions.
+- **When diagnosing:** Confirm what **`ContinuityManager`** / persisted **`continuity_state`** actually committed (or what session JSON contains) **before** treating audit-only signals as proof of a runtime bug. Interpret audit files **after** that truth layer is clear.
+
 ## Artifact reading order
 
 For session audits, read in this order:
@@ -63,6 +69,16 @@ Use the same layer order as `docs/architecture.md`:
 6. validation and enforcement
 7. Director logic
 8. Narrator rendering
+
+## Archival & retention policy
+
+**Authoritative policy thread:** [GitHub #86](https://github.com/KizzieFae/Holy_Grail_RP/issues/86). This section does not duplicate the full policy text; it aligns documentation with that issue and with operational execution tracked on **[#88](https://github.com/KizzieFae/Holy_Grail_RP/issues/88)** / **[#89](https://github.com/KizzieFae/Holy_Grail_RP/issues/89)**.
+
+- **Baseline matrix:** Scenario coverage and **OFF** / **ON** (where applicable) / **post-contract** audit-summary expectations for validation live in **[`SCENARIO_VALIDATION_FRAMEWORK.md`](../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root). Post-contract rows should include **`continuity_observability_summary_v1`** in **`_audit_summary.json`** when continuity-backed rollup is emitted (Issue **#79**), not **`continuity_observability_status_v1`** alone.
+- **Baseline registry:** Pre- and post-cleanup inventories use a **baseline registry** artifact and slot verification so **delete-eligible** work does not remove sole remaining scenario coverage or referenced sessions (per **#86** consensus and **#88** execution records).
+- **Regenerate:** Produce new **`session_*`** trees by re-running headless simulation with **`--audit`** when baselines are missing or stale—do not edit existing audit JSON in place for that purpose (**#89**).
+- **Delete-eligible:** Remove audit session directories only under explicit verification, backups, and policy (e.g. duplicate resolution with a retained canonical row, per **#86** / **#88**). **Do not** delete **`python/data/sessions/*.json`** as part of audit corpus cleanup.
+- **Layout reference:** On-disk prefixes: [`docs/rp-data-layout.md`](./rp-data-layout.md) — **Persistence vs Audit Artifacts** and **Audit outputs**. Full semantics: [`python/rp_app/AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md).
 
 ## Relevant code areas for RP audits
 

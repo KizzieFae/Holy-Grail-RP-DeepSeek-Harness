@@ -103,6 +103,35 @@ Derived index for fast listing; updated when sessions are saved. If the list UI 
 
 More: [DEBUGGING_GUIDE.md](../../DEBUGGING_GUIDE.md) § persistence.
 
+## Persistence vs Audit Artifacts
+
+Paths below are relative to the repository root (`autogen_rp/`) unless otherwise noted.
+
+This section states how **runtime/session persistence** relates to **audit artifacts** on disk. Authoritative narrative state and production gating are defined in **`ContinuityManager`** / **`SceneState`** and related runtime docs; audit applicability and “non-authoritative” rules for observational signals are in **GitHub #59** ([`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)).
+
+### Runtime / session persistence
+
+- **Location:** `autogen_rp/python/data/sessions/*.json`
+- **Contents:** Each file includes serialized **`continuity_state`** (continuity snapshot), **`character_states`**, **`chat_history`**, team/session plumbing, and other fields written by **`SessionManager.save_session`**—see **Sessions** above and `session_lifecycle_save.py` under `python/rp_app/`.
+- **Save / resume:** The Streamlit app **loads resumed play from these session JSON files** for continuity and UI state restoration. **`autogen_rp/python/data/sessions/_session_index.json`** supports listing; session truth for resume is the per-session `*.json` files.
+
+### Audit artifacts
+
+- **Location:** `autogen_rp/python/rp_app/data/rp_audits/session_*`
+- **Role:** **Observational, debugging, and validation** output: per-turn logs, summaries (`_audit_summary.json`, `_narrative.json`, per-character `*_full.json`, etc.). **Issue #79** observability blocks (for example **`continuity_observability_summary_v1`**) appear **in audit summaries** as mirrors or rollups when emitted—they are **not** a substitute for **`ContinuityManager`** as system-of-record.
+
+### Guarantees
+
+- **UI resume** hydrates from **`autogen_rp/python/data/sessions/`** session files; it does **not** read **`rp_audits/`** to restore gameplay state.
+- Audit files are **non-authoritative** for committed continuity truth; do not treat audit JSON as a second persistence store (**#59**).
+- **Deleting** `autogen_rp/python/rp_app/data/rp_audits/session_*` trees does **not** invalidate or alter saved **`autogen_rp/python/data/sessions/*.json`** files.
+- The runtime operates correctly with **auditing disabled** or with **audit directories removed**; absence of `rp_audits` does not block save/load of sessions.
+
+### Relationship
+
+- The **audit system observes** the runtime/session pipeline (logging, mirrors for operators and offline eval)—not the reverse.
+- Audit output **must not** be used as a **persistence layer** or **authority layer** for resume, continuity commits, or production gating except where explicitly allowlisted under **#59** (empty by default).
+
 ---
 
 ## Audit outputs
