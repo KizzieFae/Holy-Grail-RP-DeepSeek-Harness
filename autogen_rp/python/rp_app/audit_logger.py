@@ -283,6 +283,7 @@ class AuditLogger:
         scene_state_after: dict[str, Any] | None = None,
         issue_updates: list[dict[str, Any]] | None = None,
         presence_changes: list[dict[str, Any]] | None = None,
+        bootstrap_interpretation: dict[str, Any] | None = None,
     ) -> str:
         """Write a session manifest file listing all characters and scene info.
 
@@ -297,6 +298,7 @@ class AuditLogger:
             role_assignments: Optional role assignments
             character_presence_constraints: Optional character presence constraints
             character_authority_labels: Optional character authority labels
+            bootstrap_interpretation: Optional ``interpretation_to_jsonable`` dict (Issue #95).
 
         Returns:
             Path to manifest file
@@ -318,6 +320,7 @@ class AuditLogger:
             scene_state_after=scene_state_after,
             issue_updates=issue_updates,
             presence_changes=presence_changes,
+            bootstrap_interpretation=bootstrap_interpretation,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
             utc_timestamp=utc_timestamp,
         )

@@ -1,3 +1,4 @@
+import copy
 import json
 from pathlib import Path
 from typing import Any
@@ -288,6 +289,12 @@ def write_summary_report(
         utc_timestamp=utc_timestamp,
         index_rounds=index.get("rounds", []),
     )
+    _bi = manifest.get("bootstrap_interpretation")
+    if isinstance(_bi, dict) and _bi:
+        report["bootstrap_interpretation_snapshot_v1"] = {
+            "schema_version": "bootstrap_interpretation_snapshot.v1",
+            "interpretation": copy.deepcopy(_bi),
+        }
     if continuity_manager is not None:
         # Replace-only block for Issue #79 Slice 4 (no merge with prior file contents).
         report.pop("continuity_observability_status_v1", None)

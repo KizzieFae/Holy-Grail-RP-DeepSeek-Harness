@@ -20,6 +20,7 @@ def write_session_manifest(
     scene_state_after: dict[str, Any] | None = None,
     issue_updates: list[dict[str, Any]] | None = None,
     presence_changes: list[dict[str, Any]] | None = None,
+    bootstrap_interpretation: dict[str, Any] | None = None,
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
@@ -46,6 +47,9 @@ def write_session_manifest(
         "total_characters": len(cast),
         "scene_template": scene_template,
     }
+
+    if bootstrap_interpretation is not None:
+        manifest["bootstrap_interpretation"] = bootstrap_interpretation
 
     if any(
         [

@@ -47,6 +47,7 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 | **`metadata.continuity_audit_origin`** | Same rows | **`pipeline_turn`** when the row corresponds to a committed **`process_turn`** for the current **`turn_counter`** (pending marker match). **Not** used for bypass-only labeling per row; bypass kinds accumulate session-level (see below). |
 | **`continuity_observability_summary_v1`** | **`_audit_summary.json`** (top-level when **`ContinuityManager`** is passed into **`write_summary_report`**) | Session rollup only: counts, **`beats_with_mutation_resolution`**, and **`session_audit_origin`** (`has_bypass`, **`bypass_beats`** — bypass kinds only; **`pipeline_turn`** never appears in **`bypass_beats`**). **Mutually exclusive** with **`continuity_observability_status_v1`** for the same write. |
 | **`continuity_observability_status_v1`** | **`_audit_summary.json`** (top-level when **no** **`ContinuityManager`** was passed) | Explicit **`{ "status": "unavailable", "reason": "continuity_manager_not_provided" }`** — documents that the continuity-backed rollup was **not** emitted (not a silent omission). **No** fabricated or zero-filled **`continuity_observability_summary_v1`**. Allowed **`reason`** values are defined only in code as **`CONTINUITY_OBSERVABILITY_STATUS_REASONS`** (`continuity_observability_summary.py`). |
+| **`bootstrap_interpretation_snapshot_v1`** | **`_audit_summary.json`** (top-level when **`_manifest.json`** contains non-empty **`bootstrap_interpretation`**) | **Observational** copy of **`interpretation_to_jsonable`** (Issue **#94**) persisted on manifest at scene start when audit is enabled. Shape: **`{ "schema_version": "bootstrap_interpretation_snapshot.v1", "interpretation": { ... } }`**. **Not** canonical authored bootstrap (**`AUTHORED_SOURCE_CONTRACT.md`**), **not** a **`Canonical Knowledge Entry`**, **not** retrieval or runtime authority (**#59**). |
 
 **`session_audit_origin`:** Populated via **`flush_continuity_audit_origin_export_payload`**, which is invoked from **`build_continuity_observability_summary_v1`** when the rollup is built. That call **clears** **`continuity_audit_origin_log`** after producing **`has_bypass`** / **`bypass_beats`** for the summary file.
 
@@ -1339,6 +1340,8 @@ rp_audits/
   }
 }
 ```
+
+When audit is enabled at scene start (Streamlit and headless), **`bootstrap_interpretation`** may be present: the exact **`interpretation_to_jsonable`** dict from Issue **#94** composition (observational; see **`bootstrap_interpretation_snapshot_v1`** on **`_audit_summary.json`**).
 
 ### 2. `_round_index.json`
 **Purpose**: Maps each round to its ordered turns

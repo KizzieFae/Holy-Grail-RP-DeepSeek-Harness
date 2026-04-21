@@ -88,6 +88,7 @@ from summary_audit_helpers import (
     serialize_events_for_prompt,
     serialize_summary_blocks_for_prompt,
 )
+from audit_instrumentation import log_audit_exception
 from audit_logger import get_audit_logger
 from character_state import CharacterState
 from cross_session_memory_policy import compact_report_for_audit
@@ -995,6 +996,59 @@ def prepare_headless_session(
         opening_final=opening_final,
         user_name=user_name,
     )
+
+    if audit_enabled:
+        try:
+            audit_logger = get_audit_logger()
+            session_owner = (
+                st.session_state.get("audit_session_owner")
+                or st.session_state.get("scene_owner")
+                or owner
+            )
+            session_num = st.session_state.get("audit_session_number")
+            if session_num is None:
+                raise ValueError("audit_session_number missing with audit_enabled")
+            cm_audit = state_helpers.get_continuity_manager(
+                st_module=st, continuity_manager_cls=ContinuityManager
+            )
+            ss = (
+                cm_audit.scene_state
+                if cm_audit is not None and cm_audit.scene_state is not None
+                else None
+            )
+            scene_audit_kwargs = get_scene_audit_logging_kwargs(ss)
+            audit_logger.write_session_manifest(
+                session_owner=session_owner,
+                session_number=int(session_num),
+                cast=display_names,
+                opening_description=opening_final,
+                user_name=user_name,
+                bootstrap_interpretation=st.session_state.get("bootstrap_interpretation"),
+                **scene_audit_kwargs,
+            )
+            state_helpers.refresh_audit_summary_report(
+                st_module=st,
+                is_audit_enabled_fn=lambda: bool(
+                    st.session_state.get("audit_enabled", False)
+                ),
+                get_audit_logger_fn=get_audit_logger,
+                get_audit_context_fn=lambda: state_helpers.get_audit_context(
+                    st_module=st,
+                    is_audit_enabled_fn=lambda: bool(
+                        st.session_state.get("audit_enabled", False)
+                    ),
+                    get_audit_logger_fn=get_audit_logger,
+                ),
+                get_continuity_manager_fn=lambda: state_helpers.get_continuity_manager(
+                    st_module=st, continuity_manager_cls=ContinuityManager
+                ),
+            )
+        except Exception as exc:
+            log_audit_exception(
+                "audit: headless prepare_headless_session write_session_manifest or "
+                "refresh_audit_summary_report failed",
+                exc,
+            )
 
     if beat_shift_active:
         orch = state_helpers.get_orchestration_state(

@@ -443,6 +443,9 @@ async def start_scene(
                 cast=display_char_names,
                 opening_description=opening_description,
                 user_name=user_name,
+                bootstrap_interpretation=st_module.session_state.get(
+                    "bootstrap_interpretation"
+                ),
                 **scene_audit_kwargs,
             )
             refresh_audit_summary_report_fn()
