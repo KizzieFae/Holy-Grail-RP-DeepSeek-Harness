@@ -2,6 +2,8 @@
 
 Architectural specification for **Phase 3.4 — Canonical Knowledge Shape & Static Ingestion**. This document defines the **canonical runtime knowledge contract** that all authored sources must compile into. It is **not** an implementation guide.
 
+**Authored file types (on disk):** Which JSON files are **Character**, **Template**, **Scenario / Bootstrap**, and **Opener**, and what belongs in session vs ingestion, is specified in **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. This file remains the **compiled entry** envelope (`knowledge_id`, `authority_class`, etc.); the other doc is the **authoring + bootstrap** boundary.
+
 **Phase 3.4 scope (documentation contract):** Finalize and maintain this **canonical contract** and the rules for **static ingestion** (offline compile from authored sources into canonical-shaped artifacts consumable by the existing pipeline). Phase 3.4 **does not**, by itself, require **runtime** or **retrieval-behavior** changes (selector logic, merge order, caps, env-gated paths, or packet APIs remain as implemented for Phases 2–3.2 unless a later phase explicitly schedules code work).
 
 ### Current implementation snapshot (compile layer only)

@@ -38,7 +38,7 @@ Repository-root `.cursor/rules/*.mdc` and `autogen_rp/.cursor/rules/*.mdc` are t
 
 ## Where to start
 
-- For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
+- For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../AUTHORED_SOURCE_CONTRACT.md` (canonical **authored** Character / Template / Bootstrap / Opener boundaries), `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
 - For **behavioral / scenario validation** (headless simulation on the production path, structured metrics, audits, baseline vs enforcement, optional offline **`--fact-spec`** fact-track companion — GitHub **#62**): `../SCENARIO_VALIDATION_FRAMEWORK.md` at the Holy Grail RP repo root.
 - Read `docs/repo-map.md` for repo structure.
 - Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).

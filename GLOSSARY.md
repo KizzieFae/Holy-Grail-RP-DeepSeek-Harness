@@ -62,9 +62,15 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 ## Data and packets
 
-**Character card** — JSON file under `python/data/autogen_characters/` defining a persona (system prompt, anchors, relationships, etc.). **Current** primary character source (`character_loader.py`).
+**Authored source contract** — **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. Canonical **authored file types**: **Character** (durable knowledge), **Template** (reusable structure), **Scenario / Bootstrap** (deterministic scene-start contract), **Opener** (authored opening prose). **Not** canonical template knowledge: `initial_messages`, `progression_profile`; **not** canonical character knowledge: `agent_name`. **`opening_text`** on templates is legacy fallback. **Retrieval manifests** are compile-time inputs, not bootstrap truth.
 
-**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7).
+**Bootstrap (scenario)** — Authored **scene-start contract** JSON (`bootstrap_schema_version`, `id`, `character_refs`, optional `template_ref`, `opening` with `strategy` / `ref`, `first_round_user_line`, `initial_continuity`, etc.). Distinct from **session** state and from **Character**/**Template** knowledge files; see **Authored source contract**.
+
+**Opener** — Authored **opening prose** asset, referenced from bootstrap `opening` when strategy is asset-based; not a substitute for **Template** structure.
+
+**Character card** — JSON file under `python/data/autogen_characters/` defining a persona (system prompt, anchors, relationships, etc.). **Current** primary character source (`character_loader.py`). **Normative field set** per **Authored source contract**; on-disk files may still carry legacy keys until migration.
+
+**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7). **`progression_profile`** is **not** canonical template **knowledge** per **Authored source contract** (may remain on disk for compatibility). **`opening_text`** is legacy fallback, not the primary opener model.
 
 **Progression advisory (MVP)** — Deterministic, **non-authoritative** layer: computes **`stall_score`** from existing scene signals, maps to **`progression_pressure`**, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
 

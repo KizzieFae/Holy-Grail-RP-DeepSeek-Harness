@@ -100,6 +100,7 @@ Prefer **continuity → scene grounding → orchestration → summaries → vali
 
 ## Related docs
 
+- [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md) — **Canonical authored file types** (Character, Template, Scenario/Bootstrap, Opener), exclusions, bootstrap vs knowledge; central contract for **on-disk authoring**
 - [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) — Phase 3.4 canonical knowledge contract, authority/visibility, static ingestion boundaries, future retrieval compatibility
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — **Behavioral Validation Layer** (core architectural layer: scenarios, headless LLM runs, audits, metrics, baseline comparison)
 - [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) — diagnosis order and symptom routing

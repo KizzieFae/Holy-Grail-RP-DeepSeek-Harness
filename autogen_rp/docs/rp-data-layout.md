@@ -24,6 +24,8 @@ python/
 
 **Path:** `python/data/autogen_characters/*.json`
 
+**Contract:** Canonical authored fields and exclusions (vs bootstrap/session/ingestion) are defined in **[AUTHORED_SOURCE_CONTRACT.md](../../AUTHORED_SOURCE_CONTRACT.md)**. Files may still be **legacy or mixed** until the **dedicated migration issue** (linked from **GitHub #82** and `AUTHORED_SOURCE_CONTRACT.md` §8) is implemented.
+
 **Role:** Static (or hand-edited) **persona definitions**—system prompt, personality, identity anchors (`voice_profile`, `reaction_profile`, `speech_fingerprint`, `core_goals`), relationships, lore facts.
 
 **Read by:** `character_loader.py`, `scene_opener.py` (initial messages), UI sidebar modules.
@@ -37,6 +39,8 @@ python/
 ## Scene templates (“scenario” setup assets)
 
 **Path:** `python/data/scene_templates/*.json`
+
+**Contract:** Structural template knowledge vs **Scenario / Bootstrap** scene-start records vs **Opener** prose is defined in **[AUTHORED_SOURCE_CONTRACT.md](../../AUTHORED_SOURCE_CONTRACT.md)** (`opening_text` = legacy fallback; `initial_messages` / `progression_profile` not canonical template knowledge). On-disk files may remain **mixed** until migration.
 
 **Role:** Premise, `role_slots` (e.g. `presence_constraint`: `must_remain`), required top-level **`anchor_role_name`** (one slot id for focal-thread setup; Issue #80), optional `opening_text`, and **bounded logistics anchors** such as `sleeping_surface_slots` and `location_entry_slots` (authoritative ids for registry-backed structured moves—not inferred from prose).
 
