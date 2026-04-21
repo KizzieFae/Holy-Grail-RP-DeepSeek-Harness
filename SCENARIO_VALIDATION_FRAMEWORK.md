@@ -184,6 +184,8 @@ python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char
 
 Optional **`--user-trigger-schedule PATH`** on `scripts/run_scene_simulation_llm.py` loads a JSON file so **validation / simulation runs** can use **different simulated user lines on different orchestration turns**—for one-off establishment, probes, or scripted inputs—**without** repeating the same `--trigger` every turn or editing scenario JSON between runs. This path is **headless CLI only**; it is **not** a Streamlit or live product/runtime feature, and it does **not** extend scenario schema or continuity persistence.
 
+**Schedule binding:** Investigation-style per-turn schedules (e.g. Issue #29 harness runs) are supplied via **`--user-trigger-schedule`**, default harness commands (e.g. `scripts/run_issue29_suite.py`), or equivalent **explicit CLI / script wiring**—**not** via a scenario-manifest field. A **`schedule_file`** key is **not** part of the active progression scenario contract (removed under **Issue #91**).
+
 **JSON shape** (single object):
 
 - Optional **`default_trigger`**: non-empty string.

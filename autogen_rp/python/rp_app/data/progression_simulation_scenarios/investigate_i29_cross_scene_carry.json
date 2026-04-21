@@ -30,8 +30,7 @@
       45,
       50
     ],
-    "min_character_rows": 50,
-    "schedule_file": "data/issue29_investigation_schedules/cross_scene_50.json"
+    "min_character_rows": 50
   },
   "startup_trigger_mode": "overlay"
 }

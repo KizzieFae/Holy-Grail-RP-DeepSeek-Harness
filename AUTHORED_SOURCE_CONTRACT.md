@@ -10,7 +10,9 @@ This document is the **single in-repo authority** for **what authored files are*
 
 **Legacy state (explicit)**
 
-Until the **migration issue** (see GitHub; linked from **Issue #82** discussion) is implemented, **on-disk** character cards, scene templates, scenario/bootstrap JSON, and opener assets may still be **legacy or mixed**: extra fields, deprecated keys, or shapes that predate this contract. **Do not assume** every file matches the tables below without checking. The **contract** is normative for **new authoring** and **post-migration** files.
+**Issue #91 (closed)** removed **`initial_messages`** from on-disk scene templates; **opening prose** for those scenes lives in **Opener** assets (e.g. `{template_id}_initial_message.json`). Template **`opening_text`** remains an optional **legacy fallback** until **Issue #92** / follow-on work. **Opener** file metadata (e.g. `description`) is provisional until **Issue #93**; **runtime/bootstrap** wiring to the canonical Scenario/Bootstrap model is **Issue #94**.
+
+Other **on-disk** character cards, templates, scenario/bootstrap JSON, and opener assets may still carry **other** legacy or mixed keys (e.g. `progression_profile` on templates, `agent_name` on characters) until addressed separately. **Do not assume** every file matches the tables below without checking. The **contract** is normative for **new authoring** and for files **after** applicable migration.
 
 ---
 
@@ -135,18 +137,18 @@ Normative top-level shape:
 - **Does not** replace **Template** structure fields (`role_slots`, etc.).
 - **Does not** alone define **bootstrap** identity; **Scenario / Bootstrap** remains the scene-start contract document.
 
-*(Concrete on-disk filename conventions and JSON keys for pure opener files may be added when migration tooling lands; **semantic** role is fixed here.)*
+*(On-disk opener assets for templates follow **#91**; **normative** opener metadata schema is **#93**; **semantic** role is fixed here.)*
 
 ---
 
 ## 7. Where this is enforced
 
 - **Authoring** and **reviews** should use this document as the checklist.
-- **Loaders / compilers** may **accept** legacy fields **until** the migration issue is closed; behavior is defined in code and release notes, **not** by redefining this contract per file.
+- **Loaders / compilers** may **accept** remaining **legacy** fields where compatibility shims exist; behavior is defined in code and release notes, **not** by redefining this contract per file. **Template `initial_messages`** are **not** part of canonical on-disk templates after **#91**.
 
 ---
 
 ## 8. Related issues
 
 - **[Issue #82](https://github.com/KizzieFae/Holy_Grail_RP/issues/82)** — Scenario canonization; Issue body includes an **Authored-source contract (supplement)** with links to this doc and **#91** (see thread for authored-source vs headless/UI scenario scope).
-- **[Issue #91](https://github.com/KizzieFae/Holy_Grail_RP/issues/91)** — Migrates on-disk files to these shapes; legacy fields, compatibility, and sequencing (**do not** use #82 for bulk conversion work).
+- **[Issue #91](https://github.com/KizzieFae/Holy_Grail_RP/issues/91)** (**closed**) — Migrated on-disk files to these shapes; legacy fields, compatibility, and sequencing (**do not** use #82 for bulk conversion work).

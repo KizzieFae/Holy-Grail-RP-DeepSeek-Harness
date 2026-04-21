@@ -19,11 +19,5 @@
       "presence_constraint": "must_remain",
       "authority": "high"
     }
-  ],
-  "initial_messages": [
-    {
-      "file": "mini_imsg.json",
-      "label": "Pointer only"
-    }
   ]
 }

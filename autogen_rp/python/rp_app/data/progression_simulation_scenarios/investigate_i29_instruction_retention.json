@@ -30,8 +30,7 @@
       18,
       22
     ],
-    "min_character_rows": 25,
-    "schedule_file": "data/issue29_investigation_schedules/instruction_25.json"
+    "min_character_rows": 25
   },
   "startup_trigger_mode": "overlay"
 }

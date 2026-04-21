@@ -13,13 +13,6 @@
   },
   "premise": "At Sovereign Coast University College, a housing clerical error places an adult omega student into Dorm 303, a cramped alpha-controlled room already claimed by Marlene Fletcher and Willow Reeves. In a modern but messy alpha/omega/beta campus system, suppressants, policy, and accommodation rules exist, yet scent, instinct, territory, and heat-adjacent pressure still shape the emotional reality of the room.",
   "opening_text": "The dorm already smells like old takeout, engine grease, stale Camels, paint dust, and the kind of alpha territory that was never meant to make room for anyone soft. Miami humidity pushes through the rattling AC while a fresh SCUC housing notice lies on the coffee table like an insult. Willow has read enough of it to be furious: some adult omega student has been assigned to Room 303 without warning. Marlene, sprawled across the couch with a sketchbook, treats the whole thing like entertainment and keeps teasing Willow about how soft their new roomie is probably going to be. By the time the knock comes, the room is already thick with irritation, curiosity, and scent-heavy anticipation. Willow yanks the door open with her jaw locked and her temper on a short leash. Marlene rises with a grin and an easy roll of confident heat, her citrus-and-coconut scent cutting through the stale air. On the other side of the threshold stands the misassigned omega student with bags in hand, stepping straight into an alpha den that has had two years to forget what accommodation is supposed to look like.",
-  "initial_messages": [
-    {
-      "file": "marlene_willow_dorm_omega_misassignment_initial_message.json",
-      "label": "Dorm Omega Misassignment - Arrival",
-      "description": "The standard arrival scene where Willow is angry about the housing error and Marlene treats it as entertainment."
-    }
-  ],
   "sleeping_surface_slots": [
     "top_bunk_marlene",
     "lower_bunk_marlene",

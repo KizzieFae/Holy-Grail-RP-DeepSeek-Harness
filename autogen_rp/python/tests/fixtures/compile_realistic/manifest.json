@@ -19,8 +19,7 @@
         "premise",
         "opening_text",
         "location_entry_slots",
-        "role_slots",
-        "initial_messages"
+        "role_slots"
       ]
     },
     {

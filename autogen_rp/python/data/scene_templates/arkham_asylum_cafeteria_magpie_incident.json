@@ -3,13 +3,6 @@
   "anchor_role_name": "new_arrival",
   "premise": "Meal hour in Arkham's female ward turns volatile when inmate predation, staff surveillance, and Magpie's fixation on a guard's shiny watch collide in public.",
   "opening_text": "The cafeteria concentrates Arkham's pecking order into one fluorescent room: trays, guards, gossip, humiliation, and nowhere to go when attention lands on the wrong person. A single theft attempt or taunt can turn routine into force almost instantly.",
-  "initial_messages": [
-    {
-      "file": "arkham_asylum_cafeteria_magpie_incident_initial_message.json",
-      "label": "Cafeteria - Magpie Incident",
-      "description": "Magpie's fixation on a guard's shiny watch turns meal hour volatile."
-    }
-  ],
   "role_slots": [
     {
       "role_name": "new_arrival",
