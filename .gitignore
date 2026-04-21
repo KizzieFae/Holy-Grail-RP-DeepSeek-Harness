@@ -26,3 +26,6 @@ autogen_rp/python/validation_runs/*_stdout.txt
 
 # Root: local headless LLM simulation tee logs (run_scene_simulation_llm.py)
 /*_run*_audit.log
+
+# Local IDE / project exports (not canonical repo content)
+_proj_items.json

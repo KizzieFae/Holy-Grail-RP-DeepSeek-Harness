@@ -179,6 +179,10 @@ test/test_files/agenteval-in-out/out/
 local_cache/
 coding/
 
+# autogen_rp/tools — regeneratable issue-audit JSON (see issue86_inventory_pass.py, issue88_*.py)
+/tools/issue86_*.json
+/tools/issue88_*.json
+
 # Files created by tests
 *tmp_code_*
 test/agentchat/test_agent_scripts/*
