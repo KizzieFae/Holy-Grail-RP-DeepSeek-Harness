@@ -2,6 +2,15 @@
 
 This document describes the audit logging system for the RP app, enabling scene analysis and bot behavior debugging.
 
+## Onboarding: where to read first
+
+Pointers only — **no new contracts** here. Misreading **#59** applicability or **light** vs **full** rows is the most common triage failure mode.
+
+- **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** — GitHub **#59**: applicability classes, inventory, runtime use allowlist, and interpretation discipline.
+- **[Effective user trigger (headless simulation harness)](#effective-user-trigger-headless-simulation-harness)** — `effective_user_trigger`; **Light vs full** serialization (`*_full.json` vs light rows).
+- **[Authored index retrieval (standard evaluation mode — Phase 4A)](#authored-index-retrieval-standard-evaluation-mode-phase-4a)** — `metadata.retrieval_summary`, top-level `retrieval_session` on `_audit_summary.json`.
+- **[Continuity observability (Issue #79 — closed)](#continuity-observability-issue-79-closed)** — CTAR, `scene_state_after`, summary rollups vs availability markers on `_audit_summary.json`.
+
 ## Overview
 
 The audit system captures every bot interaction during roleplay scenes, creating both granular per-bot logs and

@@ -2,6 +2,13 @@
 
 This document captures architecture guardrails that both Windsurf and Cursor should follow.
 
+**What this file is for:** RP **package** integration — module boundaries, validation posture, and how `python/rp_app/` fits the monorepo. It is **not** the only architecture entrypoint.
+
+- **Product-level orientation and file routing:** [`ARCHITECTURE_OVERVIEW.md`](../../ARCHITECTURE_OVERVIEW.md) and [`MODULE_INDEX.md`](../../MODULE_INDEX.md) (repo root).
+- **This file (`autogen_rp/docs/architecture.md`):** shared guardrails for tooling and cross-package work under `autogen_rp/`.
+- **App runtime (Director, Narrator, continuity, enforcement):** [`python/rp_app/ARCHITECTURE.md`](../python/rp_app/ARCHITECTURE.md).
+- **Scenario validation** (scenarios, headless runs, `structured_eval`, audits): **[`SCENARIO_VALIDATION_FRAMEWORK.md`](../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root) — canonical; do not duplicate here.
+
 For detailed RP app architecture, see `python/rp_app/ARCHITECTURE.md`. For GitHub Issues / Projects workflow (**§A–§K**, including **§B.0**–**§B.5** and **§B.2** verification), see [`../../governance/rp-app/issue-tracking-workflow.md`](../../governance/rp-app/issue-tracking-workflow.md) (Issue #45 governance relocation).
 
 ## Repo-level architecture stance

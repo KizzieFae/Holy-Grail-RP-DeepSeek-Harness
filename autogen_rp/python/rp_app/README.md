@@ -425,7 +425,13 @@ Look for patterns across the tracking table, then do a calibration pass:
 - Refine stall timing
 - Tune summary ranking weights
 
+### UI vs headless (validated baseline)
+
+The Streamlit app and the headless scenario runner (`scripts/run_scene_simulation_llm.py` from `autogen_rp/python`) share the **same** core turn loop and fresh-scene bootstrap (GitHub **#83**); they are different **input surfaces**, not two runtime pipelines. When a UI run and a headless run **disagree**, treat the gap as **input-driven** first: scenario or CLI triggers, `startup_trigger_mode` on manifests, `--user-trigger-schedule`, authored retrieval activation (`RP_RETRIEVED_CONTEXT_INDEX` / `--retrieved-context-index`), and **deep simulation** vs short-cap modes. **Do not** infer a defect from mismatched inputs. Full semantics and commands are in **[SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root).
+
 ### Running Audited Sessions
+
+With audit logging enabled, **Streamlit** (sidebar toggle) and **headless** runs using **`--audit`** write the same **family** of artifacts under **`rp_app/data/rp_audits/`** (session folders, `_audit_summary.json`, per-turn logs). **Signal meaning and interpretation** (including advisory vs authoritative fields) are in **`AUDIT_DOCUMENTATION.md`**, not in this README.
 
 1. Enable audit logging in the sidebar before starting the scene
 2. Run 5-10 turns

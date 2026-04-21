@@ -1,5 +1,7 @@
 # Director + Narrator Mediated Architecture
 
+**Scope:** This file is the **RP app** runtime architecture (Director, Narrator, continuity, enforcement, scene lifecycle). Broader repo orientation: [`ARCHITECTURE_OVERVIEW.md`](../../../ARCHITECTURE_OVERVIEW.md), [`MODULE_INDEX.md`](../../../MODULE_INDEX.md). Package-level guardrails under `autogen_rp/`: [`docs/architecture.md`](../../docs/architecture.md). **Audit signal interpretation** (**#59**, **#70**, inventory): [`AUDIT_DOCUMENTATION.md`](./AUDIT_DOCUMENTATION.md) — authoritative; not duplicated here.
+
 ## Overview
 
 This branch implements a director- and narrator-mediated roleplay architecture with private

@@ -34,6 +34,8 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 
 Use this when a **headless scenario run** or **Streamlit session** “looks wrong” (FAIL/WARN, bad prose, collapsed cast, stuck loop) and you are deciding whether to **change code** and **which subsystem** owns the fix. It is the default path between **“simulation looked wrong”** and **“open the right file.”** Headless runs: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); audit layout: [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md).
 
+End-to-end validation (GitHub **#85**) treated the system as **consistent when inputs match**; apparent **UI vs headless** differences are often **input-driven**, not separate core logic. Before you assign a **Layer** defect, align the two runs on **scenario / opener inputs**, **triggers**, **overlays** (e.g. `--user-trigger-schedule` where used), **retrieval** settings, and **deep vs shallow** simulation mode (`--no-deep-simulation-turns` vs default deep simulation).
+
 ### Workflow
 
 1. Reproduce with **`--audit`** (and **`--metrics-out`** if you want a frozen `structured_eval`). Note scenario id, baseline vs treatment, deep vs `--no-deep-simulation-turns` if relevant. If the run used **`--user-trigger-schedule`**, use **`effective_user_trigger`** on **full** per-turn audit JSON to see which simulated user line applied each turn (see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) for JSON shape, precedence, and validation).

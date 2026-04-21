@@ -29,3 +29,6 @@ autogen_rp/python/validation_runs/*_stdout.txt
 
 # Local IDE / project exports (not canonical repo content)
 _proj_items.json
+
+# One-off validation/investigation harness scripts (e.g. AppTest drives); not production source
+autogen_rp/python/validation_runs/**/_run_*.py
