@@ -87,7 +87,7 @@ def test_headless_template_retrieval_smoke_scenario_passes_prepare_kwargs(
     raw = load_scenario("headless_template_retrieval_smoke")
     prep = scenario_prepare_kwargs(raw)
     assert prep["scene_template_id"] == "arkham_asylum_cell_intake"
-    st = prepare_headless_session(**prep)
+    st = prepare_headless_session(**prep, scenario_raw=raw)
     cm = get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     assert cm is not None and cm.scene_state is not None
     assert cm.scene_state.scene_template_id == "arkham_asylum_cell_intake"
@@ -108,7 +108,7 @@ def test_prepare_headless_willow_dorm_binding_stress_applies_template_sleeping_s
     prep = scenario_prepare_kwargs(raw)
     assert prep["scene_template_id"] == "marlene_willow_dorm_omega_misassignment"
     assert prep["scene_template_role_assignments"]["marlene"] == "alpha_roommate_marlene"
-    st = prepare_headless_session(**prep)
+    st = prepare_headless_session(**prep, scenario_raw=raw)
     cm = get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     assert cm is not None and cm.scene_state is not None
     tpl = SceneTemplateManager().load_template("marlene_willow_dorm_omega_misassignment")

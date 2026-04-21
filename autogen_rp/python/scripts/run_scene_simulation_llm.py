@@ -370,6 +370,10 @@ def main() -> None:
             built_in_fallback=built_in_fallback,
         )
 
+    cli_for_bootstrap_composition: str | None = None
+    if get_effective_user_trigger is None and cli_trigger_provided:
+        cli_for_bootstrap_composition = str(cli_trigger_value).strip() or None
+
     if args.scenario:
         assert raw_scenario is not None
         raw = raw_scenario
@@ -390,6 +394,8 @@ def main() -> None:
             enable_episodic_memory=args.episodic_memory,
             ignore_director_end_round=bool(args.ignore_end_round),
             issue29_long_run_harness=bool(args.issue29_long_run_harness),
+            scenario_raw=raw,
+            cli_trigger_for_composition=cli_for_bootstrap_composition,
         )
     else:
         ids = [x.strip() for x in (args.chars or "ayame,celina").split(",") if x.strip()]
@@ -424,19 +430,27 @@ def main() -> None:
             enable_episodic_memory=args.episodic_memory,
             scene_template_id=adhoc_tpl,
             scene_template_role_assignments=adhoc_roles if adhoc_roles else None,
+            scenario_raw=None,
+            cli_trigger_for_composition=cli_for_bootstrap_composition,
         )
 
     opening_for_trigger = str(
         st.session_state.get("simulation_opening_final") or ""
     ).strip()
     if get_effective_user_trigger is None:
-        trigger_text = effective_round1_trigger_text_headless(
-            scenario_raw=raw_scenario,
-            simulation_opening_final=opening_for_trigger,
-            adhoc_fallback_trigger=default_trigger,
-            cli_trigger_provided=cli_trigger_provided,
-            cli_trigger_value=cli_trigger_value,
-        )
+        composed = str(
+            st.session_state.get("first_round_user_line_composed") or ""
+        ).strip()
+        if composed:
+            trigger_text = composed
+        else:
+            trigger_text = effective_round1_trigger_text_headless(
+                scenario_raw=raw_scenario,
+                simulation_opening_final=opening_for_trigger,
+                adhoc_fallback_trigger=default_trigger,
+                cli_trigger_provided=cli_trigger_provided,
+                cli_trigger_value=cli_trigger_value,
+            )
 
     async def _run() -> None:
         try:

@@ -9,6 +9,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 import app
+from scene_opener import OpenerManager
 from session_manager import SessionManager
 from turn_runner_turn import execute_character_turn
 
@@ -155,6 +156,8 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_state = init_fake_session(fake_streamlit)
+    session_state["opening_mode"] = "custom"
+    session_state["custom_opener_text"] = "Opening line."
     continuity_manager = FakeContinuityManager(
         SimpleNamespace(
             opening_description="",
@@ -217,11 +220,7 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
         "SessionManager",
         lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_123"),
     )
-    monkeypatch.setattr(app, "OpenerManager", lambda: object())
-    monkeypatch.setattr(app, "resolve_scene_opener", lambda **_kwargs: None)
-    monkeypatch.setattr(
-        app, "resolve_opening_text", lambda *_args, **_kwargs: "Opening line."
-    )
+    monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
     monkeypatch.setattr(app, "save_current_session", fake_save_current_session)
 
@@ -229,6 +228,10 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
 
     assert started is True
     assert session_state["session_id"] == "scene_123"
+    bi = session_state.get("bootstrap_interpretation") or {}
+    assert bi.get("opening_resolved_text") == "Opening line."
+    assert bi.get("first_round_user_line") == "Opening line."
+    assert bi.get("opening_strategy") == "template_static_text"
     assert session_state["scene_started"] is True
     assert session_state["bot_reply_limit"] == 1
     assert "Opening line." in str(session_state["chat_history"][0]["content"])
@@ -244,6 +247,8 @@ async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_temp
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_state = init_fake_session(fake_streamlit)
+    session_state["opening_mode"] = "custom"
+    session_state["custom_opener_text"] = "Opening line."
     scene_state = SimpleNamespace(
         opening_description="",
         environment_description="",
@@ -333,11 +338,7 @@ async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_temp
         "SessionManager",
         lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_456"),
     )
-    monkeypatch.setattr(app, "OpenerManager", lambda: object())
-    monkeypatch.setattr(app, "resolve_scene_opener", lambda **_kwargs: None)
-    monkeypatch.setattr(
-        app, "resolve_opening_text", lambda *_args, **_kwargs: "Opening line."
-    )
+    monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
     monkeypatch.setattr(app, "save_current_session", fake_save_current_session)
     import scene_lifecycle_start as sls

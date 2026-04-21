@@ -56,6 +56,13 @@ from scene_lifecycle_start import (
     seed_scene_role_character_priorities,
     seed_scene_role_relationship_context,
 )
+from bootstrap_composition import (
+    BootstrapCompositionError,
+    compose_headless_bootstrap,
+    interpretation_to_jsonable,
+    interpretation_to_seed_scene_setup,
+)
+from scene_opener import OpenerManager
 from scene_start_bootstrap import (
     append_scene_opening_chat_message,
     headless_prepare_scene_setup_bundle,
@@ -706,6 +713,8 @@ def prepare_headless_session(
     scene_template_role_assignments: dict[str, str] | None = None,
     ignore_director_end_round: bool = False,
     issue29_long_run_harness: bool = False,
+    scenario_raw: dict[str, Any] | None = None,
+    cli_trigger_for_composition: str | None = None,
 ) -> Any:
     """Build ``HeadlessStreamlit`` session using the same continuity init/apply path as the app.
 
@@ -785,10 +794,6 @@ def prepare_headless_session(
         agent_keys.append(ak)
     st.session_state["selected_chars"] = resolved_files
 
-    opening_final = str(opening_description or "").strip()
-    if not opening_final:
-        raise ValueError("prepare_headless_session requires non-empty opening_description")
-
     def _sync() -> None:
         state_helpers.sync_orchestration_state_from_continuity(
             st_module=st,
@@ -850,6 +855,45 @@ def prepare_headless_session(
     if setup_err:
         raise ValueError(f"Headless scene template setup failed: {setup_err}")
 
+    if not str(opening_description or "").strip() and not (
+        scene_setup and str(scene_setup.get("opening_text") or "").strip()
+    ):
+        raise ValueError(
+            "prepare_headless_session requires opening_description or template opening_text"
+        )
+
+    harness_narrative: dict[str, Any] = {}
+    if initial_tension is not None:
+        harness_narrative["initial_tension"] = str(initial_tension)
+    if initial_phase is not None:
+        harness_narrative["initial_phase"] = str(initial_phase)
+
+    opener_manager = OpenerManager()
+    try:
+        interpretation = compose_headless_bootstrap(
+            scene_setup=scene_setup,
+            character_card_ids=list(character_card_ids),
+            opening_description_operand=str(opening_description or ""),
+            scenario_raw=scenario_raw,
+            cli_trigger_operand=(
+                str(cli_trigger_for_composition).strip()
+                if cli_trigger_for_composition
+                else None
+            ),
+            harness_location_operand=str(location or ""),
+            opener_manager=opener_manager,
+            harness_seed_issue=seed_issue,
+            harness_narrative_start=harness_narrative or None,
+        )
+    except BootstrapCompositionError as exc:
+        raise ValueError(f"bootstrap composition failed: {exc}") from exc
+
+    opening_final = interpretation.opening_resolved_text
+    scene_setup_apply = interpretation.scene_setup_for_continuity_apply()
+    st.session_state["bootstrap_interpretation"] = interpretation_to_jsonable(interpretation)
+    st.session_state["first_round_user_line_composed"] = interpretation.first_round_user_line
+    seed_scene_setup = interpretation_to_seed_scene_setup(interpretation)
+
     st.session_state["session_id"] = SessionManager().generate_session_id(display_names)
 
     state_helpers.restore_or_initialize_continuity_manager(
@@ -857,7 +901,7 @@ def prepare_headless_session(
         continuity_state=None,
         character_names=display_names,
         opening_description=opening_final,
-        scene_setup=scene_setup,
+        scene_setup=scene_setup_apply,
         continuity_manager_cls=ContinuityManager,
         build_initial_scene_issues_fn=state_helpers.build_initial_scene_issues,
         apply_scene_setup_to_scene_state_fn=_apply_scene_setup_to_scene_state,
@@ -866,7 +910,7 @@ def prepare_headless_session(
 
     cm = state_helpers.get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     if cm is not None and cm.scene_state is not None:
-        cm.scene_state.location = location
+        cm.scene_state.location = interpretation.location
         cm.notify_raw_location_bypass_for_audit()
         if not str(scene_template_id or "").strip():
             cm.scene_state.scene_template_id = None
@@ -933,8 +977,12 @@ def prepare_headless_session(
         )
         st.session_state["cross_session_memories"] = cross_payload
 
-        seed_scene_role_character_priorities(char_states=char_states, scene_setup=scene_setup)
-        seed_scene_role_relationship_context(char_states=char_states, scene_setup=scene_setup)
+        seed_scene_role_character_priorities(
+            char_states=char_states, scene_setup=seed_scene_setup
+        )
+        seed_scene_role_relationship_context(
+            char_states=char_states, scene_setup=seed_scene_setup
+        )
         cm.seed_character_canon_anchors(char_states)
 
         _sync()

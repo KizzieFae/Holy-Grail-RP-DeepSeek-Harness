@@ -262,3 +262,73 @@ def resolve_opening_text(
         return str(scene_setup.get("opening_text", "") or "").strip()
 
     return ""
+
+
+# --- Issue #94: canonical opener refs (id-only; labels never appear in ref) ---
+
+_TEMPLATE_OPENER_PREFIX = "template_opener:"
+_CHARACTER_OPENER_PREFIX = "character_opener:"
+
+
+def build_template_opener_ref(template_id: str, opener_asset_id: str) -> str:
+    tid = str(template_id or "").replace(".json", "").strip()
+    oid = str(opener_asset_id or "").strip()
+    if not tid or not oid:
+        raise ValueError("template_id and opener_asset_id required for template opener ref")
+    return f"{_TEMPLATE_OPENER_PREFIX}{tid}:{oid}"
+
+
+def build_character_opener_ref(character_card_stem: str, opener_asset_id: str) -> str:
+    stem = str(character_card_stem or "").replace(".json", "").strip()
+    oid = str(opener_asset_id or "").strip()
+    if not stem or not oid:
+        raise ValueError("character_card_stem and opener_asset_id required")
+    return f"{_CHARACTER_OPENER_PREFIX}{stem}:{oid}"
+
+
+def resolve_scene_opener_from_canonical_ref(
+    opener_manager: OpenerManager,
+    ref: str,
+) -> Optional[SceneOpener]:
+    """Load opener by canonical ref; returns None only if ref malformed (caller may treat as failure)."""
+    r = str(ref or "").strip()
+    if r.startswith(_TEMPLATE_OPENER_PREFIX):
+        rest = r[len(_TEMPLATE_OPENER_PREFIX) :]
+        tid, _, asset_id = rest.partition(":")
+        if not tid or not asset_id:
+            return None
+        openers = opener_manager.get_template_openers(tid)
+        for o in openers:
+            if o.id == asset_id:
+                return o
+        return None
+    if r.startswith(_CHARACTER_OPENER_PREFIX):
+        rest = r[len(_CHARACTER_OPENER_PREFIX) :]
+        stem, _, asset_id = rest.partition(":")
+        if not stem or not asset_id:
+            return None
+        char_file = f"{stem}.json"
+        openers = opener_manager.get_character_openers(char_file)
+        for o in openers:
+            if o.id == asset_id:
+                return o
+        return None
+    return None
+
+
+def template_intent_has_opener_assets(template_id: str, opener_manager: OpenerManager) -> bool:
+    """True if template declares or legacy file provides at least one opener asset path."""
+    normalized_template_id = str(template_id or "").replace(".json", "").strip()
+    if not normalized_template_id:
+        return False
+    try:
+        template_manager = SceneTemplateManager(opener_manager.templates_dir)
+        template = template_manager.load_template(normalized_template_id)
+        if template.initial_messages:
+            return True
+    except Exception:
+        pass
+    legacy = (
+        opener_manager.templates_dir / f"{normalized_template_id}_initial_message.json"
+    )
+    return legacy.is_file()

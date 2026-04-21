@@ -11,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 import app  # noqa: E402
+from scene_opener import OpenerManager  # noqa: E402
 from test_rp_app_smoke_flows import (  # noqa: E402
     FakeAuditLogger,
     FakeCharacterStateManager,
@@ -44,6 +45,8 @@ async def test_start_scene_audit_manifest_failure_surfaces_error_and_continues(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_state = init_fake_session(fake_streamlit)
+    session_state["opening_mode"] = "custom"
+    session_state["custom_opener_text"] = "Opening line."
     session_state["audit_enabled"] = True
     continuity_manager = FakeContinuityManager(
         SimpleNamespace(
@@ -98,11 +101,7 @@ async def test_start_scene_audit_manifest_failure_surfaces_error_and_continues(
         "SessionManager",
         lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_123"),
     )
-    monkeypatch.setattr(app, "OpenerManager", lambda: object())
-    monkeypatch.setattr(app, "resolve_scene_opener", lambda **_k: None)
-    monkeypatch.setattr(
-        app, "resolve_opening_text", lambda *_a, **_k: "Opening line."
-    )
+    monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
     monkeypatch.setattr(app, "save_current_session", fake_save_current_session)
     monkeypatch.setattr(app, "get_audit_logger", lambda: _AuditLoggerManifestFail())
@@ -123,6 +122,8 @@ async def test_start_scene_audit_refresh_failure_surfaces_error_and_continues(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session_state = init_fake_session(fake_streamlit)
+    session_state["opening_mode"] = "custom"
+    session_state["custom_opener_text"] = "Opening line."
     session_state["audit_enabled"] = True
     continuity_manager = FakeContinuityManager(
         SimpleNamespace(
@@ -176,11 +177,7 @@ async def test_start_scene_audit_refresh_failure_surfaces_error_and_continues(
         "SessionManager",
         lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_124"),
     )
-    monkeypatch.setattr(app, "OpenerManager", lambda: object())
-    monkeypatch.setattr(app, "resolve_scene_opener", lambda **_k: None)
-    monkeypatch.setattr(
-        app, "resolve_opening_text", lambda *_a, **_k: "Opening line."
-    )
+    monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
     monkeypatch.setattr(app, "save_current_session", fake_save_current_session)
     monkeypatch.setattr(app, "get_audit_logger", lambda: _AuditLoggerManifestOk())

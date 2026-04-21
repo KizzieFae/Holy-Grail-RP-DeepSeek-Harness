@@ -82,14 +82,20 @@ def mirror_opening_into_scene_state(
 def apply_opener_location_time_to_continuity(
     continuity_manager: Any,
     opener: Any | None,
+    *,
+    apply_location: bool = True,
 ) -> None:
-    """Apply optional opener-derived location / time before setup seam finalize."""
+    """Apply optional opener-derived location / time before setup seam finalize.
+
+    When ``apply_location`` is False, only ``time`` is applied (Issue #94: location
+    may already be set from composed ``BootstrapInterpretation``).
+    """
     if continuity_manager is None or continuity_manager.scene_state is None:
         return
     if opener is None:
         return
     loc = getattr(opener, "location", None)
-    if loc:
+    if apply_location and loc:
         continuity_manager.scene_state.location = loc
         continuity_manager.notify_raw_location_bypass_for_audit()
     tim = getattr(opener, "time", None)

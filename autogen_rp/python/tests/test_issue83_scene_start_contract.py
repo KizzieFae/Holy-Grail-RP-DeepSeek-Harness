@@ -35,7 +35,7 @@ def test_parity_scenario_headless_startup_matches_contract(_mock_client: MagicMo
     raw = load_scenario("parity_opening_trigger_smoke")
     assert raw["startup_trigger_mode"] == "parity"
     prep = scenario_prepare_kwargs(raw)
-    st = prepare_headless_session(**prep, user_name="Traveler")
+    st = prepare_headless_session(**prep, user_name="Traveler", scenario_raw=raw)
     opening_final = str(st.session_state.get("simulation_opening_final") or "").strip()
     assert opening_final == prep["opening_description"].strip()
     chat = st.session_state.get("chat_history") or []
@@ -53,6 +53,11 @@ def test_parity_scenario_headless_startup_matches_contract(_mock_client: MagicMo
     cm = get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
     assert cm is not None and cm.scene_state is not None
     assert cm.setup_seam_complete is True
+    bi = st.session_state.get("bootstrap_interpretation") or {}
+    assert bi.get("id") == "parity_opening_trigger_smoke"
+    assert bi.get("opening_resolved_text") == opening_final
+    assert st.session_state.get("first_round_user_line_composed") == opening_final
+    assert "opening_text" not in str(bi.get("initial_continuity") or {})
 
 
 @patch("headless_scene_simulation.create_deepseek_client", return_value=MagicMock())
@@ -60,7 +65,7 @@ def test_overlay_scenario_headless_uses_manifest_trigger(_mock_client: MagicMock
     raw = load_scenario("headless_template_retrieval_smoke")
     assert raw["startup_trigger_mode"] == "overlay"
     prep = scenario_prepare_kwargs(raw)
-    st = prepare_headless_session(**prep, user_name="Traveler")
+    st = prepare_headless_session(**prep, user_name="Traveler", scenario_raw=raw)
     opening_final = str(st.session_state.get("simulation_opening_final") or "").strip()
     assert opening_final == prep["opening_description"].strip()
     manifest_trigger = str(raw["trigger_text"]).strip()
@@ -73,6 +78,12 @@ def test_overlay_scenario_headless_uses_manifest_trigger(_mock_client: MagicMock
         cli_trigger_value="",
     )
     assert resolved == manifest_trigger
+    bi = st.session_state.get("bootstrap_interpretation") or {}
+    assert bi.get("id") == "headless_template_retrieval_smoke"
+    assert st.session_state.get("first_round_user_line_composed") == manifest_trigger
+    cm_overlay = get_continuity_manager(st_module=st, continuity_manager_cls=ContinuityManager)
+    assert cm_overlay is not None and cm_overlay.scene_state is not None
+    assert cm_overlay.scene_state.location == str(raw["location"])
 
 
 @patch("headless_scene_simulation.create_deepseek_client", return_value=MagicMock())
@@ -86,7 +97,7 @@ def test_template_scenario_passes_non_none_scene_setup_on_first_init(
 ) -> None:
     raw = load_scenario("headless_template_retrieval_smoke")
     prep = scenario_prepare_kwargs(raw)
-    prepare_headless_session(**prep)
+    prepare_headless_session(**prep, scenario_raw=raw)
     kw = mock_restore.call_args.kwargs
     assert kw.get("scene_setup") is not None
     assert kw["scene_setup"].get("template_id") == "arkham_asylum_cell_intake"

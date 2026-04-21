@@ -6,6 +6,12 @@ from continuity_setup_seam_v77 import (
     ensure_interim_anchor_role_fallback_for_finalize,
     finalize_continuity_setup_seam,
 )
+from bootstrap_composition import (
+    BootstrapCompositionError,
+    compose_streamlit_bootstrap,
+    interpretation_to_jsonable,
+    interpretation_to_seed_scene_setup,
+)
 from scene_start_bootstrap import (
     apply_opener_location_time_to_continuity,
     mirror_opening_into_scene_state,
@@ -321,22 +327,13 @@ async def start_scene(
     custom_text = st_module.session_state.get("custom_opener_text", "")
 
     opener_manager = opener_manager_cls()
-    opener = resolve_scene_opener_fn(
-        opener_manager=opener_manager,
-        selected_chars=selected_chars,
-        scene_owner=scene_owner,
-        opening_mode=opening_mode,
-        scene_template_id=(scene_setup.get("template_id") if scene_setup else None),
-        specific_opener_id=selected_opener_id,
-        custom_text=custom_text,
-    )
-
     narrator = create_narrator_agent_fn(model_client)
-    with st_module.spinner("Narrator is setting the scene..."):
-        opening_description = await resolve_streamlit_opening_narrative(
+
+    async def _generate_opening() -> str:
+        return await resolve_streamlit_opening_narrative(
             scene_setup=scene_setup,
-            opener=opener,
-            resolve_opening_text_fn=resolve_opening_text_fn,
+            opener=None,
+            resolve_opening_text_fn=lambda _s, _o: "",
             display_char_names=display_char_names,
             char_names=char_names,
             user_name=user_name,
@@ -345,11 +342,39 @@ async def start_scene(
             narrator=narrator,
         )
 
+    with st_module.spinner("Narrator is setting the scene..."):
+        try:
+            interpretation, res_opener = await compose_streamlit_bootstrap(
+                scene_setup=scene_setup,
+                character_card_ids_or_files=selected_chars,
+                display_names=display_char_names,
+                opening_mode=opening_mode,
+                specific_opener_id=selected_opener_id,
+                custom_text=custom_text,
+                scene_owner=scene_owner,
+                opener_manager=opener_manager,
+                authored_bootstrap_document=None,
+                generate_opening_fn=_generate_opening,
+                scenario_raw=None,
+                cli_trigger_operand=None,
+                template_default_location=None,
+            )
+        except BootstrapCompositionError as exc:
+            st_module.error(str(exc))
+            return False
+
+    st_module.session_state["bootstrap_interpretation"] = interpretation_to_jsonable(
+        interpretation
+    )
+    opening_description = interpretation.opening_resolved_text
+    scene_setup_apply = interpretation.scene_setup_for_continuity_apply()
+    scene_setup_for_seed = interpretation_to_seed_scene_setup(interpretation)
+
     restore_or_initialize_continuity_manager_fn(
         None,
         char_names,
         opening_description,
-        scene_setup,
+        scene_setup_apply,
     )
 
     state_manager = character_state_manager_cls()
@@ -359,10 +384,10 @@ async def start_scene(
     cross_session_memories = load_cross_session_memories_fn(char_names, user_name)
     apply_cross_session_memories_fn(char_states, cross_session_memories, user_name)
     _seed_scene_role_character_priorities(
-        char_states=char_states, scene_setup=scene_setup
+        char_states=char_states, scene_setup=scene_setup_for_seed
     )
     _seed_scene_role_relationship_context(
-        char_states=char_states, scene_setup=scene_setup
+        char_states=char_states, scene_setup=scene_setup_for_seed
     )
     st_module.session_state["cross_session_memories"] = cross_session_memories
     continuity_manager = get_continuity_manager_fn()
@@ -378,7 +403,11 @@ async def start_scene(
 
     if continuity_manager and continuity_manager.scene_state:
         mirror_opening_into_scene_state(continuity_manager, opening_description)
-        apply_opener_location_time_to_continuity(continuity_manager, opener)
+        continuity_manager.scene_state.location = interpretation.location
+        continuity_manager.notify_raw_location_bypass_for_audit()
+        apply_opener_location_time_to_continuity(
+            continuity_manager, res_opener, apply_location=False
+        )
         sync_orchestration_state_from_continuity_fn()
 
     if continuity_manager is not None and continuity_manager.scene_state is not None:
@@ -433,7 +462,7 @@ async def start_scene(
         char_agents=char_agents,
         narrator=narrator,
         director=director,
-        trigger_text=opening_description,
+        trigger_text=interpretation.first_round_user_line,
         user_name=user_name,
     )
 
