@@ -78,11 +78,15 @@ def format_retrieved_context_for_prompt(bundle: RetrievedContextBundle) -> str:
 
 @dataclass
 class RuntimeScenePacket:
-    """Authored + scene-start-stable inputs only (no live transcript or trigger text)."""
+    """Authored + scene-start-stable inputs only (no live transcript or trigger text).
+
+    ``session_scene_owner`` mirrors ``session_state["scene_owner"]``: the normalized
+    session/run owner label (Issue #107), not a separate authority layer.
+    """
 
     stable_scene_state: dict[str, Any]
     session_selected_scene_template_id: str = ""
-    session_scene_owner: str = ""
+    session_scene_owner: str = ""  # same conceptual label as st.session_state["scene_owner"]
     session_opening_mode: str = ""
     session_initial_message_label: str = ""
     session_initial_message_prose: str = ""

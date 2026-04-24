@@ -325,6 +325,8 @@ async def start_scene(
     display_char_names = get_character_display_names_fn(char_names)
     user_name = st_module.session_state.get("user_name", "Traveler")
 
+    # Issue #107: normalized session/run owner label (audits, save metadata, narrator hook,
+    # packets)—not Streamlit opener scope, scene-construction authority, or continuity.
     scene_owner = st_module.session_state.get(
         "scene_owner", display_char_names[0] if display_char_names else "Unknown"
     )
@@ -374,7 +376,6 @@ async def start_scene(
                 opening_mode=opening_mode,
                 specific_opener_id=selected_opener_id,
                 custom_text=custom_text,
-                scene_owner=scene_owner,
                 opener_manager=opener_manager,
                 authored_bootstrap_document=None,
                 generate_opening_fn=_generate_opening,

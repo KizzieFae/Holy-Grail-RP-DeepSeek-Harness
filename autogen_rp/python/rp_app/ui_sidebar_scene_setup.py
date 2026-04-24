@@ -114,7 +114,8 @@ def render_scene_setup_controls(
             selected_chars=selected_chars,
             character_loader_cls=character_loader_cls,
         )
-        # Issue #102: no Scene Owner UI; keep internal `scene_owner` in sync for opener/bootstrap.
+        # Issue #102 / #107: no Scene Owner UI; keep `scene_owner` (normalized session/run
+        # owner label) aligned with cast defaults before start—not Streamlit opener scope.
         if not st_module.session_state.get("scene_started", False):
             _cur = st_module.session_state.get("scene_owner")
             if _cur and _cur in char_names:

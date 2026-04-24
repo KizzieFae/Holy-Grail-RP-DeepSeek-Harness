@@ -395,7 +395,6 @@ async def compose_streamlit_bootstrap(
     opening_mode: object,
     specific_opener_id: str | None,
     custom_text: str | None,
-    scene_owner: str,
     opener_manager: OpenerManager,
     authored_bootstrap_document: dict[str, Any] | None,
     generate_opening_fn: Callable[[], Awaitable[str]],
@@ -405,7 +404,12 @@ async def compose_streamlit_bootstrap(
     scenario_manifest_location: str | None = None,
     template_default_location: str | None = None,
 ) -> tuple[BootstrapInterpretation, SceneOpener | None]:
-    """Compose Streamlit scene-start (Issue #94)."""
+    """Compose Streamlit scene-start (Issue #94).
+
+    Opening resolution is strategy-locked from ``opening_mode`` and template/custom inputs;
+    it does not use ``session_state["scene_owner"]`` (Issue #107: that key is a normalized
+    session/run owner label elsewhere—audits, narrator hook, packets—not opener scope).
+    """
     character_refs = tuple(str(x).strip() for x in character_card_ids_or_files if str(x).strip())
     meta: dict[str, Any] = {}
     bootstrap_id = f"streamlit-adhoc:{uuid.uuid4().hex}"

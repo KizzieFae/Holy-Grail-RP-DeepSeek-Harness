@@ -123,7 +123,6 @@ async def test_cross_path_static_opening_aligned_where_inputs_align() -> None:
         opening_mode="custom",
         specific_opener_id=None,
         custom_text=opening,
-        scene_owner="A",
         opener_manager=om,
         authored_bootstrap_document=None,
         generate_opening_fn=_gen,
