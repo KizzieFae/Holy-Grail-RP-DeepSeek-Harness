@@ -21,6 +21,7 @@ def write_session_manifest(
     issue_updates: list[dict[str, Any]] | None = None,
     presence_changes: list[dict[str, Any]] | None = None,
     bootstrap_interpretation: dict[str, Any] | None = None,
+    cross_session_injection_report: dict[str, Any] | None = None,
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
@@ -50,6 +51,9 @@ def write_session_manifest(
 
     if bootstrap_interpretation is not None:
         manifest["bootstrap_interpretation"] = bootstrap_interpretation
+
+    if cross_session_injection_report is not None:
+        manifest["cross_session_injection_report"] = cross_session_injection_report
 
     if any(
         [
@@ -153,6 +157,7 @@ def update_narrative_summary(
     scene_state_after: dict[str, Any] | None = None,
     issue_updates: list[dict[str, Any]] | None = None,
     presence_changes: list[dict[str, Any]] | None = None,
+    cross_session_injection_report: dict[str, Any] | None = None,
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
@@ -196,6 +201,9 @@ def update_narrative_summary(
         narrative["scene_template"] = scene_template
     else:
         narrative["scene_template"] = existing_scene_template
+
+    if cross_session_injection_report is not None:
+        narrative["cross_session_injection_report"] = cross_session_injection_report
 
     turn_entry = {
         "round": round_number,

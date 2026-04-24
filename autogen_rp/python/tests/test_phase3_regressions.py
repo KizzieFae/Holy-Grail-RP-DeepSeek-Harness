@@ -1006,6 +1006,24 @@ def test_phase3_audit_scene_template_metadata_flows_through_outputs(
     )
 
 
+def test_write_session_manifest_persists_cross_session_injection_report(
+    tmp_path: Path,
+) -> None:
+    logger = AuditLogger(str(tmp_path))
+    compact = {"injected_summary_ids": ["s1"], "source": "test"}
+    manifest_path = logger.write_session_manifest(
+        session_owner="Ayame",
+        session_number=1,
+        cast=["Ayame"],
+        opening_description="Open.",
+        user_name="Alex",
+        cross_session_injection_report=compact,
+    )
+    with open(manifest_path, "r", encoding="utf-8") as handle:
+        manifest = json.load(handle)
+    assert manifest["cross_session_injection_report"] == compact
+
+
 def test_phase3_audit_summary_report_includes_role_coverage_for_scene_templates(
     tmp_path: Path,
 ) -> None:

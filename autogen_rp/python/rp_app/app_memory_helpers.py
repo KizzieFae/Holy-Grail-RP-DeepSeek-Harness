@@ -53,6 +53,7 @@ def record_character_memories(
     build_memory_fact_summary_fn,
     character_names: list[str] | None = None,
     continuity_manager=None,
+    display_name_for_key=None,
 ) -> None:
     names = (
         character_names
@@ -71,6 +72,7 @@ def record_character_memories(
         build_memory_fact_summary_fn=build_memory_fact_summary_fn,
         character_names=names,
         continuity_manager=continuity_manager,
+        display_name_for_key=display_name_for_key,
     )
 
 

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from memory_layer.writes import (
     commit_character_turn_memory as _commit_character_turn_memory,
@@ -20,6 +21,7 @@ def commit_character_turn_memory(
     director_decision: dict[str, Any],
     continuity_manager: Any | None,
     build_memory_fact_summary_fn: Callable[[str, dict[str, Any]], str],
+    display_name_for_key: Callable[[str], str] | None = None,
 ) -> None:
     present_characters = resolve_present_characters(
         continuity_manager=continuity_manager, char_names=character_names
@@ -32,6 +34,7 @@ def commit_character_turn_memory(
         director_decision=director_decision,
         present_characters=present_characters,
         build_memory_fact_summary_fn=build_memory_fact_summary_fn,
+        display_name_for_key=display_name_for_key,
     )
 
 

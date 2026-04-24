@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from anti_regression_advisory import (
@@ -51,6 +52,7 @@ def apply_successful_turn_updates(
     tension_history_limit: int,
     effective_user_trigger: str,
     skip_continuity_process_turn: bool = False,
+    memory_display_name_for_key: Callable[[str], str] | None = None,
 ) -> dict[str, Any]:
     if state_manager:
         state_manager.update_character_move(
@@ -66,6 +68,7 @@ def apply_successful_turn_updates(
         decision,
         st_module=st_module,
         char_names=char_names,
+        display_name_for_key=memory_display_name_for_key,
     )
 
     continuity_manager = st_module.session_state.get("continuity_manager")

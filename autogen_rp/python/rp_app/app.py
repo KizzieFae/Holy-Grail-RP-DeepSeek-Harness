@@ -588,6 +588,7 @@ def record_character_memories(
     *,
     st_module: Any | None = None,
     char_names: list[str] | None = None,
+    display_name_for_key=None,
 ) -> None:
     memory_helpers.record_character_memories(
         st_module=st_module or st,
@@ -596,6 +597,7 @@ def record_character_memories(
         director_decision=director_decision,
         build_memory_fact_summary_fn=build_memory_fact_summary,
         character_names=char_names,
+        display_name_for_key=display_name_for_key,
     )
 
 

@@ -453,6 +453,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         *,
         st_module: Any,
         char_names: list[str],
+        display_name_for_key=None,
     ) -> None:
         memory_helpers.record_character_memories(
             st_module=st_module,
@@ -461,6 +462,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
             director_decision=director_decision,
             build_memory_fact_summary_fn=memory_helpers.build_memory_fact_summary,
             character_names=char_names,
+            display_name_for_key=display_name_for_key or get_character_display_name_fn,
         )
 
     async def reset_agents_fn(agents: list[Any], cancellation_token: Any) -> None:
@@ -839,7 +841,7 @@ def prepare_headless_session(
         return state_helpers.resolve_scene_template_setup(
             st_module=st,
             selected_chars=resolved_files,
-            character_names_by_file=dict(zip(resolved_files, display_names)),
+            character_names_by_file=dict(zip(resolved_files, agent_keys)),
             scene_template_manager_cls=SceneTemplateManager,
             normalize_role_assignments_fn=normalize_role_assignments,
             validate_role_assignments_fn=validate_role_assignments,
@@ -900,7 +902,7 @@ def prepare_headless_session(
     state_helpers.restore_or_initialize_continuity_manager(
         st_module=st,
         continuity_state=None,
-        character_names=display_names,
+        character_names=agent_keys,
         opening_description=opening_final,
         scene_setup=scene_setup_apply,
         continuity_manager_cls=ContinuityManager,
@@ -966,7 +968,7 @@ def prepare_headless_session(
 
         cross_payload = app_memory_cross_session.load_cross_session_memories(
             st_module=st,
-            character_names=display_names,
+            character_names=agent_keys,
             user_name=user_name,
             session_manager_cls=SessionManager,
         )
@@ -987,8 +989,8 @@ def prepare_headless_session(
         cm.seed_character_canon_anchors(char_states)
 
         _sync()
-        ensure_interim_anchor_role_fallback_for_finalize(cm, cast=display_names)
-        finalize_continuity_setup_seam(cm, cast=display_names)
+        ensure_interim_anchor_role_fallback_for_finalize(cm, cast=agent_keys)
+        finalize_continuity_setup_seam(cm, cast=agent_keys)
 
     st.session_state["simulation_opening_final"] = opening_final
     append_scene_opening_chat_message(

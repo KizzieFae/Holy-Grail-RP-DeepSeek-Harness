@@ -284,6 +284,7 @@ class AuditLogger:
         issue_updates: list[dict[str, Any]] | None = None,
         presence_changes: list[dict[str, Any]] | None = None,
         bootstrap_interpretation: dict[str, Any] | None = None,
+        cross_session_injection_report: dict[str, Any] | None = None,
     ) -> str:
         """Write a session manifest file listing all characters and scene info.
 
@@ -299,6 +300,7 @@ class AuditLogger:
             character_presence_constraints: Optional character presence constraints
             character_authority_labels: Optional character authority labels
             bootstrap_interpretation: Optional ``interpretation_to_jsonable`` dict (Issue #95).
+            cross_session_injection_report: Optional compact cross-session injection audit payload.
 
         Returns:
             Path to manifest file
@@ -321,6 +323,7 @@ class AuditLogger:
             issue_updates=issue_updates,
             presence_changes=presence_changes,
             bootstrap_interpretation=bootstrap_interpretation,
+            cross_session_injection_report=cross_session_injection_report,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
             utc_timestamp=utc_timestamp,
         )
@@ -439,6 +442,7 @@ class AuditLogger:
         character_presence_constraints: dict[str, str] | None = None,
         character_authority_labels: dict[str, str] | None = None,
         effective_user_trigger: str | None = None,
+        cross_session_injection_report: dict[str, Any] | None = None,
     ) -> AuditEntry:
         """Create an audit entry with current timestamp.
 
@@ -458,6 +462,7 @@ class AuditLogger:
             role_assignments: Optional role assignments
             character_presence_constraints: Optional character presence constraints
             character_authority_labels: Optional character authority labels
+            cross_session_injection_report: Optional compact cross-session injection audit payload.
 
         Returns:
             Configured AuditEntry
@@ -484,6 +489,11 @@ class AuditLogger:
             ]
         ):
             normalized_context_snapshot["scene_template"] = scene_template
+
+        if cross_session_injection_report is not None:
+            normalized_context_snapshot["cross_session_injection_report"] = (
+                cross_session_injection_report
+            )
 
         return AuditEntry(
             timestamp=utc_timestamp(),
@@ -523,6 +533,7 @@ class AuditLogger:
         scene_state_after: dict[str, Any] | None = None,
         issue_updates: list[dict[str, Any]] | None = None,
         presence_changes: list[dict[str, Any]] | None = None,
+        cross_session_injection_report: dict[str, Any] | None = None,
     ) -> str:
         """Update or create the narrative summary file with this round's contribution.
 
@@ -542,6 +553,7 @@ class AuditLogger:
             role_assignments: Optional role assignments
             character_presence_constraints: Optional character presence constraints
             character_authority_labels: Optional character authority labels
+            cross_session_injection_report: Optional compact cross-session injection audit payload.
 
         Returns:
             Path to narrative file
@@ -569,6 +581,7 @@ class AuditLogger:
             scene_state_after=scene_state_after,
             issue_updates=issue_updates,
             presence_changes=presence_changes,
+            cross_session_injection_report=cross_session_injection_report,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
             utc_timestamp=utc_timestamp,
         )

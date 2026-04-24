@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any
 
 from memory_layer.facade import (
@@ -33,6 +34,7 @@ def record_character_memories(
     build_memory_fact_summary_fn,
     character_names: list[str],
     continuity_manager: Any | None = None,
+    display_name_for_key: Callable[[str], str] | None = None,
 ) -> None:
     state_manager = st_module.session_state.get("character_state_manager")
     cm = (
@@ -48,4 +50,5 @@ def record_character_memories(
         director_decision=director_decision,
         continuity_manager=cm,
         build_memory_fact_summary_fn=build_memory_fact_summary_fn,
+        display_name_for_key=display_name_for_key,
     )

@@ -371,6 +371,7 @@ async def run_character_turns(
                     tension_history_limit=tension_history_limit,
                     effective_user_trigger=effective_user_trigger,
                     skip_continuity_process_turn=skip_continuity_process_turn,
+                    memory_display_name_for_key=get_character_display_name_fn,
                 )
 
         refresh_audit_summary_report_if_enabled(

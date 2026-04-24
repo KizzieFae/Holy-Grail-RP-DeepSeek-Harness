@@ -1,4 +1,9 @@
-"""Commit-time memory write policy (deterministic; no validation coupling)."""
+"""Commit-time memory write policy (deterministic; no validation coupling).
+
+Observer recipient checks accept optional ``display_name_for_key`` so episodic
+writes align with orchestration when ``present_characters`` uses display labels
+and ``character_names`` uses agent keys (GitHub #99).
+"""
 
 from __future__ import annotations
 
@@ -8,6 +13,7 @@ from perception_audibility import (
     event_knowledge_recipients,
     normalize_move_audibility,
 )
+from response_validation_selection import eligible_agent_keys_for_present_characters
 
 from . import storage
 
@@ -29,6 +35,24 @@ def resolve_present_characters(
     return list(char_names)
 
 
+def _observer_recipient_agent_keys(
+    recipients: set[str],
+    character_names: list[str],
+    *,
+    display_name_for_key: Callable[[str], str] | None,
+) -> set[str]:
+    """Map recipient labels (display or key) to participant agent keys for membership checks."""
+    if not display_name_for_key:
+        return set(recipients)
+    return set(
+        eligible_agent_keys_for_present_characters(
+            list(recipients),
+            character_names,
+            display_name_for_key=display_name_for_key,
+        )
+    )
+
+
 def commit_character_turn_memory(
     *,
     state_manager: Any | None,
@@ -38,6 +62,7 @@ def commit_character_turn_memory(
     director_decision: dict[str, Any],
     present_characters: list[str],
     build_memory_fact_summary_fn: Callable[[str, dict[str, Any]], str],
+    display_name_for_key: Callable[[str], str] | None = None,
 ) -> None:
     if not state_manager or not acting_character:
         return
@@ -69,18 +94,23 @@ def commit_character_turn_memory(
         interpretation=interpretation,
     )
 
-    recipients = set(
+    recipients_raw = set(
         event_knowledge_recipients(
             move_norm,
             acting_character=acting_character,
             present_characters=present_characters,
         )
     )
+    recipient_keys = _observer_recipient_agent_keys(
+        recipients_raw,
+        character_names,
+        display_name_for_key=display_name_for_key,
+    )
     observed_line = f"Observed: {event_summary}"
     for name in character_names:
         if not name or name == acting_character:
             continue
-        if name not in recipients:
+        if name not in recipient_keys:
             continue
         storage.append_observer_episodic(
             state_manager, name, observed_line=observed_line
