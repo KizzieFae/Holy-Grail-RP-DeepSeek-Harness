@@ -43,7 +43,7 @@ def init_session_state(*, st_module: Any) -> None:
         "selector_decisions": [],
         "rejected_messages": [],
         "scene_owner": None,
-        "opening_mode": "character",
+        "opening_mode": "custom",
         "selected_opener_id": None,
         "custom_opener_text": "",
         "selected_scene_template_id": None,

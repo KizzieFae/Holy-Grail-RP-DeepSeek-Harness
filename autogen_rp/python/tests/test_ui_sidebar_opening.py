@@ -1,4 +1,4 @@
-"""Tests for Streamlit opener UI helpers (Issue #101)."""
+"""Tests for Streamlit opener UI helpers (Issue #101, #108)."""
 
 import sys
 from pathlib import Path
@@ -8,12 +8,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from bootstrap_composition import (
-    STREAMLIT_OPENING_MODE_CHARACTER,
     STREAMLIT_OPENING_MODE_CUSTOM,
     STREAMLIT_OPENING_MODE_TEMPLATE,
 )
 from scene_opener import SceneOpener
 from ui_sidebar_opening import (
+    _opening_scope_fingerprint,
     _selection_resolves_for_multi_opener_list,
     streamlit_opener_selection_error,
 )
@@ -41,6 +41,15 @@ def _pair() -> tuple[SceneOpener, SceneOpener]:
     )
 
 
+def test_opening_scope_fingerprint_template_includes_template_id() -> None:
+    assert _opening_scope_fingerprint("template", "tid") == "template|tid"
+    assert _opening_scope_fingerprint("template", None) == "template|"
+
+
+def test_opening_scope_fingerprint_non_template_ignores_template_id() -> None:
+    assert _opening_scope_fingerprint("custom", "tid") == "custom|"
+
+
 def test_selection_resolves_multi_requires_non_empty_or_match() -> None:
     a, b = _pair()
     assert _selection_resolves_for_multi_opener_list([a, b], None) is False
@@ -62,18 +71,11 @@ def test_streamlit_opener_selection_error_template_multi_none() -> None:
             assert tid == "tpl"
             return [a, b]
 
-        def get_character_openers(self, _f: str):
-            return []
-
     err = streamlit_opener_selection_error(
         opening_mode=STREAMLIT_OPENING_MODE_TEMPLATE,
         selected_opener_id=None,
         scene_setup={"template_id": "tpl"},
-        selected_chars=["x.json"],
-        scene_owner="X",
         opener_manager=_OM(),
-        character_loader_cls=object,
-        resolve_character_file_fn=lambda _l, _s: None,
     )
     assert err is not None
     assert "template opening" in err.lower()
@@ -86,19 +88,12 @@ def test_streamlit_opener_selection_error_template_multi_picked() -> None:
         def get_template_openers(self, tid: str):
             return [a, b]
 
-        def get_character_openers(self, _f: str):
-            return []
-
     assert (
         streamlit_opener_selection_error(
             opening_mode=STREAMLIT_OPENING_MODE_TEMPLATE,
             selected_opener_id="a",
             scene_setup={"template_id": "tpl"},
-            selected_chars=[],
-            scene_owner="",
             opener_manager=_OM(),
-            character_loader_cls=object,
-            resolve_character_file_fn=lambda _l, _s: None,
         )
         is None
     )
@@ -116,38 +111,7 @@ def test_streamlit_opener_selection_error_custom_skips() -> None:
             opening_mode=STREAMLIT_OPENING_MODE_CUSTOM,
             selected_opener_id=None,
             scene_setup={"template_id": "tpl"},
-            selected_chars=[],
-            scene_owner="",
             opener_manager=_OM(),
-            character_loader_cls=object,
-            resolve_character_file_fn=lambda _l, _s: None,
         )
         is None
     )
-
-
-def test_streamlit_opener_selection_error_character_multi() -> None:
-    a, b = _pair()
-
-    class _OM:
-        def get_template_openers(self, _tid: str):
-            return []
-
-        def get_character_openers(self, f: str):
-            assert f == "harley.json"
-            return [a, b]
-
-    err = streamlit_opener_selection_error(
-        opening_mode=STREAMLIT_OPENING_MODE_CHARACTER,
-        selected_opener_id=None,
-        scene_setup=None,
-        selected_chars=["harley.json"],
-        scene_owner="Harley",
-        opener_manager=_OM(),
-        character_loader_cls=object,
-        resolve_character_file_fn=lambda _l, name: "harley.json"
-        if "Harley" in (name or "")
-        else None,
-    )
-    assert err is not None
-    assert "character opener" in err.lower()

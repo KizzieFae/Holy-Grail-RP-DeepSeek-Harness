@@ -73,7 +73,7 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
    - Choose your character as either a custom persona or a predefined character
    - Select the bot-controlled scene characters from the sidebar
    - Optionally choose a scene template and assign each selected character to an explicit role
-   - For **template-asset** or **character-asset** opening modes, pick an **Opener** when more than one exists for that template or character scope (a single opener is auto-selected; see **`ui_sidebar_opening`**, GitHub **#101**)
+   - For **template-asset** opening mode, pick an **Opener** when more than one exists for that **template** (a single opener is auto-selected; see **`ui_sidebar_opening`**, GitHub **#101**; **`character_asset`** is not used on Streamlit Start Scene—**#108**)
    - Adjust bot replies per round if desired
    - Click "Start Scene" to begin
    - Type your messages in the chat input
@@ -106,7 +106,7 @@ Current V1 schema:
 }
 ```
 
-`opening_text` is an **optional** on-disk field (legacy / compatibility). For **Start Scene** in template- or character-asset modes, the app resolves opening prose from **Opener** JSON assets and the sidebar (explicit selection when multiple openers share a scope—**GitHub #101**); it does not inject template card `opening_text` as the primary source for that path. See **[AUTHORED_SOURCE_CONTRACT.md](../../../AUTHORED_SOURCE_CONTRACT.md)**.
+`opening_text` is an **optional** on-disk field (legacy / compatibility). For **Start Scene** in **template-asset** mode, the Streamlit app resolves opening prose from **Opener** JSON assets and the sidebar (explicit selection when multiple openers exist for the **template**—**GitHub #101**); **`character_asset`** is for **authored** scenario/bootstrap, **headless** / CLI, and **legacy** paths, not the Streamlit opening UI (**#108**). It does not inject template card `opening_text` as the primary source for that path. See **[AUTHORED_SOURCE_CONTRACT.md](../../../AUTHORED_SOURCE_CONTRACT.md)**.
 
 Role-slot fields are intentionally minimal in V1:
 
@@ -122,8 +122,8 @@ Role-slot fields are intentionally minimal in V1:
 1. Select the participating characters.
 2. Choose a scene template from the sidebar.
 3. Assign each selected character to a role.
-4. In **template-asset** or **character-asset** opening mode, if multiple **Opener** JSON files exist in scope, **select** one in the opening section before starting; a single opener is auto-selected.
-5. Start the scene only after all required roles are filled; when multiple template or character openers are in scope, **select** one first (Start Scene is blocked until then).
+4. In **template-asset** mode, if multiple **Opener** JSON files exist for the **template**, **select** one in the opening section before starting; a single opener is auto-selected.
+5. Start the scene only after all required roles are filled; when multiple **template** openers are in scope, **select** one first (Start Scene is blocked until then).
 
 Validation is deterministic:
 
@@ -131,7 +131,7 @@ Validation is deterministic:
 - assigned roles must exist in the chosen template
 - every required role must be filled before scene start
 
-If no scene template is selected, use **character-asset**, **custom text**, or **generated** opening modes as configured in the opening UI; there is no separate “generic template `opening_text`” Start Scene path (GitHub **#100** / **#101**).
+If no scene template is selected, use **custom text** or **generated** opening modes in the opening UI; there is no separate “generic template `opening_text`” Start Scene path (GitHub **#100** / **#101** / **#108**).
 
 ### What V1 enforces
 
@@ -431,7 +431,7 @@ Look for patterns across the tracking table, then do a calibration pass:
 
 ### UI vs headless (validated baseline)
 
-The Streamlit app and the headless scenario runner (`scripts/run_scene_simulation_llm.py` from `autogen_rp/python`) share the **same** core turn loop and fresh-scene bootstrap (GitHub **#83**); they are different **input surfaces**, not two runtime pipelines. When a UI run and a headless run **disagree**, treat the gap as **input-driven** first: scenario or CLI triggers, `startup_trigger_mode` on manifests, `--user-trigger-schedule`, authored retrieval activation (`RP_RETRIEVED_CONTEXT_INDEX` / `--retrieved-context-index`), and **deep simulation** vs short-cap modes. For **which Opener asset** starts the scene, Streamlit uses **`ui_sidebar_opening`** / `selected_opener_id` (GitHub **#101**); headless uses **scenario/CLI composition** into `prepare_headless_session`—align on **resolved** opening text, not on UI-only controls. **Do not** infer a defect from mismatched inputs. Full semantics and commands are in **[SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root).
+The Streamlit app and the headless scenario runner (`scripts/run_scene_simulation_llm.py` from `autogen_rp/python`) share the **same** core turn loop and fresh-scene bootstrap (GitHub **#83**); they are different **input surfaces**, not two runtime pipelines. When a UI run and a headless run **disagree**, treat the gap as **input-driven** first: scenario or CLI triggers, `startup_trigger_mode` on manifests, `--user-trigger-schedule`, authored retrieval activation (`RP_RETRIEVED_CONTEXT_INDEX` / `--retrieved-context-index`), and **deep simulation** vs short-cap modes. For **which Opener asset** starts the scene, Streamlit uses **`ui_sidebar_opening`** / `selected_opener_id` (template / custom / generated only—**#101**, **#108**); headless and authored **scenario/CLI** composition may also resolve **`character_asset`**. Align on **resolved** opening text, not on UI-only controls. **Do not** infer a defect from mismatched inputs. Full semantics and commands are in **[SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root).
 
 ### Running Audited Sessions
 

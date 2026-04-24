@@ -32,3 +32,6 @@ _proj_items.json
 
 # One-off validation/investigation harness scripts (e.g. AppTest drives); not production source
 autogen_rp/python/validation_runs/**/_run_*.py
+
+# Temporary research / local notes
+memplace.txt

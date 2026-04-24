@@ -1,6 +1,11 @@
 from typing import Any, Awaitable, Callable
 
-from bootstrap_composition import VALID_STREAMLIT_OPENING_MODES
+from bootstrap_composition import (
+    STREAMLIT_OPENING_MODE_CHARACTER,
+    STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_TEMPLATE,
+    VALID_STREAMLIT_OPENING_MODES,
+)
 from continuity_setup_seam_v77 import ContinuitySetupSeamError
 
 
@@ -184,21 +189,29 @@ async def load_existing_session(
     )
     st_module.session_state.pop("scene_owner_select", None)
     st_module.session_state.pop("scene_owner_display", None)
-    # Issue #100: non-canonical saved values must be unset (None), not coerced to
-    # "character", so Start Scene stays invalid until the user picks a valid mode.
+    # Issue #100: non-canonical saved values must be unset (None), not coerced to a default mode.
+    # Issue #108: legacy ``character`` opening_mode migrates to template or custom; clears opener pick.
     _meta = session_data.get("metadata") or {}
     if "opening_mode" in _meta:
         _raw_om: object = _meta.get("opening_mode")
     else:
-        _raw_om = st_module.session_state.get("opening_mode", "character")
+        _raw_om = st_module.session_state.get("opening_mode", "custom")
     _s = str(_raw_om).strip().lower() if _raw_om is not None else ""
-    if not _s or _s not in VALID_STREAMLIT_OPENING_MODES:
+    migrated_from_character = _s == STREAMLIT_OPENING_MODE_CHARACTER
+    if migrated_from_character:
+        _tid = st_module.session_state.get("selected_scene_template_id")
+        if _tid and str(_tid).strip():
+            st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_TEMPLATE
+        else:
+            st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_CUSTOM
+    elif not _s or _s not in VALID_STREAMLIT_OPENING_MODES:
         st_module.session_state["opening_mode"] = None
     else:
         st_module.session_state["opening_mode"] = _s
-    st_module.session_state["selected_opener_id"] = session_data.get(
-        "metadata", {}
-    ).get("selected_opener_id")
+    if migrated_from_character:
+        st_module.session_state["selected_opener_id"] = None
+    else:
+        st_module.session_state["selected_opener_id"] = _meta.get("selected_opener_id")
     st_module.session_state["custom_opener_text"] = session_data.get(
         "metadata", {}
     ).get("custom_opener_text", "")

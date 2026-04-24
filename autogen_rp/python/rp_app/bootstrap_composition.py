@@ -16,7 +16,6 @@ from typing import Any, Awaitable, Callable, Literal
 from scene_opener import (
     OpenerManager,
     SceneOpener,
-    build_character_opener_ref,
     build_template_opener_ref,
     resolve_scene_opener_from_canonical_ref,
     template_intent_has_opener_assets,
@@ -39,10 +38,11 @@ STREAMLIT_OPENING_MODE_CHARACTER = "character"
 STREAMLIT_OPENING_MODE_CUSTOM = "custom"
 STREAMLIT_OPENING_MODE_GENERATED = "generated"
 
+# Streamlit UI modes (Issue #108): template (when a template is selected), custom, generated.
+# ``STREAMLIT_OPENING_MODE_CHARACTER`` is kept for session migration and docs; not a valid UI mode.
 VALID_STREAMLIT_OPENING_MODES: frozenset[str] = frozenset(
     {
         STREAMLIT_OPENING_MODE_TEMPLATE,
-        STREAMLIT_OPENING_MODE_CHARACTER,
         STREAMLIT_OPENING_MODE_CUSTOM,
         STREAMLIT_OPENING_MODE_GENERATED,
     }
@@ -54,12 +54,10 @@ def streamlit_opening_mode_options_for_ui(*, with_template: bool) -> list[str]:
     if with_template:
         return [
             STREAMLIT_OPENING_MODE_TEMPLATE,
-            STREAMLIT_OPENING_MODE_CHARACTER,
             STREAMLIT_OPENING_MODE_CUSTOM,
             STREAMLIT_OPENING_MODE_GENERATED,
         ]
     return [
-        STREAMLIT_OPENING_MODE_CHARACTER,
         STREAMLIT_OPENING_MODE_CUSTOM,
         STREAMLIT_OPENING_MODE_GENERATED,
     ]
@@ -232,46 +230,11 @@ def _normalize_template_opener_selection_to_asset_id(
     )
 
 
-def _normalize_character_opener_selection_to_asset_id(
-    *,
-    opener_manager: OpenerManager,
-    owner_file: str,
-    specific_opener_id: str | None,
-) -> str:
-    openers = opener_manager.get_character_openers(owner_file)
-    if not openers:
-        raise BootstrapCompositionError(
-            f"no character openers for {owner_file!r}"
-        )
-    sel = _strip(specific_opener_id)
-    if not sel:
-        if len(openers) != 1:
-            raise BootstrapCompositionError(
-                "character opener selection required when multiple character openers exist"
-            )
-        return str(openers[0].id)
-    by_id = [o for o in openers if o.id == sel]
-    if len(by_id) == 1:
-        return str(by_id[0].id)
-    by_label = [o for o in openers if o.label == sel]
-    if len(by_label) == 1:
-        return str(by_label[0].id)
-    raise BootstrapCompositionError(
-        f"ambiguous or unknown character opener selection {sel!r}"
-    )
-
-
-def _character_stem(character_file: str) -> str:
-    return str(character_file or "").replace(".json", "").strip()
-
-
 def _lock_streamlit_opening_strategy_intent(
     *,
     opening_mode: object,
     scene_setup: dict[str, Any] | None,
     opener_manager: OpenerManager,
-    selected_chars: list[str],
-    scene_owner: str,
     specific_opener_id: str | None,
     custom_text: str | None,
 ) -> tuple[str, str | None]:
@@ -283,9 +246,10 @@ def _lock_streamlit_opening_strategy_intent(
     **Do not** use ``scene_setup["opening_text"]`` for Streamlit ad-hoc strategy
     selection; generated openings are explicit via ``generated`` only (no implicit
     template-text fallback).
-    """
-    from scene_opener import _normalize_owner_identifier  # noqa: PLC0415
 
+    **Issue #108:** Streamlit ad-hoc composition uses only template assets, custom
+    static text, or generated — not character-scoped openers.
+    """
     mode = validate_streamlit_opening_mode_untrusted(opening_mode)
     tpl_id = _strip(scene_setup.get("template_id") if scene_setup else None)
 
@@ -300,30 +264,6 @@ def _lock_streamlit_opening_strategy_intent(
             specific_opener_id=specific_opener_id,
         )
         return "template_asset", build_template_opener_ref(tpl_id, asset_id)
-
-    if mode == STREAMLIT_OPENING_MODE_CHARACTER:
-        owner_file = None
-        norm_owner = _normalize_owner_identifier(scene_owner)
-        for char_file in selected_chars:
-            ncf = _normalize_owner_identifier(char_file)
-            if ncf == norm_owner or norm_owner in ncf:
-                owner_file = char_file
-                break
-        if not owner_file:
-            raise BootstrapCompositionError(
-                "opening_mode character but scene owner does not match selected cast file"
-            )
-        if not opener_manager.get_character_openers(owner_file):
-            raise BootstrapCompositionError(
-                f"opening_mode character but no openers for {owner_file!r}"
-            )
-        asset_id = _normalize_character_opener_selection_to_asset_id(
-            opener_manager=opener_manager,
-            owner_file=owner_file,
-            specific_opener_id=specific_opener_id,
-        )
-        stem = _character_stem(owner_file)
-        return "character_asset", build_character_opener_ref(stem, asset_id)
 
     if mode == STREAMLIT_OPENING_MODE_CUSTOM and _strip(custom_text):
         return "template_static_text", None
@@ -342,7 +282,7 @@ def _lock_streamlit_opening_strategy_intent(
         )
     raise BootstrapCompositionError(
         f"opening mode {mode!r} could not be resolved to a start strategy; "
-        "select template + opener, character + opener, custom text, or generated (Issue #100)"
+        "select template + opener, custom text, or generated (Issue #100)"
     )
 
 
@@ -551,8 +491,6 @@ async def compose_streamlit_bootstrap(
         opening_mode=opening_mode,
         scene_setup=scene_setup,
         opener_manager=opener_manager,
-        selected_chars=character_card_ids_or_files,
-        scene_owner=scene_owner,
         specific_opener_id=specific_opener_id,
         custom_text=custom_text,
     )

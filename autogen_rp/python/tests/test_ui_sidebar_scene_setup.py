@@ -138,7 +138,7 @@ def test_scene_setup_does_not_change_bot_reply_limit_mid_scene(
             "selected_chars": ["a", "b", "c"],
             "bot_reply_limit": 3,
             "player_character": None,
-            "opening_mode": "character",
+            "opening_mode": "custom",
             "audit_enabled": False,
         }
     )
@@ -180,7 +180,7 @@ def test_scene_setup_sets_bot_reply_limit_once_if_missing(
             "selected_chars": ["a", "b", "c"],
             "bot_reply_limit": None,
             "player_character": None,
-            "opening_mode": "character",
+            "opening_mode": "custom",
             "audit_enabled": False,
         }
     )
@@ -218,7 +218,7 @@ def test_scene_setup_syncs_scene_owner_without_scene_owner_ui(
             "scene_started": False,
             "npc_selection": ["a", "b", "c"],
             "player_character": None,
-            "opening_mode": "character",
+            "opening_mode": "custom",
             "audit_enabled": False,
         }
     )
@@ -254,7 +254,7 @@ def test_scene_setup_preserves_scene_owner_when_still_in_cast(
             "npc_selection": ["a", "b", "c"],
             "scene_owner": "Gamma",
             "player_character": None,
-            "opening_mode": "character",
+            "opening_mode": "custom",
             "audit_enabled": False,
         }
     )

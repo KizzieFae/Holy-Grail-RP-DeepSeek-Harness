@@ -90,7 +90,7 @@ async def save_current_session(
                 and continuity_manager.scene_state is not None
                 else {}
             ),
-            "opening_mode": st_module.session_state.get("opening_mode", "character"),
+            "opening_mode": st_module.session_state.get("opening_mode", "custom"),
             "selected_opener_id": st_module.session_state.get("selected_opener_id"),
             "custom_opener_text": st_module.session_state.get("custom_opener_text", ""),
             "scene_grounding": st_module.session_state.get("scene_grounding"),

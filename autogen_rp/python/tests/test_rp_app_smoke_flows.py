@@ -1419,6 +1419,141 @@ async def test_load_existing_session_unsets_noncanonical_opening_mode(
 
 
 @pytest.mark.asyncio
+async def test_load_existing_session_migrates_character_opening_mode_with_template(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Issue #108: saved ``character`` opener mode becomes ``template`` when a template id exists."""
+    session_state = init_fake_session(fake_streamlit)
+    manager = SessionManager(tmp_path)
+    continuity_manager = FakeContinuityManager(
+        SimpleNamespace(
+            scene_template_id="household_entry_evaluation",
+            scene_premise="",
+            role_assignments={},
+        )
+    )
+    manager.save_session(
+        session_id="mig_char_tpl",
+        team_state={"scene_state": {"opening_description": "x"}},
+        characters=["Ayame"],
+        metadata={
+            "scene_template_id": "household_entry_evaluation",
+            "opening_mode": "character",
+            "selected_opener_id": "legacy_pick",
+            "scene_status": "closed",
+        },
+        chat_history=[],
+    )
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    monkeypatch.setattr(app, "SessionManager", lambda: manager)
+    monkeypatch.setattr(app, "CharacterLoader", make_loader({"Ayame": "Ayame"}))
+    monkeypatch.setattr(app, "resolve_character_file", lambda _loader, name: name)
+    monkeypatch.setattr(app, "create_deepseek_client", lambda: object())
+    monkeypatch.setattr(app, "CharacterStateManager", FakeCharacterStateManager)
+    monkeypatch.setattr(
+        app, "apply_cross_session_memories", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        app,
+        "restore_or_initialize_continuity_manager",
+        lambda *_args, **_kwargs: continuity_manager,
+    )
+    monkeypatch.setattr(app, "get_continuity_manager", lambda: continuity_manager)
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+    monkeypatch.setattr(
+        app, "load_cross_session_memories", lambda *_a, **_k: {}
+    )
+    monkeypatch.setattr(
+        app, "has_player_character_conflict", lambda *_a, **_k: False
+    )
+
+    await app.load_existing_session("mig_char_tpl")
+
+    assert session_state["opening_mode"] == "template"
+    assert session_state["selected_opener_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_load_existing_session_migrates_character_opening_mode_without_template(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Issue #108: saved ``character`` mode becomes ``custom`` when no template is selected."""
+    session_state = init_fake_session(fake_streamlit)
+    manager = SessionManager(tmp_path)
+    continuity_manager = FakeContinuityManager(
+        SimpleNamespace(
+            scene_template_id=None,
+            scene_premise="",
+            role_assignments={},
+        )
+    )
+    manager.save_session(
+        session_id="mig_char_custom",
+        team_state={"scene_state": {"opening_description": "x"}},
+        characters=["Ayame"],
+        metadata={
+            "opening_mode": "character",
+            "selected_opener_id": "legacy_pick",
+            "scene_status": "closed",
+        },
+        chat_history=[],
+    )
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    monkeypatch.setattr(app, "SessionManager", lambda: manager)
+    monkeypatch.setattr(app, "CharacterLoader", make_loader({"Ayame": "Ayame"}))
+    monkeypatch.setattr(app, "resolve_character_file", lambda _loader, name: name)
+    monkeypatch.setattr(app, "create_deepseek_client", lambda: object())
+    monkeypatch.setattr(app, "CharacterStateManager", FakeCharacterStateManager)
+    monkeypatch.setattr(
+        app, "apply_cross_session_memories", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        app,
+        "restore_or_initialize_continuity_manager",
+        lambda *_args, **_kwargs: continuity_manager,
+    )
+    monkeypatch.setattr(app, "get_continuity_manager", lambda: continuity_manager)
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+    monkeypatch.setattr(
+        app, "load_cross_session_memories", lambda *_a, **_k: {}
+    )
+    monkeypatch.setattr(
+        app, "has_player_character_conflict", lambda *_a, **_k: False
+    )
+
+    await app.load_existing_session("mig_char_custom")
+
+    assert session_state["opening_mode"] == "custom"
+    assert session_state["selected_opener_id"] is None
+
+
+@pytest.mark.asyncio
 async def test_save_current_session_persists_scene_template_and_audit_metadata(
     fake_streamlit: FakeStreamlit,
     monkeypatch: pytest.MonkeyPatch,

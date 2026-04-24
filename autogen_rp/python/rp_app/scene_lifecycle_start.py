@@ -344,11 +344,7 @@ async def start_scene(
             else None
         ),
         scene_setup=scene_setup,
-        selected_chars=selected_chars,
-        scene_owner=scene_owner,
         opener_manager=opener_manager,
-        character_loader_cls=character_loader_cls,
-        resolve_character_file_fn=resolve_character_file_fn,
     )
     if selection_err:
         st_module.error(selection_err)

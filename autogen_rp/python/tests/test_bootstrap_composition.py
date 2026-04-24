@@ -14,12 +14,16 @@ from bootstrap_composition import (  # noqa: E402
     BOOTSTRAP_SHIM_SCHEMA_VERSION,
     BootstrapCompositionError,
     BootstrapInterpretation,
+    STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_GENERATED,
+    STREAMLIT_OPENING_MODE_TEMPLATE,
     build_initial_continuity_projection,
     compose_first_round_user_line,
     compose_headless_bootstrap,
     interpretation_to_jsonable,
     lock_headless_opening_strategy_intent,
     resolve_location_precedence,
+    streamlit_opening_mode_options_for_ui,
     validate_streamlit_opening_mode_untrusted,
 )
 from scene_opener import (  # noqa: E402
@@ -205,8 +209,22 @@ def test_interpretation_jsonable_roundtrip_keys() -> None:
     assert "opening_text" not in json.dumps(d["initial_continuity"])
 
 
+def test_streamlit_opening_mode_options_issue108() -> None:
+    assert streamlit_opening_mode_options_for_ui(with_template=True) == [
+        STREAMLIT_OPENING_MODE_TEMPLATE,
+        STREAMLIT_OPENING_MODE_CUSTOM,
+        STREAMLIT_OPENING_MODE_GENERATED,
+    ]
+    assert streamlit_opening_mode_options_for_ui(with_template=False) == [
+        STREAMLIT_OPENING_MODE_CUSTOM,
+        STREAMLIT_OPENING_MODE_GENERATED,
+    ]
+
+
 def test_validate_streamlit_opening_mode_untrusted() -> None:
-    assert validate_streamlit_opening_mode_untrusted("  character  ") == "character"
+    assert validate_streamlit_opening_mode_untrusted("  template  ") == "template"
+    with pytest.raises(BootstrapCompositionError, match="invalid opening_mode"):
+        validate_streamlit_opening_mode_untrusted("character")
     with pytest.raises(BootstrapCompositionError, match="required"):
         validate_streamlit_opening_mode_untrusted(None)  # type: ignore[arg-type]
     for bad in ("", "   "):
@@ -229,8 +247,6 @@ def test_lock_streamlit_does_not_use_scene_setup_opening_text() -> None:
             opening_mode="custom",
             scene_setup={"opening_text": "FALLBACK_SHOULD_NOT_SELECT_STATIC", "template_id": "t"},
             opener_manager=om,
-            selected_chars=[],
-            scene_owner="x",
             specific_opener_id=None,
             custom_text=None,
         )
