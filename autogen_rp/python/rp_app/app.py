@@ -58,7 +58,7 @@ from scene_lifecycle import (
     skip_turn as skip_turn_impl,
     start_scene as start_scene_impl,
 )
-from scene_opener import OpenerManager, resolve_opening_text, resolve_scene_opener
+from scene_opener import OpenerManager, resolve_scene_opener
 from cross_session_memory_policy import compact_report_for_audit
 from summary_audit_helpers import (
     build_summary_block_audit_metadata,
@@ -624,7 +624,6 @@ async def start_scene(selected_chars: list[str]) -> bool:
         session_manager_cls=SessionManager,
         opener_manager_cls=OpenerManager,
         resolve_scene_opener_fn=resolve_scene_opener,
-        resolve_opening_text_fn=resolve_opening_text,
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,

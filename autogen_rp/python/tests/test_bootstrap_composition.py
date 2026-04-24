@@ -20,6 +20,7 @@ from bootstrap_composition import (  # noqa: E402
     interpretation_to_jsonable,
     lock_headless_opening_strategy_intent,
     resolve_location_precedence,
+    validate_streamlit_opening_mode_untrusted,
 )
 from scene_opener import (  # noqa: E402
     OpenerManager,
@@ -204,11 +205,103 @@ def test_interpretation_jsonable_roundtrip_keys() -> None:
     assert "opening_text" not in json.dumps(d["initial_continuity"])
 
 
+def test_validate_streamlit_opening_mode_untrusted() -> None:
+    assert validate_streamlit_opening_mode_untrusted("  character  ") == "character"
+    with pytest.raises(BootstrapCompositionError, match="required"):
+        validate_streamlit_opening_mode_untrusted(None)  # type: ignore[arg-type]
+    for bad in ("", "   "):
+        with pytest.raises(BootstrapCompositionError, match="required|empty"):
+            validate_streamlit_opening_mode_untrusted(bad)
+    for bad in ("general", "default"):
+        with pytest.raises(BootstrapCompositionError, match="invalid opening_mode"):
+            validate_streamlit_opening_mode_untrusted(bad)
+
+
+def test_lock_streamlit_does_not_use_scene_setup_opening_text() -> None:
+    from bootstrap_composition import _lock_streamlit_opening_strategy_intent  # noqa: E402
+
+    om = OpenerManager(
+        templates_dir=Path(__file__).resolve().parent / "nonexistent_tpl_dir_100",
+        characters_dir=Path(__file__).resolve().parent / "nonexistent_char_dir_100",
+    )
+    with pytest.raises(BootstrapCompositionError):
+        _lock_streamlit_opening_strategy_intent(
+            opening_mode="custom",
+            scene_setup={"opening_text": "FALLBACK_SHOULD_NOT_SELECT_STATIC", "template_id": "t"},
+            opener_manager=om,
+            selected_chars=[],
+            scene_owner="x",
+            specific_opener_id=None,
+            custom_text=None,
+        )
+
+
+@pytest.mark.asyncio
+async def test_compose_streamlit_custom_empty_does_not_fall_back_to_opening_text() -> None:
+    from bootstrap_composition import compose_streamlit_bootstrap  # noqa: E402
+
+    om = OpenerManager(
+        templates_dir=Path(__file__).resolve().parent / "nonexistent_tpl_dir_100",
+        characters_dir=Path(__file__).resolve().parent / "nonexistent_char_dir_100",
+    )
+
+    async def _never() -> str:
+        raise AssertionError("generate_opening_fn must not run for custom+empty / opening_text (Issue #100)")
+
+    with pytest.raises(BootstrapCompositionError, match="custom|opening"):
+        await compose_streamlit_bootstrap(
+            scene_setup={"opening_text": "SHOULD NOT BE USED", "template_id": "t"},
+            character_card_ids_or_files=["a.json"],
+            display_names=["A"],
+            opening_mode="custom",
+            specific_opener_id=None,
+            custom_text="",
+            scene_owner="A",
+            opener_manager=om,
+            authored_bootstrap_document=None,
+            generate_opening_fn=_never,
+            scenario_raw=None,
+            cli_trigger_operand=None,
+        )
+
+
+@pytest.mark.asyncio
+async def test_compose_streamlit_rejects_untrusted_mode_string() -> None:
+    from bootstrap_composition import compose_streamlit_bootstrap  # noqa: E402
+
+    om = OpenerManager(
+        templates_dir=Path(__file__).resolve().parent / "nonexistent_tpl_dir_100",
+        characters_dir=Path(__file__).resolve().parent / "nonexistent_char_dir_100",
+    )
+
+    async def gen() -> str:
+        return "x"
+
+    with pytest.raises(BootstrapCompositionError, match="invalid opening_mode"):
+        await compose_streamlit_bootstrap(
+            scene_setup=None,
+            character_card_ids_or_files=["a.json"],
+            display_names=["A"],
+            opening_mode="general",
+            specific_opener_id=None,
+            custom_text=None,
+            scene_owner="A",
+            opener_manager=om,
+            authored_bootstrap_document=None,
+            generate_opening_fn=gen,
+            scenario_raw=None,
+            cli_trigger_operand=None,
+        )
+
+
 @pytest.mark.asyncio
 async def test_compose_streamlit_generated_only_when_locked() -> None:
     from bootstrap_composition import compose_streamlit_bootstrap  # noqa: E402
 
-    om = OpenerManager()
+    om = OpenerManager(
+        templates_dir=Path(__file__).resolve().parent / "nonexistent_tpl_dir_100",
+        characters_dir=Path(__file__).resolve().parent / "nonexistent_char_dir_100",
+    )
 
     async def gen() -> str:
         return "llm body"
@@ -217,7 +310,7 @@ async def test_compose_streamlit_generated_only_when_locked() -> None:
         scene_setup=None,
         character_card_ids_or_files=["a.json"],
         display_names=["A"],
-        opening_mode="general",
+        opening_mode="generated",
         specific_opener_id=None,
         custom_text=None,
         scene_owner="A",

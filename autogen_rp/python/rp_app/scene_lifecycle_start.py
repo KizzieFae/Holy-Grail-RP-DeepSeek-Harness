@@ -11,6 +11,7 @@ from bootstrap_composition import (
     compose_streamlit_bootstrap,
     interpretation_to_jsonable,
     interpretation_to_seed_scene_setup,
+    validate_streamlit_opening_mode_untrusted,
 )
 from scene_start_bootstrap import (
     apply_opener_location_time_to_continuity,
@@ -248,7 +249,6 @@ async def start_scene(
     session_manager_cls: Any,
     opener_manager_cls: Any,
     resolve_scene_opener_fn: Callable[..., Any],
-    resolve_opening_text_fn: Callable[[dict[str, Any] | None, Any], str],
     is_audit_enabled_fn: Callable[[], bool],
     get_audit_logger_fn: Callable[[], Any],
     get_audit_context_fn: Callable[[], tuple[str, int, int, int]],
@@ -272,6 +272,15 @@ async def start_scene(
     await close_active_scene_if_needed_fn("new_scene_started")
     await shutdown_runtime_resources_fn()
     reset_state_for_new_scene_fn()
+
+    try:
+        opening_mode = validate_streamlit_opening_mode_untrusted(
+            st_module.session_state.get("opening_mode")
+        )
+    except BootstrapCompositionError as exc:
+        st_module.error(str(exc))
+        return False
+    st_module.session_state["opening_mode"] = opening_mode
 
     try:
         model_client = create_deepseek_client_fn()
@@ -322,7 +331,6 @@ async def start_scene(
     st_module.session_state["audit_session_owner"] = (
         scene_owner if is_audit_enabled_fn() else None
     )
-    opening_mode = st_module.session_state.get("opening_mode", "character")
     selected_opener_id = st_module.session_state.get("selected_opener_id")
     custom_text = st_module.session_state.get("custom_opener_text", "")
 

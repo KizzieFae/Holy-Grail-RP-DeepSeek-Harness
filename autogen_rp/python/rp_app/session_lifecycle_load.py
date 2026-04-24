@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable
 
+from bootstrap_composition import VALID_STREAMLIT_OPENING_MODES
 from continuity_setup_seam_v77 import ContinuitySetupSeamError
 
 
@@ -182,9 +183,18 @@ async def load_existing_session(
         saved_scene_owner if saved_audit_enabled else None
     )
     st_module.session_state.pop("scene_owner_select", None)
-    st_module.session_state["opening_mode"] = session_data.get("metadata", {}).get(
-        "opening_mode", st_module.session_state.get("opening_mode", "character")
-    )
+    # Issue #100: non-canonical saved values must be unset (None), not coerced to
+    # "character", so Start Scene stays invalid until the user picks a valid mode.
+    _meta = session_data.get("metadata") or {}
+    if "opening_mode" in _meta:
+        _raw_om: object = _meta.get("opening_mode")
+    else:
+        _raw_om = st_module.session_state.get("opening_mode", "character")
+    _s = str(_raw_om).strip().lower() if _raw_om is not None else ""
+    if not _s or _s not in VALID_STREAMLIT_OPENING_MODES:
+        st_module.session_state["opening_mode"] = None
+    else:
+        st_module.session_state["opening_mode"] = _s
     st_module.session_state["selected_opener_id"] = session_data.get(
         "metadata", {}
     ).get("selected_opener_id")

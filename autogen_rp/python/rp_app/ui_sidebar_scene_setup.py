@@ -2,6 +2,13 @@ import asyncio
 from typing import Any, Awaitable, Callable
 
 from app_state_session import get_bot_reply_limit_widget_key
+from bootstrap_composition import (
+    STREAMLIT_OPENING_MODE_CHARACTER,
+    STREAMLIT_OPENING_MODE_GENERATED,
+    STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_TEMPLATE,
+    streamlit_opening_mode_options_for_ui,
+)
 from ui_runtime_status import runtime_evaluation_status_markdown
 from ui_sidebar_opening import load_character_names, render_opening_controls
 
@@ -180,9 +187,9 @@ def render_scene_setup_controls(
 
         if template_selection_changed:
             if selected_template_id:
-                st_module.session_state["opening_mode"] = "template"
-            elif st_module.session_state.get("opening_mode") == "template":
-                st_module.session_state["opening_mode"] = "character"
+                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_TEMPLATE
+            elif st_module.session_state.get("opening_mode") == STREAMLIT_OPENING_MODE_TEMPLATE:
+                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_CHARACTER
 
         if selected_template_id:
             selected_template = next(
@@ -228,10 +235,8 @@ def render_scene_setup_controls(
         st_module.session_state["scene_role_assignments"] = {}
 
     st_module.subheader("Scene Opening")
-    opening_mode_options = (
-        ["template", "character", "custom"]
-        if selected_template_id
-        else ["character", "custom"]
+    opening_mode_options = streamlit_opening_mode_options_for_ui(
+        with_template=bool(selected_template_id)
     )
     current_opening_mode = st_module.session_state.get("opening_mode", "character")
     opening_mode_index = (
@@ -244,15 +249,21 @@ def render_scene_setup_controls(
         options=opening_mode_options,
         index=opening_mode_index,
         format_func=lambda x: (
-            "Template Opening"
-            if x == "template"
-            else ("Character Opener" if x == "character" else "Custom Text")
+            "Template opening (JSON)"
+            if x == STREAMLIT_OPENING_MODE_TEMPLATE
+            else "Character opener (JSON)"
+            if x == STREAMLIT_OPENING_MODE_CHARACTER
+            else "Custom text"
+            if x == STREAMLIT_OPENING_MODE_CUSTOM
+            else "Generated (LLM)"
+            if x == STREAMLIT_OPENING_MODE_GENERATED
+            else str(x)
         ),
         key="opening_mode_radio",
     )
     st_module.session_state["opening_mode"] = opening_mode
 
-    if selected_template_id and opening_mode == "character":
+    if selected_template_id and opening_mode == STREAMLIT_OPENING_MODE_CHARACTER:
         st_module.info(
             "You have a Scene Template selected, but Opening Mode is set to Character Opener. "
             "In this mode, the app only looks for <character>_initial_message.json in data/autogen_characters/. "

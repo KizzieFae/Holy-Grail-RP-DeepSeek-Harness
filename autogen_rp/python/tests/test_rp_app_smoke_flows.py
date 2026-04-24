@@ -242,6 +242,76 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
 
 
 @pytest.mark.asyncio
+async def test_start_scene_fails_on_invalid_opening_mode_before_compose(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    init_fake_session(fake_streamlit)
+    fake_streamlit.session_state["opening_mode"] = "not_a_valid_mode"
+
+    async def _compose_should_not_run(*_a, **_k) -> object:
+        raise AssertionError("compose_streamlit_bootstrap should not be called for invalid mode")
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    import scene_lifecycle_start as sls
+
+    monkeypatch.setattr(sls, "compose_streamlit_bootstrap", _compose_should_not_run)
+
+    started = await app.start_scene(["ayame"])
+
+    assert started is False
+    assert fake_streamlit.errors
+    err_blob = " ".join(fake_streamlit.errors).lower()
+    assert "invalid" in err_blob and "opening_mode" in err_blob
+
+
+@pytest.mark.asyncio
+async def test_start_scene_fails_on_unset_opening_mode_before_compose(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session_state = init_fake_session(fake_streamlit)
+    session_state["opening_mode"] = None
+
+    async def _compose_should_not_run(*_a, **_k) -> object:
+        raise AssertionError("compose_streamlit_bootstrap should not be called when mode unset")
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    import scene_lifecycle_start as sls
+
+    monkeypatch.setattr(sls, "compose_streamlit_bootstrap", _compose_should_not_run)
+
+    started = await app.start_scene(["ayame"])
+
+    assert started is False
+    assert fake_streamlit.errors
+    err_blob = " ".join(fake_streamlit.errors).lower()
+    assert "required" in err_blob and "opening_mode" in err_blob
+
+
+@pytest.mark.asyncio
 async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_template(
     fake_streamlit: FakeStreamlit,
     monkeypatch: pytest.MonkeyPatch,
@@ -1274,8 +1344,78 @@ async def test_load_existing_session_restores_scene_template_and_audit_state(
     assert session_state["audit_turn_number"] == 1
     assert session_state["scene_owner"] == "Ayame"
     assert session_state["audit_session_owner"] == "Ayame"
+    assert session_state["opening_mode"] == "template"
     assert session_state["scene_started"] is True
     assert session_state["scene_ended"] is False
+
+
+@pytest.mark.asyncio
+async def test_load_existing_session_unsets_noncanonical_opening_mode(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Invalid saved opening_mode (Issue #100) becomes unset — not coerced to 'character'."""
+    init_fake_session(fake_streamlit)
+    manager = SessionManager(tmp_path)
+    continuity_manager = FakeContinuityManager(
+        SimpleNamespace(
+            scene_template_id=None,
+            scene_premise="",
+            role_assignments={},
+        )
+    )
+    manager.save_session(
+        session_id="legacy_mode_scene",
+        team_state={},
+        characters=["Ayame"],
+        metadata={
+            "opening_mode": "pre_canonical_saved_value",
+            "scene_status": "closed",
+        },
+        chat_history=[],
+    )
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    monkeypatch.setattr(app, "SessionManager", lambda: manager)
+    monkeypatch.setattr(
+        app, "CharacterLoader", make_loader({"Ayame": "Ayame"})
+    )
+    monkeypatch.setattr(app, "resolve_character_file", lambda _loader, name: name)
+    monkeypatch.setattr(app, "create_deepseek_client", lambda: object())
+    monkeypatch.setattr(app, "CharacterStateManager", FakeCharacterStateManager)
+    monkeypatch.setattr(
+        app, "apply_cross_session_memories", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        app,
+        "restore_or_initialize_continuity_manager",
+        lambda *_args, **_kwargs: continuity_manager,
+    )
+    monkeypatch.setattr(app, "get_continuity_manager", lambda: continuity_manager)
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+    monkeypatch.setattr(
+        app, "load_cross_session_memories", lambda *_a, **_k: {}
+    )
+    monkeypatch.setattr(
+        app, "has_player_character_conflict", lambda *_a, **_k: False
+    )
+
+    await app.load_existing_session("legacy_mode_scene")
+
+    om = fake_streamlit.session_state.get("opening_mode")
+    assert om is None
+    assert om != "character"
 
 
 @pytest.mark.asyncio

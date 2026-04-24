@@ -1,5 +1,12 @@
 from typing import Any, Callable
 
+from bootstrap_composition import (
+    STREAMLIT_OPENING_MODE_CHARACTER,
+    STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_GENERATED,
+    STREAMLIT_OPENING_MODE_TEMPLATE,
+)
+
 
 def load_character_names(
     *, selected_chars: list[str], character_loader_cls: Any
@@ -30,10 +37,11 @@ def render_opening_controls(
 ) -> None:
     if selected_template_id:
         st_module.caption(
-            "Opening mode chooses **prose source** only. The **template id** above still applies to "
-            "continuity roles and, when authored retrieval is ON, template-scoped retrieval rows."
+            "Opening mode chooses **prose source** for scene start. The **template id** still applies to "
+            "continuity roles and, when authored retrieval is ON, template-scoped retrieval rows. "
+            "It does not inject template `opening_text` on Start Scene (use an opener, Custom, or Generated)."
         )
-    if opening_mode == "template" and selected_template_id:
+    if opening_mode == STREAMLIT_OPENING_MODE_TEMPLATE and selected_template_id:
         if selected_template is None:
             selected_template = next(
                 (
@@ -83,12 +91,13 @@ def render_opening_controls(
             st_module.session_state["selected_opener_id"] = None
             if selected_template is not None and selected_template.opening_text:
                 st_module.info(
-                    "No authored template opener files were found for this Scene Template. "
-                    "The app will use the template's built-in opening_text."
+                    "No template opener JSON files were found. Add `*_opener_*.json` for this template, "
+                    "or choose **Custom text** or **Generated (LLM)**. The card `opening_text` is not used "
+                    "on Start Scene in this app path (only opener assets or explicit Custom/Generated apply)."
                 )
-                with st_module.expander("Preview Template Opening"):
+                with st_module.expander("Template card `opening_text` (reference only, not used on Start)"):
                     st_module.text(selected_template.opening_text)
-    elif opening_mode == "character" and selected_chars:
+    elif opening_mode == STREAMLIT_OPENING_MODE_CHARACTER and selected_chars:
         opener_manager = opener_manager_cls()
         loader = character_loader_cls()
         owner_file = resolve_character_file_fn(
@@ -129,11 +138,12 @@ def render_opening_controls(
                         st_module.text(selected_opener_obj.text)
             else:
                 st_module.info(
-                    "No authored openers found for this character. Will use narrator generation."
+                    "No character opener JSON for this role. Add `*_initial_message.json`, switch to **Generated (LLM)**, "
+                    "or use **Custom text** — the app does not fall back to template `opening_text` or auto-generate."
                 )
                 st_module.session_state["selected_opener_id"] = None
 
-    elif opening_mode == "custom":
+    elif opening_mode == STREAMLIT_OPENING_MODE_CUSTOM:
         st_module.session_state["selected_opener_id"] = None
         custom_text = st_module.text_area(
             "Custom Opening Text",
@@ -143,3 +153,10 @@ def render_opening_controls(
             key="custom_opener_input",
         )
         st_module.session_state["custom_opener_text"] = custom_text
+    elif opening_mode == STREAMLIT_OPENING_MODE_GENERATED:
+        st_module.session_state["selected_opener_id"] = None
+        st_module.caption(
+            "**Generated (LLM):** the narrator fabricates a first-paragraph opening from the template/cast. "
+            "This is the explicit generated mode — it does not use character or template JSON openers, "
+            "Custom text, or template `opening_text`."
+        )

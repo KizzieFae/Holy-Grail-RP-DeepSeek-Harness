@@ -30,6 +30,69 @@ OPENING_STRATEGIES = frozenset(
     {"template_asset", "character_asset", "template_static_text", "generated"}
 )
 
+# ---------------------------------------------------------------------------
+# Streamlit ad-hoc ``opening_mode`` (GitHub #100) — single source of truth.
+# UI must import these symbols; do not duplicate mode string literals.
+# ---------------------------------------------------------------------------
+STREAMLIT_OPENING_MODE_TEMPLATE = "template"
+STREAMLIT_OPENING_MODE_CHARACTER = "character"
+STREAMLIT_OPENING_MODE_CUSTOM = "custom"
+STREAMLIT_OPENING_MODE_GENERATED = "generated"
+
+VALID_STREAMLIT_OPENING_MODES: frozenset[str] = frozenset(
+    {
+        STREAMLIT_OPENING_MODE_TEMPLATE,
+        STREAMLIT_OPENING_MODE_CHARACTER,
+        STREAMLIT_OPENING_MODE_CUSTOM,
+        STREAMLIT_OPENING_MODE_GENERATED,
+    }
+)
+
+
+def streamlit_opening_mode_options_for_ui(*, with_template: bool) -> list[str]:
+    """Radio option values for scene setup, in order of presentation."""
+    if with_template:
+        return [
+            STREAMLIT_OPENING_MODE_TEMPLATE,
+            STREAMLIT_OPENING_MODE_CHARACTER,
+            STREAMLIT_OPENING_MODE_CUSTOM,
+            STREAMLIT_OPENING_MODE_GENERATED,
+        ]
+    return [
+        STREAMLIT_OPENING_MODE_CHARACTER,
+        STREAMLIT_OPENING_MODE_CUSTOM,
+        STREAMLIT_OPENING_MODE_GENERATED,
+    ]
+
+
+def validate_streamlit_opening_mode_untrusted(value: object) -> str:
+    """Validate ``opening_mode`` for Streamlit ad-hoc composition (Issue #100).
+
+    Input is always treated as **untrusted** (session, future callers). Rejects
+    ``None``, empty, whitespace-only, and non-canonical values.
+
+    This is the primary gate for ad-hoc mode; :func:`_lock_streamlit_opening_strategy_intent`
+    calls this first, and :func:`start_scene` may call it before :func:`compose_streamlit_bootstrap`
+    to surface a friendly error. ``compose_streamlit_bootstrap`` re-validates
+    (defense in depth) where needed for the ``template_static_text`` invariant.
+    """
+    if value is None:
+        raise BootstrapCompositionError(
+            "opening_mode is required; choose a scene opening type before starting"
+        )
+    s = str(value).strip()
+    if not s:
+        raise BootstrapCompositionError(
+            "opening_mode is required; choose a scene opening type before starting (empty value)"
+        )
+    low = s.lower()
+    if low not in VALID_STREAMLIT_OPENING_MODES:
+        raise BootstrapCompositionError(
+            f"invalid opening_mode: {value!r}; expected one of: {sorted(VALID_STREAMLIT_OPENING_MODES)}"
+        )
+    return low
+
+
 # Keys consumed by ``apply_scene_setup_to_scene_state`` (bootstrap-owned projection → apply).
 _SCENE_SETUP_APPLY_KEYS = frozenset(
     {
@@ -204,7 +267,7 @@ def _character_stem(character_file: str) -> str:
 
 def _lock_streamlit_opening_strategy_intent(
     *,
-    opening_mode: str,
+    opening_mode: object,
     scene_setup: dict[str, Any] | None,
     opener_manager: OpenerManager,
     selected_chars: list[str],
@@ -212,13 +275,21 @@ def _lock_streamlit_opening_strategy_intent(
     specific_opener_id: str | None,
     custom_text: str | None,
 ) -> tuple[str, str | None]:
-    """Return (strategy, opening_ref) from intent only (Issue #94 §3.2.2 Rule B)."""
+    """Return (strategy, opening_ref) from intent only (Issue #94 §3.2.2 Rule B).
+
+    **Issue #100:** ``opening_mode`` is always treated as **untrusted**; canonical
+    modes and validation live in
+    :data:`VALID_STREAMLIT_OPENING_MODES` / :func:`validate_streamlit_opening_mode_untrusted`.
+    **Do not** use ``scene_setup["opening_text"]`` for Streamlit ad-hoc strategy
+    selection; generated openings are explicit via ``generated`` only (no implicit
+    template-text fallback).
+    """
     from scene_opener import _normalize_owner_identifier  # noqa: PLC0415
 
-    mode = str(opening_mode or "").strip().lower()
+    mode = validate_streamlit_opening_mode_untrusted(opening_mode)
     tpl_id = _strip(scene_setup.get("template_id") if scene_setup else None)
 
-    if mode == "template" and tpl_id:
+    if mode == STREAMLIT_OPENING_MODE_TEMPLATE and tpl_id:
         if not template_intent_has_opener_assets(tpl_id, opener_manager):
             raise BootstrapCompositionError(
                 f"opening_mode template but no opener assets for template {tpl_id!r}"
@@ -230,7 +301,7 @@ def _lock_streamlit_opening_strategy_intent(
         )
         return "template_asset", build_template_opener_ref(tpl_id, asset_id)
 
-    if mode == "character":
+    if mode == STREAMLIT_OPENING_MODE_CHARACTER:
         owner_file = None
         norm_owner = _normalize_owner_identifier(scene_owner)
         for char_file in selected_chars:
@@ -254,14 +325,25 @@ def _lock_streamlit_opening_strategy_intent(
         stem = _character_stem(owner_file)
         return "character_asset", build_character_opener_ref(stem, asset_id)
 
-    if mode == "custom" and _strip(custom_text):
+    if mode == STREAMLIT_OPENING_MODE_CUSTOM and _strip(custom_text):
         return "template_static_text", None
 
-    opening_text = _strip(scene_setup.get("opening_text") if scene_setup else None)
-    if opening_text:
-        return "template_static_text", None
+    if mode == STREAMLIT_OPENING_MODE_GENERATED:
+        return "generated", None
 
-    return "generated", None
+    if mode == STREAMLIT_OPENING_MODE_CUSTOM:
+        raise BootstrapCompositionError(
+            "opening_mode custom requires non-empty custom opener text; enter text in the "
+            "Custom opening field, or pick another opening type (Issue #100)"
+        )
+    if mode == STREAMLIT_OPENING_MODE_TEMPLATE and not tpl_id:
+        raise BootstrapCompositionError(
+            "opening_mode template requires a selected scene template (Issue #100)"
+        )
+    raise BootstrapCompositionError(
+        f"opening mode {mode!r} could not be resolved to a start strategy; "
+        "select template + opener, character + opener, custom text, or generated (Issue #100)"
+    )
 
 
 def lock_headless_opening_strategy_intent(
@@ -370,7 +452,7 @@ async def compose_streamlit_bootstrap(
     scene_setup: dict[str, Any] | None,
     character_card_ids_or_files: list[str],
     display_names: list[str],
-    opening_mode: str,
+    opening_mode: object,
     specific_opener_id: str | None,
     custom_text: str | None,
     scene_owner: str,
@@ -475,12 +557,19 @@ async def compose_streamlit_bootstrap(
         custom_text=custom_text,
     )
 
+    om = validate_streamlit_opening_mode_untrusted(opening_mode)
     static_operand = ""
     if strategy == "template_static_text":
-        if _strip(custom_text) and str(opening_mode).strip().lower() == "custom":
+        if (
+            om == STREAMLIT_OPENING_MODE_CUSTOM
+            and _strip(custom_text)
+        ):
             static_operand = _strip(custom_text)
-        elif scene_setup:
-            static_operand = _strip(scene_setup.get("opening_text"))
+        else:
+            raise BootstrapCompositionError(
+                "invariant: Streamlit ad-hoc template_static_text may only use non-empty "
+                "Custom text; scene_setup['opening_text'] is not a composition source (Issue #100)"
+            )
 
     resolved_text: str
     res_opener: SceneOpener | None
