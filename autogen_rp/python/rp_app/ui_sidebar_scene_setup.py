@@ -111,43 +111,17 @@ def render_scene_setup_controls(
         )
 
     if selected_chars:
-        st_module.subheader("Scene Owner")
-        st_module.caption("Which character owns this scene?")
         char_names = load_character_names(
             selected_chars=selected_chars,
             character_loader_cls=character_loader_cls,
         )
-
-        if st_module.session_state.get("scene_started", False):
-            current_owner = (
-                st_module.session_state.get("audit_session_owner")
-                or st_module.session_state.get("scene_owner")
-                or char_names[0]
-            )
-            st_module.selectbox(
-                "Scene Owner",
-                options=char_names,
-                index=(
-                    char_names.index(current_owner)
-                    if current_owner in char_names
-                    else 0
-                ),
-                key="scene_owner_display",
-                disabled=True,
-            )
-        else:
-            initial_owner = st_module.session_state.get("scene_owner") or char_names[0]
-            initial_index = (
-                char_names.index(initial_owner) if initial_owner in char_names else 0
-            )
-
-            selected_owner = st_module.selectbox(
-                "Scene Owner",
-                options=char_names,
-                index=initial_index,
-                key="scene_owner_select",
-            )
-            st_module.session_state["scene_owner"] = selected_owner
+        # Issue #102: no Scene Owner UI; keep internal `scene_owner` in sync for opener/bootstrap.
+        if not st_module.session_state.get("scene_started", False):
+            _cur = st_module.session_state.get("scene_owner")
+            if _cur and _cur in char_names:
+                st_module.session_state["scene_owner"] = _cur
+            else:
+                st_module.session_state["scene_owner"] = char_names[0]
 
     template_manager = scene_template_manager_cls()
     templates = template_manager.list_templates()

@@ -12,8 +12,10 @@ class FakeStreamlit:
     def __init__(self) -> None:
         self.session_state: dict[str, object] = {}
         self.multiselect_calls: list[dict[str, object]] = []
+        self.subheader_calls: list[str] = []
 
-    def subheader(self, *_args, **_kwargs) -> None:
+    def subheader(self, title: str, *_args, **_kwargs) -> None:
+        self.subheader_calls.append(str(title))
         return None
 
     def caption(self, *_args, **_kwargs) -> None:
@@ -160,6 +162,7 @@ def test_scene_setup_does_not_change_bot_reply_limit_mid_scene(
     call = st.multiselect_calls[0]
     assert call["disabled"] is True
     assert call["default"] == ["a", "b", "c"]
+    assert "Scene Owner" not in st.subheader_calls
 
 
 def test_scene_setup_sets_bot_reply_limit_once_if_missing(
@@ -197,3 +200,75 @@ def test_scene_setup_sets_bot_reply_limit_once_if_missing(
     )
 
     assert st.session_state["bot_reply_limit"] == 3
+    assert "Scene Owner" not in st.subheader_calls
+
+
+def test_scene_setup_syncs_scene_owner_without_scene_owner_ui(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #102: internal scene_owner defaults to first cast display name pre-start."""
+    monkeypatch.setattr(
+        scene_setup, "load_character_names", lambda **_kwargs: ["Alpha", "Beta", "Gamma"]
+    )
+    monkeypatch.setattr(scene_setup, "render_opening_controls", lambda **_kwargs: None)
+
+    st = FakeStreamlit()
+    st.session_state.update(
+        {
+            "scene_started": False,
+            "npc_selection": ["a", "b", "c"],
+            "player_character": None,
+            "opening_mode": "character",
+            "audit_enabled": False,
+        }
+    )
+
+    scene_setup.render_scene_setup_controls(
+        st_module=st,
+        available=["a", "b", "c"],
+        character_loader_cls=object(),
+        has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
+        resolve_bot_reply_limit_fn=lambda ac, cl: min(ac, cl or ac),
+        scene_template_manager_cls=FakeTemplateManager,
+        opener_manager_cls=object(),
+        resolve_character_file_fn=lambda *_args, **_kwargs: None,
+        start_scene_fn=_unused_start_scene,
+    )
+
+    assert st.session_state["scene_owner"] == "Alpha"
+    assert "Scene Owner" not in st.subheader_calls
+
+
+def test_scene_setup_preserves_scene_owner_when_still_in_cast(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        scene_setup, "load_character_names", lambda **_kwargs: ["Alpha", "Beta", "Gamma"]
+    )
+    monkeypatch.setattr(scene_setup, "render_opening_controls", lambda **_kwargs: None)
+
+    st = FakeStreamlit()
+    st.session_state.update(
+        {
+            "scene_started": False,
+            "npc_selection": ["a", "b", "c"],
+            "scene_owner": "Gamma",
+            "player_character": None,
+            "opening_mode": "character",
+            "audit_enabled": False,
+        }
+    )
+
+    scene_setup.render_scene_setup_controls(
+        st_module=st,
+        available=["a", "b", "c"],
+        character_loader_cls=object(),
+        has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
+        resolve_bot_reply_limit_fn=lambda ac, cl: min(ac, cl or ac),
+        scene_template_manager_cls=FakeTemplateManager,
+        opener_manager_cls=object(),
+        resolve_character_file_fn=lambda *_args, **_kwargs: None,
+        start_scene_fn=_unused_start_scene,
+    )
+
+    assert st.session_state["scene_owner"] == "Gamma"

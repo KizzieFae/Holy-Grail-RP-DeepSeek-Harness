@@ -183,6 +183,7 @@ async def load_existing_session(
         saved_scene_owner if saved_audit_enabled else None
     )
     st_module.session_state.pop("scene_owner_select", None)
+    st_module.session_state.pop("scene_owner_display", None)
     # Issue #100: non-canonical saved values must be unset (None), not coerced to
     # "character", so Start Scene stays invalid until the user picks a valid mode.
     _meta = session_data.get("metadata") or {}
