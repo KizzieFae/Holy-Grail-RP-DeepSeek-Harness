@@ -58,7 +58,7 @@ from scene_lifecycle import (
     skip_turn as skip_turn_impl,
     start_scene as start_scene_impl,
 )
-from scene_opener import OpenerManager, resolve_scene_opener
+from scene_opener import OpenerManager
 from cross_session_memory_policy import compact_report_for_audit
 from summary_audit_helpers import (
     build_summary_block_audit_metadata,
@@ -611,6 +611,7 @@ async def start_scene(selected_chars: list[str]) -> bool:
         reset_state_for_new_scene_fn=reset_state_for_new_scene,
         create_deepseek_client_fn=create_deepseek_client,
         character_loader_cls=CharacterLoader,
+        resolve_character_file_fn=resolve_character_file,
         resolve_scene_template_setup_fn=resolve_scene_template_setup,
         resolve_bot_reply_limit_fn=resolve_bot_reply_limit,
         get_character_display_names_fn=get_character_display_names,
@@ -623,7 +624,6 @@ async def start_scene(selected_chars: list[str]) -> bool:
         create_director_agent_fn=create_director_agent,
         session_manager_cls=SessionManager,
         opener_manager_cls=OpenerManager,
-        resolve_scene_opener_fn=resolve_scene_opener,
         is_audit_enabled_fn=is_audit_enabled,
         get_audit_logger_fn=get_audit_logger,
         get_audit_context_fn=get_audit_context,

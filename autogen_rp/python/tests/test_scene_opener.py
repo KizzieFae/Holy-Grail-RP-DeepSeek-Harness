@@ -27,6 +27,7 @@ def test_resolve_opening_text_prefers_selected_opener_over_template_text() -> No
     )
 
     assert result == "Celina's authored opener."
+    assert opener.description is None
 
 
 def test_resolve_opening_text_uses_template_text_when_no_opener_is_selected() -> None:
@@ -45,6 +46,7 @@ def test_opener_manager_loads_template_owned_initial_message(tmp_path: Path) -> 
 {
   "label": "Arkham Cell Intake",
   "text": "A steel door slams and the new arrival is left inside the cell.",
+  "description": "Intake cell opener for new arrivals.",
   "tags": ["arkham", "cell", "intake"],
   "location": "Arkham Asylum - Female Ward Cell",
   "time": "Night"
@@ -61,7 +63,30 @@ def test_opener_manager_loads_template_owned_initial_message(tmp_path: Path) -> 
     assert openers[0].source == "template"
     assert openers[0].owner == "arkham_asylum_cell_intake"
     assert openers[0].label == "Arkham Cell Intake"
+    assert openers[0].description == "Intake cell opener for new arrivals."
     assert openers[0].location == "Arkham Asylum - Female Ward Cell"
+
+
+def test_opener_manager_description_absent_when_missing_or_blank(tmp_path: Path) -> None:
+    path_missing = tmp_path / "t_a_initial_message.json"
+    path_missing.write_text(
+        '{"id": "a", "text": "Hello", "label": "L"}',
+        encoding="utf-8",
+    )
+    path_whitespace = tmp_path / "t_b_initial_message.json"
+    path_whitespace.write_text(
+        '{"id": "b", "text": "Hello2", "label": "L2", "description": "   "}',
+        encoding="utf-8",
+    )
+    path_non_str = tmp_path / "t_c_initial_message.json"
+    path_non_str.write_text(
+        '{"id": "c", "text": "Hello3", "label": "L3", "description": 99}',
+        encoding="utf-8",
+    )
+    m = OpenerManager(characters_dir=tmp_path, templates_dir=tmp_path)
+    assert m.get_template_openers("t_a")[0].description is None
+    assert m.get_template_openers("t_b")[0].description is None
+    assert m.get_template_openers("t_c")[0].description is None
 
 
 def test_resolve_scene_opener_uses_template_owned_opener_when_template_mode_selected(
@@ -135,3 +160,4 @@ def test_resolve_scene_opener_matches_display_name_to_character_filename(
         opener.text
         == "Harley is already grinning by the time the new girl steps inside."
     )
+    assert opener.description is None

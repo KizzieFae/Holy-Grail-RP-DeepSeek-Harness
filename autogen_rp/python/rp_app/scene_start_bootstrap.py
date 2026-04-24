@@ -117,9 +117,15 @@ async def resolve_streamlit_opening_narrative(
     ],
     narrator: Any,
 ) -> str:
-    """Return final opening prose (authored, ``scene_setup.opening_text``, or narrator LLM).
+    """Return opening prose for the Streamlit **generated** strategy path.
 
-    Streamlit-only: requires a narrator agent when no static opening is available.
+    When used as ``generate_opening_fn`` from ``compose_streamlit_bootstrap`` (Issue #94),
+    ``start_scene`` passes ``resolve_opening_text_fn`` that always returns ``""``, so
+    **static** prose is **not** taken from ``resolve_opening_text`` or
+    ``scene_setup["opening_text"]`` on this call — asset and custom openings are resolved
+    solely by ``bootstrap_composition`` before this runs. If the hook still has no
+    non-empty static text, the narrator LLM produces text. Requires a narrator agent
+    for that LLM path.
     """
     opening = resolve_opening_text_fn(scene_setup, opener)
     if str(opening or "").strip():

@@ -24,6 +24,19 @@ class SceneOpener:
     tags: list[str]
     location: Optional[str] = None
     time: Optional[str] = None
+    # Passthrough from Opener JSON (AUTHORED_SOURCE_CONTRACT §6); not inferred from `text`.
+    description: Optional[str] = None
+
+
+def _opener_description_from_json(opener_data: dict[str, Any]) -> Optional[str]:
+    """File `description` only: absent, empty, or non-string -> None (no synthesis)."""
+    raw = opener_data.get("description")
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        return None
+    s = raw.strip()
+    return s if s else None
 
 
 class OpenerManager:
@@ -73,6 +86,7 @@ class OpenerManager:
                         tags=opener_data.get("tags", []),
                         location=opener_data.get("location"),
                         time=opener_data.get("time"),
+                        description=_opener_description_from_json(opener_data),
                     )
                     openers.append(opener)
             except Exception:

@@ -18,6 +18,7 @@ from scene_start_bootstrap import (
     mirror_opening_into_scene_state,
     resolve_streamlit_opening_narrative,
 )
+from ui_sidebar_opening import streamlit_opener_selection_error
 
 
 def _role_text(value: Any) -> str:
@@ -232,6 +233,7 @@ async def start_scene(
     reset_state_for_new_scene_fn: Callable[[], None],
     create_deepseek_client_fn: Callable[[], Any],
     character_loader_cls: Any,
+    resolve_character_file_fn: Callable[[Any, str], str | None],
     resolve_scene_template_setup_fn: Callable[
         [list[str], dict[str, str]], tuple[dict[str, Any] | None, str]
     ],
@@ -248,7 +250,6 @@ async def start_scene(
     create_director_agent_fn: Callable[[Any], Any],
     session_manager_cls: Any,
     opener_manager_cls: Any,
-    resolve_scene_opener_fn: Callable[..., Any],
     is_audit_enabled_fn: Callable[[], bool],
     get_audit_logger_fn: Callable[[], Any],
     get_audit_context_fn: Callable[[], tuple[str, int, int, int]],
@@ -335,6 +336,24 @@ async def start_scene(
     custom_text = st_module.session_state.get("custom_opener_text", "")
 
     opener_manager = opener_manager_cls()
+    selection_err = streamlit_opener_selection_error(
+        opening_mode=opening_mode,
+        selected_opener_id=(
+            (str(selected_opener_id).strip() or None)
+            if selected_opener_id is not None
+            else None
+        ),
+        scene_setup=scene_setup,
+        selected_chars=selected_chars,
+        scene_owner=scene_owner,
+        opener_manager=opener_manager,
+        character_loader_cls=character_loader_cls,
+        resolve_character_file_fn=resolve_character_file_fn,
+    )
+    if selection_err:
+        st_module.error(selection_err)
+        return False
+
     narrator = create_narrator_agent_fn(model_client)
 
     async def _generate_opening() -> str:

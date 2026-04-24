@@ -197,7 +197,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `ui_sidebar_session.py` | Session list, load/save | `SessionManager` | |
 | `ui_sidebar_player.py` | Player character selection | cards | |
 | `ui_sidebar_scene_setup.py` | Cast, template, roles, audit toggle | `scene_template` | |
-| `ui_sidebar_opening.py` | Opener mode UI | `scene_opener` | |
+| `ui_sidebar_opening.py` | Opener list, multi-opener selection, previews (GitHub #101) | `scene_opener` | |
 | `ui_debug.py` | Debug panels | state | |
 
 ---

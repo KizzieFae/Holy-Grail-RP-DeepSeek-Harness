@@ -52,6 +52,8 @@ Each scenario defines:
 
 **Streamlit UI vs scenario manifests:** The Streamlit app does not expose `startup_trigger_mode`. After **Start Scene**, the first-round user trigger passed into the turn loop is always the **finalized opening** from `scene_lifecycle_start.start_scene`—**parity-style** (same string as the resolved opening). The **`overlay`** mode applies to **scenario JSON and headless** first-round resolution via `effective_round1_trigger_text_headless` (CLI `--trigger` still wins when provided). It is not a separate control on the current Streamlit surface.
 
+**Opener asset selection:** In Streamlit, template- and character-asset opening modes resolve **which** Opener JSON to use through **`ui_sidebar_opening`** and session `selected_opener_id` (multi-opener scopes require a choice; see GitHub **#101**). Headless runs have **no** sidebar: opener choice is carried by **scenario / bootstrap / harness** composition (e.g. `prepare_headless_session`, manifest fields), not by copying Streamlit session state. Align comparisons on the **same** resolved opening text and manifest trigger semantics, not on UI controls that exist only in Streamlit.
+
 **Storage path** (repository root = Holy Grail RP):
 
 `autogen_rp/python/rp_app/data/progression_simulation_scenarios/<scenario_id>.json`
