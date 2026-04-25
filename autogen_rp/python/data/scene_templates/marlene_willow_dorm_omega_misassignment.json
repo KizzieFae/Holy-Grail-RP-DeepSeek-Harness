@@ -1,7 +1,7 @@
 {
   "template_id": "marlene_willow_dorm_omega_misassignment",
   "anchor_role_name": "misassigned_omega_student",
-  "premise": "At Sovereign Coast University College, a housing clerical error places an adult omega student into Dorm 303, a cramped alpha-controlled room already claimed by Marlene Fletcher and Willow Reeves. In a modern but messy alpha/omega/beta campus system, suppressants, policy, and accommodation rules exist, yet scent, instinct, territory, and heat-adjacent pressure still shape the emotional reality of the room.",
+  "premise": "A housing clerical error places an adult omega student into a cramped alpha-controlled dorm room already shared by two alpha roommates. In a modern but messy alpha/omega/beta campus system, suppressants, policy, and accommodation rules exist, yet scent, instinct, territory, and heat-adjacent pressure still shape the emotional reality of the room.",
   "sleeping_surface_slots": [
     "top_bunk_marlene",
     "lower_bunk_marlene",

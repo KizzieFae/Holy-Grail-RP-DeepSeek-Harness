@@ -1,7 +1,7 @@
 {
   "template_id": "yukiko_shrine_guided_visit",
   "anchor_role_name": "primary_visitor",
-  "premise": "At Fushimi Inari Taisha, Yukiko guides a shrine visit that is built around a core interaction between head miko and visitor but can naturally expand to include other shrine participants or companions without breaking the scene.",
+  "premise": "A guided shrine visit is built around a core interaction between head miko and visitor but can naturally expand to include other shrine participants or companions without breaking the scene.",
   "role_slots": [
     {
       "role_name": "head_miko",

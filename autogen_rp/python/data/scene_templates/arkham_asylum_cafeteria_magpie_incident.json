@@ -1,7 +1,7 @@
 {
   "template_id": "arkham_asylum_cafeteria_magpie_incident",
   "anchor_role_name": "new_arrival",
-  "premise": "Meal hour in Arkham's female ward turns volatile when inmate predation, staff surveillance, and Magpie's fixation on a guard's shiny watch collide in public.",
+  "premise": "Meal hour in Arkham's female ward turns volatile when inmate predation, staff surveillance, and one inmate's fixation on a guard's shiny watch collide in public.",
   "role_slots": [
     {
       "role_name": "new_arrival",

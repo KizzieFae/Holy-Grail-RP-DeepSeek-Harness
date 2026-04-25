@@ -1,7 +1,7 @@
 {
   "template_id": "celina_apartment_recovery_watch",
   "anchor_role_name": "recovering_demi_human",
-  "premise": "Celina's apartment is functioning as a secluded safehouse immediately after a dangerous rescue, with the protector trying to stabilize a vulnerable Demi-human while outside criminal pressure remains offscreen. The setting stays mostly grounded: demi-humans are real, but most people do not treat overt magic as a known public system or a socially normalized part of daily life. Do not assume hidden forms, supernatural recovery, or specialized occult knowledge unless the scene itself establishes them.",
+  "premise": "A private apartment is functioning as a secluded safehouse immediately after a dangerous rescue, with the protector trying to stabilize a vulnerable Demi-human while outside criminal pressure remains offscreen. The setting stays mostly grounded: demi-humans are real, but most people do not treat overt magic as a known public system or a socially normalized part of daily life. Do not assume hidden forms, supernatural recovery, or specialized occult knowledge unless the scene itself establishes them.",
   "role_slots": [
     {
       "role_name": "protector",

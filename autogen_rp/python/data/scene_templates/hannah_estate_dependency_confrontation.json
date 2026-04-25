@@ -1,7 +1,7 @@
 {
   "template_id": "hannah_estate_dependency_confrontation",
   "anchor_role_name": "adult_child",
-  "premise": "Inside Hannah Lovelace's private estate, a closed two-person confrontation turns care, comfort, and authority into tools for tightening control over her adult child. All participants in this scene are adults.",
+  "premise": "Inside a private estate, a closed two-person confrontation turns care, comfort, and authority into tools for tightening control over her adult child. All participants in this scene are adults.",
   "role_slots": [
     {
       "role_name": "controlling_mother",
