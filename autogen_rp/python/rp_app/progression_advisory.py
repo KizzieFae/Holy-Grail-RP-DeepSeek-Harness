@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 from beat_shift_state import plateau_snapshots_suggest_beat_shift
@@ -289,14 +290,28 @@ def sync_progression_advisory_for_prompts(
 
 
 def load_progression_profile_for_template_id(template_id: str) -> dict[str, Any]:
-    """Static template progression_profile, or defaults if missing / load error."""
+    """Load progression parameters: Template-associated support file, else defaults.
+
+    Resolution (Issue #119):
+    1. ``{template_id}_progression.json`` in ``data/scene_templates/`` if present and valid object JSON
+    2. :func:`default_progression_profile` if missing, invalid JSON, or non-dict
+
+    In-template ``progression_profile`` on ``{template_id}.json`` is not read (Template Exclude; use the support file).
+    """
     tid = str(template_id or "").strip()
     if not tid:
         return default_progression_profile()
-    try:
-        from scene_template import SceneTemplateManager  # noqa: PLC0415
+    from scene_template import SceneTemplateManager  # noqa: PLC0415
 
-        template = SceneTemplateManager().load_template(tid)
-        return normalize_progression_profile(template.progression_profile)
-    except (OSError, ValueError, FileNotFoundError, json.JSONDecodeError):
+    mgr = SceneTemplateManager()
+    support_path: Path = mgr.templates_dir / f"{tid}_progression.json"
+    if not support_path.is_file():
         return default_progression_profile()
+    try:
+        with open(support_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return default_progression_profile()
+    if not isinstance(data, dict):
+        return default_progression_profile()
+    return normalize_progression_profile(data)

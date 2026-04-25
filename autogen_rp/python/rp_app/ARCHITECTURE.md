@@ -176,7 +176,7 @@ When the Director is **neutral** on directional `tension_shift` (no valid `escal
 
 #### Progression advisory (MVP)
 
-When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the scene template’s optional **`progression_profile`** (e.g. physical action, spatial shift, consequence). This is **guidance only**; it does not override selection logic or continuity.
+When the deterministic **progression advisory** layer detects elevated **stall pressure**, the Director may receive a short **PROGRESSION ADVISORY** prefix (outside the JSON payload) suggesting advancement channels from the optional static profile in **`{template_id}_progression.json`** (Template-associated support file) or **built-in** defaults—see **`load_progression_profile_for_template_id`** (**#119**). This is **guidance only**; it does not override selection logic or continuity.
 
 Beat-shift activation uses the **same** computed **`stall_score`** threshold as this advisory layer (alongside the existing short-user-message path), so there is a **single** plateau-related signal rather than duplicate detectors.
 

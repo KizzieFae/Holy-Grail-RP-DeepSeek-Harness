@@ -13,7 +13,7 @@ This document is the **single in-repo authority** for **what authored files are*
 
 **Issue #91 (closed)** removed **`initial_messages`** from on-disk scene templates; **opening prose** for those scenes lives in **Opener** assets (e.g. `{template_id}_initial_message.json`). Template **`opening_text`** on disk remains **optional** **legacy compatibility** (loaders / reference display); it is **not** the primary authored opening model, and the Streamlit app does **not** use it on **Start Scene** for template-asset mode when Opener selection applies (**#100**, **#101**). Broader design coordination for **Issue #92** may still extend contract text or operator docs. The **v1** **normative** **metadata** **schema** for **Opener** JSON is **section 6** (consensus: **[Issue #93](https://github.com/KizzieFae/Holy_Grail_RP/issues/93)**; contract encoding: **[Issue #96](https://github.com/KizzieFae/Holy_Grail_RP/issues/96)**). **Runtime/bootstrap** wiring to the canonical Scenario/Bootstrap model is **Issue #94**.
 
-Other **on-disk** character cards, templates, scenario/bootstrap JSON, and opener assets may still carry **other** legacy or mixed keys (e.g. `progression_profile` on templates, `agent_name` on characters) until addressed separately. **Do not assume** every file matches the tables below without checking. The **contract** is normative for **new authoring** and for files **after** applicable migration.
+Other **on-disk** character cards, templates, scenario/bootstrap JSON, and opener assets may still carry **other** legacy or mixed keys (e.g. `agent_name` on characters) until addressed separately. **Template** **`progression_profile`** on `{template_id}.json` is **not** an acceptable **new** **authoring** shape after **#119**; use **Template-associated support files** (`{template_id}_progression.json`). **Do not assume** every file matches the tables below without checking. The **contract** is normative for **new authoring** and for files **after** applicable migration.
 
 ---
 
@@ -33,6 +33,20 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 - **Session / runtime bootstrap inputs** — Ephemeral or persisted session wiring; not a substitute for the bootstrap **contract** document.
 - **Run-control** — Flags, CLI, app settings; not character or scene knowledge.
 - **Ingestion / compile configuration** — Retrieval **manifests**, compile CLI, adapter tables; **inputs** to offline compile, **not** bootstrap truth at runtime.
+
+#### Template-associated support files (co-located; not canonical Template body)
+
+**Definition:** Optional files **in the same directory** as `python/data/scene_templates/{template_id}.json` that are **keyed to** a `template_id` but are **not** the canonical **Template** JSON document (they do **not** carry **Template Include** content).
+
+**Requirements (normative for any such file the contract recognizes):**
+
+- **Not canonical Template knowledge** — Content belongs to **Template Exclude** and/or the **supporting layer** (see **§1** and **§4**), **not** the **Template Include** list.
+- **Contract-governed** — For each **reserved** pattern, this document defines (or points to) **filename pattern**, **permitted payload** or **owning subsystem**, and **non-overlap** with the four canonical **authored** types in the table above.
+- **Reserved suffix / naming model** — Only **documented** stem or suffix patterns are valid. Authors **must not** invent parallel ad hoc names for the same **logical** content without a **contract** update.
+- **Discoverable by owning subsystem** — Each pattern has a **named** runtime or tooling **owner** that loads or validates it. **Not** implied by a bare `*.json` glob of all template **definition** files without exclusion rules.
+- **Excluded from template enumeration** — Code that **lists** scene **template** **definition** files (`{template_id}.json` **only**) **must** **ignore** these paths so they are **not** mis-loaded as `SceneTemplate` (same class of rule as existing `{template_id}_initial_message.json` handling).
+
+**Examples (not an exhaustive list of patterns):** **Opener** JSON co-located with a template (e.g. `{template_id}_initial_message.json` per **section 6** and legacy notes) — **opening** **prose** **asset**; not the Template structural object. **Progression advisory** support content — e.g. `{template_id}_progression.json` holding the **Template Exclude** `progression_profile` payload for **Progression Advisory** (GitHub **#119**); not an Opener, not bootstrap truth.
 
 ---
 
@@ -54,7 +68,7 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 - **Scenario / Bootstrap** must not duplicate Opener prose as a second authored source; it references openers via `opening` (see section 5).
 - **`opening_text`** on a template (if present) is **legacy fallback / compatibility** only — **not** the primary authored opening model.
 - **`initial_messages`** is **not** canonical template knowledge.
-- **`progression_profile`** is **not** canonical template knowledge (advisory/progression layers may still **read** legacy fields until migration).
+- **`progression_profile`** is **not** canonical template knowledge. **Authored** payload belongs in a **Template-associated support file** using the **reserved** `{template_id}_progression.json` pattern (see **§1** *Template-associated support files*), **not** in `{template_id}.json` (**#119**). **Progression Advisory** does **not** read `progression_profile` from the template body.
 - **`agent_name`** is **not** canonical character knowledge.
 - **Retrieval manifests** are **ingestion / compile inputs**; they are **not** runtime or bootstrap **truth** by themselves.
 
@@ -100,7 +114,7 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 **Exclude**:
 
 - `initial_messages`
-- `progression_profile`
+- `progression_profile` (authored **payload** for this key appears **only** in **Template-associated support file** `python/data/scene_templates/{template_id}_progression.json`, per **§1** *Template-associated support files* — **not** in the canonical `template_id.json` body)
 - Bootstrap, session, run-control, ingestion-manifest fields
 
 ---

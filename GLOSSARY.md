@@ -70,7 +70,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Character card** — JSON file under `python/data/autogen_characters/` defining a persona (system prompt, anchors, relationships, etc.). **Current** primary character source (`character_loader.py`). **Normative field set** per **Authored source contract**; on-disk files may still carry legacy keys until migration.
 
-**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels, optional static **`progression_profile`** (`advancement_channels`, `common_stall_pattern`) for advisory hints only (`scene_template.py`, PRD §5.7). **`progression_profile`** is **not** canonical template **knowledge** per **Authored source contract** (may remain on disk for compatibility). **`opening_text`** is legacy fallback, not the primary opener model.
+**Scene template** — JSON under `python/data/scene_templates/`: premise, roles, `presence_constraint`, optional authority labels. **Template-associated support files** in the same directory (e.g. `{template_id}_progression.json` for **Template Exclude** `progression_profile` per **Authored source contract** §1) supply advisory-only channel lists for **Progression Advisory** (`progression_advisory.py`, PRD §5.7). **`progression_profile`** is **not** in canonical `template_id`.json. **`opening_text`** is legacy fallback, not the primary opener model.
 
 **Progression advisory (MVP)** — Deterministic, **non-authoritative** layer: computes **`stall_score`** from existing scene signals, maps to **`progression_pressure`**, and may inject **short** Director/character prompt text plus audit metadata. Does **not** write continuity or `CharacterState` (`progression_advisory.py`).
 

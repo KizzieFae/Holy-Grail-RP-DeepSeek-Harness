@@ -152,14 +152,14 @@ If no scene template is selected, use **custom text** or **generated** opening m
 - deterministic authority-based enforcement or hard routing
 - richer freeform role semantics beyond the current flat slot schema
 
-### Optional `progression_profile` (template metadata)
+### Progression advisory parameters (Template-associated support file)
 
-Scene template JSON may include a static **`progression_profile`** block (human-authored, not inferred at runtime) used only by the **Progression Advisory** layer:
+**Progression Advisory** reads a static profile (human-authored, not inferred at runtime) from **`python/data/scene_templates/{template_id}_progression.json`** (Template-associated support file per `../../../AUTHORED_SOURCE_CONTRACT.md` §1), or built-in defaults if the file is absent or invalid. **`progression_profile` is not read** from `{template_id}.json` (**#119**). Payload shape:
 
 - **`advancement_channels`**: list of string channel ids (e.g. `physical_action`, `spatial_shift`, `bureaucratic_followthrough`, `social_reconfiguration`, `consequence`).
 - **`common_stall_pattern`**: short description of the typical stall pattern for authoring context and advisory **note** text.
 
-If omitted, the app uses a small built-in default profile. This does **not** change continuity authority or character state; it only shapes **optional prompt hints** and **audit/debug** fields when stall pressure is computed from existing scene signals. See `../Holy Grail PRD.md` §5.7 and `progression_advisory.py`. **Scene Grounding (settled scene facts, read-only prompts)** is specified in PRD §5.8 and `../../docs/scene-grounding-layer.md`.
+If the support file is absent and the legacy key is absent, the app uses a small built-in default profile. This does **not** change continuity authority or character state; it only shapes **optional prompt hints** and **audit/debug** fields when stall pressure is computed from existing scene signals. See `../Holy Grail PRD.md` §5.7 and `progression_advisory.py`. **Scene Grounding (settled scene facts, read-only prompts)** is specified in PRD §5.8 and `../../docs/scene-grounding-layer.md`.
 
 ### Audit visibility
 

@@ -161,6 +161,19 @@ def test_load_profile_dorm_template() -> None:
     assert "stall" in prof["common_stall_pattern"].lower() or "verbal" in prof[
         "common_stall_pattern"
     ].lower()
+    # Loader reads only {template_id}_progression.json; should match the authored support file shape.
+    assert prof == normalize_progression_profile(
+        {
+            "advancement_channels": [
+                "physical_action",
+                "spatial_shift",
+                "bureaucratic_followthrough",
+                "social_reconfiguration",
+                "consequence",
+            ],
+            "common_stall_pattern": "verbal escalation loop without state change",
+        }
+    )
 
 
 def test_normalize_profile_invalid_channels_fallback() -> None:

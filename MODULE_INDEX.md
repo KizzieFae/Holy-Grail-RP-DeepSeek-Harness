@@ -77,7 +77,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `turn_runner_turn.py` | Single character turn: Director path, character call, validate, Narrator | `app_turn_*`, `response_validation`, `semantic_validation`, `perception_audibility` | Normalizes move audibility after parse; chat append includes `actor` id |
 | `turn_runner_updates.py` | Post-success continuity/orchestration updates | `ContinuityManager`, helpers | |
 | `turn_runner_audit.py` | Character/narrator audit payloads, CTAR / scene mirror / excursion digest / **`continuity_audit_origin`** merge | `audit_ctar`, `audit_runtime_mirrors`, `continuity_audit_origin`, `audit_logger*` | |
-| `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets | `beat_shift_state` (plateau snapshot helper), scene template profile | Advisory only; no continuity writes |
+| `progression_advisory.py` | Deterministic `stall_score`, `progression_advisory` blob, Director/character prompt snippets; `load_progression_profile_for_template_id` reads `{template_id}_progression.json` or defaults (**#119**) | `beat_shift_state` (plateau snapshot helper) | Advisory only; no continuity writes |
 | `progression_enforcement.py` | v1 **structural delta** contract (Q1–Q4) after `process_turn`; gate = beat-shift **or** high progression pressure | `turn_runner_turn`, `beat_shift_state`, `progression_advisory` | No continuity writes; snapshot/restore on retry; reads continuity **`consequences`** only—thin/empty tags are fixed in **`continuity_consequence_classifier.py`**, not by changing Q1–Q4 |
 | `anti_regression_advisory.py` | Ping-pong + post-break / low player-agency → short Director ANTI-REGRESSION block | `progression_advisory` (stall read-only), `director_decisions`, `recent_structured_moves`, session `player_character` / `user_name` | Option A trigger: no `high_stall` OR; orchestration cache only |
 | `beat_shift_state.py` | Pending beat-shift lifecycle; **`stall_score`** threshold → `progression_stall` | `progression_advisory.compute_stall_score`, orchestration state | Unified plateau signal with short-message trigger |
@@ -144,7 +144,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 |--------|----------------|----------------|-------|
 | `scene_lifecycle_start.py` | Start scene, team setup | `scene_template`, `scene_opener` | |
 | `scene_lifecycle_actions.py` | End scene, skip, close, recreate team | `session_lifecycle`, continuity | |
-| `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80) | `data/scene_templates` | Optional `progression_profile` on JSON templates |
+| `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80) | `data/scene_templates` | `list_templates` skips `*_initial_message` / `*_progression` (see **Template-associated support files** in `AUTHORED_SOURCE_CONTRACT.md` §1) |
 | `scene_opener.py` | Opening text / initial message resolution | `autogen_characters` | |
 | `scene_exit_detection.py` | Hard departure signals for continuity | text / moves | |
 | `session_lifecycle_save.py` | Persist session + continuity + audit ids | `SessionManager` | |

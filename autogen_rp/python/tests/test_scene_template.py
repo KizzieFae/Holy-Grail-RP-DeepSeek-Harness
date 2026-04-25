@@ -196,6 +196,47 @@ def test_scene_template_manager_ignores_template_owned_initial_message_files(
     ]
 
 
+def test_scene_template_manager_ignores_template_owned_progression_support_files(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "arkham_asylum_cell_intake.json").write_text(
+        json.dumps(
+            {
+                "template_id": "arkham_asylum_cell_intake",
+                "premise": "A new arrival is locked into a cell.",
+                "opening_text": "The cell door closes.",
+                "anchor_role_name": "new_arrival",
+                "role_slots": [
+                    {
+                        "role_name": "new_arrival",
+                        "required": True,
+                        "presence_constraint": "must_remain",
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "arkham_asylum_cell_intake_progression.json").write_text(
+        json.dumps(
+            {
+                "advancement_channels": ["consequence"],
+                "common_stall_pattern": "test stall pattern",
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    manager = SceneTemplateManager(tmp_path)
+    templates = manager.list_templates()
+
+    assert [template.template_id for template in templates] == [
+        "arkham_asylum_cell_intake"
+    ]
+
+
 def test_arkham_templates_keep_new_arrival_optional() -> None:
     templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
     manager = SceneTemplateManager(templates_dir)

@@ -72,7 +72,6 @@ class SceneTemplate:
     role_slots: list[SceneRoleSlot]
     anchor_role_name: str = ""
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
-    progression_profile: dict[str, Any] | None = None
     sleeping_surface_slots: list[str] = field(default_factory=list)
     location_entry_slots: list[str] = field(default_factory=list)
 
@@ -87,8 +86,6 @@ class SceneTemplate:
             "sleeping_surface_slots": list(self.sleeping_surface_slots),
             "location_entry_slots": list(self.location_entry_slots),
         }
-        if self.progression_profile is not None:
-            out["progression_profile"] = dict(self.progression_profile)
         return out
 
     def get_role_slot(self, role_name: str) -> SceneRoleSlot | None:
@@ -117,10 +114,8 @@ class SceneTemplate:
             for item in data.get("initial_messages", [])
             if isinstance(item, dict)
         ]
-        raw_prog = data.get("progression_profile")
-        progression_profile = (
-            dict(raw_prog) if isinstance(raw_prog, dict) else None
-        )
+        # Template Exclude: progression_profile is not read from canonical template JSON; use
+        # {template_id}_progression.json and progression_advisory.load_progression_profile_for_template_id.
         sleeping_surface_slots = [
             str(item).strip()
             for item in data.get("sleeping_surface_slots", [])
@@ -153,7 +148,6 @@ class SceneTemplate:
             role_slots=role_slots,
             anchor_role_name=anchor_slot.role_name,
             initial_messages=initial_messages,
-            progression_profile=progression_profile,
             sleeping_surface_slots=sleeping_surface_slots,
             location_entry_slots=location_entry_slots,
         )
@@ -196,6 +190,8 @@ class SceneTemplateManager:
         templates: list[SceneTemplate] = []
         for path in sorted(self.templates_dir.glob("*.json")):
             if path.stem.endswith("_initial_message"):
+                continue
+            if path.stem.endswith("_progression"):
                 continue
             try:
                 templates.append(self.load_template(path.stem))
