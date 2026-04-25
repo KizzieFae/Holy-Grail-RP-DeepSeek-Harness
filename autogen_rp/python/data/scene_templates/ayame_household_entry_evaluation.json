@@ -2,7 +2,6 @@
   "template_id": "ayame_household_entry_evaluation",
   "anchor_role_name": "applicant",
   "premise": "A newcomer is brought into a controlled household space for evaluation while the host and at least one established presence remain actively involved.",
-  "opening_text": "The household receives a newcomer inside a carefully controlled interior space. The host directs the first exchange, the applicant is under direct evaluation, and any assigned guard remains visibly present rather than fading into the background.",
   "location_entry_slots": [
     "foyer",
     "evaluation_room",

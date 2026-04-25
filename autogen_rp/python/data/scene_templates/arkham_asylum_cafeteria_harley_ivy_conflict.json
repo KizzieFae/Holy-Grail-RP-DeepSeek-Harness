@@ -2,7 +2,6 @@
   "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
   "anchor_role_name": "new_arrival",
   "premise": "Witnesses raise the cost of backing down, so pairwise challenges tend to accelerate versus a private setting. Peripheral cast can hijack momentum by tying the conflict to a visible object or slight the room will treat as shared evidence.",
-  "opening_text": "Evening meal in Arkham's cafeteria is a ritual of noise, surveillance, and resentment. When Harley and Ivy turn their private fault lines outward, the whole room becomes an audience and potential casualty.",
   "role_slots": [
     {
       "role_name": "new_arrival",

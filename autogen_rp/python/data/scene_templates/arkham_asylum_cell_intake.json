@@ -2,7 +2,6 @@
   "template_id": "arkham_asylum_cell_intake",
   "anchor_role_name": "new_arrival",
   "premise": "Before staff intervene, interaction follows informal hierarchy over intake labels—whoever frames the space as already governed sets tempo. A conspicuous disruption or safety-risk beat is what most reliably pulls formal enforcement to reset or ratify control.",
-  "opening_text": "The steel door shuts on a new arrival inside Arkham Asylum's female ward. Fluorescent light buzzes over stained walls, distant shouting leaks through vents, and the room already belongs more to the inmate who knows the routine than to the person who just got dropped into it.",
   "role_slots": [
     {
       "role_name": "new_arrival",

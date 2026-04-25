@@ -1,0 +1,8 @@
+{
+  "label": "Household entry evaluation - opening",
+  "description": "Controlled interior evaluation: host, applicant, and visible guard frame the first exchange.",
+  "text": "The household receives a newcomer inside a carefully controlled interior space. The host directs the first exchange, the applicant is under direct evaluation, and any assigned guard remains visibly present rather than fading into the background.",
+  "tags": ["ayame", "household", "evaluation", "applicant", "host"],
+  "location": "Controlled household — interior / evaluation",
+  "time": "Entry / evaluation"
+}

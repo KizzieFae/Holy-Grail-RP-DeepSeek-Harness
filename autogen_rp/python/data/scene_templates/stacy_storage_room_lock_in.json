@@ -2,7 +2,6 @@
   "template_id": "stacy_storage_room_lock_in",
   "anchor_role_name": "trapped_target",
   "premise": "A locked sports storage room becomes an overnight pressure cooker where Stacy's social cruelty and physical dominance bear down on a trapped target with no witnesses and no way out until morning.",
-  "opening_text": "The storage room is cramped, stale, and sealed for the night. The dominant cheerleader still has sweat on her skin and fury in her posture, while the trapped target has nowhere to retreat and no one coming to help before morning. With no signal, no bathroom, and no privacy, the room becomes a sealed stage for intimidation, humiliation, and escalating control.",
   "role_slots": [
     {
       "role_name": "dominant_cheerleader",

@@ -6,6 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
+from scene_opener import OpenerManager
 from scene_template import SceneTemplateManager, validate_role_assignments
 
 
@@ -286,8 +287,11 @@ def test_celina_recovery_template_stays_grounded_and_slow_recovery() -> None:
         "Do not assume hidden forms, supernatural recovery, or specialized occult knowledge"
         in template.premise
     )
-    assert "fragile stabilization under pressure" in template.opening_text
+    opener_mgr = OpenerManager(templates_dir=templates_dir)
+    opener = opener_mgr.get_default_template_opener("celina_apartment_recovery_watch")
+    assert opener is not None
+    assert "fragile stabilization under pressure" in opener.text
     assert (
         "unusual traits or impossible-seeming developments carrying real emotional weight"
-        in template.opening_text
+        in opener.text
     )
