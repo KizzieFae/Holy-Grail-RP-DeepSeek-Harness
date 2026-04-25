@@ -59,7 +59,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `app_turn_helpers.py` | `app_turn_director`, `app_turn_prompting`, `app_turn_rendering`, `app_turn_selector`, `app_turn_audit` |
 | `app_state_helpers.py` | `app_state_audit`, `app_state_characters`, `app_state_continuity`, `app_state_runtime`, `app_state_scene`, `app_state_session` |
 | `app_memory_helpers.py` | `app_memory_basics`, `app_memory_summary`, `app_memory_cross_session`, `app_memory_recording`, `app_message_processing` |
-| `ui_rendering.py` | `ui_sidebar`, `ui_chat`, `ui_debug` |
+| `ui_rendering.py` | `ui_sidebar`, `ui_chat` |
 | `ui_sidebar.py` | `ui_sidebar_session`, `ui_sidebar_player`, `ui_sidebar_scene_setup`, `ui_sidebar_opening` |
 | `scene_lifecycle.py` | `scene_lifecycle_start`, `scene_lifecycle_actions` |
 | `session_lifecycle.py` | `session_lifecycle_save`, `session_lifecycle_load` |
@@ -198,7 +198,6 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `ui_sidebar_player.py` | Player character selection | cards | |
 | `ui_sidebar_scene_setup.py` | Cast, template, roles, audit toggle | `scene_template` | |
 | `ui_sidebar_opening.py` | Template opener list, multi-opener selection, previews (GitHub #101); template defines available openers, bootstrap applies selection, template/custom/generated only—no `character_asset` in Streamlit (GitHub #108) | `scene_opener` | |
-| `ui_debug.py` | Debug panels | state | |
 
 ---
 

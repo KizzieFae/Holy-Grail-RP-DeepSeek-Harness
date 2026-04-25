@@ -1,6 +1,5 @@
 from typing import Any, Awaitable, Callable
 
-from ui_debug import render_debug_panel
 from ui_sidebar_player import render_player_controls
 from ui_sidebar_scene_setup import render_scene_setup_controls
 from ui_sidebar_session import (
@@ -57,7 +56,3 @@ def render_sidebar(
             resolve_character_file_fn=resolve_character_file_fn,
             start_scene_fn=start_scene_fn,
         )
-
-        st_module.divider()
-        render_debug_panel(st_module=st_module)
-        st_module.divider()

@@ -78,7 +78,7 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
    - Click "Start Scene" to begin
    - Type your messages in the chat input
    - Bot-controlled characters respond dynamically; the per-round cap matches the selected cast size (see **Operating Rules** above; **#103**)
-   - **Debug** (sidebar): enable **Debug Mode** to see read-only **runtime / evaluation** status (retrieval index, episodic memory flag, audit/template hints)—not shown in the main scene setup column (**#103**)
+   - **Runtime / evaluation** (retrieval index, episodic memory flag, template hints): there is no in-app debug panel for these (**#105**). Use **env** (e.g. `RP_RETRIEVED_CONTEXT_INDEX`, `RP_EPISODIC_MEMORY`), **audits** when audit is enabled, or **headless** runs. **Audit logging** for the scene is still toggled in **scene setup** in the sidebar.
    - Sessions auto-save after each turn
 
 ## Scene Templates V1
@@ -177,7 +177,7 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 - `app.py` - Thin Streamlit compatibility/composition entrypoint that preserves stable wrapper names for tests and callers
 - `app_turn_helpers.py` - Compatibility export layer over `app_turn_director.py`, `app_turn_prompting.py`, `app_turn_rendering.py`, `app_turn_selector.py`, and `app_turn_audit.py`
 - `app_state_helpers.py` - Compatibility export layer over `app_state_audit.py`, `app_state_characters.py`, `app_state_continuity.py`, `app_state_runtime.py`, `app_state_scene.py`, and `app_state_session.py`
-- `ui_rendering.py` - Compatibility export layer for `ui_sidebar.py`, `ui_chat.py`, and `ui_debug.py`
+- `ui_rendering.py` - Compatibility export layer for `ui_sidebar.py` and `ui_chat.py`
 - `ui_sidebar.py` - Sidebar composition layer over `ui_sidebar_session.py`, `ui_sidebar_player.py`, `ui_sidebar_scene_setup.py`, and `ui_sidebar_opening.py`
 - `app_memory_helpers.py` - Compatibility export layer over `app_memory_basics.py`, `app_memory_summary.py`, `app_memory_cross_session.py`, `app_memory_recording.py`, and `app_message_processing.py`
 - `scene_lifecycle.py` - Compatibility export layer over `scene_lifecycle_start.py` and `scene_lifecycle_actions.py`
