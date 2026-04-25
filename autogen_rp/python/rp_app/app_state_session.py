@@ -42,7 +42,6 @@ def init_session_state(*, st_module: Any) -> None:
         "player_character": None,
         "pending_forced_speaker": None,
         "forced_speaker_consumed": False,
-        "debug_mode": False,
         "selector_decisions": [],
         "rejected_messages": [],
         "scene_owner": None,
