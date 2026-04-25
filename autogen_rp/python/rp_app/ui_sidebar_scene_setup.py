@@ -39,9 +39,8 @@ def render_scene_setup_controls(
         st_module.session_state.get("selected_chars") if scene_started else None
     )
     if not default_selected_chars:
-        default_selected_chars = (
-            npc_options[:2] if len(npc_options) >= 2 else npc_options
-        )
+        # Issue #104: fresh pre-start has no implicit default; no sorted [:2] preselection.
+        default_selected_chars = []
     default_selected_chars = [c for c in default_selected_chars if c in npc_options]
 
     selected_chars = st_module.multiselect(

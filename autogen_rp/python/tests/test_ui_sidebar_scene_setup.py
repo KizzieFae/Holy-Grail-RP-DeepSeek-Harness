@@ -198,6 +198,41 @@ def test_scene_setup_does_not_seed_bot_reply_limit_when_none(
     assert "Scene Owner" not in st.subheader_calls
 
 
+def test_fresh_pre_start_uses_empty_npc_multiselect_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Issue #104: no implicit sorted two-NPC default; pre-start default is empty."""
+    monkeypatch.setattr(
+        scene_setup, "load_character_names", lambda **_kwargs: ["A", "B", "C"]
+    )
+    monkeypatch.setattr(scene_setup, "render_opening_controls", lambda **_kwargs: None)
+
+    st = FakeStreamlit()
+    st.session_state.update(
+        {
+            "scene_started": False,
+            "bot_reply_limit": None,
+            "player_character": None,
+            "opening_mode": "custom",
+            "audit_enabled": False,
+        }
+    )
+
+    scene_setup.render_scene_setup_controls(
+        st_module=st,
+        available=["a", "b", "c"],
+        character_loader_cls=object(),
+        has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
+        scene_template_manager_cls=FakeTemplateManager,
+        opener_manager_cls=object(),
+        resolve_character_file_fn=lambda *_args, **_kwargs: None,
+        start_scene_fn=_unused_start_scene,
+    )
+
+    assert st.multiselect_calls
+    assert st.multiselect_calls[0]["default"] == []
+
+
 def test_scene_setup_pre_start_leaves_bot_reply_limit_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -237,7 +272,7 @@ def test_scene_setup_pre_start_leaves_bot_reply_limit_none(
 def test_scene_setup_syncs_scene_owner_without_scene_owner_ui(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Issue #102: internal scene_owner defaults to first cast display name pre-start."""
+    """Issue #102: internal scene_owner defaults to first cast display name pre-start (explicit selection)."""
     monkeypatch.setattr(
         scene_setup, "load_character_names", lambda **_kwargs: ["Alpha", "Beta", "Gamma"]
     )

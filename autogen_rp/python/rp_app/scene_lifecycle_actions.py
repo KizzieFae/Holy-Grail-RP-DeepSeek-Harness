@@ -1,6 +1,13 @@
 from typing import Any, Awaitable, Callable
 
 
+def _clear_fresh_scene_setup_state(st_module: Any) -> None:
+    """Reset NPC multiselect carry-over after a scene is closed (Issue #104)."""
+    st_module.session_state["selected_chars"] = []
+    st_module.session_state.pop("npc_selection", None)
+    st_module.session_state["scene_owner"] = None
+
+
 def get_scene_status(
     *, scene_status: str | None, scene_ended: bool, scene_started: bool
 ) -> str:
@@ -25,6 +32,7 @@ async def close_active_scene_if_needed(
     await save_current_session_fn(scene_status="closed", scene_closed_reason=reason)
     st_module.session_state["scene_started"] = False
     st_module.session_state["scene_ended"] = True
+    _clear_fresh_scene_setup_state(st_module)
 
 
 async def skip_turn(
@@ -88,3 +96,4 @@ async def end_scene(
         scene_status="closed", scene_closed_reason="user_ended"
     )
     await shutdown_runtime_resources_fn()
+    _clear_fresh_scene_setup_state(st_module)

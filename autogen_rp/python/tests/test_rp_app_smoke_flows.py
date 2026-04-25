@@ -1238,6 +1238,9 @@ async def test_end_scene_smoke_closes_scene_saves_and_shuts_down(
     session_state = init_fake_session(fake_streamlit)
     session_state["session_id"] = "session_42"
     session_state["scene_started"] = True
+    session_state["selected_chars"] = ["a.json"]
+    session_state["npc_selection"] = ["a"]
+    session_state["scene_owner"] = "CarryoverOwner"
     save_calls: list[tuple[str | None, str | None]] = []
     shutdown_calls: list[str] = []
 
@@ -1261,6 +1264,9 @@ async def test_end_scene_smoke_closes_scene_saves_and_shuts_down(
     assert "session_42" in str(session_state["chat_history"][-1]["content"])
     assert save_calls == [("closed", "user_ended")]
     assert shutdown_calls == ["shutdown"]
+    assert session_state.get("selected_chars") == []
+    assert "npc_selection" not in session_state
+    assert session_state.get("scene_owner") is None
 
 
 @pytest.mark.asyncio

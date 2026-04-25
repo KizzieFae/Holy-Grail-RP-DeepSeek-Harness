@@ -71,7 +71,8 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
 
 3. **Use the interface:**
    - Choose your character as either a custom persona (name only) or a predefined character
-   - Select the bot-controlled scene characters from the sidebar
+   - For a **new** scene, the **NPC** multiselect starts **empty**; select one or more bot characters, then use **Start Scene** (GitHub **#104**)
+   - **Load Session** restores a saved run’s cast as before; headless / scenario / bootstrap entry points are unchanged
    - Optionally choose a scene template and assign each selected character to an explicit role
    - For **template-asset** opening mode, pick an **Opener** when more than one exists for that **template** (a single opener is auto-selected; see **`ui_sidebar_opening`**, GitHub **#101**; **`character_asset`** is not used on Streamlit Start Scene—**#108**)
    - Click "Start Scene" to begin
