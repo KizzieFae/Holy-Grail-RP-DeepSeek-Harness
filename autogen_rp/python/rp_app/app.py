@@ -809,7 +809,6 @@ def render_sidebar() -> None:
         get_available_characters_fn=get_available_characters,
         character_loader_cls=CharacterLoader,
         has_player_character_conflict_fn=has_player_character_conflict,
-        resolve_bot_reply_limit_fn=resolve_bot_reply_limit,
         scene_template_manager_cls=SceneTemplateManager,
         opener_manager_cls=OpenerManager,
         resolve_character_file_fn=resolve_character_file,

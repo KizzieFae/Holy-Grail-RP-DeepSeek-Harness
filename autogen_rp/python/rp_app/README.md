@@ -17,7 +17,7 @@ A Streamlit-based multi-character roleplay system using AutoGen.
 - The user is present in-scene but remains separate from the LLM actor pool while directly controlled
 - Any character-profile, including the user's persona if represented as a character card, may be either player-controlled or bot-controlled per scene, but never both at once
 - A player-controlled character does not make an LLM call, and the user's post ends the round
-- Default bot replies per user turn equals the number of active bot participants, with user override allowed
+- Default bot replies per user turn equals the number of active bot participants; the cap is **derived** from the selected NPC count (set at Start Scene / session load), not configured in the primary scene setup UI (GitHub **#103**)
 - The same character should not act twice in the same response cycle
 - Ending a scene saves and closes it; starting a new scene closes the current one first; interrupted active sessions are finalized on next startup
 
@@ -70,14 +70,14 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
    ```
 
 3. **Use the interface:**
-   - Choose your character as either a custom persona or a predefined character
+   - Choose your character as either a custom persona (name only) or a predefined character
    - Select the bot-controlled scene characters from the sidebar
    - Optionally choose a scene template and assign each selected character to an explicit role
    - For **template-asset** opening mode, pick an **Opener** when more than one exists for that **template** (a single opener is auto-selected; see **`ui_sidebar_opening`**, GitHub **#101**; **`character_asset`** is not used on Streamlit Start Scene—**#108**)
-   - Adjust bot replies per round if desired
    - Click "Start Scene" to begin
    - Type your messages in the chat input
-   - Bot-controlled characters respond dynamically according to the current round limit
+   - Bot-controlled characters respond dynamically; the per-round cap matches the selected cast size (see **Operating Rules** above; **#103**)
+   - **Debug** (sidebar): enable **Debug Mode** to see read-only **runtime / evaluation** status (retrieval index, episodic memory flag, audit/template hints)—not shown in the main scene setup column (**#103**)
    - Sessions auto-save after each turn
 
 ## Scene Templates V1
@@ -335,7 +335,7 @@ Current design direction for long-session continuity:
 - **Scene templates V1** with explicit cast-role assignment and deterministic required-role validation
 - **Presence constraints** so `must_remain` characters stay structurally present and auditable
 - **Session persistence** - save and resume conversations
-- **Dynamic bot replies per round** with user-configurable limits capped by active bot participants
+- **Per-round bot turn cap** derived from active bot participants (no primary-UI limit control; **#103**)
 - **Session list** - see and resume previous sessions
 - **Auto-generated session IDs** based on characters and timestamp
 - **Audit logging** - enable in sidebar to capture scene data for analysis

@@ -46,14 +46,4 @@ def render_player_controls(
         if user_name:
             st_module.session_state["user_name"] = user_name
 
-        user_desc = st_module.text_area(
-            "Your Description (optional)",
-            value=st_module.session_state.get("user_description", ""),
-            placeholder="A weary warrior seeking shelter...",
-            height=68,
-            key="user_desc_input",
-        )
-        if user_desc:
-            st_module.session_state["user_description"] = user_desc
-
     return available

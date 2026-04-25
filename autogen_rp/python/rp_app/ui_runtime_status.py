@@ -1,7 +1,7 @@
-"""Read-only runtime / evaluation status for Streamlit (UI sync pass 1).
+"""Read-only runtime / evaluation status for Streamlit.
 
-Single source for sidebar status strip and debug panel. Uses the same backend
-interpretation as the turn pipeline — no duplicate env rules.
+Used by the **Debug** panel (`ui_debug.py`). Primary scene setup no longer embeds
+this block (GitHub #103). Same env/session interpretation as the turn pipeline.
 """
 
 from __future__ import annotations

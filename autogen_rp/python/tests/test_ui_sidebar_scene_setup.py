@@ -148,9 +148,6 @@ def test_scene_setup_does_not_change_bot_reply_limit_mid_scene(
         available=["a", "b", "c"],
         character_loader_cls=object(),
         has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
-        resolve_bot_reply_limit_fn=lambda active_bot_count, configured_limit: min(
-            active_bot_count, configured_limit or active_bot_count
-        ),
         scene_template_manager_cls=FakeTemplateManager,
         opener_manager_cls=object(),
         resolve_character_file_fn=lambda *_args, **_kwargs: None,
@@ -165,9 +162,10 @@ def test_scene_setup_does_not_change_bot_reply_limit_mid_scene(
     assert "Scene Owner" not in st.subheader_calls
 
 
-def test_scene_setup_sets_bot_reply_limit_once_if_missing(
+def test_scene_setup_does_not_seed_bot_reply_limit_when_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Issue #103 Model A: UI does not write ``bot_reply_limit``; Start Scene will."""
     monkeypatch.setattr(
         scene_setup, "load_character_names", lambda **_kwargs: ["A", "B", "C"]
     )
@@ -190,17 +188,50 @@ def test_scene_setup_sets_bot_reply_limit_once_if_missing(
         available=["a", "b", "c"],
         character_loader_cls=object(),
         has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
-        resolve_bot_reply_limit_fn=lambda active_bot_count, configured_limit: min(
-            active_bot_count, configured_limit or active_bot_count
-        ),
         scene_template_manager_cls=FakeTemplateManager,
         opener_manager_cls=object(),
         resolve_character_file_fn=lambda *_args, **_kwargs: None,
         start_scene_fn=_unused_start_scene,
     )
 
-    assert st.session_state["bot_reply_limit"] == 3
+    assert st.session_state.get("bot_reply_limit") is None
     assert "Scene Owner" not in st.subheader_calls
+
+
+def test_scene_setup_pre_start_leaves_bot_reply_limit_none(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Multiple NPC changes before Start Scene do not require seeding the limit (Issue #103)."""
+    monkeypatch.setattr(
+        scene_setup, "load_character_names", lambda **_kwargs: ["A", "B", "C"]
+    )
+    monkeypatch.setattr(scene_setup, "render_opening_controls", lambda **_kwargs: None)
+
+    st = FakeStreamlit()
+    st.session_state.update(
+        {
+            "scene_started": False,
+            "npc_selection": ["a", "b", "c"],
+            "bot_reply_limit": None,
+            "player_character": None,
+            "opening_mode": "custom",
+            "audit_enabled": False,
+        }
+    )
+    st.session_state["npc_selection"] = ["a", "b", "c"]
+
+    scene_setup.render_scene_setup_controls(
+        st_module=st,
+        available=["a", "b", "c"],
+        character_loader_cls=object(),
+        has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
+        scene_template_manager_cls=FakeTemplateManager,
+        opener_manager_cls=object(),
+        resolve_character_file_fn=lambda *_args, **_kwargs: None,
+        start_scene_fn=_unused_start_scene,
+    )
+
+    assert st.session_state.get("bot_reply_limit") is None
 
 
 def test_scene_setup_syncs_scene_owner_without_scene_owner_ui(
@@ -228,7 +259,6 @@ def test_scene_setup_syncs_scene_owner_without_scene_owner_ui(
         available=["a", "b", "c"],
         character_loader_cls=object(),
         has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
-        resolve_bot_reply_limit_fn=lambda ac, cl: min(ac, cl or ac),
         scene_template_manager_cls=FakeTemplateManager,
         opener_manager_cls=object(),
         resolve_character_file_fn=lambda *_args, **_kwargs: None,
@@ -264,7 +294,6 @@ def test_scene_setup_preserves_scene_owner_when_still_in_cast(
         available=["a", "b", "c"],
         character_loader_cls=object(),
         has_player_character_conflict_fn=lambda *_args, **_kwargs: False,
-        resolve_bot_reply_limit_fn=lambda ac, cl: min(ac, cl or ac),
         scene_template_manager_cls=FakeTemplateManager,
         opener_manager_cls=object(),
         resolve_character_file_fn=lambda *_args, **_kwargs: None,

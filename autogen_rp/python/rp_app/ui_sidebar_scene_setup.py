@@ -1,14 +1,12 @@
 import asyncio
 from typing import Any, Awaitable, Callable
 
-from app_state_session import get_bot_reply_limit_widget_key
 from bootstrap_composition import (
     STREAMLIT_OPENING_MODE_GENERATED,
     STREAMLIT_OPENING_MODE_CUSTOM,
     STREAMLIT_OPENING_MODE_TEMPLATE,
     streamlit_opening_mode_options_for_ui,
 )
-from ui_runtime_status import runtime_evaluation_status_markdown
 from ui_sidebar_opening import load_character_names, render_opening_controls
 
 
@@ -18,22 +16,11 @@ def render_scene_setup_controls(
     available: list[str],
     character_loader_cls: Any,
     has_player_character_conflict_fn: Callable[[list[str], str | None], bool],
-    resolve_bot_reply_limit_fn: Callable[[int, int | None], int],
     scene_template_manager_cls: Any,
     opener_manager_cls: Any,
     resolve_character_file_fn: Callable[[Any, str], str | None],
     start_scene_fn: Callable[[list[str]], Awaitable[bool]],
 ) -> None:
-    st_module.subheader("Runtime / Evaluation Status")
-    st_module.caption(
-        "Read-only. Uses the same rules as the runtime: `get_index_path_from_env()`, "
-        "`is_episodic_memory_enabled()`, and your choices below. "
-        "Restart the Streamlit app if you change environment variables outside the app."
-    )
-    st_module.markdown(runtime_evaluation_status_markdown(st_module=st_module))
-
-    st_module.divider()
-
     st_module.subheader("NPCs in Scene")
     st_module.caption("Select the characters that should respond in this scene")
 
@@ -71,42 +58,6 @@ def render_scene_setup_controls(
     ):
         st_module.error(
             "The character you are playing cannot also be selected as a bot in this scene."
-        )
-
-    configured_bot_count = len(selected_chars) or len(
-        st_module.session_state.get("characters", [])
-    )
-    if (
-        configured_bot_count > 0
-        and st_module.session_state.get("bot_reply_limit") is None
-    ):
-        st_module.session_state["bot_reply_limit"] = resolve_bot_reply_limit_fn(
-            configured_bot_count,
-            configured_bot_count,
-        )
-
-    if configured_bot_count > 0:
-        st_module.subheader("Bot Replies Per Round")
-        st_module.caption(
-            "Hard ceiling on how many NPC turns run after each user message."
-        )
-
-        configured_limit = st_module.session_state.get("bot_reply_limit")
-        if isinstance(configured_limit, int):
-            default_limit = resolve_bot_reply_limit_fn(
-                configured_bot_count,
-                configured_limit,
-            )
-        else:
-            default_limit = configured_bot_count
-
-        st_module.number_input(
-            "Max replies",
-            min_value=1,
-            max_value=configured_bot_count,
-            value=int(default_limit),
-            step=1,
-            key=get_bot_reply_limit_widget_key(st_module=st_module),
         )
 
     if selected_chars:

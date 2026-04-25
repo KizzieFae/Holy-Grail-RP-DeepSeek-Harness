@@ -8,10 +8,14 @@ def get_current_bot_reply_limit(
     get_bot_reply_limit_widget_key_fn,
     resolve_bot_reply_limit_fn,
 ) -> int:
+    """Return the effective per-round cap for ``active_bot_count`` bot agents.
+
+    ``bot_reply_limit`` may be ``None`` before Start Scene (Issue #103); the resolver
+    then yields ``active_bot_count`` (all bots). No Streamlit number_input exists anymore,
+    so we do not read ``bot_reply_limit_widget_*`` session keys (stale values must not apply).
+    """
+    _ = get_bot_reply_limit_widget_key_fn
     configured_limit = st_module.session_state.get("bot_reply_limit")
-    widget_limit = st_module.session_state.get(get_bot_reply_limit_widget_key_fn())
-    if isinstance(widget_limit, int):
-        configured_limit = widget_limit
     if isinstance(configured_limit, int):
         return resolve_bot_reply_limit_fn(active_bot_count, configured_limit)
     return resolve_bot_reply_limit_fn(active_bot_count, None)
@@ -34,7 +38,6 @@ def init_session_state(*, st_module: Any) -> None:
         "scene_started": False,
         "scene_ended": False,
         "user_name": "Traveler",
-        "user_description": "A mysterious newcomer",
         "team_state": None,
         "player_character": None,
         "pending_forced_speaker": None,

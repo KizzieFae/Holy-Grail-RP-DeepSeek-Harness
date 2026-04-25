@@ -13,7 +13,7 @@ def render_debug_panel(*, st_module: Any) -> None:
     if debug_mode:
         st_module.caption("Debug information for troubleshooting")
 
-        st_module.markdown("**Runtime / evaluation (same as sidebar strip):**")
+        st_module.markdown("**Runtime / evaluation (read-only):**")
         st_module.markdown(runtime_evaluation_status_markdown(st_module=st_module))
         st_module.divider()
 

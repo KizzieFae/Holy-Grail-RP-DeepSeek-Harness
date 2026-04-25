@@ -13,6 +13,13 @@ How to **approach problems** in the Holy Grail RP runtime without fixing the wro
 
 ---
 
+## Streamlit scene setup vs debug (Issue #103)
+
+- **Per-round NPC turn cap** (`bot_reply_limit`): derived from the selected cast size at **Start Scene** / session load (`resolve_bot_reply_limit`); not configurable from the primary scene setup column.
+- **Runtime / evaluation readouts** (authored retrieval path, episodic memory flag, template/audit hints): enable **Debug Mode** in the sidebar (`ui_debug.py`); built from `ui_runtime_status.py`—not duplicated in the main setup path.
+
+---
+
 ## Suggested diagnosis order (runtime)
 
 Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workflows.md`:

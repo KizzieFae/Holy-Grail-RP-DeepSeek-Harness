@@ -14,6 +14,7 @@ from app import (
     has_player_character_conflict,
     resolve_bot_reply_limit,
 )
+from app_state_session import get_current_bot_reply_limit
 from character_state import CharacterState
 from continuity_state import CanonAnchor
 from prompt_builders import build_character_turn_prompt
@@ -182,6 +183,35 @@ def test_resolve_bot_reply_limit_defaults_to_active_bot_count() -> None:
 
 def test_resolve_bot_reply_limit_clamps_to_available_bots() -> None:
     assert resolve_bot_reply_limit(3, 5) == 3
+
+
+def test_get_current_bot_reply_limit_none_ignores_stale_widget_issue_103() -> None:
+    """Orphan ``bot_reply_limit_widget_*`` keys must not cap when session limit is None."""
+    st = SimpleNamespace(
+        session_state={"bot_reply_limit": None, "bot_reply_limit_widget_0": 1}
+    )
+    assert (
+        get_current_bot_reply_limit(
+            st_module=st,
+            active_bot_count=3,
+            get_bot_reply_limit_widget_key_fn=lambda: "bot_reply_limit_widget_0",
+            resolve_bot_reply_limit_fn=resolve_bot_reply_limit,
+        )
+        == 3
+    )
+
+
+def test_get_current_bot_reply_limit_uses_session_int() -> None:
+    st = SimpleNamespace(session_state={"bot_reply_limit": 2})
+    assert (
+        get_current_bot_reply_limit(
+            st_module=st,
+            active_bot_count=3,
+            get_bot_reply_limit_widget_key_fn=lambda: "bot_reply_limit_widget_0",
+            resolve_bot_reply_limit_fn=resolve_bot_reply_limit,
+        )
+        == 2
+    )
 
 
 def test_parse_director_decision_accepts_available_actor() -> None:
