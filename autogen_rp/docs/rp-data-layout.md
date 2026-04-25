@@ -66,7 +66,7 @@ python/
 
 | Item | Description |
 |------|-------------|
-| `*.json` (excluding index) | One file per RP session id: team/agent state, chat history, serialized `character_states`, `continuity_state`, memory buckets, scene status, audit session numbers, etc. |
+| `*.json` (excluding index) | One file per RP session id: team/agent state, chat history, serialized `character_states`, `continuity_state`, memory buckets, scene status, audit session numbers, etc. **New** sessions use an **opaque UUIDv4** string as `session_id` / filename stem ([Issue #109](https://github.com/KizzieFae/Holy_Grail_RP/issues/109)). **Legacy** files may retain older cast+timestamp-shaped stems; load by stored `session_id` as-is (no migration). |
 | `_session_index.json` | Cached index for listing/resuming sessions (versioned in code: `SessionManager`) |
 
 **Read by:** `SessionManager`, `session_lifecycle_load.py`, startup recovery in `app_bootstrap.py`.
@@ -81,7 +81,7 @@ Each `{session_id}.json` file is written by `SessionManager.save_session` and co
 
 | Field | Role |
 |-------|------|
-| `session_id` | Filename key and identifier in UI |
+| `session_id` | Filename key and identifier in UI — **opaque** UUIDv4 for new saves (#109); legacy shapes may still exist on disk |
 | `saved_at` | UTC ISO timestamp |
 | `characters` | Cast names for this session |
 | `team_state` | Serialized AutoGen team state (`team.save_state()`) |
@@ -89,7 +89,16 @@ Each `{session_id}.json` file is written by `SessionManager.save_session` and co
 | `chat_history` | Messages for replay in UI |
 | `metadata` | Extensible bag (see below) |
 
-**`metadata`** (populated from `session_lifecycle_save.py` among others) typically includes: `summary`, `character_states`, `memory_buckets`, `bot_reply_limit`, `continuity_state`, `player_control_mode`, `scene_status`, `scene_closed_reason`, audit counters (`audit_session_number`, `audit_round_number`, `audit_turn_number`), `audit_enabled`, `scene_owner` / `audit_session_owner` (normalized session/run owner label for audits and related surfaces—not opener scope or continuity authority; see [Issue #107](https://github.com/KizzieFae/Holy_Grail_RP/issues/107)). When the **Scene Grounding** MVP is implemented, expect a scene-scoped **`scene_grounding`** (or equivalent) blob: **prompt-facing derived facts**, not a second continuity authority — see [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8 and [scene-grounding-layer.md](./scene-grounding-layer.md). **Trust the code** for the current full set.
+### Audit identity in `metadata` (Issue #106)
+
+| Subfield | Role |
+|----------|------|
+| `audit_session_owner` | **Canonical audit identity** (required for any audit-supported session). Set at **ingress** (Streamlit, headless, or from a save that already persisted this field). Used for audit filenames, manifest / narrative / summary `session_owner` strings. **No** inference from `scene_owner`, cast, or display names. [Issue #106](https://github.com/KizzieFae/Holy_Grail_RP/issues/106). **Streamlit (auditing on):** deterministic slug of opaque `session_id` only (#109). **Headless:** unchanged scenario/harness/ad-hoc labels (#109). |
+| `scene_owner` | **UI / session / narrator context only** (e.g. display, packets). **Not** a substitute for `audit_session_owner` and **not** a fallback if `audit_session_owner` is missing. [Issue #107](https://github.com/KizzieFae/Holy_Grail_RP/issues/107) |
+
+**Load behavior:** `audit_session_owner` is **required** to treat a session as audit-supported. Saves that lack it (legacy) **cannot** be audited: auditing is **disabled** on load; there is **no** backfill from `scene_owner` (archival only, not migration).
+
+**`metadata`** (populated from `session_lifecycle_save.py` among others) also typically includes: `summary`, `character_states`, `memory_buckets`, `bot_reply_limit`, `continuity_state`, `player_control_mode`, `scene_status`, `scene_closed_reason`, audit counters (`audit_session_number`, `audit_round_number`, `audit_turn_number`), `audit_enabled`, and the audit fields above. When the **Scene Grounding** MVP is implemented, expect a scene-scoped **`scene_grounding`** (or equivalent) blob: **prompt-facing derived facts**, not a second continuity authority — see [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8 and [scene-grounding-layer.md](./scene-grounding-layer.md). **Trust the code** for the current full set.
 
 ### When sessions are saved
 

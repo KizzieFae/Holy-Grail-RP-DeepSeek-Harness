@@ -897,7 +897,7 @@ def prepare_headless_session(
     st.session_state["first_round_user_line_composed"] = interpretation.first_round_user_line
     seed_scene_setup = interpretation_to_seed_scene_setup(interpretation)
 
-    st.session_state["session_id"] = SessionManager().generate_session_id(display_names)
+    st.session_state["session_id"] = SessionManager().generate_session_id()
 
     state_helpers.restore_or_initialize_continuity_manager(
         st_module=st,

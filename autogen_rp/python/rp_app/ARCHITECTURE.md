@@ -32,6 +32,8 @@ per-character state.
 - Starting a new scene closes the current one first.
 - Interrupted active sessions are finalized on next startup.
 
+**Session identity (Issue #109):** New **`session_id`** values are **opaque UUIDv4** strings minted by **`SessionManager.generate_session_id`** (no cast, scenario, template, or run-class tokens). **Streamlit** audited runs set **`audit_session_owner`** from that id via **`audit_identity.streamlit_audit_owner_label_from_session_id`** (#106 rules preserved). **Headless** audit naming stays scenario/harness/ad-hoc driven and is **not** tied to `session_id` for folder prefixes.
+
 **Implemented in the current app:**
 
 - Director-controlled turn selection using structured scene state

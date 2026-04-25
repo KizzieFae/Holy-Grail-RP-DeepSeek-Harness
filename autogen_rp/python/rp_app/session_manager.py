@@ -4,6 +4,7 @@ Handles saving and loading conversation state between sessions.
 """
 
 import json
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -630,15 +631,11 @@ class SessionManager:
             return True
         return False
 
-    def generate_session_id(self, characters: list[str]) -> str:
-        """Generate a unique session ID.
+    def generate_session_id(self) -> str:
+        """Mint a new opaque session id (Issue #109).
 
-        Args:
-            characters: Character names in the session
-
-        Returns:
-            Unique session ID string
+        Returns a canonical lowercase UUIDv4 string with hyphens. The value carries
+        no embedded cast, scenario, template, or run-class semantics; meaning lives in
+        session metadata. Immutable for the life of a saved session once minted.
         """
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        char_slug = "_".join(c.lower().replace(" ", "_") for c in characters[:2])
-        return f"{char_slug}_{timestamp}"
+        return str(uuid.uuid4())

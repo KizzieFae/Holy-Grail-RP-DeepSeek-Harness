@@ -10,6 +10,25 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Effective user trigger (headless simulation harness)](#effective-user-trigger-headless-simulation-harness)** — `effective_user_trigger`; **Light vs full** serialization (`*_full.json` vs light rows).
 - **[Authored index retrieval (standard evaluation mode — Phase 4A)](#authored-index-retrieval-standard-evaluation-mode-phase-4a)** — `metadata.retrieval_summary`, top-level `retrieval_session` on `_audit_summary.json`.
 - **[Continuity observability (Issue #79 — closed)](#continuity-observability-issue-79-closed)** — CTAR, `scene_state_after`, summary rollups vs availability markers on `_audit_summary.json`.
+- **[Canonical audit identity (Issue #106)](#canonical-audit-identity-issue-106)** — `audit_session_owner` vs `scene_owner`, ingress, no inference.
+
+## Canonical audit identity (Issue #106)
+
+**Normative model (finalized):**
+
+- **`audit_session_owner`** (persisted as **`metadata.audit_session_owner`**) is the **only** canonical **audit identity** for audit artifacts: folder/file stems, manifest and narrative `session_owner` fields, and related summary owner strings.
+- It is **required** for any **audit-supported** work: when auditing is enabled, the runtime must have this value; there is **no** fallback, inference, or default from **`scene_owner`**, cast order, display names, or “who holds the scene” in a narrative sense.
+- Audit identity is **constructed at ingress** (Streamlit fresh scene, headless entrypoints, or rehydration from session JSON that already stores **`metadata.audit_session_owner`**)—not derived from character cards, template **role_assignments**, or UI-only fields.
+- **`scene_owner`** is **UI / session / narrator context only** (display, packets, bootstrap wiring). It **must not** be read as audit identity and **must not** backfill a missing **`audit_session_owner`**. See [Issue #107](https://github.com/KizzieFae/Holy_Grail_RP/issues/107) for UI semantics.
+- **Legacy** session files **without** **`metadata.audit_session_owner`** are **not audit-supported** (treat as archival; on load, auditing is disabled—**no** migration path that invents the field from **`scene_owner`**).
+
+**Filename stems** under `rp_audits/session_*/` use the `audit_session_owner` **label** (see [Directory structure](#directory-structure)); that token is **not** implicitly “the character who owns the scene,” even when it resembles a cast slug.
+
+### Session id vs audit label (Issue #109)
+
+- **`session_id`** (session JSON filename key, resume handle) is an **opaque UUIDv4** for **new** runs. It **must not** be parsed for cast, scenario, template, or run-class meaning; those fields live in **metadata** and continuity/session payloads.
+- **Streamlit + auditing:** `audit_session_owner` is **`streamlit_audit_owner_label_from_session_id(session_id)`** — a filesystem-safe slug of the opaque id only (#106 ingress preserved).
+- **Headless + auditing:** **`audit_session_owner`** / manifest `session_owner` behavior is **unchanged** from pre–#109: scenario/harness-derived or ad-hoc labels (e.g. default `headless_sim`), **not** derived from `session_id`. Do not assume `session_id` correlates with headless audit folder stems.
 
 ## Overview
 
@@ -1284,6 +1303,9 @@ rp_app/data/rp_audits/
 ```
 
 Organised by session number first, then round number:
+
+The `{owner}` token in per-turn filenames is the **`audit_session_owner`** label (canonical audit identity, Issue **#106**), not **`scene_owner`** and not a narrative “scene owner” role.
+
 ```
 rp_audits/
 └── session_{###}/                   # 3-digit session number
@@ -1388,10 +1410,12 @@ When audit is enabled at scene start (Streamlit and headless), **`bootstrap_inte
 
 **Created**: Updated after each turn
 
+**`session_owner` in this file:** The same canonical **`audit_session_owner`** string as in session **metadata** (Issue **#106**). It **must not** be confused with UI **`scene_owner`**, a template “host” role, or the first character in the cast. The example below uses a **session-style** label; real values are constructed at ingress (e.g. from session id), not implied from **role_assignments**.
+
 **Contents**:
 ```json
 {
-  "session_owner": "Ayame",
+  "session_owner": "char_a_char_b_20260424_234707",
   "session_number": 42,
   "created_at": "2026-03-14T12:45:30Z",
   "last_updated": "2026-03-14T12:52:15Z",

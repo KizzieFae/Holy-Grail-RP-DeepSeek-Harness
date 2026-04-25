@@ -99,7 +99,7 @@ async def test_start_scene_audit_manifest_failure_surfaces_error_and_continues(
     monkeypatch.setattr(
         app,
         "SessionManager",
-        lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_123"),
+        lambda: SimpleNamespace(generate_session_id=lambda: "scene_123"),
     )
     monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
@@ -110,6 +110,9 @@ async def test_start_scene_audit_manifest_failure_surfaces_error_and_continues(
 
     assert started is True
     assert session_state["scene_started"] is True
+    # Issue #106: audit identity is session-derived, not cast / scene_owner.
+    assert session_state["audit_session_owner"] == "scene_123"
+    assert session_state["scene_owner"] == "Ayame"
     assert len(fake_streamlit.errors) == 1
     assert "Audit logging failed during scene start" in fake_streamlit.errors[0]
     assert "manifest failed" in fake_streamlit.errors[0]
@@ -175,7 +178,7 @@ async def test_start_scene_audit_refresh_failure_surfaces_error_and_continues(
     monkeypatch.setattr(
         app,
         "SessionManager",
-        lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_124"),
+        lambda: SimpleNamespace(generate_session_id=lambda: "scene_124"),
     )
     monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)

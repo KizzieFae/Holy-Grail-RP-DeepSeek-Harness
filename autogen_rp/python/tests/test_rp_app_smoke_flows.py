@@ -218,7 +218,7 @@ async def test_start_scene_smoke_initializes_scene_and_posts_opening(
     monkeypatch.setattr(
         app,
         "SessionManager",
-        lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_123"),
+        lambda: SimpleNamespace(generate_session_id=lambda: "scene_123"),
     )
     monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)
@@ -406,7 +406,7 @@ async def test_start_scene_smoke_seeds_role_relationship_context_from_scene_temp
     monkeypatch.setattr(
         app,
         "SessionManager",
-        lambda: SimpleNamespace(generate_session_id=lambda _chars: "scene_456"),
+        lambda: SimpleNamespace(generate_session_id=lambda: "scene_456"),
     )
     monkeypatch.setattr(app, "OpenerManager", OpenerManager)
     monkeypatch.setattr(app, "run_character_turns", fake_run_character_turns)

@@ -1,5 +1,6 @@
 from typing import Any, Awaitable, Callable
 
+from audit_identity import streamlit_audit_owner_label_from_session_id
 from audit_instrumentation import log_audit_exception
 from continuity_setup_seam_v77 import (
     ContinuitySetupSeamError,
@@ -325,15 +326,15 @@ async def start_scene(
     display_char_names = get_character_display_names_fn(char_names)
     user_name = st_module.session_state.get("user_name", "Traveler")
 
-    # Issue #107: normalized session/run owner label (audits, save metadata, narrator hook,
-    # packets)—not Streamlit opener scope, scene-construction authority, or continuity.
-    scene_owner = st_module.session_state.get(
-        "scene_owner", display_char_names[0] if display_char_names else "Unknown"
-    )
+    # Issue #106: audit identity must come from ``audit_session_owner`` only (set after
+    # ``session_id`` exists). Do not derive from ``scene_owner`` or other UI fields.
+    # Issue #107: ``scene_owner`` is UI / narrator / packet context only.
+    _raw_scene_owner = st_module.session_state.get("scene_owner")
+    if _raw_scene_owner is not None and str(_raw_scene_owner).strip():
+        scene_owner = str(_raw_scene_owner).strip()
+    else:
+        scene_owner = display_char_names[0] if display_char_names else "Unknown"
     st_module.session_state["scene_owner"] = scene_owner
-    st_module.session_state["audit_session_owner"] = (
-        scene_owner if is_audit_enabled_fn() else None
-    )
     selected_opener_id = st_module.session_state.get("selected_opener_id")
     custom_text = st_module.session_state.get("custom_opener_text", "")
 
@@ -421,9 +422,16 @@ async def start_scene(
     director = create_director_agent_fn(model_client)
 
     session_manager = session_manager_cls()
-    session_id = session_manager.generate_session_id(char_names)
+    session_id = session_manager.generate_session_id()
     st_module.session_state["session_id"] = session_id
     st_module.session_state["team_state"] = None
+
+    if is_audit_enabled_fn():
+        st_module.session_state["audit_session_owner"] = (
+            streamlit_audit_owner_label_from_session_id(session_id)
+        )
+    else:
+        st_module.session_state["audit_session_owner"] = None
 
     if continuity_manager and continuity_manager.scene_state:
         mirror_opening_into_scene_state(continuity_manager, opening_description)
