@@ -24,10 +24,11 @@ def load_character_names(
     return char_names
 
 
-def _opening_scope_fingerprint(
+def streamlit_opener_scope_fingerprint(
     opening_mode: str,
     selected_template_id: str | None,
 ) -> str:
+    """Session-state scope key for template opener selection (Issues #108, #113)."""
     tid = (
         (selected_template_id or "").strip()
         if opening_mode == STREAMLIT_OPENING_MODE_TEMPLATE
@@ -43,7 +44,7 @@ def _sync_opener_scope_session_state(
     selected_template_id: str | None,
 ) -> None:
     """Clear stale selected_opener_id when template/mode scope changes (Issue #108)."""
-    fp = _opening_scope_fingerprint(opening_mode, selected_template_id)
+    fp = streamlit_opener_scope_fingerprint(opening_mode, selected_template_id)
     if st_module.session_state.get("opener_selection_scope_key") != fp:
         st_module.session_state["opener_selection_scope_key"] = fp
         st_module.session_state["selected_opener_id"] = None
@@ -126,12 +127,6 @@ def render_opening_controls(
         selected_template_id=selected_template_id,
     )
 
-    if selected_template_id:
-        st_module.caption(
-            "Opening mode chooses **prose source** for scene start. The **template id** still applies to "
-            "continuity roles and, when authored retrieval is ON, template-scoped retrieval rows. "
-            "It does not inject template `opening_text` on Start Scene (use an opener, Custom, or Generated)."
-        )
     if opening_mode == STREAMLIT_OPENING_MODE_TEMPLATE and selected_template_id:
         if selected_template is None:
             selected_template = next(
@@ -152,8 +147,6 @@ def render_opening_controls(
                 only = template_openers[0]
                 st_module.session_state["selected_opener_id"] = only.id
                 _render_opener_helper_captions(st_module, only)
-                with st_module.expander("Preview Template Opening"):
-                    st_module.text(only.text)
             else:
                 display_keys = [_OPENER_SELECT_PLACEHOLDER] + [
                     _opener_display_row_label(op) for op in template_openers
@@ -196,8 +189,6 @@ def render_opening_controls(
                     op_picked = label_to_op[pick]
                     st_module.session_state["selected_opener_id"] = op_picked.id
                     _render_opener_helper_captions(st_module, op_picked)
-                    with st_module.expander("Preview Template Opening"):
-                        st_module.text(op_picked.text)
         else:
             st_module.session_state["selected_opener_id"] = None
             if selected_template is not None and selected_template.opening_text:
@@ -205,7 +196,7 @@ def render_opening_controls(
                     "No template opener JSON was found for this template. Add entries under "
                     "`initial_messages` in the scene template JSON and/or add "
                     "`{template_id}_initial_message.json` under `data/scene_templates/`, "
-                    "or choose **Custom text** or **Generated (LLM)**. "
+                    "or choose **Custom text**. "
                     "Template card `opening_text` is not used on Start Scene for this path."
                 )
                 with st_module.expander("Template card `opening_text` (reference only, not used on Start)"):
@@ -221,9 +212,5 @@ def render_opening_controls(
         )
         st_module.session_state["custom_opener_text"] = custom_text
     elif opening_mode == STREAMLIT_OPENING_MODE_GENERATED:
+        # Migrated out before radio render (Issue #113); no operator-facing path.
         st_module.session_state["selected_opener_id"] = None
-        st_module.caption(
-            "**Generated (LLM):** the narrator fabricates a first-paragraph opening from the template/cast. "
-            "This is the explicit generated mode — it does not use character or template JSON openers, "
-            "Custom text, or template `opening_text`."
-        )

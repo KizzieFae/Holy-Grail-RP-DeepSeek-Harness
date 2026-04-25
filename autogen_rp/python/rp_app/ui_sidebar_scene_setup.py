@@ -2,12 +2,17 @@ import asyncio
 from typing import Any, Awaitable, Callable
 
 from bootstrap_composition import (
-    STREAMLIT_OPENING_MODE_GENERATED,
     STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_GENERATED,
     STREAMLIT_OPENING_MODE_TEMPLATE,
+    migrate_legacy_generated_streamlit_opening_state,
     streamlit_opening_mode_options_for_ui,
 )
-from ui_sidebar_opening import load_character_names, render_opening_controls
+from ui_sidebar_opening import (
+    load_character_names,
+    render_opening_controls,
+    streamlit_opener_scope_fingerprint,
+)
 
 
 def render_scene_setup_controls(
@@ -159,6 +164,30 @@ def render_scene_setup_controls(
         st_module.session_state["scene_role_assignments"] = {}
 
     st_module.subheader("Scene Opening")
+    if st_module.session_state.get("opening_mode") == STREAMLIT_OPENING_MODE_GENERATED:
+        _om = opener_manager_cls()
+        _topts: list = (
+            _om.get_template_openers(
+                str(selected_template_id or "").strip(), template_manager
+            )
+            if selected_template_id
+            else []
+        )
+        _n_mode, _n_oid = migrate_legacy_generated_streamlit_opening_state(
+            opening_mode=STREAMLIT_OPENING_MODE_GENERATED,
+            selected_template_id=selected_template_id,
+            selected_opener_id=st_module.session_state.get("selected_opener_id"),
+            template_openers=_topts,
+        )
+        st_module.session_state["opening_mode"] = _n_mode
+        st_module.session_state["selected_opener_id"] = _n_oid
+        st_module.session_state["opener_selection_scope_key"] = (
+            streamlit_opener_scope_fingerprint(_n_mode, selected_template_id)
+        )
+        st_module.info(
+            "The **Generated (LLM)** opening option has been removed. Your session was moved to "
+            "**Template** or **Custom** opening (see **Opening Mode** above)."
+        )
     opening_mode_options = streamlit_opening_mode_options_for_ui(
         with_template=bool(selected_template_id)
     )
@@ -177,8 +206,6 @@ def render_scene_setup_controls(
             if x == STREAMLIT_OPENING_MODE_TEMPLATE
             else "Custom text"
             if x == STREAMLIT_OPENING_MODE_CUSTOM
-            else "Generated (LLM)"
-            if x == STREAMLIT_OPENING_MODE_GENERATED
             else str(x)
         ),
         key="opening_mode_radio",

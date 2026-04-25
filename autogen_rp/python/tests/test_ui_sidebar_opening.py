@@ -13,8 +13,8 @@ from bootstrap_composition import (
 )
 from scene_opener import SceneOpener
 from ui_sidebar_opening import (
-    _opening_scope_fingerprint,
     _selection_resolves_for_multi_opener_list,
+    streamlit_opener_scope_fingerprint,
     streamlit_opener_selection_error,
 )
 
@@ -42,12 +42,12 @@ def _pair() -> tuple[SceneOpener, SceneOpener]:
 
 
 def test_opening_scope_fingerprint_template_includes_template_id() -> None:
-    assert _opening_scope_fingerprint("template", "tid") == "template|tid"
-    assert _opening_scope_fingerprint("template", None) == "template|"
+    assert streamlit_opener_scope_fingerprint("template", "tid") == "template|tid"
+    assert streamlit_opener_scope_fingerprint("template", None) == "template|"
 
 
 def test_opening_scope_fingerprint_non_template_ignores_template_id() -> None:
-    assert _opening_scope_fingerprint("custom", "tid") == "custom|"
+    assert streamlit_opener_scope_fingerprint("custom", "tid") == "custom|"
 
 
 def test_selection_resolves_multi_requires_non_empty_or_match() -> None:

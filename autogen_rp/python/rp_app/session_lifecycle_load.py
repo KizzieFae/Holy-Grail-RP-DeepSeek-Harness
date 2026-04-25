@@ -3,10 +3,15 @@ from typing import Any, Awaitable, Callable
 from bootstrap_composition import (
     STREAMLIT_OPENING_MODE_CHARACTER,
     STREAMLIT_OPENING_MODE_CUSTOM,
+    STREAMLIT_OPENING_MODE_GENERATED,
     STREAMLIT_OPENING_MODE_TEMPLATE,
+    migrate_legacy_generated_streamlit_opening_state,
     VALID_STREAMLIT_OPENING_MODES,
 )
 from continuity_setup_seam_v77 import ContinuitySetupSeamError
+from scene_opener import OpenerManager
+from scene_template import SceneTemplateManager
+from ui_sidebar_opening import streamlit_opener_scope_fingerprint
 
 
 async def load_existing_session(
@@ -210,26 +215,52 @@ async def load_existing_session(
     st_module.session_state.pop("scene_owner_display", None)
     # Issue #100: non-canonical saved values must be unset (None), not coerced to a default mode.
     # Issue #108: legacy ``character`` opening_mode migrates to template or custom; clears opener pick.
+    # Issue #113: legacy ``generated`` migrates to template (preserving a valid ``selected_opener_id``) or custom.
+    _saved_opener_raw = _meta.get("selected_opener_id")
     if "opening_mode" in _meta:
         _raw_om: object = _meta.get("opening_mode")
     else:
         _raw_om = st_module.session_state.get("opening_mode", "custom")
     _s = str(_raw_om).strip().lower() if _raw_om is not None else ""
     migrated_from_character = _s == STREAMLIT_OPENING_MODE_CHARACTER
+    migrated_from_generated = _s == STREAMLIT_OPENING_MODE_GENERATED
     if migrated_from_character:
         _tid = st_module.session_state.get("selected_scene_template_id")
         if _tid and str(_tid).strip():
             st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_TEMPLATE
         else:
             st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_CUSTOM
+    elif migrated_from_generated:
+        _tid_g = st_module.session_state.get("selected_scene_template_id")
+        _om = OpenerManager()
+        _tm = SceneTemplateManager()
+        _ts = str(_tid_g).strip() if _tid_g else ""
+        _topts = _om.get_template_openers(_ts, _tm) if _ts else []
+        nmode, noid = migrate_legacy_generated_streamlit_opening_state(
+            opening_mode=STREAMLIT_OPENING_MODE_GENERATED,
+            selected_template_id=_tid_g if _tid_g else None,
+            selected_opener_id=_saved_opener_raw
+            if _saved_opener_raw is not None
+            else None,
+            template_openers=_topts,
+        )
+        st_module.session_state["opening_mode"] = nmode
     elif not _s or _s not in VALID_STREAMLIT_OPENING_MODES:
         st_module.session_state["opening_mode"] = None
     else:
         st_module.session_state["opening_mode"] = _s
     if migrated_from_character:
         st_module.session_state["selected_opener_id"] = None
+    elif migrated_from_generated:
+        st_module.session_state["selected_opener_id"] = noid
     else:
-        st_module.session_state["selected_opener_id"] = _meta.get("selected_opener_id")
+        st_module.session_state["selected_opener_id"] = _saved_opener_raw
+    st_module.session_state["opener_selection_scope_key"] = (
+        streamlit_opener_scope_fingerprint(
+            str(st_module.session_state.get("opening_mode") or "custom"),
+            st_module.session_state.get("selected_scene_template_id"),
+        )
+    )
     st_module.session_state["custom_opener_text"] = session_data.get(
         "metadata", {}
     ).get("custom_opener_text", "")

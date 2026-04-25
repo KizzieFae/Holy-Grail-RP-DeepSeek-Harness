@@ -22,12 +22,14 @@ from bootstrap_composition import (  # noqa: E402
     compose_headless_bootstrap,
     interpretation_to_jsonable,
     lock_headless_opening_strategy_intent,
+    migrate_legacy_generated_streamlit_opening_state,
     resolve_location_precedence,
     streamlit_opening_mode_options_for_ui,
     validate_streamlit_opening_mode_untrusted,
 )
 from scene_opener import (  # noqa: E402
     OpenerManager,
+    SceneOpener,
     build_template_opener_ref,
     resolve_scene_opener_from_canonical_ref,
     template_intent_has_opener_assets,
@@ -213,12 +215,49 @@ def test_streamlit_opening_mode_options_issue108() -> None:
     assert streamlit_opening_mode_options_for_ui(with_template=True) == [
         STREAMLIT_OPENING_MODE_TEMPLATE,
         STREAMLIT_OPENING_MODE_CUSTOM,
-        STREAMLIT_OPENING_MODE_GENERATED,
     ]
     assert streamlit_opening_mode_options_for_ui(with_template=False) == [
         STREAMLIT_OPENING_MODE_CUSTOM,
-        STREAMLIT_OPENING_MODE_GENERATED,
     ]
+
+
+def test_issue113_migrate_generated_to_custom_without_template() -> None:
+    m, oid = migrate_legacy_generated_streamlit_opening_state(
+        opening_mode=STREAMLIT_OPENING_MODE_GENERATED,
+        selected_template_id=None,
+        selected_opener_id="stale",
+        template_openers=[],
+    )
+    assert m == STREAMLIT_OPENING_MODE_CUSTOM
+    assert oid is None
+
+
+def test_issue113_migrate_generated_preserves_valid_opener() -> None:
+    o = SceneOpener(
+        id="o1", source="template", owner="t", label="L", text="x", tags=[]
+    )
+    m, oid = migrate_legacy_generated_streamlit_opening_state(
+        opening_mode=STREAMLIT_OPENING_MODE_GENERATED,
+        selected_template_id="tid",
+        selected_opener_id="o1",
+        template_openers=[o],
+    )
+    assert m == STREAMLIT_OPENING_MODE_TEMPLATE
+    assert oid == "o1"
+
+
+def test_issue113_migrate_generated_clears_stale_opener() -> None:
+    o = SceneOpener(
+        id="o1", source="template", owner="t", label="L", text="x", tags=[]
+    )
+    m, oid = migrate_legacy_generated_streamlit_opening_state(
+        opening_mode=STREAMLIT_OPENING_MODE_GENERATED,
+        selected_template_id="tid",
+        selected_opener_id="not_in_list",
+        template_openers=[o],
+    )
+    assert m == STREAMLIT_OPENING_MODE_TEMPLATE
+    assert oid is None
 
 
 def test_validate_streamlit_opening_mode_untrusted() -> None:
