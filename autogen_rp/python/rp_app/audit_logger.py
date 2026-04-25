@@ -52,7 +52,7 @@ class AuditEntry:
     """A single audit entry for a bot interaction."""
 
     timestamp: str
-    session_owner: str  # Character who owns the initial message/scene
+    session_owner: str  # Audit run owner label (Issue #106); manifest/filename prefix, not scene_owner
     session_number: int  # 3-digit session number
     round_number: int
     turn_number: int
@@ -217,7 +217,7 @@ class AuditLogger:
         """Get the directory path for a specific session.
 
         Args:
-            session_owner: Character who owns the initial message/scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
 
         Returns:
@@ -249,7 +249,7 @@ class AuditLogger:
         """Generate audit filename in format: {owner}_session{num}_round{num}_turn{num}_{bot}_{level}.json
 
         Args:
-            session_owner: Character who owns the initial message/scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             round_number: Round number
             bot_name: Name of the bot (Director, Narrator, or Character name)
@@ -289,7 +289,7 @@ class AuditLogger:
         """Write a session manifest file listing all characters and scene info.
 
         Args:
-            session_owner: Character who owns the scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             cast: List of all character names in the scene
             opening_description: The scene opening text
@@ -347,7 +347,7 @@ class AuditLogger:
         """Append to a round index file mapping rounds to their turns.
 
         Args:
-            session_owner: Character who owns the scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             round_number: Round number
             acting_character: Character who acted this round
@@ -447,7 +447,7 @@ class AuditLogger:
         """Create an audit entry with current timestamp.
 
         Args:
-            session_owner: Character who owns the initial message/scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             round_number: Round number
             bot_name: Name of the bot
@@ -538,7 +538,7 @@ class AuditLogger:
         """Update or create the narrative summary file with this round's contribution.
 
         Args:
-            session_owner: Character who owns the scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             round_number: Round number
             acting_character: Character who acted this round
@@ -595,7 +595,7 @@ class AuditLogger:
         """Update the session manifest with the current total turn count.
 
         Args:
-            session_owner: Character who owns the scene
+            session_owner: Audit run owner label (Issue #106); not UI scene_owner
             session_number: 3-digit session number
             total_turns: Current total number of turns logged
 

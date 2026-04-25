@@ -29,9 +29,7 @@ async def save_current_session(
     audit_round_number = st_module.session_state.get("audit_round_number", 0)
     audit_turn_number = st_module.session_state.get("audit_turn_number", 0)
     scene_owner = st_module.session_state.get("scene_owner")
-    audit_session_owner = st_module.session_state.get(
-        "audit_session_owner", scene_owner
-    )
+    audit_session_owner = st_module.session_state.get("audit_session_owner")
     audit_enabled = is_audit_enabled_fn()
     bot_reply_limit = get_current_bot_reply_limit_fn(len(characters))
 
@@ -76,8 +74,8 @@ async def save_current_session(
             "audit_session_number": audit_session_number,
             "audit_round_number": audit_round_number,
             "audit_turn_number": audit_turn_number,
-            "scene_owner": audit_session_owner or scene_owner,
-            "audit_session_owner": audit_session_owner or scene_owner,
+            "scene_owner": scene_owner,
+            "audit_session_owner": audit_session_owner,
             "scene_template_id": (
                 continuity_manager.scene_state.scene_template_id
                 if continuity_manager is not None

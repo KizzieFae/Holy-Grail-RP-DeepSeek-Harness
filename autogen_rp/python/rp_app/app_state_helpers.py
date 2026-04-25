@@ -1,4 +1,5 @@
 from app_state_audit import (
+    AuditIdentityMissingError,
     get_audit_context,
     is_audit_enabled,
     is_llm_audit_enabled,
@@ -34,6 +35,7 @@ from app_state_session import (
 )
 
 __all__ = [
+    "AuditIdentityMissingError",
     "apply_scene_setup_to_scene_state",
     "build_initial_scene_issues",
     "enforce_must_remain_presence",

@@ -1350,6 +1350,73 @@ async def test_load_existing_session_restores_scene_template_and_audit_state(
 
 
 @pytest.mark.asyncio
+async def test_load_existing_session_disables_audit_without_audit_session_owner(
+    fake_streamlit: FakeStreamlit,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Issue #106: legacy saves without canonical audit_session_owner are not audit-supported."""
+    session_state = init_fake_session(fake_streamlit)
+    manager = SessionManager(tmp_path)
+    continuity_manager = FakeContinuityManager(
+        SimpleNamespace(
+            scene_template_id=None,
+            scene_premise="",
+            role_assignments={},
+        )
+    )
+    manager.save_session(
+        session_id="legacy_no_audit_owner",
+        team_state={"scene_state": {"opening_description": "x"}},
+        characters=["Ayame"],
+        metadata={
+            "audit_enabled": True,
+            "audit_session_number": 2,
+            "scene_owner": "Ayame",
+            "opening_mode": "custom",
+            "scene_status": "closed",
+        },
+        chat_history=[],
+    )
+
+    async def fake_shutdown_runtime_resources() -> None:
+        return None
+
+    async def fake_close_active_scene_if_needed(_reason: str) -> None:
+        return None
+
+    monkeypatch.setattr(app, "SessionManager", lambda: manager)
+    monkeypatch.setattr(
+        app, "CharacterLoader", make_loader({"Ayame": "Ayame"})
+    )
+    monkeypatch.setattr(app, "resolve_character_file", lambda _loader, name: name)
+    monkeypatch.setattr(app, "create_deepseek_client", lambda: object())
+    monkeypatch.setattr(app, "CharacterStateManager", FakeCharacterStateManager)
+    monkeypatch.setattr(
+        app, "apply_cross_session_memories", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        app,
+        "restore_or_initialize_continuity_manager",
+        lambda *_args, **_kwargs: continuity_manager,
+    )
+    monkeypatch.setattr(app, "get_continuity_manager", lambda: continuity_manager)
+    monkeypatch.setattr(
+        app, "shutdown_runtime_resources", fake_shutdown_runtime_resources
+    )
+    monkeypatch.setattr(
+        app, "close_active_scene_if_needed", fake_close_active_scene_if_needed
+    )
+
+    await app.load_existing_session("legacy_no_audit_owner")
+
+    assert session_state["audit_enabled"] is False
+    assert session_state["audit_session_owner"] is None
+    assert session_state["scene_owner"] == "Ayame"
+    assert fake_streamlit.warnings
+
+
+@pytest.mark.asyncio
 async def test_load_existing_session_unsets_noncanonical_opening_mode(
     fake_streamlit: FakeStreamlit,
     monkeypatch: pytest.MonkeyPatch,

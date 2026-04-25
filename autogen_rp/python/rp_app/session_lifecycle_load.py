@@ -171,27 +171,45 @@ async def load_existing_session(
         for agent, char_file in zip(agents, resolved_files, strict=False)
         if restored_role_assignments.get(agent.name, "")
     }
-    saved_audit_enabled = session_data.get("metadata", {}).get(
-        "audit_enabled",
-        session_data.get("metadata", {}).get("audit_session_number") is not None,
+    _meta = session_data.get("metadata") or {}
+    # Issue #106: audit identity must come from ``audit_session_owner`` in metadata only.
+    # Do not derive from ``scene_owner`` or other UI fields; missing owner disables audit.
+    saved_audit_enabled = bool(
+        _meta.get("audit_enabled", _meta.get("audit_session_number") is not None)
     )
-    st_module.session_state["audit_enabled"] = saved_audit_enabled
     st_module.session_state.pop("audit_enabled_toggle", None)
-    saved_scene_owner = session_data.get("metadata", {}).get(
-        "audit_session_owner",
-        session_data.get("metadata", {}).get(
-            "scene_owner", st_module.session_state.get("scene_owner")
-        ),
+
+    saved_audit_owner_raw = _meta.get("audit_session_owner")
+    saved_audit_owner = (
+        str(saved_audit_owner_raw).strip()
+        if saved_audit_owner_raw is not None and str(saved_audit_owner_raw).strip()
+        else None
     )
-    st_module.session_state["scene_owner"] = saved_scene_owner
-    st_module.session_state["audit_session_owner"] = (
-        saved_scene_owner if saved_audit_enabled else None
-    )
+    if saved_audit_enabled and not saved_audit_owner:
+        st_module.session_state["audit_enabled"] = False
+        st_module.session_state["audit_session_owner"] = None
+        st_module.warning(
+            "This saved session has no canonical **audit_session_owner** in metadata; "
+            "auditing is disabled. Legacy sessions are not audit-supported (Issue #106). "
+            "Start a new scene with auditing enabled to produce new audit artifacts."
+        )
+    else:
+        st_module.session_state["audit_enabled"] = saved_audit_enabled
+        st_module.session_state["audit_session_owner"] = (
+            saved_audit_owner if saved_audit_enabled else None
+        )
+
+    saved_scene_owner_ui = _meta.get("scene_owner")
+    if saved_scene_owner_ui is not None and str(saved_scene_owner_ui).strip():
+        st_module.session_state["scene_owner"] = str(saved_scene_owner_ui).strip()
+    elif char_names:
+        st_module.session_state["scene_owner"] = char_names[0]
+    else:
+        st_module.session_state["scene_owner"] = "Unknown"
     st_module.session_state.pop("scene_owner_select", None)
     st_module.session_state.pop("scene_owner_display", None)
     # Issue #100: non-canonical saved values must be unset (None), not coerced to a default mode.
     # Issue #108: legacy ``character`` opening_mode migrates to template or custom; clears opener pick.
-    _meta = session_data.get("metadata") or {}
     if "opening_mode" in _meta:
         _raw_om: object = _meta.get("opening_mode")
     else:

@@ -80,8 +80,9 @@ def format_retrieved_context_for_prompt(bundle: RetrievedContextBundle) -> str:
 class RuntimeScenePacket:
     """Authored + scene-start-stable inputs only (no live transcript or trigger text).
 
-    ``session_scene_owner`` mirrors ``session_state["scene_owner"]``: the normalized
-    session/run owner label (Issue #107), not a separate authority layer.
+    ``session_scene_owner`` mirrors ``session_state["scene_owner"]`` (Issue #107) for
+    UI/narrator context only — not audit identity; use ``audit_session_owner`` for audits
+    (Issue #106).
     """
 
     stable_scene_state: dict[str, Any]
