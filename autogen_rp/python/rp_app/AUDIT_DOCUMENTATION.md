@@ -1590,7 +1590,7 @@ for that turn.
 
 **Semantics:** Read and updated by the **operator CLI** (see **Operator tool** below), not the Streamlit app. A **new** user callout from Streamlit (Issue #55) **upserts** a row into this index automatically. **Rebuild** (maintenance) rescans per-session `user_callouts_v1.json`, overlays **§8**, preserves dispositions where possible, and **flags** orphans/inconsistencies without silently deleting rows. **Dismissing** a callout that already has an issue link is **forbidden** in v1.
 
-**Operator tool:** From `autogen_rp/python/`, run `python scripts/user_callout_review.py` with subcommands: `list`, `show --callout-id <UUID>`, `dismiss`, `promote`, `rebuild`, `links`. Use `--base-dir` if your `rp_audits` root is not the default `rp_app/data/rp_audits`. See `scripts/user_callout_review.py` `--help`.
+**Operator tool:** From `autogen_rp/python/`, run `python scripts/user_callout_review.py` with subcommands: `list`, `show --callout-id <UUID>`, `dismiss`, `promote` (and `promote --replace` for reconciliation — see **§8**), `rebuild`, `links`. Use `--base-dir` if your `rp_audits` root is not the default `rp_app/data/rp_audits`. See `scripts/user_callout_review.py` `--help`.
 
 **Evidence for notes and `artifact_refs`:** Always from per-session **`user_callouts_v1.json`** (§6). The `show` subcommand prints the full raw record and optional **§8** link metadata.
 
@@ -1602,7 +1602,7 @@ for that turn.
 
 **Root shape:** `schema: "user_callout_issue_links.v1"`, `schema_version: 1`, `links: { "<callout_id>": { ... } }`.
 
-**Rules:** At most one link per `callout_id` in v1 (duplicate promotion rejected). The operator runs **`user_callout_review.py promote`** (after creating the GitHub issue) or edits are applied only through that tooling—**not** from Streamlit. **Atomic** writes (temp + replace) like other audit JSON.
+**Rules:** At most one link per `callout_id` in v1. **Default `promote`:** if that `callout_id` is already in `links`, the command **fails** with *duplicate promotion rejected* (unchanged from first ship). **`promote --replace` (reconciliation):** allowed when the **sole** link for an existing `callout_id` must point to a **different** issue—e.g. a validation link to **#125** superseded by a substantive tracked issue. **Explicit flag only;** it **replaces** the one map entry (still one link per callout), updates **`issue_number`**, **`issue_url`**, and sets **`linked_at_utc`** to the time of the write. The link file **does not** track GitHub issue open/close or other lifecycle; **GitHub** remains work authority. **Does not** edit raw per-session `user_callouts_v1.json` (§6). The operator runs **`user_callout_review.py promote`** (or **`promote --replace`** as above) after the appropriate issue exists—**not** from Streamlit. **Atomic** writes (temp + replace) like other audit JSON.
 
 ## How to Audit a Scene
 

@@ -96,6 +96,34 @@ def test_issue_links_sole_promotion_and_duplicate_rejected(tmp_path: Path) -> No
         )
 
 
+def test_issue_promotion_replace_updates_link(tmp_path: Path) -> None:
+    save_issue_links(
+        rs.issue_links_path(base_dir=tmp_path),
+        {
+            "schema": rs.ISSUE_LINKS_SCHEMA,
+            "schema_version": 1,
+            "links": {
+                "c1": {
+                    "issue_number": 99,
+                    "issue_url": "https://x/y/99",
+                    "linked_at_utc": "2026-01-01T00:00:00Z",
+                }
+            },
+        },
+    )
+    record_issue_promotion(
+        base_dir=tmp_path,
+        callout_id="c1",
+        issue_number=100,
+        issue_url="https://x/y/100",
+        replace=True,
+    )
+    l = rs.load_issue_links(rs.issue_links_path(base_dir=tmp_path))
+    assert l["links"]["c1"]["issue_number"] == 100
+    assert l["links"]["c1"]["issue_url"] == "https://x/y/100"
+    assert l["links"]["c1"]["linked_at_utc"].startswith("20")
+
+
 def test_dismiss_forbidden_when_promoted(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     save_issue_links(
         rs.issue_links_path(base_dir=tmp_path),

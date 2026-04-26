@@ -141,6 +141,7 @@ def _cmd_promote(ns: argparse.Namespace) -> int:
             callout_id=cid,
             issue_number=int(ns.issue_number),
             issue_url=url,
+            replace=bool(getattr(ns, "replace", False)),
         )
     except ValueError as e:
         print(e, file=sys.stderr)
@@ -231,6 +232,11 @@ def main() -> int:
     p_pro.add_argument("--callout-id", required=True)
     p_pro.add_argument("--issue-number", type=int, required=True)
     p_pro.add_argument("--issue-url", required=True)
+    p_pro.add_argument(
+        "--replace",
+        action="store_true",
+        help="Overwrite an existing issue link for this callout (reconciliation; default: reject duplicate)",
+    )
     _add_base(p_pro)
     p_pro.set_defaults(func=_cmd_promote)
 

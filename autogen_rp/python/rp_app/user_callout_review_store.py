@@ -309,15 +309,30 @@ def record_issue_promotion(
     callout_id: str,
     issue_number: int,
     issue_url: str,
+    replace: bool = False,
 ) -> None:
-    """Record promotion: issue link map is sole authority. Rejects duplicate callout_id."""
+    """Record promotion: issue link map is sole authority.
+
+    Rejects duplicate ``callout_id`` unless ``replace`` is True (e.g. reconciling
+    a link to a different GitHub issue while keeping the same callout_id).
+    """
     links_p = issue_links_path(base_dir=base_dir)
     ldata = load_issue_links(links_p)
     links: dict[str, Any] = dict(ldata.get("links", {}))
-    if callout_id in links:
+    if callout_id in links and not replace:
         raise ValueError(
             f"callout_id {callout_id!r} already has an issue link; duplicate promotion rejected"
         )
+    if replace and callout_id in links:
+        now = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+        links[callout_id] = {
+            "issue_number": int(issue_number),
+            "issue_url": str(issue_url).strip(),
+            "linked_at_utc": now,
+        }
+        ldata["links"] = links
+        save_issue_links(links_p, ldata)
+        return
     idx_p = review_index_path(base_dir=base_dir)
     idata = load_review_index(idx_p)
     rows: dict[str, Any] = dict(idata.get("rows", {}))
