@@ -1560,17 +1560,18 @@ for that turn.
 
 ### 6. `user_callouts_v1.json` (User Callouts — GitHub #55 / Holy Grail RP)
 
-**Purpose:** **Append-only** triage file written from the Streamlit sidebar when **audit logging is enabled** for the scene. Each entry is a **User Callout**: a **human-authored**, **user-originated** annotation. It is **observational** and **non-authoritative** — not model output, not continuity truth, and **not** read by the Director, continuity manager, or validators.
+**Purpose:** **Append-only** triage file written from the Streamlit sidebar when **audit logging is enabled** for the scene. A **User Callout** is one record in this file. The **operator** authors only the optional **observation** text (`note`). **Streamlit** has **no** UI for choosing files, curating `artifact_refs`, or entering paths — only a callout **trigger** and the **note** (see `README` User callout bullets). The record is **observational** and **non-authoritative** — not model output, not continuity truth, and **not** read by the Director, continuity manager, or validators (no **runtime** consumers of `user_callouts_v1.json` or its fields for orchestration, validation, or continuity commits).
 
 **Location:** `rp_audits/session_{###}/user_callouts_v1.json` (one file per **audit** session number; not the Streamlit `SessionManager` UUID by itself).
 
 **Root shape:** `schema: "user_callouts.v1"`, `schema_version: 1`, `records: [ ... ]`.
 
-**Record fields (MVP):** `callout_id`, `created_at_utc` (UTC), `audit_session_owner`, `audit_session_number`, `runtime_session_id` **nullable** if unavailable, `scene_template_id` **nullable**, `audit_round_number`, `audit_turn_number`, `continuity_turn_index` **nullable** if unavailable, `note` **nullable**, and `artifact_refs` with:
+**Record fields (MVP):** `callout_id`, `created_at_utc` (UTC), `audit_session_owner`, `audit_session_number`, `runtime_session_id` **nullable** if unavailable, `scene_template_id` **nullable**, `audit_round_number`, `audit_turn_number`, `continuity_turn_index` **nullable** if unavailable, `note` **nullable** (operator), and `artifact_refs` (below — **system-populated** on save) with:
 - `round_path` — string path **relative to `autogen_rp/python/`** (forward slashes)
-- `primary_full_path` — **nullable** when no `*_full.json` exists yet for the target audit round/turn; **no placeholder strings**
+- `primary_full_path` — **nullable** when no `*_full.json` exists yet for the target audit round/turn; **no placeholder strings**; set by the app from the same on-disk contract as `pick_primary_full_path` in `user_callouts.py`
 - `audit_summary_path` — string path to `_audit_summary.json` in the same audit session
 - `session_state_path` — **nullable** when the `SessionManager` save file is not on disk yet
+- **`related_artifact_refs`** (optional, GitHub #126) — if present, a JSON array of objects **only** from **system** population at callout **creation** (not operator). Each object **must** include **`path`** (string, same rel-to-`autogen_rp/python/` rule as other refs). **Optional** fields: `label`, `relation`, `order` (browsing hints; non-normative). **Unknown** keys on each object are **allowed** and ignored for validation. **Omit** the array entirely if empty. **Population rule:** same **round** and same **audit** **turn** as the callout; **only** other **same-turn** `*_full.json` files on disk (siblings of the **primary** `*_full`); the **primary** file is **not** duplicated in this list. Excludes: `*_light.json`, `_audit_summary`, session state, round indexes, other turns, inferred retry/causal/parsed relations.
 
 **Semantics:** **Append-only**; existing entries are not rewritten by the app. If the file is present but not valid for this schema/JSON, the UI **fails** (does not repair or truncate) to preserve **audit integrity**.
 
@@ -1592,7 +1593,7 @@ for that turn.
 
 **Operator tool:** From `autogen_rp/python/`, run `python scripts/user_callout_review.py` with subcommands: `list`, `show --callout-id <UUID>`, `dismiss`, `promote` (and `promote --replace` for reconciliation — see **§8**), `rebuild`, `links`. Use `--base-dir` if your `rp_audits` root is not the default `rp_app/data/rp_audits`. See `scripts/user_callout_review.py` `--help`.
 
-**Evidence for notes and `artifact_refs`:** Always from per-session **`user_callouts_v1.json`** (§6). The `show` subcommand prints the full raw record and optional **§8** link metadata.
+**Operator note vs `artifact_refs`:** The **operator** supplies only **`note`** (if any) when saving a callout in Streamlit. **`artifact_refs`**, including **`related_artifact_refs`**, are **system** **anchors** to audit paths — **not** hand-authored in the apps. Both are **persisted** in **`user_callouts_v1.json`** (§6). Triage, **dismiss**, and **promote** are **operator CLI** only (not Streamlit). The `show` subcommand prints the full raw record and optional **§8** link metadata.
 
 ### 8. `_user_callout_issue_links_v1.json` (User callout → GitHub issue links — GitHub #125 / Holy Grail RP)
 

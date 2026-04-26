@@ -80,6 +80,49 @@ def pick_primary_full_path(
     return None
 
 
+def _same_turn_full_json_paths(
+    round_dir: Path, *, audit_turn_number: int
+) -> list[Path]:
+    """All existing ``*_turn{NN}_*_full.json`` files in ``round_dir`` for this audit turn (sorted by name)."""
+    if not round_dir.is_dir():
+        return []
+    turn_s = f"{int(audit_turn_number):02d}"
+    found: list[Path] = []
+    for p in round_dir.iterdir():
+        if not p.is_file():
+            continue
+        m = RE_FULL_TURN.search(p.name)
+        if not m or m.group("turn") != turn_s:
+            continue
+        found.append(p)
+    return sorted(found, key=lambda x: x.name)
+
+
+def build_related_artifact_ref_entries(
+    round_dir: Path,
+    *,
+    audit_turn_number: int,
+    primary_full: Path | None,
+) -> list[dict[str, Any]]:
+    """System-only sibling refs: same round, same turn, other ``*_full.json`` vs ``primary`` (GitHub #126).
+
+    Excludes the primary file from the list. Omits if there are no other ``*_full`` rows for
+    the turn. Does not include ``*_light.json``, summaries, or other turns.
+    """
+    paths = _same_turn_full_json_paths(round_dir, audit_turn_number=audit_turn_number)
+    primary_r = primary_full.resolve() if primary_full is not None else None
+    related: list[Path] = []
+    for p in paths:
+        if primary_r is not None and p.resolve() == primary_r:
+            continue
+        related.append(p)
+    if not related:
+        return []
+    return [
+        {"path": path_relative_to_python_dir(p), "order": i} for i, p in enumerate(related)
+    ]
+
+
 @dataclass(frozen=True, slots=True)
 class ArtifactRefInputs:
     base_dir: Path
@@ -108,12 +151,24 @@ def build_artifact_refs(inputs: ArtifactRefInputs) -> dict[str, Any]:
         primary = path_relative_to_python_dir(inputs.primary_full)
     else:
         primary = None
-    return {
+    out: dict[str, Any] = {
         "round_path": round_path,
         "primary_full_path": primary,
         "audit_summary_path": audit_summary_path,
         "session_state_path": session_state,
     }
+    rel = build_related_artifact_ref_entries(
+        round_dir,
+        audit_turn_number=inputs.audit_turn_number,
+        primary_full=inputs.primary_full
+        if (
+            inputs.primary_full is not None and inputs.primary_full.is_file()
+        )
+        else None,
+    )
+    if rel:
+        out["related_artifact_refs"] = rel
+    return out
 
 
 def empty_document_root() -> dict[str, Any]:
@@ -216,6 +271,44 @@ def validate_callout_record(rec: dict[str, Any]) -> list[str]:
                     continue
                 if not isinstance(val, str) or not str(val).strip():
                     errors.append(f"artifact_refs.{rk} must be a non-empty string or null")
+        raw_rel = refs.get("related_artifact_refs")
+        if raw_rel is not None:
+            if not isinstance(raw_rel, list):
+                errors.append("artifact_refs.related_artifact_refs must be an array or absent")
+            else:
+                for i, item in enumerate(raw_rel):
+                    err = _validate_related_artifact_ref_object(item, i)
+                    errors.extend(err)
+    return errors
+
+
+def _validate_related_artifact_ref_object(item: Any, index: int) -> list[str]:
+    """Validate one related ref; allow unknown extra keys; known optional fields if present."""
+    errors: list[str] = []
+    if not isinstance(item, dict):
+        return [f"related_artifact_refs[{index}] must be an object"]
+    if "path" not in item:
+        errors.append(f"related_artifact_refs[{index}] missing path")
+        return errors
+    p = item.get("path")
+    if not isinstance(p, str) or not p.strip():
+        errors.append(
+            f"related_artifact_refs[{index}].path must be a non-empty string"
+        )
+    if "label" in item and item["label"] is not None and not isinstance(
+        item.get("label"), str
+    ):
+        errors.append(f"related_artifact_refs[{index}].label must be a string or null")
+    if "relation" in item and item["relation"] is not None and not isinstance(
+        item.get("relation"), str
+    ):
+        errors.append(
+            f"related_artifact_refs[{index}].relation must be a string or null"
+        )
+    if "order" in item and item["order"] is not None and not isinstance(
+        item.get("order"), int
+    ):
+        errors.append(f"related_artifact_refs[{index}].order must be an int or null")
     return errors
 
 

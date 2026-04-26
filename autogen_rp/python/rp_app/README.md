@@ -174,7 +174,7 @@ This includes the selected template ID, scene premise, cast-to-role assignments,
 
 ### User callouts (operator — GitHub #55 / #125)
 
-- **Streamlit (creation only):** With audit logging enabled, operators can add **User Callouts** from the sidebar. Those append to per-session `user_callouts_v1.json` and upsert the review index. Streamlit does **not** run cross-session **review, dismissal, promotion, `rebuild`, or issue-link reconciliation** (including `promote --replace`).
+- **Streamlit (callout creation only, minimal):** With audit logging enabled, the sidebar offers a callout **trigger** and an optional **note** (what the operator noticed). There is **no** artifact **selection** UI, no path entry, and no curation of `artifact_refs` — those are **system-populated** when the callout is **saved** (see `AUDIT_DOCUMENTATION.md` §6, GitHub #126 for optional `related_artifact_refs`). Records append to per-session `user_callouts_v1.json` and **upsert** the review index. Streamlit does **not** run cross-session **review, dismissal, promotion, `rebuild`, or issue-link reconciliation** (including `promote --replace`).
 - **CLI (maintenance / triage):** From `autogen_rp/python/`, run `python scripts/user_callout_review.py` (`--help` lists subcommands). **GitHub** is work authority; the on-disk link map does not track issue lifecycle. Semantics, artifacts, and authority rules: [`AUDIT_DOCUMENTATION.md`](./AUDIT_DOCUMENTATION.md) **§6–§8**.
 
 ## Current module layout
