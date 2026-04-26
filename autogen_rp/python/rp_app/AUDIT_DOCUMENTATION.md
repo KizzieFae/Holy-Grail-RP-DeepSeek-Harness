@@ -1588,9 +1588,11 @@ for that turn.
 
 **Row fields:** `audit_session_number`, `session_path_hint` (path under `autogen_rp/python/`, no directory creation side effect from this hint), `created_at_utc`, `audit_round_number`, `audit_turn_number`, `continuity_turn_index` (nullable), `review_disposition`: `unreviewed` | `dismissed` only. **Promoted** is **not** stored as a disposition: presence in **§8** means promoted.
 
-**Semantics:** Read/written by the Streamlit **User callout review** section. **Rebuild** (maintenance) rescans per-session `user_callouts_v1.json`, overlays **§8**, preserves dispositions where possible, and **flags** orphans/inconsistencies without silently deleting rows. **Dismissing** a callout that already has an issue link is **forbidden** in v1.
+**Semantics:** Read and updated by the **operator CLI** (see **Operator tool** below), not the Streamlit app. A **new** user callout from Streamlit (Issue #55) **upserts** a row into this index automatically. **Rebuild** (maintenance) rescans per-session `user_callouts_v1.json`, overlays **§8**, preserves dispositions where possible, and **flags** orphans/inconsistencies without silently deleting rows. **Dismissing** a callout that already has an issue link is **forbidden** in v1.
 
-**Evidence for notes and `artifact_refs`:** Always from per-session **`user_callouts_v1.json`** (§6).
+**Operator tool:** From `autogen_rp/python/`, run `python scripts/user_callout_review.py` with subcommands: `list`, `show --callout-id <UUID>`, `dismiss`, `promote`, `rebuild`, `links`. Use `--base-dir` if your `rp_audits` root is not the default `rp_app/data/rp_audits`. See `scripts/user_callout_review.py` `--help`.
+
+**Evidence for notes and `artifact_refs`:** Always from per-session **`user_callouts_v1.json`** (§6). The `show` subcommand prints the full raw record and optional **§8** link metadata.
 
 ### 8. `_user_callout_issue_links_v1.json` (User callout → GitHub issue links — GitHub #125 / Holy Grail RP)
 
@@ -1600,7 +1602,7 @@ for that turn.
 
 **Root shape:** `schema: "user_callout_issue_links.v1"`, `schema_version: 1`, `links: { "<callout_id>": { ... } }`.
 
-**Rules:** At most one link per `callout_id` in v1 (duplicate promotion rejected). Written when the operator records a link after creating the issue outside the app. **Atomic** writes (temp + replace) like other audit JSON.
+**Rules:** At most one link per `callout_id` in v1 (duplicate promotion rejected). The operator runs **`user_callout_review.py promote`** (after creating the GitHub issue) or edits are applied only through that tooling—**not** from Streamlit. **Atomic** writes (temp + replace) like other audit JSON.
 
 ## How to Audit a Scene
 

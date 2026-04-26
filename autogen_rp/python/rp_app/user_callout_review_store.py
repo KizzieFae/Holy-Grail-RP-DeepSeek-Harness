@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from audit_logger_paths import resolve_base_dir
 from user_callouts import USER_CALLOUTS_FILENAME, load_document as load_user_callouts_doc
 
 REVIEW_INDEX_SCHEMA = "user_callout_review_index.v1"
@@ -377,6 +378,38 @@ def find_raw_record(*, base_dir: Path, callout_id: str) -> dict[str, Any] | None
     return m.get(callout_id)
 
 
+def resolve_default_audit_base_dir(
+    base_dir: Path | str | None = None,
+) -> Path:
+    """Default ``data/rp_audits`` (same as audit logger) unless ``base_dir`` is set."""
+    if base_dir is not None:
+        return Path(base_dir).resolve()
+    return resolve_base_dir(file_path=str(Path(__file__).resolve()), base_dir=None)
+
+
+def find_user_callouts_path_for_callout(
+    *, base_dir: Path, callout_id: str
+) -> Path | None:
+    """Path to the ``user_callouts_v1.json`` file containing this ``callout_id``, if any."""
+    for p in _iter_session_callout_paths(base_dir):
+        try:
+            doc = load_user_callouts_doc(p)
+        except Exception:
+            continue
+        for rec in doc.get("records", []):
+            if isinstance(rec, dict) and str(rec.get("callout_id")) == str(callout_id):
+                return p
+    return None
+
+
+def get_issue_link_for_callout(
+    *, base_dir: Path, callout_id: str
+) -> dict[str, Any] | None:
+    ldata = load_issue_links(issue_links_path(base_dir=base_dir))
+    link = (ldata.get("links") or {}).get(callout_id)
+    return link if isinstance(link, dict) else None
+
+
 @dataclass
 class RebuildResult:
     review_rows_written: int
@@ -442,7 +475,7 @@ def rebuild_review_state(*, base_dir: Path) -> RebuildResult:
     )
 
 
-def list_unresolved_for_ui(
+def list_unresolved(
     *, base_dir: Path
 ) -> list[tuple[str, dict[str, Any]]]:
     """Queue: not promoted (no link) and not dismissed; sorted by created_at_utc desc."""

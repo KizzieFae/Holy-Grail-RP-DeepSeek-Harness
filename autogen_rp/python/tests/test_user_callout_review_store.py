@@ -14,6 +14,8 @@ import user_callouts as uc
 from user_callout_review_store import (
     UserCalloutReviewStoreError,
     dismiss_callout,
+    find_user_callouts_path_for_callout,
+    list_unresolved,
     record_issue_promotion,
     rebuild_review_state,
     review_index_path,
@@ -189,3 +191,83 @@ def test_corrupt_review_index_raises(tmp_path: Path) -> None:
     p.write_text("{", encoding="utf-8")
     with pytest.raises(UserCalloutReviewStoreError):
         rs.load_review_index(p)
+
+
+def test_find_user_callouts_path_for_callout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(rs, "PATH_ANCHOR", tmp_path, raising=False)
+    monkeypatch.setattr(uc, "_PATH_ANCHOR", tmp_path, raising=False)
+    base = tmp_path / "rp"
+    sdir = base / "session_001"
+    sdir.mkdir(parents=True)
+    cid = "11111111-1111-1111-1111-111111111111"
+    uc.append_callout(
+        sdir / "user_callouts_v1.json",
+        _raw_record(cid, 1),
+    )
+    got = find_user_callouts_path_for_callout(base_dir=base, callout_id=cid)
+    assert got is not None
+    assert got.name == "user_callouts_v1.json"
+
+
+def test_list_unresolved_excludes_dismissed_and_promoted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(rs, "PATH_ANCHOR", tmp_path, raising=False)
+    monkeypatch.setattr(uc, "_PATH_ANCHOR", tmp_path, raising=False)
+    base = tmp_path / "rp"
+    sdir = base / "session_001"
+    sdir.mkdir(parents=True)
+    uc.append_callout(
+        sdir / "user_callouts_v1.json",
+        _raw_record("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 1),
+    )
+    uc.append_callout(
+        sdir / "user_callouts_v1.json",
+        _raw_record("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 1),
+    )
+    r1 = _raw_record("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 1)
+    r2 = _raw_record("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", 1)
+    upsert_review_row_after_new_callout(base_dir=base, record=r1)
+    upsert_review_row_after_new_callout(base_dir=base, record=r2)
+    # promote b
+    save_issue_links(
+        rs.issue_links_path(base_dir=base),
+        {
+            "schema": rs.ISSUE_LINKS_SCHEMA,
+            "schema_version": 1,
+            "links": {
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb": {
+                    "issue_number": 1,
+                    "issue_url": "https://x/1",
+                    "linked_at_utc": "t",
+                }
+            },
+        },
+    )
+    # dismiss a via file manipulation: load index, set dismissed for a
+    pidx = review_index_path(base_dir=base)
+    data = rs.load_review_index(pidx)
+    ar = data["rows"]["aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"]
+    ar["review_disposition"] = "dismissed"
+    data["rows"]["aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"] = ar
+    save_review_index(pidx, data)
+    u = list_unresolved(base_dir=base)
+    assert u == []
+
+
+def test_list_unresolved_includes_unreviewed_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(rs, "PATH_ANCHOR", tmp_path, raising=False)
+    monkeypatch.setattr(uc, "_PATH_ANCHOR", tmp_path, raising=False)
+    base = tmp_path / "rp"
+    sdir = base / "session_001"
+    sdir.mkdir(parents=True)
+    r0 = _raw_record("cccccccc-cccc-cccc-cccc-cccccccccccc", 1)
+    uc.append_callout(sdir / "user_callouts_v1.json", r0)
+    upsert_review_row_after_new_callout(base_dir=base, record=r0)
+    u = list_unresolved(base_dir=base)
+    assert len(u) == 1
+    assert u[0][0] == "cccccccc-cccc-cccc-cccc-cccccccccccc"
