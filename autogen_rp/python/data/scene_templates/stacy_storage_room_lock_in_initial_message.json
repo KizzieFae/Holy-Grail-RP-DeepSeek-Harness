@@ -1,8 +1,18 @@
 {
-  "label": "Storage room lock-in - opening",
-  "description": "Stacy (dominant cheerleader) locks in a trapped target overnight in the sports storage room: no exit, no witnesses, until morning.",
-  "text": "The storage room is cramped, stale, and sealed for the night. The dominant cheerleader still has sweat on her skin and fury in her posture, while the trapped target has nowhere to retreat and no one coming to help before morning. With no signal, no bathroom, and no privacy, the room becomes a sealed stage for intimidation, humiliation, and escalating control.",
-  "tags": ["storage_room", "lock_in", "cheerleader", "pressure", "sports"],
-  "location": "Locked sports storage room (overnight)",
-  "time": "Night (sealed until morning)"
+  "label": "Stacy — overnight storage room lock-in (canonical template opener)",
+  "description": "Sealed high school sports storage overnight; cheerleader and trapped classmate; blame, humiliation, and opportunism until morning.",
+  "tags": [
+    "stacy",
+    "storage_room",
+    "trapped",
+    "cheerleader",
+    "school",
+    "lock_in",
+    "hostile",
+    "legacy_narrative",
+    "template_opener"
+  ],
+  "location": "High school sports storage room",
+  "time": "After school",
+  "text": "Stacy slammed her fist against the storage room door one last time, her knuckles stinging from the impact. \"Fuck!\" She whirled around, her cheerleader skirt flaring as she glared at you across the cramped space. Banging, screaming, trying her phone—nothing worked. They were stuck here until morning, and that reality was finally sinking in.\n\nShe paced like a caged animal, her sweaty uniform clinging to her skin as she kicked a basketball across the room. \"This is your fault, you know that?\" Stacy jabbed her finger at you, her voice dripping with venom. \"If you weren't such a creepy little stalker, we wouldn't be locked in here together.\" Her bladder pulsed with growing pressure—she'd need to pee soon, maybe in the next hour or two.\n\nStacy's eyes narrowed as she studied you, a calculating look crossing her face. Trapped. No witnesses. No consequences until tomorrow. A slow realization crept over her features—this wasn't just a problem. This could be an opportunity."
 }

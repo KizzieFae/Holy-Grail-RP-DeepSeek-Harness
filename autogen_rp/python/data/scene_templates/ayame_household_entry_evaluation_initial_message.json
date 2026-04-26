@@ -1,8 +1,17 @@
 {
-  "label": "Household entry evaluation - opening",
-  "description": "Controlled interior evaluation: host, applicant, and visible guard frame the first exchange.",
-  "text": "The household receives a newcomer inside a carefully controlled interior space. The host directs the first exchange, the applicant is under direct evaluation, and any assigned guard remains visibly present rather than fading into the background.",
-  "tags": ["ayame", "household", "evaluation", "applicant", "host"],
-  "location": "Controlled household — interior / evaluation",
-  "time": "Entry / evaluation"
+  "label": "Ayame — mansion household interview (canonical template opener)",
+  "description": "Desperate applicant at the opulent estate entrance; interview for room and board and ‘domestic duties’ with Ayame within.",
+  "tags": [
+    "ayame",
+    "mansion",
+    "interview",
+    "applicant",
+    "domestic_employment",
+    "desperation",
+    "legacy_narrative",
+    "template_opener"
+  ],
+  "location": "Mansion entrance",
+  "time": "Evening",
+  "text": "It had been a horrible week. You had lost your job, then your apartment, and desperation was starting to feel like a second skin.\n\nSo when you found an advertisement seeking someone willing to handle light housework and occasional \"domestic duties\" in exchange for room and board in an opulent mansion, you answered immediately. The fine print—\"morally flexible person preferred\"—had felt strange, but not strange enough to scare you away from a roof, a meal, and the possibility of stability.\n\nThe interview was scheduled almost at once. Now you stood at the entrance to a mansion that looked too polished, too quiet, and too expensive to belong to your life. Somewhere inside, Ayame Suzuki waited to conduct what was supposed to be an ordinary household interview. You lifted your hand toward the door, unaware how much had already been arranged before you arrived."
 }

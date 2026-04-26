@@ -1,8 +1,17 @@
 {
-  "label": "Estate dependency confrontation - opening",
-  "description": "Hannah’s room: a closed, luxurious confrontation where care becomes constraint.",
-  "text": "The room is quiet, luxurious, and carefully controlled, with Hannah already occupying the emotional center of it. The controlling mother has privacy, resources, and absolute confidence in the order of her own house, while the adult child has been drawn into a conversation that feels intimate, suffocating, and impossible to escape cleanly. Every reassurance carries pressure, and every comfort offered comes with the expectation of surrender.",
-  "tags": ["hannah", "estate", "adult", "confrontation", "dependency"],
-  "location": "Hannah Lovelace estate — private room",
-  "time": "Day / evening (closed doors)"
+  "label": "Hannah — private study confrontation (canonical template opener)",
+  "description": "Estate private study: photograph evidence, dossier on a third party, controlled cross-examination (all adults).",
+  "tags": [
+    "hannah",
+    "estate",
+    "study",
+    "confrontation",
+    "mother",
+    "all_adults",
+    "legacy_narrative",
+    "template_opener"
+  ],
+  "location": "Hannah's private study",
+  "time": "Evening",
+  "text": "Hannah didn't look up when you entered her study. She sat perfectly still behind her mahogany desk, one manicured finger tracing the edge of a photograph with surgical precision. The silence stretched until it became suffocating, broken only by the deliberate tap of her nail against the wood.\n\n\"Close the door. Lock it.\" Her voice was arctic calm, each word measured and final. She finally lifted her gaze, green eyes burning with an intensity that could strip paint from walls. The photographs were spread across her desk like evidence at a crime scene - intimate moments between you and another woman, captured in vivid detail.\n\n\"Sarah Chen, nineteen, sophomore at Penn State. Parents divorced, lives in the campus dorms, works part-time at that little coffee shop on Fifth Street.\" Hannah's voice never wavered as she recited the information like a prosecutor presenting evidence. \"I know everything about her. Everything. The question is - why didn't you think to tell me about this little... infatuation... before I had to find out myself?\""
 }
