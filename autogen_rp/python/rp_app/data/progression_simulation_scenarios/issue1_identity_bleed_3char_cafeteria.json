@@ -1,13 +1,13 @@
 {
   "id": "issue1_identity_bleed_3char_cafeteria",
   "title": "Issue #1 — 3-char cafeteria identity bleed probe (template roles)",
-  "intent": "Long-session stress with adjacent template roles; priming/probe user lines come from --user-trigger-schedule. Owner of role instigator = Harley card; non-owner N = Magpie (witness); Ivy = possessive_counterforce.",
+  "intent": "Long-session stress with adjacent template roles; priming/probe user lines come from --user-trigger-schedule. Owner of role instigator = Harley card; non-owner N = Magpie (new_arrival slot); Ivy = instigator_accomplice.",
   "character_card_ids": [
     "harley_quinn",
     "poison_ivy",
     "magpie"
   ],
-  "opening_description": "Arkham cafeteria at shift change: plastic trays, weak coffee, a guard's radio murmuring at the edge of hearing. Harley is wound tight; Ivy has claimed a table like territory; Magpie watches both, ready to side-step or steal focus. CAST roles: one instigator, one possessive counterforce, one witness—authority and blame are easy to confuse when the room is watching.",
+  "opening_description": "Arkham cafeteria at shift change: plastic trays, weak coffee, a guard's radio murmuring at the edge of hearing. Harley is wound tight; Ivy has claimed a table like territory; Magpie watches both, ready to side-step or steal focus. CAST roles: one instigator, one instigator accomplice, one new arrival—authority and blame are easy to confuse when the room is watching.",
   "location": "arkham_cafeteria",
   "trigger_text": "A tray clatters—too loud. Harley's eyes jump to Ivy's hands. Magpie mutters, 'Nobody's eating until someone says what this is really about.'",
   "max_turns": 20,
@@ -16,15 +16,15 @@
   "initial_tension": "high",
   "initial_phase": "rising",
   "expected_pressure_profile": "high",
-  "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+  "scene_template_id": "arkham_asylum_mess_hall_arena",
   "scene_template_role_assignments": {
     "harley_quinn": "instigator",
-    "poison_ivy": "possessive_counterforce",
+    "poison_ivy": "instigator_accomplice",
     "magpie": "new_arrival"
   },
   "seed_issue": {
     "issue_id": "issue1_cafeteria_triangle",
-    "description": "Public cafeteria tension; witness, instigator, and counterforce roles create adjacent-authority confusion for attribution probes.",
+    "description": "Public cafeteria tension; instigator, instigator accomplice, and new-arrival slots create adjacent-authority confusion for attribution probes.",
     "participant_card_ids": [
       "harley_quinn",
       "poison_ivy",

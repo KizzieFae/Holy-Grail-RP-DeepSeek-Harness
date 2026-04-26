@@ -129,7 +129,7 @@ def test_finalize_template_driven_uses_anchor_role_name() -> None:
         present_characters=["P1", "P2"],
     )
     assert m.scene_state is not None
-    m.scene_state.scene_template_id = "arkham_asylum_cafeteria_harley_ivy_conflict"
+    m.scene_state.scene_template_id = "arkham_asylum_mess_hall_arena"
     m.scene_state.anchor_role_name = "new_arrival"
     m.scene_state.role_assignments = {"P1": "new_arrival", "P2": "instigator"}
     m.scene_state.present_characters = ["P1", "P2"]

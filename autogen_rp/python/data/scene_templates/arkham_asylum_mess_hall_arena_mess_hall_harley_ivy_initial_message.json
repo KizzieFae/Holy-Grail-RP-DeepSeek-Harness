@@ -1,8 +1,9 @@
 {
-  "label": "Cafeteria - Harley & Ivy Conflict",
-  "description": "Harley's fixation on the Joker collides with Ivy's possessive frustration in a public blowup.",
+  "id": "mess_hall_harley_ivy",
+  "label": "Cafeteria — dyadic public escalation",
+  "description": "Pairwise conflict over attachment and humiliation in public; eyes collect before the room remembers to hush.",
   "text": "Dinner in Arkham's female ward was loud in the way only forced routine could be: trays slamming down, plastic utensils scraping, guards pretending to supervise rather than endure, and every inmate measuring the room for weakness while chewing through food nobody respected. The fluorescent lights hummed overhead hard enough to make every pause feel temporary.\n\nHarley Quinn sat hunched over her tray in a sulk that still managed to demand an audience, platinum pigtails damp from the ward air and irritation curling under her skin. It took only one wistful mention of her precious Puddin for Poison Ivy's expression to go flat and dangerous. Ivy had heard this cycle too many times. The room had, too. But that never stopped it.\n\nWhat started as a bitter little exchange was already drawing eyes from nearby tables. In Arkham, private humiliation had a way of becoming public spectacle before anyone remembered to lower their voice.\n\n\"I miss my Puddin',\" Harley muttered, stabbing at the gray slop on her tray. Ivy's jaw tightened almost imperceptibly before she answered, and the whole table seemed to lean toward the sound.\n\n\"For God's sake, Harley,\" Ivy said coolly, \"must every meal come with his name in your mouth?\"",
-  "tags": ["arkham", "cafeteria", "harley", "ivy", "joker", "conflict"],
+  "tags": ["arkham", "mess_hall", "dyadic_conflict", "public_spectacle"],
   "location": "Arkham Asylum - Female Ward Cafeteria",
   "time": "Evening meal"
 }

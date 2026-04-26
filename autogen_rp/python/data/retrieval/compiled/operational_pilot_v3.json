@@ -270,157 +270,10 @@
   "schema_version": 3,
   "setup_notes": [],
   "templates": {
-    "arkham_asylum_cafeteria_harley_ivy_conflict": [
-      {
-        "authority_class": "setup_truth",
-        "knowledge_id": "f0900849c072c98434bdcc1c1fcc407fea48d30677fc477bcaccf1ddee8cf0cd",
-        "knowledge_type": "scene_setup_fact",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:premise",
-        "structured_payload": null,
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "Witnesses raise the cost of backing down, so pairwise challenges tend to accelerate versus a private setting. Peripheral cast can hijack momentum by tying the conflict to a visible object or slight the room will treat as shared evidence.",
-        "visibility": "template_participants"
-      },
-      {
-        "authority_class": "foundational_truth",
-        "knowledge_id": "400905ce1cfe35afae8d992e91e7cd8fc1e6a7c6b0512e7b12cbb0ced88d28f1",
-        "knowledge_type": "role_constraint",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:guard_or_staff_response",
-        "structured_payload": {
-          "authority": "high",
-          "presence_constraint": "flexible",
-          "required": false,
-          "role_name": "guard_or_staff_response"
-        },
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "{\"authority\": \"high\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"guard_or_staff_response\"}",
-        "visibility": "template_participants"
-      },
-      {
-        "authority_class": "foundational_truth",
-        "knowledge_id": "162d83cc59abba9055dba9660474ab287877f3280d3b7eb0abadf30a62497ce1",
-        "knowledge_type": "role_constraint",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:instigator",
-        "structured_payload": {
-          "authority": "low",
-          "presence_constraint": "must_remain",
-          "required": true,
-          "role_name": "instigator"
-        },
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"instigator\"}",
-        "visibility": "template_participants"
-      },
-      {
-        "authority_class": "foundational_truth",
-        "knowledge_id": "857a11a9817fad003d01ace8317bb254c4cfd680d99d8e2f35738d831c62bef4",
-        "knowledge_type": "role_constraint",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:new_arrival",
-        "structured_payload": {
-          "authority": "low",
-          "presence_constraint": "must_remain",
-          "required": false,
-          "role_name": "new_arrival"
-        },
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": false, \"role_name\": \"new_arrival\"}",
-        "visibility": "template_participants"
-      },
-      {
-        "authority_class": "foundational_truth",
-        "knowledge_id": "4eae874c25d292bf0d8d6c8df8f422d2855b7086fcaaa1b7ae4fa6b6307201d7",
-        "knowledge_type": "role_constraint",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:possessive_counterforce",
-        "structured_payload": {
-          "authority": "low",
-          "presence_constraint": "must_remain",
-          "required": true,
-          "role_name": "possessive_counterforce"
-        },
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"possessive_counterforce\"}",
-        "visibility": "template_participants"
-      },
-      {
-        "authority_class": "foundational_truth",
-        "knowledge_id": "10ade3aa41b429db93a99b091b6e116a2337aabd48aa21c734dd61966857f9b4",
-        "knowledge_type": "role_constraint",
-        "priority": 45,
-        "relationship_relevant": false,
-        "relevance_tags": [
-          "template:arkham_asylum_cafeteria_harley_ivy_conflict"
-        ],
-        "scope": "scene_shared",
-        "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cafeteria_harley_ivy_conflict:role_slots:role_slot:witness_or_intervenor",
-        "structured_payload": {
-          "authority": "medium",
-          "presence_constraint": "flexible",
-          "required": false,
-          "role_name": "witness_or_intervenor"
-        },
-        "subject_scope": {
-          "template_id": "arkham_asylum_cafeteria_harley_ivy_conflict"
-        },
-        "temporal_scope": {},
-        "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"witness_or_intervenor\"}",
-        "visibility": "template_participants"
-      }
-    ],
     "arkham_asylum_cell_intake": [
       {
         "authority_class": "setup_truth",
-        "knowledge_id": "bccfc6d60460e1569282536ce6c8b3e76b332109a7340c9ea0548af1a8ca4c97",
+        "knowledge_id": "7b34d6dcc9c03c2e2408b0e9563ddfb971cfe52f2e7d37f26349b6e25e985d1f",
         "knowledge_type": "scene_setup_fact",
         "priority": 45,
         "relationship_relevant": false,
@@ -435,7 +288,7 @@
           "template_id": "arkham_asylum_cell_intake"
         },
         "temporal_scope": {},
-        "text": "Before staff intervene, interaction follows informal hierarchy over intake labels—whoever frames the space as already governed sets tempo. A conspicuous disruption or safety-risk beat is what most reliably pulls formal enforcement to reset or ratify control.",
+        "text": "A sealed women's ward isolation cell (two cots, shared head, a reinforced door, and a high observation aperture) makes first contact intimate before the larger system commits: whoever already reads the room sets tempo for cohabitation, and noise from the corridor is a reminder that power can re-enter at any moment. Intake is lived here; informal hierarchy and fear of the next move (rounds, shower blocks, the mess) shape what gets said and what is deferred until staff, a ward peer enforcer, or a credentialed officer steps into view.",
         "visibility": "template_participants"
       },
       {
@@ -461,6 +314,31 @@
         },
         "temporal_scope": {},
         "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"cell_anchor\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "80cdd845ccd1b4b5cf524a4d855a72ef301b27513c88a3978b7027f4102c2b63",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_cell_intake"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:new_arrival",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": false,
+          "role_name": "new_arrival"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_cell_intake"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": false, \"role_name\": \"new_arrival\"}",
         "visibility": "template_participants"
       },
       {
@@ -511,6 +389,153 @@
         },
         "temporal_scope": {},
         "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"ward_enforcer\"}",
+        "visibility": "template_participants"
+      }
+    ],
+    "arkham_asylum_mess_hall_arena": [
+      {
+        "authority_class": "setup_truth",
+        "knowledge_id": "335e4d80d8f29204ca0fcc42157fc3b43a4664f254f07c9d35892e927a344228",
+        "knowledge_type": "scene_setup_fact",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:premise",
+        "structured_payload": null,
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "A line-served women's ward mess hall is a low-privacy, high-visibility room: long tables, plastic chairs, and worn murals under hard lighting force parallel attention to food, pecking order, and staff sightlines. Predatory talk, a sudden impulse grab, or a pairwise blow-up at a table can all escalate in full view; guards and uniformed response sit at the room's margin with proximity but not always instant reach, so the beat can fork between coordinated table pressure, an opportunistic disruption that re-routes authority, and dyadic public volatility before the room is reset.",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "8abdd9aff28d4225fdde87c53c366dc3306a607aa3f06a960a3ebc75e261f782",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:role_slots:role_slot:guard_or_staff_response",
+        "structured_payload": {
+          "authority": "high",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "guard_or_staff_response"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"high\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"guard_or_staff_response\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "fbdd5caaebb6b290629cf05338599dd7f299d79946edc9587588ec8514a30f59",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:role_slots:role_slot:impulse_disruptor",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "impulse_disruptor"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"impulse_disruptor\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "1e1ae5ff190ee273cc42701b6060458a81fe6f96a8fa4b51fde98702c66416b7",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:role_slots:role_slot:instigator",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "instigator"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"instigator\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "3abcedd7715dd2dc1d33a1de6e3b4ec036bc9e6cfcbd64a0f8c17ffa79f085e6",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:role_slots:role_slot:instigator_accomplice",
+        "structured_payload": {
+          "authority": "low",
+          "presence_constraint": "must_remain",
+          "required": true,
+          "role_name": "instigator_accomplice"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"instigator_accomplice\"}",
+        "visibility": "template_participants"
+      },
+      {
+        "authority_class": "foundational_truth",
+        "knowledge_id": "239ea699f33384a686bf25c67fff3d5327a9a57acecd6490777079bf9575da5e",
+        "knowledge_type": "role_constraint",
+        "priority": 45,
+        "relationship_relevant": false,
+        "relevance_tags": [
+          "template:arkham_asylum_mess_hall_arena"
+        ],
+        "scope": "scene_shared",
+        "source_kind": "scene_template",
+        "source_ref": "tpl:arkham_asylum_mess_hall_arena:role_slots:role_slot:witness_or_intervenor",
+        "structured_payload": {
+          "authority": "medium",
+          "presence_constraint": "flexible",
+          "required": false,
+          "role_name": "witness_or_intervenor"
+        },
+        "subject_scope": {
+          "template_id": "arkham_asylum_mess_hall_arena"
+        },
+        "temporal_scope": {},
+        "text": "{\"authority\": \"medium\", \"presence_constraint\": \"flexible\", \"required\": false, \"role_name\": \"witness_or_intervenor\"}",
         "visibility": "template_participants"
       }
     ]

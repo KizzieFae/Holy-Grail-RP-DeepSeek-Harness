@@ -163,7 +163,7 @@ def main() -> int:
     )
 
     tpl_intake = "arkham_asylum_cell_intake"
-    tpl_cafeteria = "arkham_asylum_cafeteria_harley_ivy_conflict"
+    tpl_cafeteria = "arkham_asylum_mess_hall_arena"
 
     matrix = [
         (

@@ -30,4 +30,4 @@ def test_operational_pilot_manifest_compiles_v3(tmp_path: Path) -> None:
     assert idx.schema_version == 3
     assert set(idx.characters.keys()) == {"Harley_Quinn", "Magpie", "Poison_Ivy"}
     assert "arkham_asylum_cell_intake" in idx.templates
-    assert "arkham_asylum_cafeteria_harley_ivy_conflict" in idx.templates
+    assert "arkham_asylum_mess_hall_arena" in idx.templates

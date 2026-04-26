@@ -37,7 +37,7 @@
 | **Character 2** | `Poison_Ivy` | Card file `poison_ivy.json`; index key = `make_agent_identifier("Poison Ivy")` |
 | **Character 3** | `Magpie` | Card file `magpie.json`; index key = `Magpie` |
 | **Template A (dyadic / intake tension)** | `arkham_asylum_cell_intake` | `data/scene_templates/arkham_asylum_cell_intake.json` |
-| **Template B (3-way conflict)** | `arkham_asylum_cafeteria_harley_ivy_conflict` | `data/scene_templates/arkham_asylum_cafeteria_harley_ivy_conflict.json` |
+| **Template B (3-way mess hall)** | `arkham_asylum_mess_hall_arena` | `data/scene_templates/arkham_asylum_mess_hall_arena.json` |
 
 Changing characters or templates **during** a comparison matrix invalidates A/B baselines.
 
@@ -107,7 +107,7 @@ Use the **locked** cast and templates only.
 | ID | Scenario | Template | Cast / roles (suggested) | What to observe |
 |----|----------|----------|---------------------------|-----------------|
 | **S1** | 2-character emotional loop | **A** `arkham_asylum_cell_intake` | e.g. `harley_quinn` as **cell_anchor**, `magpie` as **new_arrival** | Voice/goals in retrieved vs noise; duplication vs grounding |
-| **S2** | 3-character conflict | **B** `arkham_asylum_cafeteria_harley_ivy_conflict` | `harley_quinn` **instigator**, `poison_ivy` **possessive_counterforce**, `magpie` **witness_or_intervenor** | Cross-character pressure; caps; ordering (fixed in code) |
+| **S2** | 3-character conflict | **B** `arkham_asylum_mess_hall_arena` | `harley_quinn` **instigator**, `poison_ivy` **instigator_accomplice**, `magpie` **new_arrival** (optional slots like **witness_or_intervenor** / **impulse_disruptor** unbound in baseline) | Cross-character pressure; caps; ordering (fixed in code) |
 | **S3** | Grounding / binding | **A** or **B** (pick one run per template) | After continuity promotes settled facts / binding | Retrieved must **not** override grounding; check **duplication** of same facts |
 | **S4** (optional) | Episodic merge | Same as S1 or S2 | Enable **`RP_EPISODIC_MEMORY=1`** | Redundancy between episodic lines and authored chunks; global cap behavior |
 

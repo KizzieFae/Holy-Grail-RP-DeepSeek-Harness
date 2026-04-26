@@ -16,10 +16,10 @@
   "initial_tension": "high",
   "initial_phase": "rising",
   "expected_pressure_profile": "high",
-  "scene_template_id": "arkham_asylum_cafeteria_harley_ivy_conflict",
+  "scene_template_id": "arkham_asylum_mess_hall_arena",
   "scene_template_role_assignments": {
     "harley_quinn": "instigator",
-    "poison_ivy": "possessive_counterforce",
+    "poison_ivy": "instigator_accomplice",
     "magpie": "new_arrival"
   },
   "seed_issue": {

@@ -1,7 +1,7 @@
 {
   "template_id": "arkham_asylum_cell_intake",
   "anchor_role_name": "new_arrival",
-  "premise": "Before staff intervene, interaction follows informal hierarchy over intake labels—whoever frames the space as already governed sets tempo. A conspicuous disruption or safety-risk beat is what most reliably pulls formal enforcement to reset or ratify control.",
+  "premise": "A sealed women's ward isolation cell (two cots, shared head, a reinforced door, and a high observation aperture) makes first contact intimate before the larger system commits: whoever already reads the room sets tempo for cohabitation, and noise from the corridor is a reminder that power can re-enter at any moment. Intake is lived here; informal hierarchy and fear of the next move (rounds, shower blocks, the mess) shape what gets said and what is deferred until staff, a ward peer enforcer, or a credentialed officer steps into view.",
   "role_slots": [
     {
       "role_name": "new_arrival",

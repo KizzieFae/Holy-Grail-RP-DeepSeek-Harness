@@ -245,8 +245,7 @@ def test_arkham_templates_keep_new_arrival_optional() -> None:
     for template_id in [
         "arkham_asylum_cell_intake",
         "arkham_asylum_shower_predation",
-        "arkham_asylum_cafeteria_magpie_incident",
-        "arkham_asylum_cafeteria_harley_ivy_conflict",
+        "arkham_asylum_mess_hall_arena",
     ]:
         template = manager.load_template(template_id)
         role_slot = template.get_role_slot("new_arrival")
@@ -254,11 +253,11 @@ def test_arkham_templates_keep_new_arrival_optional() -> None:
         assert role_slot.required is False
 
 
-def test_harley_ivy_conflict_uses_high_authority_staff_response_slot() -> None:
+def test_mess_hall_arena_uses_high_authority_staff_response_slot() -> None:
     templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
     manager = SceneTemplateManager(templates_dir)
 
-    template = manager.load_template("arkham_asylum_cafeteria_harley_ivy_conflict")
+    template = manager.load_template("arkham_asylum_mess_hall_arena")
     witness_role_slot = template.get_role_slot("witness_or_intervenor")
     role_slot = template.get_role_slot("guard_or_staff_response")
 
@@ -290,8 +289,8 @@ def test_celina_recovery_template_stays_grounded_and_slow_recovery() -> None:
     opener_mgr = OpenerManager(templates_dir=templates_dir)
     opener = opener_mgr.get_default_template_opener("celina_apartment_recovery_watch")
     assert opener is not None
-    assert "fragile stabilization under pressure" in opener.text
-    assert (
-        "unusual traits or impossible-seeming developments carrying real emotional weight"
-        in opener.text
-    )
+    # Canonical opener: street rescue → car → apartment; slow physical recovery beats on couch.
+    text_lower = opener.text.lower()
+    assert "apartment" in text_lower
+    assert "couch" in text_lower
+    assert "blankets" in text_lower
