@@ -26,14 +26,62 @@ def render_scene_setup_controls(
     resolve_character_file_fn: Callable[[Any, str], str | None],
     start_scene_fn: Callable[[list[str]], Awaitable[bool]],
 ) -> None:
-    st_module.subheader("NPCs in Scene")
-    st_module.caption("Select the characters that should respond in this scene")
-
     scene_started = bool(st_module.session_state.get("scene_started", False))
 
     npc_options = [
         c for c in available if c != st_module.session_state.get("player_character")
     ]
+
+    template_manager = scene_template_manager_cls()
+    templates = template_manager.list_templates()
+    selected_template: Any | None = None
+    selected_template_id: str | None = None
+    if templates:
+        template_options = ["(legacy opener flow)"] + [
+            template.template_id for template in templates
+        ]
+        current_template_id = st_module.session_state.get("selected_scene_template_id")
+        selected_template_option = (
+            current_template_id
+            if current_template_id in template_options
+            else "(legacy opener flow)"
+        )
+        selected_template_id = st_module.selectbox(
+            "Scene Template",
+            options=template_options,
+            index=template_options.index(selected_template_option),
+            key="scene_template_select",
+            disabled=st_module.session_state.get("scene_started", False),
+        )
+        selected_template_id = (
+            None
+            if selected_template_id == "(legacy opener flow)"
+            else selected_template_id
+        )
+        template_selection_changed = selected_template_id != current_template_id
+        st_module.session_state["selected_scene_template_id"] = selected_template_id
+
+        if template_selection_changed:
+            if selected_template_id:
+                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_TEMPLATE
+            elif st_module.session_state.get("opening_mode") == STREAMLIT_OPENING_MODE_TEMPLATE:
+                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_CUSTOM
+
+        if selected_template_id:
+            selected_template = next(
+                (
+                    template
+                    for template in templates
+                    if template.template_id == selected_template_id
+                ),
+                None,
+            )
+    else:
+        st_module.session_state["selected_scene_template_id"] = None
+        st_module.session_state["scene_role_assignments"] = {}
+
+    st_module.subheader("NPCs in Scene")
+    st_module.caption("Select the characters that should respond in this scene")
 
     if not npc_options:
         st_module.warning("No character files found in data/autogen_characters/")
@@ -78,90 +126,32 @@ def render_scene_setup_controls(
             else:
                 st_module.session_state["scene_owner"] = char_names[0]
 
-    template_manager = scene_template_manager_cls()
-    templates = template_manager.list_templates()
-    selected_template = None
-    selected_template_id = None
-    if templates:
-        st_module.subheader("Scene Template")
-        st_module.caption(
-            "Sets the continuity template id, role slots, and opener path. When authored retrieval is ON "
-            "(env `RP_RETRIEVED_CONTEXT_INDEX`), it also selects **template-scoped** index rows "
-            "(`role_slots`, `premise`) for matching templates. "
-            "“(legacy opener flow)” means **no** template id — template lane retrieval does not apply."
-        )
-        template_options = ["(legacy opener flow)"] + [
-            template.template_id for template in templates
-        ]
-        current_template_id = st_module.session_state.get("selected_scene_template_id")
-        selected_template_option = (
-            current_template_id
-            if current_template_id in template_options
-            else "(legacy opener flow)"
-        )
-        selected_template_id = st_module.selectbox(
-            "Scene Template",
-            options=template_options,
-            index=template_options.index(selected_template_option),
-            key="scene_template_select",
-            disabled=st_module.session_state.get("scene_started", False),
-        )
-        selected_template_id = (
-            None
-            if selected_template_id == "(legacy opener flow)"
-            else selected_template_id
-        )
-        template_selection_changed = selected_template_id != current_template_id
-        st_module.session_state["selected_scene_template_id"] = selected_template_id
-
-        if template_selection_changed:
-            if selected_template_id:
-                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_TEMPLATE
-            elif st_module.session_state.get("opening_mode") == STREAMLIT_OPENING_MODE_TEMPLATE:
-                st_module.session_state["opening_mode"] = STREAMLIT_OPENING_MODE_CUSTOM
-
-        if selected_template_id:
-            selected_template = next(
-                (
-                    template
-                    for template in templates
-                    if template.template_id == selected_template_id
+    if templates and selected_template_id and selected_template is not None:
+        role_options = [""] + [slot.role_name for slot in selected_template.role_slots]
+        current_assignments = {
+            key: value
+            for key, value in st_module.session_state.get(
+                "scene_role_assignments", {}
+            ).items()
+            if key in selected_chars
+        }
+        for char_file, char_name in zip(selected_chars, char_names, strict=False):
+            selected_role = st_module.selectbox(
+                f"Role for {char_name}",
+                options=role_options,
+                index=(
+                    role_options.index(current_assignments.get(char_file, ""))
+                    if current_assignments.get(char_file, "") in role_options
+                    else 0
                 ),
-                None,
+                key=f"scene_role_assignment_{char_file}",
+                disabled=st_module.session_state.get("scene_started", False),
             )
-            if selected_template is not None:
-                role_options = [""] + [
-                    slot.role_name for slot in selected_template.role_slots
-                ]
-                current_assignments = {
-                    key: value
-                    for key, value in st_module.session_state.get(
-                        "scene_role_assignments", {}
-                    ).items()
-                    if key in selected_chars
-                }
-                for char_file, char_name in zip(
-                    selected_chars, char_names, strict=False
-                ):
-                    selected_role = st_module.selectbox(
-                        f"Role for {char_name}",
-                        options=role_options,
-                        index=(
-                            role_options.index(current_assignments.get(char_file, ""))
-                            if current_assignments.get(char_file, "") in role_options
-                            else 0
-                        ),
-                        key=f"scene_role_assignment_{char_file}",
-                        disabled=st_module.session_state.get("scene_started", False),
-                    )
-                    if selected_role:
-                        current_assignments[char_file] = selected_role
-                    else:
-                        current_assignments.pop(char_file, None)
-                st_module.session_state["scene_role_assignments"] = current_assignments
-    else:
-        st_module.session_state["selected_scene_template_id"] = None
-        st_module.session_state["scene_role_assignments"] = {}
+            if selected_role:
+                current_assignments[char_file] = selected_role
+            else:
+                current_assignments.pop(char_file, None)
+        st_module.session_state["scene_role_assignments"] = current_assignments
 
     st_module.subheader("Scene Opening")
     if st_module.session_state.get("opening_mode") == STREAMLIT_OPENING_MODE_GENERATED:
