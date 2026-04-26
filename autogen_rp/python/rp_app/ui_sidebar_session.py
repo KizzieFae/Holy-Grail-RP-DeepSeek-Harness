@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any, Awaitable, Callable
 
+from ui_sidebar_user_callout_review import render_user_callout_review_section
 from ui_sidebar_user_callouts import render_user_callout_controls
 
 
@@ -49,6 +50,11 @@ def render_current_scene_controls(
             get_audit_logger_fn=get_audit_logger_fn,
             get_continuity_manager_fn=get_continuity_manager_fn,
             session_manager_cls=session_manager_cls,
+        )
+        render_user_callout_review_section(
+            st_module=st_module,
+            is_audit_enabled_fn=is_audit_enabled_fn,
+            get_audit_logger_fn=get_audit_logger_fn,
         )
         st_module.divider()
 

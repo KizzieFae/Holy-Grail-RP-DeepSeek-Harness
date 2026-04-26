@@ -132,6 +132,7 @@ This section states how **runtime/session persistence** relates to **audit artif
 
 - **Location:** `autogen_rp/python/rp_app/data/rp_audits/session_*`
 - **Role:** **Observational, debugging, and validation** output: per-turn logs, summaries (`_audit_summary.json`, `_narrative.json`, per-character `*_full.json`, etc.). **Issue #79** observability blocks (for example **`continuity_observability_summary_v1`**) appear **in audit summaries** as mirrors or rollups when emitted—they are **not** a substitute for **`ContinuityManager`** as system-of-record.
+- **User callout cross-session review (GitHub #125):** Under the same `rp_audits/` root, **`_user_callout_review_index_v1.json`** (keyed review queue, no `artifact_refs`) and **`_user_callout_issue_links_v1.json`** (keyed `callout_id` → GitHub issue link; sole “promoted” authority). Per-session **`user_callouts_v1.json`** remains evidence for each callout (GitHub #55). See **`AUDIT_DOCUMENTATION.md`** §6–§8.
 
 ### Guarantees
 

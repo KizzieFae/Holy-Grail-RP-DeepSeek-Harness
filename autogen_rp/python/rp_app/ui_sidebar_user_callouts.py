@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app_state_audit import AuditIdentityMissingError
+from user_callout_review_store import (
+    UserCalloutReviewStoreError as _ReviewStoreError,
+    upsert_review_row_after_new_callout,
+)
 from user_callouts import (
     UserCalloutDocumentError,
     get_user_callouts_path,
@@ -146,8 +150,20 @@ def render_user_callout_controls(
             st_module.error(f"Could not save user callout: {exc}")
             return
 
+        err_rev = None
+        try:
+            upsert_review_row_after_new_callout(
+                base_dir=base_dir, record=record
+            )
+        except (OSError, _ReviewStoreError) as exc:
+            err_rev = str(exc)
+
         rel = str(path).replace("\\", "/")
         st_module.success(
             f"Saved user callout **{record.get('callout_id', '')}** to `{rel}`"
         )
+        if err_rev:
+            st_module.warning(
+                f"Review index could not be updated (run Rebuild in User callout review): {err_rev}"
+            )
         st_module.session_state.pop("user_callout_note_area_v1", None)

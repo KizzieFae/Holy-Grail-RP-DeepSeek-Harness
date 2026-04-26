@@ -1578,6 +1578,30 @@ for that turn.
 
 **Runtime / authority:** The runtime and audit-signal contract **do not** load this file. It does not alter scene flow, validation, or orchestration.
 
+### 7. `_user_callout_review_index_v1.json` (User callout review queue — GitHub #125 / Holy Grail RP)
+
+**Location:** `rp_audits/_user_callout_review_index_v1.json` (one file per audit **root** directory, alongside `session_*`).
+
+**Purpose:** **Lightweight** keyed map: `callout_id` → review row for operator queue only. **Not** evidence (no `artifact_refs`); **not** promotion authority; **not** runtime; **not** GitHub work lifecycle.
+
+**Root shape:** `schema: "user_callout_review_index.v1"`, `schema_version: 1`, `rows: { "<callout_id>": { ... } }` (JSON object map, not an array).
+
+**Row fields:** `audit_session_number`, `session_path_hint` (path under `autogen_rp/python/`, no directory creation side effect from this hint), `created_at_utc`, `audit_round_number`, `audit_turn_number`, `continuity_turn_index` (nullable), `review_disposition`: `unreviewed` | `dismissed` only. **Promoted** is **not** stored as a disposition: presence in **§8** means promoted.
+
+**Semantics:** Read/written by the Streamlit **User callout review** section. **Rebuild** (maintenance) rescans per-session `user_callouts_v1.json`, overlays **§8**, preserves dispositions where possible, and **flags** orphans/inconsistencies without silently deleting rows. **Dismissing** a callout that already has an issue link is **forbidden** in v1.
+
+**Evidence for notes and `artifact_refs`:** Always from per-session **`user_callouts_v1.json`** (§6).
+
+### 8. `_user_callout_issue_links_v1.json` (User callout → GitHub issue links — GitHub #125 / Holy Grail RP)
+
+**Location:** `rp_audits/_user_callout_issue_links_v1.json`.
+
+**Purpose:** **Sole authority** for “this `callout_id` was promoted to a tracked GitHub issue.” Keyed map: `callout_id` → `{ issue_number, issue_url, linked_at_utc }`. **Does not** mirror issue open/closed state — **GitHub** is work authority.
+
+**Root shape:** `schema: "user_callout_issue_links.v1"`, `schema_version: 1`, `links: { "<callout_id>": { ... } }`.
+
+**Rules:** At most one link per `callout_id` in v1 (duplicate promotion rejected). Written when the operator records a link after creating the issue outside the app. **Atomic** writes (temp + replace) like other audit JSON.
+
 ## How to Audit a Scene
 
 ### Quick Scene Read
