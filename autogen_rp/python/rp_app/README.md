@@ -132,7 +132,7 @@ Validation is deterministic:
 - assigned roles must exist in the chosen template
 - every required role must be filled before scene start
 
-If no scene template is selected, use **custom text** or **generated** opening modes in the opening UI; there is no separate “generic template `opening_text`” Start Scene path (GitHub **#100** / **#101** / **#108**).
+If no scene template is selected, use **custom text** in the opening UI; there is no separate “generic template `opening_text`” Start Scene path (GitHub **#100** / **#101** / **#108** / **#113**).
 
 ### What V1 enforces
 
@@ -432,7 +432,7 @@ Look for patterns across the tracking table, then do a calibration pass:
 
 ### UI vs headless (validated baseline)
 
-The Streamlit app and the headless scenario runner (`scripts/run_scene_simulation_llm.py` from `autogen_rp/python`) share the **same** core turn loop and fresh-scene bootstrap (GitHub **#83**); they are different **input surfaces**, not two runtime pipelines. When a UI run and a headless run **disagree**, treat the gap as **input-driven** first: scenario or CLI triggers, `startup_trigger_mode` on manifests, `--user-trigger-schedule`, authored retrieval activation (`RP_RETRIEVED_CONTEXT_INDEX` / `--retrieved-context-index`), and **deep simulation** vs short-cap modes. For **which Opener asset** starts the scene, Streamlit uses **`ui_sidebar_opening`** / `selected_opener_id` (template / custom / generated only—**#101**, **#108**); headless and authored **scenario/CLI** composition may also resolve **`character_asset`**. Align on **resolved** opening text, not on UI-only controls. **Do not** infer a defect from mismatched inputs. Full semantics and commands are in **[SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root).
+The Streamlit app and the headless scenario runner (`scripts/run_scene_simulation_llm.py` from `autogen_rp/python`) share the **same** core turn loop and fresh-scene bootstrap (GitHub **#83**); they are different **input surfaces**, not two runtime pipelines. When a UI run and a headless run **disagree**, treat the gap as **input-driven** first: scenario or CLI triggers, `startup_trigger_mode` on manifests, `--user-trigger-schedule`, authored retrieval activation (`RP_RETRIEVED_CONTEXT_INDEX` / `--retrieved-context-index`), and **deep simulation** vs short-cap modes. For **which Opener asset** starts the scene, Streamlit uses **`ui_sidebar_opening`** / `selected_opener_id` (operator UI: template / custom only—**#101**, **#108**, **#113**); headless and authored **scenario/CLI** composition may also resolve **`character_asset`**. Align on **resolved** opening text, not on UI-only controls. **Do not** infer a defect from mismatched inputs. Full semantics and commands are in **[SCENARIO_VALIDATION_FRAMEWORK.md](../../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root).
 
 ### Running Audited Sessions
 
