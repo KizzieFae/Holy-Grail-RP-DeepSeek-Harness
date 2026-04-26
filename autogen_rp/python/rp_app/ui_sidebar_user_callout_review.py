@@ -134,7 +134,10 @@ def render_user_callout_review_section(
     issue_url = st_module.text_input("Issue URL", key="uc_promote_url_v1", placeholder="https://github.com/...")
     if st_module.button("Record issue link (promote)", type="primary"):
         tid = (promote_id or "").strip()
-        if not _is_uuid(tid):
+        u = str(issue_url or "").strip()
+        if not u:
+            st_module.error("Enter the GitHub issue URL before recording the link.")
+        elif not _is_uuid(tid):
             st_module.error("Enter a full valid callout_id UUID from `user_callouts_v1.json` or the expander above.")
         else:
             try:
@@ -142,7 +145,7 @@ def render_user_callout_review_section(
                     base_dir=base_dir,
                     callout_id=tid,
                     issue_number=int(issue_num),
-                    issue_url=str(issue_url or "").strip(),
+                    issue_url=u,
                 )
             except ValueError as ve:
                 st_module.error(str(ve))
