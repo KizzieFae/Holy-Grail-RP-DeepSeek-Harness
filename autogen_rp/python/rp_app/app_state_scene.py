@@ -410,7 +410,14 @@ def resolve_scene_template_setup(
     raw_assignments = normalize_role_assignments_fn(
         st_module.session_state.get("scene_role_assignments", {})
     )
-    issues = validate_role_assignments_fn(template, selected_chars, raw_assignments)
+    _pc = st_module.session_state.get("player_character")
+    _player_file = str(_pc).strip() if _pc else None
+    issues = validate_role_assignments_fn(
+        template,
+        selected_chars,
+        raw_assignments,
+        player_character_file=_player_file or None,
+    )
     if issues:
         return None, "; ".join(issues)
 

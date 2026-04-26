@@ -238,7 +238,17 @@ def validate_role_assignments(
     template: SceneTemplate,
     selected_character_ids: list[str],
     assignments: dict[str, str] | list[RoleAssignment] | None,
+    *,
+    player_character_file: str | None = None,
 ) -> list[str]:
+    """Validate template role coverage for selected character **file** ids.
+
+    **Issue #129:** The player-controlled character file (``player_character_file``) may appear
+    in ``selected_character_ids`` **without** a role assignment. All other selected ids must still
+    have explicit valid roles. Required/anchor slot rules apply to the union of assigned roles
+    (if the player assigns a role, it is validated like any other). This is a narrow exception;
+    it does not relax validation for NPC/bot files.
+    """
     normalized_assignments = normalize_role_assignments(assignments)
     issues: list[str] = []
     selected_ids = [
@@ -248,8 +258,13 @@ def validate_role_assignments(
     ]
     selected_id_set = set(selected_ids)
     valid_roles = {slot.role_name for slot in template.role_slots}
+    player_file = (
+        str(player_character_file).strip() if player_character_file else ""
+    )
 
     for selected_id in selected_ids:
+        if player_file and selected_id == player_file:
+            continue
         if selected_id not in normalized_assignments:
             issues.append(
                 f"Missing role assignment for selected character: {selected_id}"

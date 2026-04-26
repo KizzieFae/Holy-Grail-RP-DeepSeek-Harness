@@ -324,3 +324,104 @@ def test_issue128_validate_role_assignments_accepts_player_file_in_cast() -> Non
     selected = ["bot.json", "player.json"]
     assignments = {"bot.json": "host", "player.json": "applicant"}
     assert validate_role_assignments(template, selected, assignments) == []
+
+
+def _issue129_two_role_template() -> SceneTemplate:
+    return SceneTemplate(
+        template_id="t",
+        premise="p",
+        opening_text="",
+        role_slots=[
+            SceneRoleSlot(
+                role_name="host",
+                required=True,
+                presence_constraint="flexible",
+            ),
+            SceneRoleSlot(
+                role_name="applicant",
+                required=True,
+                presence_constraint="must_remain",
+            ),
+        ],
+        anchor_role_name="applicant",
+    )
+
+
+def test_issue129_player_roleless_valid_when_npcs_fill_required_and_anchor() -> None:
+    """Roleless player file in validation set; NPCs cover required + anchor (Issue #129)."""
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "npc_b.json", "player.json"]
+    assignments = {"npc_a.json": "host", "npc_b.json": "applicant"}
+    assert (
+        validate_role_assignments(
+            template,
+            selected,
+            assignments,
+            player_character_file="player.json",
+        )
+        == []
+    )
+
+
+def test_issue129_player_invalid_assigned_role_still_invalid() -> None:
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "player.json"]
+    issues = validate_role_assignments(
+        template,
+        selected,
+        {"npc_a.json": "host", "player.json": "bogus_role"},
+        player_character_file="player.json",
+    )
+    assert any("unknown role" in msg for msg in issues)
+
+
+def test_issue129_player_holds_anchor_role_still_valid() -> None:
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "player.json"]
+    assignments = {"npc_a.json": "host", "player.json": "applicant"}
+    assert (
+        validate_role_assignments(
+            template,
+            selected,
+            assignments,
+            player_character_file="player.json",
+        )
+        == []
+    )
+
+
+def test_issue129_non_player_missing_role_still_invalid() -> None:
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "npc_b.json", "player.json"]
+    issues = validate_role_assignments(
+        template,
+        selected,
+        {"npc_a.json": "host", "player.json": "applicant"},
+        player_character_file="player.json",
+    )
+    assert any("Missing role assignment" in msg and "npc_b.json" in msg for msg in issues)
+
+
+def test_issue129_player_roleless_but_required_unfilled_still_invalid() -> None:
+    """Player may omit role; required slots must still be covered by assignments."""
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "player.json"]
+    issues = validate_role_assignments(
+        template,
+        selected,
+        {"npc_a.json": "host"},
+        player_character_file="player.json",
+    )
+    assert any("Required role is unfilled: applicant" in msg for msg in issues)
+
+
+def test_issue129_default_no_player_exception_preserves_strict_npc_rules() -> None:
+    """Omitting player_character_file keeps mandatory role for every selected id."""
+    template = _issue129_two_role_template()
+    selected = ["npc_a.json", "npc_b.json"]
+    issues = validate_role_assignments(
+        template,
+        selected,
+        {"npc_a.json": "host"},
+    )
+    assert any("Missing role assignment" in msg for msg in issues)
