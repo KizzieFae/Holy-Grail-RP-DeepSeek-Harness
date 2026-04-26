@@ -6,6 +6,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 import ui_sidebar_scene_setup as scene_setup
+from scene_template import SceneRoleSlot, SceneTemplate
 
 
 class FakeStreamlit:
@@ -336,3 +337,130 @@ def test_scene_setup_preserves_scene_owner_when_still_in_cast(
     )
 
     assert st.session_state["scene_owner"] == "Gamma"
+
+
+def test_issue128_role_assignment_pool_appends_player_not_in_bot_multiselect() -> None:
+    """Player file is excluded from NPC options but included in template role-assignment pool."""
+    bot = ["npc_a.json"]
+    player = "user_pc.json"
+    available = ["npc_a.json", "user_pc.json"]
+    assert scene_setup._template_role_assignment_char_files(
+        bot_selected_char_files=bot,
+        player_char_file=player,
+        available_char_files=available,
+    ) == ["npc_a.json", "user_pc.json"]
+
+
+def test_issue128_role_assignment_pool_without_player_unchanged() -> None:
+    bot = ["a.json", "b.json"]
+    assert scene_setup._template_role_assignment_char_files(
+        bot_selected_char_files=bot,
+        player_char_file=None,
+        available_char_files=bot,
+    ) == bot
+
+
+def test_issue128_role_assignment_pool_skips_unknown_player_file() -> None:
+    assert scene_setup._template_role_assignment_char_files(
+        bot_selected_char_files=["a.json"],
+        player_char_file="missing.json",
+        available_char_files=["a.json"],
+    ) == ["a.json"]
+
+
+class FakeStreamlitIssue128(FakeStreamlit):
+    """Selectbox picks concrete roles for template assignment keys (placeholder is option index 0)."""
+
+    def selectbox(
+        self,
+        label: str,
+        *,
+        options: list[str],
+        index: int = 0,
+        key: str,
+        disabled: bool = False,
+    ):
+        if key.startswith("scene_role_assignment_"):
+            role_choices = [o for o in options if o]
+            if "user_pc" in key and "applicant" in role_choices:
+                pick = "applicant"
+            elif "host" in role_choices:
+                pick = "host"
+            else:
+                pick = role_choices[0]
+            if not disabled:
+                self.session_state[key] = pick
+            return pick
+        value = options[index]
+        if not disabled:
+            self.session_state[key] = value
+        return value
+
+
+class FakeTemplateManagerIssue128:
+    def list_templates(self):
+        return [
+            SceneTemplate(
+                template_id="demo_tpl",
+                premise="p",
+                opening_text="",
+                role_slots=[
+                    SceneRoleSlot(
+                        role_name="host",
+                        required=True,
+                        presence_constraint="flexible",
+                    ),
+                    SceneRoleSlot(
+                        role_name="applicant",
+                        required=True,
+                        presence_constraint="must_remain",
+                    ),
+                ],
+                anchor_role_name="applicant",
+            )
+        ]
+
+
+def test_issue128_template_role_rows_include_player_file(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Role selectboxes are rendered for bots plus the player file (separate from NPC multiselect)."""
+    load_calls: list[list[str]] = []
+
+    def _track_names(*, selected_chars: list[str], character_loader_cls: object) -> list[str]:
+        load_calls.append(list(selected_chars))
+        return [f"NAME:{fn}" for fn in selected_chars]
+
+    monkeypatch.setattr(scene_setup, "load_character_names", _track_names)
+    monkeypatch.setattr(scene_setup, "render_opening_controls", lambda **_kwargs: None)
+
+    st = FakeStreamlitIssue128()
+    st.session_state.update(
+        {
+            "scene_started": False,
+            "npc_selection": ["npc_a.json"],
+            "selected_scene_template_id": "demo_tpl",
+            "player_character": "user_pc.json",
+            "opening_mode": "custom",
+            "audit_enabled": False,
+        }
+    )
+
+    scene_setup.render_scene_setup_controls(
+        st_module=st,
+        available=["npc_a.json", "user_pc.json"],
+        character_loader_cls=object(),
+        has_player_character_conflict_fn=lambda *_a, **_k: False,
+        scene_template_manager_cls=FakeTemplateManagerIssue128,
+        opener_manager_cls=object(),
+        resolve_character_file_fn=lambda *_a, **_k: None,
+        start_scene_fn=_unused_start_scene,
+    )
+
+    assert st.multiselect_calls[0]["options"] == ["npc_a.json"]
+    assert load_calls[0] == ["npc_a.json"]
+    assert load_calls[1] == ["npc_a.json", "user_pc.json"]
+    assert st.session_state["scene_role_assignments"] == {
+        "npc_a.json": "host",
+        "user_pc.json": "applicant",
+    }

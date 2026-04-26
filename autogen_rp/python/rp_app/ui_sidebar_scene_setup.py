@@ -15,6 +15,25 @@ from ui_sidebar_opening import (
 )
 
 
+def _template_role_assignment_char_files(
+    *,
+    bot_selected_char_files: list[str],
+    player_char_file: str | None,
+    available_char_files: list[str],
+) -> list[str]:
+    """Character files that need template role rows: bots in scene plus optional POV (Issue #128).
+
+    Bot/NPC multiselect still excludes ``player_char_file``; role assignment must not, so anchor
+    and required roles can map onto the user-controlled cast member when intended.
+    """
+    out = list(bot_selected_char_files)
+    pc = str(player_char_file).strip() if player_char_file else ""
+    available_set = set(available_char_files)
+    if pc and pc in available_set and pc not in out:
+        out.append(pc)
+    return out
+
+
 def render_scene_setup_controls(
     *,
     st_module: Any,
@@ -126,16 +145,35 @@ def render_scene_setup_controls(
             else:
                 st_module.session_state["scene_owner"] = char_names[0]
 
-    if templates and selected_template_id and selected_template is not None:
+    role_assignment_chars = _template_role_assignment_char_files(
+        bot_selected_char_files=selected_chars,
+        player_char_file=st_module.session_state.get("player_character"),
+        available_char_files=available,
+    )
+    role_char_names: list[str] = []
+    if role_assignment_chars:
+        role_char_names = load_character_names(
+            selected_chars=role_assignment_chars,
+            character_loader_cls=character_loader_cls,
+        )
+
+    if (
+        templates
+        and selected_template_id
+        and selected_template is not None
+        and role_assignment_chars
+    ):
         role_options = [""] + [slot.role_name for slot in selected_template.role_slots]
         current_assignments = {
             key: value
             for key, value in st_module.session_state.get(
                 "scene_role_assignments", {}
             ).items()
-            if key in selected_chars
+            if key in role_assignment_chars
         }
-        for char_file, char_name in zip(selected_chars, char_names, strict=False):
+        for char_file, char_name in zip(
+            role_assignment_chars, role_char_names, strict=False
+        ):
             selected_role = st_module.selectbox(
                 f"Role for {char_name}",
                 options=role_options,

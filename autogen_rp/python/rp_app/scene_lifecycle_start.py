@@ -309,8 +309,23 @@ async def start_scene(
             st_module.error(f"Failed to load character: {exc}")
             return False
 
+    # Issue #128: template role validation and scene_setup.role_assignments must include the
+    # player-controlled file when it has slot assignments; bot agents remain selected_chars only.
+    template_cast_files = list(selected_chars)
+    if player_character:
+        pc = str(player_character).strip()
+        if pc and pc not in template_cast_files:
+            template_cast_files.append(pc)
+            try:
+                card = loader.load_character_card(pc)
+                display = str(card.get("name", pc) or "").strip() or pc
+                character_names_by_file[pc] = display
+            except FileNotFoundError as exc:
+                st_module.error(f"Failed to load player character card: {exc}")
+                return False
+
     scene_setup, scene_setup_error = resolve_scene_template_setup_fn(
-        selected_chars,
+        template_cast_files,
         character_names_by_file,
     )
     if scene_setup_error:

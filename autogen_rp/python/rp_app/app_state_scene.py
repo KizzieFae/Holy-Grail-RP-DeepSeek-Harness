@@ -391,6 +391,12 @@ def resolve_scene_template_setup(
     normalize_role_assignments_fn,
     validate_role_assignments_fn,
 ) -> tuple[dict[str, Any] | None, str]:
+    """Resolve template-driven scene_setup from session state.
+
+    ``selected_chars`` is the set of character **file** ids that participate in template role
+    validation and ``role_assignments`` (Issue #128: may include the player POV file in addition
+    to bot ``selected_chars`` from scene start).
+    """
     template_id = st_module.session_state.get("selected_scene_template_id")
     if not template_id:
         return None, ""

@@ -7,7 +7,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from scene_opener import OpenerManager
-from scene_template import SceneTemplateManager, validate_role_assignments
+from scene_template import (
+    SceneRoleSlot,
+    SceneTemplate,
+    SceneTemplateManager,
+    validate_role_assignments,
+)
 
 
 def test_scene_template_requires_anchor_role_name(tmp_path: Path) -> None:
@@ -294,3 +299,28 @@ def test_celina_recovery_template_stays_grounded_and_slow_recovery() -> None:
     assert "apartment" in text_lower
     assert "couch" in text_lower
     assert "blankets" in text_lower
+
+
+def test_issue128_validate_role_assignments_accepts_player_file_in_cast() -> None:
+    """Template cast may include bot files plus player POV file (Issue #128)."""
+    template = SceneTemplate(
+        template_id="t",
+        premise="p",
+        opening_text="",
+        role_slots=[
+            SceneRoleSlot(
+                role_name="host",
+                required=True,
+                presence_constraint="flexible",
+            ),
+            SceneRoleSlot(
+                role_name="applicant",
+                required=True,
+                presence_constraint="must_remain",
+            ),
+        ],
+        anchor_role_name="applicant",
+    )
+    selected = ["bot.json", "player.json"]
+    assignments = {"bot.json": "host", "player.json": "applicant"}
+    assert validate_role_assignments(template, selected, assignments) == []
