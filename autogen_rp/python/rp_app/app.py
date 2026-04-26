@@ -815,6 +815,10 @@ def render_sidebar() -> None:
         start_scene_fn=start_scene,
         skip_turn_fn=skip_turn,
         end_scene_fn=end_scene,
+        is_audit_enabled_fn=is_audit_enabled,
+        get_audit_context_fn=get_audit_context,
+        get_audit_logger_fn=get_audit_logger,
+        get_continuity_manager_fn=get_continuity_manager,
     )
 
 

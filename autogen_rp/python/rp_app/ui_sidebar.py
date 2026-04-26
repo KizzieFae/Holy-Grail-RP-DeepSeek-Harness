@@ -21,6 +21,10 @@ def render_sidebar(
     start_scene_fn: Callable[[list[str]], Awaitable[bool]],
     skip_turn_fn: Callable[[], Awaitable[None]],
     end_scene_fn: Callable[[], Awaitable[None]],
+    is_audit_enabled_fn: Callable[[], bool] | None = None,
+    get_audit_context_fn: Callable[[], tuple[str, int, int, int]] | None = None,
+    get_audit_logger_fn: Callable[[], Any] | None = None,
+    get_continuity_manager_fn: Callable[[], Any] | None = None,
 ) -> None:
     with st_module.sidebar:
         st_module.header("Session Management")
@@ -29,6 +33,11 @@ def render_sidebar(
             st_module=st_module,
             skip_turn_fn=skip_turn_fn,
             end_scene_fn=end_scene_fn,
+            is_audit_enabled_fn=is_audit_enabled_fn,
+            get_audit_context_fn=get_audit_context_fn,
+            get_audit_logger_fn=get_audit_logger_fn,
+            get_continuity_manager_fn=get_continuity_manager_fn,
+            session_manager_cls=session_manager_cls,
         )
 
         render_session_resume_controls(

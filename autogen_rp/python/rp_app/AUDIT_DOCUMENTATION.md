@@ -1558,6 +1558,26 @@ for that turn.
 
 **`context_snapshot` (Signal id):** Silence and engineering-family semantics are **only** in the **[inventory row](#audit-signal-applicability-inventory)** and **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)**—this section documents **field usage** for debugging only.
 
+### 6. `user_callouts_v1.json` (User Callouts — GitHub #55 / Holy Grail RP)
+
+**Purpose:** **Append-only** triage file written from the Streamlit sidebar when **audit logging is enabled** for the scene. Each entry is a **User Callout**: a **human-authored**, **user-originated** annotation. It is **observational** and **non-authoritative** — not model output, not continuity truth, and **not** read by the Director, continuity manager, or validators.
+
+**Location:** `rp_audits/session_{###}/user_callouts_v1.json` (one file per **audit** session number; not the Streamlit `SessionManager` UUID by itself).
+
+**Root shape:** `schema: "user_callouts.v1"`, `schema_version: 1`, `records: [ ... ]`.
+
+**Record fields (MVP):** `callout_id`, `created_at_utc` (UTC), `audit_session_owner`, `audit_session_number`, `runtime_session_id` **nullable** if unavailable, `scene_template_id` **nullable**, `audit_round_number`, `audit_turn_number`, `continuity_turn_index` **nullable** if unavailable, `note` **nullable**, and `artifact_refs` with:
+- `round_path` — string path **relative to `autogen_rp/python/`** (forward slashes)
+- `primary_full_path` — **nullable** when no `*_full.json` exists yet for the target audit round/turn; **no placeholder strings**
+- `audit_summary_path` — string path to `_audit_summary.json` in the same audit session
+- `session_state_path` — **nullable** when the `SessionManager` save file is not on disk yet
+
+**Semantics:** **Append-only**; existing entries are not rewritten by the app. If the file is present but not valid for this schema/JSON, the UI **fails** (does not repair or truncate) to preserve **audit integrity**.
+
+**Projection:** **MVP does not** copy callouts into `_audit_summary.json`. That projection is a possible **follow-on** issue, not the authoritative store (authoritative file remains `user_callouts_v1.json`).
+
+**Runtime / authority:** The runtime and audit-signal contract **do not** load this file. It does not alter scene flow, validation, or orchestration.
+
 ## How to Audit a Scene
 
 ### Quick Scene Read
