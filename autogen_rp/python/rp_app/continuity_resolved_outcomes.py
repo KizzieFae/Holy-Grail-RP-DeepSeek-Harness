@@ -20,12 +20,14 @@ from resolved_outcome_registry import (
     SLEEPING_SURFACE_CONSEQUENCE_RULE_ID,
     SLEEPING_SURFACE_ISSUE_PREFIX,
     SLEEPING_SURFACE_ISSUE_RULE_ID,
+    TRANSACTION_SCENE_COMMITMENT_ASPECT_ID,
     get_valid_sleeping_surface_ids,
     get_valid_location_entry_ids,
     parse_housing_call_outcome_candidates,
     parse_lodging_sleep_surface_candidates,
     parse_location_entry_outcome_candidates,
     parse_suppressant_formulation_outcome_candidates,
+    parse_scene_commitment_outcome_candidates,
 )
 
 __all__ = [
@@ -39,12 +41,14 @@ __all__ = [
     "COMMUNICATION_HOUSING_CALL_ASPECT_ID",
     "MEDICAL_SUPPRESSANT_FORMULATION_ASPECT_ID",
     "ACCESS_LOCATION_ENTRY_ASPECT_ID",
+    "TRANSACTION_SCENE_COMMITMENT_ASPECT_ID",
     "HOUSING_CALL_COMPLETED_RULE_ID",
     "HOUSING_CALL_FAILED_RULE_ID",
     "SUPPRESSANT_FORMULATION_COMPATIBLE_RULE_ID",
     "SUPPRESSANT_FORMULATION_INCOMPATIBLE_RULE_ID",
     "get_valid_sleeping_surface_ids",
     "get_valid_location_entry_ids",
+    "parse_scene_commitment_outcome_candidates",
     "extract_sleeping_surface_candidates",
     "extract_housing_call_outcome_candidates",
     "extract_suppressant_formulation_outcome_candidates",
@@ -58,6 +62,7 @@ __all__ = [
     "apply_housing_call_outcome_updates",
     "apply_suppressant_formulation_outcome_updates",
     "apply_location_entry_outcome_updates",
+    "apply_scene_commitment_outcome_updates",
 ]
 
 
@@ -257,3 +262,20 @@ def apply_location_entry_outcome_updates(
         turn_consequences=turn_consequences,
         turn_index=turn_index,
     ).get("location_entry", {"reason": "no_candidate", "decision": "none"})
+
+
+def apply_scene_commitment_outcome_updates(
+    *,
+    manager: Any,
+    move: dict[str, Any],
+    event: Any,
+    turn_consequences: dict[str, Any],
+    turn_index: int,
+) -> dict[str, Any]:
+    return apply_registered_resolved_outcome_updates(
+        manager=manager,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+        turn_index=turn_index,
+    ).get("scene_commitment", {"reason": "no_candidate", "decision": "none"})

@@ -34,6 +34,7 @@ _CATEGORY_PRIORITY: dict[str, int] = {
     "medical_status": 85,
     "assignment": 80,
     "communication_state": 75,
+    "transaction": 72,
     "object_state": 70,
 }
 
@@ -209,6 +210,14 @@ def _build_value_summary(category: str, key: str, kv: dict[str, str]) -> str:
         return f"Wound dressing: {kv.get('status', 'unknown')}"[:120]
     if category == "communication_state" and key == "housing_call":
         return f"Housing call: {kv.get('status', 'unknown')}"[:120]
+    if category == "transaction" and key == "scene_commitment":
+        kind = str(kv.get("kind", "") or "").replace("_", " ") or "commitment"
+        sc = str(kv.get("subject_scope", "") or "").replace("_", " ")
+        ph = str(kv.get("phase", "") or "").replace("_", " ")
+        lab = str(kv.get("label", "") or "").strip()
+        if lab:
+            return lab[:120]
+        return f"{kind} ({sc}): {ph}"[:120]
     return f"{category}/{key}"[:120]
 
 
@@ -255,6 +264,12 @@ def _fact_slot_identity(
         slot_subject = subject or ""
         slot_location = location or ""
         return category, key, f"{slot_subject}::{slot_location}" if slot_subject or slot_location else None
+    if category == "transaction" and key == "scene_commitment":
+        kind = str(kv.get("kind", "") or "").strip()
+        sc = str(kv.get("subject_scope", "") or "").strip()
+        if not kind or not sc:
+            return category, key, None
+        return category, key, f"{kind}::{sc}"
     return category, key, None
 
 
@@ -335,6 +350,7 @@ def _marker_to_fact(
         "medical_status": {"omega_suppressants", "wound_dressing"},
         "object_state": {"phone", "weapon"},
         "communication_state": {"housing_call"},
+        "transaction": {"scene_commitment"},
     }
     if key not in allowed_keys.get(category, set()):
         return None
@@ -407,6 +423,25 @@ def _resolved_outcome_to_fact(
             "location": location,
             "status": status,
         }
+    elif category == "transaction" and key == "scene_commitment":
+        kind = str(value.get("kind", "") or "").strip()
+        sc = str(
+            value.get("subject_scope", "")
+            or getattr(outcome, "subject_id", "")
+            or ""
+        ).strip()
+        ph = str(value.get("phase", "") or "").strip()
+        if not kind or not sc or not ph:
+            return None
+        kv = {
+            "kind": kind,
+            "subject_scope": sc,
+            "phase": ph,
+        }
+        for opt in ("label", "thread_instance_id", "source_event_id", "prior_thread_id"):
+            o = str(value.get(opt, "") or "").strip()
+            if o:
+                kv[opt] = o
     else:
         return None
     return SceneFact(

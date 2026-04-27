@@ -491,6 +491,7 @@ summaries, while the continuity layer now provides the missing shared story-stat
 - scene-level continuity state shared across prompts through `SceneState`
 - public event memory separated from private interpretation memory
 - canon anchors made explicit as protected truths
+- **Registry-backed resolved outcomes** (including `transaction.scene_commitment` for transactional scene commitments — GitHub #127): slot-scoped **authoritative** facts in `ContinuityManager.resolved_outcomes` with `value` carrying domain state (e.g. phase, kind, `subject_scope`, `thread_instance_id`); the type name `ResolvedOutcome` refers to **row** lifecycle (`active` / `superseded` / `revoked`), not “narrative resolved” — see `continuity_state.ResolvedOutcome` and `resolved_outcome_registry`. Scene grounding **projects** these; it does not write continuity.
 
 The issue layer is currently a pressure-first hybrid rather than a fully consequence-native engine:
 

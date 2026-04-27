@@ -695,6 +695,173 @@ def test_housing_call_supersedes_failed_with_completed() -> None:
     assert debug["reason"] == "superseded_terminal_outcome"
 
 
+def _build_scene_commitment_move(
+    *,
+    kind: str,
+    subject_scope: str,
+    phase: str,
+    dialogue: str,
+    action: str,
+    label: str = "",
+) -> dict:
+    payload: dict = {
+        "kind": kind,
+        "subject_scope": subject_scope,
+        "phase": phase,
+    }
+    if label:
+        payload["label"] = label
+    return {
+        "action": action,
+        "dialogue": dialogue,
+        "motivation": {
+            "goal": "transactional scene state",
+            "tactic": "structured update",
+            "emotional_driver": "resolve",
+            "risk_level": "medium",
+        },
+        "scene_state_updates": {"transactional_commitment": payload},
+    }
+
+
+def test_scene_commitment_promotes_committed_phase() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Pizzeria back room",
+        opening_description="Everyone is waiting on the order status.",
+        present_characters=["Marlene_Fletcher", "Kizzie"],
+    )
+    complete_setup_seam_for_test_manager(manager)
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_scene_commitment_move(
+            kind="food_order",
+            subject_scope="cast_shared",
+            phase="committed",
+            dialogue="I placed the order. Two larges, that's locked in.",
+            action="taps the phone and sets it down",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-04-26T18:00:00"),
+    )
+    assert len(manager.resolved_outcomes) == 1
+    o = manager.resolved_outcomes[0]
+    assert o.category == "transaction"
+    assert o.key == "scene_commitment"
+    assert o.subject_id == "cast_shared"
+    assert o.value["kind"] == "food_order"
+    assert o.value["subject_scope"] == "cast_shared"
+    assert o.value["phase"] == "committed"
+    assert o.aspect_id == "transaction.scene_commitment"
+    assert o.slot_key == "transaction.scene_commitment::food_order::cast_shared"
+    assert "thread_instance_id" in o.value
+    assert "source_event_id" in o.value
+    dbg = manager.turn_metadata_by_index[1]["resolved_outcomes"]["scene_commitment"]
+    assert dbg["decision"] in ("promoted",)
+    assert dbg["reason"] == "promoted_committed"
+
+
+def test_scene_commitment_rejects_initiated_mvp() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Corner booth",
+        opening_description="Ordering is still in progress.",
+        present_characters=["Kizzie", "Willow_Reeves"],
+    )
+    complete_setup_seam_for_test_manager(manager)
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=_build_scene_commitment_move(
+            kind="generic",
+            subject_scope="scene",
+            phase="initiated",
+            dialogue="I'm about to place the call.",
+            action="scrolls the phone",
+        ),
+        director_decision=_build_test_decision("Willow_Reeves"),
+        other_characters=["Willow_Reeves"],
+        timestamp=datetime.fromisoformat("2026-04-26T18:10:00"),
+    )
+    assert manager.resolved_outcomes == []
+    dbg = manager.turn_metadata_by_index[1]["resolved_outcomes"]["scene_commitment"]
+    assert dbg["reason"] == "initiated_mvp_deferred"
+
+
+def test_scene_commitment_void_revokes() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Curb",
+        opening_description="Ride request state tracking.",
+        present_characters=["Kizzie", "Celina"],
+    )
+    complete_setup_seam_for_test_manager(manager)
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=_build_scene_commitment_move(
+            kind="ride",
+            subject_scope="kizzie_solo",
+            phase="committed",
+            dialogue="Called a ride, it's on the way.",
+            action="lifts the phone",
+        ),
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-04-26T19:00:00"),
+    )
+    assert len(manager.resolved_outcomes) == 1
+    manager.process_turn(
+        acting_character="Kizzie",
+        move=_build_scene_commitment_move(
+            kind="ride",
+            subject_scope="kizzie_solo",
+            phase="voided",
+            dialogue="Cancel that — I'll walk.",
+            action="cancels the app",
+        ),
+        director_decision=_build_test_decision("Celina"),
+        other_characters=["Celina"],
+        timestamp=datetime.fromisoformat("2026-04-26T19:01:00"),
+    )
+    assert len(manager.resolved_outcomes) == 1
+    assert manager.resolved_outcomes[0].status == "revoked"
+    sg = rebuild_scene_grounding_from_continuity(manager)
+    facts = [f for f in sg.get("facts", []) if f.get("category") == "transaction"]
+    assert facts == []
+
+
+def test_scene_commitment_grounding_projection_includes_value_summary() -> None:
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm kitchen",
+        opening_description="Waiting on delivery.",
+        present_characters=["Kizzie", "Marlene_Fletcher"],
+    )
+    complete_setup_seam_for_test_manager(manager)
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_scene_commitment_move(
+            kind="food_order",
+            subject_scope="cast_shared",
+            phase="awaiting_fulfillment",
+            dialogue="Pizza is on the way, twenty minutes.",
+            action="checks the app",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-04-26T20:00:00"),
+    )
+    sg = rebuild_scene_grounding_from_continuity(manager)
+    facts = sg.get("facts", [])
+    assert any(
+        f.get("category") == "transaction" and f.get("key") == "scene_commitment"
+        for f in facts
+    )
+    t_facts = [f for f in facts if f.get("category") == "transaction"]
+    assert t_facts[0].get("value_summary")
+    assert "awaiting" in t_facts[0].get("value", {}).get("phase", "")
+
+
 def test_suppressant_formulation_promotes_subject_scoped_attribute_state() -> None:
     manager = ContinuityManager()
     manager.initialize_scene(

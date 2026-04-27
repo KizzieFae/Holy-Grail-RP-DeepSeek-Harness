@@ -441,6 +441,13 @@ class PublicEvent:
 
 @dataclass
 class ResolvedOutcome:
+    """Slot-scoped continuity fact (registry / resolved-outcome pipeline).
+
+    ``status`` on this row is the row lifecycle (``active`` / ``superseded`` /
+    ``revoked``), not “story resolved.” Domain phase for transactional work lives
+    in ``value`` (e.g. ``phase`` for Issue #127 scene commitments).
+    """
+
     outcome_id: str
     category: str
     key: str
@@ -517,6 +524,18 @@ class ResolvedOutcome:
             ).strip()
             if location_id:
                 slot_key = f"{aspect_id}::{subject_id}::{location_id}"
+        if (
+            not slot_key
+            and category == "transaction"
+            and key == "scene_commitment"
+        ):
+            vlo = data.get("value") or {}
+            if isinstance(vlo, dict):
+                k = str(vlo.get("kind", "") or "").strip()
+                sc = str(vlo.get("subject_scope", "") or "").strip()
+                aspect_id = aspect_id or "transaction.scene_commitment"
+                if k and sc:
+                    slot_key = f"{aspect_id}::{k}::{sc}"
 
         return cls(
             outcome_id=str(data.get("outcome_id", "") or ""),

@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from continuity_state import ResolvedOutcome
-from resolved_outcome_registry import ASPECT_REGISTRY, PromotionContext
+from resolved_outcome_registry import (
+    ASPECT_REGISTRY,
+    PromotionContext,
+    TRANSACTION_SCENE_COMMITMENT_ASPECT_ID,
+    merge_transaction_commitment_value_for_apply,
+    transaction_commitment_semantic_equal,
+)
 
 
 def _find_active_outcome_for_slot(manager: Any, slot_key: str) -> ResolvedOutcome | None:
@@ -59,7 +65,20 @@ def _apply_candidate(
         debug["outcome_id"] = active.outcome_id
         return
 
-    if active is not None and dict(active.value) == dict(candidate.value):
+    if aspect_id == TRANSACTION_SCENE_COMMITMENT_ASPECT_ID:
+        merged = merge_transaction_commitment_value_for_apply(
+            dict(candidate.value),
+            active=active,
+            source_event_id=source_event_id,
+            turn_index=turn_index,
+        )
+        if active is not None and transaction_commitment_semantic_equal(
+            active.value, merged
+        ):
+            debug["reason"] = "no_op_existing_value"
+            debug["outcome_id"] = active.outcome_id
+            return
+    elif active is not None and dict(active.value) == dict(candidate.value):
         debug["reason"] = "no_op_existing_value"
         debug["outcome_id"] = active.outcome_id
         return
@@ -72,12 +91,22 @@ def _apply_candidate(
     debug["candidate_source"] = decision.source
     debug["issue_id"] = decision.issue_id
 
+    final_value: dict[str, str] = (
+        merge_transaction_commitment_value_for_apply(
+            dict(candidate.value),
+            active=active,
+            source_event_id=source_event_id,
+            turn_index=turn_index,
+        )
+        if aspect_id == TRANSACTION_SCENE_COMMITMENT_ASPECT_ID
+        else dict(candidate.value)
+    )
     outcome = ResolvedOutcome(
         outcome_id=spec.build_outcome_id(candidate, turn_index, source_event_id),
         category=spec.legacy_category,
         key=spec.legacy_key,
         subject_id=candidate.subject_id,
-        value=dict(candidate.value),
+        value=final_value,
         status="active",
         source_event_id=source_event_id,
         source_issue_id=decision.issue_id,

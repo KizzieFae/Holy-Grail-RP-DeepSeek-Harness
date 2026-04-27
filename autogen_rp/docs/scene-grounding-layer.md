@@ -1,6 +1,6 @@
 # Scene Grounding Layer (MVP) — Technical Specification
 
-**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`.  
+**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and `transaction:scene_commitment` (transactional scene commitments, GitHub #127).  
 **Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8.  
 **Placement:** Derived **after** continuity updates per turn, consumed **before** LLM calls in the packaging/prompt path.
 
@@ -45,7 +45,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 | Field | Type | Required | Notes |
 |-------|------|----------|--------|
 | `fact_id` | `string` | yes | Stable id: deterministic hash of `(category, key, scene_id, promotion_seq)` or **continuity source event id** when present. |
-| `category` | `enum` | yes | One of: `assignment`, `object_state`, `medical_status`, `medical`, `communication_state`, `access`. |
+| `category` | `enum` | yes | One of: `assignment`, `object_state`, `medical_status`, `medical`, `communication_state`, `access`, `transaction`. |
 | `key` | `string` | yes | **Allowlisted** per category (see §3.3). |
 | `value` | `object` | yes | Category-specific **closed** shape (§3.3). **No** unbounded prose in v1. |
 | `value_summary` | `string` | yes | **Single line**, ≤ 120 chars, **deterministically formatted** from `value` (for prompts). Not an LLM summary. |
@@ -97,7 +97,17 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 |-------|---------------|---------|
 | `location_entry` | `{ "subject": "<participant_id>", "location": "<bounded_location_id>", "status": "allowed" \| "denied" }` | `Kizzie: clinic room entry denied` |
 
-**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`; do not treat it as a general second state system.
+#### G. `transaction` — transactional scene commitments (GitHub #127)
+
+Authoritative state lives in **`ContinuityManager.resolved_outcomes`** for aspect **`transaction.scene_commitment`**. **Semantic slot identity** is `kind` + `subject_scope` (see `resolved_outcome_registry`); `thread_instance_id` and lineage sit in the outcome **`value`**. Phases: `initiated` (schema-valid; **MVP** promotion from structured moves is **deferred** until deterministic signals exist), `committed`, `awaiting_fulfillment`, `fulfilled`, `failed`, `voided` (revocation path).
+
+| `key` | `value` (projection) | Example `value_summary` |
+|-------|----------------------|------------------------|
+| `scene_commitment` | `kind`, `subject_scope`, `phase`, optional `label`, `thread_instance_id`, `source_event_id`, `prior_thread_id` | `food order (cast shared): awaiting fulfillment` |
+
+**Structured input:** `move["scene_state_updates"]["transactional_commitment"]` (object or list of objects) with at least `kind`, `subject_scope`, `phase` (see allowlists in `resolved_outcome_registry`).
+
+**MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and **`transaction:scene_commitment`**; do not treat it as a general second state system.
 
 **Narrow runtime enforcement (`sleeping_surface` only):** After promotion and projection, **`response_validation_binding_sleeping_surface`** may **reject** moves that **deny** or **incorrectly reassign** the settled sleeping surface (deterministic; **one** structured retry in `turn_runner_turn`). This is **not** a general contradiction engine for all facts. See `python/rp_app/ARCHITECTURE.md` (Scene Grounding — binding contradiction enforcement).
 
@@ -110,7 +120,7 @@ Stored on the **scene-scoped** portion of runtime state (see §6). Serialized wi
 1. **Structured continuity outputs** after `ContinuityManager` (or equivalent) processes a turn:
    - `PublicEvent` / event summaries with **typed** `event_type` or tags (existing or **new narrow types** — extraction improvement track). Event **`summary`** strings for non-public speech are **audibility-safe** (no verbatim private **`dialogue`** in the global summary text); consumers that need word-level private content must use per-recipient prompt state, not shared event text alone.
    - **Issue** lifecycle transitions (e.g. resolved + linked template → promote “call completed”).
-   - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **Current coverage:** `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, and `access:location_entry`.
+   - **Resolved outcomes** compiled inside continuity from structured move fields + issue/consequence signals. **Current coverage:** `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and `transaction:scene_commitment` (transactional scene commitments, GitHub #127).
 2. **`DetectedConsequence` + `ConsequenceCategory`** from `continuity_consequence_classifier` (deterministic):
    - e.g. `DECISION_MADE`, `AGREEMENT`, `COMMITMENT` **when** paired with **rule rows** that map (category + optional template_id + optional tag) → `SceneFact` patch.
 3. **Explicit system signals** (optional, rare):
