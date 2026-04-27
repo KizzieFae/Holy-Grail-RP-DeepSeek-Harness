@@ -10,6 +10,7 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Effective user trigger (headless simulation harness)](#effective-user-trigger-headless-simulation-harness)** — `effective_user_trigger`; **Light vs full** serialization (`*_full.json` vs light rows).
 - **[Authored index retrieval (standard evaluation mode — Phase 4A)](#authored-index-retrieval-standard-evaluation-mode-phase-4a)** — `metadata.retrieval_summary`, top-level `retrieval_session` on `_audit_summary.json`.
 - **[Continuity observability (Issue #79 — closed)](#continuity-observability-issue-79-closed)** — CTAR, `scene_state_after`, summary rollups vs availability markers on `_audit_summary.json`.
+- **[Registry-backed resolved outcomes and scene grounding (Issue #127)](#registry-backed-resolved-outcomes-and-scene-grounding-issue-127)** — `continuity_state`, `turn_metadata_by_index`, per-turn `metadata.scene_grounding` limits, `transaction.scene_commitment`, triage map.
 - **[Canonical audit identity (Issue #106)](#canonical-audit-identity-issue-106)** — `audit_session_owner` vs `scene_owner`, ingress, no inference.
 
 ## Canonical audit identity (Issue #106)
@@ -136,6 +137,31 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 **Allowed shape (strict):** **`{ "status": "unavailable", "reason": "<closed_enum>" }`**. The closed set of **`reason`** strings is **`CONTINUITY_OBSERVABILITY_STATUS_REASONS`** in **`continuity_observability_summary.py`** (currently **`continuity_manager_not_provided`** only). **No** empty or synthetic summary block.
 
 **Canonical key order:** **`status`**, then **`reason`** (enforced at write time). **`continuity_observability_summary_v1`** and **`continuity_observability_status_v1`** are **mutually exclusive** on the same report (enforced in **`audit_logger_summary_report.write_summary_report`**).
+
+### Registry-backed resolved outcomes and scene grounding (Issue #127)
+
+**Purpose:** Operator map for **registry-backed** `ContinuityManager.resolved_outcomes` (including **`transaction.scene_commitment`** and related `ResolvedOutcome` rows). Persistence and engine behavior are defined in `resolved_outcome_registry` / `continuity_state`; this section documents **where those facts show up in artifacts** and what is **not** duplicated on per-turn audit rows.
+
+**Authoritative store (resume and deep triage):**
+
+1. **Resolved outcomes live in persisted session `continuity_state`.** On session save, the full continuity snapshot (including `resolved_outcomes` as serialized `ResolvedOutcome` dicts) is embedded in session JSON under **`metadata.continuity_state`** (see [Disk layout vs session restore](#overview)). **`rp_audits/`** does not replace that blob; for “what rows exist after load,” use the **session file**, not audit folders alone.
+
+2. **`turn_metadata_by_index` contains resolved-outcome promotion and engine debug data.** After each `process_turn`, per-aspect engine output is merged into the turn bucket under **`resolved_outcomes`** (keyed by legacy aspect keys such as **`scene_commitment`**: decision, reason, `outcome_id`, etc.). That structure is part of the same **`continuity_state`** persistence path. It is **not** fully copied into character **`metadata`** on `*_full.json` rows; CTAR and other per-turn fields remain **bounded** (see [Continuity turn-level audit record (CTAR)](#continuity-turn-level-audit-record-ctar-issue-79-slice-1)).
+
+**Per-turn audit (`*_full.json`) — `metadata.scene_grounding`:**
+
+3. **`metadata.scene_grounding` is summary-level observability, not a full fact dump.** Writers build it via `merge_scene_grounding_audit_family` → `build_grounding_phase1_inner`: **fact counts**, **binding** vs **non_binding** tallies, optional **`grounding_derivation_refs`** (from `continuity_event.event_id` and per-fact `source.ref` when present), and an optional one-line **summary** string. Operators must **not** expect the complete grounded **`facts`[]** list to appear inside **`metadata.scene_grounding`** on a turn row.
+
+4. **Transaction commitments (`category` `transaction`, key `scene_commitment`) count as non-binding in those grounding summaries.** The binding / non_binding split in phase 1 follows `is_behaviorally_binding_scene_fact` (only a small subset, e.g. sleeping surface and location entry, are “binding” for that tally). **`transaction.scene_commitment`**-derived facts are therefore reflected under **`non_binding_fact_count`**, not **`binding_fact_count`**, when they are present in the rebuilt grounding snapshot.
+
+**Deep triage for Issue #127–class failures (state-binding vs. structured input vs. projection):** combine artifacts — not only one file:
+
+- **Session `continuity_state`** — full **`resolved_outcomes`** and slot-level truth.
+- **`turn_metadata_by_index`** (within that same `continuity_state`) — per-beat **`resolved_outcomes` → `scene_commitment`** (and siblings) for promote / reject / revoke reasons.
+- **Turn audit row** — **`parsed_output` / move** (structured `scene_state_updates.transactional_commitment` when emitted), prompt text in **`input_messages`**, and other **`metadata`** blocks as usual.
+- **`metadata.scene_grounding.phase1.grounding_derivation_refs`** (when present) — continuity- and fact-level **ref** strings for cross-linking, **not** a substitute for the full `continuity_state` list.
+
+**Scope note:** This documentation does **not** add new audit schema fields; it describes existing persistence and write paths for operator navigation.
 
 ### Offline evaluation layer (Issue #66 — v1)
 
