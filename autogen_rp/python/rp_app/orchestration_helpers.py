@@ -681,6 +681,17 @@ def append_turn_to_orchestration_state(
         "audibility": str(move.get("audibility", "public") or "public"),
         "audience": list(move.get("audience") or []),
     }
+    try:
+        msv = int(str(move.get("move_schema_version", 0) or 0) or 0)
+    except (TypeError, ValueError):
+        msv = 0
+    if msv == 2:
+        move_entry["move_schema_version"] = 2
+        raw_beats = move.get("beats")
+        if isinstance(raw_beats, list):
+            move_entry["beats"] = [
+                dict(b) if isinstance(b, dict) else b for b in raw_beats
+            ]
     # Persist existing computed outcome signals when available (no new logic).
     if consequences is not None:
         move_entry["consequences"] = list(consequences)

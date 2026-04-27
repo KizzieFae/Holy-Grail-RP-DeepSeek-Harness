@@ -1,9 +1,11 @@
-"""Read-only derived views of canonical v2 character moves (GitHub #137).
+"""Read-only derived views of canonical v2 character moves (GitHub #137, #138).
 
 The validated parse handoff is a single ``dict`` with ``move_schema_version: 2`` and
 ``beats`` (no root-level v1 ``action``/``dialogue`` persistence). Functions here
 compute legacy-shaped strings **on read** for callers that still expect v1 field
-semantics. They must not mutate the input move dict.
+semantics, and provide **iteration / shallow-copy** helpers for **per-beat**
+perception projections (GitHub #138). They must not mutate the input move dict;
+callers that need mutable copies use :func:`copy_move_shallow_with_deep_beats`.
 """
 
 from __future__ import annotations
@@ -11,6 +13,52 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 # --- Read-only string projections (for validation / turn runner text) ---
+
+
+def move_schema_version(move: Mapping[str, Any] | None) -> int:
+    """Return ``move_schema_version`` as int, or ``0`` when absent or invalid."""
+    if not isinstance(move, Mapping):
+        return 0
+    try:
+        return int(str(move.get("move_schema_version", 0) or 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def is_canonical_v2_move(move: Mapping[str, Any] | None) -> bool:
+    return move_schema_version(move) == 2
+
+
+def iter_speech_beats(
+    move: Mapping[str, Any] | None,
+) -> list[tuple[int, dict[str, Any]]]:
+    """Return ``(index, beat)`` pairs for ``type: speech`` beats in order (read-only)."""
+    if not isinstance(move, Mapping):
+        return []
+    beats = move.get("beats")
+    if not isinstance(beats, list):
+        return []
+    out: list[tuple[int, dict[str, Any]]] = []
+    for i, b in enumerate(beats):
+        if isinstance(b, dict) and b.get("type") == "speech":
+            out.append((i, b))
+    return out
+
+
+def copy_move_shallow_with_deep_beats(move: Mapping[str, Any]) -> dict[str, Any]:
+    """Shallow copy of ``move`` with a fresh list and copied beat dicts (for safe mutation).
+
+    Does not claim to deep-copy ``motivation`` or other nested objects—only ``beats[]``
+    dict elements are copied one level. Read-only helper for derived projections.
+    """
+    base: dict[str, Any] = dict(move)
+    raw_beats = move.get("beats")
+    if isinstance(raw_beats, list):
+        copied: list[Any] = []
+        for b in raw_beats:
+            copied.append(dict(b) if isinstance(b, dict) else b)
+        base["beats"] = copied
+    return base
 
 
 def legacy_flat_action_text(move: Mapping[str, Any] | None) -> str:

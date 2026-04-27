@@ -3,16 +3,22 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from perception_audibility import (
     REDACTED_PLAYER_TEXT_CONTENT,
+    REDACTED_SPEECH_STUB,
     build_recent_dialogue_history_for_viewer,
     event_knowledge_recipients,
     filter_structured_move_for_viewer,
     normalize_move_audibility,
+    normalize_speech_beat_audibility,
     player_text_for_character_viewer,
     public_safe_event_summary,
+    redact_structured_move_for_orchestration,
+    speech_beat_viewer_may_perceive,
     viewer_may_perceive_dialogue,
 )
 
@@ -219,7 +225,7 @@ def test_build_recent_dialogue_user_line_filtered_for_character_viewer() -> None
     assert secret in none_out[0]["content"]
 
 
-def test_build_recent_dialogue_orchestration_omits_private_rendered() -> None:
+def test_build_recent_dialogue_director_sees_full_rendered() -> None:
     def _display(name: str) -> str:
         return name
 
@@ -245,4 +251,127 @@ def test_build_recent_dialogue_orchestration_omits_private_rendered() -> None:
         limit=8,
     )
     assert len(out) == 1
-    assert "classified words here" not in out[0]["content"]
+    assert "classified words here" in out[0]["content"]
+
+
+@pytest.mark.parametrize(
+    "aud,audience,viewer,expected",
+    [
+        ("public", [], "B", True),
+        ("public", [], "C", True),
+        ("", [], "C", True),
+        ("directed", ["B"], "A", True),
+        ("directed", ["B"], "B", True),
+        ("directed", ["B"], "C", False),
+        ("private", ["B"], "A", True),
+        ("private", ["B"], "B", True),
+        ("private", ["B"], "C", False),
+    ],
+)
+def test_speech_beat_viewer_may_perceive_matrix(
+    aud: str, audience: list[str], viewer: str, expected: bool
+) -> None:
+    beat = {
+        "type": "speech",
+        "dialogue": "secret",
+        "audibility": aud,
+        "audience": audience,
+    }
+    b = normalize_speech_beat_audibility(beat, "A", ["A", "B", "C"])
+    assert (
+        speech_beat_viewer_may_perceive(
+            b, acting_character="A", viewer_character=viewer
+        )
+        is expected
+    )
+
+
+def _v2_move_mixed() -> dict:
+    return {
+        "move_schema_version": 2,
+        "motivation": {"goal": "g", "tactic": "t", "emotional_driver": "e", "risk_level": "r"},
+        "beats": [
+            {"type": "action", "action": "nods"},
+            {"type": "speech", "dialogue": "for everyone"},
+            {"type": "action", "action": "leans toward B"},
+            {
+                "type": "speech",
+                "dialogue": "for B only",
+                "audibility": "directed",
+                "audience": ["B"],
+            },
+        ],
+    }
+
+
+def test_filter_structured_move_v2_redacts_per_beat_order_stable() -> None:
+    entry = {"speaker": "A", **_v2_move_mixed()}
+    out_c = filter_structured_move_for_viewer(
+        entry,
+        viewer_character_name="C",
+        present_characters=["A", "B", "C"],
+    )
+    assert out_c["move_schema_version"] == 2
+    assert len(out_c["beats"]) == 4
+    assert out_c["beats"][0]["action"] == "nods"
+    assert out_c["beats"][1]["dialogue"] == "for everyone"
+    assert out_c["beats"][3]["dialogue"] == REDACTED_SPEECH_STUB
+    assert "for B only" not in out_c["dialogue"]
+
+
+def test_redact_structured_move_for_orchestration_passes_through() -> None:
+    entry = {
+        "speaker": "A",
+        **_v2_move_mixed(),
+    }
+    out = redact_structured_move_for_orchestration(
+        entry, present_characters=["A", "B", "C"]
+    )
+    assert out["beats"][3]["dialogue"] == "for B only"
+
+
+def test_normalize_v2_omitted_audibility_is_public_on_speech() -> None:
+    m = normalize_move_audibility(
+        {
+            "move_schema_version": 2,
+            "motivation": {"goal": "g", "tactic": "t", "emotional_driver": "e", "risk_level": "r"},
+            "beats": [{"type": "speech", "dialogue": "hi"}],
+        },
+        "A",
+        ["A", "B"],
+    )
+    assert m["beats"][0]["audibility"] == "public"
+    assert m["beats"][0]["audience"] == []
+
+
+def test_viewer_may_perceive_v2_any_beat() -> None:
+    m = normalize_move_audibility(_v2_move_mixed(), "A", ["A", "B", "C"])
+    assert viewer_may_perceive_dialogue(m, acting_character="A", viewer_character="B")
+    assert viewer_may_perceive_dialogue(m, acting_character="A", viewer_character="C")
+
+
+def test_event_knowledge_recipients_v2_unions_beats() -> None:
+    m = normalize_move_audibility(_v2_move_mixed(), "A", ["A", "B", "C"])
+    r = event_knowledge_recipients(m, acting_character="A", present_characters=["A", "B", "C"])
+    assert set(r) == {"A", "B", "C"}
+
+
+def test_public_safe_event_summary_v2_strips_directed() -> None:
+    move = {
+        "move_schema_version": 2,
+        "motivation": {"goal": "g", "tactic": "t", "emotional_driver": "e", "risk_level": "r"},
+        "beats": [
+            {
+                "type": "speech",
+                "dialogue": "ZZ_DIRECTED_SECRET_ZZ",
+                "audibility": "directed",
+                "audience": ["B"],
+            },
+        ],
+    }
+    m = normalize_move_audibility(move, "A", ["A", "B", "C"])
+    raw = 'A whispered ZZ_DIRECTED_SECRET_ZZ to B'
+    safe = public_safe_event_summary(
+        acting_character="A", move=m, provisional_summary=raw
+    )
+    assert "ZZ_DIRECTED_SECRET_ZZ" not in safe

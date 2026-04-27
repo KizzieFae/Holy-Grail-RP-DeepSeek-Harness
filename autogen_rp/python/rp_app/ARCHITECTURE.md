@@ -252,7 +252,16 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **Caps** (structural only): `MAX_V2_BEATS` 64, `MAX_V2_TEXT_CODEPOINTS` 8192, `MAX_V2_AUDIENCE_ITEMS` 32.
 - **Handoff type:** :class:`CanonicalV2Move` in `character_move_adapters.py` — a ``dict`` subclass with **only** v2 keys stored. Legacy ``.get("action")`` / ``.get("dialogue")`` and ``["action"]`` / ``["dialogue"]`` return **read-only** concatenations from ``beats`` (no root-level v1 shadow fields persisted on the object).
 - **``scene_state_updates``:** this layer checks **JSON object** when present, not internal semantics.
-- **Turn runner:** for ``move_schema_version == 2``, root-level ``normalize_move_audibility`` is **not** called (audibility is on **speech** beats; Issue **#138** will refine further).
+- **Turn runner:** for ``move_schema_version == 2``, root-level v1 ``normalize_move_audibility`` heuristics do **not** apply to the whole move; **speech** beats are normalized per beat in ``perception_audibility`` (Issue **#138**).
+
+**v2 perception / audibility (GitHub #138)**
+
+- **Ground truth:** structured move / ``beats[]`` only; **no** narrator ``rendered`` parsing for audibility.
+- **Speech beats:** ``audibility`` / ``audience`` only on ``type: speech``; **omit** audibility → **public**. **Directed** and **private** are **visibility-equivalent** here (who may receive verbatim ``dialogue`` for that beat), not a claim of semantic equivalence elsewhere.
+- **Action beats:** always visible to all recipients in structured views; **not** audibility-gated.
+- **Canonical vs derived:** ``recent_structured_moves`` entries retain **full** v2 ``beats`` (authoritative, unredacted). **Per-recipient** prompt/history views use **derived** projections: non-perceivable speech ``dialogue`` is replaced by a **deterministic stub**; **beat order** is unchanged; beats are **not** removed.
+- **Director:** consumes **unredacted** canonical structured character actions. **Characters** consume **projected** structured tails where applicable. Recent **transcript** lines for the Director use **full** stored ``rendered`` text (orchestration is not an in-world perceiver).
+- **Helpers:** ``character_move_adapters`` supplies read-only iteration / shallow copy helpers; projections do **not** introduce a second stored truth.
 
 ### 3. Director Agent
 
@@ -268,10 +277,10 @@ Director inputs are intentionally structured and lightweight:
 - current scene state, including location, scene phase, present characters, and recent tension or environment beats
 - scene-template context, including template ID and premise
 - cast role map, including assigned roles, `presence_constraint`, and informational authority labels
-- recent structured character actions (**non-public `dialogue` redacted** in the Director payload)
+- recent structured character actions (**verbatim** canonical v1/v2 structured moves, including per-beat speech; Issue **#138**)
 - public character goal/emotion snapshot
 - active issues and recent public events
-- recent scene transcript (**perception-filtered**: only **public** beats use full narrator `rendered`; directed/private beats use structured, observable stubs—see `perception_audibility.py`)
+- recent scene transcript (**Director:** full ``rendered`` lines; **characters:** perception-filtered via ``perception_audibility``—see Issue **#138**)
 - spotlight history and currently available next actors
 
 Director selection policy is prompt-guided rather than hard-coded. It is instructed to:
