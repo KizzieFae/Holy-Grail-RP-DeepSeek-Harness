@@ -3,3 +3,4 @@
 # They should not be tracked in version control
 *
 !.gitignore
+!_user_callout_issue_links_v1.json
