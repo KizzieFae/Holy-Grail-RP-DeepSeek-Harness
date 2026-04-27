@@ -26,7 +26,11 @@ from audit_v2_pipeline import (
 from character_audits_v1 import build_character_audit_v1
 from turn_runner_audit import log_character_turn_audit
 from character_move_adapters import legacy_move_text_for_validation
-from perception_audibility import normalize_move_audibility
+from perception_audibility import (
+    filter_structured_move_for_viewer,
+    normalize_move_audibility,
+    redact_structured_move_for_orchestration,
+)
 from response_validation_binding_sleeping_surface import (
     binding_sleeping_surface_id_for_actor,
     format_binding_sleeping_surface_retry_note,
@@ -36,6 +40,29 @@ from response_validation_investigation_recall import (
 )
 
 DEFAULT_MAX_CHARACTER_ATTEMPTS = 3
+
+
+def _narrate_move_for_character_turn(
+    move: dict[str, Any],
+    *,
+    next_actor: str,
+    char_names: list[str],
+    st_module: Any,
+) -> dict[str, Any]:
+    """Select structured view for narrator: canonical if no in-scene player POV; else per-recipient (Issue #139)."""
+    present = [str(c).strip() for c in char_names if str(c or "").strip()]
+    move_norm = normalize_move_audibility(dict(move), next_actor, present)
+    player = st_module.session_state.get("player_character")
+    if isinstance(player, str) and player.strip() and player.strip() in char_names:
+        return filter_structured_move_for_viewer(
+            {**move_norm, "speaker": next_actor},
+            viewer_character_name=player.strip(),
+            present_characters=present,
+        )
+    return redact_structured_move_for_orchestration(
+        move_norm, present_characters=present
+    )
+
 
 _CHARACTER_MOVE_PARSE_JSON_DISCIPLINE_NOTE = (
     "IMPORTANT: Your previous response could not be parsed as valid JSON for the required "
@@ -702,6 +729,10 @@ async def execute_character_turn(
     if rendered_move_result is None or move is None:
         return None
 
+    narrate_move = _narrate_move_for_character_turn(
+        move, next_actor=next_actor, char_names=char_names, st_module=st_module
+    )
+
     scene_context, narrator_summary_block_audit = build_recent_scene_context_fn(
         st_module.session_state["chat_history"],
         orchestration_state,
@@ -720,7 +751,7 @@ async def execute_character_turn(
         ) = await render_character_move_fn(
             narrator,
             next_actor,
-            move,
+            narrate_move,
             scene_context,
             decision,
             cancellation_token,
@@ -760,7 +791,7 @@ async def execute_character_turn(
     narrator_semantic_assessment = await assess_narrator_render_semantics_fn(
         model_client=get_model_client_fn(),
         char_name=next_actor,
-        move=move,
+        move=narrate_move,
         director_decision=decision,
         rendered=rendered,
         scene_context=scene_context,
@@ -788,7 +819,7 @@ async def execute_character_turn(
         semantic_fallback_deterministic_critical = deterministic_critical
 
     if use_narrator_semantic_fallback:
-        rendered = fallback_render_move_fn(next_actor, move, decision)
+        rendered = fallback_render_move_fn(next_actor, narrate_move, decision)
         st_module.session_state["selector_decisions"].append(
             f"Narrator fallback render used for {next_actor} after semantic review."
         )
@@ -800,7 +831,7 @@ async def execute_character_turn(
     )
     narrator_output_audit_v1 = build_narrator_output_audit_v1(
         next_actor=next_actor,
-        move=move,
+        move=narrate_move,
         decision=decision,
         rendered_final=rendered_final,
         char_names=char_names,
@@ -818,7 +849,7 @@ async def execute_character_turn(
     )
     prose_dialogue_audit_v1 = build_prose_dialogue_audit_v1(
         next_actor=next_actor,
-        move=move,
+        move=narrate_move,
         rendered_final=rendered_final,
         prior_assistant_content=prior_rendered,
         acting_display_name=acting_display,
@@ -828,7 +859,7 @@ async def execute_character_turn(
     if is_audit_enabled_fn():
         nar_v2_bundle = await build_audit_v2_narrator_prose_bundle(
             next_actor=next_actor,
-            move=dict(move),
+            move=dict(narrate_move),
             decision=decision,
             rendered_final=rendered_final,
             char_names=list(char_names),

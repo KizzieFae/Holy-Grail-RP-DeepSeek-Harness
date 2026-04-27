@@ -319,13 +319,30 @@ async def assess_narrator_render_semantics(
     scene_context: str,
     cancellation_token: Any,
 ) -> dict[str, Any] | None:
-    payload = {
-        "character": char_name,
-        "move": {
+    from character_move_adapters import (
+        is_canonical_v2_move,
+        legacy_flat_action_text,
+        legacy_flat_dialogue_text,
+    )
+
+    if is_canonical_v2_move(move):
+        move_payload: dict[str, Any] = {
+            "move_schema_version": 2,
+            "beats": move.get("beats"),
+            "action_flat": legacy_flat_action_text(move),
+            "dialogue_flat": legacy_flat_dialogue_text(move),
+            "motivation": move.get("motivation", {}),
+        }
+    else:
+        move_payload = {
             "action": str(move.get("action", "") or ""),
             "dialogue": str(move.get("dialogue", "") or ""),
             "motivation": move.get("motivation", {}),
-        },
+        }
+
+    payload = {
+        "character": char_name,
+        "move": move_payload,
         "director_decision": {
             "environment_event": str(
                 director_decision.get("environment_event", "") or ""

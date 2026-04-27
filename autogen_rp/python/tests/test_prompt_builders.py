@@ -655,6 +655,31 @@ def test_build_narrator_render_prompt_without_dialogue_uses_action_only_variant(
     )
 
 
+def test_build_narrator_render_prompt_v2_uses_beats_json() -> None:
+    sm = {
+        "move_schema_version": 2,
+        "beats": [{"type": "speech", "dialogue": "Hi."}],
+        "motivation": {
+            "goal": "g",
+            "tactic": "t",
+            "emotional_driver": "e",
+            "risk_level": "r",
+        },
+    }
+    prompt = build_narrator_render_prompt(
+        char_name="Ayame",
+        action="",
+        dialogue="",
+        environment_event="",
+        scene_context="X",
+        structured_move=sm,
+    )
+    assert '"type": "speech"' in prompt
+    assert "v2" in prompt.lower() or "beats" in prompt
+    assert "STRUCTURED MOVE" in prompt
+    assert "ordered" in prompt.lower()
+
+
 def _minimal_character_prompt_kwargs(
     *,
     scene_grounding_section: str = "",

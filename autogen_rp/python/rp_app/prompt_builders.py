@@ -1,6 +1,8 @@
 import json
 from typing import Any, Callable
 
+from character_move_adapters import is_canonical_v2_move
+
 _EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK = """## **EVIDENCE & AUTHORITY DISCIPLINE (HIGH PRIORITY)**
 
 **Authoritative and institutional framing**—including **clinical** language, **institutional** framing, and a **"recorded"** or **"noted"** tone—**must not introduce unsupported specifics** (concrete who / what / where / when). You may **accuse, pressure, and bluff** in a strong voice, but you must **not present unsupported specific facts as established truth**, especially in those voices.
@@ -449,7 +451,32 @@ def build_narrator_render_prompt(
     dialogue: str,
     environment_event: str,
     scene_context: str,
+    structured_move: dict[str, Any] | None = None,
 ) -> str:
+    if structured_move is not None and is_canonical_v2_move(structured_move):
+        sm = json.dumps(structured_move, ensure_ascii=False, indent=2)
+        return f"""Render the following structured character turn (v2 ``beats[]``) into third-person past-tense scene narration.
+
+CHARACTER: {char_name}
+STRUCTURED MOVE (authoritative; render only this visibility scope; do not invent speech):
+{sm}
+OPTIONAL ENVIRONMENT EVENT: {environment_event}
+
+SCENE CONTEXT:
+{scene_context}
+
+RULES:
+1. Preserve ``beats[]`` order: do not reorder beats.
+2. For each ``type: speech`` beat, the ``dialogue`` string must appear in your output as a contiguous **verbatim** substring, in the same order as in ``beats`` (you may add connective narrator prose between beats; adjacent speech may be merged in prose only if every speech line still appears as an exact, ordered substring).
+3. For ``type: action`` beats, you may paraphrase the action text in third person; do not treat action text as a verbatim substring requirement.
+4. Do not add new spoken lines or quoted speech that are not substrings of the provided speech lines (narrator connective prose without quotes is allowed between beats).
+5. If you include optional environment event material, work it in naturally; do not contradict the structured move.
+6. Only describe this character for action/speech; no other character dialogue.
+7. Be concise (roughly 2-6 short sentences or one tight paragraph).
+8. Write in third person past tense.
+
+OUTPUT ONLY the rendered narration (no preface, no JSON)."""
+
     if dialogue:
         return f"""Render the following character action and dialogue into scene narration.
 

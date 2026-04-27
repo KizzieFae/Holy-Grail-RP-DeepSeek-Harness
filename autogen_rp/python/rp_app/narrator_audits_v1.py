@@ -5,6 +5,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app_turn_rendering import (
+    rendered_includes_ordered_speech_substrings,
+    speech_dialogue_substrings_in_order,
+)
+from character_move_adapters import is_canonical_v2_move, legacy_flat_action_text
+
 _STOPWORDS = frozenset(
     {
         "a",
@@ -84,7 +90,10 @@ def build_narrator_output_audit_v1(
     char_names: list[str],
     acting_display_name: str,
 ) -> dict[str, Any]:
-    action = str(move.get("action", "") or "")
+    if is_canonical_v2_move(move):
+        action = legacy_flat_action_text(move)
+    else:
+        action = str(move.get("action", "") or "")
     render_for_action = _strip_double_quoted_regions(rendered_final)
     action_toks = set(_meaningful_tokens(action))
     render_toks = set(_meaningful_tokens(render_for_action))
@@ -227,10 +236,18 @@ def build_prose_dialogue_audit_v1(
     )
     passes_read = avg_word_length <= 9.0 and long_token_ratio <= 0.35
 
-    dialogue = str(move.get("dialogue", "") or "").strip()
-    dialogue_non_empty = bool(dialogue)
-    exact_quoted = bool(dialogue) and f'"{dialogue}"' in rendered_final
-    passes_dialogue = (not dialogue_non_empty) or exact_quoted
+    if is_canonical_v2_move(move):
+        v2_subs = speech_dialogue_substrings_in_order(move)
+        dialogue_non_empty = bool(v2_subs)
+        exact_quoted = (not v2_subs) or rendered_includes_ordered_speech_substrings(
+            rendered_final, v2_subs
+        )
+        passes_dialogue = (not dialogue_non_empty) or exact_quoted
+    else:
+        dialogue = str(move.get("dialogue", "") or "").strip()
+        dialogue_non_empty = bool(dialogue)
+        exact_quoted = bool(dialogue) and f'"{dialogue}"' in rendered_final
+        passes_dialogue = (not dialogue_non_empty) or exact_quoted
 
     if prior_assistant_content:
         a = set(_meaningful_tokens(rendered_final))

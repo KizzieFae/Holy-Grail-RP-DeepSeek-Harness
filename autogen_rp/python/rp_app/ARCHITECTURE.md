@@ -346,12 +346,16 @@ A **read-only** **SETTLED SCENE FACTS** block is injected into Director and char
 
 ### 4. Narrator Rendering
 
-Narrator receives structured moves and renders:
+**v2 (GitHub #139):** The narrator is **presentation only**; it does **not** choose visibility. ``execute_character_turn`` supplies a pre-selected structured view:
 
-- Scene-appropriate third-person prose
-- Past tense, consistent style
-- Proper attribution ("she said", character names)
-- Exact dialogue preservation when dialogue is present
+- **Canonical, unredacted** v2 move — when the session has no **in-scene** player character on the cast (``player_character`` missing or not in the active ``char_names``), via ``redact_structured_move_for_orchestration`` (or equivalent pass-through).
+- **Per-recipient projected** v2 move — when ``player_character`` is set and is on the active cast, via ``filter_structured_move_for_viewer`` (Issue **#138** rules: speech stems may be replaced by the deterministic inaudible stub; beat order preserved).
+
+Narration uses **only** that supplied dict for prompts, fallbacks, and verbatim checks. The stored ``move`` on canonical continuity / character audits remains the **parsed** character output where applicable; **chat** history still carries the authoritative structured move; the **rendered** line matches the **narration** view, not a second re-derived truth.
+
+**v2 ``beats[]`` contract for narrator output (summary):** speech lines must appear in ``rendered`` as **ordered, contiguous, verbatim** substrings from the **supplied** view. Action beats may be paraphrased; beat order is preserved; adjacent speech may be merged in prose only if every speech substring remains intact in order. **No** v2 path uses deprecated root ``dialogue`` for fallback. **v1** moves keep the previous flat ``action`` / ``dialogue`` narrator prompt and ``"…"`` presence check.
+
+**Implementation (narrow):** ``app_turn_rendering.render_character_move``, ``fallback_render_move``, ``prompt_builders.build_narrator_render_prompt`` (v2 shape via ``structured_move``), and ``turn_runner_turn._narrate_move_for_character_turn``.
 
 ### 5. Orchestration Flow
 
