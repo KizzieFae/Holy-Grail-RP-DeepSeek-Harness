@@ -9,7 +9,14 @@ from continuity_manager import ContinuityManager
 from continuity_seam_test_helpers import complete_setup_seam_for_test_manager
 from continuity_summary_helpers import build_summary_block
 from continuity_state import IssueState, IssueStatus, PublicEvent
-from scene_grounding import rebuild_scene_grounding_from_continuity
+from scene_grounding import (
+    format_grounding_block_body,
+    rebuild_scene_grounding_from_continuity,
+)
+from audit_interpretation_metadata import (
+    build_grounding_phase1_inner,
+    merge_scene_grounding_audit_family,
+)
 
 
 def _build_test_move(idx: int) -> dict:
@@ -828,6 +835,121 @@ def test_scene_commitment_void_revokes() -> None:
     sg = rebuild_scene_grounding_from_continuity(manager)
     facts = [f for f in sg.get("facts", []) if f.get("category") == "transaction"]
     assert facts == []
+
+
+def test_issue127_scenario_validating_committed_awaiting_then_no_reopen() -> None:
+    """Behavioral validation (GitHub #127): establish commitment, move to in-flight,
+    then a subsequent character turn that *narrates* a reopened ordering flow without
+    new structured `transactional_commitment` must **not** reset or replace the active
+    slot — authoritative phase stays ``awaiting_fulfillment`` and grounding still
+    projects the shared-wait / in-flight state (system invariants; not an LLM verdict).
+    """
+    manager = ContinuityManager()
+    manager.initialize_scene(
+        location="Dorm common room",
+        opening_description="Cast is gathered; food run is the thread.",
+        present_characters=["Marlene_Fletcher", "Kizzie"],
+    )
+    complete_setup_seam_for_test_manager(manager)
+    # 1) Establish transactional commitment
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_scene_commitment_move(
+            kind="food_order",
+            subject_scope="cast_shared",
+            phase="committed",
+            dialogue="Order is placed — two larges, locked in.",
+            action="sets the phone down",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-04-26T21:00:00"),
+    )
+    # 2) In-flight / waiting
+    manager.process_turn(
+        acting_character="Marlene_Fletcher",
+        move=_build_scene_commitment_move(
+            kind="food_order",
+            subject_scope="cast_shared",
+            phase="awaiting_fulfillment",
+            dialogue="Pizza is on the way, ETA twenty minutes. We wait.",
+            action="glances at the delivery tracker",
+        ),
+        director_decision=_build_test_decision("Kizzie"),
+        other_characters=["Kizzie"],
+        timestamp=datetime.fromisoformat("2026-04-26T21:01:00"),
+    )
+    # 3) Next character turn: dialogue that would *reopen* ordering in the old failure
+    #    class — without structured transaction updates (no re-commit, no void).
+    manager.process_turn(
+        acting_character="Kizzie",
+        move={
+            "action": "slides a paper menu across the table and taps toppings line",
+            "dialogue": (
+                "So what are we getting — do you want meat lovers or should we do "
+                "half veggie? I'll call it in now."
+            ),
+            "motivation": {
+                "goal": "solicit preferences",
+                "tactic": "reopen the food thread",
+                "emotional_driver": "helpfulness",
+                "risk_level": "low",
+            },
+        },
+        director_decision=_build_test_decision("Marlene_Fletcher"),
+        other_characters=["Marlene_Fletcher"],
+        timestamp=datetime.fromisoformat("2026-04-26T21:02:00"),
+    )
+
+    active = [o for o in manager.resolved_outcomes if o.status == "active"]
+    assert len(active) == 1
+    assert active[0].value.get("phase") == "awaiting_fulfillment"
+    assert active[0].slot_key == (
+        "transaction.scene_commitment::food_order::cast_shared"
+    )
+    dbg1 = manager.turn_metadata_by_index[1]["resolved_outcomes"]["scene_commitment"]
+    assert dbg1.get("decision") in ("promoted",) and "committed" in str(
+        dbg1.get("reason", "")
+    )
+    dbg2 = manager.turn_metadata_by_index[2]["resolved_outcomes"]["scene_commitment"]
+    assert dbg2.get("decision") == "superseded"
+    assert dbg2.get("reason") == "superseded_scene_commitment"
+    dbg3 = manager.turn_metadata_by_index[3]["resolved_outcomes"]["scene_commitment"]
+    assert dbg3.get("decision") in ("none",) and dbg3.get("reason") in (
+        "no_candidate",
+    )
+
+    sg = rebuild_scene_grounding_from_continuity(manager)
+    t_facts = [f for f in sg.get("facts", []) if f.get("category") == "transaction"]
+    assert len(t_facts) == 1
+    assert "awaiting" in t_facts[0].get("value", {}).get("phase", "")
+    body = format_grounding_block_body(sg)
+    assert "awaiting" in body.lower() or "fulfillment" in body.lower()
+
+    phase1 = build_grounding_phase1_inner(
+        scene_grounding=sg,
+        continuity_turn_index=3,
+        continuity_event={},
+    )
+    assert phase1 is not None
+    assert phase1.get("non_binding_fact_count", 0) >= 1
+    sga = merge_scene_grounding_audit_family(
+        scene_grounding_state=sg,
+        continuity_turn_index=3,
+        continuity_event={"event_id": "synthetic_for_validation"},
+    )
+    assert sga is not None
+    assert "phase1" in sga
+    assert sga["phase1"].get("grounding_derivation_refs")
+
+    cont = manager.to_dict()
+    assert "resolved_outcomes" in cont
+    assert any(
+        o.get("aspect_id") == "transaction.scene_commitment"
+        and o.get("value", {}).get("phase") == "awaiting_fulfillment"
+        for o in cont.get("resolved_outcomes", [])
+        if isinstance(o, dict)
+    )
 
 
 def test_scene_commitment_grounding_projection_includes_value_summary() -> None:
