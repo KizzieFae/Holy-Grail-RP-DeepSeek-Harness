@@ -6,7 +6,7 @@ For artifact details, see `python/rp_app/AUDIT_DOCUMENTATION.md`. For optional *
 
 For turning audit findings into GitHub Issues (classification **bug** / **behavior** / **limitation**, evidence, re-test loop, heuristic caveats), see the same file → **Audit interpretation and issue tracking**, and `governance/rp-app/issue-tracking-workflow.md` (§A.1, §D).
 
-**User callouts (GitHub #55 / #125):** Record operator findings during audited runs, then **triage in the operator CLI** and **promote to a tracked GitHub issue** (link recorded in `rp_audits` — not from Streamlit). From `autogen_rp/python/`, run `python scripts/user_callout_review.py`; see `python/rp_app/AUDIT_DOCUMENTATION.md` §6–§8.
+**User callouts (GitHub #55 / #125 / #126):** In Streamlit, the surface is **minimal**—a callout **trigger** and an optional **operator** **note** only. Operators do **not** select artifact paths. **`artifact_refs`** and optional **`related_artifact_refs`** (same-turn sibling `*_full` links; **#126**) are **system-populated at save**. **Triage**, **review**, **promote**, and **dismiss** are **operator CLI** only, not Streamlit. Record operator findings during audited runs, then **triage in the operator CLI** and **promote to a tracked GitHub issue** (link recorded in `rp_audits` — not from Streamlit). From `autogen_rp/python/`, run `python scripts/user_callout_review.py`. Authoritative contract (not restated here): `python/rp_app/AUDIT_DOCUMENTATION.md` **§6–§8**.
 
 ## When to use this
 
