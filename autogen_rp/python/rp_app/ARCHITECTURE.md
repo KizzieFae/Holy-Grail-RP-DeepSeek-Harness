@@ -263,6 +263,13 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **Director:** consumes **unredacted** canonical structured character actions. **Characters** consume **projected** structured tails where applicable. Recent **transcript** lines for the Director use **full** stored ``rendered`` text (orchestration is not an in-world perceiver).
 - **Helpers:** ``character_move_adapters`` supplies read-only iteration / shallow copy helpers; projections do **not** introduce a second stored truth.
 
+**v2 continuity / consequences (GitHub #140)**
+
+- **Commit authority:** ``ContinuityManager.process_turn`` is the sole runtime commit path for continuity state. Ingress and response validation may **reject** moves; they do **not** apply ``scene_state_updates`` or other continuity commits. Registry-backed ``scene_state_updates`` apply via ``apply_registered_resolved_outcome_updates`` / ``resolved_outcome_registry`` on that path.
+- **Classifier input:** ``ConsequenceClassifier.classify_turn`` consumes **canonical** structured moves: for v2, **flat** ``action``/``dialogue``-equivalent text is derived from ``beats[]`` via ``character_move_adapters`` (concatenations), not per-recipient **projected** stubs.
+- **PublicEventExtraction:** ``PublicEvent.summary`` is **not** a raw dump of canonical dialogue. ``perception_audibility.public_safe_event_summary`` (alias ``public_event_extraction``) strips non-public verbatim speech from provisional summaries before the text is stored on ``PublicEvent``. Private/directed speech must not appear verbatim in that global-facing prose.
+- **Knowledge (eligibility only):** ``continuity_knowledge_helpers`` gates who may receive verbatim speech in **interpretation** strings and **event knowledge** propagation using the same audibility rules; this does **not** define episodic storage policy.
+
 ### 3. Director Agent
 
 Director receives structured orchestration inputs and returns:

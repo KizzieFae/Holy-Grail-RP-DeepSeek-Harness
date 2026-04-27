@@ -439,12 +439,17 @@ def public_safe_event_summary(
     move: dict[str, Any],
     provisional_summary: str,
 ) -> str:
-    """Ensure ``PublicEvent.summary`` never embeds private/directed verbatim dialogue."""
+    """PublicEventExtraction: ensure ``PublicEvent.summary`` never embeds private/directed verbatim dialogue.
+
+    Canonical turn facts + provisional narrative pass through this layer before global public-event prose.
+    Issue #140: not a raw copy of structured move text into ``summary``.
+    """
     if is_canonical_v2_move(move):
         # Callers (e.g. continuity) normalize moves with full ``present_characters``
         # before summary; do not re-normalize here with an incomplete roster.
         base = str(provisional_summary or "")
         beats = move.get("beats")
+        has_non_public_speech = False
         if isinstance(beats, list):
             for b in beats:
                 if not isinstance(b, dict) or b.get("type") != "speech":
@@ -454,10 +459,15 @@ def public_safe_event_summary(
                 ).lower()
                 if aud == AUDIBILITY_PUBLIC:
                     continue
+                has_non_public_speech = True
                 dialogue = str(b.get("dialogue", "") or "").strip()
                 base = strip_dialogue_from_summary(base, dialogue)
         if base.strip():
             return base.strip()
+        if has_non_public_speech:
+            return (
+                f"{acting_character} spoke (non-public speech; words not globally knowable in summary)."
+            )
         return f"{acting_character} took action"
 
     aud = str(move.get("audibility", AUDIBILITY_PUBLIC) or AUDIBILITY_PUBLIC).lower()
@@ -477,6 +487,10 @@ def public_safe_event_summary(
     if aud == AUDIBILITY_PRIVATE:
         return f"{acting_character} spoke privately (words not globally knowable)."
     return f"{acting_character} {action}".strip() or f"{acting_character} took action"
+
+
+# Explicit name for continuity / governance (Issue #140); same implementation as ``public_safe_event_summary``.
+public_event_extraction = public_safe_event_summary
 
 
 def format_observable_beat_text(

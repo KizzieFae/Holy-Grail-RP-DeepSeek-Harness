@@ -2,10 +2,16 @@ import re
 from datetime import datetime
 from typing import Any
 
+from character_move_adapters import (
+    is_canonical_v2_move,
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
 from continuity_state import CharacterInterpretation
 from perception_audibility import (
     normalize_move_audibility,
     observer_may_quote_dialogue_in_interpretation,
+    speech_beat_viewer_may_perceive,
     viewer_may_perceive_dialogue,
 )
 
@@ -30,6 +36,41 @@ def share_event_knowledge(
         event.inferred_by.append(character_name)
 
 
+def perceivable_dialogue_excerpt_for_interpretation(
+    *,
+    norm_move: dict[str, Any],
+    acting_character: str,
+    observer_character: str,
+    max_chars: int = 50,
+) -> str:
+    """Verbatim speech snippet for interpretation text — only speech beats the observer may perceive (Issue #140)."""
+    if is_canonical_v2_move(norm_move):
+        parts: list[str] = []
+        beats = norm_move.get("beats")
+        if not isinstance(beats, list):
+            return ""
+        for b in beats:
+            if not isinstance(b, dict) or b.get("type") != "speech":
+                continue
+            if not speech_beat_viewer_may_perceive(
+                b,
+                acting_character=acting_character,
+                viewer_character=observer_character,
+            ):
+                continue
+            seg = str(b.get("dialogue", "") or "").strip()
+            if seg:
+                parts.append(seg)
+        return " ".join(parts).strip()[:max_chars]
+    if not observer_may_quote_dialogue_in_interpretation(
+        norm_move,
+        acting_character=acting_character,
+        observer_character=observer_character,
+    ):
+        return ""
+    return str(norm_move.get("dialogue", "") or "").strip()[:max_chars]
+
+
 def mentioned_participants(*, text: str, participants: list[str]) -> list[str]:
     text_lower = text.lower()
     mentioned: list[str] = []
@@ -51,8 +92,11 @@ def propagate_knowledge_from_turn(
     mentioned_participants_fn,
     share_event_knowledge_fn,
 ) -> None:
-    dialogue = str(move.get("dialogue", "") or "")
-    if not dialogue:
+    if is_canonical_v2_move(move):
+        dialogue = legacy_flat_dialogue_text(move)
+    else:
+        dialogue = str(move.get("dialogue", "") or "")
+    if not str(dialogue).strip():
         return
     present = list(dict.fromkeys([acting_character, *other_characters]))
     move = normalize_move_audibility(dict(move), acting_character, present)
@@ -86,31 +130,36 @@ def update_interpretations(
     other_characters: list[str],
     timestamp: datetime,
 ) -> None:
-    dialogue = move.get("dialogue", "")
-    action = move.get("action", "")
     motivation = move.get("motivation", {})
     present = list(dict.fromkeys([acting_character, *other_characters]))
     norm_move = normalize_move_audibility(dict(move), acting_character, present)
+    if is_canonical_v2_move(norm_move):
+        action = legacy_flat_action_text(norm_move)
+        flat_dialogue = legacy_flat_dialogue_text(norm_move)
+    else:
+        action = str(move.get("action", "") or "")
+        flat_dialogue = str(move.get("dialogue", "") or "")
 
     for observer in other_characters:
         if observer not in manager.interpretations:
             manager.interpretations[observer] = []
 
         observed = f"Saw {acting_character} {action}"
-        if dialogue:
-            if observer_may_quote_dialogue_in_interpretation(
-                norm_move,
-                acting_character=acting_character,
-                observer_character=observer,
-            ):
-                observed += f' and heard: "{str(dialogue)[:50]}"'
-            else:
-                observed += " (speech not audible to you; only observable behavior)"
+        heard_excerpt = perceivable_dialogue_excerpt_for_interpretation(
+            norm_move=norm_move,
+            acting_character=acting_character,
+            observer_character=observer,
+            max_chars=50,
+        )
+        if heard_excerpt:
+            observed += f' and heard: "{heard_excerpt}"'
+        elif flat_dialogue:
+            observed += " (speech not audible to you; only observable behavior)"
 
         reaction = "observing neutrally"
-        if "angry" in str(motivation).lower() or "accus" in dialogue.lower():
+        if "angry" in str(motivation).lower() or "accus" in flat_dialogue.lower():
             reaction = "defensive or concerned"
-        elif "question" in str(motivation).lower() or "?" in dialogue:
+        elif "question" in str(motivation).lower() or "?" in flat_dialogue:
             reaction = "curious or guarded"
 
         interpretation = CharacterInterpretation(

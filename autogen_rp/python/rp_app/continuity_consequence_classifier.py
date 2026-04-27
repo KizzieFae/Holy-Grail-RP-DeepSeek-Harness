@@ -7,6 +7,12 @@ semantic consequence categories via intent + behavior pattern matching.
 import re
 from typing import Any
 
+from character_move_adapters import (
+    is_canonical_v2_move,
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
+
 # Geometry: "turn" only counts as movement when a standalone verb and not negated
 # (avoids "did not turn", "didn't turn", "not turning", etc.).
 _GEOMETRY_NEGATED_TURN_PHRASE = re.compile(
@@ -53,6 +59,16 @@ try:
     from continuity_state import ConsequenceCategory, DetectedConsequence
 except ImportError:
     from python.rp_app.continuity_state import ConsequenceCategory, DetectedConsequence
+
+
+def _move_with_flat_text_for_deterministic_tools(move: dict[str, Any]) -> dict[str, Any]:
+    """Augment v2 moves with root ``action``/``dialogue`` for exit/grounding helpers (canonical text, Issue #140)."""
+    if not is_canonical_v2_move(move):
+        return move
+    out = dict(move)
+    out["action"] = legacy_flat_action_text(move)
+    out["dialogue"] = legacy_flat_dialogue_text(move)
+    return out
 
 
 class ConsequenceClassifier:
@@ -327,18 +343,24 @@ class ConsequenceClassifier:
 
         Multi-label: returns all applicable categories, not just first match.
         """
-        # Extract structured fields
+        # Extract structured fields (v2: canonical text from ``beats[]``, not projected views; Issue #140).
         goal = str(move.get("motivation", {}).get("goal", "")).lower()
         tactic = str(move.get("motivation", {}).get("tactic", "")).lower()
-        action = str(move.get("action", "")).lower()
-        dialogue = str(move.get("dialogue", "")).lower()
+        if is_canonical_v2_move(move):
+            action = legacy_flat_action_text(move).lower()
+            dialogue = legacy_flat_dialogue_text(move).lower()
+        else:
+            action = str(move.get("action", "")).lower()
+            dialogue = str(move.get("dialogue", "")).lower()
         tension_shift = str(director_decision.get("tension_shift", "")).lower()
         environment_event = str(director_decision.get("environment_event", "")).lower()
+
+        tm = _move_with_flat_text_for_deterministic_tools(move)
 
         # Build signal profiles
         intent = self._extract_intent_signals(goal, tactic)
         behavior = self._extract_behavior_signals(action, dialogue)
-        if detect_exit_from_scene(move, scene_state, acting_character):
+        if detect_exit_from_scene(tm, scene_state, acting_character):
             behavior["exit"] = True
 
         # Accumulate all detected consequences
@@ -426,9 +448,10 @@ class ConsequenceClassifier:
                 grounding_state_signals_from_move,
             )
 
-        signals = grounding_state_signals_from_move(move)
+        tm = _move_with_flat_text_for_deterministic_tools(move)
+        signals = grounding_state_signals_from_move(tm)
         results: list[DetectedConsequence] = []
-        excerpt_src = f"{move.get('dialogue', '')} {move.get('action', '')}".strip()
+        excerpt_src = f"{tm.get('dialogue', '')} {tm.get('action', '')}".strip()
         excerpt = excerpt_src[:80] if excerpt_src else ""
 
         if SIGNAL_PHONE_BROKEN in signals or SIGNAL_WEAPON_ON_TABLE in signals:

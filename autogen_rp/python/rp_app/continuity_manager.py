@@ -76,6 +76,11 @@ from continuity_scene_helpers import (
     restore_manager_state,
     serialize_manager_state,
 )
+from character_move_adapters import (
+    is_canonical_v2_move,
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
 from scene_grounding import compute_grounding_markers, grounding_markers_event_summary
 
 from perception_audibility import (
@@ -467,8 +472,12 @@ class ContinuityManager:
         if not isinstance(motivation, dict):
             motivation = {}
         risk_level = str(motivation.get("risk_level", "medium") or "medium").lower()
-        dialogue = str(move.get("dialogue", "") or "").lower()
-        action = str(move.get("action", "") or "").lower()
+        if is_canonical_v2_move(move):
+            dialogue = legacy_flat_dialogue_text(move).lower()
+            action = legacy_flat_action_text(move).lower()
+        else:
+            dialogue = str(move.get("dialogue", "") or "").lower()
+            action = str(move.get("action", "") or "").lower()
         environment_event = str(
             director_decision.get("environment_event", "") or ""
         ).lower()
@@ -509,8 +518,17 @@ class ContinuityManager:
         )
         base_promotion = has_durable_change or has_scene_shift
 
+        move_for_grounding = (
+            {
+                **move,
+                "action": legacy_flat_action_text(move),
+                "dialogue": legacy_flat_dialogue_text(move),
+            }
+            if is_canonical_v2_move(move)
+            else move
+        )
         grounding_markers = compute_grounding_markers(
-            acting_character, move, detected
+            acting_character, move_for_grounding, detected
         )
         should_create_event = base_promotion or bool(grounding_markers)
 
@@ -890,6 +908,10 @@ class ContinuityManager:
     ) -> ContinuitySnapshot:
         """Process a completed turn and update continuity state.
 
+        Sole runtime commit authority for narrative state: ingress/validation may reject
+        moves but does not partially commit. ``scene_state_updates`` semantics are applied
+        on this path (registry / resolved outcomes) per Issue #140.
+
         Args:
             acting_character: Name of character who just acted
             move: Structured move with action, dialogue, motivation
@@ -1050,6 +1072,7 @@ class ContinuityManager:
             turn_consequences.get("summary", "")
             or f"{acting_character} took action"
         )
+        # PublicEventExtraction: only public-safe text in PublicEvent.summary (Issue #140).
         safe_summary = public_safe_event_summary(
             acting_character=acting_character,
             move=move,

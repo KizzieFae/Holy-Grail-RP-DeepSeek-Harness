@@ -120,11 +120,23 @@ def issue_tokens(*, text: str, stopwords: set[str]) -> set[str]:
 
 
 def turn_tokens(*, move: dict[str, Any], issue_tokens_fn) -> set[str]:
+    from character_move_adapters import (
+        is_canonical_v2_move,
+        legacy_flat_action_text,
+        legacy_flat_dialogue_text,
+    )
+
     motivation = move.get("motivation", {}) if isinstance(move, dict) else {}
+    if is_canonical_v2_move(move):
+        a = legacy_flat_action_text(move)
+        d = legacy_flat_dialogue_text(move)
+    else:
+        a = str(move.get("action", "") or "")
+        d = str(move.get("dialogue", "") or "")
     text = " ".join(
         [
-            str(move.get("action", "") or ""),
-            str(move.get("dialogue", "") or ""),
+            a,
+            d,
             str(motivation.get("goal", "") or ""),
             str(motivation.get("tactic", "") or ""),
         ]
