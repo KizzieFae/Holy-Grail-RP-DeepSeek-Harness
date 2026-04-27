@@ -116,7 +116,11 @@ A **read-only** seam for **character** prompts: **`CharacterPromptInputAssembly`
 
 ### 2. Structured Output Format
 
-Characters now return:
+Character moves are **versioned**. **Normative post-boundary** shape for the **v2** migration (**GitHub #134** / **#136**) is defined under **Normative v2 character move** below. **Runtime parsers, validators, prompts, and audits** follow the **child-issue cutover** order in **#134** (**#137–#142**); until that migration completes, **production** may still ingest **legacy v1** layout at ingress.
+
+#### Legacy v1 shape (ingress / pre-boundary)
+
+The following is the **historical** root-level **`action`** / **`dialogue`** object accepted at ingress on the v1 path. It is **not** the long-term normative contract; **post-boundary** canonical shape is **v2** with **`move_schema_version: 2`** and **`beats[]`** (see below). Do **not** treat root **`action`** / **`dialogue`** as valid alongside **`beats`** on the same conforming v2 document.
 
 ```json
 {
@@ -133,9 +137,112 @@ Characters now return:
 }
 ```
 
-Optional fields **`audibility`** (`public` \| `directed` \| `private`) and **`audience`** (names, for non-public) are parsed from character JSON when present, then **normalized** in `perception_audibility.py` (including deterministic whisper-style heuristics on structured `action`/`dialogue` only). **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what.
+On the **v1** path, optional root-level **`audibility`** (`public` \| `directed` \| `private`) and **`audience`** (names, for non-public) are parsed from character JSON when present, then **normalized** in `perception_audibility.py` (including deterministic whisper-style heuristics on structured `action`/`dialogue` only). **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what.
 
-The JSON above is the **stable** self-only core. The pipeline may accept **additional** optional keys; **issue pressure and consequence structure** for the scene are **primarily** produced by **continuity** and reflected in **narrative/orchestration** artifacts. Missing optional keys on the move must **not** be read as “no story pressure changed.”
+The v1 JSON above is the **stable** self-only core for that path. The pipeline may accept **additional** optional keys on v1-shaped moves; **issue pressure and consequence structure** for the scene are **primarily** produced by **continuity** and reflected in **narrative/orchestration** artifacts. Missing optional keys on the move must **not** be read as “no story pressure changed.”
+
+#### Normative v2 character move (`move_schema_version` 2)
+
+This subsection is the **single in-repo normative contract** for **v2** structured character moves (**GitHub #136**). **Semantic** contents of **`scene_state_updates`** are **not** specified here (optional **object envelope** only); mutation payload definitions are owned by continuity / later seams (**e.g. GitHub #140**). **Ingress** normalization and **v1** tolerance are **#137**; **prompt** cutover is **#142**.
+
+**Canonical example** (illustrative; not all optional roots need appear):
+
+```json
+{
+  "move_schema_version": 2,
+  "beats": [
+    {
+      "type": "action",
+      "action": "She squared her shoulders, watching the door."
+    },
+    {
+      "type": "speech",
+      "dialogue": "Who is she?",
+      "audibility": "directed",
+      "audience": ["Marlene Fletcher"]
+    }
+  ],
+  "motivation": {
+    "goal": "test whether Celina knows the stranger",
+    "tactic": "probe with a direct question",
+    "emotional_driver": "suspicion",
+    "risk_level": "low"
+  },
+  "scene_state_updates": {}
+}
+```
+
+**Versioning**
+
+| Rule | Definition |
+|------|------------|
+| Field name | `move_schema_version` |
+| JSON type | integer |
+| Required | Yes for conforming v2 documents |
+| Location | Root only; must not appear on beats or inside `motivation` / `scene_state_updates` |
+| Allowed values | Exactly `2` for this contract. Broader beat or root layout changes require a **new** `move_schema_version`, not silent extension within v2 |
+
+**Root fields**
+
+- **Required:** `move_schema_version` (`2`), `beats` (array), `motivation` (object)
+- **Optional:** `scene_state_updates` (JSON **object** when present; `{}` valid). **Envelope only** — inner keys and domain meaning are **out of scope** for this contract; **`#137`** may verify “is an object,” not continuity semantics under **`#136`** authority.
+- **Prohibited at root:** `action`, `dialogue`, `audibility`, `audience`, `type`, and any property not named above
+
+**Legacy root `action` / `dialogue`:** Not part of v2. A document with root **`action`** and/or **`dialogue`** is not a conforming v2 object, even if `move_schema_version` is `2` and `beats` is present (invalid v2 or pre-boundary legacy input).
+
+**`beats[]`**
+
+- JSON array; **minimum length 1**; empty array **invalid**
+- **Order is authoritative** for the turn’s beat sequence (downstream presentation may merge adjacent beats only where a later seam explicitly allows; no reordering)
+- **Maximum length:** not specified by this contract
+- Each element is an object with **`type`** exactly **`action`** or **`speech`** (case-sensitive)
+
+**Unknown fields on any beat are invalid under v2.** Only the fields listed below for that `type` are permitted.
+
+**`type`: `action`**
+
+- **Required:** `type`, `action` (non-empty string after trim)
+- **Optional:** none
+- **Forbidden:** all other keys (including `dialogue`, `audibility`, `audience`, `motivation`, `scene_state_updates`, `move_schema_version`, `beats`)
+
+**`type`: `speech`**
+
+- **Required:** `type`, `dialogue` (non-empty string after trim)
+- **Optional:** `audibility`, `audience`
+- **Forbidden:** the beat-level **`action`** field used on `action` beats, and all keys not listed in required/optional
+
+**Speech audibility**
+
+- **`audibility`** only on **`speech`** beats; **omit** → effective **`public`**
+- Allowed values: **`public`**, **`directed`**, **`private`** (strings, case-sensitive)
+- **`audience`:** JSON array of strings
+- If **`audibility`** is omitted or **`public`**: **`audience`** must be **omitted** or **`[]`**; **non-empty `audience` is invalid**
+- If **`directed`** or **`private`**: **`audience`** required and must be a **non-empty** array of strings
+- Root-level **`audibility`** / **`audience`:** **prohibited** on v2
+
+**`motivation`**
+
+- **Required keys:** `goal`, `tactic`, `emotional_driver`, `risk_level` (each a JSON string, non-empty after trim)
+- **Additional keys:** allowed (forward extension without v2 shape churn)
+
+**Invalid under v2 (summary)**
+
+- Missing or non-integer **`move_schema_version`**, or any value other than **`2`**
+- Any **prohibited** or **unknown** root property; root **`action`**, **`dialogue`**, **`audibility`**, or **`audience`**
+- **`beats`** missing, not an array, or **empty**
+- **`motivation`** missing, not an object, or any required key missing / not a non-empty string after trim
+- Any beat not an object; **`type`** not exactly **`action`** or **`speech`**; **unknown keys** on a beat
+- **`action`** beat missing **`action`** or containing any disallowed key; **`speech`** beat missing **`dialogue`** or containing any disallowed key (including the **`action`** field used on action beats)
+- **`speech`** **`audibility`** not one of **`public`** / **`directed`** / **`private`**; **public** (explicit or by omission) with **non-empty** **`audience`**; **`directed`** / **`private`** with **`audience`** missing, not an array, or empty
+- **`audibility`** or **`audience`** on an **`action`** beat; nested **`move_schema_version`**, **`beats`**, **`motivation`**, or **`scene_state_updates`** inside a beat
+- **`scene_state_updates`** present but not a JSON **object**
+- Invalid JSON or **duplicate keys** at parse time: not a conforming document
+
+**Compatibility boundary (contract only)**
+
+- **v1** layout may exist **only at ingress** (unstructured or legacy-shaped model output)
+- **Normalization** to canonical v2 occurs at the **parse boundary** (**#137**); this doc does not specify algorithms
+- **Downstream** layers should consume **only** objects satisfying this v2 contract after normalization; **#142** owns when model-facing instructions require **`beats`**
 
 ### 3. Director Agent
 
