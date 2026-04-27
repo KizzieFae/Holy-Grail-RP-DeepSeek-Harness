@@ -381,7 +381,7 @@ For the **full** end-to-end procedure (corpus definition, independent validation
 
 ### Audit signal applicability inventory
 
-**Excluded from this table:** **Runtime outcome records** (see **Authority rules**). Examples: `stage: validation_progression_retry`, validation reason strings, successful `turn_execution_metadata` fields that mirror retry state — interpret via **`ARCHITECTURE.md`** and validation docs, not applicability class.
+**Excluded from this table:** **Runtime outcome records** (see **Authority rules**). Examples: `stage: validation_progression_retry`, `stage: parse_retry`, validation reason strings, successful `turn_execution_metadata` fields that mirror retry state (including `parse_retry_*`) — interpret via **`ARCHITECTURE.md`** and validation docs, not applicability class.
 
 | Signal id | Description | Class | Predicate (conditional only) | Silence semantics | Engineering family |
 |-----------|-------------|-------|-------------------------------|-------------------|---------------------|
@@ -507,6 +507,10 @@ Director turn metadata may include **`anti_regression_advisory`**: **`active`** 
 
 **Character** and **Narrator** per-turn audit metadata also include **`progression_advisory`** and **`anti_regression_advisory`** snapshots read from orchestration cache at log time (same fields as above, where present). That lets you correlate each rendered beat with stall pressure, ping-pong flags, and post-break window state without relying on Director JSON alone.
 
+### Character move parse retry in audits (GitHub #133)
+
+When a character raw response **fails structured parse** and the slot still has remaining attempts in the unified budget, turn failure logging may use **`stage: parse_retry`** (non-terminal). The **final** parse failure for that slot uses **`stage: parse`** (terminal; the actor is appended to **`actors_failed_this_round`** for the batch). On **successful** turns after a parse recovery, character audit **`turn_execution_metadata`** may include **`parse_retry_triggered`**, **`parse_retry_reason`**, and **`parse_retry_outcome`** (**`success_after_retry`** or **`no_retry`**), alongside the existing duplicate / binding / investigation / progression retry fields. See **`ARCHITECTURE.md`** (*Character slot attempt budget*) and `turn_runner_turn.py`.
+
 ### Progression enforcement and `consequences` in audits
 
 When progression enforcement is on, a character failure log may show **`validation_progression_retry`**: the move passed parse/presence checks but **Q1–Q4** in **`progression_enforcement.py`** failed after continuity **`process_turn`**, so continuity was rolled back and the turn retried. **Q1–Q4 logic is unchanged;** they consume **`turn_metadata_by_index[*]["consequences"]`** and related continuity outputs.
@@ -556,7 +560,7 @@ Character `*_full.json` system prompts may include the heading `## **BINDING CON
 
 **Binding sleeping-surface contradiction enforcement (runtime validation)**
 
-When a move contradicts a **promoted** `assignment:sleeping_surface` binding, the first failed attempt may be logged with **`stage: validation_binding_retry`** and reason prefix **`[BINDING_SLEEPING_SURFACE]`** (see `turn_runner_turn.py`, `response_validation_binding_sleeping_surface.py`). The retry attempt’s system prompt may include a short **`[BINDING_RETRY]`** note. **`turn_execution_metadata`** can include **`binding_retry_triggered`**, **`binding_retry_reason`**, and related fields on successful turns after a retry.
+When a move contradicts a **promoted** `assignment:sleeping_surface` binding, a failed attempt may be logged with **`stage: validation_binding_retry`** and reason prefix **`[BINDING_SLEEPING_SURFACE]`** when a **binding-class** retry is still allowed under the **unified character attempt budget** (see **`ARCHITECTURE.md`**, *Character slot attempt budget*; `turn_runner_turn.py`, `response_validation_binding_sleeping_surface.py`). The retry attempt’s system prompt may include a short **`[BINDING_RETRY]`** note. **`turn_execution_metadata`** can include **`binding_retry_triggered`**, **`binding_retry_reason`**, and related fields on successful turns after a retry.
 
 **Do not conflate** with **`[REGISTRY_SLOT] sleeping_surface_assignment: invalid_surface_id`**, which fires when **`scene_state_updates.sleeping_surface_assignment`** uses a **surface id** not allowed by the registry/template contract (`response_validation_registry_slots.py`, `resolved_outcome_registry.py`). That path has **no** binding-contradiction retry; it is ordinary validation failure. Repeated `invalid_surface_id` churn in long runs is tracked separately (**GitHub #31**; see **`ARCHITECTURE.md`** — Scene Grounding binding enforcement note).
 
@@ -1134,6 +1138,7 @@ In the registry table, **`surface_kind: signal`** applies only to surfaces that 
 | `audit.outcome_record.stage.validation_progression_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.progression_enforcement` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
 | `audit.outcome_record.stage.validation_binding_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.response_validation.binding_sleeping_surface` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
 | `audit.outcome_record.stage.validation_duplicate_retry` | audit | production, headless | outcome_record | | observational | | none | `runtime.response_validation.duplicate_dialogue` | — | — | Logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
+| `audit.outcome_record.stage.parse_retry` | audit | production, headless | outcome_record | | observational | | none | — | — | — | Non-terminal structured parse failure with attempts remaining (`turn_runner_turn.py`); logged `stage` mirror; **omit** `engineering_role` and `applicability_class`. |
 
 **Table conventions:** `—` means the field does not apply. For **`outcome_record`** rows, **`engineering_role`** and **`applicability_class`** are intentionally **blank** (omitted from the registry row, not `null`).
 

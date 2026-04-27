@@ -34,6 +34,14 @@ from response_validation_investigation_recall import (
     format_investigation_anchor_retry_note,
 )
 
+DEFAULT_MAX_CHARACTER_ATTEMPTS = 3
+
+_CHARACTER_MOVE_PARSE_JSON_DISCIPLINE_NOTE = (
+    "IMPORTANT: Your previous response could not be parsed as valid JSON for the required "
+    "character move schema. Reply with a single JSON object containing the required fields "
+    "(e.g. action, dialogue, motivation) and no surrounding prose or markdown/code fences."
+)
+
 
 async def execute_character_turn(
     *,
@@ -72,6 +80,7 @@ async def execute_character_turn(
     get_character_display_name_fn,
     sync_orchestration_state_from_continuity_fn,
     effective_user_trigger: str = "",
+    max_character_attempts: int = DEFAULT_MAX_CHARACTER_ATTEMPTS,
 ) -> dict[str, Any] | None:
     effective_user_trigger = (effective_user_trigger or trigger_text or "").strip()
     task_prompt, character_summary_block_audit = build_character_turn_prompt_fn(
@@ -86,16 +95,24 @@ async def execute_character_turn(
     rejection_reason = ""
     duplicate_retry_triggered = False
     duplicate_retry_reason = ""
+    duplicate_retry_consumed = False
     progression_retry_triggered = False
     progression_retry_reason = ""
+    progression_retry_consumed = False
     binding_retry_triggered = False
     binding_retry_reason = ""
+    binding_retry_consumed = False
     investigation_retry_triggered = False
     investigation_retry_reason = ""
+    investigation_retry_consumed = False
+    parse_retry_triggered = False
+    parse_retry_reason = ""
     continuity_applied_in_execute = False
     continuity_transaction_snapshot: dict[str, Any] | None = None
 
-    for attempt_index in range(2):
+    attempt_cap = max(1, int(max_character_attempts))
+    for attempt_index in range(attempt_cap):
+        has_more_attempts = attempt_index < attempt_cap - 1
         continuity_manager = get_continuity_manager_fn()
         scene_state = (
             continuity_manager.scene_state.to_dict()
@@ -103,8 +120,10 @@ async def execute_character_turn(
             else orchestration_state.get("scene_state", {})
         )
         attempt_prompt = task_prompt
-        if attempt_index == 1:
+        if attempt_index >= 1:
             retry_notes: list[str] = []
+            if parse_retry_triggered:
+                retry_notes.append(_CHARACTER_MOVE_PARSE_JSON_DISCIPLINE_NOTE)
             if duplicate_retry_triggered:
                 retry_notes.append(
                     "IMPORTANT: Your previous attempt was rejected as a duplicate. "
@@ -186,6 +205,31 @@ async def execute_character_turn(
 
         move, error = parse_character_move_fn(char_raw_response)
         if error or move is None:
+            if has_more_attempts:
+                parse_retry_triggered = True
+                parse_retry_reason = error or "Character move could not be parsed"
+                log_turn_failure_fn(
+                    round_number=round_number,
+                    turn_number=turn_number,
+                    bot_name=next_actor,
+                    bot_type="character",
+                    stage="parse_retry",
+                    reason=parse_retry_reason,
+                    input_messages=[{"role": "system", "content": attempt_prompt}],
+                    raw_response=char_raw_response,
+                    parsed_output=decision,
+                    context_snapshot={
+                        "director_decision": decision,
+                        "character_names": char_names,
+                        "attempt_index": attempt_index,
+                    },
+                    metadata={"summary_blocks": character_summary_block_audit},
+                    effective_user_trigger=effective_user_trigger,
+                )
+                st_module.session_state["selector_decisions"].append(
+                    f"Retrying {next_actor} after character move parse failure."
+                )
+                continue
             actors_failed_this_round.append(next_actor)
             log_turn_failure_fn(
                 round_number=round_number,
@@ -259,9 +303,11 @@ async def execute_character_turn(
         if (
             not is_valid
             and rejection_reason.startswith("[DUPLICATE]")
-            and attempt_index == 0
+            and not duplicate_retry_consumed
+            and has_more_attempts
         ):
             duplicate_retry_triggered = True
+            duplicate_retry_consumed = True
             duplicate_retry_reason = rejection_reason
             log_turn_failure_fn(
                 round_number=round_number,
@@ -292,9 +338,11 @@ async def execute_character_turn(
         if (
             not is_valid
             and rejection_reason.startswith("[BINDING_SLEEPING_SURFACE]")
-            and attempt_index == 0
+            and not binding_retry_consumed
+            and has_more_attempts
         ):
             binding_retry_triggered = True
+            binding_retry_consumed = True
             binding_retry_reason = rejection_reason
             log_turn_failure_fn(
                 round_number=round_number,
@@ -325,9 +373,11 @@ async def execute_character_turn(
         if (
             not is_valid
             and rejection_reason.startswith("[INVESTIGATION_ANCHOR]")
-            and attempt_index == 0
+            and not investigation_retry_consumed
+            and has_more_attempts
         ):
             investigation_retry_triggered = True
+            investigation_retry_consumed = True
             investigation_retry_reason = rejection_reason
             log_turn_failure_fn(
                 round_number=round_number,
@@ -444,7 +494,8 @@ async def execute_character_turn(
                 progression_retry_reason = (
                     "Progression enforcement: no qualifying structural delta after process_turn."
                 )
-                if attempt_index == 0:
+                if not progression_retry_consumed and has_more_attempts:
+                    progression_retry_consumed = True
                     progression_retry_triggered = True
                     maybe_record_sim_progression_metric(
                         st_module,
@@ -556,33 +607,30 @@ async def execute_character_turn(
 
         turn_execution_metadata = {
             "attempt_index": attempt_index,
+            "parse_retry_triggered": parse_retry_triggered,
+            "parse_retry_reason": parse_retry_reason,
+            "parse_retry_outcome": (
+                "success_after_retry" if parse_retry_triggered else "no_retry"
+            ),
             "duplicate_retry_triggered": duplicate_retry_triggered,
             "duplicate_retry_reason": duplicate_retry_reason,
             "duplicate_retry_outcome": (
-                "success_after_retry"
-                if duplicate_retry_triggered and attempt_index == 1
-                else "no_retry"
+                "success_after_retry" if duplicate_retry_triggered else "no_retry"
             ),
             "progression_retry_triggered": progression_retry_triggered,
             "progression_retry_reason": progression_retry_reason,
             "progression_retry_outcome": (
-                "success_after_retry"
-                if progression_retry_triggered and attempt_index == 1
-                else "no_retry"
+                "success_after_retry" if progression_retry_triggered else "no_retry"
             ),
             "binding_retry_triggered": binding_retry_triggered,
             "binding_retry_reason": binding_retry_reason,
             "binding_retry_outcome": (
-                "success_after_retry"
-                if binding_retry_triggered and attempt_index == 1
-                else "no_retry"
+                "success_after_retry" if binding_retry_triggered else "no_retry"
             ),
             "investigation_retry_triggered": investigation_retry_triggered,
             "investigation_retry_reason": investigation_retry_reason,
             "investigation_retry_outcome": (
-                "success_after_retry"
-                if investigation_retry_triggered and attempt_index == 1
-                else "no_retry"
+                "success_after_retry" if investigation_retry_triggered else "no_retry"
             ),
         }
 
