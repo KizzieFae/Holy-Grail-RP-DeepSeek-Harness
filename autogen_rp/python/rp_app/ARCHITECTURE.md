@@ -244,6 +244,16 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **Normalization** to canonical v2 occurs at the **parse boundary** (**#137**); this doc does not specify algorithms
 - **Downstream** layers should consume **only** objects satisfying this v2 contract after normalization; **#142** owns when model-facing instructions require **`beats`**
 
+**Parse implementation (GitHub #137 — narrow scope)**
+
+- **Module:** `character_move_ingress.py` — fenced unwrap, then `json.loads` with an `object_pairs_hook` that **rejects duplicate keys in every object** (before schema detection). `parse_json_payload` (Director, etc.) uses the same loader.
+- **v1** ingress allowlist (root keys only): `action`, `dialogue`, `motivation`, `audibility`, `audience`, `scene_state_updates`. Any other root key **rejects**. Legacy v1 may be **disabled** with env `RP_LEGACY_V1_CHARACTER_MOVE=0` (v2-only ingress).
+- **Unknown** `move_schema_version` (missing on v1 path, or present and not **integer 2**): **reject** (no other-version fallback in this layer).
+- **Caps** (structural only): `MAX_V2_BEATS` 64, `MAX_V2_TEXT_CODEPOINTS` 8192, `MAX_V2_AUDIENCE_ITEMS` 32.
+- **Handoff type:** :class:`CanonicalV2Move` in `character_move_adapters.py` — a ``dict`` subclass with **only** v2 keys stored. Legacy ``.get("action")`` / ``.get("dialogue")`` and ``["action"]`` / ``["dialogue"]`` return **read-only** concatenations from ``beats`` (no root-level v1 shadow fields persisted on the object).
+- **``scene_state_updates``:** this layer checks **JSON object** when present, not internal semantics.
+- **Turn runner:** for ``move_schema_version == 2``, root-level ``normalize_move_audibility`` is **not** called (audibility is on **speech** beats; Issue **#138** will refine further).
+
 ### 3. Director Agent
 
 Director receives structured orchestration inputs and returns:

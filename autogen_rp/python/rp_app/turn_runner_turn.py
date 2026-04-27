@@ -25,6 +25,7 @@ from audit_v2_pipeline import (
 )
 from character_audits_v1 import build_character_audit_v1
 from turn_runner_audit import log_character_turn_audit
+from character_move_adapters import legacy_move_text_for_validation
 from perception_audibility import normalize_move_audibility
 from response_validation_binding_sleeping_surface import (
     binding_sleeping_surface_id_for_actor,
@@ -252,11 +253,18 @@ async def execute_character_turn(
             return None
 
         present_for_norm = scene_state.get("present_characters") or char_names
-        move = normalize_move_audibility(
-            dict(move), next_actor, list(present_for_norm)
-        )
+        if int(str(move.get("move_schema_version", 0) or 0) or 0) == 2:
+            # Canonical v2: audibility lives on speech beats; root-level inference
+            # in ``normalize_move_audibility`` is skipped here (Issue #138).
+            # Preserve :class:`CanonicalV2Move` (do not ``dict()``) so legacy ``.get``
+            # (action/dialogue) keeps working for continuity in this process.
+            pass
+        else:
+            move = normalize_move_audibility(
+                dict(move), next_actor, list(present_for_norm)
+            )
 
-        move_text = f"{move.get('action', '')} {move.get('dialogue', '')}".strip()
+        move_text = legacy_move_text_for_validation(move)
         is_valid, rejection_reason = validate_bot_response_fn(
             move_text,
             next_actor,

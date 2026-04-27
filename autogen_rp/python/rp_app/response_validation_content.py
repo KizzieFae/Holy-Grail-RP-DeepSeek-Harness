@@ -22,6 +22,7 @@ from response_validation_binding_sleeping_surface import (
     validate_binding_sleeping_surface_contradiction,
 )
 from progression_simulation_scenarios import load_scenario
+from character_move_adapters import legacy_flat_dialogue_text
 from response_validation_investigation_recall import (
     validate_investigation_recall_contract,
 )
@@ -207,7 +208,11 @@ def _validate_bot_tier_quality_repetition(
     if is_dup:
         return False, f"[DUPLICATE] {dup_reason}"
 
-    dialogue = str((move or {}).get("dialogue", "") or "")
+    m = move or {}
+    if int(str(m.get("move_schema_version", 0) or 0) or 0) == 2:
+        dialogue = str(legacy_flat_dialogue_text(m) or "")
+    else:
+        dialogue = str(m.get("dialogue", "") or "")
     is_dup_dialogue, dup_dialogue_reason = is_duplicate_dialogue(
         speaker=speaker,
         dialogue=dialogue,

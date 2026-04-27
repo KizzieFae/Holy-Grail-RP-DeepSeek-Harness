@@ -1,6 +1,16 @@
 import json
 from typing import Any
 
+from character_move_adapters import (
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
+from character_move_ingress import (
+    load_json_object_duplicate_safe,
+    parse_character_move_content_to_v2,
+    unwrap_fenced_json_object,
+)
+
 
 def build_attempted_post_details(
     raw_response: str = "",
@@ -9,8 +19,12 @@ def build_attempted_post_details(
     details: dict[str, Any] = {}
     payload = parsed_output if isinstance(parsed_output, dict) else {}
 
-    action = str(payload.get("action", "") or "").strip()
-    dialogue = str(payload.get("dialogue", "") or "").strip()
+    if int(str(payload.get("move_schema_version", 0) or 0) or 0) == 2:
+        action = str(legacy_flat_action_text(payload) or "").strip()
+        dialogue = str(legacy_flat_dialogue_text(payload) or "").strip()
+    else:
+        action = str(payload.get("action", "") or "").strip()
+        dialogue = str(payload.get("dialogue", "") or "").strip()
     motivation = payload.get("motivation", {})
     if not isinstance(motivation, dict):
         motivation = {}
@@ -56,80 +70,24 @@ def build_attempted_post_details(
 
 
 def parse_json_payload(content: str) -> tuple[dict[str, Any] | None, str]:
-    content = content.strip()
-
+    """Parse a single JSON object (director, etc.): fenced unwrap + duplicate-key–safe load."""
+    json_str, uerr = unwrap_fenced_json_object(content)
+    if uerr:
+        return None, uerr
     try:
-        if "```json" in content:
-            start = content.find("```json") + 7
-            end = content.find("```", start)
-            json_str = content[start:end].strip()
-        elif content.startswith("```"):
-            start = content.find("```") + 3
-            end = content.find("```", start)
-            json_str = content[start:end].strip()
-        else:
-            start = content.find("{")
-            end = content.rfind("}")
-            if start == -1 or end == -1 or end <= start:
-                return None, "No JSON object found"
-            json_str = content[start : end + 1]
-
-        data = json.loads(json_str)
-        if not isinstance(data, dict):
-            return None, "JSON payload must be an object"
-        return data, ""
-    except json.JSONDecodeError as e:
-        return None, f"Invalid JSON: {str(e)}"
+        data = load_json_object_duplicate_safe(json_str)
+    except (json.JSONDecodeError, ValueError) as e:
+        return None, f"Invalid JSON: {e}"
     except Exception as e:
-        return None, f"Parse error: {str(e)}"
+        return None, f"Parse error: {e}"
+    if not isinstance(data, dict):
+        return None, "JSON payload must be an object"
+    return data, ""
 
 
 def parse_character_move(content: str) -> tuple[dict | None, str]:
-    data, error = parse_json_payload(content)
-    if error or data is None:
-        return None, error
-
-    if "action" not in data:
-        return None, "Missing 'action' field"
-
-    if "motivation" not in data:
-        legacy_intent = str(data.get("intent", "") or "")
-        data["motivation"] = {
-            "goal": legacy_intent or "advance current objective",
-            "tactic": "react in character",
-            "emotional_driver": "guarded focus",
-            "risk_level": "medium",
-        }
-
-    if not isinstance(data.get("motivation"), dict):
-        return None, "Field 'motivation' must be an object"
-
-    motivation = data["motivation"]
-    motivation.setdefault(
-        "goal",
-        str(
-            data.get("intent", "advance current objective")
-            or "advance current objective"
-        ),
-    )
-    motivation.setdefault("tactic", "react in character")
-    motivation.setdefault("emotional_driver", "guarded focus")
-    motivation.setdefault("risk_level", "medium")
-    data["dialogue"] = str(data.get("dialogue", "") or "")
-    aud = str(data.get("audibility", "") or "").strip().lower()
-    if aud in ("public", "directed", "private"):
-        data["audibility"] = aud
-    else:
-        data.pop("audibility", None)
-    raw_audience = data.get("audience")
-    if isinstance(raw_audience, list):
-        data["audience"] = [str(a).strip() for a in raw_audience if str(a).strip()]
-    elif raw_audience is not None:
-        data["audience"] = [str(raw_audience).strip()] if str(raw_audience).strip() else []
-    else:
-        data.pop("audience", None)
-
-    return data, ""
+    """Canonical v2 only on success (legacy v1 at ingress is normalized in-place)."""
+    return parse_character_move_content_to_v2(content)
 
 
 def _resolve_next_actor_to_allowed(
@@ -143,7 +101,7 @@ def _resolve_next_actor_to_allowed(
     na = str(next_actor or "").strip()
     if not na:
         return None
-    allowed = [str(a).strip() for a in allowed_actors if str(a or "").strip()]
+    allowed = [str(a).strip() for a in allowed_actors if (a or "").strip()]
     if not allowed:
         return None
     if na in allowed:
@@ -170,7 +128,7 @@ def parse_director_decision(
             if available_actors is not None
             else participant_names
         )
-        if str(a or "").strip()
+        if (a or "").strip()
     ]
     end_round = bool(data.get("end_round"))
     raw_next = data.get("next_actor")
