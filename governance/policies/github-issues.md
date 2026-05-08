@@ -66,6 +66,8 @@ Issue retrieval must remain bounded and deterministic.
 
 After a successful retrieval, when **using** Issue content for ongoing execution (human or agent), read **stable execution cues** before deep thread replay:
 
+When workflow bootstrap rules in `governance/policies/cursor-workflow-layer.md` govern the session, this anchor-first **usage** ordering applies **after** required bootstrap completion (including **SYSTEM UNDERSTANDING REPORT** where applicable).
+
 1. **Execution snapshot** (body / template), if present.
 2. **Execution anchor** (permalink, commit hash, scenario id, etc.), if present.
 3. Then **`Current status:`**, mandatory **Evidence**, and remaining **`issue-tracking-workflow.md` §D** sections.
