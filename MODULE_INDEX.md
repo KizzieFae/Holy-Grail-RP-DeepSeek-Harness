@@ -170,7 +170,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `character_loader.py` | Load JSON cards, build agents | `data/autogen_characters`, `model_client` | Current “ingestion” is files |
 | `character_state_model.py` | Per-character state schema | cards | Identity anchors |
 | `character_state_manager.py` | Update goals, emotions, relationships | continuity, turns | |
-| `orchestration_helpers.py` | Spotlight, continuation override, sync from continuity | `st.session_state` | Persists `audibility`/`audience` on structured move entries; narrator scene context uses perception-filtered transcript |
+| `orchestration_helpers.py` | Orchestration cache + selection policy (in-file domains A–G: state init, continuity sync, continuation override, spotlight/fairness/fallback, progression override, bounded histories, `build_recent_scene_context`) | `st.session_state` | Persists `audibility`/`audience` on structured move entries; narrator scene context uses perception-filtered transcript |
 | `prompt_builders.py` | Structured prompt text for Director/characters/Narrator | continuity, templates | Labels perception-filtered transcript/structured sections; **character** template: optional `scene_binding_constraints_section`, static **EVIDENCE & AUTHORITY DISCIPLINE** block, then **OUTPUT RULES**; inputs assembled in `app_turn_prompting` (Phase 0.5 shadow parity in `runtime_packets`) |
 
 ---
