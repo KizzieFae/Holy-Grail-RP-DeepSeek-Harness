@@ -73,7 +73,7 @@ as the authoritative guide.
 
 | Task class | Minimum extra reads |
 |------------|-------------------|
-| GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`** only); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; runtime app architecture in `autogen_rp/python/rp_app/ARCHITECTURE.md` |
+| GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`** only); **`governance/policies/gpt-workflow-instruction-set.md`** (orchestration assignment / escalation parity); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; runtime app architecture in `autogen_rp/python/rp_app/ARCHITECTURE.md` |
 | RP app behavior / continuity / Director / audits | `autogen_rp/docs/architecture.md`, `autogen_rp/python/rp_app/ARCHITECTURE.md`; if auditing: `autogen_rp/docs/audit-workflows.md` |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
 | Repo structure | `autogen_rp/docs/repo-map.md` |
@@ -156,15 +156,17 @@ For non-trivial work:
 
 ## Weight-aware bootstrap (Issue #145 — activated)
 
-Canonical **`light`**, **`standard`**, **`full`**, and **escalation triggers:** **`governance/rp-app/workflow-weights.md`** only. Profile read lists: **`docs/issue-bootstrap-profiles.md`** (**authoritative**). Do **not** use declared weight to skip **`§D`**, **`§H`**, **`§B`**, or **`§B.2`** requirements.
+Canonical **`light`**, **`standard`**, **`full`**, and **escalation triggers:** **`governance/rp-app/workflow-weights.md`** only. Orchestration vs execution parity (**weight assignment, escalation discipline**): **`governance/policies/gpt-workflow-instruction-set.md`**. Profile read lists: **`docs/issue-bootstrap-profiles.md`** (**authoritative**). Implementation AI MUST NOT independently reinterpret bootstrap depth or consensus rigor. Do **not** use weight tier to skip **`§D`**, **`§H`**, **`§B`**, or **`§B.2`** requirements.
 
 **Procedure** (after **`SYSTEM UNDERSTANDING REPORT`** when work is tied to a tracked Issue, or when starting substantive Issue execution):
 
-1. **Resolve declared weight** — From Issue body (**e.g.** `## Workflow weight`) or template-exported field; if absent or unclear → **`standard`** (routine default per **`workflow-weights.md`**).
-2. **Evaluate escalation** — If any trigger in **`workflow-weights.md` → Escalation triggers** applies to the task, treat **effective weight** as **`full`** regardless of declaration.
-3. **Map to profile** — Match effective weight to **Full** / **Standard** / **Light** in **`issue-bootstrap-profiles.md`**.
-4. **Apply profile baseline** — Load mandatory reads from the mapped profile (**authoritative**). Do **not** shrink below that profile unless escalation already elevated to **`full`** (then use **Full** profile).
+1. **Resolve assigned workflow weight** — Issue body (**e.g.** `## Workflow weight`) or template field records orchestration assignment; if absent or unclear → **`standard`** (routine default per **`workflow-weights.md`**).
+2. **Resolve effective workflow weight** — If **`workflow-weights.md` → Escalation triggers** applies to the task, **effective** weight is **`full`** (**GPT escalates effective workflow weight** when canonical criteria are met per **`gpt-workflow-instruction-set.md`**). Otherwise **effective** equals **assigned**.
+3. **Map to profile** — Match **effective** weight to **Full** / **Standard** / **Light** in **`issue-bootstrap-profiles.md`**.
+4. **Apply profile baseline** — Load mandatory reads from the mapped profile (**authoritative**). Do **not** shrink below that profile when **effective** weight is **`full`**.
 5. **Merge task-class reads** — Add **`AGENTS.md` → Minimum guidance reads** (and **Active project areas**) for this task’s class on top of the profile baseline.
+
+**Persistence:** **Assigned** and **effective** workflow weight MUST appear where orchestration directs—in prompts from GPT to implementation AI; Issue **Execution snapshot** (and related body fields); new-chat bootstrap (**`SYSTEM UNDERSTANDING REPORT`** reflects them when executing tracked Issues).
 
 ---
 
@@ -172,7 +174,7 @@ Canonical **`light`**, **`standard`**, **`full`**, and **escalation triggers:** 
 
 When assembling **execution context** from a tracked Issue **after** the **`SYSTEM UNDERSTANDING REPORT`** (human or agent):
 
-1. **Execution snapshot** (Issue body section / template), if present.
+1. **Execution snapshot** (Issue body section / template), if present — include **assigned**/**effective** workflow weight when recorded there.
 2. **Execution anchor** (permalink, commit hash, scenario id, durable locator), if present — resolve or fetch **before** deep comment-thread replay.
 3. **`Current status:`**, mandatory **Evidence**, remaining **`§D`** sections.
 4. **Comments** — prioritize recent **execution-stage transition** and **session boundary** comments; avoid dumping the full thread before snapshot/anchor unless history itself is the task.
@@ -325,7 +327,7 @@ All **evidence extraction** and **analysis** must be **externalized** (analysis 
 
 **Handoff prompts are non-authoritative (hard rule):** If information exists in a **handoff prompt** but **not** in the issue body **or** issue comments, the workflow is **invalid** until reconciled—copy authoritative facts into the Issue thread first (`governance/rp-app/issue-tracking-workflow.md` **§B.5**).
 
-**Escalation to `full` workflow weight:** When **`governance/rp-app/workflow-weights.md`** escalation triggers apply, the implementation agent MUST post an Issue **comment** recommending **`full`** discipline, naming the trigger category **without** copying weight definitions out of that file, and defer to oversight / **user** decision per that document. Do **not** narrow bootstrap reads or consensus recording **below** **`full`** expectations while escalation is pending resolution.
+**Escalation / effective weight:** When **`governance/rp-app/workflow-weights.md`** escalation triggers apply, **GPT escalates effective workflow weight to `full`** per **`gpt-workflow-instruction-set.md`**. Implementation AI inherits **`full`**, MUST NOT narrow bootstrap reads or consensus recording **below** **`full`**, and MUST post an Issue **comment** when surfacing a suspected trigger (category only—do **not** copy definitions out of **`workflow-weights.md`**). **User** resolves material disagreement—still on-record on the Issue (**§B.5**).
 
 ---
 
@@ -343,7 +345,7 @@ No free-floating work is allowed.
 
 **Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, **also** retain proof from **`gh project item-list`**, the **Projects** UI, or **GraphQL** that **Priority** is **set** (P0–P3)—**`projectItems` JSON alone is insufficient** (**§B.2**). When **Priority** is **material** to the task, the completion record **must** include the **one-line** acknowledgment or update described in **§B.2**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
-**Workflow weights:** Canonical definitions and escalation triggers live **only** in **`governance/rp-app/workflow-weights.md`**. **Issue #145** Stage **3** activation applies: routine filing default **`standard`**, authoritative **`docs/issue-bootstrap-profiles.md`**, and operational **`standard`**/**`light`** paths where declared unless escalation forces **`full`**. Operational procedures: **Weight-aware bootstrap** and **Anchor-first Issue context retrieval** above; compressed Issue-facing reporting: **`governance/policies/github-issues.md`**; escalation recommendations: **Delegation** above.
+**Workflow weights:** Canonical definitions and escalation triggers live **only** in **`governance/rp-app/workflow-weights.md`**. Assignment and escalation discipline: **`governance/policies/gpt-workflow-instruction-set.md`**. **Issue #145** Stage **3** activation applies: routine **assigned** default **`standard`**, authoritative **`docs/issue-bootstrap-profiles.md`**, and operational **`standard`**/**`light`** paths when **effective** weight matches (**assigned** unless escalation forces **`full`**). Operational procedures: **Weight-aware bootstrap** and **Anchor-first Issue context retrieval** above; compressed Issue-facing reporting: **`governance/policies/github-issues.md`**; suspected-trigger surfacing: **Delegation** above.
 
 ---
 

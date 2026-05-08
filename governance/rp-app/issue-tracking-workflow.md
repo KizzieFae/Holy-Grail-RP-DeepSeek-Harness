@@ -140,17 +140,17 @@ Record progress in the Issue (description updates, comments, checklists). **Stat
 
 Canonical **`light`**, **`standard`**, and **`full`** meanings and **escalation triggers** live **only** in **`governance/rp-app/workflow-weights.md`**. Other governance cites that file; it does **not** replace **`§H`**, **`§D`**, **`Consensus Gate`** substance in **`governance/policies/project-behavior-holy-grail.md`**, or **`§B.2`** verification.
 
-Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** by declared **Workflow weight** (Issue body or template):
+Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** follows **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`** per **`workflow-weights.md`** / **`governance/policies/gpt-workflow-instruction-set.md`**):
 
-| Declared weight | Consensus recording shape |
-|-----------------|---------------------------|
+| Effective workflow weight | Consensus recording shape |
+|---------------------------|---------------------------|
 | **`full`** | Full narrative acceptable across Issue body updates **and/or** multiple comments when evidence-heavy; all consensus gate elements MUST appear before **`consensus_reached`**. |
 | **`standard`** | One consolidated Issue comment (preferred) **or** a single coherent body edit containing **all** consensus gate elements together—still **no** omission of required substance. |
-| **`light`** | Minimal consensus digest with explicit pointers to mandatory **`§D`** evidence fields; **expand immediately** to **`full`** recording shape if any escalation trigger in **`workflow-weights.md`** applies. |
+| **`light`** | **Light:** (1) scoped proposal or stated change recorded on the Issue; (2) rapid GPT review recorded on the Issue; (3) execution after **`consensus_reached`**; (4) verification recorded toward **`validated`**. **Escalate** to **`full`** recording/bootstrap discipline immediately if: a design change emerges; scope expands; architecture is touched; or any canonical escalation trigger in **`workflow-weights.md`** applies. |
 
-Apply the row matching the Issue’s **declared** workflow weight (**`standard`** is the routine template default per **`workflow-weights.md`**). Escalation to **`full`** recording/bootstrap discipline follows **`workflow-weights.md`**.
+Apply the row matching **effective** workflow weight (**`standard`** is the routine **assigned** default per **`workflow-weights.md`** when orchestration uses template defaults).
 
-**Escalation to `full` discipline:** **`workflow-weights.md`** — implementation MAY recommend; oversight evaluates; **user decides**; reconcile on the Issue (**§B.5**).
+**Escalation:** When **`workflow-weights.md`** triggers apply, **GPT escalates effective workflow weight to `full`** per **`gpt-workflow-instruction-set.md`**. Implementation AI inherits **`full`** and MUST NOT narrow Issue-facing consensus recording below **`full`** while **effective** weight is **`full`**; reconcile on the Issue (**§B.5**).
 
 1. **Observation** — Unexpected behavior in runs, tests, or review. Open or update an Issue when work may outlive the session. Create on GitHub via **§B.1** (CLI) or the web UI using **`.github/ISSUE_TEMPLATE/holy_grail_rp.yml`** (repository root).
 2. **Investigation** — Gather evidence; set **`Current status: investigating`**. Document ruled-out **Layers** in comments.
@@ -287,7 +287,7 @@ Use these sections **in order** (copy into `body.md` or the root issue form).
 
 Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / action).
 
-**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/rp-app/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval: **`governance/policies/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
+**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`** — orchestration-assigned per **`governance/policies/gpt-workflow-instruction-set.md`**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/rp-app/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval / persistence expectations: **`governance/policies/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
 
 ### E. Type (classification; PRD authority)
 

@@ -22,7 +22,7 @@ body:
 
         **Session boundary:** Before ending a session or switching chats, add an **Issue comment** with progress and next step; **Active Context** in chat must **derive** from GitHub, not replace it (**§B.5**, `governance/policies/project-behavior-holy-grail.md`).
 
-        **Workflow weight / execution anchor fields:** **Workflow weight** is required on new filings using this template (**default `standard`** per `governance/rp-app/workflow-weights.md`). **Execution anchor** and **Execution snapshot** remain optional handoff aids (`governance/policies/cursor-workflow-layer.md`). Leave optional fields blank when unused.
+        **Workflow weight / execution anchor fields:** **Workflow weight** records orchestration-assigned weight (**`governance/policies/gpt-workflow-instruction-set.md`**); **assigned**/**effective** weight must persist in prompts to implementation AI, **Execution snapshot**, and new-chat bootstrap (**`governance/policies/cursor-workflow-layer.md`**). **Default `standard`** per **`governance/rp-app/workflow-weights.md`**. **Execution anchor** and **Execution snapshot** remain optional handoff aids. Leave optional fields blank when unused.
 
         Set the **title** prefix to `[QUALITY]` or `[DESIGN_GAP]` when **Type** is not **bug**.
 
@@ -94,8 +94,9 @@ body:
     attributes:
       label: Workflow weight
       description: >
-        Routine default is standard (Issue #145 Stage 3 activated).
+        Orchestration-assigned routine default is standard (Issue #145 Stage 3; gpt-workflow-instruction-set.md).
         Canonical meanings and escalation-only triggers: governance/rp-app/workflow-weights.md only.
+        Assigned/effective weight should appear in prompts, Execution snapshot, and bootstrap context (cursor-workflow-layer.md).
         Authoritative read sets: docs/issue-bootstrap-profiles.md.
       options:
         - standard
@@ -133,7 +134,7 @@ body:
     id: execution_snapshot
     attributes:
       label: Execution snapshot (optional)
-      description: Short live summary — read before deep thread replay per governance/policies/cursor-workflow-layer.md (Anchor-first Issue context retrieval); workflow-weight semantics only in governance/rp-app/workflow-weights.md. Handoffs transport-only until copied on-issue (issue-tracking-workflow.md §B.5).
+      description: Short live summary — read before deep thread replay per governance/policies/cursor-workflow-layer.md (Anchor-first Issue context retrieval). Include assigned/effective workflow weight when known; workflow-weight semantics only in governance/rp-app/workflow-weights.md. Handoffs transport-only until copied on-issue (issue-tracking-workflow.md §B.5).
     validations:
       required: false
 
