@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any, Callable
 
 from arch_quality_variants import arch_quality_b_no_character_progression_suffix
@@ -10,9 +9,6 @@ from progression_advisory import (
     should_append_progression_character_suffix,
     sync_progression_advisory_for_prompts,
 )
-
-_progression_log = logging.getLogger("rp_app.progression_advisory")
-_episodic_merge_log = logging.getLogger("rp_app.episodic_prompt")
 from offstage_prompt_filter import (
     filter_dialogue_for_offstage_character,
     filter_structured_moves_for_offstage_character,
@@ -21,63 +17,21 @@ from perception_audibility import (
     filter_structured_move_for_viewer,
     player_text_for_character_viewer,
 )
-from memory_layer.retrieval import build_character_state_context_for_prompt
-from scene_grounding import (
-    format_character_binding_constraints_section,
-    format_character_grounding_section,
-)
-
 from prompt_builders import build_cast_and_scene_role_participants
 from prompt_derivations import (
     build_priority_ladder,
     select_relationship_prompt_names,
 )
-from episodic_memory_cache import get_or_compile_episodic_candidate_pool
-from episodic_memory_inputs import continuity_sequences_for_episodic
-from episodic_memory_prompt import is_episodic_memory_enabled
-from episodic_memory_select import select_episodic_items_for_character
-from retrieved_context_select import (
-    get_index_path_from_env,
-    load_authored_retrieval_index,
-    log_retrieval_if_active,
-    merge_retrieved_context_with_episodic,
-    select_retrieved_context_bundle,
-    structured_prompt_id_sets_for_episodic_suppression,
+from prompt_grounding_assembly import build_scene_grounding_sections_for_character_prompt
+from prompt_input_assembly import (
+    build_character_prompt_kwargs_and_assembly,
+    run_packet_shadow_compare_if_enabled,
 )
+from prompt_retrieval_assembly import build_character_retrieved_context_bundle
+from prompt_state_context import build_state_context_for_character_prompt
 from retrieval_audit_helpers import build_retrieval_summary_for_audit
-from runtime_packets import (
-    CharacterPromptInputAssembly,
-    live_bundle_from_character_prompt_assembly,
-    runtime_packets_from_character_prompt_assembly,
-)
 
-
-def _prompt_dedup_texts_for_retrieval(
-    scene_state: dict[str, Any],
-    canon_anchors: list[dict[str, Any]],
-    summary_blocks: list[dict[str, Any]],
-) -> tuple[str, ...]:
-    out: list[str] = []
-    for key in ("scene_premise", "opening_description"):
-        v = scene_state.get(key)
-        if v is not None and str(v).strip():
-            out.append(str(v))
-    for ca in canon_anchors:
-        if isinstance(ca, dict):
-            for v in ca.values():
-                if isinstance(v, str) and v.strip():
-                    out.append(v)
-    for sb in summary_blocks:
-        if isinstance(sb, dict):
-            for v in sb.values():
-                if isinstance(v, str) and v.strip():
-                    out.append(v)
-    return tuple(out)
-
-
-def _packet_shadow_compare_enabled() -> bool:
-    v = os.environ.get("RP_PACKET_SHADOW_COMPARE", "")
-    return v.strip().lower() in ("1", "true", "yes")
+_progression_log = logging.getLogger("rp_app.progression_advisory")
 
 
 def build_character_turn_prompt(
@@ -336,18 +290,16 @@ def build_character_turn_prompt(
     )
     # state_context contract: single string from memory_layer + identity; passed unchanged
     # to prompt_builders.build_character_turn_prompt (see autogen_rp/docs/architecture.md).
-    state_context = (
-        build_character_state_context_for_prompt(
-            state=state,
-            relationship_focus_names=relationship_focus_names,
-            relationship_secondary_names=relationship_secondary_names,
-        )
-        if state
-        else "No private state available."
+    state_context = build_state_context_for_character_prompt(
+        state=state,
+        relationship_focus_names=relationship_focus_names,
+        relationship_secondary_names=relationship_secondary_names,
     )
-    _sg = st_module.session_state.get("scene_grounding")
-    grounding_section = format_character_grounding_section(_sg)
-    binding_constraints_section = format_character_binding_constraints_section(_sg)
+    grounding_section, binding_constraints_section = (
+        build_scene_grounding_sections_for_character_prompt(
+            session_state=st_module.session_state,
+        )
+    )
     filtered_trigger = player_text_for_character_viewer(
         raw_text=trigger_text,
         viewer_character_name=char_name,
@@ -355,143 +307,63 @@ def build_character_turn_prompt(
         user_display_name=user_name,
         get_character_display_name_fn=get_character_display_name_fn,
     )
-    _retrieval_index = load_authored_retrieval_index(get_index_path_from_env())
-    _dedup_texts = _prompt_dedup_texts_for_retrieval(
-        scene_state, canon_anchors, summary_blocks
+    retrieved_bundle = build_character_retrieved_context_bundle(
+        st_module=st_module,
+        scene_state=scene_state,
+        canon_anchors=canon_anchors,
+        summary_blocks=summary_blocks,
+        char_name=char_name,
+        relationship_focus_names=relationship_focus_names,
+        cast=cast,
+        active_issues=active_issues,
+        recent_public_events=recent_public_events,
+        my_interpretations=my_interpretations,
+        continuity_manager=continuity_manager,
     )
-    _tid = str(scene_state.get("scene_template_id", "") or "")
-    _rf = tuple(sorted(relationship_focus_names))
-    _cast_t = tuple(sorted(cast))
-    if is_episodic_memory_enabled() and continuity_manager is not None:
-        pe, itp, isu, ca = continuity_sequences_for_episodic(continuity_manager)
-        pool = get_or_compile_episodic_candidate_pool(
-            st_module.session_state,
-            public_events=pe,
-            interpretations=itp,
-            issues=isu,
-            canon_anchors=ca,
-        )
-        _sup_issue_ids, _sup_evt_ids, _sup_int_ids = (
-            structured_prompt_id_sets_for_episodic_suppression(
-                active_issues=active_issues,
-                recent_public_events=recent_public_events,
-                my_interpretations=my_interpretations,
-            )
-        )
-        episodic_selected = select_episodic_items_for_character(
-            pool,
-            char_name,
-            structured_prompt_issue_ids=_sup_issue_ids,
-            structured_prompt_public_event_ids=_sup_evt_ids,
-            structured_prompt_interpretation_ids=_sup_int_ids,
-        )
-        retrieved_bundle = merge_retrieved_context_with_episodic(
-            index=_retrieval_index,
-            char_name=char_name,
-            scene_template_id=_tid,
-            relationship_focus_names=_rf,
-            cast=_cast_t,
-            dedup_against_texts=_dedup_texts,
-            episodic_items=episodic_selected,
-            structured_prompt_issue_ids=_sup_issue_ids,
-            structured_prompt_public_event_ids=_sup_evt_ids,
-            structured_prompt_interpretation_ids=_sup_int_ids,
-        )
-        _episodic_merge_log.info(
-            "episodic merge char=%s pool_len=%d selected_len=%d bundle_items=%d",
-            char_name,
-            len(pool),
-            len(episodic_selected),
-            len(retrieved_bundle.items),
-        )
-    else:
-        retrieved_bundle = select_retrieved_context_bundle(
-            index=_retrieval_index,
-            char_name=char_name,
-            scene_template_id=_tid,
-            relationship_focus_names=_rf,
-            cast=_cast_t,
-            dedup_against_texts=_dedup_texts,
-        )
-    log_retrieval_if_active(retrieved_bundle, char_name=char_name)
-    if retrieved_bundle.items:
-        st_module.session_state["sim_retrieval_saw_nonempty_bundle"] = True
 
     session_agent_names = [
         str(getattr(a, "name", "") or "").strip()
         for a in st_module.session_state.get("characters", [])
         if str(getattr(a, "name", "") or "").strip()
     ]
-    prompt_input_assembly = CharacterPromptInputAssembly(
-        char_name=char_name,
-        user_name=user_name,
-        trigger_text=filtered_trigger,
-        director_decision=director_decision,
-        scene_state=scene_state,
-        scene_template_context=scene_template_context,
-        my_scene_role=my_scene_role,
-        scene_roles=scene_roles,
-        recent_moves=recent_moves,
-        recent_dialogue=recent_dialogue,
-        active_issues=active_issues,
-        priority_ladder=priority_ladder,
-        summary_blocks=summary_blocks,
-        recent_public_events=recent_public_events,
-        cross_session_user_memories=cross_session_user_memories,
-        cross_session_world_facts=cross_session_world_facts,
-        user_preferences=user_preferences,
-        my_interpretations=my_interpretations,
-        canon_anchors=canon_anchors,
-        state_context=state_context,
-        cast=cast,
-        scene_grounding_section=grounding_section,
-        scene_binding_constraints_section=binding_constraints_section,
-        retrieved_bundle=retrieved_bundle,
-        session_agent_names=session_agent_names,
-        session_state=st_module.session_state,
-    )
-    character_prompt_kwargs = live_bundle_from_character_prompt_assembly(
-        prompt_input_assembly
+    character_prompt_kwargs, prompt_input_assembly = (
+        build_character_prompt_kwargs_and_assembly(
+            char_name=char_name,
+            user_name=user_name,
+            trigger_text=filtered_trigger,
+            director_decision=director_decision,
+            scene_state=scene_state,
+            scene_template_context=scene_template_context,
+            my_scene_role=my_scene_role,
+            scene_roles=scene_roles,
+            recent_moves=recent_moves,
+            recent_dialogue=recent_dialogue,
+            active_issues=active_issues,
+            priority_ladder=priority_ladder,
+            summary_blocks=summary_blocks,
+            recent_public_events=recent_public_events,
+            cross_session_user_memories=cross_session_user_memories,
+            cross_session_world_facts=cross_session_world_facts,
+            user_preferences=user_preferences,
+            my_interpretations=my_interpretations,
+            canon_anchors=canon_anchors,
+            state_context=state_context,
+            cast=cast,
+            scene_grounding_section=grounding_section,
+            scene_binding_constraints_section=binding_constraints_section,
+            retrieved_bundle=retrieved_bundle,
+            session_agent_names=session_agent_names,
+            session_state=st_module.session_state,
+        )
     )
 
-    if _packet_shadow_compare_enabled():
-        from runtime_packets import (
-            compare_character_prompt_bundles,
-            debug_bundle_mismatch_strings,
-            reconstruct_character_prompt_input_bundle,
-        )
-
-        scene_packet, char_packet = runtime_packets_from_character_prompt_assembly(
-            prompt_input_assembly
-        )
-        recon_bundle = reconstruct_character_prompt_input_bundle(
-            scene_packet,
-            char_packet,
-            state=state,
-            get_character_display_name_fn=get_character_display_name_fn,
-        )
-        ok, detail = compare_character_prompt_bundles(
-            character_prompt_kwargs, recon_bundle
-        )
-        _plog = logging.getLogger("rp_app.packet_shadow")
-        if not ok:
-            _plog.warning(
-                "packet shadow structured mismatch: %s", detail, exc_info=False
-            )
-            _plog.debug(
-                "packet shadow string diff (debug):\n%s",
-                debug_bundle_mismatch_strings(character_prompt_kwargs, recon_bundle),
-            )
-        else:
-            core_live = build_character_turn_prompt_text_fn(**character_prompt_kwargs)
-            core_recon = build_character_turn_prompt_text_fn(**recon_bundle)
-            if core_live != core_recon:
-                _plog.debug(
-                    "packet shadow core prompt text mismatch (bundle matched); "
-                    "len live=%d recon=%d",
-                    len(core_live),
-                    len(core_recon),
-                )
+    run_packet_shadow_compare_if_enabled(
+        character_prompt_kwargs=character_prompt_kwargs,
+        assembly=prompt_input_assembly,
+        state=state,
+        get_character_display_name_fn=get_character_display_name_fn,
+        build_character_turn_prompt_text_fn=build_character_turn_prompt_text_fn,
+    )
 
     prompt_text = build_character_turn_prompt_text_fn(**character_prompt_kwargs)
     beat_shift_active_here = is_pending_beat_shift_active(orchestration_state)

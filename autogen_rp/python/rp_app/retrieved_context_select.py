@@ -1,6 +1,7 @@
 """Phase 2: deterministic authored-index retrieval for RetrievedContextBundle.
 
-No transcript ingestion, vectors, or graph. Selection runs only from app_turn_prompting.
+No transcript ingestion, vectors, or graph. Runtime bundle build runs only from
+``prompt_retrieval_assembly.build_character_retrieved_context_bundle`` (invoked by ``app_turn_prompting``).
 """
 
 from __future__ import annotations

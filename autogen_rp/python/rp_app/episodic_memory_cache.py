@@ -3,7 +3,7 @@
 Read-only with respect to continuity: only reads inputs and optional session cache dict.
 Invalidation is implicit when the snapshot key changes; explicit clear for session resets.
 
-Wired into character prompt assembly in ``app_turn_prompting.build_character_turn_prompt`` when
+Wired into character prompt assembly in ``prompt_retrieval_assembly.build_character_retrieved_context_bundle`` when
 ``RP_EPISODIC_MEMORY`` is ``1``/``true``/``yes`` (see ``episodic_memory_prompt.is_episodic_memory_enabled``).
 """
 

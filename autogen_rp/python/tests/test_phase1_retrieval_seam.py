@@ -1,7 +1,7 @@
 """Phase 1 — retrieval locked through character assembly seam (validation only, no new selector logic).
 
 Inventory (static): The live character path builds ``RetrievedContextBundle`` only in
-``app_turn_prompting.build_character_turn_prompt`` (``select_retrieved_context_bundle`` /
+``prompt_retrieval_assembly.build_character_retrieved_context_bundle`` (``select_retrieved_context_bundle`` /
 ``merge_retrieved_context_with_episodic``), assigns it to ``CharacterPromptInputAssembly.retrieved_bundle``,
 and derives ``retrieved_context_section`` solely via ``live_bundle_from_character_prompt_assembly`` →
 ``format_retrieved_context_for_prompt(asm.retrieved_bundle)``. No alternate formatting path for the
