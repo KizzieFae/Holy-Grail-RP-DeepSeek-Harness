@@ -9,27 +9,30 @@ import logging
 import os
 import re
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
-from scene_exit_detection import (
-    authored_prose_suppresses_physical_departure,
-    detect_exit_from_scene,
-    has_hard_scene_departure_evidence,
-    has_scene_reentry_evidence,
-    structured_presence_exit_for_character,
+from scene_exit_detection import has_scene_reentry_evidence
+
+from continuity_presence_helpers import (
+    PresenceAuthorityScratch,
+    align_exit_narrative_with_effective_presence,
+    apply_canonical_exit_offstage_transition_scratch,
+    apply_canonical_reentry_scratch,
+    assert_presence_invariant_after_reconcile_scratch,
+    ensure_at_least_one_present_character_scratch,
+    presence_scratch_from_scene_state,
+    process_structured_reentries_from_move_scratch,
+    purge_excursion_participants_from_offstage_scratch,
+    reconcile_presence_lists_scratch,
+    strip_active_excursions_from_focal_scratch,
 )
 
 from continuity_issue_helpers import (
     event_tokens,
-    find_matching_issue,
     get_active_issues as get_active_issues_helper,
     get_resolved_issue_descriptions as get_resolved_issue_descriptions_helper,
-    issue_tokens,
-    link_issue_interactions,
     maybe_create_issue,
-    merge_issue_terms,
     retrieve_public_events as retrieve_public_events_helper,
     retrieve_summary_blocks as retrieve_summary_blocks_helper,
     turn_tokens,
@@ -49,7 +52,6 @@ from continuity_knowledge_helpers import (
     update_interpretations as update_interpretations_helper,
 )
 from continuity_resolved_outcomes import (
-    apply_registered_resolved_outcome_updates,
     build_housing_call_state_change,
     build_location_entry_state_change,
     build_sleeping_surface_state_change,
@@ -59,13 +61,14 @@ from continuity_mutation_pipeline import (
     MutationRequest,
     apply_resolved_mutations,
     compose_resolved_mutations,
-    resolved_mutations_audit_payload,
     validate_resolved_mutations_globally,
+)
+from continuity_process_turn_orchestration import (
+    run_process_turn_after_resolved_mutations_applied,
 )
 from continuity_audit_origin import (
     CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
     CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION,
-    CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN,
 )
 from continuity_setup_seam_v77 import ContinuitySetupSeamIncompleteError
 from continuity_scene_helpers import (
@@ -76,13 +79,6 @@ from continuity_scene_helpers import (
     restore_manager_state,
     serialize_manager_state,
 )
-from character_move_adapters import (
-    is_canonical_v2_move,
-    legacy_flat_action_text,
-    legacy_flat_dialogue_text,
-)
-from scene_grounding import compute_grounding_markers, grounding_markers_event_summary
-
 from perception_audibility import (
     event_knowledge_recipients,
     normalize_move_audibility,
@@ -92,7 +88,6 @@ from perception_audibility import (
 from continuity_state import (
     CanonAnchor,
     CharacterInterpretation,
-    ConsequenceCategory,
     ContinuitySnapshot,
     DetectedConsequence,
     ExcursionRecord,
@@ -106,6 +101,11 @@ from continuity_state import (
 )
 
 from continuity_consequence_classifier import ConsequenceClassifier
+from continuity_consequence_phrase_maps import (
+    CATEGORY_ACTIONABLE_IMPLICATIONS,
+    category_state_change_phrases,
+)
+from continuity_event_promotion_policy import compute_event_promotion_policy_fields
 from tension_pacing_policy import (
     apply_consequence_up_saturation_gate,
     resolve_hybrid_pacing,
@@ -114,55 +114,24 @@ from user_presence_signals import (
     apply_user_trigger_to_offstage_on_scratch,
     release_pending_forced_speaker_on_scratch,
 )
+from continuity_issue_manager_wiring import (
+    DEFAULT_ACTIVE_ISSUE_LIMIT,
+    ISSUE_STALL_TURN_THRESHOLD,
+    ISSUE_TOKEN_STOPWORDS,
+    MAX_ACTIVE_ISSUES,
+    find_matching_issue_for_manager,
+    issue_tokens_for_manager_stopwords,
+    link_issue_interactions_callback,
+    merge_issue_terms_positional,
+)
 
-MAX_ACTIVE_ISSUES = 3
 DEFAULT_SUMMARY_INTERVAL = 12
 DEFAULT_RECENT_EVENT_WINDOW = 8
 DEFAULT_SUMMARY_PROMPT_LIMIT = 3
-DEFAULT_ACTIVE_ISSUE_LIMIT = 4
 DEFAULT_RECENT_EVENT_PROMPT_LIMIT = 6
-ISSUE_STALL_TURN_THRESHOLD = 3
 KNOWLEDGE_SHARE_MIN_OVERLAP = 2
-ISSUE_TOKEN_STOPWORDS = {
-    "about",
-    "after",
-    "because",
-    "before",
-    "could",
-    "did",
-    "from",
-    "have",
-    "into",
-    "just",
-    "much",
-    "should",
-    "that",
-    "their",
-    "them",
-    "they",
-    "this",
-    "were",
-    "what",
-    "when",
-    "where",
-    "which",
-    "while",
-    "with",
-    "would",
-    "your",
-}
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class PresenceAuthorityScratch:
-    """Mutable staging bundle for presence fields before a single sync to ``SceneState``."""
-
-    present_characters: list[str]
-    offstage_characters: list[str]
-    character_presence_status: dict[str, str]
-    absent_but_relevant: list[str]
 
 
 class ContinuityManager:
@@ -375,49 +344,8 @@ class ContinuityManager:
         actionable_implications: list[str] = []
         tags: set[str] = set()
 
-        # Category to state change mapping
-        category_state_change = {
-            ConsequenceCategory.AUTHORITY_ASSERTED: f"{acting_character} asserted authority or control.",
-            ConsequenceCategory.AUTHORITY_CHALLENGED: f"{acting_character} challenged existing authority.",
-            ConsequenceCategory.TERRITORIAL_CLAIM: f"{acting_character} claimed presence in contested space.",
-            ConsequenceCategory.TERRITORIAL_DENIAL: f"{acting_character} denied another's right to remain.",
-            ConsequenceCategory.MEDIATION_ATTEMPTED: f"{acting_character} attempted to mediate the conflict.",
-            ConsequenceCategory.INTERCEPTION: f"{acting_character} rejected mediation and reasserted control.",
-            ConsequenceCategory.ARRIVAL: f"{acting_character} arrived in the scene.",
-            ConsequenceCategory.EXIT: f"{acting_character} left the immediate scene.",
-            ConsequenceCategory.REPOSITIONING: f"{acting_character} repositioned physically in contested space.",
-            ConsequenceCategory.REFUSAL: f"{acting_character} refused the current demand, request, or proposed course of action.",
-            ConsequenceCategory.AGREEMENT: f"{acting_character} agreed or accepted a proposal.",
-            ConsequenceCategory.COMMITMENT: f"{acting_character} committed to a future action.",
-            ConsequenceCategory.ACCESS_GRANTED: f"{acting_character} granted access or permission.",
-            ConsequenceCategory.ACCESS_DENIED: f"{acting_character} denied access or blocked entry.",
-            ConsequenceCategory.REVELATION: f"{acting_character} revealed significant information.",
-            ConsequenceCategory.CONCEALMENT: f"{acting_character} concealed or hid information.",
-            ConsequenceCategory.PHYSICAL_STATE_SET: f"{acting_character} established or changed a concrete physical detail in the scene.",
-            ConsequenceCategory.MEDICAL_STATE_SET: f"{acting_character} applied or confirmed a hands-on medical or first-aid detail.",
-        }
-
-        # Category to actionable implication mapping
-        category_implication = {
-            ConsequenceCategory.AUTHORITY_ASSERTED: "Authority dynamics are now contested and must be resolved.",
-            ConsequenceCategory.AUTHORITY_CHALLENGED: "The challenged party must respond or cede control.",
-            ConsequenceCategory.TERRITORIAL_CLAIM: "Territorial boundaries are now disputed.",
-            ConsequenceCategory.TERRITORIAL_DENIAL: "The targeted character must exit, challenge back, or submit.",
-            ConsequenceCategory.MEDIATION_ATTEMPTED: "The mediator temporarily controls the interaction flow.",
-            ConsequenceCategory.INTERCEPTION: "Mediation failed; direct confrontation is resuming.",
-            ConsequenceCategory.ARRIVAL: "Others must account for the new arrival's presence.",
-            ConsequenceCategory.EXIT: "The remaining cast must proceed without the departed character.",
-            ConsequenceCategory.ESCALATION: "Tension is increasing; pressure mounts on all parties.",
-            ConsequenceCategory.DEESCALATION: "Tension is reducing; opportunity for resolution or rest.",
-            ConsequenceCategory.REFUSAL: "The cast must respond to the refusal or choose a different course.",
-            ConsequenceCategory.AGREEMENT: "The agreed course can now move from debate to execution.",
-            ConsequenceCategory.COMMITMENT: "The committed action creates future obligation and pressure.",
-            ConsequenceCategory.ACCESS_GRANTED: "The granted access can be used immediately by the recipient.",
-            ConsequenceCategory.ACCESS_DENIED: "The denied party must find leverage or alternate route.",
-            ConsequenceCategory.REVELATION: "Others can now act on the newly revealed information.",
-            ConsequenceCategory.PHYSICAL_STATE_SET: "A physical object or placement detail is now part of shared scene reality.",
-            ConsequenceCategory.MEDICAL_STATE_SET: "A medical or stabilization detail is now part of shared scene reality.",
-        }
+        category_state_change = category_state_change_phrases(acting_character)
+        category_implication = CATEGORY_ACTIONABLE_IMPLICATIONS
 
         for consequence in detected:
             tags.add(consequence.category.value)
@@ -467,155 +395,25 @@ class ContinuityManager:
                 "Location entry permission may now be ready for continuity settlement."
             )
 
-        # Extract additional fields from move for significance calculation
-        motivation = move.get("motivation", {})
-        if not isinstance(motivation, dict):
-            motivation = {}
-        risk_level = str(motivation.get("risk_level", "medium") or "medium").lower()
-        if is_canonical_v2_move(move):
-            dialogue = legacy_flat_dialogue_text(move).lower()
-            action = legacy_flat_action_text(move).lower()
-        else:
-            dialogue = str(move.get("dialogue", "") or "").lower()
-            action = str(move.get("action", "") or "").lower()
-        environment_event = str(
-            director_decision.get("environment_event", "") or ""
-        ).lower()
-        tension_shift = str(director_decision.get("tension_shift", "") or "").lower()
-
-        # Determine event type from detected categories
-        event_type = self._determine_event_type(
-            detected, dialogue, action, environment_event
+        promo = compute_event_promotion_policy_fields(
+            acting_character=acting_character,
+            move=move,
+            director_decision=director_decision,
+            detected=detected,
+            state_changes=state_changes,
+            actionable_implications=actionable_implications,
         )
-
-        # Determine significance
-        significance = self._determine_significance(
-            detected, risk_level, tension_shift, dialogue, environment_event
-        )
-
-        # Build summary
-        if state_changes:
-            summary = state_changes[0]
-        elif action and dialogue:
-            summary = f'{acting_character} {action}; said: "{dialogue}"'
-        elif action:
-            summary = f"{acting_character} {action}"
-        elif dialogue:
-            summary = f'{acting_character} said: "{dialogue}"'
-        elif environment_event:
-            summary = environment_event
-        else:
-            summary = f"{acting_character} took action"
-
-        # Determine if event should be created
-        # Only create events for durable changes or significant scene shifts
-        # Pure dialogue without consequences or state changes should not create events
-        has_durable_change = bool(detected or state_changes or actionable_implications)
-        has_scene_shift = bool(
-            environment_event
-            or risk_level in ["high", "extreme"]
-            or tension_shift in ["escalate", "unsettle"]
-        )
-        base_promotion = has_durable_change or has_scene_shift
-
-        move_for_grounding = (
-            {
-                **move,
-                "action": legacy_flat_action_text(move),
-                "dialogue": legacy_flat_dialogue_text(move),
-            }
-            if is_canonical_v2_move(move)
-            else move
-        )
-        grounding_markers = compute_grounding_markers(
-            acting_character, move_for_grounding, detected
-        )
-        should_create_event = base_promotion or bool(grounding_markers)
-
-        # Markers must persist on a PublicEvent; when they are the only promotion driver,
-        # use a compact deterministic summary and a stable event_type (PRD §5.8).
-        if should_create_event and not base_promotion and grounding_markers:
-            summary = grounding_markers_event_summary(grounding_markers)
-            event_type = "state"
-            significance = "minor"
-
         return {
-            "should_create_event": should_create_event,
-            "event_type": event_type,
-            "summary": summary,
-            "significance": significance,
+            "should_create_event": promo["should_create_event"],
+            "event_type": promo["event_type"],
+            "summary": promo["summary"],
+            "significance": promo["significance"],
             "state_changes": state_changes,
             "actionable_implications": actionable_implications,
             "tags": sorted(tags),
             "consequences": [c.category.value for c in detected],  # For audit/debug
-            "grounding_markers": grounding_markers,
+            "grounding_markers": promo["grounding_markers"],
         }
-
-    def _determine_event_type(
-        self,
-        detected: list,
-        dialogue: str,
-        action: str,
-        environment_event: str,
-    ) -> str:
-        """Determine event type from detected consequence categories."""
-        categories = {c.category for c in detected}
-
-        if ConsequenceCategory.PHYSICAL_STATE_SET in categories:
-            return "state"
-        if ConsequenceCategory.MEDICAL_STATE_SET in categories:
-            return "state"
-        if ConsequenceCategory.REVELATION in categories:
-            return "revelation"
-        if {
-            ConsequenceCategory.REFUSAL,
-            ConsequenceCategory.AGREEMENT,
-            ConsequenceCategory.COMMITMENT,
-            ConsequenceCategory.ACCESS_GRANTED,
-            ConsequenceCategory.ACCESS_DENIED,
-        }.intersection(categories):
-            return "decision"
-        if environment_event and not (dialogue or action or categories):
-            return "environment"
-        if dialogue and not categories:
-            return "dialogue"
-        return "action"
-
-    def _determine_significance(
-        self,
-        detected: list,
-        risk_level: str,
-        tension_shift: str,
-        dialogue: str,
-        environment_event: str,
-    ) -> str:
-        """Determine event significance from consequences and metadata."""
-        categories = {c.category for c in detected}
-
-        # Pivotal: key consequence categories
-        pivotal_categories = {
-            ConsequenceCategory.AUTHORITY_ASSERTED,
-            ConsequenceCategory.AUTHORITY_CHALLENGED,
-            ConsequenceCategory.TERRITORIAL_CLAIM,
-            ConsequenceCategory.TERRITORIAL_DENIAL,
-            ConsequenceCategory.REVELATION,
-            ConsequenceCategory.COMMITMENT,
-        }
-        if categories.intersection(pivotal_categories):
-            return "pivotal"
-
-        # Major: tension shift, environment, or high risk
-        if risk_level in ["high", "extreme"] or tension_shift in [
-            "escalate",
-            "unsettle",
-        ]:
-            return "major"
-        if dialogue and any(marker in dialogue for marker in ["?", "you", "why"]):
-            return "major"
-        if environment_event or categories:
-            return "major"
-
-        return "minor"
 
     def _upsert_canon_anchor(self, anchor: CanonAnchor) -> None:
         """Insert or replace a canon anchor by ID."""
@@ -820,19 +618,17 @@ class ContinuityManager:
         )
 
     def _turn_tokens(self, move: dict[str, Any]) -> set[str]:
-        return turn_tokens(move=move, issue_tokens_fn=self._issue_tokens)
+        return turn_tokens(
+            move=move, issue_tokens_fn=issue_tokens_for_manager_stopwords
+        )
 
     def _event_tokens(self, event: PublicEvent) -> set[str]:
-        return event_tokens(event=event, issue_tokens_fn=self._issue_tokens)
+        return event_tokens(
+            event=event, issue_tokens_fn=issue_tokens_for_manager_stopwords
+        )
 
     def _mentioned_participants(self, text: str, participants: list[str]) -> list[str]:
         return mentioned_participants_helper(text=text, participants=participants)
-
-    def _merge_issue_terms(self, issue: IssueState, matched_terms: set[str]) -> None:
-        merge_issue_terms(issue=issue, matched_terms=matched_terms)
-
-    def _link_issue_interactions(self, issue_id: str) -> None:
-        link_issue_interactions(manager=self, issue_id=issue_id)
 
     def _propagate_knowledge_from_turn(
         self,
@@ -850,20 +646,6 @@ class ContinuityManager:
             event_tokens_fn=self._event_tokens,
             mentioned_participants_fn=self._mentioned_participants,
             share_event_knowledge_fn=self.share_event_knowledge,
-        )
-
-    def _issue_tokens(self, text: str) -> set[str]:
-        """Normalize issue text into comparable tokens."""
-        return issue_tokens(text=text, stopwords=ISSUE_TOKEN_STOPWORDS)
-
-    def _find_matching_issue(
-        self, pressure_profile: dict[str, Any]
-    ) -> IssueState | None:
-        """Find an existing unresolved issue that likely matches this pressure."""
-        return find_matching_issue(
-            manager=self,
-            pressure_profile=pressure_profile,
-            issue_tokens_fn=self._issue_tokens,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -964,80 +746,16 @@ class ContinuityManager:
                 commit_timestamp=timestamp,
             )
 
-            turn_consequences = self._classify_turn_consequences(
-                acting_character,
-                move,
-                director_decision,
-            )
-            if resolved_mutations:
-                turn_consequences["continuity_mutation_resolution"] = (
-                    resolved_mutations_audit_payload(resolved_mutations)
-                )
-
-            self._update_scene_state(
-                acting_character,
-                move,
-                director_decision,
-                None,
-                turn_consequences,
-            )
-
-            event = self._maybe_create_event(
-                acting_character,
-                move,
-                director_decision,
-                timestamp,
-                turn_index,
-                turn_consequences,
-            )
-            if event:
-                self.public_events.append(event)
-                self.scene_state.recent_event_ids.append(event.event_id)
-                self.scene_state.recent_event_ids = self.scene_state.recent_event_ids[-10:]
-
-            self._maybe_create_issue(
-                acting_character,
-                move,
-                director_decision,
-                event,
-                timestamp,
-                turn_consequences,
-            )
-
-            self._update_issues(
-                acting_character,
-                move,
-                event,
-                turn_consequences,
-            )
-
-            resolved_outcome_debug = apply_registered_resolved_outcome_updates(
-                manager=self,
+            return run_process_turn_after_resolved_mutations_applied(
+                self,
+                acting_character=acting_character,
                 move=move,
-                event=event,
-                turn_consequences=turn_consequences,
+                director_decision=director_decision,
+                other_characters=other_characters,
+                timestamp=timestamp,
                 turn_index=turn_index,
+                resolved_mutations=resolved_mutations,
             )
-            turn_consequences.setdefault("resolved_outcomes", {}).update(
-                resolved_outcome_debug
-            )
-
-            self._update_interpretations(
-                acting_character, move, director_decision, other_characters, timestamp
-            )
-
-            self._propagate_knowledge_from_turn(acting_character, move, other_characters)
-
-            self.turn_counter = turn_index
-            self.turn_metadata_by_index[turn_index] = turn_consequences
-            self._maybe_generate_summary_block(timestamp)
-
-            self._pending_pipeline_audit_origin_index = turn_index
-            self._record_continuity_audit_event(
-                CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN, turn_index
-            )
-
-            return self.get_snapshot(timestamp)
         finally:
             self._continuity_pipeline_turn_active = False
 
@@ -1143,26 +861,15 @@ class ContinuityManager:
 
     def _presence_scratch_from_scene_state(self) -> PresenceAuthorityScratch:
         assert self.scene_state is not None
-        ss = self.scene_state
-        return PresenceAuthorityScratch(
-            present_characters=list(ss.present_characters or []),
-            offstage_characters=list(ss.offstage_characters or []),
-            character_presence_status=dict(ss.character_presence_status or {}),
-            absent_but_relevant=list(ss.absent_but_relevant or []),
-        )
+        return presence_scratch_from_scene_state(self.scene_state)
 
     def _strip_active_excursions_from_focal_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
         """Enforce P_focal ∩ E_active = ∅ before committing presence."""
-        e_active = self.active_excursion_character_ids()
-        if not e_active:
-            return
-        scratch.present_characters = [
-            n
-            for n in scratch.present_characters
-            if str(n).strip() not in e_active
-        ]
+        strip_active_excursions_from_focal_scratch(
+            scratch, self.active_excursion_character_ids()
+        )
 
     def _purge_excursion_participants_from_offstage_scratch(
         self, scratch: PresenceAuthorityScratch
@@ -1172,17 +879,9 @@ class ContinuityManager:
         Clears ``offstage_characters`` and presence-status rows for ``E_active`` in the
         same scratch write as focal stripping — no partial excursion-without-presence-fix.
         """
-        e_active = self.active_excursion_character_ids()
-        if not e_active:
-            return
-        banned = frozenset(str(x).strip() for x in e_active if str(x).strip())
-        scratch.offstage_characters = [
-            str(n).strip()
-            for n in scratch.offstage_characters
-            if str(n).strip() and str(n).strip() not in banned
-        ]
-        for pid in banned:
-            scratch.character_presence_status.pop(pid, None)
+        purge_excursion_participants_from_offstage_scratch(
+            scratch, self.active_excursion_character_ids()
+        )
 
     def _resync_presence_through_authority(self) -> None:
         """Full presence pipeline: reconcile → invariant → ensure-one → sync (single writer)."""
@@ -1266,68 +965,17 @@ class ContinuityManager:
         self._synchronize_presence_from_canonical_authority(scratch)
 
     def _reconcile_presence_lists_scratch(self, scratch: PresenceAuthorityScratch) -> None:
-        seen_present: set[str] = set()
-        deduped_present: list[str] = []
-        for name in scratch.present_characters:
-            n = str(name).strip()
-            if not n or n in seen_present:
-                continue
-            seen_present.add(n)
-            deduped_present.append(n)
-        scratch.present_characters = deduped_present
-        present_set = set(scratch.present_characters)
-        filtered_absent = [
-            str(n).strip()
-            for n in scratch.absent_but_relevant
-            if str(n).strip() and str(n).strip() not in present_set
-        ]
-        seen_absent: set[str] = set()
-        deduped_absent: list[str] = []
-        for n in filtered_absent:
-            if n in seen_absent:
-                continue
-            seen_absent.add(n)
-            deduped_absent.append(n)
-        scratch.absent_but_relevant = deduped_absent
-
-        seen_off: set[str] = set()
-        deduped_off: list[str] = []
-        for n in scratch.offstage_characters:
-            n = str(n).strip()
-            if not n or n in seen_off:
-                continue
-            if n in present_set:
-                continue
-            seen_off.add(n)
-            deduped_off.append(n)
-        scratch.offstage_characters = deduped_off
+        reconcile_presence_lists_scratch(scratch)
 
     def _process_structured_reentries_from_move_scratch(
         self, move: dict[str, Any], scratch: PresenceAuthorityScratch
     ) -> None:
-        seen: set[str] = set()
-        reentry_changes = frozenset({"entry", "return", "reenter", "re-entry"})
-        for item in move.get("presence_changes") or []:
-            if not isinstance(item, dict):
-                continue
-            ch = str(item.get("character", "") or "").strip()
-            chg = str(item.get("change", "") or "").lower().replace("_", "-")
-            if not ch or ch in seen or chg not in reentry_changes:
-                continue
-            seen.add(ch)
-            self._apply_canonical_reentry_scratch(scratch, ch)
+        process_structured_reentries_from_move_scratch(move, scratch)
 
     def _apply_canonical_reentry_scratch(
         self, scratch: PresenceAuthorityScratch, character_name: str
     ) -> None:
-        name = str(character_name or "").strip()
-        if not name:
-            return
-        scratch.offstage_characters = [n for n in scratch.offstage_characters if n != name]
-        if name not in scratch.present_characters:
-            scratch.present_characters.append(name)
-        scratch.absent_but_relevant = [n for n in scratch.absent_but_relevant if n != name]
-        scratch.character_presence_status[name] = "onstage"
+        apply_canonical_reentry_scratch(scratch, character_name)
 
     def _apply_canonical_exit_offstage_transition_scratch(
         self,
@@ -1340,121 +988,39 @@ class ContinuityManager:
     ) -> None:
         if self.scene_state is None:
             return
-        actor = str(acting_character or "").strip()
-        if not actor:
-            return
-
-        exit_tag = "exit" in consequence_tags
-        detect = detect_exit_from_scene(move, scene_dict, actor)
-        structured_exit = structured_presence_exit_for_character(move, actor)
-        raw_exit = exit_tag or detect or structured_exit
-        if not raw_exit:
-            return
-
-        if not structured_exit and authored_prose_suppresses_physical_departure(move):
-            return
-
-        hard = has_hard_scene_departure_evidence(move, scene_dict)
-        lexical_exit = hard or structured_exit
-        detect_soft = bool(detect and not lexical_exit)
-        tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
-        soft_style = detect_soft or tag_only_soft
-
-        constraints = self.scene_state.character_presence_constraints or {}
-        must_remain = str(constraints.get(actor, "") or "") == "must_remain"
-
-        if must_remain:
-            if soft_style:
-                return
-            if not structured_exit:
-                return
-            status_kind = "temporary_offstage"
-        elif soft_style:
-            if self._should_skip_soft_exit_presence_removal(actor, move):
-                return
-            status_kind = "temporary_offstage"
-        else:
-            status_kind = "departed"
-
-        scratch.present_characters = [name for name in scratch.present_characters if name != actor]
-        if actor not in scratch.absent_but_relevant:
-            scratch.absent_but_relevant.append(actor)
-        if actor not in scratch.offstage_characters:
-            scratch.offstage_characters.append(actor)
-        scratch.character_presence_status[actor] = status_kind
+        apply_canonical_exit_offstage_transition_scratch(
+            acting_character,
+            move,
+            consequence_tags=consequence_tags,
+            scene_dict=scene_dict,
+            scratch=scratch,
+            character_presence_constraints=dict(
+                self.scene_state.character_presence_constraints or {}
+            ),
+            should_skip_soft_exit_presence_removal=self._should_skip_soft_exit_presence_removal,
+        )
 
     def _ensure_at_least_one_present_character_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
         if self.scene_state is None:
             return
-        if scratch.present_characters:
-            return
         cast = [
             str(k).strip()
             for k in self.scene_state.role_assignments.keys()
             if str(k).strip()
         ]
-        if not cast:
-            return
-        e_active = self.active_excursion_character_ids()
-
-        def eligible_for_focal(n: str) -> bool:
-            return str(n).strip() not in e_active
-
-        status_map = scratch.character_presence_status
-
-        def is_departed(n: str) -> bool:
-            return str(status_map.get(n, "") or "").strip() == "departed"
-
-        def is_temporary_offstage_equivalent(n: str) -> bool:
-            if is_departed(n):
-                return False
-            st = str(status_map.get(n, "") or "").strip()
-            return st == "temporary_offstage" or st == ""
-
-        off = list(scratch.offstage_characters)
-        tier1 = [
-            n
-            for n in off
-            if n in cast
-            and is_temporary_offstage_equivalent(n)
-            and eligible_for_focal(n)
-        ]
-        if tier1:
-            self._apply_canonical_reentry_scratch(scratch, tier1[0])
-            return
-        tier2 = [
-            n for n in off if n in cast and not is_departed(n) and eligible_for_focal(n)
-        ]
-        if tier2:
-            self._apply_canonical_reentry_scratch(scratch, tier2[0])
-            return
-        tier3 = [n for n in cast if not is_departed(n) and eligible_for_focal(n)]
-        if tier3:
-            self._apply_canonical_reentry_scratch(scratch, tier3[0])
-            return
-        if not any(not is_departed(n) for n in cast):
-            logger.critical(
-                "presence deadlock guard: present_characters empty and all cast are departed; "
-                "skipping re-entry (no implicit resurrection)"
-            )
+        ensure_at_least_one_present_character_scratch(
+            scratch,
+            cast=cast,
+            e_active=self.active_excursion_character_ids(),
+            log=logger,
+        )
 
     def _assert_presence_invariant_after_reconcile_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
-        present = set(scratch.present_characters)
-        absent = set(scratch.absent_but_relevant)
-        overlap = present & absent
-        if not overlap:
-            return
-        message = (
-            "continuity presence invariant failed after reconcile: "
-            f"present ∩ absent_but_relevant = {overlap!r}"
-        )
-        if os.environ.get("RP_CONTINUITY_STRICT_INVARIANTS", "").strip() == "1":
-            raise AssertionError(message)
-        logger.warning(message)
+        assert_presence_invariant_after_reconcile_scratch(scratch, log=logger)
 
     def _reconcile_presence_lists(self) -> None:
         """Drop absent entries that are still present; dedupe both lists (synced write path)."""
@@ -1598,43 +1164,11 @@ class ContinuityManager:
         """
         if self.scene_state is None:
             return
-        actor = str(acting_character or "").strip()
-        if not actor:
-            return
-        raw_tags = turn_consequences.get("tags", [])
-        if not isinstance(raw_tags, list):
-            return
-        if "exit" not in {str(t).strip().lower() for t in raw_tags}:
-            return
-        if actor not in self.scene_state.present_characters:
-            return
-
-        old_change = f"{actor} left the immediate scene."
-        new_change = (
-            f"{actor} took departure-oriented action; "
-            "on-stage presence is retained per scene constraints."
+        align_exit_narrative_with_effective_presence(
+            present_characters=list(self.scene_state.present_characters or []),
+            acting_character=acting_character,
+            turn_consequences=turn_consequences,
         )
-        sc = turn_consequences.get("state_changes")
-        if isinstance(sc, list):
-            for i, item in enumerate(sc):
-                if str(item).strip() == old_change:
-                    sc[i] = new_change
-                    break
-
-        summ = turn_consequences.get("summary")
-        if str(summ).strip() == old_change:
-            turn_consequences["summary"] = new_change
-
-        old_impl = "The remaining cast must proceed without the departed character."
-        new_impl = (
-            "On-stage roster unchanged; this character remains structurally present."
-        )
-        im = turn_consequences.get("actionable_implications")
-        if isinstance(im, list):
-            for i, item in enumerate(im):
-                if str(item).strip() == old_impl:
-                    im[i] = new_impl
-                    break
 
     def _acting_character_named_in_current_move(
         self, acting_character: str, move: dict[str, Any]
@@ -1738,9 +1272,9 @@ class ContinuityManager:
             timestamp=timestamp,
             max_active_issues=MAX_ACTIVE_ISSUES,
             turn_tokens_fn=self._turn_tokens,
-            find_matching_issue_fn=self._find_matching_issue,
-            merge_issue_terms_fn=self._merge_issue_terms,
-            link_issue_interactions_fn=self._link_issue_interactions,
+            find_matching_issue_fn=lambda p: find_matching_issue_for_manager(self, p),
+            merge_issue_terms_fn=merge_issue_terms_positional,
+            link_issue_interactions_fn=link_issue_interactions_callback(self),
         )
 
     def _escalate_tension(self) -> None:
@@ -1803,9 +1337,9 @@ class ContinuityManager:
             ],
             issue_stall_turn_threshold=ISSUE_STALL_TURN_THRESHOLD,
             turn_tokens_fn=self._turn_tokens,
-            issue_tokens_fn=self._issue_tokens,
-            merge_issue_terms_fn=self._merge_issue_terms,
-            link_issue_interactions_fn=self._link_issue_interactions,
+            issue_tokens_fn=issue_tokens_for_manager_stopwords,
+            merge_issue_terms_fn=merge_issue_terms_positional,
+            link_issue_interactions_fn=link_issue_interactions_callback(self),
         )
 
     def _update_interpretations(
