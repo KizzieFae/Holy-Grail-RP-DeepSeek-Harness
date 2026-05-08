@@ -54,7 +54,8 @@ From `python/README.md` and current repo practice:
   `pytest tests/test_progression_layer_llm.py -m progression_llm -v`  
   Omit them from a fast run:  
   `pytest -m "not llm"`
-- Without a key, those tests **skip** (except `test_deepseek_api_key_exists`, which asserts the key is present — intended for environments that require configured credentials).
+- Without a key, those tests **skip**. Tests that require a configured key (including `test_deepseek_api_key_exists`) are marked **`llm`** — excluded with **`pytest -m "not llm"`**.
+- Hosted defaults use **DeepSeek V4** model IDs (`deepseek-v4-flash` / `deepseek-v4-pro`) via `rp_app/model_client.create_deepseek_client`. Legacy hosted IDs `deepseek-chat` and `deepseek-reasoner` are **rejected**.
 
 ## RP app-specific testing guidance
 

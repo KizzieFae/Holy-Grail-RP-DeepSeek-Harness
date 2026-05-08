@@ -63,6 +63,14 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
    $env:DEEPSEEK_API_KEY = "your-api-key-here"
    ```
 
+   Optional hosted DeepSeek tuning (V4-native defaults in `model_client.create_deepseek_client`):
+
+   - `DEEPSEEK_MODEL` — default `deepseek-v4-flash`; use `deepseek-v4-pro` to override.
+   - `DEEPSEEK_BASE_URL` — optional; default matches DeepSeek OpenAI-compatible docs (`https://api.deepseek.com`).
+   - `DEEPSEEK_THINKING` — set truthy (`1`, `true`, `yes`, `on`) to enable DeepSeek thinking mode (default off).
+   - `DEEPSEEK_REASONING_EFFORT` — `high` or `max` when thinking is enabled (default `high`).
+   - Deprecated hosted IDs `deepseek-chat` and `deepseek-reasoner` are **rejected** at client construction.
+
 2. **Run the app:**
 
    ```bash

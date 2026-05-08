@@ -2,10 +2,15 @@
 
 import asyncio
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "rp_app"))
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.ui import Console
-from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+from model_client import create_deepseek_client
 
 
 async def main() -> None:
@@ -16,19 +21,7 @@ async def main() -> None:
         print("Set it with: $env:DEEPSEEK_API_KEY = 'your-key-here'")
         return
 
-    # Create the model client directly
-    model_client = OpenAIChatCompletionClient(
-        model="deepseek-chat",
-        base_url="https://api.deepseek.com/v1",
-        api_key=api_key,
-        model_info={
-            "function_calling": True,
-            "json_output": True,
-            "vision": False,
-            "family": "unknown",
-            "structured_output": True,
-        },
-    )
+    model_client = create_deepseek_client(api_key=api_key)
 
     # Create an assistant agent
     agent = AssistantAgent(
@@ -48,15 +41,9 @@ async def main() -> None:
         if user_input.lower() in ["exit", "quit"]:
             break
 
-        print("\nAssistant: ", end="", flush=True)
-        
-        # Run the agent with streaming
-        response = await Console(agent.run_stream(task=user_input))
-        print()  # New line after response
+        await Console(agent.run_stream(task=user_input))
 
-    # Cleanup
     await model_client.close()
-    print("\nGoodbye!")
 
 
 if __name__ == "__main__":

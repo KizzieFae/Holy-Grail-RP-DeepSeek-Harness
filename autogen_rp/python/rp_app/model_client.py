@@ -1,16 +1,24 @@
 """Model client configuration for RP app.
 
-Provides DeepSeek model client with consistent configuration.
+Provides DeepSeek model client with consistent configuration (DeepSeek V4-native defaults).
 """
 
 import os
-from typing import Any
+from typing import Any, Literal
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core.model_context import BufferedChatCompletionContext
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 MODEL_CONTEXT_BUFFER_SIZE = 1
+
+# Hosted DeepSeek OpenAI-compatible base URL per provider docs (Issue #130).
+# Empirically verified: invalid-key probe returns 401 (route reachable), both this host and legacy `/v1` suffix work.
+DEFAULT_DEEPSEEK_OPENAI_BASE_URL = "https://api.deepseek.com"
+
+DEFAULT_DEEPSEEK_MODEL = "deepseek-v4-flash"
+ALLOWED_DEEPSEEK_MODELS = frozenset({"deepseek-v4-flash", "deepseek-v4-pro"})
+DEPRECATED_DEEPSEEK_MODELS = frozenset({"deepseek-chat", "deepseek-reasoner"})
 
 
 NARRATOR_SYSTEM_MESSAGE = """You are the Narrator for a roleplay scene. Your role is to set the scene and describe the world, never to make character choices for them.
@@ -126,6 +134,67 @@ OUTPUT FORMAT:
 """
 
 
+def _env_truthy(name: str) -> bool:
+    v = os.environ.get(name)
+    if v is None:
+        return False
+    return v.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _validate_deepseek_model_id(model: str) -> None:
+    mid = model.strip()
+    if mid in DEPRECATED_DEEPSEEK_MODELS:
+        raise ValueError(
+            f"Unsupported deprecated DeepSeek model ID {mid!r} for Holy Grail RP. "
+            "Replace with 'deepseek-v4-flash' or 'deepseek-v4-pro'. "
+            "Use DeepSeek V4 thinking controls (e.g. DEEPSEEK_THINKING / DEEPSEEK_REASONING_EFFORT), "
+            "not legacy model names."
+        )
+    if mid not in ALLOWED_DEEPSEEK_MODELS:
+        raise ValueError(
+            f"Unsupported DeepSeek model ID {mid!r}. "
+            f"Allowed hosted models: {sorted(ALLOWED_DEEPSEEK_MODELS)}."
+        )
+
+
+def _resolve_deepseek_base_url() -> str:
+    return (os.environ.get("DEEPSEEK_BASE_URL") or DEFAULT_DEEPSEEK_OPENAI_BASE_URL).strip()
+
+
+def _thinking_controls_from_env() -> tuple[bool, Literal["high", "max"] | None]:
+    """Return (thinking_enabled, reasoning_effort when enabled).
+
+    reasoning_effort is applied via merged request fields alongside DeepSeek `thinking` (API docs).
+    """
+    enabled = _env_truthy("DEEPSEEK_THINKING")
+    effort_raw = (os.environ.get("DEEPSEEK_REASONING_EFFORT") or "high").strip().lower()
+    effort: Literal["high", "max"] | None
+    if enabled:
+        if effort_raw not in ("high", "max"):
+            raise ValueError(
+                "DEEPSEEK_REASONING_EFFORT must be 'high' or 'max' when DEEPSEEK_THINKING is enabled "
+                f"(got {effort_raw!r})."
+            )
+        effort = effort_raw  # type: ignore[assignment]
+    else:
+        if os.environ.get("DEEPSEEK_REASONING_EFFORT") and effort_raw not in ("high", "max"):
+            raise ValueError(
+                "DEEPSEEK_REASONING_EFFORT must be 'high' or 'max' when set "
+                f"(got {effort_raw!r})."
+            )
+        effort = None
+    return enabled, effort if enabled else None
+
+
+def _build_deepseek_extra_body(
+    thinking_enabled: bool, reasoning_effort: Literal["high", "max"] | None
+) -> dict[str, Any]:
+    body: dict[str, Any] = {"thinking": {"type": "enabled" if thinking_enabled else "disabled"}}
+    if thinking_enabled and reasoning_effort is not None:
+        body["reasoning_effort"] = reasoning_effort
+    return body
+
+
 def create_narrator_agent(model_client: OpenAIChatCompletionClient) -> AssistantAgent:
     """Create a Narrator agent for scene descriptions.
 
@@ -163,19 +232,23 @@ def create_director_agent(model_client: OpenAIChatCompletionClient) -> Assistant
 
 def create_deepseek_client(
     api_key: str | None = None,
-    model: str = "deepseek-chat",
+    model: str | None = None,
 ) -> OpenAIChatCompletionClient:
-    """Create a DeepSeek model client.
+    """Create a DeepSeek hosted OpenAI-compatible chat completion client (V4-native defaults).
 
-    Args:
-        api_key: DeepSeek API key. If None, reads from DEEPSEEK_API_KEY env var.
-        model: Model name to use (default: deepseek-chat)
-
-    Returns:
-        Configured OpenAIChatCompletionClient for DeepSeek
+    Environment variables:
+        DEEPSEEK_API_KEY: Required unless api_key is passed.
+        DEEPSEEK_MODEL: Optional override (default ``deepseek-v4-flash``); ``deepseek-v4-pro`` allowed.
+        DEEPSEEK_BASE_URL: Optional override (default documented OpenAI-format host for DeepSeek).
+        DEEPSEEK_THINKING: When truthy, enables DeepSeek thinking mode (default off).
+        DEEPSEEK_REASONING_EFFORT: ``high`` or ``max`` when thinking enabled (default ``high``).
 
     Raises:
-        ValueError: If API key is not provided and not in environment
+        ValueError: Missing API key, unsupported model ID (including deprecated ``deepseek-chat`` /
+            ``deepseek-reasoner``), or invalid reasoning-effort configuration.
+
+    Returns:
+        Configured OpenAIChatCompletionClient for DeepSeek.
     """
     if api_key is None:
         api_key = os.environ.get("DEEPSEEK_API_KEY")
@@ -186,9 +259,20 @@ def create_deepseek_client(
             "or pass api_key parameter."
         )
 
+    if model is not None:
+        resolved_model = model.strip()
+    else:
+        resolved_model = (os.environ.get("DEEPSEEK_MODEL") or "").strip() or DEFAULT_DEEPSEEK_MODEL
+    _validate_deepseek_model_id(resolved_model)
+
+    base_url = _resolve_deepseek_base_url()
+
+    thinking_on, reasoning_effort = _thinking_controls_from_env()
+    extra_body = _build_deepseek_extra_body(thinking_on, reasoning_effort)
+
     return OpenAIChatCompletionClient(
-        model=model,
-        base_url="https://api.deepseek.com/v1",
+        model=resolved_model,
+        base_url=base_url,
         api_key=api_key,
         model_info={
             "function_calling": True,
@@ -197,18 +281,20 @@ def create_deepseek_client(
             "family": "unknown",
             "structured_output": True,
         },
+        extra_body=extra_body,
     )
 
 
 def get_model_info() -> dict[str, Any]:
-    """Get information about the DeepSeek model configuration.
-
-    Returns:
-        Dictionary with model configuration details
-    """
+    """Return default DeepSeek V4-native configuration snapshot for tooling/UI hints."""
+    thinking_on, effort = _thinking_controls_from_env()
+    resolved_model = (os.environ.get("DEEPSEEK_MODEL") or "").strip() or DEFAULT_DEEPSEEK_MODEL
+    _validate_deepseek_model_id(resolved_model)
     return {
-        "model": "deepseek-chat",
-        "base_url": "https://api.deepseek.com/v1",
+        "model": resolved_model,
+        "base_url": _resolve_deepseek_base_url(),
+        "thinking_enabled": thinking_on,
+        "reasoning_effort": effort,
         "features": {
             "function_calling": True,
             "json_output": True,

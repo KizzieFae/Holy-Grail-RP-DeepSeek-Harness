@@ -8,8 +8,11 @@ _TESTS_DIR = Path(__file__).resolve().parent
 if str(_TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(_TESTS_DIR))
 
+_RP_APP_DIR = Path(__file__).resolve().parent.parent / "rp_app"
+if str(_RP_APP_DIR) not in sys.path:
+    sys.path.insert(0, str(_RP_APP_DIR))
+
 import pytest
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 
 def pytest_configure(config):
@@ -43,18 +46,9 @@ def deepseek_api_key():
 @pytest.fixture
 async def deepseek_model_client(deepseek_api_key):
     """Fixture to create a DeepSeek model client."""
-    client = OpenAIChatCompletionClient(
-        model="deepseek-chat",
-        base_url="https://api.deepseek.com/v1",
-        api_key=deepseek_api_key,
-        model_info={
-            "function_calling": True,
-            "json_output": True,
-            "vision": False,
-            "family": "unknown",
-            "structured_output": True,
-        },
-    )
+    from model_client import create_deepseek_client
+
+    client = create_deepseek_client(api_key=deepseek_api_key)
 
     yield client
 

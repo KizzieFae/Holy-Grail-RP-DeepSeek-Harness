@@ -11,7 +11,7 @@ from autogen_core import CancellationToken
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
-from model_client import DIRECTOR_SYSTEM_MESSAGE, create_director_agent
+from model_client import DIRECTOR_SYSTEM_MESSAGE, create_deepseek_client, create_director_agent
 
 
 def create_test_model_client():
@@ -20,20 +20,7 @@ def create_test_model_client():
     if not api_key:
         pytest.skip("DEEPSEEK_API_KEY not set")
 
-    from autogen_ext.models.openai import OpenAIChatCompletionClient
-
-    return OpenAIChatCompletionClient(
-        model="deepseek-chat",
-        base_url="https://api.deepseek.com/v1",
-        api_key=api_key,
-        model_info={
-            "function_calling": True,
-            "json_output": True,
-            "vision": False,
-            "family": "unknown",
-            "structured_output": True,
-        },
-    )
+    return create_deepseek_client(api_key=api_key)
 
 
 def test_director_prompt_includes_pressure_core_guidance():

@@ -6,7 +6,8 @@ import pytest
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.base import TaskResult
 from autogen_core import CancellationToken
-from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+from model_client import create_deepseek_client
 
 
 def create_test_model_client():
@@ -15,18 +16,7 @@ def create_test_model_client():
     if not api_key:
         pytest.skip("DEEPSEEK_API_KEY not set")
 
-    return OpenAIChatCompletionClient(
-        model="deepseek-chat",
-        base_url="https://api.deepseek.com/v1",
-        api_key=api_key,
-        model_info={
-            "function_calling": True,
-            "json_output": True,
-            "vision": False,
-            "family": "unknown",
-            "structured_output": True,
-        },
-    )
+    return create_deepseek_client(api_key=api_key)
 
 
 @pytest.mark.asyncio

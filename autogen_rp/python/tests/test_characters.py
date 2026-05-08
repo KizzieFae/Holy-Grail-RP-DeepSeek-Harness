@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 from autogen_agentchat.agents import AssistantAgent
 from autogen_core import CancellationToken
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
@@ -21,24 +20,16 @@ from scene_lifecycle_start import (
 )
 
 
+from model_client import create_deepseek_client
+
+
 def create_test_model_client():
     """Helper to create a test model client."""
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         pytest.skip("DEEPSEEK_API_KEY not set")
 
-    return OpenAIChatCompletionClient(
-        model="deepseek-chat",
-        base_url="https://api.deepseek.com/v1",
-        api_key=api_key,
-        model_info={
-            "function_calling": True,
-            "json_output": True,
-            "vision": False,
-            "family": "unknown",
-            "structured_output": True,
-        },
-    )
+    return create_deepseek_client(api_key=api_key)
 
 
 def test_character_card_schema():
