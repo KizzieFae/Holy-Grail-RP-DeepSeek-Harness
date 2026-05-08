@@ -121,6 +121,32 @@ def test_resolve_authored_anchor_character_id_zero_matches() -> None:
         )
 
 
+def test_resolve_authored_anchor_cast_must_include_role_slot_holders() -> None:
+    """If cast omits a character that only appears in role_assignments (e.g. player
+    POV added in Issue #128), anchor role cannot be matched; scene_lifecycle must pass
+    template_cast_names, not bot-only char_names.
+    """
+    ra = {
+        "Harley_Quinn": "predator_secondary",
+        "Poison_Ivy": "predator_primary",
+        "Kizzie": "new_arrival",
+    }
+    with pytest.raises(ContinuitySetupSeamError, match="No cast member"):
+        resolve_authored_anchor_character_id(
+            ["Harley_Quinn", "Poison_Ivy"],
+            ra,
+            "new_arrival",
+        )
+    assert (
+        resolve_authored_anchor_character_id(
+            ["Harley_Quinn", "Poison_Ivy", "Kizzie"],
+            ra,
+            "new_arrival",
+        )
+        == "Kizzie"
+    )
+
+
 def test_finalize_template_driven_uses_anchor_role_name() -> None:
     m = ContinuityManager()
     m.initialize_scene(

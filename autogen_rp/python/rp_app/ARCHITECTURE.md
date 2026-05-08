@@ -116,11 +116,11 @@ A **read-only** seam for **character** prompts: **`CharacterPromptInputAssembly`
 
 ### 2. Structured Output Format
 
-Character moves are **versioned**. **Normative post-boundary** shape for the **v2** migration (**GitHub #134** / **#136**) is defined under **Normative v2 character move** below. **Runtime parsers, validators, prompts, and audits** follow the **child-issue cutover** order in **#134** (**#137–#142**); until that migration completes, **production** may still ingest **legacy v1** layout at ingress.
+Character moves are **versioned**. **Normative post-boundary** shape for the **v2** migration (**GitHub #134** / **#136**) is defined under **Normative v2 character move** below. **Runtime parsers and validators** follow the **child-issue cutover** order in **#134** (**#137–#143**). **Production model-facing prompts** (character system prompts, turn **OUTPUT RULES**, retry discipline) require **canonical v2** output (**GitHub #142**): root **`move_schema_version` 2**, non-empty **`beats[]`**, no root **`action`** / **`dialogue`**. **Ingress is v2-only** (**GitHub #143**): model output must include **`move_schema_version: 2`**; legacy v1-shaped root objects are **rejected** at the parse boundary (not normalized).
 
-#### Legacy v1 shape (ingress / pre-boundary)
+#### Historical v1 shape (archival / pre-#143)
 
-The following is the **historical** root-level **`action`** / **`dialogue`** object accepted at ingress on the v1 path. It is **not** the long-term normative contract; **post-boundary** canonical shape is **v2** with **`move_schema_version: 2`** and **`beats[]`** (see below). Do **not** treat root **`action`** / **`dialogue`** as valid alongside **`beats`** on the same conforming v2 document.
+The following root-level **`action`** / **`dialogue`** layout appears in **older audits** and documentation as the pre-v2 self-only shape. It is **not** accepted at ingress after **#143**. **Post-boundary** canonical shape is **v2** with **`move_schema_version: 2`** and **`beats[]`**. Do **not** treat root **`action`** / **`dialogue`** as valid alongside **`beats`** on the same conforming v2 document.
 
 ```json
 {
@@ -137,13 +137,11 @@ The following is the **historical** root-level **`action`** / **`dialogue`** obj
 }
 ```
 
-On the **v1** path, optional root-level **`audibility`** (`public` \| `directed` \| `private`) and **`audience`** (names, for non-public) are parsed from character JSON when present, then **normalized** in `perception_audibility.py` (including deterministic whisper-style heuristics on structured `action`/`dialogue` only). **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what.
-
-The v1 JSON above is the **stable** self-only core for that path. The pipeline may accept **additional** optional keys on v1-shaped moves; **issue pressure and consequence structure** for the scene are **primarily** produced by **continuity** and reflected in **narrative/orchestration** artifacts. Missing optional keys on the move must **not** be read as “no story pressure changed.”
+For **canonical v2** moves, per-beat **`audibility`** / **`audience`** on **`speech`** beats are **normalized** in `perception_audibility.py`. **Perception boundaries use the structured move as ground truth**; narrator `rendered` prose is not parsed to infer who heard what. Historical v1 root **`audibility`** / **`audience`** exist only in archived records, not in live ingress.
 
 #### Normative v2 character move (`move_schema_version` 2)
 
-This subsection is the **single in-repo normative contract** for **v2** structured character moves (**GitHub #136**). **Semantic** contents of **`scene_state_updates`** are **not** specified here (optional **object envelope** only); mutation payload definitions are owned by continuity / later seams (**e.g. GitHub #140**). **Ingress** normalization and **v1** tolerance are **#137**; **prompt** cutover is **#142**.
+This subsection is the **single in-repo normative contract** for **v2** structured character moves (**GitHub #136**). **Semantic** contents of **`scene_state_updates`** are **not** specified here (optional **object envelope** only); mutation payload definitions are owned by continuity / later seams (**e.g. GitHub #140**). **Ingress** is duplicate-key–safe JSON + **v2** validation (**#137**); v1-shaped ingress was removed in **#143**; **prompt** cutover is **#142**.
 
 **Canonical example** (illustrative; not all optional roots need appear):
 
@@ -240,15 +238,15 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 
 **Compatibility boundary (contract only)**
 
-- **v1** layout may exist **only at ingress** (unstructured or legacy-shaped model output)
-- **Normalization** to canonical v2 occurs at the **parse boundary** (**#137**); this doc does not specify algorithms
-- **Downstream** layers should consume **only** objects satisfying this v2 contract after normalization; **#142** owns when model-facing instructions require **`beats`**
+- **Ingress** accepts **only** v2 documents with root **`move_schema_version: 2`** (**#143**). Legacy v1 root layouts are **not** normalized; they are **rejected** with a clear error.
+- **Downstream** layers consume **only** objects satisfying this v2 contract after a successful parse; **#142** model-facing instructions require **`beats[]`** and forbid root **`action`** / **`dialogue`** on conforming model output.
+- **Read-only** helpers (`character_move_adapters`, audit projections) may still interpret **archived** rows or fixtures that use historical root **`action`**/**`dialogue`** for display or offline checks — that is **not** ingress.
 
-**Parse implementation (GitHub #137 — narrow scope)**
+**Parse implementation (GitHub #137 / #143 — narrow scope)**
 
 - **Module:** `character_move_ingress.py` — fenced unwrap, then `json.loads` with an `object_pairs_hook` that **rejects duplicate keys in every object** (before schema detection). `parse_json_payload` (Director, etc.) uses the same loader.
-- **v1** ingress allowlist (root keys only): `action`, `dialogue`, `motivation`, `audibility`, `audience`, `scene_state_updates`. Any other root key **rejects**. Legacy v1 may be **disabled** with env `RP_LEGACY_V1_CHARACTER_MOVE=0` (v2-only ingress).
-- **Unknown** `move_schema_version` (missing on v1 path, or present and not **integer 2**): **reject** (no other-version fallback in this layer).
+- **v2-only:** root **`move_schema_version`** must be present and **integer `2`**. Missing version, or v1-shaped root object without **`move_schema_version`**, **rejects** (no v1 allowlist, no `RP_LEGACY_V1_*` flag).
+- **`move_schema_version`** present but not **integer 2**: **reject** (no other-version fallback in this layer).
 - **Caps** (structural only): `MAX_V2_BEATS` 64, `MAX_V2_TEXT_CODEPOINTS` 8192, `MAX_V2_AUDIENCE_ITEMS` 32.
 - **Handoff type:** :class:`CanonicalV2Move` in `character_move_adapters.py` — a ``dict`` subclass with **only** v2 keys stored. Legacy ``.get("action")`` / ``.get("dialogue")`` and ``["action"]`` / ``["dialogue"]`` return **read-only** concatenations from ``beats`` (no root-level v1 shadow fields persisted on the object).
 - **``scene_state_updates``:** this layer checks **JSON object** when present, not internal semantics.
@@ -284,7 +282,7 @@ Director inputs are intentionally structured and lightweight:
 - current scene state, including location, scene phase, present characters, and recent tension or environment beats
 - scene-template context, including template ID and premise
 - cast role map, including assigned roles, `presence_constraint`, and informational authority labels
-- recent structured character actions (**verbatim** canonical v1/v2 structured moves, including per-beat speech; Issue **#138**)
+- recent structured character actions (**verbatim** canonical v2 structured moves, including per-beat speech; Issue **#138**)
 - public character goal/emotion snapshot
 - active issues and recent public events
 - recent scene transcript (**Director:** full ``rendered`` lines; **characters:** perception-filtered via ``perception_audibility``—see Issue **#138**)

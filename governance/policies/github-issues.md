@@ -19,6 +19,17 @@ When framing suspected behavior in an Issue body or investigation notes:
 
 **Pattern confirmation** depends on **cross-scenario** consistency, not on repetition within a single long run alone.
 
+## Compressed implementation and reporting defaults
+
+When posting implementation notes, completion records, session summaries, or **checkpoint** comments on Issues:
+
+1. **Default:** Prefer **compressed** prose—outcomes, concrete paths, verification commands run, and structured proof blocks where **`issue-tracking-workflow.md` §B.2** applies—instead of full transcript replay.
+2. **Expand** when any applies: material ambiguity; architecture or enforcement risk; explicit reader request; escalation packages requiring oversight or **user** decision; mandatory Issue body fields still demand full detail per **`issue-tracking-workflow.md` §D**.
+
+This section **does not** relax: Issue body mandatory sections, safe body mutation rules below, **§B.2** verification gates, **Priority** proof requirements, or governance authority.
+
+**Cursor / agent alignment:** When reporting implementation outcomes **to Issues** (comments, checkpoint blocks), default to the same compressed-vs-expand judgment unless **`governance/policies/cursor-workflow-layer.md`** mandates a structured report shape that already embeds proof blocks.
+
 ## Safe issue retrieval and mutation
 
 When retrieving or modifying GitHub Issues, preserve the issue body as authoritative structured state.
@@ -50,6 +61,17 @@ Prohibited recovery behavior:
 * speculative repair outside authentication or repository-context verification
 
 Issue retrieval must remain bounded and deterministic.
+
+### Anchor-first execution context (Issue #145)
+
+After a successful retrieval, when **using** Issue content for ongoing execution (human or agent), read **stable execution cues** before deep thread replay:
+
+1. **Execution snapshot** (body / template), if present.
+2. **Execution anchor** (permalink, commit hash, scenario id, etc.), if present.
+3. Then **`Current status:`**, mandatory **Evidence**, and remaining **`issue-tracking-workflow.md` §D** sections.
+4. Then **comments**, prioritizing recent **§B.5** transition and session-boundary comments.
+
+Ordering aligns with **`governance/policies/cursor-workflow-layer.md` → Anchor-first Issue context retrieval**. It does **not** authorize extra retrieval attempts beyond **Retrieval discipline** above.
 
 ### Safe issue body mutation
 

@@ -327,3 +327,80 @@ def test_run_fact_track_postprocess_explicit_out_path(tmp_path: Path) -> None:
     out = run_fact_track_postprocess(sess, spec, companion_path=target)
     assert out["companion_artifact_path"] == str(target.resolve())
     assert target.is_file()
+
+
+def _char_row_v2(
+    *,
+    rnd: int,
+    turn: int,
+    name: str,
+    prompt: str,
+    beats: list[dict],
+    support_manifest: dict | None = None,
+) -> dict:
+    md: dict = {}
+    if support_manifest is not None:
+        md["support_manifest"] = support_manifest
+    return {
+        "bot_type": "character",
+        "round_number": rnd,
+        "turn_number": turn,
+        "bot_name": name,
+        "input_messages": [{"content": prompt}],
+        "parsed_output": {
+            "move_schema_version": 2,
+            "beats": beats,
+            "motivation": {},
+        },
+        "metadata": md,
+        "context_snapshot": {},
+        "effective_user_trigger": "",
+    }
+
+
+def test_parsed_output_literals_all_finds_text_in_v2_beats(tmp_path: Path) -> None:
+    """#141: literals match speech beat dialogue without root fields."""
+    sess = tmp_path / "session_v2_fact"
+    sess.mkdir()
+    pl_empty: dict = {}
+    rows = [
+        _char_row_v2(
+            rnd=1,
+            turn=1,
+            name="A",
+            prompt="intro ESTABLISH_KEEP",
+            beats=[{"type": "speech", "dialogue": "alpha REQUIRED_TOKEN bravo"}],
+            support_manifest=build_support_manifest(pl_empty, "intro ESTABLISH_KEEP"),
+        ),
+        _char_row_v2(
+            rnd=1,
+            turn=2,
+            name="A",
+            prompt="intro ESTABLISH_KEEP more",
+            beats=[{"type": "speech", "dialogue": "missing token"}],
+            support_manifest=build_support_manifest(pl_empty, "intro ESTABLISH_KEEP more"),
+        ),
+    ]
+    for i, data in enumerate(rows):
+        p = sess / f"round_001_A_turn0{i + 1}_A_full.json"
+        p.write_text(json.dumps(data), encoding="utf-8")
+
+    spec = {
+        "schema_version": "fact_spec.v1",
+        "probe_id": "t_v2_lit",
+        "actor_scope": {"kind": "character_name", "name": "A"},
+        "establishment_rule": {
+            "kind": "prompt_literals_all",
+            "literals": ["ESTABLISH_KEEP"],
+        },
+        "support_predicate": {
+            "kind": "prompt_literals_all",
+            "literals": ["KEEP"],
+        },
+        "behavior_rule": {
+            "kind": "parsed_output_literals_all",
+            "literals": ["REQUIRED_TOKEN"],
+        },
+    }
+    out = analyze_fact_tracking(sess, spec)
+    assert out["failure_classification"] == "utilization_failure"

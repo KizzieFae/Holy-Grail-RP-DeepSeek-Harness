@@ -511,9 +511,13 @@ Director turn metadata may include **`anti_regression_advisory`**: **`active`** 
 
 When a character raw response **fails structured parse** and the slot still has remaining attempts in the unified budget, turn failure logging may use **`stage: parse_retry`** (non-terminal). The **final** parse failure for that slot uses **`stage: parse`** (terminal; the actor is appended to **`actors_failed_this_round`** for the batch). On **successful** turns after a parse recovery, character audit **`turn_execution_metadata`** may include **`parse_retry_triggered`**, **`parse_retry_reason`**, and **`parse_retry_outcome`** (**`success_after_retry`** or **`no_retry`**), alongside the existing duplicate / binding / investigation / progression retry fields. See **`ARCHITECTURE.md`** (*Character slot attempt budget*) and `turn_runner_turn.py`.
 
-**Structured move shape versioning (GitHub #134 / #136):** Normative **post-boundary** character move JSON (**`move_schema_version`**, **`beats[]`**, v2 root rules) is defined **only** in **`ARCHITECTURE.md`** (*Structured Output Format* — **Normative v2 character move**). This document does **not** duplicate that contract or redefine existing eval predicates. Audit **`parsed_output`** reflects whatever shape the runtime emitted for that session; predicates that read root **`dialogue`** / **`action`** (e.g. **`verbatim_dialogue_contract_v1`**) remain **v1-path** assumptions until **#134** child issues update tooling. **`scene_state_updates`** inner semantics are **not** specified by **#136**; continuity / mutation payload meaning stays with continuity seams (**e.g. GitHub #140**), not this audit doc.
+**Structured move shape versioning (GitHub #134 / #136; audits #141):** Normative **post-boundary** character move JSON (**`move_schema_version`**, **`beats[]`**, v2 root rules) is defined **only** in **`ARCHITECTURE.md`** (*Structured Output Format* — **Normative v2 character move**). This document does **not** duplicate that contract. Audit **`parsed_output`** reflects whatever shape the runtime emitted for that session.
 
-**Narrator v2 render vs audits (GitHub #139):** How **narrator** prose relates to v2 **`beats[]`** speech lines (ordered verbatim substrings from the **supplied** structured view—canonical or per-recipient projected) is a **runtime presentation** contract in **`ARCHITECTURE.md`** (§4 *Narrator Rendering*). **Offline** `scene_eval_v2` predicate **`verbatim_dialogue_contract_v1`** and related narrator **join** text above remain defined on **v1-style** character **`parsed_output`** and quoted-text checks until **#141** (audits + evaluation) updates deterministic evaluation. Do **not** read **`AUDIT_DOCUMENTATION.md`** in place of **`ARCHITECTURE.md`** for #139’s narrator rules, or vice versa for the legacy eval predicate’s assumptions.
+**Offline tooling (#141)** uses read-only projections from **`character_move_adapters`**: for substring / literal checks over “dialogue + action” text (Issue #29 harness, **`parsed_output_literals_all`** in **`fact_spec.v1`**, narrative **`_narrative.json`** **`character_dialogue` / `character_action`** mirrors), **`format_move_for_legacy_audit_view`** concatenates **speech** then **action** text derived from **`beats[]`** when **`move_schema_version`** is **2**, and falls back to root **`dialogue`** / **`action`** for legacy rows. **`scene_eval_v1`** (bundle version **2**) adds predicate **`parsed_output.move_schema_shape`**: v2 rows must have a non-empty **`beats`** list (mechanical integrity only).
+
+**Narrator v2 render vs audits (GitHub #139):** How **narrator** prose relates to v2 **`beats[]`** speech lines (ordered verbatim substrings) is a **runtime presentation** contract in **`ARCHITECTURE.md`** (§4 *Narrator Rendering*). **`narrator_audits_v1`** already branches v2 for integration checks; Audit V2 pipeline LLM prompts use **`root_or_flat_dialogue_text` / `root_or_flat_action_text`** for excerpts. Legacy **quoted-line** predicates that assume a single root **`dialogue`** string remain meaningful for v1-shaped **`parsed_output`**; for v2 audits, use **`beats[]`** speech lines or the adapter-derived flat dialogue string when interpreting operator docs that still say “root dialogue.”
+
+**`scene_state_updates`** inner semantics are **not** specified by **#136**; continuity / mutation payload meaning stays with continuity seams (**e.g. GitHub #140**), not this audit doc.
 
 ### Progression enforcement and `consequences` in audits
 
@@ -743,7 +747,7 @@ Top-level fields:
 Each rule is an object:
 
 - **`kind`:** `prompt_literals_all` — all `literals` appear as substrings in the character system prompt (`input_messages[0].content`).
-- **`kind`:** `parsed_output_literals_all` — all `literals` appear in `dialogue` + `action` (parsed move).
+- **`kind`:** `parsed_output_literals_all` — all `literals` appear in the **audit substring view** of the parsed move: for **`move_schema_version: 2`**, speech **`dialogue`** lines and action beat text from **`beats[]`** (same composition as **`format_move_for_legacy_audit_view`** in **`character_move_adapters`**); for legacy moves, root **`dialogue`** and **`action`**.
 
 **Classification (deterministic):**
 
@@ -1210,7 +1214,7 @@ This section documents **headless harnesses**, **deterministic audit analysis**,
 **Inputs (typical bundle):**
 
 - **`input_messages[0].content`** — Character system prompt as logged.
-- **`parsed_output`** — Validated structured move (dialogue / action fields used by Issue #29 probes).
+- **`parsed_output`** — Validated structured move. Issue #29 / fact-track probes match literals against **`format_move_for_legacy_audit_view`** (v2: **`beats[]`**; v1: root fields).
 - **Audit metadata** — Including **`T_beh`** location, anchor / probe tokens, **`metadata.support_manifest`**, **`effective_user_trigger`**, and related rows from the same session.
 
 **Output:** A **single primary-cause classification** label chosen from the **advisory taxonomy** below, plus short **human-readable rationale** tied to quoted spans where possible.

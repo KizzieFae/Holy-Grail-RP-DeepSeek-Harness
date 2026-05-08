@@ -91,9 +91,17 @@ def test_character_card_json_serialization():
 
 
 def test_character_move_schema_requires_structured_motivation():
-    """Test that the move schema requires structured motivation fields."""
+    """Test that the v2 move schema requires beats, motivation, and schema version."""
+    assert CHARACTER_MOVE_SCHEMA["required"] == [
+        "move_schema_version",
+        "beats",
+        "motivation",
+    ]
+    assert CHARACTER_MOVE_SCHEMA["properties"]["move_schema_version"]["type"] == "integer"
+    beats_prop = CHARACTER_MOVE_SCHEMA["properties"]["beats"]
+    assert beats_prop["type"] == "array"
+    assert beats_prop["minItems"] == 1
     assert "motivation" in CHARACTER_MOVE_SCHEMA["properties"]
-    assert CHARACTER_MOVE_SCHEMA["required"] == ["action", "motivation"]
     assert CHARACTER_MOVE_SCHEMA["properties"]["motivation"]["required"] == [
         "goal",
         "tactic",

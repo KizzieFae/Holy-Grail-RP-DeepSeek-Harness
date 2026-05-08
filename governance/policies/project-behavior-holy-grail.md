@@ -232,6 +232,8 @@ No implementation may begin unless the Issue contains:
 
 This must be written before any implementation begins.
 
+Weight-aware **recording shape** (not a substitute for these bullets): **`issue-tracking-workflow.md` §B.0.1** and canonical weights **`governance/rp-app/workflow-weights.md`**.
+
 
 
 ---

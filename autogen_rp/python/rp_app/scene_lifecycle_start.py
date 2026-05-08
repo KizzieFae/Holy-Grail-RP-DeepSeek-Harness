@@ -324,6 +324,20 @@ async def start_scene(
                 st_module.error(f"Failed to load player character card: {exc}")
                 return False
 
+    # Full template cast names (agent/display keys) in template_cast_files order.
+    # Issue #128: role_assignments can include a player not in the bot multiselect; anchor
+    # resolution and continuity init must use the same name list as the template, not
+    # char_names (bots only) or "No cast member assigned anchor role …" is raised.
+    template_cast_names: list[str] = []
+    for char_file in template_cast_files:
+        resolved = character_names_by_file.get(char_file)
+        if resolved is not None and str(resolved).strip():
+            template_cast_names.append(str(resolved).strip())
+        else:
+            s = str(char_file).strip()
+            if s:
+                template_cast_names.append(s)
+
     scene_setup, scene_setup_error = resolve_scene_template_setup_fn(
         template_cast_files,
         character_names_by_file,
@@ -412,7 +426,7 @@ async def start_scene(
 
     restore_or_initialize_continuity_manager_fn(
         None,
-        char_names,
+        template_cast_names,
         opening_description,
         scene_setup_apply,
     )
@@ -421,7 +435,9 @@ async def start_scene(
     for name, state in char_states.items():
         state_manager.register_character(name, state)
     st_module.session_state["character_state_manager"] = state_manager
-    cross_session_memories = load_cross_session_memories_fn(char_names, user_name)
+    cross_session_memories = load_cross_session_memories_fn(
+        template_cast_names, user_name
+    )
     apply_cross_session_memories_fn(char_states, cross_session_memories, user_name)
     _seed_scene_role_character_priorities(
         char_states=char_states, scene_setup=scene_setup_for_seed
@@ -460,9 +476,9 @@ async def start_scene(
     if continuity_manager is not None and continuity_manager.scene_state is not None:
         try:
             ensure_interim_anchor_role_fallback_for_finalize(
-                continuity_manager, cast=char_names
+                continuity_manager, cast=template_cast_names
             )
-            finalize_continuity_setup_seam(continuity_manager, cast=char_names)
+            finalize_continuity_setup_seam(continuity_manager, cast=template_cast_names)
         except ContinuitySetupSeamError as exc:
             st_module.error(str(exc))
             return False

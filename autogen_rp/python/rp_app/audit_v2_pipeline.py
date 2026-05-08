@@ -19,6 +19,7 @@ from audit_v2_llm import (
     build_llm_skipped_payload,
     run_audit_v2_llm,
 )
+from character_move_adapters import root_or_flat_action_text, root_or_flat_dialogue_text
 
 
 async def build_audit_v2_character_bundle(
@@ -150,8 +151,8 @@ async def build_audit_v2_narrator_prose_bundle(
         )
     else:
         prompt = build_prose_llm_prompt(
-            move_dialogue=str(move.get("dialogue", "") or ""),
-            move_action_excerpt=str(move.get("action", "") or ""),
+            move_dialogue=str(root_or_flat_dialogue_text(move)),
+            move_action_excerpt=str(root_or_flat_action_text(move)),
             rendered_final=rendered_final,
             prior_assistant_excerpt=prior_assistant_content,
             acting_label=acting_display_name,

@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 from audit_support_manifest import build_support_manifest
 from scene_eval_v1 import (
     PREDICATE_INTEGRITY,
+    PREDICATE_MOVE_SHAPE,
     PREDICATE_PAIRWISE,
     PREDICATE_STRUCT,
     run_scene_eval_v1,
@@ -71,7 +72,7 @@ def test_integrity_when_no_character_rows(tmp_path: Path) -> None:
     sess = tmp_path / "session_empty"
     sess.mkdir()
     out = run_scene_eval_v1(sess)
-    assert out["scene_eval_version"] == "1"
+    assert out["scene_eval_version"] == "2"
     integrity = [j for j in out["judgments"] if j["predicate_id"] == PREDICATE_INTEGRITY]
     assert len(integrity) == 1
     assert integrity[0]["result"] == "inconclusive"
@@ -176,3 +177,58 @@ def test_structured_eval_fired_with_metrics(tmp_path: Path) -> None:
     assert st[0]["result"] == "fired"
     assert "progression_retries_triggered" in st[0]["summary"]
     assert "2" in st[0]["summary"]
+
+
+def test_move_schema_shape_clear_for_v2_beats(tmp_path: Path) -> None:
+    sess = tmp_path / "session_v2shape"
+    sess.mkdir()
+    pl = _minimal_prompt_layer_audit()
+    m = build_support_manifest(pl, "p")
+    data = {
+        "bot_type": "character",
+        "round_number": 1,
+        "turn_number": 1,
+        "bot_name": "Z",
+        "input_messages": [{"content": "p"}],
+        "parsed_output": {
+            "move_schema_version": 2,
+            "beats": [{"type": "speech", "dialogue": "hello"}],
+            "motivation": {},
+        },
+        "metadata": {"support_manifest": m},
+        "context_snapshot": {},
+        "effective_user_trigger": "",
+    }
+    (sess / "round_001_x_turn01_Z_full.json").write_text(
+        json.dumps(data), encoding="utf-8"
+    )
+    out = run_scene_eval_v1(sess)
+    ms = [j for j in out["judgments"] if j["predicate_id"] == PREDICATE_MOVE_SHAPE]
+    assert len(ms) == 1
+    assert ms[0]["result"] == "clear"
+    assert "move_schema_version 2" in ms[0]["summary"]
+
+
+def test_move_schema_shape_fired_when_v2_beats_empty(tmp_path: Path) -> None:
+    sess = tmp_path / "session_v2bad"
+    sess.mkdir()
+    pl = _minimal_prompt_layer_audit()
+    m = build_support_manifest(pl, "p")
+    data = {
+        "bot_type": "character",
+        "round_number": 1,
+        "turn_number": 1,
+        "bot_name": "Z",
+        "input_messages": [{"content": "p"}],
+        "parsed_output": {"move_schema_version": 2, "beats": []},
+        "metadata": {"support_manifest": m},
+        "context_snapshot": {},
+        "effective_user_trigger": "",
+    }
+    (sess / "round_001_x_turn01_Z_full.json").write_text(
+        json.dumps(data), encoding="utf-8"
+    )
+    out = run_scene_eval_v1(sess)
+    ms = [j for j in out["judgments"] if j["predicate_id"] == PREDICATE_MOVE_SHAPE]
+    assert len(ms) == 1
+    assert ms[0]["result"] == "fired"

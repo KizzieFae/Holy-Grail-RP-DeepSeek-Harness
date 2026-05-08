@@ -11,6 +11,7 @@ Thumbs.db
 
 # Local issue drafting / one-off GitHub helpers (not intended as tracked source)
 .github/issue_drafts/
+.github/issue-bodies-workflow-efficiency/
 
 # Python bytecode (root-level scripts / stray caches)
 __pycache__/
@@ -35,3 +36,6 @@ autogen_rp/python/validation_runs/**/_run_*.py
 
 # Temporary research / local notes
 memplace.txt
+
+# Local vendor / IDE export (not canonical repo content)
+deepseek_v4_overview.rtf

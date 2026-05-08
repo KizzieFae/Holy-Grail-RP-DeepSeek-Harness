@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 from typing import Any
 
+from character_move_adapters import root_or_flat_action_text, root_or_flat_dialogue_text
+
 
 def entry_to_full_dict(entry: Any) -> dict[str, Any]:
     out = {
@@ -35,13 +37,14 @@ def entry_to_light_dict(entry: Any) -> dict[str, Any]:
         for msg in entry.input_messages
     ]
 
+    po = entry.parsed_output if isinstance(entry.parsed_output, dict) else {}
     light_output = {
         "type": entry.bot_type,
-        "has_environment_event": bool(entry.parsed_output.get("environment_event")),
-        "has_tension_shift": bool(entry.parsed_output.get("tension_shift")),
-        "key_fields": list(entry.parsed_output.keys())[:5],
-        "action_preview": str(entry.parsed_output.get("action", ""))[:100],
-        "dialogue_preview": str(entry.parsed_output.get("dialogue", ""))[:100],
+        "has_environment_event": bool(po.get("environment_event")),
+        "has_tension_shift": bool(po.get("tension_shift")),
+        "key_fields": list(po.keys())[:5],
+        "action_preview": str(root_or_flat_action_text(po))[:100],
+        "dialogue_preview": str(root_or_flat_dialogue_text(po))[:100],
     }
 
     out: dict[str, Any] = {

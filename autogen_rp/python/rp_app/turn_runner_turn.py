@@ -66,8 +66,9 @@ def _narrate_move_for_character_turn(
 
 _CHARACTER_MOVE_PARSE_JSON_DISCIPLINE_NOTE = (
     "IMPORTANT: Your previous response could not be parsed as valid JSON for the required "
-    "character move schema. Reply with a single JSON object containing the required fields "
-    "(e.g. action, dialogue, motivation) and no surrounding prose or markdown/code fences."
+    "character move schema (v2). Reply with a single JSON object: integer move_schema_version 2, "
+    "non-empty beats[] (type action / type speech), motivation, optional scene_state_updates — "
+    "no root-level action or dialogue keys, and no surrounding prose or markdown/code fences."
 )
 
 
@@ -155,7 +156,7 @@ async def execute_character_turn(
             if duplicate_retry_triggered:
                 retry_notes.append(
                     "IMPORTANT: Your previous attempt was rejected as a duplicate. "
-                    "Write a materially different action/dialogue. Do not repeat previous dialogue verbatim."
+                    "Write a materially different beats[] sequence. Do not repeat previous speech lines verbatim."
                 )
             if progression_retry_triggered:
                 retry_notes.append(

@@ -1,10 +1,12 @@
-"""Minimal offline scene evaluation (GitHub Issue #66 v1).
+"""Minimal offline scene evaluation (GitHub Issue #66 v1; bundle v2 — #141).
 
 Descriptive judgments only over existing audit artifacts. Does not read
 ``context_snapshot``. Does not use character audit derived dimensions,
 Audit v2 checks, narrator/prose heuristics, or LLM audit layers.
 
-See governance issue #66 for intent; judgments are not runtime gates.
+Includes a mechanical ``move_schema_version`` / ``beats[]`` shape judgment for
+character rows (GitHub #141). See governance issue #66 for intent; judgments
+are not runtime gates.
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ from typing import Any, Final
 from audit_support_manifest import diff_support_manifests
 from issue29_investigation import load_character_audit_rows
 
-SCENE_EVAL_VERSION: Final[str] = "1"
+SCENE_EVAL_VERSION: Final[str] = "2"
 
 PREDICATE_PAIRWISE: Final[str] = "support_manifest.non_envelope_pairwise_delta"
 PREDICATE_PAIRWISE_VER: Final[str] = "1"
@@ -27,6 +29,9 @@ PREDICATE_STRUCT_VER: Final[str] = "1"
 
 PREDICATE_INTEGRITY: Final[str] = "session.character_rows_integrity"
 PREDICATE_INTEGRITY_VER: Final[str] = "1"
+
+PREDICATE_MOVE_SHAPE: Final[str] = "parsed_output.move_schema_shape"
+PREDICATE_MOVE_SHAPE_VER: Final[str] = "1"
 
 
 def _get_support_manifest(row: dict[str, Any]) -> dict[str, Any] | None:
@@ -182,6 +187,69 @@ def _pairwise_judgments(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def _move_schema_shape_judgments(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Mechanical check: v2 rows must carry non-empty ``beats[]`` in ``parsed_output``."""
+    lim = [
+        "Mechanical shape only; does not validate beat schemas or speech content.",
+        "Legacy rows without move_schema_version 2 are counted but not required to have beats.",
+    ]
+    if not rows:
+        return []
+
+    v2_count = 0
+    v2_bad = 0
+    legacy_count = 0
+    for r in rows:
+        po = r.get("parsed_output")
+        if not isinstance(po, dict):
+            continue
+        try:
+            msv = int(str(po.get("move_schema_version", 0) or 0) or 0)
+        except (TypeError, ValueError):
+            msv = 0
+        if msv == 2:
+            v2_count += 1
+            beats = po.get("beats")
+            if not isinstance(beats, list) or len(beats) == 0:
+                v2_bad += 1
+        else:
+            legacy_count += 1
+
+    if v2_bad:
+        return [
+            _judgment(
+                predicate_id=PREDICATE_MOVE_SHAPE,
+                predicate_version=PREDICATE_MOVE_SHAPE_VER,
+                result="fired",
+                subject=None,
+                summary=(
+                    f"{v2_bad} character row(s) declare move_schema_version 2 but lack "
+                    f"non-empty beats[]."
+                ),
+                limitations=lim,
+            )
+        ]
+
+    parts: list[str] = []
+    if v2_count:
+        parts.append(f"{v2_count} row(s) with move_schema_version 2 and non-empty beats[]")
+    if legacy_count:
+        parts.append(
+            f"{legacy_count} row(s) legacy or non-v2 parsed_output (root dialogue/action ok)"
+        )
+    summary = "; ".join(parts) if parts else "No character parsed_output classified"
+    return [
+        _judgment(
+            predicate_id=PREDICATE_MOVE_SHAPE,
+            predicate_version=PREDICATE_MOVE_SHAPE_VER,
+            result="clear",
+            subject=None,
+            summary=summary + ".",
+            limitations=lim,
+        )
+    ]
+
+
 def _structured_eval_judgments(structured_eval_path: Path | None) -> list[dict[str, Any]]:
     lim = [
         "Descriptive mirror of structured_eval fields only; not a failure or quality signal.",
@@ -305,6 +373,7 @@ def run_scene_eval_v1(
     judgments: list[dict[str, Any]] = []
     judgments.extend(_integrity_judgments(rows))
     judgments.extend(_pairwise_judgments(rows))
+    judgments.extend(_move_schema_shape_judgments(rows))
     judgments.extend(_structured_eval_judgments(sep))
 
     return {

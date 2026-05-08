@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from audit_support_manifest import diff_support_manifests
+from character_move_adapters import format_move_for_legacy_audit_view
 from issue29_investigation import load_character_audit_rows
 
 FACT_SPEC_SCHEMA_VERSION: Final[str] = "fact_spec.v1"
@@ -43,7 +44,7 @@ def _row_prompt(row: dict[str, Any]) -> str:
 def _combined_move(po: dict[str, Any]) -> str:
     if not isinstance(po, dict):
         return ""
-    return f"{po.get('dialogue', '')}\n{po.get('action', '')}"
+    return format_move_for_legacy_audit_view(po)
 
 
 def _rule_prompt_literals_all(row: dict[str, Any], rule: dict[str, Any]) -> bool:

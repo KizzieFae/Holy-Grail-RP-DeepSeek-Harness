@@ -1,4 +1,4 @@
-"""Unit tests for Issue #137 character move ingress (v1 allowlist, v2, caps, adapters)."""
+"""Unit tests for Issue #137 / #143 character move ingress (v2-only, caps, adapters)."""
 
 from __future__ import annotations
 
@@ -35,29 +35,23 @@ def test_nested_duplicate_key_rejects() -> None:
         load_json_object_duplicate_safe('{"x": {"y": 1, "y": 2}}')
 
 
-def test_v1_unknown_root_key_rejects() -> None:
+def test_v1_shaped_object_without_version_rejects() -> None:
     d = json.loads(
         '{"action": "x", "dialogue": "y", "motivation": {"goal": "g", "tactic": "t", '
         '"emotional_driver": "e", "risk_level": "l"}, "intent": "bad"}'
     )
     m, err = ingest_character_move_json_object(d)
-    assert m is None and "unknown v1 root keys" in err
+    assert m is None and "move_schema_version is required" in (err or "")
 
 
-def test_v1_normalizes_to_v2() -> None:
+def test_v1_shaped_object_unknown_extra_root_rejects() -> None:
+    """Without move_schema_version, ingress does not apply v1 allowlist; require v2 first."""
     d = json.loads(
-        '{"action": "Looked up.", "dialogue": "Hello.", "motivation": {"goal": "g", '
-        '"tactic": "t", "emotional_driver": "e", "risk_level": "l"}}'
+        '{"action": "x", "dialogue": "y", "motivation": {"goal": "g", "tactic": "t", '
+        '"emotional_driver": "e", "risk_level": "l"}}'
     )
     m, err = ingest_character_move_json_object(d)
-    assert err == "" and m is not None
-    assert m["move_schema_version"] == 2
-    assert len(m["beats"]) == 2
-    assert m["beats"][0]["type"] == "action"
-    assert m["beats"][1]["type"] == "speech"
-    assert isinstance(m, CanonicalV2Move)
-    assert m.get("action") == "Looked up."
-    assert m.get("dialogue") == "Hello."
+    assert m is None and "move_schema_version is required" in (err or "")
 
 
 def test_v2_rejects_mixed_action_with_version() -> None:

@@ -186,13 +186,18 @@ async def test_llm_character_move_passes_progression_delta_after_process_turn(
     complete_setup_seam_for_test_manager(cm)
 
     system_message = """You are Blake in a structured RP engine.
-Output exactly one JSON object and no other text.
+Output exactly one JSON object and no other text. Canonical v2 character move only.
 Schema:
 {
-  "action": "concrete observable behavior",
-  "dialogue": "spoken line (may be short)",
+  "move_schema_version": 2,
+  "beats": [
+    {"type": "action", "action": "concrete observable behavior"},
+    {"type": "speech", "dialogue": "spoken line (may be short)"}
+  ],
   "motivation": {"goal": "str", "tactic": "str", "emotional_driver": "str", "risk_level": "medium"}
 }
+Use at least one action beat and at least one speech beat as needed. Root fields other than
+move_schema_version, beats, motivation are forbidden.
 Rules:
 - Morgan is blocking your path; the scene has stalled on talk.
 - This beat must CHANGE the situation: refusal, ultimatum, physical attempt to pass, or clear commitment — not observation alone.

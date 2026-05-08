@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any, Mapping
 
+from character_move_adapters import root_or_flat_action_text
+
 from character_audits_v1 import (
     _ca4_repetition,
     _ca7_pressure_move,
@@ -69,7 +71,7 @@ def _structured_intent_for_masked_progression(move: Mapping[str, Any]) -> bool:
         t = str(mot.get("tactic", "") or "").strip()
         if g or t:
             return True
-    if str(move.get("action", "") or "").strip():
+    if root_or_flat_action_text(move).strip():
         return True
     return False
 
@@ -315,7 +317,7 @@ def build_narrator_audit_v2_deterministic(
     env = ch.get("environment_event_heuristic") if isinstance(ch, dict) else {}
     env = env if isinstance(env, dict) else {}
 
-    action_empty = not str(move.get("action", "") or "").strip()
+    action_empty = not root_or_flat_action_text(move).strip()
     checks: list[dict[str, Any]] = [
         {
             "check_id": "nar_strict_action_overlap",

@@ -86,7 +86,7 @@ def parse_json_payload(content: str) -> tuple[dict[str, Any] | None, str]:
 
 
 def parse_character_move(content: str) -> tuple[dict | None, str]:
-    """Canonical v2 only on success (legacy v1 at ingress is normalized in-place)."""
+    """Parse model output to canonical v2 (:class:`CanonicalV2Move`). v2-only ingress (#143)."""
     return parse_character_move_content_to_v2(content)
 
 

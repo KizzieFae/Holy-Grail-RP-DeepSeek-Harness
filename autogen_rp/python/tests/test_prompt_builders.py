@@ -343,9 +343,10 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
         in prompt
     )
     assert (
-        "Only output a JSON object with action, dialogue, motivation, and optional scene_state_updates."
+        "Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``)."
         in prompt
     )
+    assert "Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``." in prompt
     assert (
         "Emit sleeping_surface_assignment only when you, as the acting speaker, are establishing, actively enforcing against present resistance or dispute, or explicitly reassigning where someone will sleep in this turn."
         in prompt
@@ -430,8 +431,9 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
         "surface_id must be exactly one valid allowed surface_id value"
         in prompt
     )
-    assert 'Positive example: {"action": "pointed at the couch"' in prompt
-    assert 'Negative example: {"action": "gestured between the couch and the floor"' in prompt
+    assert '"move_schema_version": 2' in prompt
+    assert 'Positive example: {"move_schema_version": 2, "beats":' in prompt
+    assert 'Negative example: {"move_schema_version": 2, "beats":' in prompt
     assert "OTHER PRESENT CHARACTERS: Celina" in prompt
     assert "PLAYER NAME: Alex" in prompt
 

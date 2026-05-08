@@ -16,17 +16,63 @@ from autogen_core.models import ChatCompletionClient
 from character_state import CharacterState
 from model_client import MODEL_CONTEXT_BUFFER_SIZE
 
-# JSON schema for character structured output
+# JSON schema for character structured output (canonical v2; model-facing — GitHub #142)
 CHARACTER_MOVE_SCHEMA = {
     "type": "object",
     "properties": {
-        "action": {
-            "type": "string",
-            "description": "Brief visible action the character takes (self only, third person). Describe what YOU do, not others.",
+        "move_schema_version": {
+            "type": "integer",
+            "description": "Must be exactly 2 for this character move contract.",
         },
-        "dialogue": {
-            "type": "string",
-            "description": "What the character says out loud, if anything. Use first person within quotes.",
+        "beats": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Ordered beats for this turn: action (visible self-only) and/or speech (dialogue).",
+            "items": {
+                "type": "object",
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["action"],
+                                "description": "Physical / visible beat.",
+                            },
+                            "action": {
+                                "type": "string",
+                                "description": "Brief visible action (self only, third person). Describe what YOU do, not others.",
+                            },
+                        },
+                        "required": ["type", "action"],
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": ["speech"],
+                                "description": "Spoken beat.",
+                            },
+                            "dialogue": {
+                                "type": "string",
+                                "description": "What you say out loud. Use first person within quotes when applicable.",
+                            },
+                            "audibility": {
+                                "type": "string",
+                                "enum": ["public", "directed", "private"],
+                                "description": "Optional on speech beats; omit for public. directed/private require non-empty audience.",
+                            },
+                            "audience": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Required when audibility is directed or private; omit or empty for public.",
+                            },
+                        },
+                        "required": ["type", "dialogue"],
+                    },
+                ],
+            },
         },
         "motivation": {
             "type": "object",
@@ -118,8 +164,8 @@ CHARACTER_MOVE_SCHEMA = {
             "description": "Optional scene-state updates for bounded sleeping-surface assignment, housing-call outcome, current suppressant-formulation compatibility, or current location-entry permission facts settled by this move.",
         },
     },
-    "required": ["action", "motivation"],
-    "description": "Character move: core action, dialogue, private structured motivation, and optional bounded scene-state updates settled by this move.",
+    "required": ["move_schema_version", "beats", "motivation"],
+    "description": "Character move v2: move_schema_version 2, non-empty beats[], motivation, optional scene_state_updates.",
 }
 
 
@@ -352,13 +398,15 @@ class CharacterLoader:
                 "- Stay in character at all times.",
                 "",
                 "OUTPUT FORMAT:",
-                "You must respond with a JSON object using these core fields, plus bounded optional scene-state fields when needed:",
-                '  "action": "Brief description of YOUR visible action only (3rd person, past tense). What YOU do, not others.",',
-                '  "dialogue": "What you say out loud, if anything. Use first person inside quotes. (Optional, can be empty)",',
-                '  "motivation": {"goal": "What you want", "tactic": "How you are pursuing it", "emotional_driver": "What feeling drives you", "risk_level": "low|medium|high"},',
+                "You must respond with a single JSON object: canonical character move v2.",
+                '  "move_schema_version": 2 (integer, required)',
+                '  "beats": [ ordered beats — each object is either:',
+                '    {"type": "action", "action": "Brief visible action YOU take only (3rd person). What YOU do, not others."}',
+                '    or {"type": "speech", "dialogue": "What you say out loud (optional audibility / audience on speech beats — see below)"} ]',
+                "  Speech audibility (only on type speech): omit audibility for public speech. Use audibility directed or private only when limiting who hears the line; then include non-empty audience (array of present character names). For public speech, omit audience or use [].",
+                "  Do not put root-level action, dialogue, audibility, or audience on the JSON object — only inside beats[].",
+                '  "motivation": {"goal": "What you want", "tactic": "How you are pursuing it", "emotional_driver": "What feeling drives you", "risk_level": "low|medium|high"} (required)',
                 '  "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "character", "surface_id": "surface"}, "housing_call_outcome": {"status": "completed|failed"}, "suppressant_formulation_outcome": {"subject_id": "character", "status": "compatible|incompatible"}, "location_entry_outcome": {"subject_id": "character", "location_id": "bounded_location", "status": "allowed|denied"}} (optional)',
-                '  "spatial_transition": {"location": "canonical scene location string after this move"} (optional; only when the cast physically relocates the shared scene to a new place in this turn; not for permission/entry registry — use location_entry_outcome for that)',
-                '  "excursion_lifecycle": {"operation": "open|update|close", "excursion_id": "string (required for update/close; optional for open)", "participant_character_ids": ["id", "..."], "reintegration": {"reintegration_commit_id": "required id on close only", "events": [], "issues": [], "resolved_outcomes": []}} (optional reintegration block only on close; closed v1 schema)',
                 "Only include scene_state_updates.sleeping_surface_assignment when your own move explicitly establishes, actively enforces against present resistance or dispute, or reassigns where someone will sleep in this turn.",
                 "Contested enforcement vs reminder: Include scene_state_updates.sleeping_surface_assignment when another present character has just challenged the existing sleeping plan in the current exchange, and your move directly responds by keeping the same assignee_id on the same surface_id, even if your tone is soft, conciliatory, or framed as \"already settled.\" That is contested enforcement, not a reminder. Do not use tone as the deciding factor. Do not include the field when no such challenge is present and your move is only informational, referential, or housekeeping about an assignment nobody is contesting in that exchange.",
                 "Do not include it for offers, suggestions, negotiation, reactions, observations, reminders, restating prior state, or unresolved argument.",
@@ -380,8 +428,8 @@ class CharacterLoader:
                 "location_entry_outcome.status must be exactly one of: allowed or denied.",
                 "",
                 "EXAMPLES:",
-                'Positive: {"action": "pointed at the couch and squared her shoulders", "dialogue": "Take the couch tonight. That\'s final.", "motivation": {"goal": "settle the room", "tactic": "issue a firm instruction", "emotional_driver": "protective resolve", "risk_level": "medium"}, "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "Kizzie", "surface_id": "couch"}}}',
-                'Negative: {"action": "gestured between the couch and the floor", "dialogue": "You can take the couch if you want.", "motivation": {"goal": "offer an option", "tactic": "keep the decision open", "emotional_driver": "tentative concern", "risk_level": "low"}}',
+                'Positive: {"move_schema_version": 2, "beats": [{"type": "action", "action": "pointed at the couch and squared her shoulders"}, {"type": "speech", "dialogue": "Take the couch tonight. That\'s final."}], "motivation": {"goal": "settle the room", "tactic": "issue a firm instruction", "emotional_driver": "protective resolve", "risk_level": "medium"}, "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "Kizzie", "surface_id": "couch"}}}',
+                'Negative: {"move_schema_version": 2, "beats": [{"type": "action", "action": "gestured between the couch and the floor"}, {"type": "speech", "dialogue": "You can take the couch if you want."}], "motivation": {"goal": "offer an option", "tactic": "keep the decision open", "emotional_driver": "tentative concern", "risk_level": "low"}}',
                 "",
                 "RULE: Only output the JSON object. No other text.",
             ]

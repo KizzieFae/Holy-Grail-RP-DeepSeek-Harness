@@ -263,8 +263,11 @@ def build_character_turn_prompt(
 
     positive_sleeping_assignment_example = json.dumps(
         {
-            "action": "pointed at the couch",
-            "dialogue": "Take the couch tonight. That's final.",
+            "move_schema_version": 2,
+            "beats": [
+                {"type": "action", "action": "pointed at the couch"},
+                {"type": "speech", "dialogue": "Take the couch tonight. That's final."},
+            ],
             "motivation": {
                 "goal": "settle the room",
                 "tactic": "issue a firm instruction",
@@ -282,8 +285,11 @@ def build_character_turn_prompt(
     )
     negative_sleeping_assignment_example = json.dumps(
         {
-            "action": "gestured between the couch and the floor",
-            "dialogue": "You can take the couch if you want.",
+            "move_schema_version": 2,
+            "beats": [
+                {"type": "action", "action": "gestured between the couch and the floor"},
+                {"type": "speech", "dialogue": "You can take the couch if you want."},
+            ],
             "motivation": {
                 "goal": "offer an option",
                 "tactic": "keep the decision open",
@@ -411,9 +417,10 @@ YOUR PRIORITIES, IN ORDER:
 
 {binding_constraints_block}{_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK}
 OUTPUT RULES:
-- Only output a JSON object with action, dialogue, motivation, and optional scene_state_updates.
-- Keep action concrete and observable.
-- Let dialogue sound natural and in-character rather than explanatory.
+- Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``).
+- Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``. Put visible action and speech only inside ``beats[]`` as ``type: action`` or ``type: speech`` objects, in true beat order.
+- Each ``type: action`` beat has non-empty ``action`` (visible self-only, third person). Each ``type: speech`` beat has non-empty ``dialogue``. On speech beats, optional ``audibility`` is one of ``public``, ``directed``, ``private``; omit for public. For ``directed`` or ``private``, include non-empty ``audience`` (names). For public, omit ``audience`` or use ``[]``.
+- Keep action beats concrete and observable; let speech sound natural and in-character rather than explanatory.
  - Only include scene_state_updates when your move deterministically settles a bounded scene fact already supported by the beat.
  - For sleeping arrangement settlement, you may include only scene_state_updates.sleeping_surface_assignment with assignee_id and surface_id.
  - For a shared housing / res-life call reaching terminal outcome, you may include only scene_state_updates.housing_call_outcome with status.

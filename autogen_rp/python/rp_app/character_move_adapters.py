@@ -98,9 +98,9 @@ def legacy_flat_dialogue_text(move: Mapping[str, Any] | None) -> str:
 def legacy_move_text_for_validation(move: Mapping[str, Any] | None) -> str:
     """``action``-like text plus ``dialogue``-like text, same order as v1 string joins.
 
-    For canonical v2, derives from ``beats``; for legacy v1 dicts (no
-    ``move_schema_version`` or tests injecting plain dicts), uses root
-    ``action``/``dialogue`` when there are no beats.
+    For canonical v2, derives from ``beats``. For read-only views of **historical**
+    dicts (e.g. old audit rows, unit fixtures) with root ``action``/``dialogue`` and
+    no ``move_schema_version``, falls back to those roots when there are no beats.
     """
     if not isinstance(move, Mapping):
         return ""
@@ -113,6 +113,38 @@ def legacy_move_text_for_validation(move: Mapping[str, Any] | None) -> str:
     a1 = str(move.get("action", "") or "").strip()
     d1 = str(move.get("dialogue", "") or "").strip()
     return f"{a1} {d1}".strip()
+
+
+def root_or_flat_dialogue_text(move: Mapping[str, Any] | None) -> str:
+    """Read-only: speech lines for audits and summaries (v2: ``beats``; v1: root ``dialogue``)."""
+
+    if not isinstance(move, Mapping):
+        return ""
+    if move_schema_version(move) == 2:
+        return legacy_flat_dialogue_text(move)
+    return str(move.get("dialogue", "") or "").strip()
+
+
+def root_or_flat_action_text(move: Mapping[str, Any] | None) -> str:
+    """Read-only: action lines for audits and summaries (v2: ``beats``; v1: root ``action``)."""
+
+    if not isinstance(move, Mapping):
+        return ""
+    if move_schema_version(move) == 2:
+        return legacy_flat_action_text(move)
+    return str(move.get("action", "") or "").strip()
+
+
+def format_move_for_legacy_audit_view(move: Mapping[str, Any] | None) -> str:
+    """Read-only string for audit substring checks (GitHub #141).
+
+    Historical tooling joined root ``dialogue`` then ``action`` with a newline. For
+    ``move_schema_version: 2``, both sides are derived from ``beats[]`` in that order.
+    """
+
+    d = root_or_flat_dialogue_text(move)
+    a = root_or_flat_action_text(move)
+    return f"{d}\n{a}"
 
 
 class CanonicalV2Move(dict):

@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from character_move_adapters import root_or_flat_action_text, root_or_flat_dialogue_text
+
 
 def write_session_manifest(
     *,
@@ -215,8 +217,8 @@ def update_narrative_summary(
         "director_reason": director_decision.get("reason", ""),
         "environment_event": director_decision.get("environment_event", ""),
         "tension_shift": director_decision.get("tension_shift", ""),
-        "character_action": character_move.get("action", ""),
-        "character_dialogue": character_move.get("dialogue", ""),
+        "character_action": root_or_flat_action_text(character_move),
+        "character_dialogue": root_or_flat_dialogue_text(character_move),
         "character_motivation": character_move.get("motivation", {}),
         "rendered_output": rendered_output,
         "continuity_event_type": str(
@@ -292,7 +294,7 @@ def update_narrative_summary(
     )
 
     stats["turns"] += 1
-    if character_move.get("dialogue"):
+    if root_or_flat_dialogue_text(character_move).strip():
         stats["dialogue_count"] += 1
     stats["total_response_length"] += len(rendered_output)
     stats["avg_response_length"] = stats["total_response_length"] // stats["turns"]

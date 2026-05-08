@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from audit_support_manifest import diff_support_manifests
+from character_move_adapters import format_move_for_legacy_audit_view
 from progression_simulation_scenarios import load_scenario
 
 
@@ -70,7 +71,7 @@ def load_character_audit_rows(session_dir: Path) -> list[dict[str, Any]]:
 
 
 def _combined_move(po: dict[str, Any]) -> str:
-    return f"{po.get('dialogue', '')}\n{po.get('action', '')}"
+    return format_move_for_legacy_audit_view(po)
 
 
 def _prompt_has(row: dict[str, Any], token: str) -> bool:
