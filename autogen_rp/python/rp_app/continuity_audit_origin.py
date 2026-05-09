@@ -5,7 +5,7 @@ Observational only; not on the #59 runtime use allowlist. Does not influence val
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 # Closed enum (Issue #79): pipeline path vs continuity-affecting bypass kinds.
 CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN = "pipeline_turn"
@@ -75,3 +75,34 @@ def _get_origin_log(continuity_manager: Any) -> list[dict[str, Any]]:
         raw = []
         setattr(continuity_manager, "continuity_audit_origin_log", raw)
     return raw
+
+
+def manager_suppress_direct_excursion_bypass_audit(continuity_manager: Any) -> bool:
+    """True while pipeline turn or reintegration apply is active (Slice 3 bypass gating)."""
+    return bool(
+        getattr(continuity_manager, "_continuity_pipeline_turn_active", False)
+        or getattr(continuity_manager, "_continuity_in_reintegration_apply", False)
+    )
+
+
+def manager_record_continuity_audit_event(
+    continuity_manager: Any, kind: str, continuity_turn_index: int
+) -> None:
+    log = _get_origin_log(continuity_manager)
+    log.append(
+        {"continuity_turn_index": int(continuity_turn_index), "kind": str(kind)}
+    )
+
+
+def manager_notify_raw_location_bypass_for_audit(
+    continuity_manager: Any, *, continuity_turn_index: Optional[int] = None
+) -> None:
+    """Call after assigning ``scene_state.location`` outside ``process_turn`` (Slice 3)."""
+    idx = (
+        int(continuity_turn_index)
+        if continuity_turn_index is not None
+        else int(getattr(continuity_manager, "turn_counter", 0) or 0)
+    )
+    manager_record_continuity_audit_event(
+        continuity_manager, CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION, idx
+    )

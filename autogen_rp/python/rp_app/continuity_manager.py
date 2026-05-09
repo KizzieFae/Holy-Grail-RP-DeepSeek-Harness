@@ -6,27 +6,39 @@ updating scene state, managing character interpretations, enforcing knowledge bo
 """
 
 import logging
-import os
 import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
-from scene_exit_detection import has_scene_reentry_evidence
+from continuity_presence_helpers import PresenceAuthorityScratch
 
-from continuity_presence_helpers import (
-    PresenceAuthorityScratch,
-    align_exit_narrative_with_effective_presence,
-    apply_canonical_exit_offstage_transition_scratch,
-    apply_canonical_reentry_scratch,
-    assert_presence_invariant_after_reconcile_scratch,
-    ensure_at_least_one_present_character_scratch,
-    presence_scratch_from_scene_state,
-    process_structured_reentries_from_move_scratch,
-    purge_excursion_participants_from_offstage_scratch,
-    reconcile_presence_lists_scratch,
-    strip_active_excursions_from_focal_scratch,
+from continuity_canon_anchors import (
+    get_relevant_canon_anchors as get_relevant_canon_anchors_impl,
+    get_scene_canon_anchors as get_scene_canon_anchors_impl,
+    seed_character_canon_anchors as seed_character_canon_anchors_impl,
+    upsert_canon_anchor as upsert_canon_anchor_impl,
 )
+from continuity_presence_pipeline import (
+    manager_apply_pre_turn_user_presence_routing as pre_turn_presence_routing_impl,
+    manager_apply_must_remain_presence_from_fn as apply_must_remain_presence_impl,
+    manager_bootstrap_present_characters_from_cast as bootstrap_present_from_cast_impl,
+    manager_ensure_at_least_one_present_character as ensure_one_present_impl,
+    manager_reconcile_presence_lists as reconcile_presence_lists_impl,
+    manager_resync_presence_through_authority as resync_presence_impl,
+    manager_presence_scratch_from_scene_state as presence_scratch_impl,
+    manager_purge_excursion_participants_from_offstage_scratch as purge_excursion_offstage_impl,
+    manager_strip_active_excursions_from_focal_scratch as strip_excursions_focal_impl,
+    manager_synchronize_presence_from_canonical_authority as synchronize_presence_impl,
+    manager_reconcile_presence_lists_scratch as reconcile_presence_scratch_impl,
+    manager_process_structured_reentries_from_move_scratch as process_reentries_impl,
+    manager_apply_canonical_reentry_scratch as apply_canonical_reentry_impl,
+    manager_apply_canonical_exit_offstage_transition_scratch as apply_exit_offstage_impl,
+    manager_ensure_at_least_one_present_character_scratch as ensure_one_present_scratch_impl,
+    manager_assert_presence_invariant_after_reconcile_scratch as assert_invariant_scratch_impl,
+)
+from continuity_scene_state_update import run_update_scene_state
+from continuity_turn_classification import classify_turn_consequences_for_manager
 
 from continuity_issue_helpers import (
     event_tokens,
@@ -51,12 +63,6 @@ from continuity_knowledge_helpers import (
     share_event_knowledge as share_event_knowledge_helper,
     update_interpretations as update_interpretations_helper,
 )
-from continuity_resolved_outcomes import (
-    build_housing_call_state_change,
-    build_location_entry_state_change,
-    build_sleeping_surface_state_change,
-    build_suppressant_formulation_state_change,
-)
 from continuity_mutation_pipeline import (
     MutationRequest,
     apply_resolved_mutations,
@@ -68,7 +74,9 @@ from continuity_process_turn_orchestration import (
 )
 from continuity_audit_origin import (
     CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
-    CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION,
+    manager_notify_raw_location_bypass_for_audit,
+    manager_record_continuity_audit_event,
+    manager_suppress_direct_excursion_bypass_audit,
 )
 from continuity_setup_seam_v77 import ContinuitySetupSeamIncompleteError
 from continuity_scene_helpers import (
@@ -89,31 +97,16 @@ from continuity_state import (
     CanonAnchor,
     CharacterInterpretation,
     ContinuitySnapshot,
-    DetectedConsequence,
     ExcursionRecord,
     ExcursionStatus,
     IssueState,
     IssueStatus,
     PublicEvent,
-    ScenePhase,
     SceneState,
     SummaryBlock,
 )
 
 from continuity_consequence_classifier import ConsequenceClassifier
-from continuity_consequence_phrase_maps import (
-    CATEGORY_ACTIONABLE_IMPLICATIONS,
-    category_state_change_phrases,
-)
-from continuity_event_promotion_policy import compute_event_promotion_policy_fields
-from tension_pacing_policy import (
-    apply_consequence_up_saturation_gate,
-    resolve_hybrid_pacing,
-)
-from user_presence_signals import (
-    apply_user_trigger_to_offstage_on_scratch,
-    release_pending_forced_speaker_on_scratch,
-)
 from continuity_issue_manager_wiring import (
     DEFAULT_ACTIVE_ISSUE_LIMIT,
     ISSUE_STALL_TURN_THRESHOLD,
@@ -179,29 +172,19 @@ class ContinuityManager:
         self._pending_pipeline_audit_origin_index: Optional[int] = None
 
     def _suppress_direct_excursion_bypass_audit(self) -> bool:
-        return bool(
-            self._continuity_pipeline_turn_active
-            or self._continuity_in_reintegration_apply
-        )
+        return manager_suppress_direct_excursion_bypass_audit(self)
 
     def _record_continuity_audit_event(
         self, kind: str, continuity_turn_index: int
     ) -> None:
-        self.continuity_audit_origin_log.append(
-            {"continuity_turn_index": int(continuity_turn_index), "kind": str(kind)}
-        )
+        manager_record_continuity_audit_event(self, kind, continuity_turn_index)
 
     def notify_raw_location_bypass_for_audit(
         self, *, continuity_turn_index: Optional[int] = None
     ) -> None:
         """Call after assigning ``scene_state.location`` outside ``process_turn`` (Slice 3)."""
-        idx = (
-            int(continuity_turn_index)
-            if continuity_turn_index is not None
-            else int(self.turn_counter)
-        )
-        self._record_continuity_audit_event(
-            CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_RAW_LOCATION, idx
+        manager_notify_raw_location_bypass_for_audit(
+            self, continuity_turn_index=continuity_turn_index
         )
 
     def open_excursion(
@@ -236,8 +219,10 @@ class ContinuityManager:
         )
         self._resync_presence_through_authority()
         if not self._suppress_direct_excursion_bypass_audit():
-            self._record_continuity_audit_event(
-                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API, opened_turn
+            manager_record_continuity_audit_event(
+                self,
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
+                opened_turn,
             )
         return eid
 
@@ -269,7 +254,8 @@ class ContinuityManager:
             if frozenset(participants) != prior_ids:
                 self._resync_presence_through_authority()
         if not self._suppress_direct_excursion_bypass_audit():
-            self._record_continuity_audit_event(
+            manager_record_continuity_audit_event(
+                self,
                 CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
                 int(self.turn_counter),
             )
@@ -296,8 +282,10 @@ class ContinuityManager:
         self._resync_presence_through_authority()
         closed_idx = int(rec.closed_at_turn or self.turn_counter)
         if not self._suppress_direct_excursion_bypass_audit():
-            self._record_continuity_audit_event(
-                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API, closed_idx
+            manager_record_continuity_audit_event(
+                self,
+                CONTINUITY_AUDIT_ORIGIN_KIND_BYPASS_DIRECT_EXCURSION_API,
+                closed_idx,
             )
 
     def active_excursion_character_ids(self) -> set[str]:
@@ -333,164 +321,21 @@ class ContinuityManager:
         intent (goal/tactic) + behavior (action/dialogue) patterns.
         Multi-label: accumulates all applicable categories.
         """
-        # Use new consequence classifier
-        scene_state = self.scene_state.to_dict() if self.scene_state is not None else None
-        detected = self._consequence_classifier.classify_turn(
-            acting_character, move, director_decision, scene_state
+        return classify_turn_consequences_for_manager(
+            self,
+            acting_character,
+            move,
+            director_decision,
+            consequence_classifier=self._consequence_classifier,
         )
-
-        # Map detected categories to state_changes and actionable_implications
-        state_changes: list[str] = []
-        actionable_implications: list[str] = []
-        tags: set[str] = set()
-
-        category_state_change = category_state_change_phrases(acting_character)
-        category_implication = CATEGORY_ACTIONABLE_IMPLICATIONS
-
-        for consequence in detected:
-            tags.add(consequence.category.value)
-
-            state_change = category_state_change.get(consequence.category)
-            if state_change and state_change not in state_changes:
-                state_changes.append(state_change)
-
-            implication = category_implication.get(consequence.category)
-            if implication and implication not in actionable_implications:
-                actionable_implications.append(implication)
-
-        sleeping_assignment_state_change = build_sleeping_surface_state_change(
-            move, self.scene_state
-        )
-        if (
-            sleeping_assignment_state_change
-            and sleeping_assignment_state_change not in state_changes
-        ):
-            state_changes.append(sleeping_assignment_state_change)
-            actionable_implications.append(
-                "Sleeping arrangement state may now be ready for continuity settlement."
-            )
-        housing_call_state_change = build_housing_call_state_change(move, self.scene_state)
-        if housing_call_state_change and housing_call_state_change not in state_changes:
-            state_changes.append(housing_call_state_change)
-            actionable_implications.append(
-                "Housing call outcome may now be ready for continuity settlement."
-            )
-        suppressant_formulation_state_change = (
-            build_suppressant_formulation_state_change(move, self.scene_state)
-        )
-        if (
-            suppressant_formulation_state_change
-            and suppressant_formulation_state_change not in state_changes
-        ):
-            state_changes.append(suppressant_formulation_state_change)
-            actionable_implications.append(
-                "Suppressant formulation state may now be ready for continuity settlement."
-            )
-        location_entry_state_change = build_location_entry_state_change(
-            move, self.scene_state
-        )
-        if location_entry_state_change and location_entry_state_change not in state_changes:
-            state_changes.append(location_entry_state_change)
-            actionable_implications.append(
-                "Location entry permission may now be ready for continuity settlement."
-            )
-
-        promo = compute_event_promotion_policy_fields(
-            acting_character=acting_character,
-            move=move,
-            director_decision=director_decision,
-            detected=detected,
-            state_changes=state_changes,
-            actionable_implications=actionable_implications,
-        )
-        return {
-            "should_create_event": promo["should_create_event"],
-            "event_type": promo["event_type"],
-            "summary": promo["summary"],
-            "significance": promo["significance"],
-            "state_changes": state_changes,
-            "actionable_implications": actionable_implications,
-            "tags": sorted(tags),
-            "consequences": [c.category.value for c in detected],  # For audit/debug
-            "grounding_markers": promo["grounding_markers"],
-        }
 
     def _upsert_canon_anchor(self, anchor: CanonAnchor) -> None:
         """Insert or replace a canon anchor by ID."""
-        for index, existing in enumerate(self.canon_anchors):
-            if existing.anchor_id == anchor.anchor_id:
-                self.canon_anchors[index] = anchor
-                return
-        self.canon_anchors.append(anchor)
+        upsert_canon_anchor_impl(self, anchor)
 
     def seed_character_canon_anchors(self, character_states: dict[str, Any]) -> None:
         """Seed protected canon anchors from current character state data."""
-        timestamp = datetime.now(timezone.utc)
-        for name, state in character_states.items():
-            core_goals = list(getattr(state, "core_goals", []) or [])
-            long_term_goal = str(getattr(state, "long_term_goal", "") or "").strip()
-            if not core_goals and long_term_goal:
-                core_goals = [long_term_goal]
-            if core_goals:
-                self._upsert_canon_anchor(
-                    CanonAnchor(
-                        anchor_id=f"canon_{name.lower()}_goals",
-                        category="character_trait",
-                        subject=name,
-                        statement=f"{name} consistently pursues: {', '.join(core_goals)}.",
-                        source="character_state.core_goals",
-                        established_at=timestamp,
-                    )
-                )
-
-            voice_profile = getattr(state, "voice_profile", {}) or {}
-            speech_fingerprint = getattr(state, "speech_fingerprint", {}) or {}
-            voice_parts: list[str] = []
-            if voice_profile:
-                voice_parts.append(
-                    "voice profile: "
-                    + ", ".join(
-                        f"{key}={value}" for key, value in voice_profile.items()
-                    )
-                )
-            if speech_fingerprint:
-                voice_parts.append(
-                    "speech fingerprint: "
-                    + ", ".join(
-                        f"{key}={value}" for key, value in speech_fingerprint.items()
-                    )
-                )
-            if voice_parts:
-                self._upsert_canon_anchor(
-                    CanonAnchor(
-                        anchor_id=f"canon_{name.lower()}_voice",
-                        category="character_voice",
-                        subject=name,
-                        statement=f"{name}'s expression remains distinct: {'; '.join(voice_parts)}.",
-                        source="character_state.voice_profile",
-                        established_at=timestamp,
-                    )
-                )
-
-            reaction_profile = getattr(state, "reaction_profile", {}) or {}
-            if reaction_profile:
-                self._upsert_canon_anchor(
-                    CanonAnchor(
-                        anchor_id=f"canon_{name.lower()}_reaction",
-                        category="character_trait",
-                        subject=name,
-                        statement=(
-                            f"{name} tends to react in consistent ways: "
-                            + ", ".join(
-                                f"{key}={value}"
-                                for key, value in reaction_profile.items()
-                            )
-                            + "."
-                        ),
-                        source="character_state.reaction_profile",
-                        established_at=timestamp,
-                    )
-                )
+        seed_character_canon_anchors_impl(self, character_states)
 
     def get_relevant_canon_anchors(
         self,
@@ -499,37 +344,13 @@ class ContinuityManager:
         limit: int = 6,
     ) -> list[CanonAnchor]:
         """Return canon anchors most relevant to the named character in this scene."""
-        participant_set = set(
-            participants
-            or (self.scene_state.present_characters if self.scene_state else [])
+        return get_relevant_canon_anchors_impl(
+            self, character_name, participants=participants, limit=limit
         )
-        relevant: list[CanonAnchor] = []
-        for anchor in self.canon_anchors:
-            if anchor.subject == character_name:
-                relevant.append(anchor)
-                continue
-            if anchor.category == "world_fact":
-                relevant.append(anchor)
-                continue
-            if (
-                participant_set
-                and anchor.subject in participant_set
-                and anchor.category == "relationship"
-            ):
-                relevant.append(anchor)
-        return relevant[:limit]
 
     def get_scene_canon_anchors(self, limit: int = 10) -> list[CanonAnchor]:
         """Return canon anchors broadly relevant to the current scene."""
-        participants = set(
-            self.scene_state.present_characters if self.scene_state else []
-        )
-        anchors = [
-            anchor
-            for anchor in self.canon_anchors
-            if anchor.subject in participants or anchor.category == "world_fact"
-        ]
-        return anchors[:limit]
+        return get_scene_canon_anchors_impl(self, limit)
 
     def get_active_issues(
         self,
@@ -860,16 +681,13 @@ class ContinuityManager:
         return get_summary_blocks_helper(manager=self, limit=limit)
 
     def _presence_scratch_from_scene_state(self) -> PresenceAuthorityScratch:
-        assert self.scene_state is not None
-        return presence_scratch_from_scene_state(self.scene_state)
+        return presence_scratch_impl(self)
 
     def _strip_active_excursions_from_focal_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
         """Enforce P_focal ∩ E_active = ∅ before committing presence."""
-        strip_active_excursions_from_focal_scratch(
-            scratch, self.active_excursion_character_ids()
-        )
+        strip_excursions_focal_impl(self, scratch)
 
     def _purge_excursion_participants_from_offstage_scratch(
         self, scratch: PresenceAuthorityScratch
@@ -879,31 +697,16 @@ class ContinuityManager:
         Clears ``offstage_characters`` and presence-status rows for ``E_active`` in the
         same scratch write as focal stripping — no partial excursion-without-presence-fix.
         """
-        purge_excursion_participants_from_offstage_scratch(
-            scratch, self.active_excursion_character_ids()
-        )
+        purge_excursion_offstage_impl(self, scratch)
 
     def _resync_presence_through_authority(self) -> None:
         """Full presence pipeline: reconcile → invariant → ensure-one → sync (single writer)."""
-        if self.scene_state is None:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        self._reconcile_presence_lists_scratch(scratch)
-        self._assert_presence_invariant_after_reconcile_scratch(scratch)
-        self._ensure_at_least_one_present_character_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
+        resync_presence_impl(self)
 
     def _synchronize_presence_from_canonical_authority(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
-        if self.scene_state is None:
-            return
-        self._strip_active_excursions_from_focal_scratch(scratch)
-        self._purge_excursion_participants_from_offstage_scratch(scratch)
-        self.scene_state.present_characters = list(scratch.present_characters)
-        self.scene_state.offstage_characters = list(scratch.offstage_characters)
-        self.scene_state.character_presence_status = dict(scratch.character_presence_status)
-        self.scene_state.absent_but_relevant = list(scratch.absent_but_relevant)
+        synchronize_presence_impl(self, scratch)
 
     def apply_pre_turn_user_presence_routing(
         self,
@@ -914,68 +717,35 @@ class ContinuityManager:
         pending_forced_speaker: str | None,
     ) -> None:
         """Apply Traveler offstage hints through the single presence sync path."""
-        if self.scene_state is None:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        apply_user_trigger_to_offstage_on_scratch(
-            scratch=scratch,
+        pre_turn_presence_routing_impl(
+            self,
             trigger_text=trigger_text,
             participant_names=participant_names,
             get_character_display_name_fn=get_character_display_name_fn,
-        )
-        release_pending_forced_speaker_on_scratch(
-            scratch=scratch,
             pending_forced_speaker=pending_forced_speaker,
-            participant_names=participant_names,
         )
-        self._reconcile_presence_lists_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
 
     def apply_must_remain_presence_from_fn(
         self, get_must_remain_characters_fn: Callable[[dict[str, Any]], Any]
     ) -> None:
-        if self.scene_state is None:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        scene_dict = self.scene_state.to_dict()
-        scene_dict["present_characters"] = list(scratch.present_characters)
-        scene_dict["offstage_characters"] = list(scratch.offstage_characters)
-        scene_dict["character_presence_status"] = dict(scratch.character_presence_status)
-        scene_dict["absent_but_relevant"] = list(scratch.absent_but_relevant)
-        must_remain = get_must_remain_characters_fn(scene_dict)
-        for character_name in must_remain:
-            ch = str(character_name or "").strip()
-            if ch:
-                self._apply_canonical_reentry_scratch(scratch, ch)
-        self._reconcile_presence_lists_scratch(scratch)
-        self._assert_presence_invariant_after_reconcile_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
+        apply_must_remain_presence_impl(self, get_must_remain_characters_fn)
 
     def bootstrap_present_characters_from_cast(self, character_names: list[str]) -> None:
         """If on-stage roster is empty, seed it from the cast list (restore / init guard)."""
-        if self.scene_state is None:
-            return
-        if self.scene_state.present_characters:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        scratch.present_characters = [
-            str(x).strip() for x in character_names if str(x or "").strip()
-        ]
-        self._reconcile_presence_lists_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
+        bootstrap_present_from_cast_impl(self, character_names)
 
     def _reconcile_presence_lists_scratch(self, scratch: PresenceAuthorityScratch) -> None:
-        reconcile_presence_lists_scratch(scratch)
+        reconcile_presence_scratch_impl(self, scratch)
 
     def _process_structured_reentries_from_move_scratch(
         self, move: dict[str, Any], scratch: PresenceAuthorityScratch
     ) -> None:
-        process_structured_reentries_from_move_scratch(move, scratch)
+        process_reentries_impl(self, move, scratch)
 
     def _apply_canonical_reentry_scratch(
         self, scratch: PresenceAuthorityScratch, character_name: str
     ) -> None:
-        apply_canonical_reentry_scratch(scratch, character_name)
+        apply_canonical_reentry_impl(self, scratch, character_name)
 
     def _apply_canonical_exit_offstage_transition_scratch(
         self,
@@ -986,57 +756,33 @@ class ContinuityManager:
         scene_dict: dict[str, Any],
         scratch: PresenceAuthorityScratch,
     ) -> None:
-        if self.scene_state is None:
-            return
-        apply_canonical_exit_offstage_transition_scratch(
+        apply_exit_offstage_impl(
+            self,
             acting_character,
             move,
             consequence_tags=consequence_tags,
             scene_dict=scene_dict,
             scratch=scratch,
-            character_presence_constraints=dict(
-                self.scene_state.character_presence_constraints or {}
-            ),
             should_skip_soft_exit_presence_removal=self._should_skip_soft_exit_presence_removal,
         )
 
     def _ensure_at_least_one_present_character_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
-        if self.scene_state is None:
-            return
-        cast = [
-            str(k).strip()
-            for k in self.scene_state.role_assignments.keys()
-            if str(k).strip()
-        ]
-        ensure_at_least_one_present_character_scratch(
-            scratch,
-            cast=cast,
-            e_active=self.active_excursion_character_ids(),
-            log=logger,
-        )
+        ensure_one_present_scratch_impl(self, scratch)
 
     def _assert_presence_invariant_after_reconcile_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
-        assert_presence_invariant_after_reconcile_scratch(scratch, log=logger)
+        assert_invariant_scratch_impl(scratch)
 
     def _reconcile_presence_lists(self) -> None:
         """Drop absent entries that are still present; dedupe both lists (synced write path)."""
-        if self.scene_state is None:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        self._reconcile_presence_lists_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
+        reconcile_presence_lists_impl(self)
 
     def _ensure_at_least_one_present_character(self) -> None:
         """Deadlock guard via scratch + single sync (see scratch helper for tier rules)."""
-        if self.scene_state is None:
-            return
-        scratch = self._presence_scratch_from_scene_state()
-        self._ensure_at_least_one_present_character_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
+        ensure_one_present_impl(self)
 
     def _update_scene_state(
         self,
@@ -1047,127 +793,13 @@ class ContinuityManager:
         turn_consequences: dict[str, Any],
     ) -> None:
         """Update scene state based on director decisions and flow."""
-        if self.scene_state is None:
-            return
-
-        tension_shift_raw = ""
-        if isinstance(director_decision, dict):
-            tension_shift_raw = str(director_decision.get("tension_shift", "") or "").strip()
-
-        environment_event = (
-            director_decision.get("environment_event", "")
-            if isinstance(director_decision, dict)
-            else ""
-        )
-        consequence_tags = {
-            str(item) for item in turn_consequences.get("tags", []) if str(item).strip()
-        }
-
-        pacing_source, pacing_direction, director_neutral = resolve_hybrid_pacing(
-            director_decision=director_decision
-            if isinstance(director_decision, dict)
-            else {},
-            turn_consequences=turn_consequences
-            if isinstance(turn_consequences, dict)
-            else {},
-        )
-        pacing_source, pacing_direction, suppressed_consequence_up = (
-            apply_consequence_up_saturation_gate(
-                pacing_source=pacing_source,
-                pacing_direction=pacing_direction,
-                current_tension_level=self.scene_state.current_tension_level,
-            )
-        )
-        if pacing_direction == "up":
-            self._escalate_tension()
-        elif pacing_direction == "down":
-            self._reduce_tension()
-        hybrid_meta: dict[str, Any] = {
-            "pacing_source": pacing_source,
-            "pacing_direction": pacing_direction,
-            "director_neutral": director_neutral,
-        }
-        if suppressed_consequence_up:
-            hybrid_meta["consequence_up_suppressed_saturation"] = True
-        turn_consequences["hybrid_pacing"] = hybrid_meta
-
-        if environment_event:
-            self.scene_state.recent_environment_events.append(environment_event)
-            self.scene_state.recent_environment_events = (
-                self.scene_state.recent_environment_events[-5:]
-            )
-            self.scene_state.environment_description = environment_event
-
-        scratch = self._presence_scratch_from_scene_state()
-        self._process_structured_reentries_from_move_scratch(move, scratch)
-
-        if has_scene_reentry_evidence(move):
-            self._apply_canonical_reentry_scratch(scratch, acting_character)
-
-        if "entry" in consequence_tags:
-            self._apply_canonical_reentry_scratch(scratch, acting_character)
-
-        scene_dict = self.scene_state.to_dict()
-        scene_dict["present_characters"] = list(scratch.present_characters)
-        scene_dict["offstage_characters"] = list(scratch.offstage_characters)
-        scene_dict["character_presence_status"] = dict(scratch.character_presence_status)
-        scene_dict["absent_but_relevant"] = list(scratch.absent_but_relevant)
-        self._apply_canonical_exit_offstage_transition_scratch(
+        run_update_scene_state(
+            self,
             acting_character,
             move,
-            consequence_tags=consequence_tags,
-            scene_dict=scene_dict,
-            scratch=scratch,
-        )
-
-        self._update_scene_phase()
-
-        self._reconcile_presence_lists_scratch(scratch)
-        self._assert_presence_invariant_after_reconcile_scratch(scratch)
-        self._ensure_at_least_one_present_character_scratch(scratch)
-        self._synchronize_presence_from_canonical_authority(scratch)
-
-        self._align_exit_narrative_with_effective_presence(
-            acting_character, turn_consequences
-        )
-
-        consequence_delta = next(
-            (
-                str(change)
-                for change in (
-                    event.state_changes
-                    if event is not None
-                    else turn_consequences.get("state_changes", [])
-                )
-                if str(change).strip()
-            ),
-            "",
-        )
-        self.scene_state.recent_delta = (
-            consequence_delta
-            or (event.summary if event else "")
-            or environment_event
-            or tension_shift_raw
-            or str(move.get("action", "character action"))
-        )
-
-    def _align_exit_narrative_with_effective_presence(
-        self,
-        acting_character: str,
-        turn_consequences: dict[str, Any],
-    ) -> None:
-        """If exit was tagged but the actor remains on-stage, soften event-facing lines.
-
-        Avoids authoritative contradiction: ``present_characters`` still includes the
-        actor (e.g. ``must_remain`` / soft skip) while ``state_changes`` claimed full
-        departure.
-        """
-        if self.scene_state is None:
-            return
-        align_exit_narrative_with_effective_presence(
-            present_characters=list(self.scene_state.present_characters or []),
-            acting_character=acting_character,
-            turn_consequences=turn_consequences,
+            director_decision,
+            event,
+            turn_consequences,
         )
 
     def _acting_character_named_in_current_move(
@@ -1276,36 +908,6 @@ class ContinuityManager:
             merge_issue_terms_fn=merge_issue_terms_positional,
             link_issue_interactions_fn=link_issue_interactions_callback(self),
         )
-
-    def _escalate_tension(self) -> None:
-        """Increase scene tension level."""
-        levels = ["low", "moderate", "high", "extreme"]
-        current = self.scene_state.current_tension_level
-        if current in levels:
-            idx = levels.index(current)
-            if idx < len(levels) - 1:
-                self.scene_state.current_tension_level = levels[idx + 1]
-
-    def _reduce_tension(self) -> None:
-        """Decrease scene tension level."""
-        levels = ["low", "moderate", "high", "extreme"]
-        current = self.scene_state.current_tension_level
-        if current in levels:
-            idx = levels.index(current)
-            if idx > 0:
-                self.scene_state.current_tension_level = levels[idx - 1]
-
-    def _update_scene_phase(self) -> None:
-        """Update scene phase based on tension and progression."""
-        tension = self.scene_state.current_tension_level
-        phase = self.scene_state.phase
-
-        if phase == ScenePhase.OPENING and tension in ["moderate", "high"]:
-            self.scene_state.phase = ScenePhase.RISING
-        elif phase == ScenePhase.RISING and tension == "extreme":
-            self.scene_state.phase = ScenePhase.CLIMAX
-        elif phase == ScenePhase.CLIMAX and tension in ["low", "moderate"]:
-            self.scene_state.phase = ScenePhase.FALLING
 
     def _update_issues(
         self,
