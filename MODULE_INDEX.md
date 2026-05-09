@@ -187,11 +187,15 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `audit_fact_tracking.py` | Offline `fact_spec.v1` post-processor: `failure_classification` over character `*_full.json` (**#58**); shared **`run_fact_track_postprocess`** + companion JSON (**#62**) | `issue29_investigation`, `audit_support_manifest` | **Not** runtime / not on #59 allowlist; CLIs `run_audit_fact_track.py` (stdout) and `run_scene_simulation_llm.py` **`--fact-spec`** (audited runs) |
 | `audit_logger.py` | Audit session/round/turn lifecycle | `audit_logger_paths`, writers | |
 | `audit_logger_paths.py` | Paths: `rp_app/data/rp_audits` | — | |
-| `audit_logger_writers.py` | Write JSON artifacts | — | |
+| `audit_logger_writers.py` | Write JSON artifacts; **`update_manifest_turn_counter`** (read-merge-write session manifest) | — | |
 | `audit_logger_serialization.py` | Serialize payloads | — | |
+| `audit_logger_summary_issue_taxonomy.py` | Issue category keys + `_audit_summary` issue bucketing helpers | `audit_logger` | **#154** Slice A |
+| `audit_logger_summary_prep.py` | Pre-assembly: manifest/narrative/index backfill + audit artifact gap scan | `audit_logger_summary_report`, `audit_instrumentation`, `audit_logger_summary_output_continuity` | **#154** Slice C |
 | `audit_logger_summary_rounds.py` | Round-level summary data | — | |
-| `audit_logger_summary_report.py` | `_audit_summary.json` aggregation; **`continuity_observability_summary_v1`** when `write_summary_report` receives **`continuity_manager`**, else **`continuity_observability_status_v1`** (unavailable — no synthetic summary) | `continuity_observability_summary`, `audit_logger_summary_output` | |
-| `audit_logger_summary_output.py` | Output formatting helpers | — | |
+| `audit_logger_summary_report.py` | `_audit_summary.json` aggregation; **`continuity_observability_summary_v1`** when `write_summary_report` receives **`continuity_manager`**, else **`continuity_observability_status_v1`** (unavailable — no synthetic summary) | `continuity_observability_summary`, `audit_logger_summary_output`, `audit_logger_summary_prep` | |
+| `audit_logger_summary_output.py` | **`build_report`** façade + spotlight/role/regression helpers; re-exports continuity + core assembler | `audit_logger_summary_output_report_core`, `audit_logger_summary_output_continuity` | **#154** Slice E |
+| `audit_logger_summary_output_continuity.py` | Continuity overview + indexed-turn counting used by summary prep/output | — | **#154** Slice E |
+| `audit_logger_summary_output_report_core.py` | **`assemble_audit_summary_report_dict`** — deterministic `_audit_summary.json` dict assembly | `audit_logger_summary_output_continuity` | **#154** Slice E |
 | `summary_audit_helpers.py` | Prompt/audit bridges for summaries | continuity | |
 | `audit_ctar.py` | CTAR projection for **`metadata.ctar`** (**#79**) | `turn_runner_audit` | |
 | `audit_runtime_mirrors.py` | **`scene_state_after`** mirror; **`excursion_audit_digest_v1`** (**#79**) | `turn_runner_audit` | |

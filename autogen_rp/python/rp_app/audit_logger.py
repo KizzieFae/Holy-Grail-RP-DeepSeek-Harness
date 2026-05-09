@@ -5,7 +5,6 @@ Organized by scene owner character, 3-digit session number, and round number.
 """
 
 import json
-import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -30,10 +29,16 @@ from audit_logger_serialization import (
     prompt_reference as prompt_reference_helper,
     utc_timestamp as utc_timestamp_helper,
 )
+from audit_logger_summary_issue_taxonomy import (
+    categorize_issue_text,
+    empty_issue_categories,
+    record_issue_category,
+)
 from audit_logger_summary_report import (
     write_summary_report as write_summary_report_helper,
 )
 from audit_logger_writers import (
+    update_manifest_turn_counter as update_manifest_turn_counter_helper,
     update_narrative_summary as update_narrative_summary_helper,
     write_round_index as write_round_index_helper,
     write_session_manifest as write_session_manifest_helper,
@@ -72,98 +77,6 @@ class AuditEntry:
     def to_light_dict(self) -> dict[str, Any]:
         """Convert to lightweight audit format."""
         return entry_to_light_dict(self)
-
-
-ISSUE_CATEGORY_KEYS = (
-    "character_drift",
-    "memory_drift",
-    "turn_selection_mistakes",
-    "repetitive_phrasing",
-    "continuity_signal_gaps",
-    "issue_lifecycle_gaps",
-)
-
-
-def _empty_issue_categories() -> dict[str, dict[str, Any]]:
-    return {key: {"count": 0, "examples": []} for key in ISSUE_CATEGORY_KEYS}
-
-
-def _categorize_issue_text(text: str) -> str | None:
-    normalized = str(text or "").lower()
-    if not normalized:
-        return None
-    if any(
-        token in normalized
-        for token in [
-            "character_drift",
-            "wrong pov",
-            "voice profile",
-            "identity anchor",
-        ]
-    ):
-        return "character_drift"
-    if any(
-        token in normalized
-        for token in ["memory", "canon", "continuity", "summary block", "anchor"]
-    ):
-        return "memory_drift"
-    if any(
-        token in normalized
-        for token in [
-            "turn_selection",
-            "direct address",
-            "spotlight",
-            "available_next_actors",
-            "fallback selection",
-        ]
-    ):
-        return "turn_selection_mistakes"
-    if any(
-        token in normalized
-        for token in [
-            "duplicate",
-            "repeated content",
-            "substantial content overlap",
-            "repetitive",
-        ]
-    ):
-        return "repetitive_phrasing"
-    if any(
-        token in normalized
-        for token in [
-            "state change",
-            "recent_delta",
-            "continuity_event_type",
-            "actionable implication",
-            "dialogue-only",
-            "no material change",
-            "consequence",
-        ]
-    ):
-        return "continuity_signal_gaps"
-    if any(
-        token in normalized
-        for token in [
-            "stalled issue",
-            "issue lifecycle",
-            "resolved issue",
-            "active issue",
-            "issue update",
-        ]
-    ):
-        return "issue_lifecycle_gaps"
-    return None
-
-
-def _record_issue_category(
-    categories: dict[str, dict[str, Any]], category: str | None, example: str
-) -> None:
-    if category is None or category not in categories:
-        return
-    categories[category]["count"] += 1
-    if example and example not in categories[category]["examples"]:
-        categories[category]["examples"].append(example)
-        categories[category]["examples"] = categories[category]["examples"][:5]
 
 
 def _normalize_string_mapping(value: Any) -> dict[str, str]:
@@ -603,20 +516,11 @@ class AuditLogger:
             Path to manifest file
         """
         session_path = self._get_session_path(session_owner, session_number)
-        manifest_path = session_path / "_manifest.json"
-
-        manifest: dict[str, Any] = {}
-        if manifest_path.exists():
-            with open(manifest_path, "r", encoding="utf-8") as f:
-                manifest = json.load(f)
-
-        manifest["total_turns"] = total_turns
-        manifest["last_updated"] = utc_timestamp()
-
-        with open(manifest_path, "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2, ensure_ascii=False)
-
-        return str(manifest_path)
+        return update_manifest_turn_counter_helper(
+            session_path=session_path,
+            total_turns=total_turns,
+            utc_timestamp=utc_timestamp,
+        )
 
     def write_summary_report(
         self,
@@ -636,10 +540,10 @@ class AuditLogger:
             session_owner=session_owner,
             session_number=session_number,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
-            empty_issue_categories=_empty_issue_categories,
+            empty_issue_categories=empty_issue_categories,
             empty_summary_block_visibility=_empty_summary_block_visibility,
-            categorize_issue_text=_categorize_issue_text,
-            record_issue_category=_record_issue_category,
+            categorize_issue_text=categorize_issue_text,
+            record_issue_category=record_issue_category,
             normalize_summary_block_metadata=_normalize_summary_block_metadata,
             prompt_reference=_prompt_reference,
             append_limited=_append_limited,

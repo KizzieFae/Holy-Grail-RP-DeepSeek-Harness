@@ -136,6 +136,29 @@ def write_round_index(
     return str(index_path)
 
 
+def update_manifest_turn_counter(
+    *,
+    session_path: Path,
+    total_turns: int,
+    utc_timestamp,
+) -> str:
+    """Update ``_manifest.json`` with current total turn count (read-merge-write)."""
+    manifest_path = session_path / "_manifest.json"
+
+    manifest: dict[str, Any] = {}
+    if manifest_path.exists():
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+
+    manifest["total_turns"] = total_turns
+    manifest["last_updated"] = utc_timestamp()
+
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+    return str(manifest_path)
+
+
 def update_narrative_summary(
     *,
     session_path: Path,
