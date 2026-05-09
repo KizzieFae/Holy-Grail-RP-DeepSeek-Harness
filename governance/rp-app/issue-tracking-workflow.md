@@ -159,6 +159,60 @@ Apply the row matching **effective** workflow weight (**`standard`** is the rout
 5. **Validation** — Tests, scenario reruns, checklists in the Issue. Set **`Current status: validated`** when criteria pass.
 6. **Closure** — Set terminal **§H** status; GitHub closed when appropriate; align **Project** fields (**§B.3**) and run **§B.2**. Complete **§D** documentation checklist before **`closed`**.
 
+### B.0.2 Validation evidence reuse (`implemented` → `validated`)
+
+This subsection governs **deterministic** validation (for example **`pytest`**, static checks, and other **repeatable** commands recorded on the Issue). It does **not** relax **§B.2**, **§B.3**, **§B.5**, **§D**, or **§H**. It does **not** override **§A.3** when **§A.2**’s trigger applies on the Issue.
+
+**Definitions**
+
+- **Evidence bundle** — The **commands run**, **outcomes** (pass/fail counts, logs summary, or explicit “green”), **date**, and **`commit SHA`** of the **repository tree** that was verified, **recorded on the Issue** (body or comment), usually at **`Current status: `implemented``.
+- **Validated scope** — Files, packages, behaviors, or **commands** that the Issue’s **Validation criteria** and recorded evidence **actually exercised** (implicitly or explicitly).
+- **Delta** — Code or config changes **after** the **`commit SHA`** of the evidence bundle that **touch** the validated scope (or **replace** that SHA as the new baseline).
+
+**Default**
+
+- Advancing **`implemented` → `validated`** still requires **all** applicable gates (**§A.3** when required, **Validation criteria** on the Issue, documentation checklist **§D**, **§B.2**, project alignment **§B.3**, **§B.5** comments as required).
+- **Rerun** the **full** validation scope recorded in the evidence bundle **unless** **reuse** below is satisfied.
+
+**Reuse (cite prior evidence instead of rerunning the same deterministic scope)**
+
+Reuse is permitted **only if all** of the following hold:
+
+1. **Recorded bundle** — An evidence bundle exists on the Issue **before** the transition to **`validated`** (typically recorded at **`implemented`**).
+2. **Known SHA** — That bundle identifies a **`commit SHA`** that is **reachable / current** for the claim (usually **`HEAD`** at validation time, or an explicitly stated equivalent such as merge commit on **`main`**).
+3. **No unresolved failures** — The **current** tree has **no unresolved deterministic failures** for the Issue’s claimed validation scope (for example CI red on relevant jobs, or local failures the Issue has not dispositioned).
+4. **No material delta without delta proof** — **Either**  
+   - **(A)** **No** repository change after that SHA **affects** validated scope (state this explicitly on the Issue when moving to **`validated`**), **or**  
+   - **(B)** A delta exists, and **only** the **additional** deterministic commands needed to cover the delta have been run and recorded (**narrow reruns**), with **no** widening beyond issue criteria.
+
+**Narrow reruns when code changes**
+
+If there is a delta after the evidence bundle’s SHA:
+
+1. **Rerun** deterministic checks **necessary** to cover the delta (files, modules, markers, or commands justified by the change).
+2. **Do not** rerun **unaffected** parts of the previous validation scope **unless** the Issue’s **Validation criteria** explicitly require a broader scope or fresh full run.
+3. Record on the Issue: **prior SHA**, **new SHA** (if changed), **what changed**, and **what was executed** for the delta.
+
+**Interaction with Issue `Validation criteria`**
+
+- Issue body **Validation criteria** are **authoritative** for **what** must be satisfied before **`validated`**.
+- If criteria **explicitly** require a **fresh** run, **full suite**, **specific scenario ids**, **audit paths**, **LLM / live** reverification, or **other non-reusable** checks, **reuse does not apply** to those items—execute as written.
+- Where criteria are **silent** on reuse, **§B.0.2** applies to **deterministic** portions only.
+
+**Reuse forbidden (non-exhaustive)**
+
+Do **not** cite reuse (or treat prior evidence as sufficient) when **any** of the following apply:
+
+- **Explicit fresh execution** is required by **Validation criteria** or by a **§B.5** / execution-stage comment commitment.
+- **External, live, or non-deterministic** validation must be **reverified** (for example live LLM suites, staging checks, vendor APIs) **per the Issue**.
+- **Material scope change** — The delta **changes contracts**, **public surfaces**, **call paths under test**, or **shared infrastructure** such that the old evidence bundle **no longer** bounds risk (widened scope **until criteria** say otherwise).
+- **Ambiguous baseline** — **SHA** or **delta** is unknown, or “no changes” cannot be stated honestly.
+- **§A.3** or other **mandatory checklists** for this Issue are **not** satisfied—reuse of **pytest** does **not** substitute for those obligations.
+
+**Recording expectation**
+
+When relying on reuse or delta-only reruns, the **`implemented` → `validated`** transition comment (**§B.5**) should state **reuse vs rerun**, **SHAs**, and **commands actually executed** (or explicitly “none beyond prior bundle”) so reviewers can audit the claim without replaying the whole suite.
+
 ### B.1 Filing issues via GitHub CLI (humans and agents)
 
 Use when creating the Issue on GitHub from a terminal (e.g. agent asked to *file* / *create* / *open* / *track*, not draft-only).
@@ -282,7 +336,7 @@ Use these sections **in order** (copy into `body.md` or the root issue form).
 - **System impact** — Operator/user-visible effect.
 - **Constraints** — e.g. no LLM-only fix; no prompt workaround; no weakening enforcement; continuity authoritative—or `none`.
 - **Affected modules** — Concrete paths (e.g. `autogen_rp/python/rp_app/continuity_consequence_classifier.py`).
-- **Validation criteria** — Tests / scenario ids / audit checks required to reach **`validated`**.
+- **Validation criteria** — Tests / scenario ids / audit checks required to reach **`validated`**. When validation evidence is intended for reuse under §B.0.2, include commands, outcomes, and commit SHA.
 - **Documentation** — Before terminal closure: `[ ]` Documentation reviewed and updated where behavior or contracts changed (list files in a closing comment).
 
 Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / action).
@@ -453,6 +507,8 @@ Example: `[BUG] Orchestration selects ineligible actor under continuation overri
 | `validated` | `closed` |
 | `investigating` | `monitor` |
 | `investigating` | `wont_fix` |
+
+For **deterministic** validation evidence when moving **`implemented` → `validated`**, see **§B.0.2**.
 
 **Exception:** `open` → `closed` only for **duplicate** or **withdrawn** filings (document in a comment). No other skips (e.g. do not jump from `open` to `implemented`).
 
