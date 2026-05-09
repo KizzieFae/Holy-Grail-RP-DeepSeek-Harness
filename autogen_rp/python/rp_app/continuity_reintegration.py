@@ -43,7 +43,7 @@ _SIGNIFICANCE = frozenset({"minor", "major", "pivotal"})
 
 
 def _err() -> Any:
-    from continuity_mutation_pipeline import ContinuityMutationError
+    from continuity_mutation_pipeline_types import ContinuityMutationError
 
     return ContinuityMutationError
 
