@@ -37,5 +37,13 @@ autogen_rp/python/validation_runs/**/_run_*.py
 # Temporary research / local notes
 memplace.txt
 
+# Round A / agent dry-run local outputs (archives & synthetic fixtures; not canonical)
+_dry_run_cohort_archive_source/
+_dry_run_cohort_artifacts/
+
+# Scratch issue bodies / one-off tooling (local only)
+_tmp_hier_edit/
+_tmp_prog_issues/
+
 # Local vendor / IDE export (not canonical repo content)
 deepseek_v4_overview.rtf
