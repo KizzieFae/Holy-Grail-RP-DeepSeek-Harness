@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from arch_quality_variants import arch_quality_a1_suppress_director_soft_prefixes
@@ -434,7 +434,52 @@ class DirectorPromptAssembly:
     spotlight_last_before_pick: str | None
 
 
-def build_director_prompt_payload(
+@dataclass
+class _DirectorPayloadWork:
+    """Mutable assembly state for :func:`build_director_prompt_payload` (Issue #172)."""
+
+    st_module: Any
+    orchestration_state: dict[str, Any]
+    continuity_manager: Any
+    participant_names: list[str]
+    trigger_text: str
+    available_actors: list[str]
+    used_this_round: list[str]
+    continuation_override_actor: str | None
+    build_scene_role_prompt_context_fn: Callable[..., Any]
+    serialize_summary_blocks_for_prompt_fn: Callable[..., Any]
+    build_summary_block_audit_metadata_fn: Callable[..., Any]
+    serialize_events_for_prompt_fn: Callable[..., Any]
+    serialize_canon_anchors_for_prompt_fn: Callable[..., Any]
+    build_recent_dialogue_history_fn: Callable[..., Any]
+    prompt_dialogue_history_limit: int
+    director_spotlight_history_limit: int
+    state_manager: Any = None
+    chat_history: list[Any] = field(default_factory=list)
+    orchestration_continuity_context: dict[str, Any] | None = None
+    scene_state_for_prompt: dict[str, Any] = field(default_factory=dict)
+    scene_roles: Any = None
+    continuity_tension_history: list[Any] = field(default_factory=list)
+    summary_block_audit: dict[str, Any] = field(default_factory=dict)
+    summary_blocks: list[Any] = field(default_factory=list)
+    director_payload: dict[str, Any] = field(default_factory=dict)
+    progression_advisory_snapshot: dict[str, Any] = field(default_factory=dict)
+    anti_prefix: str = ""
+    anti_blob: dict[str, Any] = field(default_factory=dict)
+    beat_shift_active: bool = False
+    anti_regression_director_hints_active: bool = False
+    progression_pressure_val: Any = None
+    spotlight_recent: list[str] = field(default_factory=list)
+    spotlight_last_before_pick: str | None = None
+    last_raw_move: dict[str, Any] | None = None
+    present_for_audibility: list[str] = field(default_factory=list)
+    low_pressure_turn_guidance_active_flag: bool = False
+    responder_hint_for_audit: dict[str, Any] = field(
+        default_factory=lambda: {"confidence": "none"}
+    )
+
+
+def _collect_runtime_inputs(
     *,
     st_module: Any,
     orchestration_state: dict[str, Any],
@@ -452,14 +497,32 @@ def build_director_prompt_payload(
     build_recent_dialogue_history_fn: Callable[..., Any],
     prompt_dialogue_history_limit: int,
     director_spotlight_history_limit: int,
-) -> DirectorPromptAssembly:
-    state_manager = st_module.session_state.get("character_state_manager")
-    chat_history = st_module.session_state.get("chat_history", [])
+) -> _DirectorPayloadWork:
+    work = _DirectorPayloadWork(
+        st_module=st_module,
+        orchestration_state=orchestration_state,
+        continuity_manager=continuity_manager,
+        participant_names=participant_names,
+        trigger_text=trigger_text,
+        available_actors=available_actors,
+        used_this_round=used_this_round,
+        continuation_override_actor=continuation_override_actor,
+        build_scene_role_prompt_context_fn=build_scene_role_prompt_context_fn,
+        serialize_summary_blocks_for_prompt_fn=serialize_summary_blocks_for_prompt_fn,
+        build_summary_block_audit_metadata_fn=build_summary_block_audit_metadata_fn,
+        serialize_events_for_prompt_fn=serialize_events_for_prompt_fn,
+        serialize_canon_anchors_for_prompt_fn=serialize_canon_anchors_for_prompt_fn,
+        build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
+        prompt_dialogue_history_limit=prompt_dialogue_history_limit,
+        director_spotlight_history_limit=director_spotlight_history_limit,
+    )
+    work.state_manager = st_module.session_state.get("character_state_manager")
+    work.chat_history = st_module.session_state.get("chat_history", [])
     v77_projection = build_continuity_prompt_projection_v77(
         continuity_manager,
         orchestration_scene_state_fallback=orchestration_state.get("scene_state", {}),
     )
-    orchestration_continuity_context = (
+    work.orchestration_continuity_context = (
         continuity_manager.get_orchestration_context(
             active_issue_limit=4,
             recent_event_limit=4,
@@ -469,15 +532,17 @@ def build_director_prompt_payload(
         else None
     )
     continuity_scene_state = v77_projection.scene_state_dict
-    scene_state_for_prompt = (
+    work.scene_state_for_prompt = (
         continuity_scene_state
         if continuity_scene_state
         else orchestration_state.get("scene_state", {})
     )
-    scene_roles = build_scene_role_prompt_context_fn(
-        scene_state_for_prompt, participant_names
+    work.scene_roles = work.build_scene_role_prompt_context_fn(
+        work.scene_state_for_prompt, participant_names
     )
-    continuity_tension_history = scene_state_for_prompt.get("tension_history", []) or []
+    work.continuity_tension_history = (
+        work.scene_state_for_prompt.get("tension_history", []) or []
+    )
     generated_summary_blocks = (
         continuity_manager.summary_blocks[:] if continuity_manager is not None else []
     )
@@ -487,16 +552,17 @@ def build_director_prompt_payload(
         else []
     )
     selected_summary_blocks = (
-        orchestration_continuity_context.get("summary_blocks", [])
-        if orchestration_continuity_context is not None
+        work.orchestration_continuity_context.get("summary_blocks", [])
+        if work.orchestration_continuity_context is not None
         else []
     )
-    summary_blocks = (
-        serialize_summary_blocks_for_prompt_fn(selected_summary_blocks)
-        if orchestration_continuity_context is not None
+    work.summary_blocks = (
+        work.serialize_summary_blocks_for_prompt_fn(selected_summary_blocks)
+        if work.orchestration_continuity_context is not None
         else []
     )
-    summary_block_audit = build_summary_block_audit_metadata_fn(
+    ctx = work.orchestration_continuity_context
+    work.summary_block_audit = work.build_summary_block_audit_metadata_fn(
         generated_blocks=generated_summary_blocks,
         available_blocks=available_summary_blocks,
         selected_blocks=selected_summary_blocks,
@@ -525,7 +591,17 @@ def build_director_prompt_payload(
         ),
         summary_limit=3,
     )
-    director_payload: dict[str, Any] = {
+    return work
+
+
+def _build_base_payload(work: _DirectorPayloadWork) -> None:
+    scene_state_for_prompt = work.scene_state_for_prompt
+    participant_names = work.participant_names
+    trigger_text = work.trigger_text
+    orchestration_state = work.orchestration_state
+    ctx = work.orchestration_continuity_context
+
+    work.director_payload = {
         "current_scene_state": {
             "opening_description": scene_state_for_prompt.get(
                 "opening_description", ""
@@ -533,7 +609,7 @@ def build_director_prompt_payload(
             "recent_environment_events": (
                 scene_state_for_prompt.get("recent_environment_events", []) or []
             )[-4:],
-            "tension_history": continuity_tension_history[-4:],
+            "tension_history": work.continuity_tension_history[-4:],
             "resolved_events": (
                 scene_state_for_prompt.get("resolved_events", []) or []
             )[-4:],
@@ -562,7 +638,7 @@ def build_director_prompt_payload(
                 if str(item or "").strip()
             ],
         },
-        "scene_roles": scene_roles,
+        "scene_roles": work.scene_roles,
         "recent_structured_character_actions": [
             redact_structured_move_for_orchestration(
                 dict(item),
@@ -576,211 +652,292 @@ def build_director_prompt_payload(
             if isinstance(item, dict)
         ],
         "character_states": (
-            state_manager.public_state_snapshot() if state_manager else {}
+            work.state_manager.public_state_snapshot()
+            if work.state_manager
+            else {}
         ),
-        "recent_dialogue_history": build_recent_dialogue_history_fn(
-            chat_history,
-            limit=prompt_dialogue_history_limit,
+        "recent_dialogue_history": work.build_recent_dialogue_history_fn(
+            work.chat_history,
+            limit=work.prompt_dialogue_history_limit,
             viewer_character_name=None,
         ),
         "spotlight_history": orchestration_state.get("spotlight_history", [])[
-            -director_spotlight_history_limit:
+            -work.director_spotlight_history_limit :
         ],
         "active_issues": (
             [
                 issue.to_dict()
-                for issue in orchestration_continuity_context.get("active_issues", [])
+                for issue in ctx.get("active_issues", [])
             ]
-            if orchestration_continuity_context is not None
+            if ctx is not None
             else []
         ),
-        "summary_blocks": summary_blocks,
+        "summary_blocks": work.summary_blocks,
         "recent_public_events": (
-            serialize_events_for_prompt_fn(
-                orchestration_continuity_context.get("recent_public_events", [])
+            work.serialize_events_for_prompt_fn(
+                ctx.get("recent_public_events", [])
             )
-            if orchestration_continuity_context is not None
+            if ctx is not None
             else []
         ),
         "scene_canon_anchors": (
-            serialize_canon_anchors_for_prompt_fn(
-                orchestration_continuity_context.get("scene_canon_anchors", [])
+            work.serialize_canon_anchors_for_prompt_fn(
+                ctx.get("scene_canon_anchors", [])
             )
-            if orchestration_continuity_context is not None
+            if ctx is not None
             else []
         ),
         "participants": participant_names,
-        "available_next_actors": available_actors,
+        "available_next_actors": work.available_actors,
         "actors_already_used_this_round": [
-            name for name in participant_names if name not in available_actors
+            name for name in participant_names if name not in work.available_actors
         ],
         "response_cycle_acting_counts": {
-            str(name): used_this_round.count(str(name))
+            str(name): work.used_this_round.count(str(name))
             for name in participant_names
             if str(name or "").strip()
         },
     }
 
-    actionable_issues, stalled_background_issues = split_actionable_and_stalled_issues(
-        issues=director_payload.get("active_issues", []),
-    )
-    director_payload["active_issues"] = actionable_issues
-    director_payload["stalled_background_issues"] = stalled_background_issues
 
-    progression_advisory_snapshot = sync_progression_advisory_for_prompts(
+def _attach_issue_views(work: _DirectorPayloadWork) -> None:
+    dp = work.director_payload
+    actionable_issues, stalled_background_issues = split_actionable_and_stalled_issues(
+        issues=dp.get("active_issues", []),
+    )
+    dp["active_issues"] = actionable_issues
+    dp["stalled_background_issues"] = stalled_background_issues
+
+
+def _attach_progression_views(work: _DirectorPayloadWork) -> None:
+    orchestration_state = work.orchestration_state
+    continuity_manager = work.continuity_manager
+    participant_names = work.participant_names
+    st_module = work.st_module
+    dp = work.director_payload
+
+    work.progression_advisory_snapshot = sync_progression_advisory_for_prompts(
         orchestration_state=orchestration_state,
         continuity_manager=continuity_manager,
     )
 
     anti_regression_bundle = sync_anti_regression_advisory_for_prompts(
         orchestration_state=orchestration_state,
-        progression_advisory=progression_advisory_snapshot,
+        progression_advisory=work.progression_advisory_snapshot,
         session_state=st_module.session_state,
         participant_names=participant_names,
     )
-    anti_prefix = str(anti_regression_bundle.get("prompt_prefix", "") or "")
+    work.anti_prefix = str(anti_regression_bundle.get("prompt_prefix", "") or "")
     anti_blob_raw = anti_regression_bundle.get("advisory_blob") or {}
-    anti_blob = anti_blob_raw if isinstance(anti_blob_raw, dict) else {}
+    work.anti_blob = anti_blob_raw if isinstance(anti_blob_raw, dict) else {}
 
-    beat_shift_active = is_pending_beat_shift_active(orchestration_state)
+    work.beat_shift_active = is_pending_beat_shift_active(orchestration_state)
 
-    if beat_shift_active:
-        director_payload["beat_shift_director_hints"] = {
+    if work.beat_shift_active:
+        dp["beat_shift_director_hints"] = {
             "active": True,
             "prompt_prefix": build_director_beat_shift_prompt_prefix(),
         }
 
-    if progression_advisory_snapshot.get("progression_pressure") == "high":
+    if work.progression_advisory_snapshot.get("progression_pressure") == "high":
         prog_prefix = build_progression_director_prompt_prefix(
-            progression_advisory_snapshot
+            work.progression_advisory_snapshot
         )
         if prog_prefix:
-            director_payload["progression_director_hints"] = {
+            dp["progression_director_hints"] = {
                 "active": True,
                 "prompt_prefix": prog_prefix,
             }
             logger.info(
                 "[progression_advisory] director prompt injected pressure=high "
                 "stall_score=%s",
-                progression_advisory_snapshot.get("stall_score"),
+                work.progression_advisory_snapshot.get("stall_score"),
             )
 
-    if anti_prefix:
-        director_payload["anti_regression_director_hints"] = {
+    if work.anti_prefix:
+        dp["anti_regression_director_hints"] = {
             "active": True,
-            "prompt_prefix": anti_prefix,
+            "prompt_prefix": work.anti_prefix,
         }
         logger.info(
             "[anti_regression] director prompt injected ping_pong=%s post_break=%s low_agency=%s",
-            anti_blob.get("ping_pong_detected"),
-            anti_blob.get("post_break_window_active"),
-            anti_blob.get("low_player_agency"),
+            work.anti_blob.get("ping_pong_detected"),
+            work.anti_blob.get("post_break_window_active"),
+            work.anti_blob.get("low_player_agency"),
         )
 
-    anti_regression_director_hints_active = bool(str(anti_prefix or "").strip())
-    progression_pressure_val = progression_advisory_snapshot.get("progression_pressure")
+    work.anti_regression_director_hints_active = bool(
+        str(work.anti_prefix or "").strip()
+    )
+    work.progression_pressure_val = work.progression_advisory_snapshot.get(
+        "progression_pressure"
+    )
+
+
+def _attach_turn_obligation_views(work: _DirectorPayloadWork) -> None:
+    orchestration_state = work.orchestration_state
+    dp = work.director_payload
+    participant_names = work.participant_names
+    scene_state_for_prompt = work.scene_state_for_prompt
+
     spotlight_slice = orchestration_state.get("spotlight_history", [])[
-        -director_spotlight_history_limit:
+        -work.director_spotlight_history_limit :
     ]
-    spotlight_recent = [
-        str(x or "").strip() for x in (spotlight_slice or []) if str(x or "").strip()
+    work.spotlight_recent = [
+        str(x or "").strip()
+        for x in (spotlight_slice or [])
+        if str(x or "").strip()
     ]
     raw_moves = orchestration_state.get("recent_structured_moves", []) or []
-    last_raw_move = raw_moves[-1] if raw_moves and isinstance(raw_moves[-1], dict) else None
-    present_for_audibility = [
+    work.last_raw_move = (
+        raw_moves[-1] if raw_moves and isinstance(raw_moves[-1], dict) else None
+    )
+    work.present_for_audibility = [
         str(x or "").strip()
         for x in scene_state_for_prompt.get("present_characters", participant_names)
         if str(x or "").strip()
     ]
 
-    low_pressure_turn_guidance_active_flag = low_pressure_turn_guidance_active(
-        beat_shift_active=beat_shift_active,
-        progression_pressure=str(progression_pressure_val or ""),
-        available_actors=available_actors,
-        continuation_override_actor=continuation_override_actor,
-        anti_regression_director_hints_active=anti_regression_director_hints_active,
+    work.low_pressure_turn_guidance_active_flag = low_pressure_turn_guidance_active(
+        beat_shift_active=work.beat_shift_active,
+        progression_pressure=str(work.progression_pressure_val or ""),
+        available_actors=work.available_actors,
+        continuation_override_actor=work.continuation_override_actor,
+        anti_regression_director_hints_active=work.anti_regression_director_hints_active,
     )
 
-    spotlight_last_before_pick: str | None = None
     sh_full = orchestration_state.get("spotlight_history", []) or []
     if isinstance(sh_full, list) and sh_full:
-        spotlight_last_before_pick = str(sh_full[-1] or "").strip() or None
+        work.spotlight_last_before_pick = str(sh_full[-1] or "").strip() or None
+    else:
+        work.spotlight_last_before_pick = None
 
-    responder_hint_for_audit: dict[str, Any] = {"confidence": "none"}
-    if low_pressure_turn_guidance_active_flag:
-        director_payload["low_pressure_turn_selection"] = (
-            build_low_pressure_turn_selection_payload(
-                spotlight_recent=spotlight_recent,
-                response_cycle_counts=director_payload["response_cycle_acting_counts"],
-                actors_used_this_round=used_this_round,
-                available_actors=available_actors,
-            )
+    work.responder_hint_for_audit = {"confidence": "none"}
+    if work.low_pressure_turn_guidance_active_flag:
+        dp["low_pressure_turn_selection"] = build_low_pressure_turn_selection_payload(
+            spotlight_recent=work.spotlight_recent,
+            response_cycle_counts=dp["response_cycle_acting_counts"],
+            actors_used_this_round=work.used_this_round,
+            available_actors=work.available_actors,
         )
-        director_payload["responder_hint"] = compute_responder_hint(
-            last_structured_move=last_raw_move,
-            available_actors=available_actors,
-            present_characters=present_for_audibility,
+        dp["responder_hint"] = compute_responder_hint(
+            last_structured_move=work.last_raw_move,
+            available_actors=work.available_actors,
+            present_characters=work.present_for_audibility,
         )
-        responder_hint_for_audit = dict(director_payload["responder_hint"])
-        director_payload["low_pressure_turn_director_hints"] = {
+        work.responder_hint_for_audit = dict(dp["responder_hint"])
+        dp["low_pressure_turn_director_hints"] = {
             "active": True,
             "prompt_prefix": build_low_pressure_director_prompt_prefix(),
         }
 
-    director_payload["responder_obligation"] = _compute_responder_obligation_hint(
-        last_structured_move=last_raw_move,
-        available_actors=available_actors,
-        present_characters=present_for_audibility,
+    dp["responder_obligation"] = _compute_responder_obligation_hint(
+        last_structured_move=work.last_raw_move,
+        available_actors=work.available_actors,
+        present_characters=work.present_for_audibility,
     )
-    if director_payload["responder_obligation"].get("active"):
-        director_payload["responder_obligation_director_hints"] = {"active": True}
-
-    director_payload["action_responsibility"] = _compute_action_responsibility_hint(
-        last_structured_move=last_raw_move,
-        available_actors=available_actors,
-        responder_obligation=director_payload["responder_obligation"],
+    dp["action_responsibility"] = _compute_action_responsibility_hint(
+        last_structured_move=work.last_raw_move,
+        available_actors=work.available_actors,
+        responder_obligation=dp["responder_obligation"],
     )
-    if director_payload["action_responsibility"].get("active"):
-        director_payload["action_responsibility_director_hints"] = {"active": True}
 
+
+def _attach_prompt_hints(work: _DirectorPayloadWork) -> None:
+    dp = work.director_payload
+    if dp["responder_obligation"].get("active"):
+        dp["responder_obligation_director_hints"] = {"active": True}
+    if dp["action_responsibility"].get("active"):
+        dp["action_responsibility_director_hints"] = {"active": True}
+
+
+def _apply_final_suppressions(work: _DirectorPayloadWork) -> None:
+    dp = work.director_payload
+    if arch_quality_a1_suppress_director_soft_prefixes(work.st_module):
+        dp.pop("progression_director_hints", None)
+        dp.pop("anti_regression_director_hints", None)
+        dp.pop("low_pressure_turn_director_hints", None)
+        dp.pop("responder_obligation_director_hints", None)
+        dp.pop("action_responsibility_director_hints", None)
+
+
+def _finalize_payload(work: _DirectorPayloadWork) -> DirectorPromptAssembly:
+    dp = work.director_payload
     director_prefix_eligible = {
-        "progression": "progression_director_hints" in director_payload,
-        "beat_shift": "beat_shift_director_hints" in director_payload,
-        "anti_regression": "anti_regression_director_hints" in director_payload,
-        "low_pressure": "low_pressure_turn_director_hints" in director_payload,
+        "progression": "progression_director_hints" in dp,
+        "beat_shift": "beat_shift_director_hints" in dp,
+        "anti_regression": "anti_regression_director_hints" in dp,
+        "low_pressure": "low_pressure_turn_director_hints" in dp,
     }
-    if arch_quality_a1_suppress_director_soft_prefixes(st_module):
-        director_payload.pop("progression_director_hints", None)
-        director_payload.pop("anti_regression_director_hints", None)
-        director_payload.pop("low_pressure_turn_director_hints", None)
-        director_payload.pop("responder_obligation_director_hints", None)
-        director_payload.pop("action_responsibility_director_hints", None)
-
     director_prefix_in_prompt = {
-        "progression": "progression_director_hints" in director_payload,
-        "beat_shift": "beat_shift_director_hints" in director_payload,
-        "anti_regression": "anti_regression_director_hints" in director_payload,
-        "low_pressure": "low_pressure_turn_director_hints" in director_payload,
+        "progression": "progression_director_hints" in dp,
+        "beat_shift": "beat_shift_director_hints" in dp,
+        "anti_regression": "anti_regression_director_hints" in dp,
+        "low_pressure": "low_pressure_turn_director_hints" in dp,
     }
-
-    director_payload["settled_scene_facts_prompt"] = format_grounding_prompt_prefix(
-        st_module.session_state.get("scene_grounding")
+    dp["settled_scene_facts_prompt"] = format_grounding_prompt_prefix(
+        work.st_module.session_state.get("scene_grounding")
     )
-
     return DirectorPromptAssembly(
-        director_payload=director_payload,
-        summary_block_audit=summary_block_audit,
-        scene_state_for_prompt=scene_state_for_prompt,
-        continuity_manager=continuity_manager,
-        orchestration_state=orchestration_state,
-        progression_advisory_snapshot=progression_advisory_snapshot,
-        anti_prefix=anti_prefix,
-        anti_blob=anti_blob,
-        beat_shift_active=beat_shift_active,
-        low_pressure_turn_guidance_active_flag=low_pressure_turn_guidance_active_flag,
-        responder_hint_for_audit=responder_hint_for_audit,
+        director_payload=dp,
+        summary_block_audit=work.summary_block_audit,
+        scene_state_for_prompt=work.scene_state_for_prompt,
+        continuity_manager=work.continuity_manager,
+        orchestration_state=work.orchestration_state,
+        progression_advisory_snapshot=work.progression_advisory_snapshot,
+        anti_prefix=work.anti_prefix,
+        anti_blob=work.anti_blob,
+        beat_shift_active=work.beat_shift_active,
+        low_pressure_turn_guidance_active_flag=work.low_pressure_turn_guidance_active_flag,
+        responder_hint_for_audit=work.responder_hint_for_audit,
         director_prefix_eligible=director_prefix_eligible,
         director_prefix_in_prompt=director_prefix_in_prompt,
-        spotlight_recent=spotlight_recent,
-        spotlight_last_before_pick=spotlight_last_before_pick,
+        spotlight_recent=work.spotlight_recent,
+        spotlight_last_before_pick=work.spotlight_last_before_pick,
     )
+
+
+def build_director_prompt_payload(
+    *,
+    st_module: Any,
+    orchestration_state: dict[str, Any],
+    continuity_manager: Any,
+    participant_names: list[str],
+    trigger_text: str,
+    available_actors: list[str],
+    used_this_round: list[str],
+    continuation_override_actor: str | None,
+    build_scene_role_prompt_context_fn: Callable[..., Any],
+    serialize_summary_blocks_for_prompt_fn: Callable[..., Any],
+    build_summary_block_audit_metadata_fn: Callable[..., Any],
+    serialize_events_for_prompt_fn: Callable[..., Any],
+    serialize_canon_anchors_for_prompt_fn: Callable[..., Any],
+    build_recent_dialogue_history_fn: Callable[..., Any],
+    prompt_dialogue_history_limit: int,
+    director_spotlight_history_limit: int,
+) -> DirectorPromptAssembly:
+    work = _collect_runtime_inputs(
+        st_module=st_module,
+        orchestration_state=orchestration_state,
+        continuity_manager=continuity_manager,
+        participant_names=participant_names,
+        trigger_text=trigger_text,
+        available_actors=available_actors,
+        used_this_round=used_this_round,
+        continuation_override_actor=continuation_override_actor,
+        build_scene_role_prompt_context_fn=build_scene_role_prompt_context_fn,
+        serialize_summary_blocks_for_prompt_fn=serialize_summary_blocks_for_prompt_fn,
+        build_summary_block_audit_metadata_fn=build_summary_block_audit_metadata_fn,
+        serialize_events_for_prompt_fn=serialize_events_for_prompt_fn,
+        serialize_canon_anchors_for_prompt_fn=serialize_canon_anchors_for_prompt_fn,
+        build_recent_dialogue_history_fn=build_recent_dialogue_history_fn,
+        prompt_dialogue_history_limit=prompt_dialogue_history_limit,
+        director_spotlight_history_limit=director_spotlight_history_limit,
+    )
+    _build_base_payload(work)
+    _attach_issue_views(work)
+    _attach_progression_views(work)
+    _attach_turn_obligation_views(work)
+    _attach_prompt_hints(work)
+    _apply_final_suppressions(work)
+    return _finalize_payload(work)
