@@ -293,7 +293,7 @@
       },
       {
         "authority_class": "foundational_truth",
-        "knowledge_id": "c2d9aba0100cd036d6d09751c13f3af17a9b544c106cc6e838702f678c09900e",
+        "knowledge_id": "018a8bfd32737f2fedb291704d60650bc7b906cf8e66533677cc1fc3cff73712",
         "knowledge_type": "role_constraint",
         "priority": 45,
         "relationship_relevant": false,
@@ -302,18 +302,18 @@
         ],
         "scope": "scene_shared",
         "source_kind": "scene_template",
-        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:cell_anchor",
+        "source_ref": "tpl:arkham_asylum_cell_intake:role_slots:role_slot:cell_resident",
         "structured_payload": {
           "authority": "low",
           "presence_constraint": "must_remain",
           "required": true,
-          "role_name": "cell_anchor"
+          "role_name": "cell_resident"
         },
         "subject_scope": {
           "template_id": "arkham_asylum_cell_intake"
         },
         "temporal_scope": {},
-        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"cell_anchor\"}",
+        "text": "{\"authority\": \"low\", \"presence_constraint\": \"must_remain\", \"required\": true, \"role_name\": \"cell_resident\"}",
         "visibility": "template_participants"
       },
       {

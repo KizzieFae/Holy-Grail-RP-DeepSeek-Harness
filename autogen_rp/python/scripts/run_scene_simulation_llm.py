@@ -20,7 +20,7 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --beat-shift --turns 3 --audit
     # Template-linked retrieval (sets Continuity scene_template_id; same field as Streamlit):
     python scripts/run_scene_simulation_llm.py --scenario headless_template_retrieval_smoke --audit --turns 1
-    python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --scene-template-roles harley_quinn=cell_anchor,magpie=new_arrival --audit --turns 1
+    python scripts/run_scene_simulation_llm.py --chars harley_quinn,magpie --scene-template-id arkham_asylum_cell_intake --scene-template-roles harley_quinn=cell_resident,magpie=new_arrival --audit --turns 1
     # After an audited run, optional offline fact-track (GitHub #62; explicit fact_spec only):
     # python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec path/to/spec.json
     # Authored retrieval ON/OFF (sets RP_RETRIEVED_CONTEXT_INDEX for this process; omit flag to leave env unchanged):
@@ -135,7 +135,7 @@ def main() -> None:
         metavar="MAP",
         help=(
             "Ad-hoc only, required with --scene-template-id: comma-separated card=role "
-            "assignments (Issue #80). Example: harley_quinn=cell_anchor,magpie=new_arrival"
+            "assignments (Issue #80). Example: harley_quinn=cell_resident,magpie=new_arrival"
         ),
     )
     p.add_argument(
@@ -410,7 +410,7 @@ def main() -> None:
         if adhoc_tpl and not adhoc_roles:
             p.error(
                 "--scene-template-id requires --scene-template-roles in ad-hoc mode "
-                "(Issue #80); e.g. harley_quinn=cell_anchor,magpie=new_arrival"
+                "(Issue #80); e.g. harley_quinn=cell_resident,magpie=new_arrival"
             )
         if adhoc_roles and not adhoc_tpl:
             p.error("--scene-template-roles requires --scene-template-id")

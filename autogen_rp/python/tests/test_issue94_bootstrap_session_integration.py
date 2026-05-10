@@ -48,7 +48,7 @@ def test_prepare_headless_initial_continuity_has_template_binding_for_template_s
     assert ic.get("template_binding", {}).get("template_id") == "arkham_asylum_cell_intake"
     rs = ic.get("role_structure") or {}
     ra = rs.get("role_assignments") or {}
-    assert set(ra.values()) == {"cell_anchor", "new_arrival"}
+    assert set(ra.values()) == {"cell_resident", "new_arrival"}
     assert len(ra) == 2
 
 

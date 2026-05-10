@@ -60,7 +60,7 @@ def test_validate_optional_scene_template_id() -> None:
             "character_card_ids": ["harley_quinn", "magpie"],
             "scene_template_id": "arkham_asylum_cell_intake",
             "scene_template_role_assignments": {
-                "harley_quinn": "cell_anchor",
+                "harley_quinn": "cell_resident",
                 "magpie": "new_arrival",
             },
         },

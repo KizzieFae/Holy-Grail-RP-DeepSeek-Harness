@@ -10,7 +10,7 @@
       "authority": "low"
     },
     {
-      "role_name": "cell_anchor",
+      "role_name": "cell_resident",
       "required": true,
       "presence_constraint": "must_remain",
       "authority": "low"

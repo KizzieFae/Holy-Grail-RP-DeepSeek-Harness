@@ -33,7 +33,7 @@ def test_prepare_headless_template_passes_scene_setup_to_restore(
         seed_escalating_issue=False,
         scene_template_id="arkham_asylum_cell_intake",
         scene_template_role_assignments={
-            "harley_quinn": "cell_anchor",
+            "harley_quinn": "cell_resident",
             "magpie": "new_arrival",
         },
     )
@@ -52,7 +52,7 @@ def test_prepare_headless_session_sets_scene_template_id(_mock_client: MagicMock
         seed_escalating_issue=False,
         scene_template_id="arkham_asylum_cell_intake",
         scene_template_role_assignments={
-            "harley_quinn": "cell_anchor",
+            "harley_quinn": "cell_resident",
             "magpie": "new_arrival",
         },
     )
@@ -97,7 +97,7 @@ def test_headless_template_retrieval_smoke_scenario_passes_prepare_kwargs(
     chat = st.session_state.get("chat_history") or []
     assert chat and "Scene Opening" in str(chat[0].get("content", ""))
     ra = cm.scene_state.role_assignments or {}
-    assert set(ra.values()) == {"cell_anchor", "new_arrival"}
+    assert set(ra.values()) == {"cell_resident", "new_arrival"}
 
 
 @patch("headless_scene_simulation.create_deepseek_client", return_value=MagicMock())
