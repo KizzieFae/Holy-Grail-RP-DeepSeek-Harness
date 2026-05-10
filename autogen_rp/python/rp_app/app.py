@@ -15,7 +15,6 @@ from character_loader import CharacterLoader, make_agent_identifier
 from orchestration_helpers import (
     append_turn_to_orchestration_state,
     build_recent_scene_context as build_recent_scene_context_impl,
-    choose_fallback_actor as choose_fallback_actor_impl,
     ensure_orchestration_state,
     sync_orchestration_state_from_continuity as sync_orchestration_state_from_continuity_impl,
 )
@@ -59,11 +58,22 @@ from scene_lifecycle import (
     start_scene as start_scene_impl,
 )
 from scene_opener import OpenerManager
-from cross_session_memory_policy import compact_report_for_audit
+from app_actor_selection_glue import choose_fallback_actor_from_orchestration
+from app_audit_glue import build_scene_audit_logging_kwargs_for_audit
+from app_constants import (
+    DIRECTOR_SPOTLIGHT_HISTORY_LIMIT,
+    ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT,
+    ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT,
+    ORCHESTRATION_SPOTLIGHT_HISTORY_LIMIT,
+    ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT,
+    ORCHESTRATION_TENSION_HISTORY_LIMIT,
+    PROMPT_DIALOGUE_HISTORY_LIMIT,
+    PROMPT_STRUCTURED_MOVE_LIMIT,
+)
+from app_dialogue_glue import build_recent_dialogue_history_from_session
 from summary_audit_helpers import (
     build_summary_block_audit_metadata,
     get_character_scene_audit_context,
-    get_scene_audit_logging_kwargs,
     serialize_canon_anchors_for_prompt,
     serialize_events_for_prompt,
     serialize_summary_blocks_for_prompt,
@@ -78,30 +88,15 @@ from session_lifecycle import (
     save_current_session as save_current_session_impl,
 )
 from session_manager import SessionManager
-from perception_audibility import build_recent_dialogue_history_for_viewer
 from turn_runner import run_character_turns as run_character_turns_impl
 from ui_rendering import (
     render_chat as render_chat_impl,
     render_sidebar as render_sidebar_impl,
 )
 
-PROMPT_DIALOGUE_HISTORY_LIMIT = 6
-PROMPT_STRUCTURED_MOVE_LIMIT = 4
-DIRECTOR_SPOTLIGHT_HISTORY_LIMIT = 6
-ORCHESTRATION_SPOTLIGHT_HISTORY_LIMIT = 12
-ORCHESTRATION_STRUCTURED_MOVE_HISTORY_LIMIT = 8
-ORCHESTRATION_DIRECTOR_DECISION_HISTORY_LIMIT = 8
-ORCHESTRATION_ENVIRONMENT_HISTORY_LIMIT = 8
-ORCHESTRATION_TENSION_HISTORY_LIMIT = 8
-
 
 def get_scene_audit_logging_kwargs_for_audit(scene_state: Any | None) -> dict[str, Any]:
-    base = get_scene_audit_logging_kwargs(scene_state)
-    report = st.session_state.get("cross_session_injection_report")
-    if isinstance(report, dict):
-        base = dict(base)
-        base["cross_session_injection_report"] = compact_report_for_audit(report)
-    return base
+    return build_scene_audit_logging_kwargs_for_audit(scene_state, st.session_state)
 
 
 def get_model_client() -> Any:
@@ -156,7 +151,7 @@ def log_turn_failure(
 
 
 # ============================================================================
-# Narrator-Mediated Architecture - Character Move Processing
+# Memory, bot limits, session / audit context, orchestration
 # ============================================================================
 
 
@@ -260,17 +255,12 @@ def build_recent_dialogue_history(
     limit: int = PROMPT_DIALOGUE_HISTORY_LIMIT,
     viewer_character_name: str | None = None,
 ) -> list[dict[str, str]]:
-    names = [
-        str(a.name)
-        for a in st.session_state.get("characters", [])
-        if getattr(a, "name", None)
-    ]
-    return build_recent_dialogue_history_for_viewer(
-        chat_history=chat_history,
-        viewer_character_name=viewer_character_name,
-        character_names=names,
-        get_character_display_name_fn=get_character_display_name,
+    return build_recent_dialogue_history_from_session(
+        chat_history,
+        session_state=st.session_state,
         limit=limit,
+        viewer_character_name=viewer_character_name,
+        get_character_display_name_fn=get_character_display_name,
     )
 
 
@@ -389,11 +379,10 @@ def choose_fallback_actor(
     *,
     prefer_continuing_spotlight: bool = False,
 ) -> str | None:
-    return turn_helpers.choose_fallback_actor(
-        available_actors=available_actors,
-        forced_speaker=forced_speaker,
-        spotlight_history=get_orchestration_state().get("spotlight_history", []),
-        choose_fallback_actor_impl_fn=choose_fallback_actor_impl,
+    return choose_fallback_actor_from_orchestration(
+        available_actors,
+        forced_speaker,
+        orchestration_state=get_orchestration_state(),
         prefer_continuing_spotlight=prefer_continuing_spotlight,
     )
 
