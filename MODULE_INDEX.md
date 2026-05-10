@@ -46,7 +46,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `app.py` | Streamlit entry; wires session state, UI, turn pipeline | Most subsystems via injected helpers | Composition only; stable names for tests |
+| `app.py` | Streamlit entry; wires session state, UI, turn pipeline | Most subsystems via injected helpers; **#174** internal leaves (import **`app`** in product code): `app_constants.py`, `app_audit_glue.py`, `app_dialogue_glue.py`, `app_actor_selection_glue.py` | **Public façade**; composition only; stable names for tests |
 | `app_bootstrap.py` | Startup: incomplete session recovery, deferred load | `SessionManager`, `session_lifecycle` | Runs once per session |
 
 ---

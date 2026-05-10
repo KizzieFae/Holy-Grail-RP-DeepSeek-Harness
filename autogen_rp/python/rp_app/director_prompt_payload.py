@@ -561,7 +561,6 @@ def _collect_runtime_inputs(
         if work.orchestration_continuity_context is not None
         else []
     )
-    ctx = work.orchestration_continuity_context
     work.summary_block_audit = work.build_summary_block_audit_metadata_fn(
         generated_blocks=generated_summary_blocks,
         available_blocks=available_summary_blocks,

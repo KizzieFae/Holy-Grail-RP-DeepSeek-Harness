@@ -1,6 +1,6 @@
 """Prompt and orchestration history limits for the Streamlit RP app (Issue #174).
 
-Values are re-exported from app.py — import from `app` in product code.
+Canonical definitions live here; **`app.py` re-exports** the same names — import from **`app`** in product code.
 """
 
 PROMPT_DIALOGUE_HISTORY_LIMIT = 6
