@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 
 logger = logging.getLogger("rp_app.audit")
 
@@ -24,3 +25,6 @@ def log_audit_exception(context: str, exc: BaseException) -> None:
 def log_audit_warning(message: str) -> None:
     if audit_instrumentation_enabled():
         logger.warning("%s", message)
+        # Mirror gap/diagnostic warnings to stderr so operators see them without
+        # configuring logging handlers (Issue #192 PR-TECH I1). Same trigger as logger.
+        print(message, file=sys.stderr, flush=True)

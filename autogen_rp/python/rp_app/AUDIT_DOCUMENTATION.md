@@ -70,7 +70,7 @@ Expected under normal multi-beat audited runs:
 
 **Optional instrumentation (#192 visibility posture):**
 
-- **`RP_AUDIT_INSTRUMENTATION=1`** (**`true`** / **`yes`** / **`on`** accepted)—enables **`log_audit_warning`** / **`scan_audit_artifact_gaps`** diagnostics. Messages are emitted via the Python **`logging`** logger **`rp_app.audit`**; configure standard logging handlers (for example **`logging.basicConfig`**) when you need warnings on stderr or stdout. Default remains **OFF** — enabling instrumentation is additive and **does not** change serialized audit JSON shapes.
+- **`RP_AUDIT_INSTRUMENTATION=1`** (**`true`** / **`yes`** / **`on`** accepted)—enables **`log_audit_warning`** / **`scan_audit_artifact_gaps`** diagnostics. Messages are emitted via the Python **`logging`** logger **`rp_app.audit`** and **also mirrored to `stderr`** (same condition as the logger call). You may still configure **`logging`** handlers if you want duplicate or structured log routing. Default remains **OFF** — enabling instrumentation is additive and **does not** change serialized audit JSON shapes.
 
 ### Continuity observability (Issue #79 — closed)
 
