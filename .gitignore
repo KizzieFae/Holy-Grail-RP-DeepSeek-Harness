@@ -41,6 +41,10 @@ memplace.txt
 _dry_run_cohort_archive_source/
 _dry_run_cohort_artifacts/
 
+# Cursor / CLI scratch exports (gh issue JSON staging; not canonical repo content)
+.cursor/*-pre.json
+.cursor/*-clean.json
+
 # Scratch issue bodies / one-off tooling (local only)
 _tmp_hier_edit/
 _tmp_prog_issues/
