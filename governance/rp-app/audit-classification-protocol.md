@@ -16,7 +16,7 @@
 | **Document state** | **SKELETON** — operational interchange structure only |
 | **Authority posture** | **Human‑governed process completeness for classification *bundles*.** Does **not** adjudicate continuity truth (`FR4`), audit applicability predicates (`AUDIT_DOCUMENTATION` / `#59` lane), `outcome_record` meaning, `detector` judgments, **or** runtime outcomes. |
 
-**Current revision:** **ACP-doc-0.1-skeleton**
+**Current revision:** **ACP-doc-0.2-governance-freeze-v0-crossref**
 
 **Separation markers**
 
@@ -91,7 +91,7 @@ Provide a minimal, paste‑friendly **interchange** so exemplar workshops (`#186
 ```yaml
 # acp-exemplar-package — normative keys (skeleton)
 protocol_id: acp
-protocol_doc_revision: acp-doc-0.1-skeleton
+protocol_doc_revision: acp-doc-0.2-governance-freeze-v0-crossref
 
 exemplar_unit_id: eu-XXXX                 # REQUIRED — stable opaque id
 sources:                                  # REQUIRED — ≥1 anchor
@@ -118,10 +118,10 @@ notes_facilitator: ""                     # OPTIONAL ‖I‖
 ```yaml
 # acp-ft1-label-bundle — normative keys (skeleton)
 protocol_id: acp
-protocol_doc_revision: acp-doc-0.1-skeleton
+protocol_doc_revision: acp-doc-0.2-governance-freeze-v0-crossref
 
 ft1_doc_pointer: governance/rp-app/failure-taxonomy-spec-v1.md
-ft1_doc_revision_hint: FT1-doc-0.3-annexb-acp-ref  # UPDATE when FT1 changelog bumps
+ft1_doc_revision_hint: FT1-doc-0.4-governance-freeze-v0  # UPDATE when FT1 changelog bumps
 
 failure_taxonomy_ft1:
   ftc_primary: "<family.subtype>"         # REQUIRED — FT1 §3 / §11
@@ -196,7 +196,7 @@ unknown.insufficient_evidence
 ```yaml
 # acp-collision-record — normative keys (skeleton)
 protocol_id: acp
-protocol_doc_revision: acp-doc-0.1-skeleton
+protocol_doc_revision: acp-doc-0.2-governance-freeze-v0-crossref
 
 exemplar_unit_id: eu-XXXX
 
@@ -238,6 +238,8 @@ notes: ""
 
 **Issue‑attachment posture ‖I‖**: fenced YAML (or maintainer‑agreed subset) — **paste surface decision** TODO‑ACP‑04 on `#187`.
 
+**Governance Freeze v0 coupling (`#186`).** While Issue **`#186` / Freeze v0** is operative, **`FT1`** revision **`FT1-doc-0.4-governance-freeze-v0`** **`§13.1`** is the authoritative maturity lattice (G0–G3), **S4 Branch B** transitional cap (**≤ 3** **`validated`** non‑UNKNOWN **`ftc_id`** rows pending **`TODO‑METRIC‑04`** closure), and hard registry boundary (**exactly one** normative **`§9`** row: **`unknown.insufficient_evidence`**). This **`ACP`** revision (**`ACP-doc-0.2-governance-freeze-v0-crossref`**) **only** cross‑references that posture—**no** new interchange keys, **no** detector semantics, **no** **`#59`** edits, **no** **`#200`** activation—instrumentation posture remains **`§13`** / **`#192`** routing rules unchanged.
+
 ---
 
 ## §11 Workshop operational guidance ‖I‖
@@ -262,6 +264,7 @@ notes: ""
 | Revision | Note |
 |----------|------|
 | ACP-doc-0.1-skeleton | Initial interchange skeleton (**no tooling mandate**). |
+| ACP-doc-0.2-governance-freeze-v0-crossref | **Governance Freeze v0**: freeze coupling paragraph (**§10**), **`protocol_doc_revision` / `ft1_doc_revision_hint`** example sync (**§§5–6, §9**) to **`FT1-doc-0.4-governance-freeze-v0`**—**no schema growth**. |
 
 ---
 
