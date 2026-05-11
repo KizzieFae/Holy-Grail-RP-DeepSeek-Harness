@@ -12,6 +12,7 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Continuity observability (Issue #79 — closed)](#continuity-observability-issue-79-closed)** — CTAR, `scene_state_after`, summary rollups vs availability markers on `_audit_summary.json`.
 - **[Registry-backed resolved outcomes and scene grounding (Issue #127)](#registry-backed-resolved-outcomes-and-scene-grounding-issue-127)** — `continuity_state`, `turn_metadata_by_index`, per-turn `metadata.scene_grounding` limits, `transaction.scene_commitment`, triage map.
 - **[Canonical audit identity (Issue #106)](#canonical-audit-identity-issue-106)** — `audit_session_owner` vs `scene_owner`, ingress, no inference.
+- **[Audit session spine completeness (#192)](#audit-session-spine-completeness-192)** — filesystem / operator checklist: expected session files, instrumentation for gap scans, continuity summary XOR availability marker (**not** new runtime authority).
 
 ## Canonical audit identity (Issue #106)
 
@@ -54,6 +55,22 @@ Audit artifacts observe **different layers**: per-bot prompts and **parsed** mod
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
 **Disk layout vs session restore:** Audit JSON under **`rp_audits/session_*`** may **mirror** committed **`SceneState`** / continuity-related fields for a turn (for example **`context_snapshot.scene_state_after`**), but those mirrors exist for **operators and tooling**, not as a parallel store of truth. **Authoritative runtime state** remains in **`ContinuityManager`** and **`SceneState`** in memory, persisted for resume via **`python/data/sessions/*.json`** (see `docs/rp-data-layout.md`). **Session restore reads only `python/data/sessions/*.json` and does not depend on `rp_audits/`.** Removing or omitting audit files does **not** roll back or change continuity; it only removes **observational artifacts**.
+
+### Audit session spine completeness (#192)
+
+**Purpose:** Give operators and regressions a **minimal checklist** for “did we get an interpretable audited session?” This section is **documentation and triage only**—not a runtime gate (**#59** unchanged) and not a retrieval or continuity semantics change (**GitHub [#192](https://github.com/KizzieFae/Holy_Grail_RP/issues/192)** contract-hardening thread).
+
+Expected under normal multi-beat audited runs:
+
+1. **Session-root JSON** — Canonical filenames and roles are defined under [Directory Structure](#directory-structure): typically **`_manifest.json`**, **`_round_index.json`**, **`_narrative.json`**, and **`_audit_summary.json`** when those stages completed for the session.
+2. **Indexed rounds** — Rounds enumerated in **`_round_index`** should normally have **`round_<nnn>/`** directories aligned with **`round_number`**. Operators correlate per-turn **`*.json`** (**`*_full.json`** vs light summaries) with orchestration; **not every role emits a separate artifact every beat** depends on lane and auditing mode—use the index and narrative rather than guessing from file counts alone.
+3. **Narrative vs index coherence (observational)** — **`scan_audit_artifact_gaps`** (in **`audit_logger_summary_prep`**) compares indexed turn cardinality to **`_narrative.json`** `turns` using **`count_indexed_turns`** from **`audit_logger_summary_output_continuity`**. When **`RP_AUDIT_INSTRUMENTATION=1`**, it **warns** on suspicious mismatches (indexed turns but empty narrative, missing **`round_<nnn>`** directory, or a round directory with no **`*_full.json`** files)—see **`audit_instrumentation`**, **`audit_logger_summary_prep`** in **`MODULE_INDEX.md`**.
+4. **Summary rollup** — **`write_summary_report`** produces **`_audit_summary.json`**; parity fields such as **`retrieval_session`** and continuity observability rollups obey their existing contracts (see onboarding links above).
+5. **`_audit_summary` continuity observability XOR** — For a given **`write_summary_report`** pass, **`continuity_observability_summary_v1`** vs **`continuity_observability_status_v1`** follow the mutually exclusive semantics in [Continuity observability](#continuity-observability-issue-79-closed)—do **not** treat this checklist as widening runtime authority.
+
+**Optional instrumentation (#192 visibility posture):**
+
+- **`RP_AUDIT_INSTRUMENTATION=1`** (**`true`** / **`yes`** / **`on`** accepted)—enables **`log_audit_warning`** / **`scan_audit_artifact_gaps`** diagnostics. Messages are emitted via the Python **`logging`** logger **`rp_app.audit`**; configure standard logging handlers (for example **`logging.basicConfig`**) when you need warnings on stderr or stdout. Default remains **OFF** — enabling instrumentation is additive and **does not** change serialized audit JSON shapes.
 
 ### Continuity observability (Issue #79 — closed)
 
