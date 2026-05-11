@@ -13,26 +13,26 @@
 | Field | Value |
 |-------|--------|
 | **Spec ID** | FT1 |
-| **Spec state** | **PARTIAL‑REGISTRY** — **UNKNOWN **`canon`** **only (**§`**`9`** **/**`**`§`**`**`11`** **)**; **`other`** FTC rows gated **until exemplar stabilization (**§**`**`13`** **)** (**not **`a`** finalized full codebook **`release`** **) **. |
+| **Spec state** | **PARTIAL‑REGISTRY** — **UNKNOWN canon only** (**§9**, **§11**); **other** FTC rows gated until exemplar stabilization (**§13**). **Not** a finalized full codebook release. |
 | **Canonical path** | `governance/rp-app/failure-taxonomy-spec-v1.md` |
 | **Authority posture** | **Interpretive / observational labeling only.** This document does **not** define continuity truth, runtime enforcement, causal certainty, orchestration policy, or detector judgments. **`FR4` continuity remains authoritative per `runtime_narrative_memory_prd1.md` (reference only)** — see §6. |
 
 **Explicit non‑authority**
 
-- Does **not** amend, replace, or restate **`#59`** audit signal applicability semantics, **`#67`** engineering family semantics, registry inventory rows in **`AUDIT_DOCUMENTATION.md`**, **`detector`** contracts (**Issue `#66`** family), **`outcome_record`** rules, advisory causal labels (**Issue **`#`**`29`** lane), or **`issue-tracking-workflow`** **`§`**`D`/****§`**`E`/****§`**`F`/`§`**`I` .
-- **`PRD1` / **`PRD2` / roadmap** — intent / sequencing reference **only**. Product or runtime contradiction resolution remains **Issues + authoritative architecture**.
+- Does **not** amend, replace, or restate **#59** audit signal applicability semantics, **#67** engineering family semantics, registry inventory rows in **`AUDIT_DOCUMENTATION.md`**, **`detector`** contracts (Issue **#66** family), **`outcome_record`** rules, advisory causal labels (Issue **#29** lane), or **`issue-tracking-workflow`** **§D**, **§E**, **§F**, or **§I**.
+- **PRD1**, **PRD2**, and **roadmap** — intent / sequencing reference **only**. Product or runtime contradiction resolution remains **Issues + authoritative architecture**.
 
 **Separation markers used in this file**
 
 | Tag | Meaning |
 |-----|---------|
-| **‖N‖** | Normative (must-follow when adopting FT1 labeling on Issues or evaluation records explicitly governed by **`#`**`187` **or superseding protocol). |
+| **‖N‖** | Normative (must-follow when adopting FT1 labeling on Issues or evaluation records explicitly governed by **#187** or superseding protocol). |
 | **‖I‖** | Informative (rationale / examples — not a substitute for normative bullets). |
 
 **Document revision**
 
-- **Current revision:** **`FT`**`1` **‑doc‑`0.3`**`‑annexb-acp-ref`** (**CHANGELOG — §12**).
-- Bump **`FT`**`1` **‑doc‑`x`**`.**`**`y`** on further registry / exemplar substantive edits (**§**`**`12`** **)** **.**
+- **Current revision:** **FT1-doc-0.4-governance-freeze-v0** (see **CHANGELOG — §12**).
+- On further registry or exemplar substantive edits: bump **document revision** (**§0**) and append a row to **CHANGELOG** (**§12**).
 
 ---
 
@@ -256,8 +256,8 @@ Assert **`unknown.insufficient_evidence`** as **`ftc_primary`** **if and only if
 
 **Change control**
 
-- Edits **`require`** **`PR`** + **`traceability`**`** ` link **`to`** **`tracking`**`** ` **`Issue`** (**#186 lineage **or delegated child).
-- Bump **`document`**`** ` revision (**§**`**`0` **)** and append row to **`CHANGELOG`** (**stub below**) **.**
+- Edits **require** a **PR** and a **traceability link** to a **tracking Issue** (**#186** lineage or delegated child).
+- Bump **document revision** (**§0**) and append a row to **CHANGELOG** (stub below).
 
 **CHANGELOG (stub)**
 
@@ -266,6 +266,7 @@ Assert **`unknown.insufficient_evidence`** as **`ftc_primary`** **if and only if
 | FT1-doc-0.1-skeleton | Initial structure-only skeleton |
 | FT1-doc-0.2-unknown-canon | Consensus: dedicated UNKNOWN family; canonical **`unknown.insufficient_evidence`**; §4 pairing rule; partial registry row (**§**`9` **)** |
 | FT1-doc-0.3-annexb-acp-ref | Annex B points **`to`** **`audit-classification-protocol.md`** (**#187** / **`ACP`** skeleton) **`for`** operational interchange (**§ Annex B**) |
+| FT1-doc-0.4-governance-freeze-v0 | **Governance Freeze v0:** §13.1 FTC maturity tiers (**G0–G3**), G3 exemplar + **S4 Branch B** preconditions, reaffirmed UNKNOWN rigor, anti-overreach + **#192** routing posture, **#200** optionality, hard boundaries (no non‑UNKNOWN **`ftc_id`** growth in this revision). |
 
 **Migration (**`future` **)**
 
@@ -296,6 +297,59 @@ _Normative tier architecture remains **explicitly **`out‑of‑scope`**** for F
 
 ---
 
+## §13.1 FTC maturity tiers & Freeze v0 boundary ‖N‖
+
+**Governance Freeze v0** (**`FT1-doc-0.4-governance-freeze-v0`**, GitHub **`#186`**) records interpretive governance for FTC labeling and workshop bundles. It **does not** expand **`§9`** **`ftc_id`** registry rows beyond the existing **`unknown.insufficient_evidence`** row; **does not** amend **`#59`** / inventory applicability semantics; **does not** package offline detector verdict semantics as normative FTC definitions; and **does not** alter **`FR4`** continuity authority.
+
+### Maturity tiers (G0–G3)
+
+| Tier | Meaning |
+|------|---------|
+| **G0** | Workshop scratch / notes only. **No** normative **`§9`** row assertion beyond **`unknown.insufficient_evidence`**. |
+| **G1** | Draft definitions, collision notes, and exemplar planning on **`#186`** / **`#187`** threads only—**still no** additional **`§9`** **`ftc_id`** rows. |
+| **G2** | **Provisional** registry work **only after** Population gate PRs; column **`exemplar_status` = `candidate`** (**this revision adds zero `candidate` rows**). |
+| **G3 (`validated`)** | **`§13`** lifecycle (S1–S5 intent), **`≥2`** independent exemplar anchors (**distinct scenario id** or **distinct audited session lineage**—**not** only two turns from one long run slice), stabilization record on **`#186`** (**or successor**), and recorded **`S4`** posture **before** promoting **`validated`** rows (**see below**). Narrow pilot carve-outs **only** through **`#186`** Exceptions Ledger. |
+
+### **`S4` stabilization posture (Branch `B` transitional hybrid)**
+
+Before any **`validated` / G3** promotion of **additional ‖N‖ `ftc_id` rows**:
+
+1. **Exceptions Ledger** threaded on **`#186`** listing each **`validated`** intent.
+2. **Hard cap:** **≤ `3`** **`validated`** non-UNKNOWN **`ftc_id`** registrations while **Maintenance `TODO‑METRIC‑04`** numerical closure (**Cohen κ / agreement + `N`_A / `N`_B budgets**) remains open.
+3. **Numeric Branch A closure** lands **before** a **fourth** **`validated`** non-UNKNOWN promotion **or** before broad scaled registry waves—**whichever occurs first**; otherwise maintainers tighten caps via fresh Issue consensus.
+
+(_TBD_ numeric values stay tracked **only** inside **`TODO‑METRIC‑04`** / follow-on Issues.)
+
+### UNKNOWN rigor (reaffirmed)
+
+**`§11` / `§4` / `§5`** stay binding: **`unknown.insufficient_evidence` ↔ `dimensions.evidence_grade = unknown`**; **`evidence_gap`** must stay non-vacuous; high UNKNOWN rates → strata / definitions / documented exceptions—**not** automatic registry expansion.
+
+### Observational audits, `#59`, anti-detector
+
+- Audit JSON (**`AUDIT_DOCUMENTATION`**; closed **`#192`** infra) remains **observational** input—not continuity narrative truth.
+- Operators stay bound by **Signal `id` → applicability → predicate`** before shorthand; FTC **`§8`** coordinates **only**.
+- FTC **must not** redefine detector **`fired` / clear** jargon as normative FTC definitions (**`§1` / `§6`** unchanged).
+
+### Collision / adjudication (**ACP`)
+
+Workshops inherit **`ACP`** Sections **`9–10`** collision floor: open **`collision`** record before silent portfolio aggregation.
+
+### **`#200` optionality**
+
+**`#200`** cohort packaging is **optional** scale discipline—not a logical precondition for Freeze **`v0`**; narrow **`ACP` `§5`** anchors suffice until operators opt into cohort hash infra.
+
+### Hard boundaries (**this revision**)
+
+Until Population-gate PRs explicitly open ontology work:
+
+- **Exactly one** **`‖N‖`** registry FTC row remains: **`unknown.insufficient_evidence`**.
+- **`§8`** tables stay placeholders only; **no** dense matrices added here.
+- **No** **`#59` / inventory** edits, **no** runtime / retrieval / continuity code changes bundled as Freeze **`v0`**.
+- **No** **`#200`** activation requirement.
+- Merge of Freeze **`v0`** **does not** authorize **`G2`** / non-UNKNOWN **`candidate`** **`§9`** PR openings outside explicit post-freeze workshop consensus.
+
+---
+
 ## References and bibliography ‖I‖ (non‑authority)
 
 **(Informative pointers — do not supersede **`Issues`**)**
@@ -322,11 +376,11 @@ _Normative tier architecture remains **explicitly **`out‑of‑scope`**** for F
 
 ## Annex B ‖I‖ Operational interchange pointer (#187 / ACP)
 
-**Process interchange** (exemplar package, FT1 label bundle, collision record, workshop exports) is specified in `governance/rp-app/audit-classification-protocol.md` (**ACP**, **ACP‑doc‑0.1‑skeleton**), coordinated **with** **`this`** **`FT1`** **`document`** **`revision`** **`FT1-doc-0.3-annexb-acp-ref`**.
+**Process interchange** (exemplar package, FT1 label bundle, collision record, workshop exports) is specified in `governance/rp-app/audit-classification-protocol.md` (**ACP**, **ACP‑doc‑0.2‑governance‑freeze‑v0‑crossref**), coordinated **with** **`this`** **`FT1`** **`document`** **`revision`** **`FT1-doc-0.4-governance-freeze-v0`**.
 
 **Non‑authority schema reminder** (**full **`keys`** **`in`** **`ACP`** **§§5–10**):**
 ```yaml
-# See ACP-doc-0.1-skeleton §6 for authoritative label bundle (+ §5 exemplar §9 collision).
+# See ACP-doc-0.2-governance-freeze-v0-crossref §6 (+ §5 exemplar §9 collision).
 failure_taxonomy_ft1:
   ftc_primary: string   # §3; UNKNOWN: unknown.insufficient_evidence — §11
   dimensions:
