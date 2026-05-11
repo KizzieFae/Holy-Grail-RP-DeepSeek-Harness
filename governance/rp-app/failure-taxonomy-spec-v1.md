@@ -13,26 +13,26 @@
 | Field | Value |
 |-------|--------|
 | **Spec ID** | FT1 |
-| **Spec state** | **PARTIAL‑REGISTRY** — **UNKNOWN **`canon`** **only (**§`**`9`** **/**`**`§`**`**`11`** **)**; **`other`** FTC rows gated **until exemplar stabilization (**§**`**`13`** **)** (**not **`a`** finalized full codebook **`release`** **) **. |
+| **Spec state** | **PARTIAL‑REGISTRY** — **UNKNOWN canon only** (**§9**, **§11**); **other** FTC rows gated until exemplar stabilization (**§13**). **Not** a finalized full codebook release. |
 | **Canonical path** | `governance/rp-app/failure-taxonomy-spec-v1.md` |
 | **Authority posture** | **Interpretive / observational labeling only.** This document does **not** define continuity truth, runtime enforcement, causal certainty, orchestration policy, or detector judgments. **`FR4` continuity remains authoritative per `runtime_narrative_memory_prd1.md` (reference only)** — see §6. |
 
 **Explicit non‑authority**
 
-- Does **not** amend, replace, or restate **`#59`** audit signal applicability semantics, **`#67`** engineering family semantics, registry inventory rows in **`AUDIT_DOCUMENTATION.md`**, **`detector`** contracts (**Issue `#66`** family), **`outcome_record`** rules, advisory causal labels (**Issue **`#`**`29`** lane), or **`issue-tracking-workflow`** **`§`**`D`/****§`**`E`/****§`**`F`/`§`**`I` .
-- **`PRD1` / **`PRD2` / roadmap** — intent / sequencing reference **only**. Product or runtime contradiction resolution remains **Issues + authoritative architecture**.
+- Does **not** amend, replace, or restate **#59** audit signal applicability semantics, **#67** engineering family semantics, registry inventory rows in **`AUDIT_DOCUMENTATION.md`**, **`detector`** contracts (Issue **#66** family), **`outcome_record`** rules, advisory causal labels (Issue **#29** lane), or **`issue-tracking-workflow`** **§D**, **§E**, **§F**, or **§I**.
+- **PRD1**, **PRD2**, and **roadmap** — intent / sequencing reference **only**. Product or runtime contradiction resolution remains **Issues + authoritative architecture**.
 
 **Separation markers used in this file**
 
 | Tag | Meaning |
 |-----|---------|
-| **‖N‖** | Normative (must-follow when adopting FT1 labeling on Issues or evaluation records explicitly governed by **`#`**`187` **or superseding protocol). |
+| **‖N‖** | Normative (must-follow when adopting FT1 labeling on Issues or evaluation records explicitly governed by **#187** or superseding protocol). |
 | **‖I‖** | Informative (rationale / examples — not a substitute for normative bullets). |
 
 **Document revision**
 
-- **Current revision:** **`FT1-doc-0.4-governance-freeze-v0`** (**CHANGELOG — §12**).
-- Bump **`FT`**`1` **‑doc‑`x`**`.**`**`y`** on further registry / exemplar substantive edits (**§**`**`12`** **)** **.**
+- **Current revision:** **FT1-doc-0.4-governance-freeze-v0** (see **CHANGELOG — §12**).
+- On further registry or exemplar substantive edits: bump **document revision** (**§0**) and append a row to **CHANGELOG** (**§12**).
 
 ---
 
@@ -256,8 +256,8 @@ Assert **`unknown.insufficient_evidence`** as **`ftc_primary`** **if and only if
 
 **Change control**
 
-- Edits **`require`** **`PR`** + **`traceability`**`** ` link **`to`** **`tracking`**`** ` **`Issue`** (**#186 lineage **or delegated child).
-- Bump **`document`**`** ` revision (**§**`**`0` **)** and append row to **`CHANGELOG`** (**stub below**) **.**
+- Edits **require** a **PR** and a **traceability link** to a **tracking Issue** (**#186** lineage or delegated child).
+- Bump **document revision** (**§0**) and append a row to **CHANGELOG** (stub below).
 
 **CHANGELOG (stub)**
 
