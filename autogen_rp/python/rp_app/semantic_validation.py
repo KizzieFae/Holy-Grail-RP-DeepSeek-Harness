@@ -405,8 +405,9 @@ def apply_gated_addressee_alignment_under_progression_enforcement(
     is true; resolved ``direct_address_target`` is non-empty and in ``available_actors``;
     current pick differs from that target.
 
-    Returns ``(applied, previous_next_actor, resolved_target_or_empty)``. Mutates
-    ``decision['next_actor']`` and appends a machine-parsable reason suffix when applied.
+    Returns ``(applied, previous_next_actor, resolved_target_or_empty)``. Mutates only
+    ``decision['next_actor']`` when applied — merge the reason suffix via
+    ``director_reason_projection.merge_addressee_alignment_reason`` (GitHub #210 C-A).
     """
     if not progression_enforcement_gate:
         return (False, "", "")
@@ -438,9 +439,6 @@ def apply_gated_addressee_alignment_under_progression_enforcement(
     if resolved == prev:
         return (False, prev, resolved)
     decision["next_actor"] = resolved
-    suffix = f"| Addressee alignment (progression gate): {prev} -> {resolved}"
-    prior = str(decision.get("reason", "") or "").strip()
-    decision["reason"] = f"{prior} {suffix}".strip() if prior else suffix.strip()
     return (True, prev, resolved)
 
 

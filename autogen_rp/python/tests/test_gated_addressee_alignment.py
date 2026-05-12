@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
 from app_turn_director import choose_next_actor as choose_next_actor_impl
+from director_reason_projection import merge_addressee_alignment_reason
 from semantic_validation import (
     SEMANTIC_SELECTION_LOG_CONFIDENCE_THRESHOLD,
     apply_gated_addressee_alignment_under_progression_enforcement,
@@ -45,7 +46,8 @@ def test_apply_gated_override_when_all_conditions_met() -> None:
     assert prev == "Ayame"
     assert tgt == "Celina"
     assert decision["next_actor"] == "Celina"
-    assert "Addressee alignment (progression gate)" in decision["reason"]
+    merged_reason = merge_addressee_alignment_reason(decision["reason"], prev, tgt)
+    assert "Addressee alignment (progression gate)" in merged_reason
 
 
 def test_apply_gated_no_override_when_gate_inactive() -> None:

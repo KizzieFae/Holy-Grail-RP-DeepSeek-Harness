@@ -20,6 +20,12 @@ from director_low_pressure_guidance import (
     consecutive_trailing_same_speaker,
 )
 from director_prompt_payload import DirectorPromptAssembly
+from director_reason_projection import (
+    merge_addressee_alignment_reason,
+    merge_participation_fairness_reason,
+    merge_progression_override_reason,
+    merge_turn_selection_diagnostics_reason,
+)
 from orchestration_helpers import (
     assign_progression_band_for_actor,
     apply_participation_fairness_to_decision,
@@ -176,11 +182,11 @@ async def finalize_director_selection_after_llm(
         semantic_assessment=effective_semantic_assessment,
     )
     reason_before_semantic_note = str(decision.get("reason", "") or "")
+    assembled_reason = reason_before_semantic_note
     pref_candidate = routing_snapshot.get("preference_candidate")
     routing_misaligned = bool(
         pref_candidate and str(pref_candidate).strip() != str(director_pick_for_audit).strip()
     )
-    reason_amended_for_semantic = False
     actor_after_semantic = str(director_pick_for_audit or "").strip()
 
     if st_module.session_state.get("progression_enforcement_disabled"):
@@ -208,6 +214,11 @@ async def finalize_director_selection_after_llm(
         addressee_alignment_applied = True
         addressee_alignment_previous = prev_addr
         addressee_alignment_next = str(decision.get("next_actor") or "").strip()
+        assembled_reason = merge_addressee_alignment_reason(
+            assembled_reason,
+            addressee_alignment_previous,
+            addressee_alignment_next,
+        )
         actor_after_semantic = addressee_alignment_next
         reconciled_turn_selection_issues = reconcile_turn_selection_issues_fn(
             deterministic_turn_selection_issues,
@@ -277,9 +288,11 @@ async def finalize_director_selection_after_llm(
         progression_override_applied = True
         original_actor = str(decision.get("next_actor", "") or "")
         decision["next_actor"] = progression_override_actor
-        decision["reason"] = (
-            f"{decision.get('reason', '')} | Progression override from {original_actor} to {progression_override_actor}"
-        ).strip(" |")
+        assembled_reason = merge_progression_override_reason(
+            assembled_reason,
+            original_actor,
+            progression_override_actor,
+        )
     progression_override_suppressed_med_band = (
         progression_override_director_band == "med"
         and progression_enforcement_gate
@@ -289,18 +302,25 @@ async def finalize_director_selection_after_llm(
 
     actor_after_override = str(decision.get("next_actor", "") or "").strip()
     actor_before_fairness = actor_after_override
+    fairness_rotation_unheard_key: str | None = None
     if not p1_continuation_applied:
-        apply_participation_fairness_to_decision(
+        _, unheard_fair = apply_participation_fairness_to_decision(
             decision,
             participant_names=participant_names,
             available_actors=available_actors,
             actors_used_this_round=used_this_round,
         )
+        fairness_rotation_unheard_key = unheard_fair
     actor_after_fairness = str(decision.get("next_actor", "") or "").strip()
     fairness_rotated = (
         actor_before_fairness != actor_after_fairness
         and not bool(decision.get("end_round"))
     )
+    if fairness_rotated and fairness_rotation_unheard_key:
+        assembled_reason = merge_participation_fairness_reason(
+            assembled_reason,
+            fairness_rotation_unheard_key,
+        )
 
     if human_turn_selection_issues or routing_misaligned:
         final_pick = str(decision.get("next_actor", "") or "").strip()
@@ -314,10 +334,8 @@ async def finalize_director_selection_after_llm(
         if human_turn_selection_issues:
             extra.append(f"Validation: {'; '.join(human_turn_selection_issues)}")
         extra.append(diag)
-        decision["reason"] = (
-            f"{decision.get('reason', '')} | {' | '.join(extra)}"
-        ).strip(" |")
-    reason_amended_for_semantic = str(decision.get("reason", "") or "") != (
+        assembled_reason = merge_turn_selection_diagnostics_reason(assembled_reason, extra)
+    reason_amended_for_semantic = str(assembled_reason or "") != (
         reason_before_semantic_note
     )
 
@@ -330,7 +348,7 @@ async def finalize_director_selection_after_llm(
     )
 
     decision["reason"] = normalize_reason_for_human_logs(
-        str(decision.get("reason", "") or "")
+        str(assembled_reason or "")
     )
 
     director_source = "fallback" if (error or decision.get("source") == "fallback") else "director"

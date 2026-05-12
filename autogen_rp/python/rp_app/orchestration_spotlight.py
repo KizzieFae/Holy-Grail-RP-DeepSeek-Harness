@@ -51,27 +51,26 @@ def apply_participation_fairness_to_decision(
     participant_names: list[str],
     available_actors: list[str],
     actors_used_this_round: list[str],
-) -> None:
+) -> tuple[bool, str | None]:
     """If the chosen actor already spoke this round while another available actor has not, rotate.
 
-    Mutates *decision* in place. Skips when ending the round or when no unheard actor exists.
+    Mutates *decision* **next_actor only** — operator-facing reason assembly is centralized
+    in ``director_reason_projection.merge_participation_fairness_reason`` (GitHub #210 C-A).
+
+    Returns ``(fairness_rotated, unheard_actor_key)`` — *unheard_actor_key* is ``None`` when no
+    fairness rotation applies.
     """
     if bool(decision.get("end_round")):
-        return
+        return False, None
     na = str(decision.get("next_actor") or "").strip()
     if not na or not available_actors:
-        return
+        return False, None
     unheard = first_unheard_available_actor_this_round(
         participant_names=participant_names,
         available_actors=available_actors,
         actors_used_this_round=actors_used_this_round,
     )
     if not unheard or actors_used_this_round.count(na) == 0 or na == unheard:
-        return
+        return False, None
     decision["next_actor"] = unheard
-    prev = str(decision.get("reason", "") or "").strip()
-    note = (
-        f"Spotlight fairness: rotate to {unheard} "
-        "(present participant not yet heard this response cycle)"
-    )
-    decision["reason"] = f"{prev} | {note}".strip(" |") if prev else note
+    return True, unheard

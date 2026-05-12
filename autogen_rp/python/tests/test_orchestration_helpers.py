@@ -1218,23 +1218,27 @@ def test_apply_participation_fairness_rotates_when_director_reuses_speaker() -> 
         "next_actor": "Celina",
         "reason": "Director picked Celina again.",
     }
-    apply_participation_fairness_to_decision(
+    rotated, unheard = apply_participation_fairness_to_decision(
         decision,
         participant_names=["Celina", "Ayame", "Hannah_Lovelace"],
         available_actors=["Celina", "Ayame", "Hannah_Lovelace"],
         actors_used_this_round=["Celina"],
     )
+    assert rotated is True
+    assert unheard == "Ayame"
     assert decision["next_actor"] == "Ayame"
 
 
 def test_apply_participation_fairness_no_op_when_director_picks_unheard() -> None:
     decision: dict[str, object] = {"next_actor": "Ayame", "reason": "ok"}
-    apply_participation_fairness_to_decision(
+    rotated, unheard = apply_participation_fairness_to_decision(
         decision,
         participant_names=["Celina", "Ayame"],
         available_actors=["Celina", "Ayame"],
         actors_used_this_round=["Celina"],
     )
+    assert rotated is False
+    assert unheard is None
     assert decision["next_actor"] == "Ayame"
     assert "Spotlight fairness" not in str(decision.get("reason", ""))
 
