@@ -25,7 +25,11 @@ from orchestration_helpers import (
     apply_participation_fairness_to_decision,
     resolve_progression_override_actor,
 )
-from selection_attribution import record_selection_attribution_event, semantic_flag_summary
+from selection_attribution import (
+    format_operator_selector_decision_line,
+    record_selection_attribution_event,
+    semantic_flag_summary,
+)
 from semantic_validation import (
     apply_gated_addressee_alignment_under_progression_enforcement,
     filter_selection_issues_for_human_log,
@@ -433,8 +437,8 @@ async def finalize_director_selection_after_llm(
                 continuity_event=last_public_event_dict,
             )
             director_metadata: dict[str, Any] = {
-                "parse_error": error,
-                "is_fallback": bool(error),
+                "parse_error": str(error) if error else "",
+                "is_fallback": director_source == "fallback",
                 "beat_shift_active": beat_shift_active,
                 "progression_advisory": {
                     "stall_score": progression_advisory_snapshot.get("stall_score"),
@@ -495,7 +499,10 @@ async def finalize_director_selection_after_llm(
             )
 
     st_module.session_state["selector_decisions"].append(
-        f"Director selected {actor_label_for_selector(str(decision.get('next_actor') or ''))}: "
-        f"{decision.get('reason', '')}"
+        format_operator_selector_decision_line(
+            attribution_chain=attribution_chain,
+            lead=f"Director selected {actor_label_for_selector(str(decision.get('next_actor') or ''))}",
+            reason=str(decision.get("reason", "") or ""),
+        )
     )
     return decision

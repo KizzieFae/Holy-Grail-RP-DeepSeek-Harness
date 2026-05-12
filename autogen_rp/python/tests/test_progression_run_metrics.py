@@ -11,6 +11,7 @@ from progression_run_metrics import (  # noqa: E402
     build_structured_eval_payload,
     summarize_sim_progression_metrics,
 )
+from selection_attribution import format_operator_selector_decision_line  # noqa: E402
 
 
 def test_summarize_empty() -> None:
@@ -105,3 +106,23 @@ def test_build_structured_eval_payload_retrieval_session() -> None:
         retrieval_session=rs,
     )
     assert p["retrieval_session"] == rs
+
+
+def test_format_operator_selector_decision_line_reason_suffix() -> None:
+    line = format_operator_selector_decision_line(
+        attribution_chain=["director", "participation_fairness"],
+        lead="Director selected Ayame",
+        reason="pick Ayame",
+    )
+    assert line.startswith("[attribution: director > participation_fairness]")
+    assert "Director selected Ayame" in line
+    assert line.endswith(": pick Ayame")
+
+
+def test_format_operator_selector_decision_line_empty_chain_uses_unknown() -> None:
+    line = format_operator_selector_decision_line(
+        attribution_chain=[],
+        lead="Director selected Bob",
+        reason="r",
+    )
+    assert "[attribution: unknown]" in line

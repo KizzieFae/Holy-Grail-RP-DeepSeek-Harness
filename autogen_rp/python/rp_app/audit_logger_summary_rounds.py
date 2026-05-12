@@ -96,7 +96,7 @@ def process_audit_files(
                     issue_categories, "turn_selection_mistakes", str(turn_issue)
                 )
 
-            for candidate in [metadata.get("parse_error", "")]:
+            for candidate in [metadata.get("parse_error") or ""]:
                 category = categorize_issue_text(str(candidate))
                 record_issue_category(issue_categories, category, str(candidate))
 

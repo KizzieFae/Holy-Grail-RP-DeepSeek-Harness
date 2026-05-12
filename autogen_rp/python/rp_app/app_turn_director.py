@@ -17,7 +17,10 @@ from director_prompt_payload import (
 from director_selection_postprocess import finalize_director_selection_after_llm
 from progression_advisory import sync_progression_advisory_for_prompts
 from progression_enforcement import progression_delta_required
-from selection_attribution import record_selection_attribution_event
+from selection_attribution import (
+    format_operator_selector_decision_line,
+    record_selection_attribution_event,
+)
 
 __all__ = [
     "choose_next_actor",
@@ -166,7 +169,13 @@ async def choose_next_actor(
             },
         )
         st_module.session_state["selector_decisions"].append(
-            f"Director override to addressed character: {actor_label_for_selector(forced_speaker)}"
+            format_operator_selector_decision_line(
+                attribution_chain=["forced_speaker"],
+                lead=(
+                    f"Director override to addressed character: "
+                    f"{actor_label_for_selector(forced_speaker)}"
+                ),
+            )
         )
         return decision
 
@@ -225,7 +234,13 @@ async def choose_next_actor(
                 },
             )
             st_module.session_state["selector_decisions"].append(
-                f"Director override to continuation owner: {actor_label_for_selector(continuation_override_actor)}"
+                format_operator_selector_decision_line(
+                    attribution_chain=["continuation_override"],
+                    lead=(
+                        f"Director override to continuation owner: "
+                        f"{actor_label_for_selector(continuation_override_actor)}"
+                    ),
+                )
             )
             return decision
 

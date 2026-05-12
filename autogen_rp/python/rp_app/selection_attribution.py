@@ -17,6 +17,31 @@ def record_selection_attribution_event(st_module: Any, record: dict[str, Any]) -
     maybe_record_sim_progression_metric(st_module, payload)
 
 
+def format_operator_selector_decision_line(
+    *,
+    attribution_chain: list[str],
+    lead: str,
+    reason: str = "",
+) -> str:
+    """Build a session-visible selector log line with explicit attribution chain.
+
+    ``lead`` is the full human-readable clause after the chain prefix
+    (e.g. ``Director selected Alice`` or ``Director override to …: Bob``).
+    ``reason`` is appended after a colon when non-empty (Director rationale path).
+
+    Phase A (#206): surface ``attribution_chain`` without changing ``decision`` fields.
+    """
+
+    chain = " > ".join(str(x).strip() for x in attribution_chain if str(x).strip())
+    if not chain:
+        chain = "unknown"
+    base = f"[attribution: {chain}] {str(lead or '').strip()}"
+    reason_t = str(reason or "").strip()
+    if reason_t:
+        return f"{base}: {reason_t}"
+    return base
+
+
 def semantic_flag_summary(assessment: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(assessment, dict):
         return {"semantic_validation_ran": False}
