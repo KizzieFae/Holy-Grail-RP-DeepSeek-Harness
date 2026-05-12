@@ -520,7 +520,9 @@ When enabled, Director turn metadata may include a **`progression_advisory`** ob
 
 Director turn **`metadata.selection_attribution`** may include **`director_model_reason`** when the Director payload named **`reason`** or **`reason_for_choice`** and structured parse succeeded. The same optional field can appear on the runtime **`decision`** (and in headless **`sim_progression_metrics`** rows with `kind: selection_attribution` when that buffer is active). Semantics: **verbatim** model rationale captured at parse time; **not** display-name normalized; **not** merged with pipeline diagnostics. **Omitted** when inapplicable (hard routes, fallback, absent rationale keys).
 
-**Distinction:** merged operator/Memory string remains **`parsed_output.reason`** on the audit row after post-processing. **`director_model_reason`** is observational (**#59**); it is **not** a runtime authority input for validation, progression, continuity, or memory ingestion in Phase B.
+**Distinction:** merged operator string remains **`parsed_output.reason`** on the audit row after post-processing.
+
+**Episodic memory interpretation (GitHub #208 — non-authoritative text only):** The runtime **`memory_layer`** may prefer **`director_model_reason`** for the stored **`interpretation`** line when that key exists and non-empty (**verbatim**, not display-normalized); otherwise it uses merged **`reason`**, then move **`motivation`**. **`director_model_reason`** remains observational (**#59**): it **does not** drive validation, progression, continuity, or selection. Full **`selection_attribution`** records are **not** consumed by episodic writes in **#208** (defer richer attribution-memory convergence).
 
 ### Anti-regression advisory (MVP) in audits
 

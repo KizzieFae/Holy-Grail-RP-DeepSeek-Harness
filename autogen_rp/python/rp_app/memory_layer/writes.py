@@ -18,6 +18,41 @@ from response_validation_selection import eligible_agent_keys_for_present_charac
 from . import storage
 
 
+def _episodic_interpretation_from_director_decision(
+    director_decision: dict[str, Any],
+    motivation: Any,
+) -> str:
+    """Episodic interpretation string for the acting character (GitHub #208).
+
+    Tier 1: ``director_model_reason`` when the key exists and is non-empty after ``strip``.
+    Verbatim semantics — no display-name normalization.
+
+    Tier 2: merged operator ``reason`` when tier 1 does not apply.
+
+    Tier 3: ``goal`` / ``tactic`` motivation join matching prior ``writes`` behavior.
+    """
+    if "director_model_reason" in director_decision:
+        raw_mr = director_decision.get("director_model_reason")
+        tier1 = str(raw_mr or "").strip()
+        if tier1:
+            return tier1
+    tier2 = str(director_decision.get("reason", "") or "").strip()
+    if tier2:
+        return tier2
+    if isinstance(motivation, dict):
+        goal = str(motivation.get("goal", "") or "").strip()
+        tactic = str(motivation.get("tactic", "") or "").strip()
+        return "; ".join(
+            part
+            for part in [
+                f"goal={goal}" if goal else "",
+                f"tactic={tactic}" if tactic else "",
+            ]
+            if part
+        )
+    return ""
+
+
 def resolve_present_characters(
     *,
     continuity_manager: Any | None,
@@ -71,21 +106,11 @@ def commit_character_turn_memory(
         dict(move), acting_character, present_characters
     )
     motivation = move_norm.get("motivation", {})
-    reason = str(director_decision.get("reason", "") or "").strip()
     event_summary = build_memory_fact_summary_fn(acting_character, move_norm)
 
-    interpretation = reason
-    if not interpretation and isinstance(motivation, dict):
-        goal = str(motivation.get("goal", "") or "").strip()
-        tactic = str(motivation.get("tactic", "") or "").strip()
-        interpretation = "; ".join(
-            part
-            for part in [
-                f"goal={goal}" if goal else "",
-                f"tactic={tactic}" if tactic else "",
-            ]
-            if part
-        )
+    interpretation = _episodic_interpretation_from_director_decision(
+        director_decision, motivation
+    )
 
     storage.append_actor_episodic(
         state_manager,

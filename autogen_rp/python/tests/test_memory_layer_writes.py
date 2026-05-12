@@ -42,6 +42,38 @@ def test_resolve_present_characters_falls_back_when_no_scene() -> None:
     assert resolve_present_characters(continuity_manager=None, char_names=["X"]) == ["X"]
 
 
+def test_actor_episodic_prefers_director_model_reason_208() -> None:
+    """GitHub #208: verbatim director_model_reason over merged diagnostics in interpretation."""
+    manager = CharacterStateManager()
+    cast = ["Alice", "Bob"]
+    _register_cast(manager, cast)
+    move = {
+        "action": "nods",
+        "dialogue": "Understood.",
+        "motivation": {"goal": "should_not_win", "tactic": "when_model_reason_nonempty"},
+        "audibility": "public",
+    }
+    decision = {
+        "director_model_reason": "_MODEL_VERBATIM_208_",
+        "reason": "_MERGED_DIAGNOSTICS_MUST_NOT_WIN_WHEN_MODEL_REASON_SET_",
+    }
+    commit_character_turn_memory_raw(
+        state_manager=manager,
+        character_names=cast,
+        acting_character="Alice",
+        move=move,
+        director_decision=decision,
+        present_characters=cast,
+        build_memory_fact_summary_fn=lambda ac, m: f"{ac} acted.",
+        display_name_for_key=None,
+    )
+    alice = manager.get_state("Alice")
+    assert alice is not None
+    joined_summary = " ".join(alice.character_memory_summary)
+    assert "_MODEL_VERBATIM_208_" in joined_summary
+    assert "_MERGED_DIAGNOSTICS_MUST_NOT_WIN_" not in joined_summary
+
+
 def test_observer_writes_only_for_event_knowledge_recipients_private() -> None:
     manager = CharacterStateManager()
     cast = ["Alice", "Bob", "Carol"]
