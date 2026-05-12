@@ -516,6 +516,12 @@ Use **continuity-backed state** and **runtime outcome records** for any **verdic
 
 When enabled, Director turn metadata may include a **`progression_advisory`** object (not continuity truth): **`stall_score`**, **`progression_pressure`** (`low` / `medium` / `high`), template-sourced **`recommended_channels`**, human-readable **`note`**, **`stall_components`** (booleans: same phase, high tension, issue stability, exact structural repetition), and related fields consistent with `progression_advisory.py`. Logs may also record when advisory text is injected into prompts or when beat-shift eligibility is influenced by the unified **`stall_score`** threshold.
 
+### Selection attribution and `director_model_reason` (GitHub #207)
+
+Director turn **`metadata.selection_attribution`** may include **`director_model_reason`** when the Director payload named **`reason`** or **`reason_for_choice`** and structured parse succeeded. The same optional field can appear on the runtime **`decision`** (and in headless **`sim_progression_metrics`** rows with `kind: selection_attribution` when that buffer is active). Semantics: **verbatim** model rationale captured at parse time; **not** display-name normalized; **not** merged with pipeline diagnostics. **Omitted** when inapplicable (hard routes, fallback, absent rationale keys).
+
+**Distinction:** merged operator/Memory string remains **`parsed_output.reason`** on the audit row after post-processing. **`director_model_reason`** is observational (**#59**); it is **not** a runtime authority input for validation, progression, continuity, or memory ingestion in Phase B.
+
 ### Anti-regression advisory (MVP) in audits
 
 **Signal id:** `metadata.anti_regression_advisory` — interpretation: **[Operator interpretation — #59 applicability class vs Issue #67 engineering family (canonical)](#issue67-operator-interpretation)** and the [inventory row](#audit-signal-applicability-inventory) (**engineering family:** guardrail + telemetry; runtime orchestration guardrail in `anti_regression_advisory.py`, audit row is a snapshot).

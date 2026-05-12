@@ -2,6 +2,9 @@
 
 Records one event per ``choose_next_actor`` outcome via the same simulation buffer as
 progression metrics: ``maybe_record_sim_progression_metric`` with ``kind: selection_attribution``.
+
+Payloads may include ``director_model_reason`` (GitHub #207): verbatim model rationale
+when present on the runtime ``decision``; see ``ARCHITECTURE.md``.
 """
 
 from __future__ import annotations

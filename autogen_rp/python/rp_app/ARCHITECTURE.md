@@ -277,6 +277,8 @@ Director receives structured orchestration inputs and returns:
 - optional `tension_shift`
 - `reason`
 
+**`director_model_reason` (GitHub #207):** Optional field on the post-parse Director **`decision`** dict. Present only when the model JSON includes a **`reason`** or **`reason_for_choice`** key and parse succeeded. Value is the **verbatim** rationale string from that parse, **before** addressee alignment, progression override, participation fairness, validation/diagnostic merges, and before display-name substitution on **`reason`**. **Omitted** on hard routes (no available actors, forced speaker, continuation override), on parse-failure fallback decisions, and when neither rationale key is present. **Immutable** after parse; **not** read by memory — `memory_layer` / episodic interpretation still consumes merged **`decision["reason"]`** only. Distinct from merged, operator-facing **`reason`** (and from narrative `director_reason` audit mirrors). See **`AUDIT_DOCUMENTATION.md`** (*Selection attribution and `director_model_reason`*).
+
 Director inputs are intentionally structured and lightweight:
 
 - current scene state, including location, scene phase, present characters, and recent tension or environment beats

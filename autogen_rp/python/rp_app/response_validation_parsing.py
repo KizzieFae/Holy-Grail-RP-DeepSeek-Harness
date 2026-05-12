@@ -143,10 +143,15 @@ def parse_director_decision(
     if next_actor not in allowed_actors and not (end_round and next_actor == ""):
         return None, f"Invalid next_actor: {next_actor!r}"
 
-    return {
+    reason_str = str(data.get("reason", data.get("reason_for_choice", "")) or "")
+    out: dict[str, Any] = {
         "next_actor": next_actor,
         "environment_event": str(data.get("environment_event", "") or ""),
         "tension_shift": str(data.get("tension_shift", "") or ""),
-        "reason": str(data.get("reason", data.get("reason_for_choice", "")) or ""),
+        "reason": reason_str,
         "end_round": end_round,
-    }, ""
+    }
+    # Issue #207: verbatim model rationale only when the payload names reason fields.
+    if "reason" in data or "reason_for_choice" in data:
+        out["director_model_reason"] = reason_str
+    return out, ""

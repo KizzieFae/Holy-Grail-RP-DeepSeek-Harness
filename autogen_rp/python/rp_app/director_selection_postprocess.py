@@ -406,6 +406,8 @@ async def finalize_director_selection_after_llm(
         "attribution_chain": attribution_chain,
         "continuation_override_skipped_c2": continuation_override_skipped_c2,
     }
+    if "director_model_reason" in decision:
+        selection_attribution_record["director_model_reason"] = decision["director_model_reason"]
     record_selection_attribution_event(st_module, selection_attribution_record)
 
     if is_audit_enabled_fn():
