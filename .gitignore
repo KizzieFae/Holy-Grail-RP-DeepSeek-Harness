@@ -11,6 +11,7 @@ Thumbs.db
 
 # Local issue drafting / one-off GitHub helpers (not intended as tracked source)
 .github/issue_drafts/
+.github/_draft_issues_*.md
 .github/issue-bodies-workflow-efficiency/
 
 # Python bytecode (root-level scripts / stray caches)
