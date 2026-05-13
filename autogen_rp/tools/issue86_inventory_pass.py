@@ -143,6 +143,8 @@ def inventory_session(session_dir: Path) -> dict:
         "artifact__narrative": (session_dir / "_narrative.json").is_file(),
         "artifact__audit_summary": (session_dir / "_audit_summary.json").is_file(),
         "artifact__round_dirs": False,
+        # Issue #69 spec artifact; not emitted by shipped tooling (#211). True only if
+        # present on disk (adhoc/future evaluator).
         "artifact__scene_eval_v2": (session_dir / "_scene_eval_v2.json").is_file(),
         "artifact__fact_track_glob": bool(list(session_dir.glob("fact_track__*.json"))),
         "tag__36_retrieval_session_present": False,

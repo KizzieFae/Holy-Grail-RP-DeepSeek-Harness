@@ -7,6 +7,12 @@ Audit v2 checks, narrator/prose heuristics, or LLM audit layers.
 Includes a mechanical ``move_schema_version`` / ``beats[]`` shape judgment for
 character rows (GitHub #141). See governance issue #66 for intent; judgments
 are not runtime gates.
+
+Terminology (**GitHub #211**): ``SCENE_EVAL_VERSION`` / emitted ``scene_eval_version``
+``\"2\"`` means the **Issue #66 output bundle revision** (includes #141 predicates).
+It does **not** mean Issue **#69** ``scene_eval_v2`` / ``run_scene_eval_v2``, which is
+**specified but not shipped** — see ``AUDIT_DOCUMENTATION.md`` (*Offline evaluation
+layer (Issue #69 — scene_eval_v2)*).
 """
 
 from __future__ import annotations
@@ -363,6 +369,9 @@ def run_scene_eval_v1(
     be supplied for a descriptive metrics mirror judgment.
 
     Returns a dict with ``scene_eval_version``, paths, and ``judgments``.
+    The ``scene_eval_version`` field is ``SCENE_EVAL_VERSION`` (currently ``\"2\"``):
+    **Issue #66 bundle revision**, not Issue **#69** ``scene_eval_v2`` (see module
+    docstring and ``AUDIT_DOCUMENTATION.md``).
     """
     sd = Path(session_dir).expanduser().resolve()
     sep: Path | None = None

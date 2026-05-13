@@ -46,7 +46,7 @@ per-character state.
 
 - **Continuity beat index** — **`ContinuityManager.turn_counter`** (mirrored in full audits as **`context_snapshot.continuity_turn_index`**) is the **structural** “which turn committed” identity. It exists **without** requiring a **`PublicEvent`** row for that beat.
 - **`PublicEvent.event_id`** — **Semantic** id for knowability, retrieval, and grounding; **optional** at the beat level. It is **not** the primary offline join key for narrator↔character audit pairing.
-- **Audit / offline evaluation** — **`scene_eval_v2`** uses **structural turn identity** for cross-row joins; **`event_id`** is **legacy fallback** only when top-level **`continuity_turn_index`** is absent. Spec: **`AUDIT_DOCUMENTATION.md`** (*Canonical structural join contract*).
+- **Audit / offline pairing (Issue #72)** — Narrator↔character **`*_full.json`** pairing for **manual/scripted** analysis — and **specified** Issue **#69** offline evaluation when implemented — uses **structural turn identity** (**`context_snapshot.continuity_turn_index`**) as the primary join; **`event_id`** is **legacy fallback** only when top-level **`continuity_turn_index`** is absent. **`run_scene_eval_v2`** does **not** ship today (documentation reconciliation **#211**). Spec: **`AUDIT_DOCUMENTATION.md`** (*Canonical structural join contract*).
 - **Not runtime control** — These join fields are **observability / post-hoc tooling**; Director, validation, progression, and continuity commits **do not** branch on audit evaluation join keys.
 
 ### Continuity mutation audit surfaces (Issues #81 / #79)

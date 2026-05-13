@@ -40,7 +40,7 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 **Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). Feeds continuity and summaries—not raw log replay. **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** via `public_safe_event_summary` at promotion time. **`event_id`** is **semantic** and **optional** by beat; offline audit joins prefer **`continuity_turn_index`**, not **`event_id`**, when both rows carry the former (Issue #72 — **`AUDIT_DOCUMENTATION.md`**).
 
-**continuity_turn_index** (audit) — Integer on **`context_snapshot`** in full per-turn audit rows: **post-commit** **`ContinuityManager.turn_counter`** for that beat. **Primary** narrator↔character join key for **`scene_eval_v2`**; **not** a runtime control signal.
+**continuity_turn_index** (audit) — Integer on **`context_snapshot`** in full per-turn audit rows: **post-commit** **`ContinuityManager.turn_counter`** for that beat. **Primary structural join key** for narrator↔character audit pairing (**manual/scripted** offline analysis today; **specified** for deferred Issue **#69** offline evaluator — **`AUDIT_DOCUMENTATION.md`**). **Not** a runtime control signal.
 
 **Turn (structural) vs event (`PublicEvent`)** — A **structural turn** is identified by the continuity **turn counter** after a beat commits. A **`PublicEvent`** is an optional **promoted** narrative fact for that turn when continuity creates one; **event absence does not mean the turn did not commit** (Issue #72).
 
