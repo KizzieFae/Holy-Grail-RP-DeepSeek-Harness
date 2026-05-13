@@ -189,7 +189,7 @@ def prepare_headless_session(
     if audit_enabled:
         st.session_state["audit_enabled"] = True
         logger = get_audit_logger()
-        st.session_state["audit_session_number"] = logger.get_next_session_number()
+        st.session_state["audit_session_number"] = logger.claim_next_session_number()
         st.session_state["audit_session_owner"] = owner
         st.session_state["audit_round_number"] = 0
         st.session_state["audit_turn_number"] = 0

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from audit_session_identity import AuditSessionIntegrityError
+
 
 def resolve_base_dir(*, file_path: str, base_dir: str | None) -> Path:
     if base_dir is None:
@@ -24,6 +26,33 @@ def get_next_session_number(*, base_dir: Path) -> int:
         return 1
 
     return max(existing_numbers) + 1
+
+
+def claim_next_audit_session_number(
+    *,
+    base_dir: Path,
+    max_retries: int = 512,
+) -> int:
+    """Exclusively allocate ``session_NNN`` under ``base_dir`` (Issue #212).
+
+    Uses atomic ``mkdir`` without ``exist_ok``; retries with a fresh candidate when
+    another process wins the race. No artifact writes occur here.
+    """
+
+    base_dir = Path(base_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    for _ in range(max_retries):
+        candidate = get_next_session_number(base_dir=base_dir)
+        session_dir = base_dir / f"session_{candidate:03d}"
+        try:
+            session_dir.mkdir()
+            return candidate
+        except FileExistsError:
+            continue
+    raise AuditSessionIntegrityError(
+        f"Could not claim an audit session folder under {base_dir} after "
+        f"{max_retries} attempts (Issue #212)."
+    )
 
 
 def get_session_path(*, base_dir: Path, session_number: int) -> Path:

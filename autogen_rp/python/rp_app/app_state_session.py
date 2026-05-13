@@ -105,7 +105,7 @@ def reset_state_for_new_scene(
     st_module.session_state["audit_round_number"] = 0
     st_module.session_state["audit_turn_number"] = 0
     st_module.session_state["audit_session_number"] = (
-        get_audit_logger_fn().get_next_session_number()
+        get_audit_logger_fn().claim_next_session_number()
         if is_audit_enabled_fn()
         else None
     )

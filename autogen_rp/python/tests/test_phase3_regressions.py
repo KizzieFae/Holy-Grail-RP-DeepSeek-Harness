@@ -1197,7 +1197,7 @@ def test_phase3_audit_artifact_filenames_and_core_json_shapes_stay_stable(
         "total_characters",
         "scene_template",
     }
-    assert set(index) == {"rounds"}
+    assert set(index) >= {"rounds", "session_owner", "session_number"}
     assert set(index["rounds"][0]["turns"][0]) >= {
         "turn_number",
         "acting_character",

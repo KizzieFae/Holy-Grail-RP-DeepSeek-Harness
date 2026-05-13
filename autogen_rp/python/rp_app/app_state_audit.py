@@ -73,7 +73,7 @@ def get_audit_context(
     audit_session_num = st_module.session_state.get("audit_session_number")
     if audit_session_num is None and audit_on:
         audit_logger = get_audit_logger_fn()
-        audit_session_num = audit_logger.get_next_session_number()
+        audit_session_num = audit_logger.claim_next_session_number()
         st_module.session_state["audit_session_number"] = audit_session_num
 
     round_number = st_module.session_state.get("audit_round_number", 0)

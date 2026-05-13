@@ -50,6 +50,9 @@ class FakeAuditLogger:
     def get_next_session_number(self) -> int:
         return 1
 
+    def claim_next_session_number(self) -> int:
+        return 1
+
 
 class DummyState:
     def __init__(self, name: str) -> None:

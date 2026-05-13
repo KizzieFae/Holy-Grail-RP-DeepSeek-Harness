@@ -2,6 +2,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from audit_session_identity import (
+    validate_audit_session_identity_before_append,
+    validate_audit_session_identity_before_manifest_write,
+)
 from character_move_adapters import root_or_flat_action_text, root_or_flat_dialogue_text
 
 
@@ -27,6 +31,11 @@ def write_session_manifest(
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
+    validate_audit_session_identity_before_manifest_write(
+        session_path,
+        expected_owner=session_owner,
+        expected_number=session_number,
+    )
     scene_template = normalize_scene_template_metadata(
         {
             "template_id": scene_template_id,
@@ -82,6 +91,8 @@ def write_session_manifest(
 def write_round_index(
     *,
     session_path: Path,
+    session_owner: str,
+    session_number: int,
     round_number: int,
     turn_number: int,
     acting_character: str,
@@ -95,13 +106,36 @@ def write_round_index(
     presence_change_count: int = 0,
     utc_timestamp,
 ) -> str:
+    validate_audit_session_identity_before_append(
+        session_path,
+        expected_owner=session_owner,
+        expected_number=session_number,
+    )
     index_path = session_path / "_round_index.json"
 
     if index_path.exists():
         with open(index_path, "r", encoding="utf-8") as f:
             index = json.load(f)
     else:
-        index = {"rounds": []}
+        index = {
+            "session_owner": session_owner,
+            "session_number": session_number,
+            "rounds": [],
+        }
+
+    if isinstance(index, dict):
+        if "session_owner" not in index:
+            index["session_owner"] = session_owner
+        if "session_number" not in index:
+            index["session_number"] = session_number
+        if "rounds" not in index or not isinstance(index.get("rounds"), list):
+            index["rounds"] = []
+    else:
+        index = {
+            "session_owner": session_owner,
+            "session_number": session_number,
+            "rounds": [],
+        }
 
     round_entry = next(
         (item for item in index["rounds"] if item.get("round_number") == round_number),
@@ -139,10 +173,17 @@ def write_round_index(
 def update_manifest_turn_counter(
     *,
     session_path: Path,
+    session_owner: str,
+    session_number: int,
     total_turns: int,
     utc_timestamp,
 ) -> str:
     """Update ``_manifest.json`` with current total turn count (read-merge-write)."""
+    validate_audit_session_identity_before_append(
+        session_path,
+        expected_owner=session_owner,
+        expected_number=session_number,
+    )
     manifest_path = session_path / "_manifest.json"
 
     manifest: dict[str, Any] = {}
@@ -186,6 +227,11 @@ def update_narrative_summary(
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
+    validate_audit_session_identity_before_append(
+        session_path,
+        expected_owner=session_owner,
+        expected_number=session_number,
+    )
     narrative_path = session_path / "_narrative.json"
 
     if narrative_path.exists():
@@ -334,6 +380,9 @@ def update_narrative_summary(
 
     narrative["last_updated"] = utc_timestamp()
     narrative["total_rounds"] = len({turn.get("round") for turn in narrative["turns"]})
+
+    narrative["session_owner"] = session_owner
+    narrative["session_number"] = session_number
 
     scene_template = normalize_scene_template_metadata(
         narrative.get("scene_template") or {}

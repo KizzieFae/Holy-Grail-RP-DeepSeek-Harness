@@ -1370,6 +1370,8 @@ Organised by session number first, then round number:
 
 The `{owner}` token in per-turn filenames is the **`audit_session_owner`** label (canonical audit identity, Issue **#106**), not **`scene_owner`** and not a narrative “scene owner” role.
 
+**Issue #212 (audit integrity):** New audited runs allocate `session_{###}` via an **exclusive folder claim** (`mkdir` without `exist_ok`). `_manifest.json`, `_narrative.json`, and `_round_index.json` must agree on **`session_owner`** and **`session_number`** before writes append; cross-run mismatch raises **`AuditSessionIntegrityError`** (no silent merge or session substitution). **Corrupted or mismatched folders are not auto-repaired**—archive or remove the tree and re-run. Parallel audited processes sharing the same `rp_audits` root cannot claim the same session folder.
+
 ```
 rp_audits/
 └── session_{###}/                   # 3-digit session number

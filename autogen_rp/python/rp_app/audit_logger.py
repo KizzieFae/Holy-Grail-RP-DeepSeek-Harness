@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from audit_logger_paths import (
+    claim_next_audit_session_number,
     generate_filename as build_audit_filename,
     get_next_session_number as get_next_audit_session_number,
     get_round_path as get_audit_round_path,
@@ -43,6 +44,7 @@ from audit_logger_writers import (
     write_round_index as write_round_index_helper,
     write_session_manifest as write_session_manifest_helper,
 )
+from audit_session_identity import validate_audit_session_identity_before_append
 
 
 class AuditLevel(Enum):
@@ -123,8 +125,17 @@ class AuditLogger:
         self.base_dir = resolve_base_dir(file_path=__file__, base_dir=base_dir)
 
     def get_next_session_number(self) -> int:
-        """Return the next available audit session number."""
+        """Return the next unused audit session number (peek only; does not claim).
+
+        For new audited runs prefer :meth:`claim_next_session_number` (Issue #212).
+        """
+
         return get_next_audit_session_number(base_dir=self.base_dir)
+
+    def claim_next_session_number(self) -> int:
+        """Allocate the next session folder exclusively (Issue #212)."""
+
+        return claim_next_audit_session_number(base_dir=self.base_dir)
 
     def _get_session_path(self, session_owner: str, session_number: int) -> Path:
         """Get the directory path for a specific session.
@@ -275,6 +286,8 @@ class AuditLogger:
         session_path = self._get_session_path(session_owner, session_number)
         return write_round_index_helper(
             session_path=session_path,
+            session_owner=session_owner,
+            session_number=session_number,
             round_number=round_number,
             turn_number=turn_number,
             acting_character=acting_character,
@@ -301,6 +314,13 @@ class AuditLogger:
         Returns:
             Tuple of (full_filepath, light_filepath)
         """
+        session_path = self._get_session_path(entry.session_owner, entry.session_number)
+        validate_audit_session_identity_before_append(
+            session_path,
+            expected_owner=entry.session_owner,
+            expected_number=int(entry.session_number),
+        )
+
         round_path = self._get_round_path(
             entry.session_owner, entry.session_number, entry.round_number
         )
@@ -518,6 +538,8 @@ class AuditLogger:
         session_path = self._get_session_path(session_owner, session_number)
         return update_manifest_turn_counter_helper(
             session_path=session_path,
+            session_owner=session_owner,
+            session_number=session_number,
             total_turns=total_turns,
             utc_timestamp=utc_timestamp,
         )
@@ -535,6 +557,11 @@ class AuditLogger:
         spotlight distribution, recent activity, and one compact entry per round.
         """
         session_path = self._get_session_path(session_owner, session_number)
+        validate_audit_session_identity_before_append(
+            session_path,
+            expected_owner=session_owner,
+            expected_number=int(session_number),
+        )
         return write_summary_report_helper(
             session_path=session_path,
             session_owner=session_owner,
