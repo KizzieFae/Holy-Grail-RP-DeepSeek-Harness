@@ -1,0 +1,24 @@
+{
+  "id": "audit_i191_offstage_private_return",
+  "title": "Issue #191 / #214 Tier A — perception & private v2 smoke (overlay)",
+  "intent": "GitHub #214 Tier A (perception/privacy smoke only): exercises overlay round-1 + 3-char cast for directed/private v2 and post-return prompt sampling. Optional bounded token SILVER-QUILL-414 for grep-style checks when the model/harness emits it. Does NOT claim continuity-grounded offstage, excursion adoption, or committed SceneState mutation — see closed #216 and Tier B on #214.",
+  "audit_validation_tier": "tier_a_perception_smoke",
+  "audit_program_issue": "214",
+  "audit_bounded_token": "SILVER-QUILL-414",
+  "audit_return_timing_note": "Document same-turn vs multi-turn for each frozen reference session on #214; Tier A runs typically use multi-turn return for stability (post–#213 baseline).",
+  "character_card_ids": [
+    "ayame",
+    "celina",
+    "hannah"
+  ],
+  "opening_description": "Celina's apartment living room. Ayame is visiting. Hannah Lovelace is present as co-host.",
+  "location": "apartment",
+  "trigger_text": "Traveler: Hannah will leave the living room first so the others have privacy.",
+  "max_turns": 8,
+  "seed_escalating_issue": false,
+  "beat_shift_active": false,
+  "initial_tension": "medium",
+  "initial_phase": "opening",
+  "expected_pressure_profile": "medium",
+  "startup_trigger_mode": "overlay"
+}

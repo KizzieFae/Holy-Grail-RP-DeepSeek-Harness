@@ -19,6 +19,7 @@ _SCENARIOS_DIR = Path(__file__).resolve().parent / "data" / "progression_simulat
 
 _EXPECTED_PRESSURE_PROFILES = frozenset({"low", "medium", "high"})
 _STARTUP_TRIGGER_MODES = frozenset({"parity", "overlay"})
+_AUDIT_VALIDATION_TIERS = frozenset({"tier_a_perception_smoke", "tier_b_continuity_grounded"})
 
 _REQUIRED_KEYS = frozenset(
     {
@@ -41,6 +42,14 @@ _REQUIRED_KEYS = frozenset(
 
 def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> None:
     """Reject invalid values for optional manifest fields."""
+    opt_audit_tier = raw.get("audit_validation_tier")
+    if opt_audit_tier is not None and str(opt_audit_tier).strip():
+        v = str(opt_audit_tier).strip().lower()
+        if v not in _AUDIT_VALIDATION_TIERS:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: audit_validation_tier must be one of "
+                f"{sorted(_AUDIT_VALIDATION_TIERS)}, got {opt_audit_tier!r}"
+            )
     if "expected_pressure_profile" in raw and raw["expected_pressure_profile"] is not None:
         v = str(raw["expected_pressure_profile"]).strip().lower()
         if v not in _EXPECTED_PRESSURE_PROFILES:

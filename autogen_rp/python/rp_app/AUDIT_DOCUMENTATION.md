@@ -13,6 +13,7 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Registry-backed resolved outcomes and scene grounding (Issue #127)](#registry-backed-resolved-outcomes-and-scene-grounding-issue-127)** — `continuity_state`, `turn_metadata_by_index`, per-turn `metadata.scene_grounding` limits, `transaction.scene_commitment`, triage map.
 - **[Canonical audit identity (Issue #106)](#canonical-audit-identity-issue-106)** — `audit_session_owner` vs `scene_owner`, ingress, no inference.
 - **[Audit session spine completeness (#192)](#audit-session-spine-completeness-192)** — filesystem / operator checklist: expected session files, instrumentation for gap scans, continuity summary XOR availability marker (**not** new runtime authority).
+- **[Tier A perception smoke (#214 manifest)](#tier-a-perception-smoke-214-manifest)** — **`tier_a_perception_smoke`** scenario field + headless runbook (not **Tier B** / **#216**).
 
 ## Canonical audit identity (Issue #106)
 
@@ -67,6 +68,22 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 - **`metadata.ctar.continuity_mutation_resolution`** when the **#81** pipeline applied for that beat (optional corroboration — see **Continuity turn-level audit record (CTAR)** below).
 
 Label runs accordingly: **perception smoke** (dialogue visibility) vs **continuity-grounded lifecycle** (roster + excursion proof). Do not treat audit heuristics or narrative prose alone as substitutes for those mirrors (**#59**).
+
+### Tier A perception smoke (#214 manifest)
+
+**Tier** — Progression scenario manifests may set **`audit_validation_tier`** to **`tier_a_perception_smoke`** (validated at load time when present). **`audit_i191_offstage_private_return`** is the canonical **Tier A** lane for **#214** (overlay startup, 3-char cast, private/directed **v2** exercise).
+
+**How to run (headless, audited):** From **`autogen_rp/python`**, e.g.  
+`python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 8`  
+(adjust **`--turns`** / **`--no-deep-simulation-turns`** per parity with Streamlit caps; **`DEEPSEEK_API_KEY`** required for LLM path.)
+
+**What Tier A PASS means:** Directed/private paths behave as intended in **prompts** — redaction / **audience** / **`input_messages`** visibility; optional **`audit_bounded_token`** (when emitted in dialogue) supports grep-style checks. Spot-check episodic/retrieval snippets per **#214** operator checklist.
+
+**What Tier A does NOT prove:** **Continuity-grounded** offstage/reentry — no requirement for **`excursion_lifecycle`** proof, **`scene_state_after`** excursion-shaped mirrors, or **Tier B** (**#216** standard). Do not label a Tier A session as continuity-grounded.
+
+**Tier B:** Separate milestone on **#214**; uses **`tier_b_continuity_grounded`** when added to a manifest and **#216** audit surfaces.
+
+**Same-turn vs multi-turn return:** Record explicitly on **#214** for each **frozen reference session**; scenario field **`audit_return_timing_note`** is documentation-only.
 
 ### Audit session spine completeness (#192)
 

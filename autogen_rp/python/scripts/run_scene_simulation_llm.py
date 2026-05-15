@@ -12,6 +12,8 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --list-scenarios
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
+    # GitHub #214 Tier A (perception/privacy smoke; manifest ``audit_validation_tier`` — not Tier B / #216):
+    python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 8
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --audit --llm-audit --turns 1 --no-deep-simulation-turns
     # Continuity-backed episodic recall in character prompts (requires flag or RP_EPISODIC_MEMORY=1):
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 2 --episodic-memory
