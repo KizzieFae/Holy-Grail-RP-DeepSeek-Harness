@@ -30,6 +30,44 @@ This section **does not** relax: Issue body mandatory sections, safe body mutati
 
 **Cursor / agent alignment:** When reporting implementation outcomes **to Issues** (comments, checkpoint blocks), default to the same compressed-vs-expand judgment unless **`governance/policies/cursor-workflow-layer.md`** mandates a structured report shape that already embeds proof blocks.
 
+## Governance posture inheritance (Issue #217; workflow narration compression)
+
+**Declarative posture** means what kinds of actions are permitted for the **active Issue** (its **`Current status:`**, Projects view, named scope)—**not** investigation conclusions, uncertainty, consensus substance, architectural distinctions, §B.2 proof blocks (including Priority proof discipline), **`Current status:` / §H** transitions (and their **§B.5** comments), workflow-weight rationales, or evidence fields.
+
+When posture is **unchanged** and **unambiguous**, carry it forward with **one readable line** (adjust clauses freely; omit inapplicable items; bind to the Issue number):
+
+`Inherited posture (unchanged): …; scoped to #<N>.`
+
+Example clauses operators may concatenate (human language, **no opaque codes**): **investigation-only**; **no implementation** (no RP app / product code edits for this Issue’s tract); **no GitHub mutation** when that constraint is binding; **validation-only**; **deterministic checks only**.
+
+**Invalidation → full explicit restatement of posture plus context** (do not rely on the compact line alone) when **any** holds: ambiguity or disagreement; **`Current status:`** or Projects **Status/Workflow** shifts that change permitted work; material Issue **body** edits to scope/constraints/validation expectations; orchestration overrides; switching the primary tracked Issue without re-recording posture; taking an action that contradicts inherited posture.
+
+**Adjacent issues (non-umbrella coordination):** **#218** (redundant disclaimer compression) and **#219** (report scaffolding) **must remain consistent**—they compress presentation; they **never** waive §B.2/§H or substitute evidence.
+
+## Redundant disclaimer compression (Issue #218; workflow narration compression)
+
+**Declarative spine depends on Issue #217:** Use the **`Inherited posture (unchanged): …; scoped to #<N>.`** line (**Governance posture inheritance** above). That line **carries** overlapping constraints (investigation-only, **no implementation** / **no product code edits**, **no GitHub mutation** when binding, etc.). **Stable issue/project state** (“unchanged”) is ordinarily visible from **`Current status:`** and **RP System Workflow** fields—restating it verbatim adds no information **when posture already encodes those limits**.
+
+**Trim only:** Extra sentences whose **only** informational content duplicates the posture line or already-visible Issue/Projects truth (examples: repeating “no code changes,” “no GitHub mutation,” “issue unchanged,” “project fields unchanged,” “posture unchanged” in separate sentences). **Never** silently omit material facts or imply work that did **not** happen.
+
+**Forbidden to compress:** **`issue-tracking-workflow.md` §B.2** proof blocks when required; **`Current status:` / §H** transitions and associated **§B.5** comments; mandatory **Evidence / §D** substance; validation criteria prose; consensus records; uncertainty qualification; architectural or **Layer** reasoning; workflow-weight rationale; **§B.2 material Priority** acknowledgment lines when §B.2 treats Priority as material to the outcome.
+
+**Expand / restate disclaimers explicitly** whenever: ambiguity; **material** change to permitted work or Issue/Project/GitHub facts; reader or orchestration asks; escalation/oversight; or compression would conceal whether mutation or advancement occurred.
+
+**Coordination (#219):** Canonical rules in **Report structure compression** below—the posture line stays **early**; **#219** trims **structure/scaffolding**, not disclaimers (**#218**) or declarative posture (**#217**).
+
+## Report structure compression (Issue #219; workflow narration compression)
+
+**Stacking (non-umbrella):** **#217** posture line stays the **first** readable anchor in checkpoints where posture applies. **#218** removes **duplicative sentences** tied to posture. **#219** trims **repeated report skeleton** (headers, intro framing, metadata narration, category setup prose, boilerplate “current understanding” scaffolding, duplicated workflow preamble) **below** posture/disclaimer envelopes.
+
+**Prefer:** Delta-first summaries (what **changed**, decisions, next step); cite **Issue #**, **`Current status:`**, and **`Execution snapshot`/`Execution anchor`** from the Issue body instead of rewriting them as long prose when unchanged.
+
+**Never strip or collapse:** **`issue-tracking-workflow.md` §B.2** proof blocks where required; **`Current status:` / §H** transitions and mandated **§B.5** comments; evidentiary completeness; uncertainty; governance/architecture distinctions; validation criteria citations; consensus text; workflow-weight rationale; **§B.2 material Priority** acknowledgment; substantive governance reasoning or methodology.
+
+**Mandatory expansion (use full scaffolding)** when **any** holds: ambiguity; instability/contradictions; enforcement or architecture-risk decisions; oversight/escalation; multi-issue entanglement without a single clear anchor; explicit reader directive; §D-mandatory narratives for the milestone at hand (see **Compressed implementation and reporting defaults** expansion bullets above).
+
+**Discoverability:** Titles/labels/`Current status:`/`projectItems` authority is unchanged—compression must not hide Issues or mute Project truth.
+
 ## Safe issue retrieval and mutation
 
 When retrieving or modifying GitHub Issues, preserve the issue body as authoritative structured state.
