@@ -56,6 +56,18 @@ Audit JSON is **not self-consuming**: it records observations for **interpretati
 
 **Disk layout vs session restore:** Audit JSON under **`rp_audits/session_*`** may **mirror** committed **`SceneState`** / continuity-related fields for a turn (for example **`context_snapshot.scene_state_after`**), but those mirrors exist for **operators and tooling**, not as a parallel store of truth. **Authoritative runtime state** remains in **`ContinuityManager`** and **`SceneState`** in memory, persisted for resume via **`python/data/sessions/*.json`** (see `docs/rp-data-layout.md`). **Session restore reads only `python/data/sessions/*.json` and does not depend on `rp_audits/`.** Removing or omitting audit files does **not** roll back or change continuity; it only removes **observational artifacts**.
 
+### Perception-only privacy vs continuity-grounded offstage (GitHub #216)
+
+**Operational rule:** **Private / directed speech** (redaction in a non-recipient character prompt, empty or stubbed `audience`, etc.) shows **perception** working — it **does not** prove that **`SceneState`** committed an **off-focal** interval (`offstage_characters`, excursion participation, `character_presence_status`, or focal roster changes).
+
+**Continuity-grounded offstage / reentry** requires evidence that **continuity adopted** the lifecycle, for example:
+
+- **`context_snapshot.scene_state_after`** showing the intended **`present_characters` / `offstage_characters` / `character_presence_status`** after the beat (direct **`SceneState.to_dict()`** mirror — see **Scene state mirror and excursion digest** below); and/or
+- **`metadata.excursion_audit_digest_v1`** / session continuity payloads reflecting **excursion open → close** when the scenario claims an excursion-shaped interval; and/or
+- **`metadata.ctar.continuity_mutation_resolution`** when the **#81** pipeline applied for that beat (optional corroboration — see **Continuity turn-level audit record (CTAR)** below).
+
+Label runs accordingly: **perception smoke** (dialogue visibility) vs **continuity-grounded lifecycle** (roster + excursion proof). Do not treat audit heuristics or narrative prose alone as substitutes for those mirrors (**#59**).
+
 ### Audit session spine completeness (#192)
 
 **Purpose:** Give operators and regressions a **minimal checklist** for “did we get an interpretable audited session?” This section is **documentation and triage only**—not a runtime gate (**#59** unchanged) and not a retrieval or continuity semantics change (**GitHub [#192](https://github.com/KizzieFae/Holy_Grail_RP/issues/192)** contract-hardening thread).
