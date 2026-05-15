@@ -370,6 +370,8 @@ Narration uses **only** that supplied dict for prompts, fallbacks, and verbatim 
 
 ### 5. Orchestration Flow
 
+**Per-orchestration-turn pre-turn routing (GitHub #213):** In `turn_runner.run_character_turns`, each Director selection pass resolves the **effective user trigger for that orchestration turn** (Streamlit: the same user message each beat; headless: optional per-turn schedule), runs `ContinuityManager.apply_pre_turn_user_presence_routing` with that string and session `pending_forced_speaker`, **then** derives `eligible_participants`, `offstage_list`, and `available_actors`. Continuity truth is unchanged; this is **ordering only** so trigger-driven offstage / release heuristics align with the pool passed to `choose_next_actor`.
+
 ```text
 User Input
     ↓

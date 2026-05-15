@@ -116,17 +116,6 @@ async def run_character_turns(
     attempt_count = 0
     max_attempts = max(len(char_names), 1) * max(turn_limit, 1)
 
-    continuity_pre = get_continuity_manager_fn()
-    if continuity_pre is not None and continuity_pre.scene_state is not None:
-        continuity_pre.apply_pre_turn_user_presence_routing(
-            trigger_text=resolve_effective_user_trigger(1),
-            participant_names=char_names,
-            get_character_display_name_fn=get_character_display_name_fn,
-            pending_forced_speaker=st_module.session_state.get(
-                "pending_forced_speaker"
-            ),
-        )
-
     try:
         with st_module.spinner("Characters are responding..."):
             while successful_turns < turn_limit and attempt_count < max_attempts:
@@ -136,11 +125,27 @@ async def run_character_turns(
                     st_module.session_state["issue29_actors_used_this_round_tail"] = (
                         str(au[-1]) if au else None
                     )
+                next_orchestration_turn = successful_turns + 1
+                effective_user_trigger = resolve_effective_user_trigger(
+                    next_orchestration_turn
+                )
                 continuity_manager = get_continuity_manager_fn()
-                eligible_participants: list[str] = []
                 continuity_scene_state = getattr(
                     continuity_manager, "scene_state", None
                 )
+                if continuity_manager is not None and continuity_scene_state is not None:
+                    continuity_manager.apply_pre_turn_user_presence_routing(
+                        trigger_text=effective_user_trigger,
+                        participant_names=char_names,
+                        get_character_display_name_fn=get_character_display_name_fn,
+                        pending_forced_speaker=st_module.session_state.get(
+                            "pending_forced_speaker"
+                        ),
+                    )
+                    continuity_scene_state = getattr(
+                        continuity_manager, "scene_state", None
+                    )
+                eligible_participants: list[str] = []
                 if continuity_scene_state is not None:
                     eligible_participants = eligible_agent_keys_for_present_characters(
                         list(
@@ -192,8 +197,7 @@ async def run_character_turns(
                 if not available_actors:
                     break
 
-                turn_number = set_audit_turn_fn(successful_turns + 1)
-                effective_user_trigger = resolve_effective_user_trigger(turn_number)
+                turn_number = set_audit_turn_fn(next_orchestration_turn)
 
                 decision = await choose_next_actor_fn(
                     director=director,
