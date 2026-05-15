@@ -28,6 +28,7 @@ def write_session_manifest(
     presence_changes: list[dict[str, Any]] | None = None,
     bootstrap_interpretation: dict[str, Any] | None = None,
     cross_session_injection_report: dict[str, Any] | None = None,
+    audit_scenario_metadata: dict[str, Any] | None = None,
     normalize_scene_template_metadata,
     utc_timestamp,
 ) -> str:
@@ -65,6 +66,9 @@ def write_session_manifest(
 
     if cross_session_injection_report is not None:
         manifest["cross_session_injection_report"] = cross_session_injection_report
+
+    if audit_scenario_metadata is not None:
+        manifest["audit_scenario_metadata"] = dict(audit_scenario_metadata)
 
     if any(
         [

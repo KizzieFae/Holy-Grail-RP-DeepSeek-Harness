@@ -43,6 +43,7 @@ _REQUIRED_KEYS = frozenset(
 def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> None:
     """Reject invalid values for optional manifest fields."""
     opt_audit_tier = raw.get("audit_validation_tier")
+    opt_audit_tier_norm: str | None = None
     if opt_audit_tier is not None and str(opt_audit_tier).strip():
         v = str(opt_audit_tier).strip().lower()
         if v not in _AUDIT_VALIDATION_TIERS:
@@ -50,6 +51,7 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
                 f"Scenario {scenario_id!r}: audit_validation_tier must be one of "
                 f"{sorted(_AUDIT_VALIDATION_TIERS)}, got {opt_audit_tier!r}"
             )
+        opt_audit_tier_norm = v
     if "expected_pressure_profile" in raw and raw["expected_pressure_profile"] is not None:
         v = str(raw["expected_pressure_profile"]).strip().lower()
         if v not in _EXPECTED_PRESSURE_PROFILES:
@@ -139,6 +141,81 @@ def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> 
                 f"Scenario {scenario_id!r}: exactly one character must be assigned "
                 f"anchor role {anchor!r} for template {tid!r} (found {n_anchor})"
             )
+
+    if opt_audit_tier_norm == "tier_b_continuity_grounded":
+        ap_issue = raw.get("audit_program_issue")
+        if str(ap_issue or "").strip() != "214":
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b_continuity_grounded requires "
+                f'audit_program_issue "214", got {ap_issue!r}'
+            )
+        sched = raw.get("tier_b_session_mutation_schedule")
+        if not isinstance(sched, list) or not sched:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b_session_mutation_schedule must be "
+                f"a non-empty list"
+            )
+        gate = raw.get("tier_b_continuity_gate")
+        if not isinstance(gate, dict):
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b_continuity_gate must be an object"
+            )
+        eid = str(gate.get("excursion_id") or "").strip()
+        if not eid:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b_continuity_gate.excursion_id required"
+            )
+        pc = str(gate.get("excursion_participant_card_id") or "").strip()
+        if not pc:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b_continuity_gate.excursion_participant_card_id "
+                f"required"
+            )
+        cards = {str(x).strip() for x in raw.get("character_card_ids", []) if str(x).strip()}
+        if pc not in cards:
+            raise ValueError(
+                f"Scenario {scenario_id!r}: tier_b gate participant card {pc!r} "
+                f"not in character_card_ids"
+            )
+        seen_ot: set[int] = set()
+        for idx, entry in enumerate(sched):
+            if not isinstance(entry, dict):
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: tier_b schedule[{idx}] must be an object"
+                )
+            ot = entry.get("orchestration_turn")
+            if not isinstance(ot, int) or ot < 1:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: tier_b schedule[{idx}].orchestration_turn "
+                    f"must be int >= 1"
+                )
+            if ot in seen_ot:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: duplicate orchestration_turn {ot} in tier_b schedule"
+                )
+            seen_ot.add(ot)
+            muts = entry.get("mutations")
+            if not isinstance(muts, list) or not muts:
+                raise ValueError(
+                    f"Scenario {scenario_id!r}: tier_b schedule turn {ot} needs non-empty mutations"
+                )
+            for j, m in enumerate(muts):
+                if not isinstance(m, dict):
+                    raise ValueError(
+                        f"Scenario {scenario_id!r}: tier_b schedule turn {ot} mutation[{j}] "
+                        f"must be an object"
+                    )
+                mtype = str(m.get("mutation_type") or "").strip().upper()
+                if mtype not in {"EXCURSION_OPEN", "EXCURSION_UPDATE", "EXCURSION_CLOSE"}:
+                    raise ValueError(
+                        f"Scenario {scenario_id!r}: invalid tier_b mutation_type {mtype!r} "
+                        f"at turn {ot}[{j}]"
+                    )
+                if not isinstance(m.get("payload"), dict):
+                    raise ValueError(
+                        f"Scenario {scenario_id!r}: tier_b mutation at turn {ot}[{j}] "
+                        f"needs object payload"
+                    )
 
 
 def validate_startup_trigger_semantics(raw: dict[str, Any], scenario_id: str) -> None:

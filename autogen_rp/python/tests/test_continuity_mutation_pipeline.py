@@ -1087,7 +1087,7 @@ def test_slice_c_process_turn_post_close_presence_and_invariants() -> None:
         != "temporary_offstage"
     )
     present = set(mgr.scene_state.present_characters or [])
-    assert anchor in present
+    assert "B" in present
     assert not (present & mgr.active_excursion_character_ids())
 
 

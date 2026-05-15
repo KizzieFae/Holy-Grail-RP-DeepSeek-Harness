@@ -13,6 +13,7 @@ from beat_shift_state import (
 )
 from scene_grounding import rebuild_scene_grounding_from_continuity
 from turn_runner_audit import log_narrator_render_audit, write_turn_audit_artifacts
+from tier_b_session_schedule import session_mutation_candidates_for_turn
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +79,18 @@ def apply_successful_turn_updates(
     if continuity_manager:
         try:
             if not skip_continuity_process_turn:
+                sched_cand = session_mutation_candidates_for_turn(
+                    st_module, orchestration_turn=turn_number
+                )
+                proc_kw: dict[str, Any] = {}
+                if sched_cand:
+                    proc_kw["session_mutation_candidates"] = sched_cand
                 continuity_manager.process_turn(
                     acting_character=next_actor,
                     move=move,
                     director_decision=decision,
                     other_characters=[name for name in char_names if name != next_actor],
+                    **proc_kw,
                 )
             sync_orchestration_state_from_continuity_fn()
 

@@ -13,6 +13,9 @@ from continuity_audit_origin import (
 from continuity_state import ExcursionRecord, ExcursionStatus
 
 from continuity_manager_presence_surface import resync_presence_through_authority
+from continuity_presence_pipeline import (
+    manager_restore_excursion_participants_to_focal_after_close,
+)
 
 
 def open_excursion(
@@ -100,6 +103,7 @@ def close_excursion(
         raise KeyError(excursion_id)
     if rec.status == ExcursionStatus.CLOSED:
         return
+    participants = list(rec.participant_character_ids)
     rec.status = ExcursionStatus.CLOSED
     rec.closed_at_turn = (
         int(closed_at_turn)
@@ -107,6 +111,7 @@ def close_excursion(
         else int(manager.turn_counter)
     )
     resync_presence_through_authority(manager)
+    manager_restore_excursion_participants_to_focal_after_close(manager, participants)
     closed_idx = int(rec.closed_at_turn or manager.turn_counter)
     if not manager_suppress_direct_excursion_bypass_audit(manager):
         manager_record_continuity_audit_event(

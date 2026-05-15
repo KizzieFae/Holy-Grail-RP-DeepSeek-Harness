@@ -28,6 +28,7 @@ from response_validation_binding_sleeping_surface import (
 from response_validation_investigation_recall import (
     format_investigation_anchor_retry_note,
 )
+from tier_b_session_schedule import session_mutation_candidates_for_turn
 from turn_runner_audit import log_character_turn_audit
 
 DEFAULT_MAX_CHARACTER_ATTEMPTS = 3
@@ -250,11 +251,18 @@ def _apply_continuity_and_progression_gate(
         cm_exec=cm_exec,
     )
     try:
+        sched_cand = session_mutation_candidates_for_turn(
+            st_module, orchestration_turn=turn_number
+        )
+        proc_kw2: dict[str, Any] = {}
+        if sched_cand:
+            proc_kw2["session_mutation_candidates"] = sched_cand
         cm_exec.process_turn(
             acting_character=next_actor,
             move=dict(move),
             director_decision=decision,
             other_characters=[name for name in char_names if name != next_actor],
+            **proc_kw2,
         )
     except Exception:
         st_module.session_state["continuity_manager"] = ContinuityManager.from_dict(

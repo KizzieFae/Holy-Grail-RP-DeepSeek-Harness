@@ -12,9 +12,12 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --list-scenarios
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
-    # GitHub #214 Tier A (perception/privacy smoke; manifest ``audit_validation_tier`` — not Tier B / #216):
+    # GitHub #214 Tier A (perception/privacy smoke; manifest ``audit_validation_tier`` — not Tier B):
     python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 12
+    # GitHub #214 Tier B (continuity-grounded excursion lifecycle; deterministic gate on continuity mirrors):
+    python scripts/run_scene_simulation_llm.py --scenario audit_i214_offstage_continuity_tier_b --audit --turns 12
     # Same with deterministic Tier A gate skipped (investigation only): add --skip-tier-a-gate
+    # Tier B gate skip (investigation only): add --skip-tier-b-gate
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --audit --llm-audit --turns 1 --no-deep-simulation-turns
     # Continuity-backed episodic recall in character prompts (requires flag or RP_EPISODIC_MEMORY=1):
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 2 --episodic-memory
@@ -52,6 +55,10 @@ from headless_scene_simulation import (  # noqa: E402
     run_headless_llm_scene,
 )
 from tier_a_perception_gate import TierAPerceptionGateError, validate_tier_a_perception_smoke_session  # noqa: E402
+from tier_b_continuity_gate import (  # noqa: E402
+    TierBContinuityGateError,
+    validate_tier_b_continuity_grounded_session,
+)
 from progression_run_metrics import FAILURE_CLASSIFICATIONS  # noqa: E402
 from progression_simulation_scenarios import (  # noqa: E402
     audit_owner_slug,
@@ -163,6 +170,14 @@ def main() -> None:
         help=(
             "After an audited run, skip the deterministic Tier A perception gate "
             "(``tier_a_perception_smoke`` manifests only; Issue #214). Investigation only."
+        ),
+    )
+    p.add_argument(
+        "--skip-tier-b-gate",
+        action="store_true",
+        help=(
+            "After an audited run, skip the deterministic Tier B continuity gate "
+            "(``tier_b_continuity_grounded`` manifests only; Issue #214). Investigation only."
         ),
     )
     p.add_argument(
@@ -525,32 +540,42 @@ def main() -> None:
 
     if (
         args.audit
-        and not args.skip_tier_a_gate
         and args.scenario
         and raw_scenario is not None
-        and str(raw_scenario.get("audit_validation_tier") or "").strip().lower()
-        == "tier_a_perception_smoke"
         and result is not None
         and result.audit_summary_report_path
     ):
         session_root = Path(result.audit_summary_report_path).resolve().parent
-        tok_raw = raw_scenario.get("audit_bounded_token")
-        token = str(tok_raw).strip() if tok_raw else None
-        try:
-            gate_report = validate_tier_a_perception_smoke_session(
-                session_root,
-                bounded_token=token,
+        tier_chk = str(raw_scenario.get("audit_validation_tier") or "").strip().lower()
+        if not args.skip_tier_a_gate and tier_chk == "tier_a_perception_smoke":
+            tok_raw = raw_scenario.get("audit_bounded_token")
+            token = str(tok_raw).strip() if tok_raw else None
+            try:
+                gate_report = validate_tier_a_perception_smoke_session(
+                    session_root,
+                    bounded_token=token,
+                )
+            except TierAPerceptionGateError as exc:
+                print(str(exc), file=sys.stderr)
+                sys.exit(1)
+            note = (
+                f"* **Tier A perception gate:** PASS (`speech_beats_scanned={gate_report['speech_beats_scanned']}`)"
             )
-        except TierAPerceptionGateError as exc:
-            print(str(exc), file=sys.stderr)
-            sys.exit(1)
-        note = (
-            f"* **Tier A perception gate:** PASS (`speech_beats_scanned={gate_report['speech_beats_scanned']}`)"
-        )
-        btf = gate_report.get("bounded_token_found")
-        if btf is not None:
-            note += f"; bounded_token_found={btf}"
-        print(note)
+            btf = gate_report.get("bounded_token_found")
+            if btf is not None:
+                note += f"; bounded_token_found={btf}"
+            print(note)
+        if not args.skip_tier_b_gate and tier_chk == "tier_b_continuity_grounded":
+            try:
+                gate_b = validate_tier_b_continuity_grounded_session(session_root)
+            except TierBContinuityGateError as exc:
+                print(str(exc), file=sys.stderr)
+                sys.exit(1)
+            print(
+                "* **Tier B continuity gate:** PASS "
+                f"(`rows={gate_b['character_rows_scanned']}`, "
+                f"excursion_id={gate_b['excursion_id']!r})"
+            )
 
 
 if __name__ == "__main__":

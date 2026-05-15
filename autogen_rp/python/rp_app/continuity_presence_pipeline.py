@@ -150,6 +150,33 @@ def manager_resync_presence_through_authority(manager: Any) -> None:
     manager_synchronize_presence_from_canonical_authority(manager, scratch)
 
 
+def manager_restore_excursion_participants_to_focal_after_close(
+    manager: Any, participant_character_ids: list[str]
+) -> None:
+    """Re-commit excursion participants to focal presence after their excursion closes.
+
+    While an excursion is active, ``E_active`` participants are stripped from
+    ``present_characters``; a plain resync after close does not re-append them if
+    other focal characters remained present (the deadlock guard only runs when
+    ``present_characters`` is empty). This path applies the same canonical reentry
+    scratch updates used for structured ``presence_changes`` / entry tags so close
+    restores participation without narrator or perception inference (GitHub #214 Tier B).
+    """
+    if manager.scene_state is None:
+        return
+    e_active = manager.active_excursion_character_ids()
+    scratch = manager_presence_scratch_from_scene_state(manager)
+    for raw in participant_character_ids:
+        pid = str(raw or "").strip()
+        if not pid or pid in e_active:
+            continue
+        manager_apply_canonical_reentry_scratch(manager, scratch, pid)
+    manager_reconcile_presence_lists_scratch(manager, scratch)
+    manager_assert_presence_invariant_after_reconcile_scratch(scratch)
+    manager_ensure_at_least_one_present_character_scratch(manager, scratch)
+    manager_synchronize_presence_from_canonical_authority(manager, scratch)
+
+
 def manager_apply_pre_turn_user_presence_routing(
     manager: Any,
     *,

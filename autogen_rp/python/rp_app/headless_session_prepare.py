@@ -220,6 +220,19 @@ def prepare_headless_session(
         ak = str(card.get("agent_name", "") or "").strip() or make_agent_identifier(name)
         agent_keys.append(ak)
     st.session_state["selected_chars"] = resolved_files
+    card_to_agent: dict[str, str] = dict(zip(character_card_ids, agent_keys))
+    st.session_state["tier_b_session_mutation_by_turn"] = {}
+    if scenario_raw is not None:
+        _tier = str(scenario_raw.get("audit_validation_tier") or "").strip().lower()
+        if _tier == "tier_b_continuity_grounded":
+            from tier_b_session_schedule import parse_tier_b_session_mutation_schedule
+
+            st.session_state["tier_b_session_mutation_by_turn"] = (
+                parse_tier_b_session_mutation_schedule(
+                    scenario_raw,
+                    card_to_agent=card_to_agent,
+                )
+            )
 
     def _sync() -> None:
         state_helpers.sync_orchestration_state_from_continuity(
@@ -445,6 +458,12 @@ def prepare_headless_session(
                 else None
             )
             scene_audit_kwargs = get_scene_audit_logging_kwargs(ss)
+            from tier_b_session_schedule import build_audit_scenario_metadata_for_manifest
+
+            audit_scenario_metadata = build_audit_scenario_metadata_for_manifest(
+                scenario_raw,
+                card_to_agent=card_to_agent,
+            )
             audit_logger.write_session_manifest(
                 session_owner=session_owner,
                 session_number=int(session_num),
@@ -452,6 +471,7 @@ def prepare_headless_session(
                 opening_description=opening_final,
                 user_name=user_name,
                 bootstrap_interpretation=st.session_state.get("bootstrap_interpretation"),
+                audit_scenario_metadata=audit_scenario_metadata,
                 **scene_audit_kwargs,
             )
             state_helpers.refresh_audit_summary_report(

@@ -209,6 +209,7 @@ class AuditLogger:
         presence_changes: list[dict[str, Any]] | None = None,
         bootstrap_interpretation: dict[str, Any] | None = None,
         cross_session_injection_report: dict[str, Any] | None = None,
+        audit_scenario_metadata: dict[str, Any] | None = None,
     ) -> str:
         """Write a session manifest file listing all characters and scene info.
 
@@ -225,6 +226,7 @@ class AuditLogger:
             character_authority_labels: Optional character authority labels
             bootstrap_interpretation: Optional ``interpretation_to_jsonable`` dict (Issue #95).
             cross_session_injection_report: Optional compact cross-session injection audit payload.
+            audit_scenario_metadata: Optional harness fields (e.g. GitHub #214 Tier B gate inputs).
 
         Returns:
             Path to manifest file
@@ -248,6 +250,7 @@ class AuditLogger:
             presence_changes=presence_changes,
             bootstrap_interpretation=bootstrap_interpretation,
             cross_session_injection_report=cross_session_injection_report,
+            audit_scenario_metadata=audit_scenario_metadata,
             normalize_scene_template_metadata=_normalize_scene_template_metadata,
             utc_timestamp=utc_timestamp,
         )

@@ -13,7 +13,8 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Registry-backed resolved outcomes and scene grounding (Issue #127)](#registry-backed-resolved-outcomes-and-scene-grounding-issue-127)** — `continuity_state`, `turn_metadata_by_index`, per-turn `metadata.scene_grounding` limits, `transaction.scene_commitment`, triage map.
 - **[Canonical audit identity (Issue #106)](#canonical-audit-identity-issue-106)** — `audit_session_owner` vs `scene_owner`, ingress, no inference.
 - **[Audit session spine completeness (#192)](#audit-session-spine-completeness-192)** — filesystem / operator checklist: expected session files, instrumentation for gap scans, continuity summary XOR availability marker (**not** new runtime authority).
-- **[Tier A perception smoke (#214 manifest)](#tier-a-perception-smoke-214-manifest)** — **`tier_a_perception_smoke`** scenario field + headless runbook (not **Tier B** / **#216**).
+- **[Tier A perception smoke (#214 manifest)](#tier-a-perception-smoke-214-manifest)** — **`tier_a_perception_smoke`** scenario field + headless runbook (not **Tier B**).
+- **[Tier B continuity grounded (#214 manifest)](#tier-b-continuity-grounded-214-manifest)** — **`tier_b_continuity_grounded`**, **`session_mutation_candidates`** schedule, continuity mirror gate (not **Tier A**).
 
 ## Canonical audit identity (Issue #106)
 
@@ -83,9 +84,36 @@ After an audited run, `tier_a_perception_smoke` scenarios run a **deterministic 
 
 **What Tier A does NOT prove:** **Continuity-grounded** offstage/reentry — no requirement for **`excursion_lifecycle`** proof, **`scene_state_after`** excursion-shaped mirrors, or **Tier B** (**#216** standard). Do not label a Tier A session as continuity-grounded.
 
-**Tier B:** Separate milestone on **#214**; uses **`tier_b_continuity_grounded`** when added to a manifest and **#216** audit surfaces.
+**Tier B:** **`tier_b_continuity_grounded`** — see [Tier B continuity grounded (#214 manifest)](#tier-b-continuity-grounded-214-manifest) (deterministic gate on **`excursion_audit_digest_v1`** + **`scene_state_after`**; closed **#216** proof standards).
 
 **Same-turn vs multi-turn return:** Record explicitly on **#214** for each **frozen reference session**; scenario field **`audit_return_timing_note`** is documentation-only.
+
+### Tier B continuity grounded (#214 manifest)
+
+**Tier** — Progression scenario manifests may set **`audit_validation_tier`** to **`tier_b_continuity_grounded`** (validated at load time). Canonical scenario: **`audit_i214_offstage_continuity_tier_b`**. Headless runs inject **`session_mutation_candidates`** on **`tier_b_session_mutation_schedule.orchestration_turn`** indices through normal **`ContinuityManager.process_turn`** (Issue **#81** pipeline — no bypass).
+
+**Manifest extras:** **`tier_b_session_mutation_schedule`**, **`tier_b_continuity_gate`** (excursion id + **`excursion_participant_card_id`**). Resolved agent expectations are written to **`_manifest.json`** under **`audit_scenario_metadata`** for the deterministic gate.
+
+**How to run (headless, audited):** From **`autogen_rp/python`**, e.g.  
+`python scripts/run_scene_simulation_llm.py --scenario audit_i214_offstage_continuity_tier_b --audit --turns 12`  
+After the run, the CLI executes the **Tier B continuity gate** unless **`--skip-tier-b-gate`** is set (investigation only). **`DEEPSEEK_API_KEY`** required for the LLM path.
+
+**What Tier B PASS means (full offstage lifecycle, #216-aligned):** Character **`*_full.json`** rows must show, for the manifest excursion id and resolved **`excursion_participant_agent`**:
+
+1. **Excursion commitment** — non-empty **`metadata.excursion_audit_digest_v1`** and timeline **active → closed** (closed strictly after first **active**).
+2. **Pipeline authority** — at least one row with **`metadata.continuity_audit_origin.kind == pipeline_turn`** (Issue **#81** / **`process_turn`** — not narrator inference).
+3. **Focal exclusion while active** — on rows where the digest is **active** for that id, **`context_snapshot.scene_state_after.present_characters`** must **not** include the participant ( **`P_focal ∩ E_active = ∅`** mirror).
+4. **Authoritative close + restored focal participation** — on at least one row where the digest is **closed**, **`context_snapshot.scene_state_after`** must show the participant back in **`present_characters`**, with **consistent** mirrors: not listed in **`offstage_characters`**, and **`character_presence_status`** for that agent not **`temporary_offstage`** or **`departed`** when those maps are present on the snapshot.
+
+**Sufficient mirror set for reentry proof:** Primary — **`scene_state_after.present_characters`** (participant ∈ list post-close). Supporting consistency (when serialized) — **`scene_state_after.offstage_characters`**, **`scene_state_after.character_presence_status`**. Corroboration — digest row **closed**, optional **`metadata.ctar`** (not required to PASS). **Not sufficient alone:** **`parsed_output`** prose, perception redaction, or narrator-visible text.
+
+Excursion **close** in runtime applies the same canonical reentry scratch path used for structured **`presence_changes`** so that **Tier B** can prove return **without** a separate “reentry beat” when the harness closes via **`EXCURSION_CLOSE`** (still continuity-grounded via **`scene_state_after`** on the pipeline row).
+
+**What Tier B does NOT prove:** Tier A v2 directed/private perception smoke; offstage claims from perception redaction or narrator prose alone; full product “off-focal” UX beyond what the mirrors show.
+
+**PASS / FAIL:** **FAIL** exits **`run_scene_simulation_llm.py`** with non-zero status and prints gate errors; **PASS** prints a one-line confirmation.
+
+**Difference vs Tier A:** Tier A inspects **`parsed_output`** speech (`directed` / `private` + audience). Tier B ignores that contract and requires **continuity-grounded** excursion + **`SceneState`** mirror evidence instead.
 
 ### Audit session spine completeness (#192)
 

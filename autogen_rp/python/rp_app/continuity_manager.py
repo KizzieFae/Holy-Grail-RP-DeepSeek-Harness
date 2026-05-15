@@ -228,7 +228,12 @@ class ContinuityManager:
         *,
         closed_at_turn: Optional[int] = None,
     ) -> None:
-        """Mark an excursion closed and resync focal presence (no excursion reintegration)."""
+        """Mark an excursion closed, resync focal presence, and restore participants to focal roster.
+
+        Slice C **reintegration** merge (events/issues/outcomes) is separate from this API; focal
+        re-presence after close uses the same canonical reentry scratch as structured
+        ``presence_changes`` (GitHub #214 Tier B).
+        """
         close_excursion_surface(
             self, excursion_id, closed_at_turn=closed_at_turn
         )

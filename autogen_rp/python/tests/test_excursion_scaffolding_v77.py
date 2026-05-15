@@ -44,6 +44,7 @@ def test_open_update_close_excursion_record_only() -> None:
     assert m.excursions[eid].status == ExcursionStatus.CLOSED
     assert m.excursions[eid].closed_at_turn == m.turn_counter
     assert m.active_excursion_character_ids() == set()
+    assert set(m.scene_state.present_characters or []) == {"A", "B"}
     assert (
         set(m.scene_state.present_characters or [])
         & m.active_excursion_character_ids()
