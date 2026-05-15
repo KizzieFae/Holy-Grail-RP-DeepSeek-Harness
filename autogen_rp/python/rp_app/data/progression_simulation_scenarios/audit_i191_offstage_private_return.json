@@ -1,7 +1,7 @@
 {
   "id": "audit_i191_offstage_private_return",
   "title": "Issue #191 / #214 Tier A — perception & private v2 smoke (overlay)",
-  "intent": "GitHub #214 Tier A (perception/privacy smoke only): exercises overlay round-1 + 3-char cast for directed/private v2 and post-return prompt sampling. Optional bounded token SILVER-QUILL-414 for grep-style checks when the model/harness emits it. Does NOT claim continuity-grounded offstage, excursion adoption, or committed SceneState mutation — see closed #216 and Tier B on #214.",
+  "intent": "GitHub #214 Tier A (perception/privacy smoke only): overlay + 3-char cast; opening embeds explicit directed/private v2 + non-empty audience requirement and return beat for prompt sampling. Audited runs enforce a deterministic Tier A gate on parsed_output (no bounded-token requirement). Optional SILVER-QUILL-414 when emitted. Does NOT claim continuity-grounded offstage, excursion adoption, or committed SceneState mutation — see closed #216 and Tier B on #214.",
   "audit_validation_tier": "tier_a_perception_smoke",
   "audit_program_issue": "214",
   "audit_bounded_token": "SILVER-QUILL-414",
@@ -11,10 +11,10 @@
     "celina",
     "hannah"
   ],
-  "opening_description": "Celina's apartment living room. Ayame is visiting. Hannah Lovelace is present as co-host.",
+  "opening_description": "Celina's apartment living room. Ayame is visiting with Hannah Lovelace as co-host. [Tier A / GitHub #214 perception smoke only — not continuity authority, not #216 / Tier B: After Hannah leaves the living room, include at least one exchange meant only between Ayame and Celina. That beat must use canonical v2 `speech` with `audibility` `directed` or `private` and a non-empty `audience` array naming only the intended listener(s) among those present (cast-style names: Ayame, Celina, Hannah_Lovelace). Then continue the scene until Hannah is back in the living room so later prompts can be sampled; this does not require excursion lifecycle fields or committed offstage SceneState.]",
   "location": "apartment",
-  "trigger_text": "Traveler: Hannah will leave the living room first so the others have privacy.",
-  "max_turns": 8,
+  "trigger_text": "Traveler: Hannah, step out for a few minutes so Ayame and Celina can speak alone; come back when you're ready.",
+  "max_turns": 12,
   "seed_escalating_issue": false,
   "beat_shift_active": false,
   "initial_tension": "medium",

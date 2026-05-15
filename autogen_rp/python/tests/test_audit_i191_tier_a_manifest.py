@@ -21,6 +21,12 @@ def test_audit_i191_is_tier_a_perception_smoke() -> None:
     assert raw.get("audit_program_issue") == "214"
     assert raw.get("audit_bounded_token") == "SILVER-QUILL-414"
     assert raw.get("startup_trigger_mode") == "overlay"
+    assert int(raw.get("max_turns") or 0) >= 10
+    opening = str(raw.get("opening_description") or "")
+    assert "directed" in opening and "private" in opening and "audience" in opening
+    assert str(raw.get("opening_description") or "").strip() != str(
+        raw.get("trigger_text") or ""
+    ).strip()
     intent = str(raw.get("intent") or "")
     assert "#214" in intent and "#216" in intent
     assert "Tier A" in intent

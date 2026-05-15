@@ -74,7 +74,9 @@ Label runs accordingly: **perception smoke** (dialogue visibility) vs **continui
 **Tier** — Progression scenario manifests may set **`audit_validation_tier`** to **`tier_a_perception_smoke`** (validated at load time when present). **`audit_i191_offstage_private_return`** is the canonical **Tier A** lane for **#214** (overlay startup, 3-char cast, private/directed **v2** exercise).
 
 **How to run (headless, audited):** From **`autogen_rp/python`**, e.g.  
-`python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 8`  
+`python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 12`
+
+After an audited run, `tier_a_perception_smoke` scenarios run a **deterministic gate** on character `*_full.json` `parsed_output` (at least one v2 `speech` beat with `directed` or `private` and non-empty `audience`). Use `--skip-tier-a-gate` to bypass (investigation only).  
 (adjust **`--turns`** / **`--no-deep-simulation-turns`** per parity with Streamlit caps; **`DEEPSEEK_API_KEY`** required for LLM path.)
 
 **What Tier A PASS means:** Directed/private paths behave as intended in **prompts** — redaction / **audience** / **`input_messages`** visibility; optional **`audit_bounded_token`** (when emitted in dialogue) supports grep-style checks. Spot-check episodic/retrieval snippets per **#214** operator checklist.

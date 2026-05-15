@@ -13,7 +13,8 @@ From ``autogen_rp/python``::
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --turns 3
     python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --audit --turns 6
     # GitHub #214 Tier A (perception/privacy smoke; manifest ``audit_validation_tier`` — not Tier B / #216):
-    python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 8
+    python scripts/run_scene_simulation_llm.py --scenario audit_i191_offstage_private_return --audit --turns 12
+    # Same with deterministic Tier A gate skipped (investigation only): add --skip-tier-a-gate
     python scripts/run_scene_simulation_llm.py --chars ayame,celina --audit --llm-audit --turns 1 --no-deep-simulation-turns
     # Continuity-backed episodic recall in character prompts (requires flag or RP_EPISODIC_MEMORY=1):
     python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 2 --episodic-memory
@@ -50,6 +51,7 @@ from headless_scene_simulation import (  # noqa: E402
     prepare_headless_session,
     run_headless_llm_scene,
 )
+from tier_a_perception_gate import TierAPerceptionGateError, validate_tier_a_perception_smoke_session  # noqa: E402
 from progression_run_metrics import FAILURE_CLASSIFICATIONS  # noqa: E402
 from progression_simulation_scenarios import (  # noqa: E402
     audit_owner_slug,
@@ -154,6 +156,14 @@ def main() -> None:
         "--audit",
         action="store_true",
         help="Enable audit logging to rp_app/data/rp_audits/ (same as Streamlit with auditing on).",
+    )
+    p.add_argument(
+        "--skip-tier-a-gate",
+        action="store_true",
+        help=(
+            "After an audited run, skip the deterministic Tier A perception gate "
+            "(``tier_a_perception_smoke`` manifests only; Issue #214). Investigation only."
+        ),
     )
     p.add_argument(
         "--llm-audit",
@@ -299,6 +309,8 @@ def main() -> None:
             print(sid)
         return
 
+    if args.skip_tier_a_gate and not args.audit:
+        p.error("--skip-tier-a-gate requires --audit")
     if args.llm_audit and not args.audit:
         p.error("--llm-audit requires --audit")
     if args.fact_spec is not None and not args.audit:
@@ -454,7 +466,7 @@ def main() -> None:
                 cli_trigger_value=cli_trigger_value,
             )
 
-    async def _run() -> None:
+    async def _run():
         try:
             result = await run_headless_llm_scene(
                 st_module=st,
@@ -503,12 +515,42 @@ def main() -> None:
                     )
                 else:
                     run_fact_track_postprocess(session_dir, loaded)
+            return result
         finally:
             mc = st.session_state.get("model_client")
             if mc is not None and hasattr(mc, "close"):
                 await mc.close()
 
-    asyncio.run(_run())
+    result = asyncio.run(_run())
+
+    if (
+        args.audit
+        and not args.skip_tier_a_gate
+        and args.scenario
+        and raw_scenario is not None
+        and str(raw_scenario.get("audit_validation_tier") or "").strip().lower()
+        == "tier_a_perception_smoke"
+        and result is not None
+        and result.audit_summary_report_path
+    ):
+        session_root = Path(result.audit_summary_report_path).resolve().parent
+        tok_raw = raw_scenario.get("audit_bounded_token")
+        token = str(tok_raw).strip() if tok_raw else None
+        try:
+            gate_report = validate_tier_a_perception_smoke_session(
+                session_root,
+                bounded_token=token,
+            )
+        except TierAPerceptionGateError as exc:
+            print(str(exc), file=sys.stderr)
+            sys.exit(1)
+        note = (
+            f"* **Tier A perception gate:** PASS (`speech_beats_scanned={gate_report['speech_beats_scanned']}`)"
+        )
+        btf = gate_report.get("bounded_token_found")
+        if btf is not None:
+            note += f"; bounded_token_found={btf}"
+        print(note)
 
 
 if __name__ == "__main__":
