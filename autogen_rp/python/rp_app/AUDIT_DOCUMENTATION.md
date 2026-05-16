@@ -15,6 +15,16 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Audit session spine completeness (#192)](#audit-session-spine-completeness-192)** — filesystem / operator checklist: expected session files, instrumentation for gap scans, continuity summary XOR availability marker (**not** new runtime authority).
 - **[Tier A perception smoke (#214 manifest)](#tier-a-perception-smoke-214-manifest)** — **`tier_a_perception_smoke`** scenario field + headless runbook (not **Tier B**).
 - **[Tier B continuity grounded (#214 manifest)](#tier-b-continuity-grounded-214-manifest)** — **`tier_b_continuity_grounded`**, **`session_mutation_candidates`** schedule, continuity mirror gate (not **Tier A**).
+- **[Audit read safety — scaffolding vs literal (Issue #215)](#audit-read-safety--scaffolding-vs-literal-issue-215)** — distinguishes verbatim audibility cues from choreography / episodic interpretation shapes under bounded runs; **`#215`** is pointer only.
+
+## Audit read safety — scaffolding vs literal (Issue #215)
+
+**Operational operator guidance (canonical nuance stays on GitHub #215 thread).**
+
+- **Issue #215** tracks **`design_gap` perception scaffolding** posture (draft matrix comments on **#215** are **NON-RATIFIED**). **Tier A/B (#214 manifests)** in this document prove **harness-scope behaviour** — they **do not** silently replace **#215** product-policy completeness.
+- **Literal private-line leakage** review paths (**#191** lineage / `input_messages` audience checks, bounded-token greps where applicable) remain **orthogonal** from **gist / `heard:` / `Saw …` choreography compression** artefacts that may recur in scripted sessions — classify evidence separately when narrating audits.
+- **Finite-run humility:** cite explicit **scenario id**, **audit session path**, turn span; widen programme claims **only** via **tracked hooks** surfaced on **`#215`** matrix footer lineage (e.g. **`[REOPEN]`** cues on the Issue thread).
+- Escalations that look like **ambiguous non-verbatim context** (**motivation lanes, ACTIVE ISSUES, `matched_terms`, pressure scaffolding**) belong to **Layer `perception` + `#215` policy thread** pending documented product rule — attach **minimal repro**, not extrapolation from single archived envelope.
 
 ## Canonical audit identity (Issue #106)
 

@@ -52,3 +52,21 @@ _tmp_prog_issues/
 
 # Local vendor / IDE export (not canonical repo content)
 deepseek_v4_overview.rtf
+
+# Issue #215 programme scratch at repo root (canonical thread + `governance/archives/issue-215/`)
+/_215_body_*.txt
+/_215_body_phase*.md
+/_215_body_merged.md
+/_215_body_curr.txt
+/_merge_215*.py
+/_assemble*.py
+/_build_*.py
+/_p*_215_*.md
+/_p*_215_*.txt
+/_p[789]_*.py
+/_p10_*.py
+/_peek215.txt
+/_fields.json
+/_proj_fields.json
+/_scan_*.py
+/_191_checkpoint.md
