@@ -15,6 +15,7 @@ You **MUST NOT** perform **task-specific** investigation or execution until afte
 ## Bootstrap-safe (allowed before the report)
 
 - Listing files and directories
+- **Audit artifact discovery (`rp_audits/session_*`):** These trees are **gitignored**; **Cursor Glob / default repo search may return no matches even when files exist.** Do **not** conclude an audit session is missing from **search-only** evidence. Verify with **shell directory listing** or **direct file read** of the canonical path (or paths from `artifact_refs`) before reporting absence.
 - Glob / search whose **only** purpose is locating `AGENTS.md`, mapping workspace roots, or resolving paths to **Minimum guidance reads** targets
 - `git` commands that **only** establish repo root, remotes, or structure (read-only)
 - **Reading** `AGENTS.md` and the files required by **Minimum guidance reads** for this task’s class(es)
