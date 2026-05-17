@@ -19,12 +19,12 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 
 ## Audit read safety — scaffolding vs literal (Issue #215)
 
-**Operational operator guidance (canonical nuance stays on GitHub #215 thread).**
+**Operational operator guidance:** Canonical nuance stays on the **closed GitHub `#215` thread**; optional mirrors live under **`governance/archives/issue-215/`**. This section records **documentation / audit-read discipline** (**NON-RATIFIED** scaffolding posture) — **not** substitute PRD or runtime gates.
 
-- **Issue #215** tracks **`design_gap` perception scaffolding** posture (draft matrix comments on **#215** are **NON-RATIFIED**). **Tier A/B (#214 manifests)** in this document prove **harness-scope behaviour** — they **do not** silently replace **#215** product-policy completeness.
+- **GitHub #215** (closed **`design_gap`** / **`layer: perception`**) **documents archival / matrix / closure posture** for **non-verbatim contextual scaffolding** (draft matrix comments remain **NON-RATIFIED**). **`audit_validation_tier` Tier A/B (#214 manifests)** in this document prove **harness-scope behaviour** — they **do not** silently replace **#215** product-policy completeness (**terminology distinction:** draft matrix **“Tier‑1 / Tier‑2”** rows for **issue-pressure language** are **not** the same enumeration as **`audit_validation_tier` Tier A / Tier B** — see **`governance/archives/issue-215/README.md` → Terminology**).
 - **Literal private-line leakage** review paths (**#191** lineage / `input_messages` audience checks, bounded-token greps where applicable) remain **orthogonal** from **gist / `heard:` / `Saw …` choreography compression** artefacts that may recur in scripted sessions — classify evidence separately when narrating audits.
 - **Finite-run humility:** cite explicit **scenario id**, **audit session path**, turn span; widen programme claims **only** via **tracked hooks** surfaced on **`#215`** matrix footer lineage (e.g. **`[REOPEN]`** cues on the Issue thread).
-- Escalations that look like **ambiguous non-verbatim context** (**motivation lanes, ACTIVE ISSUES, `matched_terms`, pressure scaffolding**) belong to **Layer `perception` + `#215` policy thread** pending documented product rule — attach **minimal repro**, not extrapolation from single archived envelope.
+- Escalations that look like **ambiguous non-verbatim context** (**motivation lanes, ACTIVE ISSUES, `matched_terms`, pressure scaffolding**) belong to **`layer: perception`** and **authoritative `#215` GitHub archaeology** (**plus** archival mirrors **`governance/archives/issue-215/`**) pending documented product rule — attach **minimal repro**, not extrapolation from single archived envelope.
 
 ## Canonical audit identity (Issue #106)
 

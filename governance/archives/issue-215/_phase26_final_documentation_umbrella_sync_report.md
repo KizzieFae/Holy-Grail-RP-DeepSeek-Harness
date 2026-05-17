@@ -4,6 +4,15 @@
 
 ---
 
+**Reader context (#222 remediation — forward-only archaeology, non-revision):** This file is retained **verbatim** below as Phase-26 **contemporaneous** evidence.
+
+1. **Search claims in § Documentation synchronization audit** (`#215` “not discovered” inside `governance/` / “zero `governance/**/*.md` hits”) were **true at the authoring pass’s tree** and **were not retrospectively rewritten**. A **later** archival landing added **`governance/archives/issue-215/`** under **`governance/`**, which **does** contain literal **`#215`** references — resolving the apparent contradiction **without falsifying this report’s timestamp**.
+2. **Workflow-state readiness** rows that cite a **live `#215` GitHub API** **`Current status:`** reflect **that pass only** — **today’s authoritative execution stage remains the GitHub Issue thread** (**not** replayed here).
+
+Prefer **pinned `#215`** + **`issue-tracking-workflow.md`** §H for workflow truth; **`governance/rp-app/issue-tracking-workflow.md`** carries **general** workflow rules — not **`#215`-specific** outcome law.
+
+---
+
 # FINAL DOCUMENTATION & UMBRELLA SYNCHRONIZATION REPORT
 
 ## Documentation synchronization audit
