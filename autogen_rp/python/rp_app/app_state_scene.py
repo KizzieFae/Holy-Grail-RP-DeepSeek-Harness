@@ -376,9 +376,20 @@ def enforce_must_remain_presence(
         for item in orchestration_scene_state.get("present_characters", [])
         if str(item or "").strip()
     ]
+    st_map: dict[str, str] = {}
+    if continuity_manager is not None and continuity_manager.scene_state is not None:
+        raw_status = continuity_manager.scene_state.character_presence_status or {}
+        if isinstance(raw_status, dict):
+            for k, v in raw_status.items():
+                st_map[str(k or "").strip()] = str(v or "").strip()
     for character_name in must_remain:
-        if character_name not in present_characters:
-            present_characters.append(character_name)
+        ch = str(character_name or "").strip()
+        if not ch:
+            continue
+        if str(st_map.get(ch, "") or "").strip() == "temporary_offstage":
+            continue
+        if ch not in present_characters:
+            present_characters.append(ch)
     orchestration_scene_state["present_characters"] = present_characters
 
 

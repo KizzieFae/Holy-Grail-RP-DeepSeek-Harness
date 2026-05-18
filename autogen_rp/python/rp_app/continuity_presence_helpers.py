@@ -9,7 +9,12 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Set
+from typing import Any, Callable, Optional, Set
+
+from character_move_adapters import is_canonical_v2_move
+from continuity_consequence_classifier_move_tools import (
+    move_with_flat_text_for_deterministic_tools,
+)
 
 from scene_exit_detection import (
     authored_prose_suppresses_physical_departure,
@@ -152,30 +157,44 @@ def apply_canonical_exit_offstage_transition_scratch(
     if not actor:
         return
 
+    must_remain = str(character_presence_constraints.get(actor, "") or "") == "must_remain"
+    move_for_exit = (
+        move_with_flat_text_for_deterministic_tools(move)
+        if (must_remain and is_canonical_v2_move(move))
+        else move
+    )
+
     exit_tag = "exit" in consequence_tags
-    detect = detect_exit_from_scene(move, scene_dict, actor)
+    detect = detect_exit_from_scene(move_for_exit, scene_dict, actor)
     structured_exit = structured_presence_exit_for_character(move, actor)
     raw_exit = exit_tag or detect or structured_exit
     if not raw_exit:
         return
 
-    if not structured_exit and authored_prose_suppresses_physical_departure(move):
+    if not structured_exit and authored_prose_suppresses_physical_departure(move_for_exit):
         return
 
-    hard = has_hard_scene_departure_evidence(move, scene_dict)
+    hard = has_hard_scene_departure_evidence(move_for_exit, scene_dict)
     lexical_exit = hard or structured_exit
     detect_soft = bool(detect and not lexical_exit)
     tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
     soft_style = detect_soft or tag_only_soft
 
-    must_remain = str(character_presence_constraints.get(actor, "") or "") == "must_remain"
+    beta_prime = bool(
+        must_remain and is_canonical_v2_move(move) and not structured_exit
+    )
 
     if must_remain:
-        if soft_style:
-            return
-        if not structured_exit:
-            return
-        status_kind = "temporary_offstage"
+        if beta_prime:
+            if not detect:
+                return
+            status_kind = "temporary_offstage"
+        else:
+            if soft_style:
+                return
+            if not structured_exit:
+                return
+            status_kind = "temporary_offstage"
     elif soft_style:
         if should_skip_soft_exit_presence_removal(actor, move):
             return
@@ -197,6 +216,7 @@ def ensure_at_least_one_present_character_scratch(
     cast: list[str],
     e_active: Set[str],
     log: logging.Logger,
+    exclude_same_beat_reentry_for: Optional[str] = None,
 ) -> None:
     if scratch.present_characters:
         return
@@ -218,22 +238,33 @@ def ensure_at_least_one_present_character_scratch(
         st = str(status_map.get(n, "") or "").strip()
         return st == "temporary_offstage" or st == ""
 
+    ex = str(exclude_same_beat_reentry_for or "").strip()
+
     off = list(scratch.offstage_characters)
     tier1 = [
         n
         for n in off
-        if n in cast and is_temporary_offstage_equivalent(n) and eligible_for_focal(n)
+        if n in cast
+        and is_temporary_offstage_equivalent(n)
+        and eligible_for_focal(n)
+        and (not ex or n != ex)
     ]
     if tier1:
         apply_canonical_reentry_scratch(scratch, tier1[0])
         return
     tier2 = [
-        n for n in off if n in cast and not is_departed(n) and eligible_for_focal(n)
+        n
+        for n in off
+        if n in cast and not is_departed(n) and eligible_for_focal(n) and (not ex or n != ex)
     ]
     if tier2:
         apply_canonical_reentry_scratch(scratch, tier2[0])
         return
-    tier3 = [n for n in cast if not is_departed(n) and eligible_for_focal(n)]
+    tier3 = [
+        n
+        for n in cast
+        if not is_departed(n) and eligible_for_focal(n) and (not ex or n != ex)
+    ]
     if tier3:
         apply_canonical_reentry_scratch(scratch, tier3[0])
         return

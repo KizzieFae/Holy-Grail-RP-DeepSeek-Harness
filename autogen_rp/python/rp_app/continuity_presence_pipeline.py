@@ -116,7 +116,10 @@ def manager_apply_canonical_exit_offstage_transition_scratch(
 
 
 def manager_ensure_at_least_one_present_character_scratch(
-    manager: Any, scratch: PresenceAuthorityScratch
+    manager: Any,
+    scratch: PresenceAuthorityScratch,
+    *,
+    exclude_same_beat_reentry_for: str | None = None,
 ) -> None:
     if manager.scene_state is None:
         return
@@ -130,6 +133,7 @@ def manager_ensure_at_least_one_present_character_scratch(
         cast=cast,
         e_active=manager.active_excursion_character_ids(),
         log=logger,
+        exclude_same_beat_reentry_for=exclude_same_beat_reentry_for,
     )
 
 
@@ -218,8 +222,12 @@ def manager_apply_must_remain_presence_from_fn(
     must_remain = get_must_remain_characters_fn(scene_dict)
     for character_name in must_remain:
         ch = str(character_name or "").strip()
-        if ch:
-            manager_apply_canonical_reentry_scratch(manager, scratch, ch)
+        if not ch:
+            continue
+        st = str(scratch.character_presence_status.get(ch, "") or "").strip()
+        if st == "temporary_offstage":
+            continue
+        manager_apply_canonical_reentry_scratch(manager, scratch, ch)
     manager_reconcile_presence_lists_scratch(manager, scratch)
     manager_assert_presence_invariant_after_reconcile_scratch(scratch)
     manager_synchronize_presence_from_canonical_authority(manager, scratch)
