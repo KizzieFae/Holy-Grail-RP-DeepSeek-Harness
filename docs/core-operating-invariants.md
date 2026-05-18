@@ -32,6 +32,7 @@ Cross-issue reference for Issue **[#145](https://github.com/KizzieFae/Holy_Grail
 
 - **`ContinuityManager`** and committed narrative truth are authoritative at runtime per **`autogen_rp/python/rp_app/ARCHITECTURE.md`**.
 - Retrieval, prompts, and audits are **non-authoritative** versus continuity unless explicitly documented otherwise.
+- **Continuity authority doctrine** — **[GitHub #224](https://github.com/KizzieFae/Holy_Grail_RP/issues/224)**: **`SceneState`** / **`process_turn`** define **committed** truth; distinguish **intent**, **interpretation**, **commit**, and **observation** (full table in **`autogen_rp/python/rp_app/ARCHITECTURE.md`** — *Continuity authority and evidence lanes*). Narrator prose and classifier/audit signals **do not** override **`SceneState`**. Follow-on issues: [#225](https://github.com/KizzieFae/Holy_Grail_RP/issues/225), [#226](https://github.com/KizzieFae/Holy_Grail_RP/issues/226), [#227](https://github.com/KizzieFae/Holy_Grail_RP/issues/227) — **do not** treat their open work as canonical **implemented** behavior until documented there after consensus.
 
 ---
 

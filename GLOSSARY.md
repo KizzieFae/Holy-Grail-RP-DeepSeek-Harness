@@ -28,7 +28,17 @@ Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the curr
 
 ## State and continuity
 
-**Continuity** — Durable narrative state between turns: scene snapshot, **issues**, **public events**, per-character **interpretations**, **canon anchors**, knowledge propagation. **Authoritative** for “what the fiction has established.” Primary implementation: `continuity_manager.py`, `continuity_state.py`, helpers under `continuity_*`.
+**Continuity** — Durable narrative state between turns: scene snapshot, **issues**, **public events**, per-character **interpretations**, **canon anchors**, knowledge propagation. **Authoritative** for “what the fiction has established.” Primary implementation: `continuity_manager.py`, `continuity_state.py`, helpers under `continuity_*`. **Authority posture (GitHub #224):** **`SceneState`** and the **`ContinuityManager.process_turn`** path own **committed** continuity truth; see **Continuity authority (#224)** below.
+
+**Continuity authority (#224)** — Reconciled doctrine that **`SceneState`** / continuity **commit** path is authoritative for **committed** presence and narrative state; **audits**, **mirrors**, orchestration **`consequences`**, and **classifier tags** are **observational** or auxiliary unless they reflect **already-committed** facts. **Narrator `rendered` prose** is not continuity authority. Umbrella record: **[Issue #224](https://github.com/KizzieFae/Holy_Grail_RP/issues/224)**; vocabulary table: **`autogen_rp/python/rp_app/ARCHITECTURE.md`** (*Continuity authority and evidence lanes*). Related work: [#225](https://github.com/KizzieFae/Holy_Grail_RP/issues/225), [#226](https://github.com/KizzieFae/Holy_Grail_RP/issues/226), [#227](https://github.com/KizzieFae/Holy_Grail_RP/issues/227) (do not treat as replacing #224 doctrine).
+
+**Intent (continuity evidence)** — What the **structured character move** expresses (beats, motivation, etc.). **Input** to processing — not, alone, proof of **commit**.
+
+**Interpretation (continuity evidence)** — Classifier output, exit heuristics, audit summaries, and similar **readings** of the move or scene. May inform continuity; **not** a substitute for **`SceneState`** as proof of **commit**.
+
+**Commit (continuity evidence)** — What continuity **adopts** on the authoritative path (**`process_turn`**, pipeline-backed mutations, reconciled presence) for a beat.
+
+**Observation (continuity evidence)** — Audit rows, **`scene_state_after`** mirrors, session narrative **`consequences`**, **tags**, and other telemetry. **Observational** unless tied to the same facts **already** committed in continuity.
 
 **Scene facts / scene locks** — **Allowlisted, typed** entries in the **Scene Grounding** layer: settled logistics, object states, medical facts, communication outcomes. **Derived** from continuity + deterministic rules; **prompt-facing**; **not** a second authority (PRD §5.8, `autogen_rp/docs/scene-grounding-layer.md`).
 

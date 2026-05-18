@@ -1,6 +1,6 @@
 # Director + Narrator Mediated Architecture
 
-**Scope:** This file is the **RP app** runtime architecture (Director, Narrator, continuity, enforcement, scene lifecycle). Broader repo orientation: [`ARCHITECTURE_OVERVIEW.md`](../../../ARCHITECTURE_OVERVIEW.md), [`MODULE_INDEX.md`](../../../MODULE_INDEX.md). Package-level guardrails under `autogen_rp/`: [`docs/architecture.md`](../../docs/architecture.md). **Audit signal interpretation** (**#59**, **#70**, inventory): [`AUDIT_DOCUMENTATION.md`](./AUDIT_DOCUMENTATION.md) — authoritative; not duplicated here.
+**Scope:** This file is the **RP app** runtime architecture (Director, Narrator, continuity, enforcement, scene lifecycle). Broader repo orientation: [`ARCHITECTURE_OVERVIEW.md`](../../../ARCHITECTURE_OVERVIEW.md), [`MODULE_INDEX.md`](../../../MODULE_INDEX.md). Package-level guardrails under `autogen_rp/`: [`docs/architecture.md`](../../docs/architecture.md). **Audit signal interpretation** (**#59**, **#70**, inventory): [`AUDIT_DOCUMENTATION.md`](./AUDIT_DOCUMENTATION.md) — authoritative; not duplicated here. **Continuity authority / evidence vocabulary (stable doctrine):** [Continuity authority and evidence lanes (GitHub #224)](#continuity-authority-and-evidence-lanes-github-224) — umbrella [**#224**](https://github.com/KizzieFae/Holy_Grail_RP/issues/224).
 
 ## Overview
 
@@ -54,6 +54,27 @@ per-character state.
 **Runtime (#81):** Spatial and excursion lifecycle commits on the **`process_turn`** path flow through **`continuity_mutation_pipeline`**; **`turn_metadata_by_index[beat]`** may include **`continuity_mutation_resolution`** (composer output; authoritative for what committed on that beat).
 
 **Audit (#79, observational — not #59 runtime authority):** Per-turn **`*_full.json`** rows expose **CTAR** under **`metadata.ctar`** (projection of that turn bucket, not a full dump of **`turn_metadata_by_index`**), **`context_snapshot.scene_state_after`** as a **direct** **`SceneState.to_dict()`** mirror, optional **`metadata.excursion_audit_digest_v1`**, and optional **`metadata.continuity_audit_origin`** for **`pipeline_turn`** provenance when applicable. Session-level **`_audit_summary.json`** includes **`continuity_observability_summary_v1`** (strict schema rollup, including **`session_audit_origin`** for bypass beats) when a **`ContinuityManager`** is passed into **`write_summary_report`**, else **`continuity_observability_status_v1`** (**`unavailable`**). Normative field definitions and #59 boundaries: **`AUDIT_DOCUMENTATION.md`** (*Continuity observability (Issue #79)* and subsections).
+
+### Continuity authority and evidence lanes (GitHub #224)
+
+**Doctrine anchor:** **[Issue #224](https://github.com/KizzieFae/Holy_Grail_RP/issues/224)** records the **stable** continuity-authority reconciliation for exit/off-focal semantics, audit read discipline, and related contract tensions (umbrella **audit/doctrine** issue). **Child lanes** for follow-on work — [#225](https://github.com/KizzieFae/Holy_Grail_RP/issues/225) (bounded implementation/design), [#226](https://github.com/KizzieFae/Holy_Grail_RP/issues/226) (strategic reshaping), [#227](https://github.com/KizzieFae/Holy_Grail_RP/issues/227) (`must_remain` reevaluation) — are **not** canonized here beyond pointers; **do not** treat unfinished or speculative outcomes from those issues as **implemented** architecture in this file.
+
+**Committed truth:** **`SceneState`** and the continuity structures that **`ContinuityManager`** updates on the **authoritative** path — principally **`process_turn`** (plus documented bootstrap/setup seams) — define **committed** focal presence, excursions, issues, events, and related narrative state for the live session.
+
+**Evidence vocabulary (stable doctrine):**
+
+| Lane | Meaning |
+|------|---------|
+| **Intent** | What the **character move** expresses structurally (beats, motivation, etc.). **Input** to validation and continuity processing — **not** by itself proof of what **committed**. |
+| **Interpretation** | Deterministic or heuristic **readings** of the move or scene (classifiers, exit heuristics, narrative summaries, operator-facing labels). May **inform** continuity; **does not** replace **`SceneState`** as proof of commit. |
+| **Commit** | What continuity **adopts** on the authoritative path for that beat (**`process_turn`**, pipeline-backed mutations, reconciled presence). This is what the runtime **treats as true** after processing. |
+| **Observation** | **Audits**, **mirrors** (e.g. **`scene_state_after`** when emitted), session **`consequences`** / **tags** in narrative or metadata, and similar **telemetry**. These are **observational** or **tooling-facing** unless they reflect the same facts **already** in committed continuity; they **do not** override **`SceneState`**. |
+
+**Narrator `rendered` prose** is **presentation only** — not continuity authority (see **Off-focal / reentry signal contract** and Narrator sections below).
+
+**Classifier tags** (**`exit`**, **`repositioning`**, etc.) and **`turn_metadata["consequences"]`** document the **classifier lane**; an **`exit`** tag **does not** by itself prove physical removal from **`present_characters`**. Use **`SceneState`** / roster fields after commit for **committed** presence (see **Exit narrative vs effective on-stage presence**).
+
+**Explicitly deferred from this section (see linked issues):** Global **proposal-framework** semantics, **compatibility-view** governance, **scratch-authority** redesign, and full **ingress/OUTPUT** legality closure — **#226**. Bounded **operational** posture for specific template/must-remain lanes — **#225** until implemented. Long-term **`must_remain` primitive** evaluation — **#227**.
 
 ## Architecture Changes
 

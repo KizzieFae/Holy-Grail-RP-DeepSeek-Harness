@@ -16,6 +16,13 @@ Pointers only — **no new contracts** here. Misreading **#59** applicability or
 - **[Tier A perception smoke (#214 manifest)](#tier-a-perception-smoke-214-manifest)** — **`tier_a_perception_smoke`** scenario field + headless runbook (not **Tier B**).
 - **[Tier B continuity grounded (#214 manifest)](#tier-b-continuity-grounded-214-manifest)** — **`tier_b_continuity_grounded`**, **`session_mutation_candidates`** schedule, continuity mirror gate (not **Tier A**).
 - **[Audit read safety — scaffolding vs literal (Issue #215)](#audit-read-safety--scaffolding-vs-literal-issue-215)** — distinguishes verbatim audibility cues from choreography / episodic interpretation shapes under bounded runs; **`#215`** is pointer only.
+- **[Continuity authority and evidence lanes (GitHub #224)](#continuity-authority-and-evidence-lanes-github-224)** — stable doctrine: **commit** vs **observation**; **#224** anchor; children **#225–#227** deferred.
+
+## Continuity authority and evidence lanes (GitHub #224)
+
+**Stable doctrine (canonical docs):** **[Issue #224](https://github.com/KizzieFae/Holy_Grail_RP/issues/224)** is the **doctrine anchor** for continuity-authority reconciliation: **`SceneState`** / **`ContinuityManager.process_turn`** define **committed** truth; **audits** and **mirrors** are **observational**; **narrator** prose and **classifier tags** alone are **not** proof of commit. Full vocabulary (**intent / interpretation / commit / observation**): **`ARCHITECTURE.md`** (*Continuity authority and evidence lanes*). **Do not** read audit JSON or orchestration **`consequences`** as overriding **`SceneState`**.
+
+**Children (work tracking, not extra runtime authority):** [#225](https://github.com/KizzieFae/Holy_Grail_RP/issues/225) bounded implementation/design, [#226](https://github.com/KizzieFae/Holy_Grail_RP/issues/226) reshaping architecture, [#227](https://github.com/KizzieFae/Holy_Grail_RP/issues/227) `must_remain` reevaluation — **deferred** details stay on those issues until **consensus + implementation** land.
 
 ## Audit read safety — scaffolding vs literal (Issue #215)
 
@@ -62,7 +69,7 @@ This allows for:
 
 ### Layers of truth in audits
 
-Audit artifacts observe **different layers**: per-bot prompts and **parsed** model outputs; **continuity commits** and **`_narrative.json`** (orchestration-enriched trace); Director **decision** JSON; Narrator render path. Do not treat the **character’s parsed move** as the full source of structured scene truth. Fields such as **`issue_updates`**, scene-level **`tension_shift`**, and **`consequences`** in the **session narrative** reflect **continuity classification and orchestration history**, not a requirement that the character model emit them on every move.
+Audit artifacts observe **different layers**: per-bot prompts and **parsed** model outputs; **continuity commits** and **`_narrative.json`** (orchestration-enriched trace); Director **decision** JSON; Narrator render path. Do not treat the **character’s parsed move** as the full source of structured scene truth. Fields such as **`issue_updates`**, scene-level **`tension_shift`**, and **`consequences`** in the **session narrative** reflect **continuity classification and orchestration history**, not a requirement that the character model emit them on every move. Align **intent vs interpretation vs commit vs observation** with **[Continuity authority and evidence lanes (GitHub #224)](#continuity-authority-and-evidence-lanes-github-224)** and **`ARCHITECTURE.md`** (same heading): **committed** state remains **`SceneState`** after **`process_turn`**; **observation** layers do not override it.
 
 Audit JSON is **not self-consuming**: it records observations for **interpretation** before scheduling work. Deterministic audit blocks and LLM-assisted validation logs are **advisory** unless explicitly documented as a runtime gate; they **do not** by themselves change continuity, progression, or rendered output. See [Audit interpretation and issue tracking](#audit-interpretation-and-issue-tracking).
 
