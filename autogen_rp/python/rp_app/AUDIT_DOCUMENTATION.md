@@ -1415,7 +1415,27 @@ Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
 - Artifacts are **observational**; they **require interpretation** into filed issues and validation criteria.
 - **Character Audit v1**, **Narrator Audit v1**, and **Audit v2** deterministic bundles (when present on character/narrator turn metadata) are **logging-only** and **advisory**: they **do not** alter model output, continuity commits, or gate acceptance unless a separate documented mechanism says otherwise.
-- **Character move `semantic_proposals` (GitHub #230 wire + #232 authority):** When present on an ingress-valid v2 move, proposals are **retained on the parsed move** for observability. They express **semantic commit intent** on the wire; **accepted** proposals are the **sole covered-semantic commit source** (#232 validated at `1799415c`). **`proposal_authority_*`** turn metadata mirrors legality outcomes — **observational**, not audit **decision** schema (**#233**). Treat proposal presence alone as **intent evidence**, not committed **`SceneState`** / excursion fact; proof = post-turn **`SceneState`** after successful accept path. Reconstruction-era covered commits (flatten/tag/βʹ) are **suppressed** — audit must not infer covered roster/excursion commits from prose, tags, or legacy heuristics post-#232.
+- **Character move `semantic_proposals` (GitHub #230 wire + #232 authority):** When present on an ingress-valid v2 move, proposals are **retained on the parsed move** for observability. They express **semantic commit intent** on the wire; **accepted** proposals are the **sole covered-semantic commit source** (#232 validated at `1799415c`). Treat proposal presence alone as **intent evidence**, not committed **`SceneState`** / excursion fact; proof = post-turn **`SceneState`** after successful accept path. Reconstruction-era covered commits (flatten/tag/βʹ) are **suppressed** — audit must not infer covered roster/excursion commits from prose, tags, or legacy heuristics post-#232.
+
+- **Semantic proposal decision record (`metadata.semantic_proposal_decision`, GitHub #233):** Canonical **interpretive** audit contract for batch authority outcomes (`accept` | `reject` | `no_proposal`) on character turn audits. **Observational only** — **not** on the **[Runtime use allowlist](#runtime-use-allowlist)**; **must not** gate runtime or substitute for continuity commits. **Not** CTAR; **not** narrator metadata.
+
+  **Five-lane read discipline:**
+
+  | Lane | Source | Commit proof? |
+  |------|--------|---------------|
+  | Emitted proposal | `parsed_output.semantic_proposals` / `emitted.items` | No |
+  | Validated proposal | `pre_commit.coherence_status` | No |
+  | Authority decision | `batch.authority_outcome` (when `legality_evaluated`) | No |
+  | Compile authorization | `batch.covered_compile_authorized` | No |
+  | Committed truth | `context_snapshot.scene_state_after` on `lifecycle_phase=committed_attempt` | **Yes** (#224) |
+
+  **`accepted_proposal_batch`** (present **only** when `authority_outcome=accept`): read-only copy of typed proposals authorized for covered compile — **not** SceneState, **not** mutation proof, **not** replay state. **Omitted** on `reject` and `no_proposal`.
+
+  **Lifecycle phases:** `pre_commit` and `failed_attempt` rows **never** carry commit proof. `committed_attempt_rolled_back` may record compile authorization but **`commit_proof_pointer` is absent** — rollback invalidates the row as commit evidence.
+
+  **`doctrine.reconstruction_suppressed`:** when true, do **not** infer covered commits from classifier tags, flatten, exit heuristics, or βʹ mirrors — use authority outcome + `scene_state_after` only.
+
+  Legacy scattered `proposal_authority_*` keys in `turn_execution` or classifier `consequences` are **superseded** by this block for proposal triage.
 - **LLM validation** steps reflected in audit JSON (e.g. narrator semantic validation) are **advisory** relative to the render path unless explicitly defined as blocking.
 
 ### Audit v2 (deterministic, advisory)

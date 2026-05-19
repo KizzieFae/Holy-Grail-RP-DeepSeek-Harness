@@ -198,6 +198,7 @@ def log_character_turn_audit(
     audit_v2: dict[str, Any] | None = None,
     scene_grounding_state: Any = None,
     effective_user_trigger: str,
+    semantic_proposal_decision: dict[str, Any] | None = None,
     is_audit_enabled_fn,
     get_audit_logger_fn,
     get_audit_context_fn,
@@ -310,6 +311,11 @@ def log_character_turn_audit(
                     **(
                         {"audit_v2": audit_v2}
                         if isinstance(audit_v2, dict) and audit_v2
+                        else {}
+                    ),
+                    **(
+                        {"semantic_proposal_decision": semantic_proposal_decision}
+                        if isinstance(semantic_proposal_decision, dict)
                         else {}
                     ),
                     "support_manifest": support_manifest,

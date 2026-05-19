@@ -44,6 +44,10 @@ from continuity_semantic_proposals import (
     ProposalAuthorityOutcome,
     evaluate_proposal_legality,
 )
+from audit_semantic_proposal_decision import (
+    build_semantic_proposal_decision,
+    should_emit_semantic_proposal_decision,
+)
 from semantic_validation import record_proposal_coherence_stats
 from tier_b_session_schedule import session_mutation_candidates_for_turn
 from turn_runner_audit import log_character_turn_audit
@@ -117,6 +121,47 @@ def _evaluate_proposal_authority_for_attempt(
             ctx,
         )
     return True, "", ctx
+
+
+def _character_audit_metadata_with_proposal_decision(
+    base: dict[str, Any],
+    *,
+    move: dict[str, Any],
+    attempt_index: int,
+    terminal: bool,
+    retry_class: str | None,
+    proposal_coherence_assessment: dict[str, Any] | None,
+    proposal_authority_context: ProposalAuthorityContext | None,
+    legality_evaluated: bool,
+    lifecycle_phase: str,
+    force_success_character_row: bool = False,
+    continuity_turn_index: int | None = None,
+    include_commit_proof_pointer: bool = False,
+    process_turn_ran: bool | None = None,
+) -> dict[str, Any]:
+    if not should_emit_semantic_proposal_decision(
+        move,
+        proposal_authority_context=proposal_authority_context,
+        proposal_coherence_assessment=proposal_coherence_assessment,
+        legality_evaluated=legality_evaluated,
+        force_success_character_row=force_success_character_row,
+    ):
+        return base
+    out = dict(base)
+    out["semantic_proposal_decision"] = build_semantic_proposal_decision(
+        move=move,
+        proposal_authority_context=proposal_authority_context,
+        lifecycle_phase=lifecycle_phase,
+        attempt_index=attempt_index,
+        terminal=terminal,
+        retry_class=retry_class,
+        proposal_coherence_assessment=proposal_coherence_assessment,
+        legality_evaluated=legality_evaluated,
+        continuity_turn_index=continuity_turn_index,
+        include_commit_proof_pointer=include_commit_proof_pointer,
+        process_turn_ran=process_turn_ran,
+    )
+    return out
 
 
 def _route_structured_validation_retries(
@@ -407,10 +452,22 @@ def _apply_continuity_and_progression_gate(
                     "character_names": char_names,
                     "attempt_index": attempt_index,
                 },
-                metadata={
-                    "summary_blocks": character_summary_block_audit,
-                    "semantic_presence_assessment": semantic_presence_assessment or {},
-                },
+                metadata=_character_audit_metadata_with_proposal_decision(
+                    {
+                        "summary_blocks": character_summary_block_audit,
+                        "semantic_presence_assessment": semantic_presence_assessment
+                        or {},
+                    },
+                    move=move,
+                    attempt_index=attempt_index,
+                    terminal=False,
+                    retry_class=None,
+                    proposal_coherence_assessment=None,
+                    proposal_authority_context=proposal_authority_context,
+                    legality_evaluated=proposal_authority_context is not None,
+                    lifecycle_phase="committed_attempt_rolled_back",
+                    process_turn_ran=True,
+                ),
                 effective_user_trigger=effective_user_trigger,
             )
             st_module.session_state["selector_decisions"].append(
@@ -446,10 +503,21 @@ def _apply_continuity_and_progression_gate(
                 "character_names": char_names,
                 "attempt_index": attempt_index,
             },
-            metadata={
-                "summary_blocks": character_summary_block_audit,
-                "semantic_presence_assessment": semantic_presence_assessment or {},
-            },
+            metadata=_character_audit_metadata_with_proposal_decision(
+                {
+                    "summary_blocks": character_summary_block_audit,
+                    "semantic_presence_assessment": semantic_presence_assessment or {},
+                },
+                move=move,
+                attempt_index=attempt_index,
+                terminal=True,
+                retry_class=None,
+                proposal_coherence_assessment=None,
+                proposal_authority_context=proposal_authority_context,
+                legality_evaluated=proposal_authority_context is not None,
+                lifecycle_phase="committed_attempt_rolled_back",
+                process_turn_ran=True,
+            ),
             effective_user_trigger=effective_user_trigger,
         )
         return (_ContinuityGateResult(kind="progression_terminal"), progression_retry_consumed)
@@ -501,7 +569,6 @@ def _turn_execution_metadata(
     proposal_coherence_stats_snapshot: dict[str, Any] | None,
     proposal_legality_retry_triggered: bool,
     proposal_legality_retry_reason: str,
-    proposal_authority_context: ProposalAuthorityContext | None,
 ) -> dict[str, Any]:
     meta: dict[str, Any] = {
         "attempt_index": attempt_index,
@@ -542,10 +609,6 @@ def _turn_execution_metadata(
             "success_after_retry" if proposal_legality_retry_triggered else "no_retry"
         ),
     }
-    if proposal_authority_context is not None:
-        meta["proposal_authority_outcome"] = proposal_authority_context.outcome.value
-        if proposal_authority_context.reason_code:
-            meta["proposal_authority_reason_code"] = proposal_authority_context.reason_code
     return meta
 
 
@@ -1018,12 +1081,22 @@ async def run_character_attempt_phase(
                     "character_names": char_names,
                     "attempt_index": attempt_index,
                 },
-                metadata={
-                    "summary_blocks": character_summary_block_audit,
-                    "semantic_presence_assessment": semantic_presence_assessment or {},
-                    "proposal_coherence_assessment": proposal_coherence_assessment
-                    or {},
-                },
+                metadata=_character_audit_metadata_with_proposal_decision(
+                    {
+                        "summary_blocks": character_summary_block_audit,
+                        "semantic_presence_assessment": semantic_presence_assessment or {},
+                        "proposal_coherence_assessment": proposal_coherence_assessment
+                        or {},
+                    },
+                    move=move,
+                    attempt_index=attempt_index,
+                    terminal=False,
+                    retry_class="proposal_coherence",
+                    proposal_coherence_assessment=proposal_coherence_assessment,
+                    proposal_authority_context=None,
+                    legality_evaluated=False,
+                    lifecycle_phase="pre_commit",
+                ),
                 effective_user_trigger=effective_user_trigger,
             )
             st_module.session_state["selector_decisions"].append(
@@ -1053,22 +1126,20 @@ async def run_character_attempt_phase(
                     "character_names": char_names,
                     "attempt_index": attempt_index,
                 },
-                metadata={
-                    "summary_blocks": character_summary_block_audit,
-                    "semantic_presence_assessment": semantic_presence_assessment or {},
-                    "proposal_authority_context": {
-                        "outcome": (
-                            proposal_authority_context.outcome.value
-                            if proposal_authority_context
-                            else ""
-                        ),
-                        "reason_code": (
-                            proposal_authority_context.reason_code
-                            if proposal_authority_context
-                            else ""
-                        ),
+                metadata=_character_audit_metadata_with_proposal_decision(
+                    {
+                        "summary_blocks": character_summary_block_audit,
+                        "semantic_presence_assessment": semantic_presence_assessment or {},
                     },
-                },
+                    move=move,
+                    attempt_index=attempt_index,
+                    terminal=False,
+                    retry_class="proposal_legality",
+                    proposal_coherence_assessment=proposal_coherence_assessment,
+                    proposal_authority_context=proposal_authority_context,
+                    legality_evaluated=True,
+                    lifecycle_phase="pre_commit",
+                ),
                 effective_user_trigger=effective_user_trigger,
             )
             st_module.session_state["selector_decisions"].append(
@@ -1093,12 +1164,36 @@ async def run_character_attempt_phase(
                     "character_names": char_names,
                     "attempt_index": attempt_index,
                 },
-                metadata={
-                    "summary_blocks": character_summary_block_audit,
-                    "semantic_presence_assessment": semantic_presence_assessment or {},
-                    "proposal_coherence_assessment": proposal_coherence_assessment
-                    or {},
-                },
+                metadata=_character_audit_metadata_with_proposal_decision(
+                    {
+                        "summary_blocks": character_summary_block_audit,
+                        "semantic_presence_assessment": semantic_presence_assessment or {},
+                        "proposal_coherence_assessment": proposal_coherence_assessment
+                        or {},
+                    },
+                    move=move,
+                    attempt_index=attempt_index,
+                    terminal=True,
+                    retry_class=(
+                        "proposal_legality"
+                        if is_proposal_legality_rejection_reason(rejection_reason)
+                        else (
+                            "proposal_coherence"
+                            if is_proposal_rejection_reason(rejection_reason)
+                            else None
+                        )
+                    ),
+                    proposal_coherence_assessment=proposal_coherence_assessment,
+                    proposal_authority_context=(
+                        proposal_authority_context
+                        if is_proposal_legality_rejection_reason(rejection_reason)
+                        else None
+                    ),
+                    legality_evaluated=is_proposal_legality_rejection_reason(
+                        rejection_reason
+                    ),
+                    lifecycle_phase="failed_attempt",
+                ),
                 effective_user_trigger=effective_user_trigger,
             )
             return None
@@ -1182,7 +1277,28 @@ async def run_character_attempt_phase(
             ),
             proposal_legality_retry_triggered=proposal_legality_retry_triggered,
             proposal_legality_retry_reason=proposal_legality_retry_reason,
+        )
+
+        cm_for_audit = get_continuity_manager_fn()
+        turn_idx_for_decision = (
+            int(getattr(cm_for_audit, "turn_counter", 0) or 0)
+            if cm_for_audit is not None
+            else None
+        )
+        semantic_proposal_decision = build_semantic_proposal_decision(
+            move=move,
             proposal_authority_context=proposal_authority_context,
+            lifecycle_phase="committed_attempt",
+            attempt_index=attempt_index,
+            terminal=False,
+            retry_class=None,
+            proposal_coherence_assessment=proposal_coherence_assessment,
+            legality_evaluated=True,
+            continuity_turn_index=turn_idx_for_decision,
+            include_commit_proof_pointer=bool(
+                continuity_applied_in_execute and turn_idx_for_decision
+            ),
+            process_turn_ran=continuity_applied_in_execute,
         )
 
         audit_v2_metadata = await _maybe_build_audit_v2_metadata(
@@ -1222,6 +1338,7 @@ async def run_character_attempt_phase(
             audit_v2=audit_v2_metadata,
             scene_grounding_state=st_module.session_state.get("scene_grounding"),
             effective_user_trigger=effective_user_trigger,
+            semantic_proposal_decision=semantic_proposal_decision,
         )
 
         return CharacterAttemptOutcome(
