@@ -50,6 +50,7 @@ def compose_resolved_mutations(
     director_decision: dict[str, Any],
     scene_state: Any,
     session_mutation_candidates: Optional[list[MutationRequest]] = None,
+    proposal_mutation_candidates: Optional[list[MutationRequest]] = None,
 ) -> dict[MutationResolutionKey, MutationRequest]:
     """Collect, group by canonical key, apply D → S → M precedence; one winner per key."""
     candidates: list[MutationRequest] = []
@@ -62,6 +63,8 @@ def compose_resolved_mutations(
     candidates.extend(extract_s_candidates(session_mutation_candidates))
     candidates.extend(extract_m_spatial_candidates(move))
     candidates.extend(extract_m_excursion_candidates(move))
+    if proposal_mutation_candidates:
+        candidates.extend(proposal_mutation_candidates)
 
     by_key: dict[MutationResolutionKey, list[MutationRequest]] = {}
     for req in candidates:

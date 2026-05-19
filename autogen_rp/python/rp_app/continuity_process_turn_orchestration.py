@@ -16,6 +16,10 @@ from typing import Any
 
 from continuity_audit_origin import CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN
 from continuity_mutation_pipeline import resolved_mutations_audit_payload
+from continuity_semantic_proposals import (
+    ProposalAuthorityContext,
+    proposal_authority_metadata,
+)
 from continuity_resolved_outcomes import apply_registered_resolved_outcome_updates
 
 
@@ -29,12 +33,15 @@ def run_process_turn_after_resolved_mutations_applied(
     timestamp: datetime,
     turn_index: int,
     resolved_mutations: list[Any],
+    proposal_authority_context: ProposalAuthorityContext | None = None,
 ) -> Any:
     turn_consequences = manager._classify_turn_consequences(
         acting_character,
         move,
         director_decision,
     )
+    if proposal_authority_context is not None:
+        turn_consequences.update(proposal_authority_metadata(proposal_authority_context))
     if resolved_mutations:
         turn_consequences["continuity_mutation_resolution"] = (
             resolved_mutations_audit_payload(resolved_mutations)

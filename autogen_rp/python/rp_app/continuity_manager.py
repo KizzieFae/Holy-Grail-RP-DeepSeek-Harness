@@ -31,6 +31,14 @@ from continuity_mutation_pipeline import (
 from continuity_process_turn_orchestration import (
     run_process_turn_after_resolved_mutations_applied,
 )
+from continuity_semantic_proposals import (
+    ContinuityProposalLegalityError,
+    ProposalAuthorityContext,
+    ProposalAuthorityOutcome,
+    compile_proposal_excursion_mutations,
+    evaluate_proposal_legality,
+    proposal_authority_metadata,
+)
 from continuity_audit_origin import (
     manager_notify_raw_location_bypass_for_audit,
     manager_record_continuity_audit_event,
@@ -443,6 +451,7 @@ class ContinuityManager:
         timestamp: Optional[datetime] = None,
         *,
         session_mutation_candidates: Optional[list[MutationRequest]] = None,
+        proposal_authority_context: Optional[ProposalAuthorityContext] = None,
     ) -> ContinuitySnapshot:
         """Process a completed turn and update continuity state.
 
@@ -479,11 +488,35 @@ class ContinuityManager:
         move = normalize_move_audibility(dict(move), acting_character, present_list)
 
         turn_index = self.turn_counter + 1
+        authority_ctx = proposal_authority_context
+        if authority_ctx is None:
+            authority_ctx = evaluate_proposal_legality(
+                move,
+                acting_character=acting_character,
+                scene_state=self.scene_state.to_dict(),
+                active_excursion_character_ids=self.active_excursion_character_ids(),
+                excursions=self.excursions,
+            )
+        if authority_ctx.outcome == ProposalAuthorityOutcome.REJECT:
+            raise ContinuityProposalLegalityError(
+                authority_ctx.reason_detail or authority_ctx.reason_code or "reject"
+            )
+
+        self._active_proposal_authority_context = authority_ctx
+        proposal_mutations: list[MutationRequest] = []
+        if authority_ctx.outcome == ProposalAuthorityOutcome.ACCEPT:
+            proposal_mutations = compile_proposal_excursion_mutations(
+                authority_ctx.accepted_proposals,
+                acting_character=acting_character,
+                excursions=self.excursions,
+            )
+
         resolved_mutations = compose_resolved_mutations(
             move=move,
             director_decision=director_decision,
             scene_state=self.scene_state,
             session_mutation_candidates=session_mutation_candidates,
+            proposal_mutation_candidates=proposal_mutations or None,
         )
         validate_resolved_mutations_globally(
             resolved_mutations,
@@ -511,9 +544,11 @@ class ContinuityManager:
                 timestamp=timestamp,
                 turn_index=turn_index,
                 resolved_mutations=resolved_mutations,
+                proposal_authority_context=authority_ctx,
             )
         finally:
             self._continuity_pipeline_turn_active = False
+            self._active_proposal_authority_context = None
 
     def _maybe_create_event(
         self,

@@ -34,6 +34,16 @@ from response_validation_proposal_coherence import (
     is_proposal_rejection_reason,
     validate_proposal_structural_coherence,
 )
+from response_validation_proposal_legality import (
+    format_proposal_legality_rejection,
+    format_proposal_legality_retry_note,
+    is_proposal_legality_rejection_reason,
+)
+from continuity_semantic_proposals import (
+    ProposalAuthorityContext,
+    ProposalAuthorityOutcome,
+    evaluate_proposal_legality,
+)
 from semantic_validation import record_proposal_coherence_stats
 from tier_b_session_schedule import session_mutation_candidates_for_turn
 from turn_runner_audit import log_character_turn_audit
@@ -71,8 +81,42 @@ class CharacterAttemptOutcome:
 
 
 _StructuredRetryKind = Literal[
-    "duplicate", "binding", "investigation", "proposal_coherence"
+    "duplicate", "binding", "investigation", "proposal_coherence", "proposal_legality"
 ]
+
+
+def _evaluate_proposal_authority_for_attempt(
+    *,
+    move: dict[str, Any],
+    next_actor: str,
+    continuity_manager: Any,
+    scene_state: dict[str, Any],
+) -> tuple[bool, str, ProposalAuthorityContext | None]:
+    e_active: set[str] = set()
+    excursions = None
+    if continuity_manager is not None:
+        try:
+            e_active = set(continuity_manager.active_excursion_character_ids())
+        except (AttributeError, TypeError):
+            e_active = set()
+        excursions = getattr(continuity_manager, "excursions", None)
+    ctx = evaluate_proposal_legality(
+        move,
+        acting_character=next_actor,
+        scene_state=scene_state,
+        active_excursion_character_ids=e_active,
+        excursions=excursions,
+    )
+    if ctx.outcome == ProposalAuthorityOutcome.REJECT:
+        return (
+            False,
+            format_proposal_legality_rejection(
+                reason_code=ctx.reason_code,
+                reason_detail=ctx.reason_detail,
+            ),
+            ctx,
+        )
+    return True, "", ctx
 
 
 def _route_structured_validation_retries(
@@ -84,6 +128,7 @@ def _route_structured_validation_retries(
     binding_retry_consumed: bool,
     investigation_retry_consumed: bool,
     proposal_coherence_retry_consumed: bool,
+    proposal_legality_retry_consumed: bool,
 ) -> _StructuredRetryKind | None:
     if is_valid:
         return None
@@ -93,6 +138,12 @@ def _route_structured_validation_retries(
         and has_more_attempts
     ):
         return "proposal_coherence"
+    if (
+        is_proposal_legality_rejection_reason(rejection_reason)
+        and not proposal_legality_retry_consumed
+        and has_more_attempts
+    ):
+        return "proposal_legality"
     if (
         rejection_reason.startswith("[DUPLICATE]")
         and not duplicate_retry_consumed
@@ -139,6 +190,9 @@ def _build_character_attempt_prompt(
     proposal_coherence_retry_triggered: bool,
     proposal_coherence_retry_reason: str = "",
     proposal_coherence_retry_reason_code: str = "",
+    proposal_legality_retry_triggered: bool = False,
+    proposal_legality_retry_reason: str = "",
+    proposal_legality_retry_reason_code: str = "",
 ) -> str:
     attempt_prompt = task_prompt
     if attempt_index < 1:
@@ -201,6 +255,13 @@ def _build_character_attempt_prompt(
                 reason_code=proposal_coherence_retry_reason_code,
             )
         )
+    if proposal_legality_retry_triggered:
+        retry_notes.append(
+            format_proposal_legality_retry_note(
+                rejection_reason=proposal_legality_retry_reason,
+                reason_code=proposal_legality_retry_reason_code,
+            )
+        )
     if retry_notes:
         attempt_prompt = task_prompt + "\n\n" + "\n\n".join(retry_notes)
     return attempt_prompt
@@ -246,6 +307,7 @@ def _apply_continuity_and_progression_gate(
     semantic_presence_assessment: Any,
     has_more_attempts: bool,
     progression_retry_consumed: bool,
+    proposal_authority_context: ProposalAuthorityContext | None,
     log_turn_failure_fn: Any,
     sync_orchestration_state_from_continuity_fn: Any,
     actors_failed_this_round: list[str],
@@ -283,6 +345,8 @@ def _apply_continuity_and_progression_gate(
         proc_kw2: dict[str, Any] = {}
         if sched_cand:
             proc_kw2["session_mutation_candidates"] = sched_cand
+        if proposal_authority_context is not None:
+            proc_kw2["proposal_authority_context"] = proposal_authority_context
         cm_exec.process_turn(
             acting_character=next_actor,
             move=dict(move),
@@ -435,8 +499,11 @@ def _turn_execution_metadata(
     proposal_coherence_retry_triggered: bool,
     proposal_coherence_retry_reason: str,
     proposal_coherence_stats_snapshot: dict[str, Any] | None,
+    proposal_legality_retry_triggered: bool,
+    proposal_legality_retry_reason: str,
+    proposal_authority_context: ProposalAuthorityContext | None,
 ) -> dict[str, Any]:
-    return {
+    meta: dict[str, Any] = {
         "attempt_index": attempt_index,
         "parse_retry_triggered": parse_retry_triggered,
         "parse_retry_reason": parse_retry_reason,
@@ -469,7 +536,17 @@ def _turn_execution_metadata(
             "success_after_retry" if proposal_coherence_retry_triggered else "no_retry"
         ),
         "proposal_coherence_stats": dict(proposal_coherence_stats_snapshot or {}),
+        "proposal_legality_retry_triggered": proposal_legality_retry_triggered,
+        "proposal_legality_retry_reason": proposal_legality_retry_reason,
+        "proposal_legality_retry_outcome": (
+            "success_after_retry" if proposal_legality_retry_triggered else "no_retry"
+        ),
     }
+    if proposal_authority_context is not None:
+        meta["proposal_authority_outcome"] = proposal_authority_context.outcome.value
+        if proposal_authority_context.reason_code:
+            meta["proposal_authority_reason_code"] = proposal_authority_context.reason_code
+    return meta
 
 
 async def _validate_character_move(
@@ -665,6 +742,11 @@ async def run_character_attempt_phase(
     proposal_coherence_retry_reason = ""
     proposal_coherence_retry_reason_code = ""
     proposal_coherence_retry_consumed = False
+    proposal_legality_retry_triggered = False
+    proposal_legality_retry_reason = ""
+    proposal_legality_retry_reason_code = ""
+    proposal_legality_retry_consumed = False
+    proposal_authority_context: ProposalAuthorityContext | None = None
     parse_retry_triggered = False
     parse_retry_reason = ""
     continuity_applied_in_execute = False
@@ -690,6 +772,9 @@ async def run_character_attempt_phase(
             proposal_coherence_retry_triggered=proposal_coherence_retry_triggered,
             proposal_coherence_retry_reason=proposal_coherence_retry_reason,
             proposal_coherence_retry_reason_code=proposal_coherence_retry_reason_code,
+            proposal_legality_retry_triggered=proposal_legality_retry_triggered,
+            proposal_legality_retry_reason=proposal_legality_retry_reason,
+            proposal_legality_retry_reason_code=proposal_legality_retry_reason_code,
         )
 
         task = TextMessage(content=attempt_prompt, source="system")
@@ -797,6 +882,22 @@ async def run_character_attempt_phase(
             cancellation_token=cancellation_token,
         )
 
+        if is_valid:
+            legality_ok, legality_reason, legality_ctx = (
+                _evaluate_proposal_authority_for_attempt(
+                    move=move,
+                    next_actor=next_actor,
+                    continuity_manager=continuity_manager,
+                    scene_state=scene_state,
+                )
+            )
+            if not legality_ok:
+                is_valid = False
+                rejection_reason = legality_reason
+                proposal_authority_context = legality_ctx
+            else:
+                proposal_authority_context = legality_ctx
+
         sr_kind = _route_structured_validation_retries(
             is_valid=is_valid,
             rejection_reason=rejection_reason,
@@ -805,6 +906,7 @@ async def run_character_attempt_phase(
             binding_retry_consumed=binding_retry_consumed,
             investigation_retry_consumed=investigation_retry_consumed,
             proposal_coherence_retry_consumed=proposal_coherence_retry_consumed,
+            proposal_legality_retry_consumed=proposal_legality_retry_consumed,
         )
         if sr_kind == "duplicate":
             duplicate_retry_triggered = True
@@ -928,6 +1030,51 @@ async def run_character_attempt_phase(
                 f"Retrying {next_actor} after proposal coherence rejection."
             )
             continue
+        if sr_kind == "proposal_legality":
+            proposal_legality_retry_triggered = True
+            proposal_legality_retry_consumed = True
+            proposal_legality_retry_reason = rejection_reason
+            if proposal_authority_context is not None:
+                proposal_legality_retry_reason_code = str(
+                    proposal_authority_context.reason_code or ""
+                )
+            log_turn_failure_fn(
+                round_number=round_number,
+                turn_number=turn_number,
+                bot_name=next_actor,
+                bot_type="character",
+                stage="validation_proposal_legality_retry",
+                reason=rejection_reason,
+                input_messages=[{"role": "system", "content": attempt_prompt}],
+                raw_response=char_raw_response,
+                parsed_output=move,
+                context_snapshot={
+                    "director_decision": decision,
+                    "character_names": char_names,
+                    "attempt_index": attempt_index,
+                },
+                metadata={
+                    "summary_blocks": character_summary_block_audit,
+                    "semantic_presence_assessment": semantic_presence_assessment or {},
+                    "proposal_authority_context": {
+                        "outcome": (
+                            proposal_authority_context.outcome.value
+                            if proposal_authority_context
+                            else ""
+                        ),
+                        "reason_code": (
+                            proposal_authority_context.reason_code
+                            if proposal_authority_context
+                            else ""
+                        ),
+                    },
+                },
+                effective_user_trigger=effective_user_trigger,
+            )
+            st_module.session_state["selector_decisions"].append(
+                f"Retrying {next_actor} after proposal legality rejection."
+            )
+            continue
 
         if not is_valid:
             actors_failed_this_round.append(next_actor)
@@ -980,6 +1127,7 @@ async def run_character_attempt_phase(
                 semantic_presence_assessment=semantic_presence_assessment,
                 has_more_attempts=has_more_attempts,
                 progression_retry_consumed=progression_retry_consumed,
+                proposal_authority_context=proposal_authority_context,
                 log_turn_failure_fn=log_turn_failure_fn,
                 sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
                 actors_failed_this_round=actors_failed_this_round,
@@ -1032,6 +1180,9 @@ async def run_character_attempt_phase(
             proposal_coherence_stats_snapshot=(
                 dict(stats_snap) if isinstance(stats_snap, dict) else None
             ),
+            proposal_legality_retry_triggered=proposal_legality_retry_triggered,
+            proposal_legality_retry_reason=proposal_legality_retry_reason,
+            proposal_authority_context=proposal_authority_context,
         )
 
         audit_v2_metadata = await _maybe_build_audit_v2_metadata(

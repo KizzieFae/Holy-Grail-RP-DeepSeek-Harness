@@ -17,6 +17,7 @@ from character_move_ingress import (  # noqa: E402
     validate_canonical_v2,
 )
 from continuity_manager import ContinuityManager  # noqa: E402
+from continuity_semantic_proposals import ContinuityProposalLegalityError  # noqa: E402
 from continuity_seam_test_helpers import complete_setup_seam_for_test_manager  # noqa: E402
 
 
@@ -81,40 +82,56 @@ def test_validate_semantic_proposals_cap() -> None:
     assert "exceeds cap" in validate_canonical_v2(d)
 
 
-def test_process_turn_does_not_commit_from_proposals_alone() -> None:
-    """Proposals on the wire must not change focal presence without beat-driven paths."""
+def test_process_turn_no_proposal_no_covered_commit() -> None:
+    """#232: without proposals, covered semantics do not commit (legacy suppressed)."""
     actor = "Ayame"
     other = "Celina"
     base_move = _minimal_v2()
+
+    mgr = ContinuityManager()
+    mgr.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=[actor, other],
+    )
+    complete_setup_seam_for_test_manager(mgr)
+    before = (
+        list(mgr.scene_state.present_characters or []),
+        list(mgr.scene_state.offstage_characters or []),
+    )
+    mgr.process_turn(
+        acting_character=actor,
+        move=base_move,
+        director_decision={"next_actor": other},
+        other_characters=[other],
+    )
+    after = (
+        list(mgr.scene_state.present_characters or []),
+        list(mgr.scene_state.offstage_characters or []),
+    )
+    assert before == after
+
+
+def test_process_turn_wrong_scope_proposal_rejects() -> None:
+    actor = "Ayame"
+    other = "Celina"
     with_proposals = _minimal_v2(
         semantic_proposals=[{"kind": "off_focal", "character": other}],
     )
-
-    def _presence_snapshot(mgr: ContinuityManager) -> tuple[list[str], list[str]]:
-        assert mgr.scene_state is not None
-        return (
-            list(mgr.scene_state.present_characters or []),
-            list(mgr.scene_state.offstage_characters or []),
-        )
-
-    for move in (base_move, with_proposals):
-        mgr = ContinuityManager()
-        mgr.initialize_scene(
-            location="Dorm",
-            opening_description="Test.",
-            present_characters=[actor, other],
-        )
-        complete_setup_seam_for_test_manager(mgr)
-        before = _presence_snapshot(mgr)
+    mgr = ContinuityManager()
+    mgr.initialize_scene(
+        location="Dorm",
+        opening_description="Test.",
+        present_characters=[actor, other],
+    )
+    complete_setup_seam_for_test_manager(mgr)
+    with pytest.raises(ContinuityProposalLegalityError):
         mgr.process_turn(
             acting_character=actor,
-            move=move,
+            move=with_proposals,
             director_decision={"next_actor": other},
             other_characters=[other],
         )
-        after = _presence_snapshot(mgr)
-        assert before == after
-        assert other in after[0]
 
 
 @patch("character_loader.AssistantAgent")
