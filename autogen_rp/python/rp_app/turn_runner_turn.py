@@ -51,6 +51,7 @@ async def execute_character_turn(
     sync_orchestration_state_from_continuity_fn,
     effective_user_trigger: str = "",
     max_character_attempts: int = DEFAULT_MAX_CHARACTER_ATTEMPTS,
+    assess_proposal_beat_contradiction_fn=None,
 ) -> dict[str, Any] | None:
     effective_user_trigger = (effective_user_trigger or trigger_text or "").strip()
     task_prompt, character_summary_block_audit = build_character_turn_prompt_fn(
@@ -91,6 +92,7 @@ async def execute_character_turn(
         sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
         effective_user_trigger=effective_user_trigger,
         max_character_attempts=max_character_attempts,
+        assess_proposal_beat_contradiction_fn=assess_proposal_beat_contradiction_fn,
     )
     if outcome is None:
         return None

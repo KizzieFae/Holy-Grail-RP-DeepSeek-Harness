@@ -45,6 +45,7 @@ from response_validation import (
 from semantic_validation import (
     assess_narrator_render_semantics,
     assess_presence_violation_semantics,
+    assess_proposal_beat_contradiction,
     assess_turn_selection_decision_semantics,
     reconcile_turn_selection_issues,
     should_override_presence_rejection,
@@ -664,6 +665,7 @@ async def run_character_turns(
         validate_bot_response_fn=validate_bot_response,
         assess_presence_violation_semantics_fn=assess_presence_violation_semantics,
         should_override_presence_rejection_fn=should_override_presence_rejection,
+        assess_proposal_beat_contradiction_fn=assess_proposal_beat_contradiction,
         build_recent_scene_context_fn=build_recent_scene_context,
         render_character_move_fn=render_character_move,
         fallback_render_move_fn=fallback_render_move,

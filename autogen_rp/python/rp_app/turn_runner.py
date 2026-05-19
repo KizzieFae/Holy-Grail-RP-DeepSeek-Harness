@@ -47,6 +47,7 @@ async def run_character_turns(
         ..., Awaitable[dict[str, Any] | None]
     ],
     should_override_presence_rejection_fn: Callable[[str, dict[str, Any] | None], bool],
+    assess_proposal_beat_contradiction_fn: Callable[..., Any] | None = None,
     build_recent_scene_context_fn: Callable[
         [list[dict[str, Any]], dict[str, Any]], tuple[str, dict[str, Any]]
     ],
@@ -302,6 +303,7 @@ async def run_character_turns(
                     get_model_client_fn=get_model_client_fn,
                     assess_presence_violation_semantics_fn=assess_presence_violation_semantics_fn,
                     should_override_presence_rejection_fn=should_override_presence_rejection_fn,
+                    assess_proposal_beat_contradiction_fn=assess_proposal_beat_contradiction_fn,
                     build_recent_scene_context_fn=build_recent_scene_context_fn,
                     render_character_move_fn=render_character_move_fn,
                     fallback_render_move_fn=fallback_render_move_fn,

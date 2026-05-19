@@ -34,6 +34,7 @@ from response_validation import (
 from semantic_validation import (
     assess_narrator_render_semantics,
     assess_presence_violation_semantics,
+    assess_proposal_beat_contradiction,
     assess_turn_selection_decision_semantics,
     reconcile_turn_selection_issues,
     should_override_presence_rejection,
@@ -424,6 +425,7 @@ def build_headless_turn_runner_kwargs(*, st_module: Any) -> dict[str, Any]:
         "validate_bot_response_fn": validate_bot_response_fn,
         "assess_presence_violation_semantics_fn": assess_presence_violation_semantics,
         "should_override_presence_rejection_fn": should_override_presence_rejection,
+        "assess_proposal_beat_contradiction_fn": assess_proposal_beat_contradiction,
         "build_recent_scene_context_fn": lambda ch, orch, limit=6: turn_helpers.build_recent_scene_context(
             chat_history=ch,
             orchestration_state=orch,

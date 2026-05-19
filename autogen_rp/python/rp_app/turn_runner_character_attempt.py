@@ -28,6 +28,13 @@ from response_validation_binding_sleeping_surface import (
 from response_validation_investigation_recall import (
     format_investigation_anchor_retry_note,
 )
+from response_validation_proposal_coherence import (
+    PROPOSAL_COHERENCE_TAG,
+    format_proposal_coherence_retry_note,
+    is_proposal_rejection_reason,
+    validate_proposal_structural_coherence,
+)
+from semantic_validation import record_proposal_coherence_stats
 from tier_b_session_schedule import session_mutation_candidates_for_turn
 from turn_runner_audit import log_character_turn_audit
 
@@ -63,7 +70,9 @@ class CharacterAttemptOutcome:
         self.turn_execution_metadata = turn_execution_metadata
 
 
-_StructuredRetryKind = Literal["duplicate", "binding", "investigation"]
+_StructuredRetryKind = Literal[
+    "duplicate", "binding", "investigation", "proposal_coherence"
+]
 
 
 def _route_structured_validation_retries(
@@ -74,9 +83,16 @@ def _route_structured_validation_retries(
     duplicate_retry_consumed: bool,
     binding_retry_consumed: bool,
     investigation_retry_consumed: bool,
+    proposal_coherence_retry_consumed: bool,
 ) -> _StructuredRetryKind | None:
     if is_valid:
         return None
+    if (
+        is_proposal_rejection_reason(rejection_reason)
+        and not proposal_coherence_retry_consumed
+        and has_more_attempts
+    ):
+        return "proposal_coherence"
     if (
         rejection_reason.startswith("[DUPLICATE]")
         and not duplicate_retry_consumed
@@ -120,6 +136,9 @@ def _build_character_attempt_prompt(
     progression_retry_triggered: bool,
     binding_retry_triggered: bool,
     investigation_retry_triggered: bool,
+    proposal_coherence_retry_triggered: bool,
+    proposal_coherence_retry_reason: str = "",
+    proposal_coherence_retry_reason_code: str = "",
 ) -> str:
     attempt_prompt = task_prompt
     if attempt_index < 1:
@@ -175,6 +194,13 @@ def _build_character_attempt_prompt(
                 "exactly as written in the scene materials."
             )
         retry_notes.append(inv_note)
+    if proposal_coherence_retry_triggered:
+        retry_notes.append(
+            format_proposal_coherence_retry_note(
+                rejection_reason=proposal_coherence_retry_reason,
+                reason_code=proposal_coherence_retry_reason_code,
+            )
+        )
     if retry_notes:
         attempt_prompt = task_prompt + "\n\n" + "\n\n".join(retry_notes)
     return attempt_prompt
@@ -406,6 +432,9 @@ def _turn_execution_metadata(
     binding_retry_reason: str,
     investigation_retry_triggered: bool,
     investigation_retry_reason: str,
+    proposal_coherence_retry_triggered: bool,
+    proposal_coherence_retry_reason: str,
+    proposal_coherence_stats_snapshot: dict[str, Any] | None,
 ) -> dict[str, Any]:
     return {
         "attempt_index": attempt_index,
@@ -434,6 +463,12 @@ def _turn_execution_metadata(
         "investigation_retry_outcome": (
             "success_after_retry" if investigation_retry_triggered else "no_retry"
         ),
+        "proposal_coherence_retry_triggered": proposal_coherence_retry_triggered,
+        "proposal_coherence_retry_reason": proposal_coherence_retry_reason,
+        "proposal_coherence_retry_outcome": (
+            "success_after_retry" if proposal_coherence_retry_triggered else "no_retry"
+        ),
+        "proposal_coherence_stats": dict(proposal_coherence_stats_snapshot or {}),
     }
 
 
@@ -454,8 +489,48 @@ async def _validate_character_move(
     get_model_client_fn: Any,
     assess_presence_violation_semantics_fn: Any,
     should_override_presence_rejection_fn: Any,
+    assess_proposal_beat_contradiction_fn: Any,
     cancellation_token: Any,
-) -> tuple[bool, str, Any]:
+) -> tuple[bool, str, Any, Any]:
+    proposal_coherence_assessment: dict[str, Any] | None = None
+
+    ok_struct, struct_reason, struct_code = validate_proposal_structural_coherence(
+        move, acting_character=next_actor
+    )
+    if not ok_struct:
+        return (
+            False,
+            struct_reason,
+            None,
+            {
+                "status": "rejected_structural",
+                "reason_code": struct_code,
+            },
+        )
+
+    proposals_raw = move.get("semantic_proposals") if isinstance(move, dict) else None
+    if isinstance(proposals_raw, list) and proposals_raw:
+        proposal_coherence_assessment = await assess_proposal_beat_contradiction_fn(
+            model_client=get_model_client_fn(),
+            acting_character=next_actor,
+            move=move,
+            cancellation_token=cancellation_token,
+        )
+        record_proposal_coherence_stats(st_module, proposal_coherence_assessment)
+        if (
+            isinstance(proposal_coherence_assessment, dict)
+            and proposal_coherence_assessment.get("status") == "contradicted"
+        ):
+            code = str(proposal_coherence_assessment.get("reason_code", "") or "").strip()
+            expl = str(proposal_coherence_assessment.get("explanation", "") or "").strip()
+            detail = expl or "beats clearly contradict typed semantic_proposals"
+            return (
+                False,
+                f"{PROPOSAL_COHERENCE_TAG} {detail}",
+                None,
+                proposal_coherence_assessment,
+            )
+
     is_valid, rejection_reason = validate_bot_response_fn(
         move_text,
         next_actor,
@@ -495,7 +570,7 @@ async def _validate_character_move(
             st_module.session_state["selector_decisions"].append(
                 f"Semantic validation kept {next_actor}'s turn after presence review."
             )
-    return is_valid, rejection_reason, semantic_presence_assessment
+    return is_valid, rejection_reason, semantic_presence_assessment, proposal_coherence_assessment
 
 
 async def _maybe_build_audit_v2_metadata(
@@ -563,9 +638,16 @@ async def run_character_attempt_phase(
     sync_orchestration_state_from_continuity_fn,
     effective_user_trigger: str,
     max_character_attempts: int = DEFAULT_MAX_CHARACTER_ATTEMPTS,
+    assess_proposal_beat_contradiction_fn: Any = None,
 ) -> CharacterAttemptOutcome | None:
+    if assess_proposal_beat_contradiction_fn is None:
+        from semantic_validation import assess_proposal_beat_contradiction
+
+        assess_proposal_beat_contradiction_fn = assess_proposal_beat_contradiction
+
     move: dict[str, Any] | None = None
     semantic_presence_assessment = None
+    proposal_coherence_assessment: dict[str, Any] | None = None
     rejection_reason = ""
     duplicate_retry_triggered = False
     duplicate_retry_reason = ""
@@ -579,6 +661,10 @@ async def run_character_attempt_phase(
     investigation_retry_triggered = False
     investigation_retry_reason = ""
     investigation_retry_consumed = False
+    proposal_coherence_retry_triggered = False
+    proposal_coherence_retry_reason = ""
+    proposal_coherence_retry_reason_code = ""
+    proposal_coherence_retry_consumed = False
     parse_retry_triggered = False
     parse_retry_reason = ""
     continuity_applied_in_execute = False
@@ -601,6 +687,9 @@ async def run_character_attempt_phase(
             progression_retry_triggered=progression_retry_triggered,
             binding_retry_triggered=binding_retry_triggered,
             investigation_retry_triggered=investigation_retry_triggered,
+            proposal_coherence_retry_triggered=proposal_coherence_retry_triggered,
+            proposal_coherence_retry_reason=proposal_coherence_retry_reason,
+            proposal_coherence_retry_reason_code=proposal_coherence_retry_reason_code,
         )
 
         task = TextMessage(content=attempt_prompt, source="system")
@@ -683,25 +772,29 @@ async def run_character_attempt_phase(
         )
 
         move_text = legacy_move_text_for_validation(move)
-        is_valid, rejection_reason, semantic_presence_assessment = (
-            await _validate_character_move(
-                move=move,
-                move_text=move_text,
-                next_actor=next_actor,
-                user_name=user_name,
-                st_module=st_module,
-                state_manager=state_manager,
-                continuity_manager=continuity_manager,
-                scene_state=scene_state,
-                attempt_prompt=attempt_prompt,
-                turn_number=turn_number,
-                effective_user_trigger=effective_user_trigger,
-                validate_bot_response_fn=validate_bot_response_fn,
-                get_model_client_fn=get_model_client_fn,
-                assess_presence_violation_semantics_fn=assess_presence_violation_semantics_fn,
-                should_override_presence_rejection_fn=should_override_presence_rejection_fn,
-                cancellation_token=cancellation_token,
-            )
+        (
+            is_valid,
+            rejection_reason,
+            semantic_presence_assessment,
+            proposal_coherence_assessment,
+        ) = await _validate_character_move(
+            move=move,
+            move_text=move_text,
+            next_actor=next_actor,
+            user_name=user_name,
+            st_module=st_module,
+            state_manager=state_manager,
+            continuity_manager=continuity_manager,
+            scene_state=scene_state,
+            attempt_prompt=attempt_prompt,
+            turn_number=turn_number,
+            effective_user_trigger=effective_user_trigger,
+            validate_bot_response_fn=validate_bot_response_fn,
+            get_model_client_fn=get_model_client_fn,
+            assess_presence_violation_semantics_fn=assess_presence_violation_semantics_fn,
+            should_override_presence_rejection_fn=should_override_presence_rejection_fn,
+            assess_proposal_beat_contradiction_fn=assess_proposal_beat_contradiction_fn,
+            cancellation_token=cancellation_token,
         )
 
         sr_kind = _route_structured_validation_retries(
@@ -711,6 +804,7 @@ async def run_character_attempt_phase(
             duplicate_retry_consumed=duplicate_retry_consumed,
             binding_retry_consumed=binding_retry_consumed,
             investigation_retry_consumed=investigation_retry_consumed,
+            proposal_coherence_retry_consumed=proposal_coherence_retry_consumed,
         )
         if sr_kind == "duplicate":
             duplicate_retry_triggered = True
@@ -799,6 +893,41 @@ async def run_character_attempt_phase(
                 f"Retrying {next_actor} after investigation anchor recall rejection."
             )
             continue
+        if sr_kind == "proposal_coherence":
+            proposal_coherence_retry_triggered = True
+            proposal_coherence_retry_consumed = True
+            proposal_coherence_retry_reason = rejection_reason
+            if isinstance(proposal_coherence_assessment, dict):
+                proposal_coherence_retry_reason_code = str(
+                    proposal_coherence_assessment.get("reason_code", "") or ""
+                )
+            log_turn_failure_fn(
+                round_number=round_number,
+                turn_number=turn_number,
+                bot_name=next_actor,
+                bot_type="character",
+                stage="validation_proposal_coherence_retry",
+                reason=rejection_reason,
+                input_messages=[{"role": "system", "content": attempt_prompt}],
+                raw_response=char_raw_response,
+                parsed_output=move,
+                context_snapshot={
+                    "director_decision": decision,
+                    "character_names": char_names,
+                    "attempt_index": attempt_index,
+                },
+                metadata={
+                    "summary_blocks": character_summary_block_audit,
+                    "semantic_presence_assessment": semantic_presence_assessment or {},
+                    "proposal_coherence_assessment": proposal_coherence_assessment
+                    or {},
+                },
+                effective_user_trigger=effective_user_trigger,
+            )
+            st_module.session_state["selector_decisions"].append(
+                f"Retrying {next_actor} after proposal coherence rejection."
+            )
+            continue
 
         if not is_valid:
             actors_failed_this_round.append(next_actor)
@@ -820,6 +949,8 @@ async def run_character_attempt_phase(
                 metadata={
                     "summary_blocks": character_summary_block_audit,
                     "semantic_presence_assessment": semantic_presence_assessment or {},
+                    "proposal_coherence_assessment": proposal_coherence_assessment
+                    or {},
                 },
                 effective_user_trigger=effective_user_trigger,
             )
@@ -883,6 +1014,7 @@ async def run_character_attempt_phase(
                 cm_exec=None,
             )
 
+        stats_snap = st_module.session_state.get("proposal_coherence_stats")
         turn_execution_metadata = _turn_execution_metadata(
             attempt_index=attempt_index,
             parse_retry_triggered=parse_retry_triggered,
@@ -895,6 +1027,11 @@ async def run_character_attempt_phase(
             binding_retry_reason=binding_retry_reason,
             investigation_retry_triggered=investigation_retry_triggered,
             investigation_retry_reason=investigation_retry_reason,
+            proposal_coherence_retry_triggered=proposal_coherence_retry_triggered,
+            proposal_coherence_retry_reason=proposal_coherence_retry_reason,
+            proposal_coherence_stats_snapshot=(
+                dict(stats_snap) if isinstance(stats_snap, dict) else None
+            ),
         )
 
         audit_v2_metadata = await _maybe_build_audit_v2_metadata(

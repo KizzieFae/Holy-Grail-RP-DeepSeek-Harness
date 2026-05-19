@@ -1,7 +1,13 @@
 import json
+import os
 import re
 from collections.abc import Callable
 from typing import Any
+
+from character_move_adapters import (
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
 
 from autogen_agentchat.agents import AssistantAgent
 
@@ -496,3 +502,142 @@ def substitute_agent_keys_with_display_names(
         )
         out = pattern.sub(disp, out)
     return out
+
+
+PROPOSAL_COHERENCE_VALIDATOR_SYSTEM_MESSAGE = """You are a semantic validator for character move proposal coherence.
+
+The semantic_proposals array is the declared semantic commit intent (authoritative for intent).
+The beats[] text is narrative prose only.
+
+Return JSON only with keys: status, reason_code, explanation (optional short string).
+
+status must be exactly one of:
+- aligned — beats are consistent with the typed proposal(s), or no clear contradiction
+- contradicted — beats clearly contradict the typed proposal(s)
+- unclear — ambiguous, borderline, or insufficient evidence; do NOT treat as contradiction
+
+reason_code when status is contradicted should be one of:
+off_focal_vs_beats, reentry_vs_beats, excursion_open_vs_beats, excursion_close_vs_beats
+Use proposal_set_conflict or scope_non_self only if the JSON proposals themselves conflict (rare).
+
+Be conservative: if the contradiction is not clear, return unclear.
+Do not infer proposal intent from prose alone — use the typed semantic_proposals as given.
+Do not judge prose quality, continuity legality, or SceneState.
+"""
+
+
+def proposal_coherence_llm_enabled() -> bool:
+    """Production default on; set RP_PROPOSAL_COHERENCE_LLM=0 to skip checker (CI/headless)."""
+    v = os.environ.get("RP_PROPOSAL_COHERENCE_LLM", "1").strip().lower()
+    return v not in ("0", "false", "no", "off")
+
+
+def _normalize_proposal_coherence_status(raw: Any) -> str:
+    s = str(raw or "").strip().lower()
+    if s in ("aligned", "contradicted", "unclear"):
+        return s
+    return "unclear"
+
+
+async def assess_proposal_beat_contradiction(
+    *,
+    model_client: Any,
+    acting_character: str,
+    move: dict[str, Any] | None,
+    cancellation_token: Any,
+) -> dict[str, Any]:
+    """Conservative beats↔typed-proposal check. Fail-open on parse/client errors."""
+    proposals_raw = (move or {}).get("semantic_proposals")
+    if not isinstance(proposals_raw, list) or not proposals_raw:
+        return {"status": "aligned", "reason_code": "", "skipped": True}
+
+    beats_action = legacy_flat_action_text(move)
+    beats_dialogue = legacy_flat_dialogue_text(move)
+
+    if not proposal_coherence_llm_enabled():
+        return {
+            "status": "unclear",
+            "reason_code": "checker_disabled",
+            "skipped": True,
+            "explanation": "RP_PROPOSAL_COHERENCE_LLM disabled",
+        }
+
+    payload = {
+        "acting_character": acting_character,
+        "semantic_proposals": proposals_raw,
+        "beats_action_text": beats_action,
+        "beats_dialogue_text": beats_dialogue,
+        "beats_combined_text": f"{beats_action} {beats_dialogue}".strip(),
+    }
+    prompt = (
+        f"{PROPOSAL_COHERENCE_VALIDATOR_SYSTEM_MESSAGE}\n\n"
+        "Assess whether the beat prose clearly contradicts the typed semantic_proposals.\n\n"
+        f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
+    )
+
+    data = await _run_semantic_validation(
+        model_client=model_client,
+        cancellation_token=cancellation_token,
+        prompt=prompt,
+    )
+    if data is None:
+        return {
+            "status": "unclear",
+            "reason_code": "checker_parse_error",
+            "parse_error": "model_client unavailable",
+        }
+
+    if data.get("parse_error"):
+        return {
+            "status": "unclear",
+            "reason_code": "checker_parse_error",
+            "parse_error": str(data.get("parse_error", "") or ""),
+            "raw_response": str(data.get("raw_response", "") or ""),
+        }
+
+    status = _normalize_proposal_coherence_status(data.get("status"))
+    reason_code = str(data.get("reason_code", "") or "").strip()
+    return {
+        "status": status,
+        "reason_code": reason_code,
+        "explanation": str(data.get("explanation", "") or ""),
+        "raw_response": str(data.get("raw_response", "") or ""),
+    }
+
+
+def record_proposal_coherence_stats(
+    st_module: Any,
+    assessment: dict[str, Any] | None,
+) -> None:
+    """Session counters for checker invocations and status distribution (#231)."""
+    if st_module is None:
+        return
+    ss = getattr(st_module, "session_state", None)
+    if not isinstance(ss, dict):
+        return
+    stats = ss.setdefault(
+        "proposal_coherence_stats",
+        {
+            "invocations": 0,
+            "aligned": 0,
+            "contradicted": 0,
+            "unclear": 0,
+            "skipped": 0,
+            "checker_disabled": 0,
+        },
+    )
+    if not isinstance(stats, dict):
+        return
+    if assessment is None:
+        return
+    if assessment.get("skipped"):
+        stats["skipped"] = int(stats.get("skipped", 0) or 0) + 1
+        if assessment.get("reason_code") == "checker_disabled":
+            stats["checker_disabled"] = int(stats.get("checker_disabled", 0) or 0) + 1
+        return
+    stats["invocations"] = int(stats.get("invocations", 0) or 0) + 1
+    st = str(assessment.get("status", "") or "unclear")
+    if st in stats:
+        stats[st] = int(stats.get(st, 0) or 0) + 1
+    else:
+        stats["unclear"] = int(stats.get("unclear", 0) or 0) + 1
