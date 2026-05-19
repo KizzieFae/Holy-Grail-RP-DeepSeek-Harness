@@ -18,6 +18,8 @@ from character_move_adapters import CanonicalV2Move
 MAX_V2_BEATS = 64
 MAX_V2_TEXT_CODEPOINTS = 8192
 MAX_V2_AUDIENCE_ITEMS = 32
+MAX_V2_SEMANTIC_PROPOSALS = 8
+MAX_V2_PROPOSAL_TEXT_CODEPOINTS = 256
 
 V2_ROOT_ALLOWLIST = frozenset(
     {
@@ -25,10 +27,14 @@ V2_ROOT_ALLOWLIST = frozenset(
         "beats",
         "motivation",
         "scene_state_updates",
+        "semantic_proposals",
     }
 )
 
 V2_SPEECH_AUDIBILITY = frozenset({"public", "directed", "private"})
+V2_PROPOSAL_KINDS = frozenset({"off_focal", "reentry", "excursion_lifecycle"})
+V2_EXCURSION_OPERATIONS = frozenset({"open", "update", "close"})
+V2_PROPOSAL_ITEM_KEYS = frozenset({"kind", "character", "operation"})
 
 
 def _is_int_not_bool(x: Any) -> bool:
@@ -104,6 +110,43 @@ def _check_caps_v2(m: dict[str, Any]) -> str:
     return ""
 
 
+def _validate_semantic_proposals_v2(m: dict[str, Any]) -> str:
+    """Structural validation for governed A1 ``semantic_proposals`` (GitHub #230)."""
+    sp = m.get("semantic_proposals", None)
+    if sp is None:
+        return ""
+    if not isinstance(sp, list):
+        return "semantic_proposals must be a JSON array when present"
+    if len(sp) > MAX_V2_SEMANTIC_PROPOSALS:
+        return f"semantic_proposals exceeds cap ({MAX_V2_SEMANTIC_PROPOSALS})"
+    for i, item in enumerate(sp):
+        if not isinstance(item, dict):
+            return f"semantic_proposals[{i}] must be an object"
+        unknown = [k for k in item if k not in V2_PROPOSAL_ITEM_KEYS]
+        if unknown:
+            return f"unknown fields on semantic_proposals[{i}]: {unknown}"
+        kind = item.get("kind")
+        if kind not in V2_PROPOSAL_KINDS:
+            return f"invalid semantic_proposals[{i}].kind: {kind!r}"
+        char = str(item.get("character", "") or "").strip()
+        if not char:
+            return f"semantic_proposals[{i}].character must be non-empty"
+        if len(char) > MAX_V2_PROPOSAL_TEXT_CODEPOINTS:
+            return "semantic_proposals character string exceeds cap"
+        op = item.get("operation", None)
+        if kind == "excursion_lifecycle":
+            if not isinstance(op, str) or op not in V2_EXCURSION_OPERATIONS:
+                return (
+                    f"semantic_proposals[{i}] requires operation "
+                    "open|update|close for excursion_lifecycle"
+                )
+            if len(op) > MAX_V2_PROPOSAL_TEXT_CODEPOINTS:
+                return "semantic_proposals operation string exceeds cap"
+        elif op is not None:
+            return f"semantic_proposals[{i}] must not include operation for kind {kind!r}"
+    return ""
+
+
 def validate_canonical_v2(m: dict[str, Any]) -> str:
     """Return error message or ``""`` if valid. Does not copy."""
     if m.get("move_schema_version") != 2:
@@ -169,6 +212,9 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
                 for a in aud_list:
                     if not isinstance(a, str):
                         return "audience must be a JSON array of strings"
+    err_sp = _validate_semantic_proposals_v2(m)
+    if err_sp:
+        return err_sp
     return ""
 
 

@@ -163,9 +163,33 @@ CHARACTER_MOVE_SCHEMA = {
             },
             "description": "Optional scene-state updates for bounded sleeping-surface assignment, housing-call outcome, current suppressant-formulation compatibility, or current location-entry permission facts settled by this move.",
         },
+        "semantic_proposals": {
+            "type": "array",
+            "description": "Optional. Semantic commit intent only (not a commit). Omit when the turn has no off-focal, reentry, or excursion lifecycle intent. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only for excursion_lifecycle.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "enum": ["off_focal", "reentry", "excursion_lifecycle"],
+                        "description": "Proposal kind: off_focal interval, explicit reentry, or excursion lifecycle.",
+                    },
+                    "character": {
+                        "type": "string",
+                        "description": "Character subject of this proposal.",
+                    },
+                    "operation": {
+                        "type": "string",
+                        "enum": ["open", "update", "close"],
+                        "description": "Required when kind is excursion_lifecycle; omit for off_focal and reentry.",
+                    },
+                },
+                "required": ["kind", "character"],
+            },
+        },
     },
     "required": ["move_schema_version", "beats", "motivation"],
-    "description": "Character move v2: move_schema_version 2, non-empty beats[], motivation, optional scene_state_updates.",
+    "description": "Character move v2: move_schema_version 2, non-empty beats[], motivation, optional scene_state_updates and semantic_proposals.",
 }
 
 
@@ -404,7 +428,8 @@ class CharacterLoader:
                 '    {"type": "action", "action": "Brief visible action YOU take only (3rd person). What YOU do, not others."}',
                 '    or {"type": "speech", "dialogue": "What you say out loud (optional audibility / audience on speech beats — see below)"} ]',
                 "  Speech audibility (only on type speech): omit audibility for public speech. Use audibility directed or private only when limiting who hears the line; then include non-empty audience (array of present character names). For public speech, omit audience or use [].",
-                "  Audibility/audience controls who receives verbatim dialogue in prompts — it does not by itself change continuity focal presence. For a true off-focal interval that must commit in SceneState/excursions, use optional structured fields the runtime already validates (see rp_app/ARCHITECTURE.md — GitHub #216): e.g. excursion_lifecycle on the move (open/update/close; reintegration only with close), spatial_transition when committing location, or presence_changes for explicit reentry when appropriate. Omit these unless the turn actually establishes that committed state.",
+                "  Audibility/audience controls who receives verbatim dialogue in prompts — it does not by itself change continuity focal presence.",
+                '  Optional root "semantic_proposals": [ ... ] — semantic commit intent only (not a commit). Omit when the turn has no off-focal, reentry, or excursion lifecycle intent. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only when kind is excursion_lifecycle. Beats narrate; proposals declare what continuity should consider committing later (#232). Do not use root presence_changes, excursion_lifecycle, or spatial_transition (ingress rejects them).',
                 "  Do not put root-level action, dialogue, audibility, or audience on the JSON object — only inside beats[].",
                 '  "motivation": {"goal": "What you want", "tactic": "How you are pursuing it", "emotional_driver": "What feeling drives you", "risk_level": "low|medium|high"} (required)',
                 '  "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "character", "surface_id": "surface"}, "housing_call_outcome": {"status": "completed|failed"}, "suppressant_formulation_outcome": {"subject_id": "character", "status": "compatible|incompatible"}, "location_entry_outcome": {"subject_id": "character", "location_id": "bounded_location", "status": "allowed|denied"}} (optional)',

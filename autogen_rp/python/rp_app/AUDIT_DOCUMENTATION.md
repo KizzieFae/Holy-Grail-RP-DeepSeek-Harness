@@ -1415,6 +1415,7 @@ Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
 - Artifacts are **observational**; they **require interpretation** into filed issues and validation criteria.
 - **Character Audit v1**, **Narrator Audit v1**, and **Audit v2** deterministic bundles (when present on character/narrator turn metadata) are **logging-only** and **advisory**: they **do not** alter model output, continuity commits, or gate acceptance unless a separate documented mechanism says otherwise.
+- **Character move `semantic_proposals` (GitHub #230 Phase A):** When present on an ingress-valid v2 move, proposals are **retained on the parsed move** for observability and downstream lanes. They express **semantic commit intent**, not proof of commit. **Continuity does not consume proposals** until **#232**; audit and regression should treat proposal presence as **wire/intent evidence**, not as committed **`SceneState`** / excursion fact unless a separate runtime path documents otherwise.
 - **LLM validation** steps reflected in audit JSON (e.g. narrator semantic validation) are **advisory** relative to the render path unless explicitly defined as blocking.
 
 ### Audit v2 (deterministic, advisory)

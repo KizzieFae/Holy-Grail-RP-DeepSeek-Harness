@@ -100,6 +100,13 @@ def test_character_move_schema_requires_structured_motivation():
         "risk_level",
     ]
     assert "scene_state_updates" in CHARACTER_MOVE_SCHEMA["properties"]
+    sp = CHARACTER_MOVE_SCHEMA["properties"]["semantic_proposals"]
+    assert sp["type"] == "array"
+    assert sp["items"]["properties"]["kind"]["enum"] == [
+        "off_focal",
+        "reentry",
+        "excursion_lifecycle",
+    ]
     scene_state_updates = CHARACTER_MOVE_SCHEMA["properties"]["scene_state_updates"]
     assert "sleeping_surface_assignment" in scene_state_updates["properties"]
     sleeping_assignment = scene_state_updates["properties"]["sleeping_surface_assignment"]

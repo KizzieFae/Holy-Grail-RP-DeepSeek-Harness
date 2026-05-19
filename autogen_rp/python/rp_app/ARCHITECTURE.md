@@ -162,6 +162,8 @@ For **canonical v2** moves, per-beat **`audibility`** / **`audience`** on **`spe
 
 #### Normative v2 character move (`move_schema_version` 2)
 
+> **Interim (#230 Phase A):** Root **`semantic_proposals`** is **governed on the wire** and **prompt-normative** as **semantic commit intent only**. **Continuity does not consume proposals** until **GitHub #232**; ingress may retain them on the move object without **`SceneState`** commits from proposals alone. Do **not** emit reconstruction-era root carriers (`presence_changes`, root `excursion_lifecycle`, `spatial_transition`).
+
 This subsection is the **single in-repo normative contract** for **v2** structured character moves (**GitHub #136**). **Semantic** contents of **`scene_state_updates`** are **not** specified here (optional **object envelope** only); mutation payload definitions are owned by continuity / later seams (**e.g. GitHub #140**). **Ingress** is duplicate-key–safe JSON + **v2** validation (**#137**); v1-shaped ingress was removed in **#143**; **prompt** cutover is **#142**.
 
 **Canonical example** (illustrative; not all optional roots need appear):
@@ -205,7 +207,8 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 
 - **Required:** `move_schema_version` (`2`), `beats` (array), `motivation` (object)
 - **Optional:** `scene_state_updates` (JSON **object** when present; `{}` valid). **Envelope only** — inner keys and domain meaning are **out of scope** for this contract; **`#137`** may verify “is an object,” not continuity semantics under **`#136`** authority.
-- **Prohibited at root:** `action`, `dialogue`, `audibility`, `audience`, `type`, and any property not named above
+- **Optional (A1 — GitHub #230):** `semantic_proposals` (JSON **array** when present). **Intent only** on the wire until **#232** consumption; see **A1 `semantic_proposals`** below.
+- **Prohibited at root:** `action`, `dialogue`, `audibility`, `audience`, `type`, reconstruction-era carriers (`presence_changes`, `excursion_lifecycle`, `spatial_transition`, and legacy v1 presence/spatial roots), and any property not named in required/optional above
 
 **Legacy root `action` / `dialogue`:** Not part of v2. A document with root **`action`** and/or **`dialogue`** is not a conforming v2 object, even if `move_schema_version` is `2` and `beats` is present (invalid v2 or pre-boundary legacy input).
 
@@ -244,6 +247,18 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **Required keys:** `goal`, `tactic`, `emotional_driver`, `risk_level` (each a JSON string, non-empty after trim)
 - **Additional keys:** allowed (forward extension without v2 shape churn)
 
+**A1 `semantic_proposals` (GitHub #230 — wire + emission; consumption #232)**
+
+- **Omit** the root key when the turn has **no** off-focal / reentry / excursion lifecycle **commit intent** to declare.
+- When present: JSON **array**, maximum **8** items (**ingress cap**).
+- Each item is an object with **only** these keys:
+  - **`kind`** (required string): exactly **`off_focal`**, **`reentry`**, or **`excursion_lifecycle`**
+  - **`character`** (required string): non-empty after trim; names the subject of the proposal
+  - **`operation`** (required **only** when **`kind`** is **`excursion_lifecycle`**): exactly **`open`**, **`update`**, or **`close`**
+- **Forbidden on items:** any key not listed above; **`operation`** on **`off_focal`** or **`reentry`**
+- **Semantics:** proposals express **semantic commit intent**, not proof of commit. **`beats[]`** carry narrative; proposals declare what continuity **should** consider committing **after** the consumption lane (**#232**). Until then, validators retain proposals on the parsed move; **continuity must not** treat proposals as authoritative commits in Phase A.
+- **Do not** use root **`presence_changes`**, root **`excursion_lifecycle`**, or **`spatial_transition`** on v2 moves (ingress rejects; prompts must not teach them).
+
 **Invalid under v2 (summary)**
 
 - Missing or non-integer **`move_schema_version`**, or any value other than **`2`**
@@ -255,6 +270,8 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **`speech`** **`audibility`** not one of **`public`** / **`directed`** / **`private`**; **public** (explicit or by omission) with **non-empty** **`audience`**; **`directed`** / **`private`** with **`audience`** missing, not an array, or empty
 - **`audibility`** or **`audience`** on an **`action`** beat; nested **`move_schema_version`**, **`beats`**, **`motivation`**, or **`scene_state_updates`** inside a beat
 - **`scene_state_updates`** present but not a JSON **object**
+- **`semantic_proposals`** present but not a JSON **array**, over cap, or any item failing **A1** shape rules above
+- Root **`presence_changes`**, **`excursion_lifecycle`**, **`spatial_transition`**, or other non-allowlisted root keys (**ingress** enforces allowlist)
 - Invalid JSON or **duplicate keys** at parse time: not a conforming document
 
 **Compatibility boundary (contract only)**
@@ -268,7 +285,7 @@ This subsection is the **single in-repo normative contract** for **v2** structur
 - **Module:** `character_move_ingress.py` — fenced unwrap, then `json.loads` with an `object_pairs_hook` that **rejects duplicate keys in every object** (before schema detection). `parse_json_payload` (Director, etc.) uses the same loader.
 - **v2-only:** root **`move_schema_version`** must be present and **integer `2`**. Missing version, or v1-shaped root object without **`move_schema_version`**, **rejects** (no v1 allowlist, no `RP_LEGACY_V1_*` flag).
 - **`move_schema_version`** present but not **integer 2**: **reject** (no other-version fallback in this layer).
-- **Caps** (structural only): `MAX_V2_BEATS` 64, `MAX_V2_TEXT_CODEPOINTS` 8192, `MAX_V2_AUDIENCE_ITEMS` 32.
+- **Caps** (structural only): `MAX_V2_BEATS` 64, `MAX_V2_TEXT_CODEPOINTS` 8192, `MAX_V2_AUDIENCE_ITEMS` 32, `MAX_V2_SEMANTIC_PROPOSALS` 8, `MAX_V2_PROPOSAL_TEXT_CODEPOINTS` 256 per proposal string field.
 - **Handoff type:** :class:`CanonicalV2Move` in `character_move_adapters.py` — a ``dict`` subclass with **only** v2 keys stored. Legacy ``.get("action")`` / ``.get("dialogue")`` and ``["action"]`` / ``["dialogue"]`` return **read-only** concatenations from ``beats`` (no root-level v1 shadow fields persisted on the object).
 - **``scene_state_updates``:** this layer checks **JSON object** when present, not internal semantics.
 - **Turn runner:** for ``move_schema_version == 2``, root-level v1 ``normalize_move_audibility`` heuristics do **not** apply to the whole move; **speech** beats are normalized per beat in ``perception_audibility`` (Issue **#138**).

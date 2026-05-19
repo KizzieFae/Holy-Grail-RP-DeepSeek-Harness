@@ -343,10 +343,16 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
         in prompt
     )
     assert (
-        "Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``)."
+        "Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``, optional ``semantic_proposals``)."
         in prompt
     )
     assert "Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``." in prompt
+    assert "Optional root ``semantic_proposals``" in prompt
+    assert "semantic commit intent only" in prompt
+    assert "``off_focal``" in prompt and "``reentry``" in prompt
+    assert "Do not emit root ``presence_changes``" in prompt
+    assert "excursion_lifecycle on the move" not in prompt
+    assert "spatial_transition when committing location" not in prompt
     assert (
         "Emit sleeping_surface_assignment only when you, as the acting speaker, are establishing, actively enforcing against present resistance or dispute, or explicitly reassigning where someone will sleep in this turn."
         in prompt

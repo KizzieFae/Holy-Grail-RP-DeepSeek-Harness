@@ -417,8 +417,9 @@ YOUR PRIORITIES, IN ORDER:
 
 {binding_constraints_block}{_EVIDENCE_AUTHORITY_DISCIPLINE_BLOCK}
 OUTPUT RULES:
-- Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``).
+- Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``, optional ``semantic_proposals``).
 - Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``. Put visible action and speech only inside ``beats[]`` as ``type: action`` or ``type: speech`` objects, in true beat order.
+- Optional root ``semantic_proposals`` (array): semantic commit intent only — not a commit. Omit when the turn has no off-focal, reentry, or excursion lifecycle intent. Each item: ``kind`` (``off_focal`` | ``reentry`` | ``excursion_lifecycle``), ``character`` (required); ``operation`` (``open`` | ``update`` | ``close``) required only for ``excursion_lifecycle``. Beats carry narrative; proposals declare what continuity should consider committing later. Do not emit root ``presence_changes``, ``excursion_lifecycle``, or ``spatial_transition`` (ingress rejects them).
 - Each ``type: action`` beat has non-empty ``action`` (visible self-only, third person). Each ``type: speech`` beat has non-empty ``dialogue``. On speech beats, optional ``audibility`` is one of ``public``, ``directed``, ``private``; omit for public. For ``directed`` or ``private``, include non-empty ``audience`` (names). For public, omit ``audience`` or use ``[]``.
 - Keep action beats concrete and observable; let speech sound natural and in-character rather than explanatory.
  - Only include scene_state_updates when your move deterministically settles a bounded scene fact already supported by the beat.

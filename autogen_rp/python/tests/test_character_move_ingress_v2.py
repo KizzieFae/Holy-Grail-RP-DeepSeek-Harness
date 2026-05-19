@@ -159,3 +159,36 @@ def test_validate_rejects_speech_public_with_audience() -> None:
         },
     }
     assert validate_canonical_v2(d) != ""
+
+
+def test_v2_semantic_proposals_round_trip() -> None:
+    d = {
+        "move_schema_version": 2,
+        "beats": [{"type": "action", "action": "waits"}],
+        "motivation": {
+            "goal": "g",
+            "tactic": "t",
+            "emotional_driver": "e",
+            "risk_level": "l",
+        },
+        "semantic_proposals": [{"kind": "reentry", "character": "Celina"}],
+    }
+    m, err = ingest_character_move_json_object(d)
+    assert not err and m is not None
+    assert m["semantic_proposals"][0]["kind"] == "reentry"
+
+
+def test_v2_rejects_root_presence_changes() -> None:
+    d = {
+        "move_schema_version": 2,
+        "beats": [{"type": "action", "action": "a"}],
+        "motivation": {
+            "goal": "g",
+            "tactic": "t",
+            "emotional_driver": "e",
+            "risk_level": "l",
+        },
+        "presence_changes": [],
+    }
+    m, err = ingest_character_move_json_object(d)
+    assert m is None and err and "unknown" in err.lower()
