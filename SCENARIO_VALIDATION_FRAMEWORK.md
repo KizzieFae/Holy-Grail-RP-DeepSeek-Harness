@@ -83,6 +83,7 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 | `headless_template_retrieval_smoke` | Minimal Harley/Magpie run; `scene_template_id` for template-linked authored retrieval checks |
 | `parity_opening_trigger_smoke` | Minimal manifest with `startup_trigger_mode: parity` (Issue #83 contract / regression) |
 | `operational_baseline_3char_cafeteria` | **Accepted retrieval baseline** cast (Harley, Ivy, Magpie) + cafeteria template for standard OFF vs ON comparisons |
+| `cert_i234_proposal_accept_off_focal` | **#234** bounded L2 accept-path certification overlay (2-char, template-free; not a permanent cert matrix) |
 
 **Optional scenario fields**
 

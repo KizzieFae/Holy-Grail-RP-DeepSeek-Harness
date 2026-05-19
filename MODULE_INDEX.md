@@ -236,7 +236,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `audit_logger_summary_output_continuity.py` | Continuity overview + indexed-turn counting used by summary prep/output | — | **#154** Slice E |
 | `audit_logger_summary_output_report_core.py` | **`assemble_audit_summary_report_dict`** — deterministic `_audit_summary.json` dict assembly | `audit_logger_summary_output_continuity` | **#154** Slice E |
 | `summary_audit_helpers.py` | Prompt/audit bridges for summaries | continuity | |
-| `audit_semantic_proposal_decision.py` | **#233** pure builder for **`metadata.semantic_proposal_decision`** (batch authority outcomes; observational only) | `turn_runner_character_attempt`, `turn_runner_audit` | Doctrine: `AUDIT_DOCUMENTATION.md` five-lane read discipline |
+| `audit_semantic_proposal_decision.py` | **#233** pure builder for **`metadata.semantic_proposal_decision`** (batch authority outcomes; observational only) | `turn_runner_character_attempt`, `turn_runner_audit` | Doctrine: `AUDIT_DOCUMENTATION.md` five-lane read discipline; certification tests **#234** (`tests/test_issue_234_*.py`, manifest `cert_i234_proposal_accept_off_focal`) |
 | `audit_ctar.py` | CTAR projection for **`metadata.ctar`** (**#79**) | `turn_runner_audit` | |
 | `audit_runtime_mirrors.py` | **`scene_state_after`** mirror; **`excursion_audit_digest_v1`** (**#79**) | `turn_runner_audit` | |
 | `continuity_audit_origin.py` | Bypass vs pipeline classification; **`flush_continuity_audit_origin_export_payload`** (**#79**) | `continuity_manager`, `continuity_observability_summary` | |
