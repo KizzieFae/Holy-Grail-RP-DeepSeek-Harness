@@ -1341,7 +1341,8 @@ def test_location_entry_rejects_location_outside_bounded_set() -> None:
     assert debug["reason"] == "invalid_location_id"
 
 
-def test_process_turn_updates_scene_presence_on_exit() -> None:
+def test_process_turn_updates_scene_presence_on_off_focal_proposal() -> None:
+    """Covered exit commits via accepted proposal only (#232 / #235)."""
     manager = ContinuityManager()
     manager.initialize_scene(
         location="Hallway",
@@ -1353,14 +1354,20 @@ def test_process_turn_updates_scene_presence_on_exit() -> None:
     manager.process_turn(
         acting_character="Mira",
         move={
-            "action": "turned and left the room without another word",
-            "dialogue": "",
+            "move_schema_version": 2,
+            "beats": [
+                {
+                    "type": "action",
+                    "action": "turned and left the room without another word",
+                }
+            ],
             "motivation": {
                 "goal": "leave before the argument can continue",
                 "tactic": "walk out and end participation physically",
                 "emotional_driver": "anger",
                 "risk_level": "medium",
             },
+            "semantic_proposals": [{"kind": "off_focal", "character": "Mira"}],
         },
         director_decision={
             "next_actor": "Ayame",
@@ -1373,9 +1380,7 @@ def test_process_turn_updates_scene_presence_on_exit() -> None:
     )
 
     assert "Mira" not in manager.scene_state.present_characters
-    assert "Mira" in manager.scene_state.absent_but_relevant
-    assert manager.public_events[0].state_changes == ["Mira left the immediate scene."]
-    assert manager.scene_state.recent_delta == "Mira left the immediate scene."
+    assert "Mira" in manager.scene_state.offstage_characters
 
 
 def test_process_turn_must_remain_exit_softens_state_changes_when_still_present() -> None:
