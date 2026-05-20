@@ -95,14 +95,11 @@ from continuity_manager_excursions import (
     update_excursion as update_excursion_surface,
 )
 from continuity_manager_issue_surface import (
-    acting_character_required_by_active_confrontation,
     collect_issue_updates_for_manager,
     maybe_create_issue_for_manager,
     update_issues_for_manager,
 )
 from continuity_manager_presence_surface import (
-    acting_character_named_in_current_move,
-    apply_canonical_exit_offstage_transition_scratch as apply_canonical_exit_offstage_transition_scratch_surface,
     apply_canonical_reentry_scratch as apply_canonical_reentry_scratch_surface,
     apply_must_remain_presence_from_fn as apply_must_remain_presence_from_fn_surface,
     apply_pre_turn_user_presence_routing as apply_pre_turn_user_presence_routing_surface,
@@ -115,7 +112,6 @@ from continuity_manager_presence_surface import (
     reconcile_presence_lists as reconcile_presence_lists_surface,
     reconcile_presence_lists_scratch as reconcile_presence_lists_scratch_surface,
     resync_presence_through_authority as resync_presence_through_authority_surface,
-    should_skip_soft_exit_presence_removal,
     strip_active_excursions_from_focal_scratch as strip_active_excursions_from_focal_scratch_surface,
     synchronize_presence_from_canonical_authority as synchronize_presence_from_canonical_authority_surface,
 )
@@ -658,24 +654,6 @@ class ContinuityManager:
     ) -> None:
         apply_canonical_reentry_scratch_surface(self, scratch, character_name)
 
-    def _apply_canonical_exit_offstage_transition_scratch(
-        self,
-        acting_character: str,
-        move: dict[str, Any],
-        *,
-        consequence_tags: set[str],
-        scene_dict: dict[str, Any],
-        scratch: PresenceAuthorityScratch,
-    ) -> None:
-        apply_canonical_exit_offstage_transition_scratch_surface(
-            self,
-            acting_character,
-            move,
-            consequence_tags=consequence_tags,
-            scene_dict=scene_dict,
-            scratch=scratch,
-        )
-
     def _ensure_at_least_one_present_character_scratch(
         self, scratch: PresenceAuthorityScratch
     ) -> None:
@@ -711,21 +689,6 @@ class ContinuityManager:
             event,
             turn_consequences,
         )
-
-    def _acting_character_named_in_current_move(
-        self, acting_character: str, move: dict[str, Any]
-    ) -> bool:
-        return acting_character_named_in_current_move(acting_character, move)
-
-    def _acting_character_required_by_active_confrontation(
-        self, acting_character: str
-    ) -> bool:
-        return acting_character_required_by_active_confrontation(self, acting_character)
-
-    def _should_skip_soft_exit_presence_removal(
-        self, acting_character: str, move: dict[str, Any]
-    ) -> bool:
-        return should_skip_soft_exit_presence_removal(self, acting_character, move)
 
     def _maybe_create_issue(
         self,

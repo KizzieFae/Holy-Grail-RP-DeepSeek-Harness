@@ -13,10 +13,6 @@ from continuity_consequence_classifier_move_tools import (  # noqa: E402
     move_with_flat_text_for_deterministic_tools,
 )
 from continuity_manager import ContinuityManager  # noqa: E402
-from continuity_presence_helpers import (  # noqa: E402
-    apply_canonical_exit_offstage_transition_scratch,
-    presence_scratch_from_scene_state,
-)
 from continuity_scene_state_update import run_update_scene_state  # noqa: E402
 from continuity_seam_test_helpers import complete_setup_seam_for_test_manager  # noqa: E402
 from scene_exit_detection import detect_exit_from_scene, has_scene_reentry_evidence  # noqa: E402
@@ -122,35 +118,10 @@ def test_accepted_proposal_still_commits_off_focal() -> None:
     assert actor in mgr.scene_state.offstage_characters
 
 
-def test_detect_only_exit_scratch_helper_no_longer_commits() -> None:
-    """Direct helper call: reconstruction detect path removed (#235)."""
-    actor = "Willow_Reeves"
-    move = _minimal_v2()
-    mgr = ContinuityManager()
-    mgr.initialize_scene(
-        location="Dorm",
-        opening_description="Test.",
-        present_characters=[actor, "Marlene_Fletcher"],
-    )
-    scratch = presence_scratch_from_scene_state(mgr.scene_state)
-    scene_dict = mgr.scene_state.to_dict()
-    before = list(scratch.present_characters)
-    apply_canonical_exit_offstage_transition_scratch(
-        actor,
-        move,
-        consequence_tags=set(),
-        scene_dict=scene_dict,
-        scratch=scratch,
-        character_presence_constraints={},
-        should_skip_soft_exit_presence_removal=lambda _a, _m: False,
-    )
-    assert scratch.present_characters == before
-
-
 def test_run_update_scene_state_has_no_reconstruction_imports() -> None:
     import continuity_scene_state_update as mod
 
     source = Path(mod.__file__).read_text(encoding="utf-8")
     assert "_SUPPRESS_RECONSTRUCTION_COVERED_COMMITS" not in source
     assert "has_scene_reentry_evidence" not in source
-    assert "manager_apply_canonical_exit_offstage_transition_scratch" not in source
+    assert "apply_canonical_exit_offstage_transition_scratch" not in source

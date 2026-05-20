@@ -1,4 +1,4 @@
-"""GitHub #225 — Willow-class must_remain βʹ (v2 beat-aware exit / temporary_offstage)."""
+"""GitHub #225 — Willow-class must_remain (v2 beat-aware exit / proposal authority)."""
 
 from __future__ import annotations
 
@@ -14,11 +14,7 @@ from continuity_consequence_classifier_move_tools import (  # noqa: E402
     move_with_flat_text_for_deterministic_tools,
 )
 from continuity_manager import ContinuityManager  # noqa: E402
-from continuity_presence_helpers import (  # noqa: E402
-    PresenceAuthorityScratch,
-    apply_canonical_exit_offstage_transition_scratch,
-    presence_scratch_from_scene_state,
-)
+from continuity_presence_helpers import PresenceAuthorityScratch  # noqa: E402
 from continuity_presence_pipeline import (  # noqa: E402
     manager_apply_must_remain_presence_from_fn,
 )
@@ -57,7 +53,7 @@ def _scene_dict_for(scratch: PresenceAuthorityScratch, location: str = "Dorm") -
     }
 
 
-def test_issue_225_raw_v2_beats_miss_exit_classifier_tags_not_used_in_beta_proof() -> None:
+def test_issue_225_raw_v2_beats_miss_exit_on_raw_move_detect_on_flatten() -> None:
     """Exit signal lives in flattened beat text; raw v2 has no root action for detection."""
     move = _v2_exit_beat_move_hard(action="She left the room and shut the door.")
     assert is_canonical_v2_move(move)
@@ -93,39 +89,8 @@ def test_issue_225_proposal_off_focal_commits_temporary_offstage() -> None:
     assert actor in mgr.scene_state.offstage_characters
 
 
-def test_issue_225_exit_tag_without_beat_detect_does_not_commit_beta() -> None:
-    """Classifier corroboration alone does not satisfy βʹ (requires detect from authored beats)."""
-    actor = "Willow_Reeves"
-    move = _v2_exit_beat_move_hard(action="She adjusts her posture and listens.")
-    mgr = ContinuityManager()
-    mgr.initialize_scene(
-        location="Dorm",
-        opening_description="Test.",
-        present_characters=[actor, "Marlene_Fletcher"],
-    )
-    assert mgr.scene_state is not None
-    mgr.scene_state.character_presence_constraints = {actor: "must_remain"}
-    scratch = presence_scratch_from_scene_state(mgr.scene_state)
-    before_present = list(scratch.present_characters)
-    scene_dict = _scene_dict_for(scratch)
-    scene_dict["character_presence_constraints"] = dict(
-        mgr.scene_state.character_presence_constraints or {}
-    )
-    apply_canonical_exit_offstage_transition_scratch(
-        actor,
-        move,
-        consequence_tags={"exit"},
-        scene_dict=scene_dict,
-        scratch=scratch,
-        character_presence_constraints=dict(mgr.scene_state.character_presence_constraints or {}),
-        should_skip_soft_exit_presence_removal=lambda _a, _m: False,
-    )
-    assert scratch.present_characters == before_present
-    assert scratch.character_presence_status.get(actor) != "temporary_offstage"
-
-
-def test_issue_225_soft_beat_detect_alone_does_not_commit_after_235() -> None:
-    """Flatten/detect observational only; no covered commit without proposal (#235)."""
+def test_issue_225_soft_beat_detect_is_observational_only() -> None:
+    """scene_exit_detection is observational; covered commit requires proposal (#235/#236)."""
     actor = "Willow_Reeves"
     action = (
         "She crossed to the door, turned the handle, and slipped out into the corridor "
@@ -138,22 +103,19 @@ def test_issue_225_soft_beat_detect_alone_does_not_commit_after_235() -> None:
         opening_description="Test.",
         present_characters=[actor, "Marlene_Fletcher"],
     )
-    scratch = presence_scratch_from_scene_state(mgr.scene_state)
-    scene_dict = _scene_dict_for(scratch, location="Dorm room")
+    scene_dict = mgr.scene_state.to_dict() if mgr.scene_state else {}
     flat = move_with_flat_text_for_deterministic_tools(move)
     assert not has_hard_scene_departure_evidence(flat, scene_dict)
     assert detect_exit_from_scene(flat, scene_dict, actor)
-    before = list(scratch.present_characters)
-    apply_canonical_exit_offstage_transition_scratch(
-        actor,
-        move,
-        consequence_tags=set(),
-        scene_dict=scene_dict,
-        scratch=scratch,
-        character_presence_constraints={},
-        should_skip_soft_exit_presence_removal=lambda _a, _m: False,
+    complete_setup_seam_for_test_manager(mgr)
+    before = list(mgr.scene_state.present_characters)
+    mgr.process_turn(
+        acting_character=actor,
+        move=move,
+        director_decision={"next_actor": "Marlene_Fletcher"},
+        other_characters=["Marlene_Fletcher"],
     )
-    assert scratch.present_characters == before
+    assert list(mgr.scene_state.present_characters) == before
 
 
 def test_issue_225_apply_must_remain_does_not_force_reentry_when_temporary_offstage() -> None:

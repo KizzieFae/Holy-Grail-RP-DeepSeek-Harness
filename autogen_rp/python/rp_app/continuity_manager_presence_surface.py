@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any, Callable
 
 from continuity_presence_helpers import PresenceAuthorityScratch
@@ -19,50 +18,9 @@ from continuity_presence_pipeline import (
     manager_synchronize_presence_from_canonical_authority as synchronize_presence_impl,
     manager_reconcile_presence_lists_scratch as reconcile_presence_scratch_impl,
     manager_apply_canonical_reentry_scratch as apply_canonical_reentry_impl,
-    manager_apply_canonical_exit_offstage_transition_scratch as apply_exit_offstage_impl,
     manager_ensure_at_least_one_present_character_scratch as ensure_one_present_scratch_impl,
     manager_assert_presence_invariant_after_reconcile_scratch as assert_invariant_scratch_impl,
 )
-
-from continuity_manager_issue_surface import (
-    acting_character_required_by_active_confrontation,
-)
-
-
-def acting_character_named_in_current_move(
-    acting_character: str, move: dict[str, Any]
-) -> bool:
-    tokens: list[str] = []
-    for segment in acting_character.replace("_", " ").split():
-        s = segment.strip()
-        if len(s) >= 3:
-            tokens.append(s.lower())
-    if not tokens:
-        return False
-    motivation = move.get("motivation", {})
-    if not isinstance(motivation, dict):
-        motivation = {}
-    chunks = [
-        str(move.get("action", "") or ""),
-        str(move.get("dialogue", "") or ""),
-        str(motivation.get("goal", "") or ""),
-        str(motivation.get("tactic", "") or ""),
-    ]
-    text = " ".join(chunks).lower()
-    for token in tokens:
-        if re.search(rf"\b{re.escape(token)}\b", text):
-            return True
-    return False
-
-
-def should_skip_soft_exit_presence_removal(
-    manager: Any, acting_character: str, move: dict[str, Any]
-) -> bool:
-    if acting_character_named_in_current_move(acting_character, move):
-        return True
-    if acting_character_required_by_active_confrontation(manager, acting_character):
-        return True
-    return False
 
 
 def resync_presence_through_authority(manager: Any) -> None:
@@ -101,28 +59,6 @@ def apply_canonical_reentry_scratch(
     manager: Any, scratch: PresenceAuthorityScratch, character_name: str
 ) -> None:
     apply_canonical_reentry_impl(manager, scratch, character_name)
-
-
-def apply_canonical_exit_offstage_transition_scratch(
-    manager: Any,
-    acting_character: str,
-    move: dict[str, Any],
-    *,
-    consequence_tags: set[str],
-    scene_dict: dict[str, Any],
-    scratch: PresenceAuthorityScratch,
-) -> None:
-    apply_exit_offstage_impl(
-        manager,
-        acting_character,
-        move,
-        consequence_tags=consequence_tags,
-        scene_dict=scene_dict,
-        scratch=scratch,
-        should_skip_soft_exit_presence_removal=lambda a, m: should_skip_soft_exit_presence_removal(
-            manager, a, m
-        ),
-    )
 
 
 def ensure_at_least_one_present_character_scratch(

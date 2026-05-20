@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Set
+from typing import Any, Optional, Set
 
 from continuity_state import SceneState
 
@@ -113,45 +113,6 @@ def apply_canonical_reentry_scratch(
         scratch.present_characters.append(name)
     scratch.absent_but_relevant = [n for n in scratch.absent_but_relevant if n != name]
     scratch.character_presence_status[name] = "onstage"
-
-
-def apply_canonical_exit_offstage_transition_scratch(
-    acting_character: str,
-    move: dict[str, Any],
-    *,
-    consequence_tags: set[str],
-    scene_dict: dict[str, Any],
-    scratch: PresenceAuthorityScratch,
-    character_presence_constraints: dict[str, Any],
-    should_skip_soft_exit_presence_removal: Callable[[str, dict[str, Any]], bool],
-) -> None:
-    """Tag-only covered exit scratch (#236 owns full decoupling).
-
-    GitHub #235 removed reconstruction / detect / flatten / structured-exit commit
-    inputs. This helper is not called from ``run_update_scene_state``; retained for
-    #236 tag-decoupling work and direct unit tests.
-    """
-    actor = str(acting_character or "").strip()
-    if not actor:
-        return
-
-    if "exit" not in consequence_tags:
-        return
-
-    must_remain = str(character_presence_constraints.get(actor, "") or "") == "must_remain"
-    if must_remain:
-        return
-
-    if should_skip_soft_exit_presence_removal(actor, move):
-        return
-
-    status_kind = "temporary_offstage"
-    scratch.present_characters = [name for name in scratch.present_characters if name != actor]
-    if actor not in scratch.absent_but_relevant:
-        scratch.absent_but_relevant.append(actor)
-    if actor not in scratch.offstage_characters:
-        scratch.offstage_characters.append(actor)
-    scratch.character_presence_status[actor] = status_kind
 
 
 def ensure_at_least_one_present_character_scratch(

@@ -17,7 +17,6 @@ from typing import Any, Callable, Optional
 
 from continuity_presence_helpers import (
     PresenceAuthorityScratch,
-    apply_canonical_exit_offstage_transition_scratch,
     apply_canonical_reentry_scratch,
     assert_presence_invariant_after_reconcile_scratch,
     ensure_at_least_one_present_character_scratch,
@@ -81,31 +80,6 @@ def manager_apply_canonical_reentry_scratch(
     manager: Any, scratch: PresenceAuthorityScratch, character_name: str
 ) -> None:
     apply_canonical_reentry_scratch(scratch, character_name)
-
-
-def manager_apply_canonical_exit_offstage_transition_scratch(
-    manager: Any,
-    acting_character: str,
-    move: dict[str, Any],
-    *,
-    consequence_tags: set[str],
-    scene_dict: dict[str, Any],
-    scratch: PresenceAuthorityScratch,
-    should_skip_soft_exit_presence_removal: Callable[[str, dict[str, Any]], bool],
-) -> None:
-    if manager.scene_state is None:
-        return
-    apply_canonical_exit_offstage_transition_scratch(
-        acting_character,
-        move,
-        consequence_tags=consequence_tags,
-        scene_dict=scene_dict,
-        scratch=scratch,
-        character_presence_constraints=dict(
-            manager.scene_state.character_presence_constraints or {}
-        ),
-        should_skip_soft_exit_presence_removal=should_skip_soft_exit_presence_removal,
-    )
 
 
 def manager_ensure_at_least_one_present_character_scratch(
