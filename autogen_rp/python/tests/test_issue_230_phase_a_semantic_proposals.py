@@ -147,6 +147,12 @@ def test_character_loader_system_prompt_teaches_proposals_not_illegal_roots(
     system = str(mock_agent_cls.call_args.kwargs["system_message"])
     assert "semantic_proposals" in system
     assert "semantic commit intent" in system.lower()
+    assert "MUST emit when this turn has off-focal" in system
+    assert "prose implication is insufficient" in system
+    assert "continuity evaluates and accepts or rejects this turn" in system
+    assert "emission alone is not proof of commit" in system
+    assert "committing later" not in system.lower()
+    assert "#232" not in system
     assert "Do not use root presence_changes" in system
     assert "ingress rejects them" in system
     assert "excursion_lifecycle on the move" not in system

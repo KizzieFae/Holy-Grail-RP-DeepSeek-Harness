@@ -165,7 +165,7 @@ CHARACTER_MOVE_SCHEMA = {
         },
         "semantic_proposals": {
             "type": "array",
-            "description": "Optional. Semantic commit intent only (not a commit). Omit when the turn has no off-focal, reentry, or excursion lifecycle intent. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only for excursion_lifecycle.",
+            "description": "Required when this turn has off-focal, reentry, or excursion lifecycle intent; omit only when no covered semantic intent exists. Semantic commit intent only (not a commit; continuity evaluates and accepts or rejects this turn). Narrative beats alone do not change continuity focal presence; prose implication is insufficient. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only for excursion_lifecycle.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -424,12 +424,12 @@ class CharacterLoader:
                 "OUTPUT FORMAT:",
                 "You must respond with a single JSON object: canonical character move v2.",
                 '  "move_schema_version": 2 (integer, required)',
+                '  "semantic_proposals": [ ... ] — MUST emit when this turn has off-focal, reentry, or excursion lifecycle intent; omit ONLY when no covered semantic intent exists. Narrative beats alone do not change continuity focal presence; prose implication is insufficient. Semantic commit intent only (not a commit; continuity evaluates and accepts or rejects this turn). Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only when kind is excursion_lifecycle. Proposals declare covered semantic commit intent for continuity to evaluate (emission alone is not proof of commit). Do not use root presence_changes, excursion_lifecycle, or spatial_transition (ingress rejects them).',
                 '  "beats": [ ordered beats — each object is either:',
                 '    {"type": "action", "action": "Brief visible action YOU take only (3rd person). What YOU do, not others."}',
                 '    or {"type": "speech", "dialogue": "What you say out loud (optional audibility / audience on speech beats — see below)"} ]',
                 "  Speech audibility (only on type speech): omit audibility for public speech. Use audibility directed or private only when limiting who hears the line; then include non-empty audience (array of present character names). For public speech, omit audience or use [].",
                 "  Audibility/audience controls who receives verbatim dialogue in prompts — it does not by itself change continuity focal presence.",
-                '  Optional root "semantic_proposals": [ ... ] — semantic commit intent only (not a commit). Omit when the turn has no off-focal, reentry, or excursion lifecycle intent. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only when kind is excursion_lifecycle. Beats narrate; proposals declare what continuity should consider committing later (#232). Do not use root presence_changes, excursion_lifecycle, or spatial_transition (ingress rejects them).',
                 "  Do not put root-level action, dialogue, audibility, or audience on the JSON object — only inside beats[].",
                 '  "motivation": {"goal": "What you want", "tactic": "How you are pursuing it", "emotional_driver": "What feeling drives you", "risk_level": "low|medium|high"} (required)',
                 '  "scene_state_updates": {"sleeping_surface_assignment": {"assignee_id": "character", "surface_id": "surface"}, "housing_call_outcome": {"status": "completed|failed"}, "suppressant_formulation_outcome": {"subject_id": "character", "status": "compatible|incompatible"}, "location_entry_outcome": {"subject_id": "character", "location_id": "bounded_location", "status": "allowed|denied"}} (optional)',
