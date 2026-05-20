@@ -111,7 +111,6 @@ from continuity_manager_presence_surface import (
     ensure_at_least_one_present_character as ensure_at_least_one_present_character_surface,
     ensure_at_least_one_present_character_scratch as ensure_at_least_one_present_character_scratch_surface,
     presence_scratch_from_scene_state as presence_scratch_from_scene_state_surface,
-    process_structured_reentries_from_move_scratch as process_structured_reentries_from_move_scratch_surface,
     purge_excursion_participants_from_offstage_scratch as purge_excursion_participants_from_offstage_scratch_surface,
     reconcile_presence_lists as reconcile_presence_lists_surface,
     reconcile_presence_lists_scratch as reconcile_presence_lists_scratch_surface,
@@ -653,11 +652,6 @@ class ContinuityManager:
 
     def _reconcile_presence_lists_scratch(self, scratch: PresenceAuthorityScratch) -> None:
         reconcile_presence_lists_scratch_surface(self, scratch)
-
-    def _process_structured_reentries_from_move_scratch(
-        self, move: dict[str, Any], scratch: PresenceAuthorityScratch
-    ) -> None:
-        process_structured_reentries_from_move_scratch_surface(self, move, scratch)
 
     def _apply_canonical_reentry_scratch(
         self, scratch: PresenceAuthorityScratch, character_name: str

@@ -7,28 +7,16 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from character_move_adapters import is_canonical_v2_move
-from continuity_consequence_classifier_move_tools import (
-    move_with_flat_text_for_deterministic_tools,
-)
-from scene_exit_detection import has_scene_reentry_evidence
-
 from continuity_presence_helpers import align_exit_narrative_with_effective_presence
 from continuity_semantic_proposals import (
     ProposalAuthorityOutcome,
     apply_accepted_proposal_presence_to_scratch,
 )
-
-# GitHub #232 — reconstruction-era covered commits suppressed (removed #235–#238).
-_SUPPRESS_RECONSTRUCTION_COVERED_COMMITS = True
 from continuity_state import PublicEvent, ScenePhase, SceneState
 from continuity_presence_pipeline import (
-    manager_apply_canonical_exit_offstage_transition_scratch,
-    manager_apply_canonical_reentry_scratch,
     manager_assert_presence_invariant_after_reconcile_scratch,
     manager_ensure_at_least_one_present_character_scratch,
     manager_presence_scratch_from_scene_state,
-    manager_process_structured_reentries_from_move_scratch,
     manager_reconcile_presence_lists_scratch,
     manager_synchronize_presence_from_canonical_authority,
 )
@@ -108,9 +96,6 @@ def run_update_scene_state(
         if isinstance(director_decision, dict)
         else ""
     )
-    consequence_tags: set[str] = {
-        str(item) for item in turn_consequences.get("tags", []) if str(item).strip()
-    }
 
     pacing_source, pacing_direction, director_neutral = resolve_hybrid_pacing(
         director_decision=director_decision if isinstance(director_decision, dict) else {},
@@ -155,54 +140,15 @@ def run_update_scene_state(
             acting_character=acting_character,
         )
 
-    if not _SUPPRESS_RECONSTRUCTION_COVERED_COMMITS:
-        manager_process_structured_reentries_from_move_scratch(manager, move, scratch)
-
-        move_for_reentry = (
-            move_with_flat_text_for_deterministic_tools(move)
-            if is_canonical_v2_move(move)
-            else move
-        )
-        if has_scene_reentry_evidence(move_for_reentry):
-            manager_apply_canonical_reentry_scratch(manager, scratch, acting_character)
-
-        if "entry" in consequence_tags:
-            manager_apply_canonical_reentry_scratch(manager, scratch, acting_character)
-
-        scene_dict = manager.scene_state.to_dict()
-        scene_dict["present_characters"] = list(scratch.present_characters)
-        scene_dict["offstage_characters"] = list(scratch.offstage_characters)
-        scene_dict["character_presence_status"] = dict(scratch.character_presence_status)
-        scene_dict["absent_but_relevant"] = list(scratch.absent_but_relevant)
-        must_remain_actor = (
-            str(
-                (manager.scene_state.character_presence_constraints or {}).get(
-                    acting_character, ""
-                )
-                or ""
-            ).strip()
-            == "must_remain"
-        )
-
-        manager_apply_canonical_exit_offstage_transition_scratch(
-            manager,
-            acting_character,
-            move,
-            consequence_tags=consequence_tags,
-            scene_dict=scene_dict,
-            scratch=scratch,
-            should_skip_soft_exit_presence_removal=manager._should_skip_soft_exit_presence_removal,
-        )
-    else:
-        must_remain_actor = (
-            str(
-                (manager.scene_state.character_presence_constraints or {}).get(
-                    acting_character, ""
-                )
-                or ""
-            ).strip()
-            == "must_remain"
-        )
+    must_remain_actor = (
+        str(
+            (manager.scene_state.character_presence_constraints or {}).get(
+                acting_character, ""
+            )
+            or ""
+        ).strip()
+        == "must_remain"
+    )
 
     update_scene_phase_from_tension(manager.scene_state)
 

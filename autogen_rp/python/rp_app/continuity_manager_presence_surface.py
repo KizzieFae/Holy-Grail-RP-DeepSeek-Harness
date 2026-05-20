@@ -18,7 +18,6 @@ from continuity_presence_pipeline import (
     manager_strip_active_excursions_from_focal_scratch as strip_excursions_focal_impl,
     manager_synchronize_presence_from_canonical_authority as synchronize_presence_impl,
     manager_reconcile_presence_lists_scratch as reconcile_presence_scratch_impl,
-    manager_process_structured_reentries_from_move_scratch as process_reentries_impl,
     manager_apply_canonical_reentry_scratch as apply_canonical_reentry_impl,
     manager_apply_canonical_exit_offstage_transition_scratch as apply_exit_offstage_impl,
     manager_ensure_at_least_one_present_character_scratch as ensure_one_present_scratch_impl,
@@ -96,12 +95,6 @@ def reconcile_presence_lists_scratch(
     manager: Any, scratch: PresenceAuthorityScratch
 ) -> None:
     reconcile_presence_scratch_impl(manager, scratch)
-
-
-def process_structured_reentries_from_move_scratch(
-    manager: Any, move: dict[str, Any], scratch: PresenceAuthorityScratch
-) -> None:
-    process_reentries_impl(manager, move, scratch)
 
 
 def apply_canonical_reentry_scratch(

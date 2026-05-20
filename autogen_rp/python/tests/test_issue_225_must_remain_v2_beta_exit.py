@@ -68,36 +68,29 @@ def test_issue_225_raw_v2_beats_miss_exit_classifier_tags_not_used_in_beta_proof
     assert detect_exit_from_scene(flat, sc, "Willow_Reeves")
 
 
-def test_issue_225_beta_exit_commits_temporary_offstage_in_scene_state_scratch() -> None:
-    """βʹ path: must_remain + v2 + beat exit + no structured presence_changes → temporary_offstage."""
+def test_issue_225_proposal_off_focal_commits_temporary_offstage() -> None:
+    """Off-focal via accepted semantic_proposals (#232), not reconstruction detect."""
     actor = "Willow_Reeves"
+    other = "Marlene_Fletcher"
     move = _v2_exit_beat_move_hard(action="She left the room and shut the door.")
+    move["semantic_proposals"] = [{"kind": "off_focal", "character": actor}]
     mgr = ContinuityManager()
     mgr.initialize_scene(
         location="Dorm",
         opening_description="Test.",
-        present_characters=[actor, "Marlene_Fletcher"],
+        present_characters=[actor, other],
+    )
+    complete_setup_seam_for_test_manager(mgr)
+    mgr.process_turn(
+        acting_character=actor,
+        move=move,
+        director_decision={"next_actor": other},
+        other_characters=[other],
     )
     assert mgr.scene_state is not None
-    mgr.scene_state.character_presence_constraints = {actor: "must_remain"}
-    complete_setup_seam_for_test_manager(mgr)
-    scratch = presence_scratch_from_scene_state(mgr.scene_state)
-    scene_dict = _scene_dict_for(scratch)
-    scene_dict["character_presence_constraints"] = dict(
-        mgr.scene_state.character_presence_constraints or {}
-    )
-    apply_canonical_exit_offstage_transition_scratch(
-        actor,
-        move,
-        consequence_tags=set(),
-        scene_dict=scene_dict,
-        scratch=scratch,
-        character_presence_constraints=dict(mgr.scene_state.character_presence_constraints or {}),
-        should_skip_soft_exit_presence_removal=lambda _a, _m: False,
-    )
-    assert scratch.character_presence_status.get(actor) == "temporary_offstage"
-    assert actor not in scratch.present_characters
-    assert actor in scratch.offstage_characters
+    assert mgr.scene_state.character_presence_status.get(actor) == "temporary_offstage"
+    assert actor not in mgr.scene_state.present_characters
+    assert actor in mgr.scene_state.offstage_characters
 
 
 def test_issue_225_exit_tag_without_beat_detect_does_not_commit_beta() -> None:
@@ -131,8 +124,8 @@ def test_issue_225_exit_tag_without_beat_detect_does_not_commit_beta() -> None:
     assert scratch.character_presence_status.get(actor) != "temporary_offstage"
 
 
-def test_issue_225_soft_beat_exit_beta_prime_commit() -> None:
-    """Soft path (no hard phrase) still commits when boundary completion fires on flat text."""
+def test_issue_225_soft_beat_detect_alone_does_not_commit_after_235() -> None:
+    """Flatten/detect observational only; no covered commit without proposal (#235)."""
     actor = "Willow_Reeves"
     action = (
         "She crossed to the door, turned the handle, and slipped out into the corridor "
@@ -145,26 +138,22 @@ def test_issue_225_soft_beat_exit_beta_prime_commit() -> None:
         opening_description="Test.",
         present_characters=[actor, "Marlene_Fletcher"],
     )
-    assert mgr.scene_state is not None
-    mgr.scene_state.character_presence_constraints = {actor: "must_remain"}
     scratch = presence_scratch_from_scene_state(mgr.scene_state)
     scene_dict = _scene_dict_for(scratch, location="Dorm room")
-    scene_dict["character_presence_constraints"] = dict(
-        mgr.scene_state.character_presence_constraints or {}
-    )
     flat = move_with_flat_text_for_deterministic_tools(move)
     assert not has_hard_scene_departure_evidence(flat, scene_dict)
     assert detect_exit_from_scene(flat, scene_dict, actor)
+    before = list(scratch.present_characters)
     apply_canonical_exit_offstage_transition_scratch(
         actor,
         move,
         consequence_tags=set(),
         scene_dict=scene_dict,
         scratch=scratch,
-        character_presence_constraints=dict(mgr.scene_state.character_presence_constraints or {}),
+        character_presence_constraints={},
         should_skip_soft_exit_presence_removal=lambda _a, _m: False,
     )
-    assert scratch.character_presence_status.get(actor) == "temporary_offstage"
+    assert scratch.present_characters == before
 
 
 def test_issue_225_apply_must_remain_does_not_force_reentry_when_temporary_offstage() -> None:
@@ -248,12 +237,13 @@ def test_issue_225_full_turn_beta_then_reentry_repeated_cycles() -> None:
         present_characters=[w, m],
     )
     assert mgr.scene_state is not None
-    mgr.scene_state.character_presence_constraints = {w: "must_remain", m: "must_remain"}
     complete_setup_seam_for_test_manager(mgr)
     ts = datetime.fromisoformat("2026-03-27T12:00:00+00:00")
 
     def exit_mv() -> dict:
-        return _v2_exit_beat_move_hard(action="She left the room and shut the door.")
+        mv = _v2_exit_beat_move_hard(action="She left the room and shut the door.")
+        mv["semantic_proposals"] = [{"kind": "off_focal", "character": w}]
+        return mv
 
     def entry_mv() -> dict:
         return {
@@ -272,6 +262,7 @@ def test_issue_225_full_turn_beta_then_reentry_repeated_cycles() -> None:
                 "emotional_driver": "resolve",
                 "risk_level": "medium",
             },
+            "semantic_proposals": [{"kind": "reentry", "character": w}],
         }
 
     for cycle in range(2):

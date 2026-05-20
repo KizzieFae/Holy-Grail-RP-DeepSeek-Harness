@@ -138,16 +138,12 @@ def test_d3_no_proposal_allows_process_turn_without_covered_commit() -> None:
     )
     complete_setup_seam_for_test_manager(mgr)
     before_present = list(mgr.scene_state.present_characters)
-    with patch(
-        "continuity_scene_state_update.manager_apply_canonical_exit_offstage_transition_scratch"
-    ) as mock_exit:
-        mgr.process_turn(
-            acting_character=actor,
-            move=_minimal_v2(),
-            director_decision={"next_actor": other, "tags": ["exit"]},
-            other_characters=[other],
-        )
-        mock_exit.assert_not_called()
+    mgr.process_turn(
+        acting_character=actor,
+        move=_minimal_v2(),
+        director_decision={"next_actor": other, "tags": ["exit"]},
+        other_characters=[other],
+    )
     assert list(mgr.scene_state.present_characters) == before_present
 
 

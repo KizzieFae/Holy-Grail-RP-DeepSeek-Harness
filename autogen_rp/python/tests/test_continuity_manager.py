@@ -2355,7 +2355,8 @@ def test_soft_exit_does_not_remove_actor_required_by_multi_party_issue() -> None
     assert "Marlene_Fletcher" not in manager.scene_state.absent_but_relevant
 
 
-def test_hard_exit_still_removes_despite_multi_party_issue() -> None:
+def test_off_focal_proposal_removes_despite_multi_party_issue() -> None:
+    """Covered exit commits via accepted proposal only (#232 / #235)."""
     manager = ContinuityManager()
     manager.initialize_scene(
         location="Dorm",
@@ -2372,30 +2373,34 @@ def test_hard_exit_still_removes_despite_multi_party_issue() -> None:
     manager.issues[issue.issue_id] = issue
     assert manager.scene_state is not None
     manager.scene_state.active_issue_ids.append(issue.issue_id)
+    complete_setup_seam_for_test_manager(manager)
 
-    manager._update_scene_state(
+    manager.process_turn(
         acting_character="Marlene_Fletcher",
         move={
-            "action": "left the room without another word",
-            "dialogue": "",
+            "move_schema_version": 2,
+            "beats": [
+                {
+                    "type": "action",
+                    "action": "left the room without another word",
+                }
+            ],
             "motivation": {
                 "goal": "leave",
                 "tactic": "walk out",
                 "emotional_driver": "done",
                 "risk_level": "medium",
             },
+            "semantic_proposals": [
+                {"kind": "off_focal", "character": "Marlene_Fletcher"},
+            ],
         },
-        director_decision={},
-        event=None,
-        turn_consequences={
-            "tags": ["exit"],
-            "state_changes": [],
-            "actionable_implications": [],
-        },
+        director_decision={"next_actor": "Harley_Quinn"},
+        other_characters=["Harley_Quinn"],
     )
 
     assert "Marlene_Fletcher" not in manager.scene_state.present_characters
-    assert "Marlene_Fletcher" in manager.scene_state.absent_but_relevant
+    assert "Marlene_Fletcher" in manager.scene_state.offstage_characters
 
 
 def test_exit_tag_does_not_remove_must_remain_from_present_even_on_hard_departure() -> None:
@@ -2434,7 +2439,8 @@ def test_exit_tag_does_not_remove_must_remain_from_present_even_on_hard_departur
     assert "Willow_Reeves" not in manager.scene_state.absent_but_relevant
 
 
-def test_soft_exit_removes_when_actor_not_protected() -> None:
+def test_tag_only_exit_does_not_commit_without_proposal() -> None:
+    """Exit tag alone does not mutate roster post-#235 (tag decoupling → #236)."""
     manager = ContinuityManager()
     manager.initialize_scene(
         location="Dorm",
@@ -2462,7 +2468,7 @@ def test_soft_exit_removes_when_actor_not_protected() -> None:
         },
     )
     assert manager.scene_state is not None
-    assert "Only_One" not in manager.scene_state.present_characters
+    assert "Only_One" in manager.scene_state.present_characters
 
 
 def test_process_turn_under_strict_presence_invariant_env(

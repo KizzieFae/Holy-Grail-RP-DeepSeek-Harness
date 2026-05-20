@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from unittest.mock import patch
-
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
@@ -119,16 +117,12 @@ def test_process_turn_no_proposal_no_covered_commit() -> None:
     complete_setup_seam_for_test_manager(mgr)
     before = list(mgr.scene_state.present_characters)
     move = _minimal_v2()
-    with patch(
-        "continuity_scene_state_update.manager_apply_canonical_exit_offstage_transition_scratch"
-    ) as mock_exit:
-        mgr.process_turn(
-            acting_character=actor,
-            move=move,
-            director_decision={"next_actor": other, "tags": ["exit"]},
-            other_characters=[other],
-        )
-        mock_exit.assert_not_called()
+    mgr.process_turn(
+        acting_character=actor,
+        move=move,
+        director_decision={"next_actor": other, "tags": ["exit"]},
+        other_characters=[other],
+    )
     assert list(mgr.scene_state.present_characters) == before
 
 

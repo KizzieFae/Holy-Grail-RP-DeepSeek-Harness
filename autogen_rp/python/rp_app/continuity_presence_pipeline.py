@@ -22,7 +22,6 @@ from continuity_presence_helpers import (
     assert_presence_invariant_after_reconcile_scratch,
     ensure_at_least_one_present_character_scratch,
     presence_scratch_from_scene_state,
-    process_structured_reentries_from_move_scratch,
     purge_excursion_participants_from_offstage_scratch,
     reconcile_presence_lists_scratch,
     strip_active_excursions_from_focal_scratch,
@@ -76,12 +75,6 @@ def manager_reconcile_presence_lists_scratch(
     manager: Any, scratch: PresenceAuthorityScratch
 ) -> None:
     reconcile_presence_lists_scratch(scratch)
-
-
-def manager_process_structured_reentries_from_move_scratch(
-    manager: Any, move: dict[str, Any], scratch: PresenceAuthorityScratch
-) -> None:
-    process_structured_reentries_from_move_scratch(move, scratch)
 
 
 def manager_apply_canonical_reentry_scratch(

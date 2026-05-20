@@ -11,20 +11,8 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Set
 
-from character_move_adapters import is_canonical_v2_move
-from continuity_consequence_classifier_move_tools import (
-    move_with_flat_text_for_deterministic_tools,
-)
-
-from scene_exit_detection import (
-    authored_prose_suppresses_physical_departure,
-    detect_exit_from_scene,
-    has_hard_scene_departure_evidence,
-    has_scene_reentry_evidence,
-    structured_presence_exit_for_character,
-)
-
 from continuity_state import SceneState
+
 
 @dataclass
 class PresenceAuthorityScratch:
@@ -127,22 +115,6 @@ def apply_canonical_reentry_scratch(
     scratch.character_presence_status[name] = "onstage"
 
 
-def process_structured_reentries_from_move_scratch(
-    move: dict[str, Any], scratch: PresenceAuthorityScratch
-) -> None:
-    seen: set[str] = set()
-    reentry_changes = frozenset({"entry", "return", "reenter", "re-entry"})
-    for item in move.get("presence_changes") or []:
-        if not isinstance(item, dict):
-            continue
-        ch = str(item.get("character", "") or "").strip()
-        chg = str(item.get("change", "") or "").lower().replace("_", "-")
-        if not ch or ch in seen or chg not in reentry_changes:
-            continue
-        seen.add(ch)
-        apply_canonical_reentry_scratch(scratch, ch)
-
-
 def apply_canonical_exit_offstage_transition_scratch(
     acting_character: str,
     move: dict[str, Any],
@@ -153,55 +125,27 @@ def apply_canonical_exit_offstage_transition_scratch(
     character_presence_constraints: dict[str, Any],
     should_skip_soft_exit_presence_removal: Callable[[str, dict[str, Any]], bool],
 ) -> None:
+    """Tag-only covered exit scratch (#236 owns full decoupling).
+
+    GitHub #235 removed reconstruction / detect / flatten / structured-exit commit
+    inputs. This helper is not called from ``run_update_scene_state``; retained for
+    #236 tag-decoupling work and direct unit tests.
+    """
     actor = str(acting_character or "").strip()
     if not actor:
         return
 
+    if "exit" not in consequence_tags:
+        return
+
     must_remain = str(character_presence_constraints.get(actor, "") or "") == "must_remain"
-    move_for_exit = (
-        move_with_flat_text_for_deterministic_tools(move)
-        if (must_remain and is_canonical_v2_move(move))
-        else move
-    )
-
-    exit_tag = "exit" in consequence_tags
-    detect = detect_exit_from_scene(move_for_exit, scene_dict, actor)
-    structured_exit = structured_presence_exit_for_character(move, actor)
-    raw_exit = exit_tag or detect or structured_exit
-    if not raw_exit:
-        return
-
-    if not structured_exit and authored_prose_suppresses_physical_departure(move_for_exit):
-        return
-
-    hard = has_hard_scene_departure_evidence(move_for_exit, scene_dict)
-    lexical_exit = hard or structured_exit
-    detect_soft = bool(detect and not lexical_exit)
-    tag_only_soft = bool(exit_tag and not detect and not lexical_exit)
-    soft_style = detect_soft or tag_only_soft
-
-    beta_prime = bool(
-        must_remain and is_canonical_v2_move(move) and not structured_exit
-    )
-
     if must_remain:
-        if beta_prime:
-            if not detect:
-                return
-            status_kind = "temporary_offstage"
-        else:
-            if soft_style:
-                return
-            if not structured_exit:
-                return
-            status_kind = "temporary_offstage"
-    elif soft_style:
-        if should_skip_soft_exit_presence_removal(actor, move):
-            return
-        status_kind = "temporary_offstage"
-    else:
-        status_kind = "departed"
+        return
 
+    if should_skip_soft_exit_presence_removal(actor, move):
+        return
+
+    status_kind = "temporary_offstage"
     scratch.present_characters = [name for name in scratch.present_characters if name != actor]
     if actor not in scratch.absent_but_relevant:
         scratch.absent_but_relevant.append(actor)
