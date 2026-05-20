@@ -1,4 +1,7 @@
-"""GitHub #225 — Willow-class must_remain (v2 beat-aware exit / proposal authority)."""
+"""GitHub #225 / #237 — Willow-class must_remain (v2 beats; covered commits via proposals only).
+
+Historical note: pre-#235 β′ used flatten+detect for covered commits; that path is removed.
+"""
 
 from __future__ import annotations
 
@@ -190,7 +193,8 @@ def test_issue_225_update_scene_state_v2_reentry_uses_flat_beats() -> None:
     assert has_scene_reentry_evidence(flat)
 
 
-def test_issue_225_full_turn_beta_then_reentry_repeated_cycles() -> None:
+def test_issue_225_full_turn_proposal_off_focal_reentry_repeated_cycles() -> None:
+    """Off-focal/reentry via semantic_proposals (#232); not β′ flatten/detect commits."""
     w, m = "Willow_Reeves", "Marlene_Fletcher"
     mgr = ContinuityManager()
     mgr.initialize_scene(

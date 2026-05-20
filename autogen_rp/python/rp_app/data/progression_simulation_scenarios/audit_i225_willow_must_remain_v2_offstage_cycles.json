@@ -1,7 +1,7 @@
 {
   "id": "audit_i225_willow_must_remain_v2_offstage_cycles",
   "title": "Issue #225 — Willow-class must_remain v2 beat exit/return cycles (audit lane)",
-  "intent": "GitHub #225 (βʹ): exercise repeated leave/return for template-bound must_remain Willow using canonical v2 beats so post-turn SceneState commits temporary_offstage from flattened beat text; enforcement must not force immediate focal reentry; inspect context_snapshot.scene_state_after and v2 beats in audit JSON—tags/narrator/mirrors are not proof. Headless: python scripts/run_scene_simulation_llm.py --scenario audit_i225_willow_must_remain_v2_offstage_cycles --audit --turns 12 (from autogen_rp/python).",
+  "intent": "GitHub #225 / #237: Willow must_remain v2 beat exit/return audit lane. Covered off-focal/reentry commits only via accepted semantic_proposals (post-#235/#236); flatten/detect and β′ reconstruction commits are removed—scene_exit_detection remains observational for classifier tags only. Proof: context_snapshot.scene_state_after + proposal authority metadata, not tags/narrator/mirrors alone. Headless: python scripts/run_scene_simulation_llm.py --scenario audit_i225_willow_must_remain_v2_offstage_cycles --audit --turns 12 (from autogen_rp/python).",
   "scene_template_id": "marlene_willow_dorm_omega_misassignment",
   "scene_template_role_assignments": {
     "kizzie": "misassigned_omega_student",
@@ -13,7 +13,7 @@
     "marlene",
     "willow"
   ],
-  "opening_description": "SCUC triple dorm, evening continuity audit lane (GitHub #225). Willow Reeves and Marlene Fletcher are present with Kizzie near the door. [Harness note: validate must_remain temporary_offstage from v2 beat-implied exit in scene_state_after; repeated exit+reentry cycles; enforcement/orchestration must not mirror must_remain back into present_characters while genuinely off-focal.]",
+  "opening_description": "SCUC triple dorm, evening continuity audit lane (GitHub #225 / #237). Willow Reeves and Marlene Fletcher are present with Kizzie near the door. [Harness note: validate temporary_offstage only when proposals commit off_focal/reentry; repeated cycles; enforcement must not mirror must_remain back into present_characters while genuinely off-focal.]",
   "location": "university_dorm_triple",
   "trigger_text": "Marlene taps the desk and says evenly, 'Willow—we need you coherent for this logistics pass. If you need air, take it and come back; if you're staying, say so plainly. Kizzie, don't vanish while we sort surfaces.'",
   "max_turns": 12,
