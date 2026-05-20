@@ -1,7 +1,7 @@
 """Continuity authority for character ``semantic_proposals`` (GitHub #232).
 
 Accepted proposals are the sole commit source for v1 covered semantics.
-Reconstruction-era paths are suppressed elsewhere — not merged here.
+Legacy flatten/detect/tag covered-commit paths are removed from scene update — not merged here.
 """
 
 from __future__ import annotations

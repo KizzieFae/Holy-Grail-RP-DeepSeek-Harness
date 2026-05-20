@@ -149,7 +149,7 @@ def build_semantic_proposal_decision(
             "items": _emitted_items(proposals),
         },
         "doctrine": {
-            "reconstruction_suppressed": True,
+            "legacy_covered_commit_paths_removed": True,
         },
     }
 

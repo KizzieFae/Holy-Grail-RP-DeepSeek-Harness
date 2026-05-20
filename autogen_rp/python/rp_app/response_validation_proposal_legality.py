@@ -36,7 +36,7 @@ def format_proposal_legality_retry_note(
         "Your typed semantic_proposals are illegal given current scene state "
         "(must_remain, on-stage/off-stage, excursion state).",
         "Revise or omit proposals — beats alone do not commit covered semantics.",
-        "Do not rely on prose, tags, or reconstruction paths to commit presence.",
+        "Do not rely on prose, tags, or heuristic exit/tag paths to commit presence.",
     ]
     if code:
         lines.append(f"Reason code: {code}.")

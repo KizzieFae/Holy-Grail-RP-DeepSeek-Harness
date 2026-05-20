@@ -1433,7 +1433,7 @@ Align with `governance/rp-app/issue-tracking-workflow.md` **§D**:
 
   **Lifecycle phases:** `pre_commit` and `failed_attempt` rows **never** carry commit proof. `committed_attempt_rolled_back` may record compile authorization but **`commit_proof_pointer` is absent** — rollback invalidates the row as commit evidence.
 
-  **`doctrine.reconstruction_suppressed`:** when true, do **not** infer covered commits from classifier tags, flatten, exit heuristics, or βʹ mirrors — use authority outcome + `scene_state_after` only.
+  **`doctrine.legacy_covered_commit_paths_removed`:** when true, legacy flatten/detect/tag/βʹ **covered commit** paths are **removed** (not merely suppressed) — do **not** infer covered commits from classifier tags, flatten, exit heuristics, or mirrors; use proposal authority outcome + `scene_state_after` only.
 
   Legacy scattered `proposal_authority_*` keys in `turn_execution` or classifier `consequences` are **superseded** by this block for proposal triage.
 - **LLM validation** steps reflected in audit JSON (e.g. narrator semantic validation) are **advisory** relative to the render path unless explicitly defined as blocking.

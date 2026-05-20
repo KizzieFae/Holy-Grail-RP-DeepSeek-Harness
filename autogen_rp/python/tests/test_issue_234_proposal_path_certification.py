@@ -430,7 +430,7 @@ def test_d5_accept_audit_matches_runtime_authority() -> None:
     assert record["commit_proof_pointer"]["scene_state_field"] == (
         "context_snapshot.scene_state_after"
     )
-    assert record["doctrine"]["reconstruction_suppressed"] is True
+    assert record["doctrine"]["legacy_covered_commit_paths_removed"] is True
 
 
 def test_d5_reject_forfeit_audit_no_commit_proof() -> None:

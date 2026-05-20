@@ -1,6 +1,14 @@
 """Scene state update orchestration for ContinuityManager (Issue #155 Slice D).
 
 ``run_update_scene_state`` preserves the exact step order of ``ContinuityManager._update_scene_state``.
+
+**Covered semantics (#232+):** commits only from accepted ``semantic_proposals`` via
+``apply_accepted_proposal_presence_to_scratch`` — no flatten/detect/tag covered commits.
+
+**Focal invariant authority (not reconstruction):** ``ensure_at_least_one_present_character_scratch``
+may call ``apply_canonical_reentry_scratch`` when ``present_characters`` would be empty (tiered
+offstage/cast guard). ``exclude_same_beat_reentry_for`` prevents same-beat forced reentry after
+proposal ``off_focal`` for ``must_remain`` actors — policy hook only; does not infer exit from prose.
 """
 
 from __future__ import annotations
