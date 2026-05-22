@@ -14,6 +14,7 @@ from user_trigger_schedule import (  # noqa: E402
     UserTriggerScheduleError,
     load_user_trigger_schedule,
     make_resolve_effective_user_trigger,
+    make_resolve_effective_user_trigger_from_schedule,
 )
 
 
@@ -28,9 +29,9 @@ def test_load_valid_schedule(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    by_turn, dflt = load_user_trigger_schedule(p, max_orchestration_turn=3)
-    assert dflt == "from json"
-    assert by_turn == {1: "override one", 2: "two"}
+    schedule = load_user_trigger_schedule(p, max_orchestration_turn=3)
+    assert schedule.default_trigger == "from json"
+    assert schedule.by_orchestration_turn == {1: "override one", 2: "two"}
 
 
 def test_load_rejects_unknown_key(tmp_path: Path) -> None:

@@ -10,7 +10,7 @@ from autogen_agentchat.messages import TextMessage
 from anti_regression_advisory import get_cached_anti_regression_advisory
 from audit_v2_pipeline import build_audit_v2_character_bundle
 from character_audits_v1 import build_character_audit_v1
-from character_move_adapters import legacy_move_text_for_validation
+from character_move_adapters import CanonicalV2Move, legacy_move_text_for_validation
 from continuity_manager import ContinuityManager
 from perception_audibility import normalize_move_audibility
 from progression_advisory import get_cached_progression_advisory
@@ -47,6 +47,10 @@ from continuity_semantic_proposals import (
 from audit_semantic_proposal_decision import (
     build_semantic_proposal_decision,
     should_emit_semantic_proposal_decision,
+)
+from issue240_semantic_evaluation import (
+    issue240_semantic_evaluation_enabled,
+    normalize_issue240_semantic_evaluation_for_continuity,
 )
 from semantic_validation import record_proposal_coherence_stats
 from tier_b_session_schedule import session_mutation_candidates_for_turn
@@ -777,6 +781,7 @@ async def run_character_attempt_phase(
     log_turn_failure_fn,
     sync_orchestration_state_from_continuity_fn,
     effective_user_trigger: str,
+    overlay_audit_metadata: dict[str, Any] | None = None,
     max_character_attempts: int = DEFAULT_MAX_CHARACTER_ATTEMPTS,
     assess_proposal_beat_contradiction_fn: Any = None,
 ) -> CharacterAttemptOutcome | None:
@@ -914,6 +919,13 @@ async def run_character_attempt_phase(
             )
             return None
 
+        audit_move: dict[str, Any] = dict(move)
+        if issue240_semantic_evaluation_enabled():
+            normalized_data = normalize_issue240_semantic_evaluation_for_continuity(dict(move))
+            handoff = CanonicalV2Move()
+            handoff.update(normalized_data)
+            move = handoff
+
         present_for_norm = scene_state.get("present_characters") or char_names
         move = _normalize_parsed_move(
             move, next_actor=next_actor, present_for_norm=list(present_for_norm)
@@ -984,7 +996,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1013,7 +1025,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1042,7 +1054,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1075,7 +1087,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1120,7 +1132,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1158,7 +1170,7 @@ async def run_character_attempt_phase(
                 reason=rejection_reason,
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
-                parsed_output=move,
+                parsed_output=audit_move,
                 context_snapshot={
                     "director_decision": decision,
                     "character_names": char_names,
@@ -1315,7 +1327,7 @@ async def run_character_attempt_phase(
 
         log_character_turn_audit(
             next_actor=next_actor,
-            move=move,
+            move=audit_move,
             task_prompt=attempt_prompt,
             char_raw_response=char_raw_response,
             decision=decision,
@@ -1339,6 +1351,7 @@ async def run_character_attempt_phase(
             scene_grounding_state=st_module.session_state.get("scene_grounding"),
             effective_user_trigger=effective_user_trigger,
             semantic_proposal_decision=semantic_proposal_decision,
+            overlay_audit_metadata=overlay_audit_metadata,
         )
 
         return CharacterAttemptOutcome(

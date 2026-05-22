@@ -71,7 +71,8 @@ from progression_simulation_scenarios import (  # noqa: E402
 from user_trigger_schedule import (  # noqa: E402
     UserTriggerScheduleError,
     load_user_trigger_schedule,
-    make_resolve_effective_user_trigger,
+    make_actor_targeted_character_turn_resolver,
+    make_resolve_effective_user_trigger_from_schedule,
 )
 
 
@@ -382,22 +383,27 @@ def main() -> None:
     trigger_text = cli_trigger_value if cli_trigger_provided else built_in_fallback
 
     get_effective_user_trigger = None
+    resolve_character_turn_trigger = None
     if args.user_trigger_schedule is not None:
         try:
-            by_turn, json_default = load_user_trigger_schedule(
+            schedule = load_user_trigger_schedule(
                 args.user_trigger_schedule,
                 max_orchestration_turn=max_turns,
             )
         except UserTriggerScheduleError as exc:
             print(f"user trigger schedule: {exc}", file=sys.stderr)
             sys.exit(1)
-        get_effective_user_trigger = make_resolve_effective_user_trigger(
-            by_turn,
+        get_effective_user_trigger = make_resolve_effective_user_trigger_from_schedule(
+            schedule,
             cli_trigger_provided=cli_trigger_provided,
             cli_trigger_value=cli_trigger_value,
-            json_default=json_default,
             built_in_fallback=built_in_fallback,
         )
+        if schedule.by_actor_targeted_turn:
+            resolve_character_turn_trigger = make_actor_targeted_character_turn_resolver(
+                schedule,
+                base_resolve=get_effective_user_trigger,
+            )
 
     cli_for_bootstrap_composition: str | None = None
     if get_effective_user_trigger is None and cli_trigger_provided:
@@ -491,6 +497,7 @@ def main() -> None:
                 verdict=args.verdict,
                 failure_classification=args.failure_class,
                 get_effective_user_trigger=get_effective_user_trigger,
+                resolve_character_turn_trigger=resolve_character_turn_trigger,
             )
             print(format_simulation_audit_markdown(result))
             if args.metrics_out is not None and result.structured_eval is not None:

@@ -13,6 +13,10 @@ import json
 from typing import Any
 
 from character_move_adapters import CanonicalV2Move
+from issue240_semantic_evaluation import (
+    issue240_v2_root_allowlist_extra,
+    validate_issue240_semantic_evaluation_ingress,
+)
 
 # Structural caps (parser boundary only; Issue #137).
 MAX_V2_BEATS = 64
@@ -154,7 +158,8 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
     for p in ("action", "dialogue", "audibility", "audience"):
         if p in m:
             return f"prohibited root key: {p!r}"
-    extra = set(m.keys()) - V2_ROOT_ALLOWLIST
+    allowlist = V2_ROOT_ALLOWLIST | issue240_v2_root_allowlist_extra()
+    extra = set(m.keys()) - allowlist
     if extra:
         return f"unknown v2 root keys: {sorted(extra)}"
 
@@ -212,6 +217,9 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
                 for a in aud_list:
                     if not isinstance(a, str):
                         return "audience must be a JSON array of strings"
+    err_ev = validate_issue240_semantic_evaluation_ingress(m)
+    if err_ev:
+        return err_ev
     err_sp = _validate_semantic_proposals_v2(m)
     if err_sp:
         return err_sp

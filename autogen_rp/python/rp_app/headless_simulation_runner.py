@@ -46,6 +46,8 @@ async def run_headless_llm_scene(
     verdict: str | None = None,
     failure_classification: str | None = None,
     get_effective_user_trigger: Callable[[int], str] | None = None,
+    resolve_character_turn_trigger: Callable[[int, str], tuple[str, dict[str, Any]]]
+    | None = None,
 ) -> HeadlessSimulationResult:
     """Run ``run_character_turns_impl``; session must already hold model client and agents."""
     char_agents: list[Any] = list(st_module.session_state.get("characters") or [])
@@ -70,6 +72,7 @@ async def run_headless_llm_scene(
         user_name=user_name,
         max_turns=max_turns,
         get_effective_user_trigger=get_effective_user_trigger,
+        resolve_character_turn_trigger=resolve_character_turn_trigger,
         **kwargs,
     )
 

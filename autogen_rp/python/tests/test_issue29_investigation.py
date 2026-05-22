@@ -135,5 +135,6 @@ def test_user_trigger_schedule_cross_scene_max() -> None:
         / "issue29_investigation_schedules"
         / "cross_scene_50.json"
     )
-    by_turn, _ = load_user_trigger_schedule(p, max_orchestration_turn=50)
+    schedule = load_user_trigger_schedule(p, max_orchestration_turn=50)
+    by_turn = schedule.by_orchestration_turn
     assert 16 in by_turn and 31 in by_turn
