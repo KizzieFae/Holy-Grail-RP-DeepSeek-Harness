@@ -1,0 +1,7 @@
+{
+  "by_orchestration_turn": {
+    "2": "Traveler (overlay REINFORCED-1, Celina ONLY): Your JSON MUST include root semantic_proposals when your beats show off_focal intent. Required: kind off_focal, character Celina. Beats must show stepping out of the immediate focal exchange toward the kitchen.",
+    "4": "Traveler (overlay REINFORCED-1, Celina ONLY): Same required semantic_proposals for off_focal if your move steps out of the focal exchange. MUST emit root semantic_proposals aligned with beats.",
+    "5": "Traveler (overlay REINFORCED-2, Celina ONLY): REQUIRED root semantic_proposals — kind off_focal, character Celina — when your beats go to the kitchenette/kitchen off-focal. Prose implication is insufficient; emit honest proposals or omit only if no covered intent."
+  }
+}

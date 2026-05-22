@@ -19,11 +19,11 @@ from orchestration_helpers import (
 )
 from perception_audibility import build_recent_dialogue_history_for_viewer
 from prompt_builders import (
-    build_character_turn_prompt as build_character_turn_prompt_text,
     build_director_selection_prompt,
     build_narrator_render_prompt,
     build_scene_role_prompt_context,
 )
+from prompt_topology_issue240 import build_character_turn_prompt_for_runtime as build_character_turn_prompt_text
 from response_validation import (
     build_attempted_post_details,
     get_available_actors,

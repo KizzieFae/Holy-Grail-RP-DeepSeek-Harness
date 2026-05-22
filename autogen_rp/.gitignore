@@ -230,6 +230,12 @@ registry.json
 !/python/data/issue29_investigation_schedules/
 !/python/data/issue29_investigation_schedules/*.json
 
+# Issue #240 headless harness — overlay investigation schedules + run artifacts
+!/python/data/issue240/
+!/python/data/issue240/*.json
+!/python/data/issue240_runs/
+!/python/data/issue240_runs/**/*
+
 # Scene template JSON (Issue #80 — tracked authored templates; not user-local RP data)
 !/python/data/scene_templates/
 !/python/data/scene_templates/*.json
