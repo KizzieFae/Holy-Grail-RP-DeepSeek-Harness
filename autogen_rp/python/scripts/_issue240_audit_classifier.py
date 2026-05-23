@@ -30,16 +30,23 @@ def _overlay_meta(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _overlay_demands_proposals(data: dict[str, Any]) -> bool:
+def _overlay_demands_semantic_engagement(data: dict[str, Any]) -> bool:
+    """True when overlay trigger demands semantic engagement (legacy or v1_next7 wire)."""
     trig = str(data.get("effective_user_trigger") or "")
     t = trig.lower()
-    return "semantic_proposals" in t and (
+    has_wire = "semantic_proposals" in t or "semantic_evaluation" in t
+    return has_wire and (
         "required:" in t
         or "required " in t
         or "must include" in t
         or "must emit" in t
         or "same required" in t
     )
+
+
+def _overlay_demands_proposals(data: dict[str, Any]) -> bool:
+    """Backward-compatible alias for overlay semantic-engagement detection."""
+    return _overlay_demands_semantic_engagement(data)
 
 
 def _expected_overlay_actor(data: dict[str, Any]) -> str | None:

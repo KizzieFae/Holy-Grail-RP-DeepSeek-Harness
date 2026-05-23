@@ -2,19 +2,19 @@
   "by_actor_targeted_turn": {
     "3": {
       "target_actor": "Willow_Reeves",
-      "trigger": "Traveler (overlay, Willow Reeves ONLY): If this beat includes reentry or off_focal intent, MUST emit root semantic_proposals (self-only) aligned with your beats. Required kinds: reentry or off_focal as applicable."
+      "trigger": "Traveler (overlay, Willow Reeves ONLY): If this beat includes reentry or off_focal intent, MUST emit root semantic_evaluation (self-only) aligned with your beats. decision covered_change with proposals; required kinds: reentry or off_focal as applicable."
     },
     "6": {
       "target_actor": "Willow_Reeves",
-      "trigger": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient."
+      "trigger": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED semantic_evaluation when beats show reentry to the focal exchange. decision covered_change with proposals (kind reentry, character Willow Reeves or Willow_Reeves). Prose implication is insufficient."
     },
     "10": {
       "target_actor": "Willow_Reeves",
-      "trigger": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent."
+      "trigger": "Traveler (overlay, Willow Reeves ONLY): MUST emit semantic_evaluation when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). decision covered_change with proposals; omit proposals only when no covered intent."
     },
     "11": {
       "target_actor": "Willow_Reeves",
-      "trigger": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater."
+      "trigger": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_evaluation if beats reference kitchenette/off-focal movement or reentry. decision covered_change with matching proposals. Honest report only — not compliance theater."
     }
   }
 }
