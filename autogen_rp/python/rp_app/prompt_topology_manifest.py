@@ -367,7 +367,6 @@ def _profile_requirements(profile_id: str) -> tuple[frozenset[str], list[tuple[s
     three_char_extra = frozenset(
         {
             "participation_arc",
-            "threshold_bridge_v1_next6",
             "active_focus_capsule",
         }
     )
@@ -382,8 +381,7 @@ def _profile_requirements(profile_id: str) -> tuple[frozenset[str], list[tuple[s
         ("semantic_self_report", "participation_frame"),
         ("participation_frame", "threshold_calibration"),
         ("threshold_calibration", "participation_arc"),
-        ("participation_arc", "threshold_bridge"),
-        ("threshold_bridge", "active_focus"),
+        ("participation_arc", "active_focus"),
         ("active_focus", "private_state"),
     ]
     production_required = frozenset(

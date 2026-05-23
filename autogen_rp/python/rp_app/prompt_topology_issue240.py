@@ -939,9 +939,9 @@ def build_issue240_v1_next7_threshold_calibration() -> str:
     return """Covered-change threshold (calibration — do not recite in dialogue):
 ``covered_change`` does not require a dramatic or physical exit.
 
-If the recent participation arc shows you at the edge of the exchange, this beat can be ``covered_change`` when it materially continues that withdrawal, deepens that distance, or reverses it by rejoining the active exchange.
+If the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, this beat can be ``covered_change`` when it materially continues that withdrawal, deepens that distance, or reverses it by rejoining the active exchange.
 
-Use ``no_covered_change`` only when the beat expresses emotion without changing that participation state."""
+Use ``covered_change`` only when this beat maintains or shifts that participation state; use ``no_covered_change`` when the beat expresses emotion without materially changing participation."""
 
 
 def build_issue240_v1_next7_semantic_block() -> str:
@@ -1002,12 +1002,10 @@ def apply_issue240_v1_next7_topology_transform(
     )
     if should_emit_social_focus_capsule(**kwargs):
         arc = build_issue240_v1_next4_participation_arc(**kwargs)
-        bridge = build_issue240_v1_next6_covered_change_threshold_bridge()
         focus = build_issue240_v1_next2_active_focus_capsule(**kwargs)
         prompt = _insert_issue240_post_semantic_capsules(
             prompt,
             participation_arc=arc,
-            threshold_bridge=bridge,
             active_focus=focus,
         )
     prompt = _apply_issue240_v1_next7_prompt_overrides(prompt, char_name)

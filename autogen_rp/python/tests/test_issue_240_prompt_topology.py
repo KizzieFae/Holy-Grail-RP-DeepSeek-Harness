@@ -448,19 +448,23 @@ def test_issue240_v1_next7_calibration_in_semantic_cluster(
     prompt = build_character_turn_prompt_for_runtime(**_three_character_prompt_kwargs())
     assert ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER in prompt
     assert "does not require a dramatic or physical exit" in prompt
+    assert "If the recent participation arc places you withdrawn" in prompt
+    assert ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER not in prompt
     sem = prompt.index(ISSUE240_SEMANTIC_BLOCK_HEADER)
     frame = prompt.index(ISSUE240_V1_NEXT3_PARTICIPATION_FRAME_MARKER)
     cal = prompt.index(ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER)
     arc = prompt.index(ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER)
-    assert sem < frame < cal < arc
+    focus = prompt.index(ISSUE240_V1_NEXT2_ACTIVE_FOCUS_HEADER)
+    priv = prompt.index("YOUR PRIVATE STATE:")
+    assert sem < frame < cal < arc < focus < priv
 
 
-def test_issue240_v1_next7_includes_v1_next6_bridge_and_semantic_eval(
+def test_issue240_v1_next7_merged_calibration_no_separate_bridge(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7")
     prompt = build_character_turn_prompt_for_runtime(**_three_character_prompt_kwargs())
-    assert ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER in prompt
+    assert ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER not in prompt
     assert ISSUE240_V1_NEXT5_SEMANTIC_EVAL_MARKER in prompt
 
 

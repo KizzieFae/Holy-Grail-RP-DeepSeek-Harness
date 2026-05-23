@@ -64,15 +64,18 @@ def test_topology_manifest_v1_next7_three_char_profile(monkeypatch: pytest.Monke
     assert manifest["profile_match"] is True
     assert manifest["markers"]["participation_arc"] is True
     assert manifest["markers"]["active_focus_capsule"] is True
-    assert manifest["markers"]["threshold_bridge_v1_next6"] is True
+    assert manifest["markers"]["threshold_bridge_v1_next6"] is False
 
     offsets = manifest["ordering"]["offsets"]
     sem = offsets["semantic_self_report"]
     frame = offsets["participation_frame"]
     cal = offsets["threshold_calibration"]
     arc = offsets["participation_arc"]
+    focus = offsets["active_focus"]
     assert sem is not None and frame is not None and cal is not None and arc is not None
-    assert sem < frame < cal < arc
+    assert focus is not None
+    assert sem < frame < cal < arc < focus
+    assert "bridge.v6" not in manifest["topology_fingerprint"]
 
 
 def test_topology_manifest_production_profile(monkeypatch: pytest.MonkeyPatch) -> None:
