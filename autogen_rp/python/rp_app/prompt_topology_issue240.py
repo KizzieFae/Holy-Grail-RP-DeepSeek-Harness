@@ -833,9 +833,9 @@ def build_character_turn_prompt_issue240_v1_next4(**kwargs: Any) -> str:
 def build_issue240_v1_next5_opening(char_name: str) -> str:
     return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
 
-Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit semantic judgment via root ``semantic_evaluation`` — not optional attention.
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
 
-``semantic_evaluation.decision`` must be ``covered_change`` or ``no_covered_change``. Include ``proposals`` only when ``decision`` is ``covered_change``. Honest ``no_covered_change`` is valid when your authored beats contain no covered participation shift.
+Honest ``no_covered_change`` is valid when your authored beats contain no covered participation shift.
 
 Do not emit root ``semantic_proposals`` or empty proposal arrays."""
 
