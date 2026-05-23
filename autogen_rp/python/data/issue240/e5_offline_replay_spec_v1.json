@@ -1,0 +1,76 @@
+{
+  "schema_version": "issue240_e5_offline_replay_spec_v1",
+  "purpose": "investigation_only — diagnostic offline adjudication replay; not #241; not runtime authority",
+  "doctrine": {
+    "continuity_authority": "unchanged — replay output does not commit state",
+    "prose_authority": "forbidden — replay may judge proposals only; no prose-inference fallback",
+    "audit_authority": "observational — replay results are evaluation artifacts only"
+  },
+  "input_format": {
+    "required_fields_per_case": [
+      "case_id",
+      "actor",
+      "beats",
+      "beats_text",
+      "trigger_context",
+      "participation_context_snip"
+    ],
+    "optional_fields": [
+      "motivation",
+      "transcript_context_snip",
+      "semantic_evaluation_emitted",
+      "pre_triage_label"
+    ],
+    "source": "data/issue240/adjudication_corpus_willow_v1.json cases[]",
+    "replay_prompt_contract": {
+      "role": "semantic adjudicator only — NOT RP author",
+      "task": "Given authored beats and minimal participation context, emit judgment object only",
+      "output_schema": {
+        "decision": "covered_change | no_covered_change",
+        "proposals": "non-empty only when covered_change; kinds off_focal | reentry | excursion_lifecycle",
+        "rationale_snip": "one sentence, non-dialogue, for audit only"
+      },
+      "forbidden": [
+        "rewriting beats",
+        "continuity commits",
+        "narrator prose",
+        "treating replay as authoritative over original move"
+      ]
+    }
+  },
+  "minimal_context_policy": {
+    "tier_0": "beats JSON + actor name only",
+    "tier_1": "tier_0 + trigger_context + participation_context_snip (recommended default)",
+    "tier_2": "tier_1 + transcript_context_snip (last 1-2 exchanges)",
+    "tier_3": "tier_2 + motivation block",
+    "default_tier": "tier_1",
+    "rationale": "Isolate threshold judgment from full RP prompt surface; match E5 hypothesis"
+  },
+  "evaluation_procedure": [
+    "Load adjudication_corpus_willow_v1.json",
+    "For each case (or ambiguous subset), call offline adjudicator with tier_1 context",
+    "Classify replay outcome: honest_F0 | honest_F7 | performative_F3 | contradiction_F4",
+    "Compare replay decision vs corpus pre_triage_label and vs emitted semantic_evaluation",
+    "Aggregate: replay_F0_rate_on_ambiguous, agreement_with_clear_labels, disagreement_matrix"
+  ],
+  "comparison_method": {
+    "primary_question": "Can the same model correctly adjudicate participation shifts when freed from one-pass RP generation?",
+    "success_signal": "replay honest F0 rate >= 40% on ambiguous corpus cases WITHOUT F3/F4 inflation on clear_no_covered_change cases",
+    "failure_signal": "replay remains conservative (>=80% no_covered_change on ambiguous) — suggests irreducible ambiguity or model threshold bias, not one-pass coupling alone",
+    "interpretation_matrix": {
+      "replay_succeeds_on_ambiguous_one_pass_failed": "one-pass RP+judgment coupling is likely the bottleneck; #240 threshold work may still help",
+      "replay_also_conservative_on_ambiguous": "threshold/ontology problem may exceed topology; #241 planning warranted after E2/E4",
+      "replay_inflates_F3_F4_on_clear_negative": "separated adjudication over-steers — not safe as production path"
+    }
+  },
+  "implementation_boundary": {
+    "allowed": "scripts/_issue240_offline_adjudication_replay.py (investigation helper, not wired to turn_runner)",
+    "forbidden": [
+      "turn_runner changes",
+      "continuity_manager changes",
+      "production prompt merge",
+      "#241 triage/review runtime"
+    ]
+  },
+  "proposed_script_invocation": "python scripts/_issue240_offline_adjudication_replay.py --corpus data/issue240/adjudication_corpus_willow_v1.json --tier 1 --cases ambiguous"
+}
