@@ -645,11 +645,9 @@ If this beat has no covered intent, omit semantic_proposals entirely. Do not emi
 
 
 def build_issue240_v1_next3_participation_decision_frame() -> str:
-    return """Ask one question while authoring this beat: did my move change focal participation?
+    return """Ask one question while authoring this beat: did my move materially change focal participation?
 
-Report semantic_proposals only when it did — stepping out of the active exchange, returning into it, or materially updating an existing off_focal/excursion state.
-
-Emotional color alone is not enough unless participation actually shifted."""
+Use ``covered_change`` only when it did (off_focal, reentry, or excursion lifecycle). Emotional color alone is not enough unless participation actually shifted."""
 
 
 def build_character_turn_prompt_issue240_v1_semantic_block(
