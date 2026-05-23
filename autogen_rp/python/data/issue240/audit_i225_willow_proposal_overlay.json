@@ -1,0 +1,8 @@
+{
+  "by_orchestration_turn": {
+    "4": "Traveler (overlay, Willow Reeves ONLY): If this beat includes reentry or off_focal intent, MUST emit root semantic_proposals (self-only) aligned with your beats. Required kinds: reentry or off_focal as applicable.",
+    "6": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient.",
+    "9": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent.",
+    "11": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater."
+  }
+}

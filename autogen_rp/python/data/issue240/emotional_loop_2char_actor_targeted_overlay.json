@@ -1,0 +1,20 @@
+{
+  "by_actor_targeted_turn": {
+    "3": {
+      "target_actor": "Celina",
+      "trigger": "Traveler (overlay, Celina ONLY): If this beat materially shifts your focal participation — stepping back from the corridor standoff, withdrawing from the active exchange, or rejoining it — report via semantic_evaluation with decision covered_change and honest proposals (kinds off_focal or reentry as applicable). Omit proposals only when no covered participation shift exists."
+    },
+    "6": {
+      "target_actor": "Ayame",
+      "trigger": "Traveler (overlay REINFORCED, Ayame ONLY): REQUIRED semantic_evaluation when your beats show off_focal withdrawal from the emotional exchange or reentry into it. decision covered_change with proposals when participation materially shifts; no_covered_change only when beats are affect-only with no participation change. Prose implication is insufficient — honest judgment only."
+    },
+    "9": {
+      "target_actor": "Celina",
+      "trigger": "Traveler (overlay, Celina ONLY): If this beat continues gradual withdrawal, deepens distance from the standoff, or reverses it by re-engaging Ayame, use semantic_evaluation decision covered_change with matching proposals. Use no_covered_change only for static emotional expression without participation shift."
+    },
+    "11": {
+      "target_actor": "Celina",
+      "trigger": "Traveler (overlay REINFORCED-2, Celina ONLY): REQUIRED semantic_evaluation — covered_change when beats materially change focal participation (off_focal, reentry). Gradual edge-of-exchange movement counts when it continues or deepens withdrawal. Honest report only — not compliance theater."
+    }
+  }
+}

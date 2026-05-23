@@ -69,6 +69,8 @@ async def run_character_turns(
     tension_history_limit: int,
     ignore_director_end_round: bool = False,
     get_effective_user_trigger: Callable[[int], str] | None = None,
+    resolve_character_turn_trigger: Callable[[int, str], tuple[str, dict[str, Any]]]
+    | None = None,
 ) -> None:
     from autogen_core import CancellationToken
 
@@ -127,7 +129,7 @@ async def run_character_turns(
                         str(au[-1]) if au else None
                     )
                 next_orchestration_turn = successful_turns + 1
-                effective_user_trigger = resolve_effective_user_trigger(
+                base_user_trigger = resolve_effective_user_trigger(
                     next_orchestration_turn
                 )
                 continuity_manager = get_continuity_manager_fn()
@@ -136,7 +138,7 @@ async def run_character_turns(
                 )
                 if continuity_manager is not None and continuity_scene_state is not None:
                     continuity_manager.apply_pre_turn_user_presence_routing(
-                        trigger_text=effective_user_trigger,
+                        trigger_text=base_user_trigger,
                         participant_names=char_names,
                         get_character_display_name_fn=get_character_display_name_fn,
                         pending_forced_speaker=st_module.session_state.get(
@@ -203,7 +205,7 @@ async def run_character_turns(
                 decision = await choose_next_actor_fn(
                     director=director,
                     participant_names=char_names,
-                    trigger_text=effective_user_trigger,
+                    trigger_text=base_user_trigger,
                     cancellation_token=cancellation_token,
                     round_number=round_number,
                     turn_number=turn_number,
@@ -251,9 +253,20 @@ async def run_character_turns(
                             "available_actors": available_actors,
                             "character_names": char_names,
                         },
-                        effective_user_trigger=effective_user_trigger,
+                        effective_user_trigger=base_user_trigger,
                     )
                     break
+
+                overlay_audit_metadata: dict[str, Any] = {}
+                if resolve_character_turn_trigger is not None:
+                    effective_user_trigger, overlay_audit_metadata = (
+                        resolve_character_turn_trigger(
+                            next_orchestration_turn,
+                            next_actor,
+                        )
+                    )
+                else:
+                    effective_user_trigger = base_user_trigger
 
                 agent = agent_lookup.get(next_actor)
 
@@ -312,6 +325,7 @@ async def run_character_turns(
                     get_character_display_name_fn=get_character_display_name_fn,
                     sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
                     effective_user_trigger=effective_user_trigger,
+                    overlay_audit_metadata=overlay_audit_metadata,
                 )
                 if turn_result is None:
                     continue

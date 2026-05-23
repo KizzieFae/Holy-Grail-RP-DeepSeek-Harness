@@ -230,6 +230,16 @@ registry.json
 !/python/data/issue29_investigation_schedules/
 !/python/data/issue29_investigation_schedules/*.json
 
+# Issue #240 headless harness — overlay investigation schedules
+!/python/data/issue240/
+!/python/data/issue240/*.json
+# Issue #240 run artifacts — local investigation only
+/python/data/issue240_runs/
+
+# Issue #243 — semantic evaluation profiles + regression baselines (tracked authored data)
+!/python/data/evaluation/
+!/python/data/evaluation/**/*
+
 # Scene template JSON (Issue #80 — tracked authored templates; not user-local RP data)
 !/python/data/scene_templates/
 !/python/data/scene_templates/*.json

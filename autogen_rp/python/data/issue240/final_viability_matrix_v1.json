@@ -1,0 +1,101 @@
+{
+  "schema_version": "issue240_final_viability_matrix_v1",
+  "issue": 240,
+  "topology": "v1_next7",
+  "branch": "exp/240-dual-role-one-pass",
+  "env": {
+    "RP_ISSUE240_PROMPT_TOPOLOGY": "v1_next7"
+  },
+  "runs": [
+    {
+      "matrix_id": "FV1",
+      "scenario": "cert_i234_proposal_accept_off_focal",
+      "turns": 6,
+      "rep": 1,
+      "overlay": "data/issue240/cert_i234_reinforced_overlay.json",
+      "session": null
+    },
+    {
+      "matrix_id": "FV1",
+      "scenario": "cert_i234_proposal_accept_off_focal",
+      "turns": 6,
+      "rep": 2,
+      "overlay": "data/issue240/cert_i234_reinforced_overlay.json",
+      "session": null
+    },
+    {
+      "matrix_id": "FV2",
+      "scenario": "audit_i214_offstage_continuity_tier_b",
+      "turns": 12,
+      "rep": 1,
+      "overlay": null,
+      "session": null
+    },
+    {
+      "matrix_id": "FV2",
+      "scenario": "audit_i214_offstage_continuity_tier_b",
+      "turns": 12,
+      "rep": 2,
+      "overlay": null,
+      "session": null
+    },
+    {
+      "matrix_id": "FV3",
+      "scenario": "audit_i191_offstage_private_return",
+      "turns": 12,
+      "rep": 1,
+      "overlay": null,
+      "session": null
+    },
+    {
+      "matrix_id": "FV4",
+      "scenario": "emotional_loop_2char",
+      "turns": 12,
+      "rep": 1,
+      "overlay": "data/issue240/emotional_loop_2char_actor_targeted_overlay.json",
+      "session": null
+    },
+    {
+      "matrix_id": "FV4",
+      "scenario": "emotional_loop_2char",
+      "turns": 12,
+      "rep": 2,
+      "overlay": "data/issue240/emotional_loop_2char_actor_targeted_overlay.json",
+      "session": null
+    },
+    {
+      "matrix_id": "FV4",
+      "scenario": "emotional_loop_2char",
+      "turns": 12,
+      "rep": 3,
+      "overlay": "data/issue240/emotional_loop_2char_actor_targeted_overlay.json",
+      "session": null
+    },
+    {
+      "matrix_id": "FV5",
+      "scenario": "conflict_3char",
+      "turns": 12,
+      "rep": 1,
+      "overlay": null,
+      "session": null
+    },
+    {
+      "matrix_id": "FV6",
+      "scenario": "long_session",
+      "turns": 12,
+      "rep": 1,
+      "overlay": null,
+      "session": null
+    },
+    {
+      "matrix_id": "FV7",
+      "scenario": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "turns": 12,
+      "rep": 1,
+      "overlay": "data/issue240/audit_i225_willow_actor_targeted_overlay.json",
+      "session": null
+    }
+  ],
+  "scoring": "scripts/_issue240_corrected_scorer.py",
+  "classifier": "scripts/_issue240_audit_classifier.py"
+}

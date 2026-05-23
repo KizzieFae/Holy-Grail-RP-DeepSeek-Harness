@@ -50,6 +50,7 @@ async def execute_character_turn(
     get_character_display_name_fn,
     sync_orchestration_state_from_continuity_fn,
     effective_user_trigger: str = "",
+    overlay_audit_metadata: dict[str, Any] | None = None,
     max_character_attempts: int = DEFAULT_MAX_CHARACTER_ATTEMPTS,
     assess_proposal_beat_contradiction_fn=None,
 ) -> dict[str, Any] | None:
@@ -57,7 +58,7 @@ async def execute_character_turn(
     task_prompt, character_summary_block_audit = build_character_turn_prompt_fn(
         next_actor,
         user_name,
-        trigger_text,
+        effective_user_trigger,
         decision,
     )
     outcome = await run_character_attempt_phase(
@@ -91,6 +92,7 @@ async def execute_character_turn(
         log_turn_failure_fn=log_turn_failure_fn,
         sync_orchestration_state_from_continuity_fn=sync_orchestration_state_from_continuity_fn,
         effective_user_trigger=effective_user_trigger,
+        overlay_audit_metadata=overlay_audit_metadata,
         max_character_attempts=max_character_attempts,
         assess_proposal_beat_contradiction_fn=assess_proposal_beat_contradiction_fn,
     )

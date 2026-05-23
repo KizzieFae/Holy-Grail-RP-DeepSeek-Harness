@@ -1,0 +1,119 @@
+{
+  "observational_only": true,
+  "runtime_allowlist": false,
+  "continuity_authority": false,
+  "runtime_gate": false,
+  "purpose": "offline evaluation calibration \u2014 not canonical runtime truth",
+  "schema_version": "issue243_eval_baseline_v1",
+  "issue": 243,
+  "phase": "243-B",
+  "corpus_name": "willow_v1",
+  "corpus_path": "E:/CascadeProjects/Holy Grail RP/autogen_rp/python/data/issue240/adjudication_corpus_willow_v1.json",
+  "corpus_schema_version": "issue240_adjudication_corpus_v1",
+  "eval_version": "1",
+  "generated_from": "semantic_proposal_eval_v1 profile-scoped scoring \u2014 calibration-guided, not canonical truth",
+  "case_rows": [
+    {
+      "case_id": "825_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "828_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "831_t3_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "833_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "834_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "837_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "840_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "841_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "841_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "843_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "845_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "846_t3_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "846_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    },
+    {
+      "case_id": "847_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "profile_id": "dorm_studio_single_space",
+      "corrected_category": "success",
+      "semantic_decision": "no_covered_change"
+    }
+  ],
+  "corrected_category_counts": {
+    "success": 14
+  },
+  "case_count": 14
+}

@@ -256,6 +256,8 @@ These confirm **code-level** behavior; scenarios confirm **model + pipeline** be
 
 **Audit JSON** (with `--audit`): written under `autogen_rp/python/rp_app/data/rp_audits/` (session folders + summary), same mechanism as the Streamlit app with auditing enabled.
 
+**Semantic proposal evaluation (Issue #243, offline):** Frozen #240 adjudication corpora plus committed baselines under `autogen_rp/python/data/evaluation/issue243_regression_baselines/` support **observational** profile-scoped evaluation and regression diff (`scripts/run_issue243_corpus_regression.py --eval`). **Operator read discipline (#243-D):** `corrected_category` is the **primary** eval output; `legacy_lane` / F0–F7 are **historical investigation labels**; `legacy_classifier_misflag` does **not** mean runtime failure; **`ambiguous_threshold` is first-class** — do not collapse into PASS/FAIL. Eval results are **not** scenario PASS/FAIL, **not** runtime authority, **not** continuity authority, and **not** a substitute for `#233` / `scene_state_after` read discipline. See `autogen_rp/docs/audit-workflows.md` (*Semantic proposal evaluation*) and `AUDIT_DOCUMENTATION.md` (*#243-D*).
+
 #### PASS criteria
 
 **PASS** requires **both**:

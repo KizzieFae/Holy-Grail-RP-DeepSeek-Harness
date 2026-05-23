@@ -1,0 +1,95 @@
+{
+  "observational_only": true,
+  "runtime_allowlist": false,
+  "continuity_authority": false,
+  "runtime_gate": false,
+  "purpose": "offline evaluation calibration \u2014 not canonical runtime truth",
+  "schema_version": "issue243_regression_baseline_v1",
+  "issue": 243,
+  "phase": "243-A",
+  "corpus_name": "final_viability_v1",
+  "corpus_path": "E:/CascadeProjects/Holy Grail RP/autogen_rp/python/data/issue240/adjudication_corpus_final_viability_v1.json",
+  "corpus_schema_version": "issue240_final_viability_corpus_v1",
+  "generated_from": "calibration scaffolding from frozen #240 corpus labels \u2014 not canonical truth scoring",
+  "case_rows": [
+    {
+      "case_id": "848_t3_celina_baseline",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "true semantic miss",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "853_t9_celina",
+      "scenario_id": "audit_i214_offstage_continuity_tier_b",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "generic_net_state_v1",
+      "profile_resolution": "default"
+    },
+    {
+      "case_id": "855_t3_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "856_t3_celina",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "true semantic miss",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "856_t6_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "true semantic miss",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "856_t4_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "856_t10_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "856_t12_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "857_t6_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "true semantic miss",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "857_t8_ayame",
+      "scenario_id": "emotional_loop_2char",
+      "calibration_label": "ambiguous ontology threshold",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    }
+  ],
+  "category_counts": {
+    "true semantic miss": 4,
+    "ambiguous ontology threshold": 6
+  },
+  "profile_counts": {
+    "dorm_studio_single_space": 9,
+    "generic_net_state_v1": 1
+  },
+  "case_count": 10
+}

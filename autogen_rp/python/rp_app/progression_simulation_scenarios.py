@@ -42,6 +42,11 @@ _REQUIRED_KEYS = frozenset(
 
 def validate_optional_scenario_fields(raw: dict[str, Any], scenario_id: str) -> None:
     """Reject invalid values for optional manifest fields."""
+    opt_eval_profile = raw.get("evaluation_ontology_profile")
+    if opt_eval_profile is not None and str(opt_eval_profile).strip():
+        from semantic_eval_profiles import validate_evaluation_ontology_profile_id
+
+        validate_evaluation_ontology_profile_id(str(opt_eval_profile).strip())
     opt_audit_tier = raw.get("audit_validation_tier")
     opt_audit_tier_norm: str | None = None
     if opt_audit_tier is not None and str(opt_audit_tier).strip():

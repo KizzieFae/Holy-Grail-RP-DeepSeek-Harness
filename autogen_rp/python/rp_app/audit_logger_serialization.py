@@ -20,6 +20,15 @@ def entry_to_full_dict(entry: Any) -> dict[str, Any]:
         "metadata": entry.metadata,
     }
     out["effective_user_trigger"] = getattr(entry, "effective_user_trigger", None)
+    md = out.get("metadata") if isinstance(out.get("metadata"), dict) else {}
+    for key in (
+        "overlay_schedule_mode",
+        "overlay_target_actor",
+        "overlay_applied",
+        "overlay_skipped_reason",
+    ):
+        if isinstance(md, dict) and key in md:
+            out[key] = md.get(key)
     return out
 
 

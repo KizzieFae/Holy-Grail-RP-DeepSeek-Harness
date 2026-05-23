@@ -19,11 +19,11 @@ from orchestration_helpers import (
     sync_orchestration_state_from_continuity as sync_orchestration_state_from_continuity_impl,
 )
 from prompt_builders import (
-    build_character_turn_prompt as build_character_turn_prompt_text,
     build_director_selection_prompt,
     build_narrator_render_prompt,
     build_scene_role_prompt_context,
 )
+from prompt_topology_issue240 import build_character_turn_prompt_for_runtime as build_character_turn_prompt_text
 from character_state import CharacterState, CharacterStateManager
 from continuity_manager import ContinuityManager
 from model_client import (
