@@ -1,0 +1,756 @@
+{
+  "schema_version": "issue240_adjudication_corpus_v1",
+  "purpose": "evaluation_only — not runtime authority, not continuity authority",
+  "doctrine": "#224 no prose authority; corpus labels are calibration benchmarks only",
+  "source_sessions": [
+    "825",
+    "828",
+    "831",
+    "833",
+    "834",
+    "837",
+    "840",
+    "841",
+    "843",
+    "845",
+    "846",
+    "847"
+  ],
+  "case_count": 14,
+  "pre_triage_counts": {
+    "ambiguous": 13,
+    "clear_no_covered_change": 1
+  },
+  "needs_human_review_count": 13,
+  "cases": [
+    {
+      "case_id": "825_t6_willow",
+      "session_id": "session_825",
+      "turn_index": 6,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nACTIVE SCENE FOCUS (this beat only — do not recite in dialogue):\n- Emotional focus: Marlene Fletcher is pressing the conversation right now.\n- Your bearing: controlled territorial resolve\n- Your position: You may be reconnecting to the exchange, or still holding at its edge.\n- Your recent read of the room: observing neutrally.\n- In the live exchange now: Kizzie, Marlene Fletcher\n- Acti",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene Fletcher: pushed off from the desk she'd been leaning against, crossed to stand at the foot of her own bunk, and braced a hand on the metal frame. She looked from Willow to Kizzie, letting the silence hold a beat too long before she spoke. [speech inaudible to this recipient] And Will—yeah, you're staying. Got it. I'm not gonna argue territory with you tonight. But if this arrangement starts feeling tight, one of us calls a timeout before it gets stupid. Deal?\"\n  },\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie: I let ou"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "pushed off from the wall where I'd been standing and crossed to my bunk. Grabbed the edge of my mattress and gave it a hard shove back into the frame, seating it proper. Didn't look at either of them while I did it."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Bathroom's left out the door, third door down. Handle sticks — gotta lift it before you turn.",
+          "audibility": "public",
+          "audience": []
+        }
+      ],
+      "beats_text": "pushed off from the wall where I'd been standing and crossed to my bunk. Grabbed the edge of my mattress and gave it a hard shove back into the frame, seating it proper. Didn't look at either of them while I did it.   Bathroom's left out the door, third door down. Handle sticks — gotta lift it before you turn.",
+      "motivation": {
+        "goal": "stabilize Kizzie while controlling the immediate scene around them",
+        "tactic": "offer practical direction without engaging emotionally, keep the logistics pass clean and closed",
+        "emotional_driver": "controlled territorial resolve",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_825/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session825_round001_turn06_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "828_t6_willow",
+      "session_id": "session_828",
+      "turn_index": 6,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation state; me",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie let out a slow breath and let her shoulders soften a fraction, her tail giving a single slow sweep behind her as she processed the arrangement. \\\"The couch works. I don't need much space anyway.\\\" She set her suitcase on the floor beside the couch and sat down on the edge of the cushion, folding her hands in her lap and looking between the two alphas with patient curiosity. \\\"I'm not going anywhere. You wanted surfaces sorted—that's done. What comes next?\\\"\"\n  },\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene pushed off f"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Pushed off the desk with both palms, crossed the three steps to the couch, and dropped onto the far end of it. Not close enough to crowd, but close enough that the shift put her in the same visual field as the conversation instead of bracketed behind it. Let one arm drape along the couch back."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Couch is yours. That's settled. You want the number, I got it saved. Marlene's got the emergency-line script memorized. Either way works."
+        },
+        {
+          "type": "action",
+          "action": "Rolled her head to look at Kizzie directly, jaw set but not tight."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Only thing that matters is that call gets made tonight. Don't care whose thumb does the dialing."
+        }
+      ],
+      "beats_text": "Pushed off the desk with both palms, crossed the three steps to the couch, and dropped onto the far end of it. Not close enough to crowd, but close enough that the shift put her in the same visual field as the conversation instead of bracketed behind it. Let one arm drape along the couch back.   Couch is yours. That's settled. You want the number, I got it saved. Marlene's got the emergency-line script memorized. Either way works. Rolled her head to look at Kizzie directly, jaw set but not tight.   Only thing that matters is that call gets made tonight. Don't care whose thumb does the dialing.",
+      "motivation": {
+        "goal": "Close the sleeping arrangement cleanly and push toward housing resolution",
+        "tactic": "Endorse Kizzie handling her own call while making the practical resources available, without re-litigating authority",
+        "emotional_driver": "Irritated resolve — the scene needs to stop circling and move forward",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_828/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session828_round001_turn06_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "831_t3_willow",
+      "session_id": "session_831",
+      "turn_index": 3,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): If this beat includes reentry or off_focal intent, MUST emit root semantic_proposals (self-only) aligned with your beats. Required kinds: reentry or off_focal as applicable.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie stopped her slow drift toward the window and turned back toward the room. She set her suitcase upright beside the couch, centered it with a small adjustment, and lowered herself to sit on the edge of the couch cushion, her tail curling around her lap as she folded her hands over her knees. \\\"I'm not going anywhere. I just wanted to see the window's latch. Thought I might need to know how it works if things get warm.\\\"\"\n  },\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene Fletcher: Marlene uncrossed her arms and walked past Willow toward the foot of the couch, close enough to loom comfortably but not tower. S"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Willow stayed put, arms still crossed, watching Marlene settle her hand on the couch back. Her jaw worked once, nothing fast, just the grind of someone running the math on what she'd just seen and heard—or not heard, since Marlene's voice had dropped out of range."
+        },
+        {
+          "type": "speech",
+          "dialogue": "You two got a plan now, or are we still workshopping it?"
+        }
+      ],
+      "beats_text": "Willow stayed put, arms still crossed, watching Marlene settle her hand on the couch back. Her jaw worked once, nothing fast, just the grind of someone running the math on what she'd just seen and heard—or not heard, since Marlene's voice had dropped out of range.   You two got a plan now, or are we still workshopping it?",
+      "motivation": {
+        "goal": "stabilize Kizzie while controlling the immediate scene around them",
+        "tactic": "use firm practical control while keeping emotional distance, letting Marlene take lead on soft contact while testing whether she has a concrete next step",
+        "emotional_driver": "wary readiness—not distrust, just habit",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_831/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session831_round001_turn03_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "833_t11_willow",
+      "session_id": "session_833",
+      "turn_index": 11,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have stayed inside the live exchange across recent beats.\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Willow Reeves\",\n    \"content\": \"Willow heard Marlene's request without breaking stride, already at the footlocker—popped the latch one-handed, fished out the flattened spare pillow, and tossed it underhand toward Marlene's general direction without looking to see if she caught it. She turned back to her dresser, started pulling loose papers, a coil of wire, and a half-empty tin of mints off the top surface—clearing it with short, efficient movements. \\\"Already said I'm staying. Don't need air. Just moving shit so she's got space.\\\" She swept the last clutter into a drawer, then straightened an"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "drew in a breath slow enough that it barely moved her shoulders, shifted her weight, and let her eyes track Kizzie's path to the suitcase with a neutral gaze. She didn't follow her—just stayed planted near the couch arm, thumbs hooked in her jacket pockets, watching without staring."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Good. You need a towel or something, bathroom's down the hall on the left. Don't leave wet shit on the floor and we're fine, like I said.",
+          "audibility": "directed",
+          "audience": [
+            "Kizzie"
+          ]
+        },
+        {
+          "type": "action",
+          "action": "cut her gaze to Marlene for a brief flat look, one brow ticking up a fraction—not a question, just a check-in that said this part's handled. Then she pushed off from the couch arm and moved toward her desk, pulling her phone from her pocket and flipping it over in her hand without actually looking at the screen."
+        }
+      ],
+      "beats_text": "drew in a breath slow enough that it barely moved her shoulders, shifted her weight, and let her eyes track Kizzie's path to the suitcase with a neutral gaze. She didn't follow her—just stayed planted near the couch arm, thumbs hooked in her jacket pockets, watching without staring.   Good. You need a towel or something, bathroom's down the hall on the left. Don't leave wet shit on the floor and we're fine, like I said. cut her gaze to Marlene for a brief flat look, one brow ticking up a fraction—not a question, just a check-in that said this part's handled. Then she pushed off from the couch arm and moved toward her desk, pulling her phone from her pocket and flipping it over in her hand without actually looking at the screen. ",
+      "motivation": {
+        "goal": "keep the sleeping arrangement settled without reopening negotiation and signal that practical orientation is done",
+        "tactic": "repeat the towel info as a closed-loop practical cue, give Marlene a confirming look that the logistics pass is closed, then disengage into her own activity to let Kizzie settle without hovering",
+        "emotional_driver": "terse protective efficiency with the territorial edge softened by deliberate non-interference",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_833/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session833_round001_turn11_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "834_t10_willow",
+      "session_id": "session_834",
+      "turn_index": 10,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have been present at the margin of the exchange recently.\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie: Kizzie's ears swiveled toward Marlene at the tap on the desk, then back to Willow, her tail curling once against her thigh before stilling. She didn't move from where she stood by the couch. I'm not vanishing. Just... taking it in. She let her hand fall from the bag strap and turned to face them both fully, arms loose at her sides, weight settled evenly. Campus health. Standard track. I've been on it long enough to know my rhythm. If something shifts, I'll say so before it becomes a problem — I don't want surprises any more than you do. She glanced at the couch"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "She flexed the wrench in her grip once, letting the metal click against her palm, then laid the tool roll flat across her knee and snapped the last pocket closed. She didn't look up right away—just let her hands rest on the canvas, still, scanning the room's scent pressure through her peripheral senses like reading a room's temperature without a thermometer."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Got it. Lights out when I say unless someone's bleeding or the building's on fire. Other than that, settle in how you need. There's a lock on the bathroom door if you want privacy—Marlene's got the spare key but she won't use it without knocking first. That's a rule, not a suggestion.",
+          "audibility": "public",
+          "audience": []
+        }
+      ],
+      "beats_text": "She flexed the wrench in her grip once, letting the metal click against her palm, then laid the tool roll flat across her knee and snapped the last pocket closed. She didn't look up right away—just let her hands rest on the canvas, still, scanning the room's scent pressure through her peripheral senses like reading a room's temperature without a thermometer.   Got it. Lights out when I say unless someone's bleeding or the building's on fire. Other than that, settle in how you need. There's a lock on the bathroom door if you want privacy—Marlene's got the spare key but she won't use it without knocking first. That's a rule, not a suggestion.",
+      "motivation": {
+        "goal": "stabilize Kizzie while controlling the immediate scene",
+        "tactic": "acknowledge the thanks without warmth, lay down one clear boundary, then let the room settle on its own",
+        "emotional_driver": "irritation layered over a willingness to stay engaged",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "semantic_engagement_no_change",
+      "movement_cues": false,
+      "audit_path": "rp_app/data/rp_audits/session_834/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session834_round001_turn10_willow_reeves_full.json",
+      "pre_triage_label": "clear_no_covered_change",
+      "pre_triage_rationale": "No participation movement cues; honest no_covered_change plausible.",
+      "needs_human_review": false
+    },
+    {
+      "case_id": "837_t11_willow",
+      "session_id": "session_837",
+      "turn_index": 11,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have been present at the margin of the exchange recently.\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie let her tail curl forward, brushing the edge of her suitcase as she stepped around the couch. She pressed one hand flat against the cushion, testing its give, then straightened and turned back toward both roommates, her ears tilted forward and relaxed. \\\"Couch is fine. I'll take it. Pillowcase, towel direction, morning call—I heard all of it. Thank you, Marlene. Willow. I'll be quiet tonight. Don't plan on being a problem.\\\" She pulled her suitcase closer, unzipped the top flap, and retrieved a folded sweatshirt—then paused, looking at the couch again as if meas"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Willow let out a short breath, more acknowledgment than sigh, and swung her boots off the edge of the bunk. She dropped to the floor with a soft thud, landing easy, and grabbed a rag from her tool bag to wipe grease off her palms. The motion was automatic, a habit that let her eyes track without making it obvious she was still reading the room."
+        },
+        {
+          "type": "speech",
+          "dialogue": "I'm good. Don't need a drink. You want one, go ahead.",
+          "audibility": "directed",
+          "audience": [
+            "Marlene_Fletcher"
+          ]
+        },
+        {
+          "type": "action",
+          "action": "She tossed the rag back onto her desk and hooked her thumbs in her belt loops, stance loose but not relaxed. Her gaze landed on Kizzie, held for a beat—not hard, just a flat acknowledgment that she'd heard and accepted the plan."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Bathroom's yours. Take your time. Door locks from the inside.",
+          "audibility": "directed",
+          "audience": [
+            "Kizzie"
+          ]
+        }
+      ],
+      "beats_text": "Willow let out a short breath, more acknowledgment than sigh, and swung her boots off the edge of the bunk. She dropped to the floor with a soft thud, landing easy, and grabbed a rag from her tool bag to wipe grease off her palms. The motion was automatic, a habit that let her eyes track without making it obvious she was still reading the room.   I'm good. Don't need a drink. You want one, go ahead. She tossed the rag back onto her desk and hooked her thumbs in her belt loops, stance loose but not relaxed. Her gaze landed on Kizzie, held for a beat—not hard, just a flat acknowledgment that she'd heard and accepted the plan.   Bathroom's yours. Take your time. Door locks from the inside.",
+      "motivation": {
+        "goal": "Close the negotiation cleanly and let the room settle into evening routine without lingering tension",
+        "tactic": "Reply to Marlene's offer with a flat dismissal, then give Kizzie a practical signal that she's cleared to move without being watched",
+        "emotional_driver": "Grudging readiness to let the arrangement stand—irritation fading into low-level acceptance now that the plan is stable",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_837/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session837_round001_turn11_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "840_t6_willow",
+      "session_id": "session_840",
+      "turn_index": 6,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation state; me",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie shifted her weight from one foot to the other, her tail curling low and still behind her knees. She glanced at the couch, then at the lower bunks, then back to Willow's hands flat on the desk. \\\"The couch is fine. I don't need a bunk. But I'd rather know where the fire escape is before I settle anything.\\\"\"\n  },\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene Fletcher: pushed off the doorframe and crossed the room in three quick strides, one hand landing flat on the desk beside Willow's, the other pointing at the couch. Al"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Stayed still a beat longer than necessary, jaw working once, then reached for the gray blanket Marlene had tossed and gave it a single sharp snap to shake it flat across the couch cushions."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Couch is fine. Bunks stay ours. That's the arrangement till housing fixes their shit tomorrow.",
+          "audibility": "public",
+          "audience": []
+        },
+        {
+          "type": "action",
+          "action": "Turned toward the mini-fridge, pulled out a can of soda, and set it on the arm of the couch nearest Kizzie without looking at her directly."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Drink something. The protein bar's chalky as hell—Marlene's stockpile. The soda's better.",
+          "audibility": "public",
+          "audience": []
+        }
+      ],
+      "beats_text": "Stayed still a beat longer than necessary, jaw working once, then reached for the gray blanket Marlene had tossed and gave it a single sharp snap to shake it flat across the couch cushions.   Couch is fine. Bunks stay ours. That's the arrangement till housing fixes their shit tomorrow. Turned toward the mini-fridge, pulled out a can of soda, and set it on the arm of the couch nearest Kizzie without looking at her directly.   Drink something. The protein bar's chalky as hell—Marlene's stockpile. The soda's better.",
+      "motivation": {
+        "goal": "settle the sleeping arrangement and shift the room from negotiation to accepted fact",
+        "tactic": "follow through on Marlene's practical setup while making my own territorial position clear through action rather than debate",
+        "emotional_driver": "irritated competence; I don't like being checked on but I'll still make sure the omega isn't dehydrating on my watch",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_840/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session840_round001_turn06_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "841_t6_willow",
+      "session_id": "session_841",
+      "turn_index": 6,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED, Willow Reeves ONLY): REQUIRED root semantic_proposals when beats show reentry to the focal exchange. kind reentry, character Willow Reeves (or Willow_Reeves). Prose implication is insufficient.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie's ears swiveled forward at Willow's flat question, catching the shift in weight in the room. She let her gaze trace the top bunk—accessible, bare, no clutter. \\\"Heights are fine. I can manage a ladder.\\\" She stepped past Willow toward the bunk, her tail giving a single slow sweep as she passed the contested space. At the ladder she paused, looking up at the mattress, then turned her head just enough to include both roommates in her peripheral awareness. \\\"Top bunk suits me. Gives me a view of the room, and I can tuck out of the way when I need quiet.\\\"\"\n  },\n  {"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Cracked her neck once, the sound flat in the quiet. Then stepped forward and reached past Kizzie's shoulder to tap the top bunk frame once—firm, testing."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Frame's solid. Mattress is two years old, no springs poking through. You want it, it's yours. I don't climb ladders in the dark, so bottom's mine anyway."
+        },
+        {
+          "type": "speech",
+          "dialogue": "You need a fan, extra blanket, something to block the window light, say it now. After I'm under the hood tomorrow I don't want to hear about shitty sleep because you were too polite to ask."
+        }
+      ],
+      "beats_text": "Cracked her neck once, the sound flat in the quiet. Then stepped forward and reached past Kizzie's shoulder to tap the top bunk frame once—firm, testing.   Frame's solid. Mattress is two years old, no springs poking through. You want it, it's yours. I don't climb ladders in the dark, so bottom's mine anyway.  You need a fan, extra blanket, something to block the window light, say it now. After I'm under the hood tomorrow I don't want to hear about shitty sleep because you were too polite to ask.",
+      "motivation": {
+        "goal": "Settle the sleeping arrangement firmly and move past negotiation into practical stability",
+        "tactic": "Affirm the top bunk decision with minimal words and practical reassurance, then close the offer window to prevent lingering uncertainty",
+        "emotional_driver": "Controlled territorial efficiency with a rough edge of reluctant care",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_841/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session841_round001_turn06_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "841_t11_willow",
+      "session_id": "session_841",
+      "turn_index": 11,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have been present at the margin of the exchange recently.\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie climbed the last two rungs and swung onto the top bunk mattress, testing its give with one knee. She reached down, hooked the navy blanket and thin pillow from the lower bunk with her fingers, and pulled them up. \\\"Fan's fine. Light's fine. This works.\\\"\n\nShe folded the blanket once and set it at the foot of the mattress, then placed the pillow at the head. Her ears rotated once, scanning the room's sounds—the hum of a distant appliance, the shift of fabric below, the particular texture of two alphas settling into their space. She sat cross-legged on the thin pi"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "I push off the footlocker slow, rolling my shoulders back. I don't look up at the top bunk. Instead, I grab my phone from the charger, thumb the screen to check the time, and set it face-down on the shelf beside my pillow. Pointless ritual. But it buys me a second to let her words settle without having to do anything with them."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Breakfast at seven-thirty, then. I'll be awake.",
+          "audibility": "public",
+          "audience": []
+        },
+        {
+          "type": "action",
+          "action": "I pull the hem of my shirt loose from where it tucked under my belt, a small adjustment, nothing meaningful. Then I look at Marlene, flat and brief, a single beat of eye contact that says we're done here without needing to say anything aloud."
+        }
+      ],
+      "beats_text": "I push off the footlocker slow, rolling my shoulders back. I don't look up at the top bunk. Instead, I grab my phone from the charger, thumb the screen to check the time, and set it face-down on the shelf beside my pillow. Pointless ritual. But it buys me a second to let her words settle without having to do anything with them.   Breakfast at seven-thirty, then. I'll be awake. I pull the hem of my shirt loose from where it tucked under my belt, a small adjustment, nothing meaningful. Then I look at Marlene, flat and brief, a single beat of eye contact that says we're done here without needing to say anything aloud. ",
+      "motivation": {
+        "goal": "Close the conversation without re-opening negotiation or emotional exposure",
+        "tactic": "Confirm the breakfast plan with minimal acknowledgement, signal to Marlene that I'm offline for the night, and let Kizzie's trust-building statement land without engaging it directly",
+        "emotional_driver": "Controlled territorial efficiency with a thread of reluctant provision",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_841/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session841_round001_turn11_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "843_t10_willow",
+      "session_id": "session_843",
+      "turn_index": 10,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have been present at the margin of the exchange recently.\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_cha",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene Fletcher: Pushed off the couch arm and crossed to her trunk, popped the latch one-handed, and pulled out a folded blanket—cream with navy stripes, soft from years of use. Held it up, gave it a shake, then draped it over the back of the couch near Kizzie's bag. Here. This one's mine, so it's clean and it don't smell like anyone else's laundry. Pillow's in the closet—I'll grab it in a sec. Turned back to face them both, arms crossing loose across her chest, weight easy on her heels. Let her grin soften into something more level. [speech inaudible to thi"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Rolled her shoulders once, loose, and scraped a hand through her hair—pulling the ponytail tighter out of habit. Let her gaze drift from Marlene to the couch where Kizzie had settled, then back. She didn't shift her weight."
+        },
+        {
+          "type": "speech",
+          "dialogue": "You go ahead. I'll take second—gotta check the bike's carb before bed anyway. Won't take long.",
+          "audibility": "public",
+          "audience": []
+        }
+      ],
+      "beats_text": "Rolled her shoulders once, loose, and scraped a hand through her hair—pulling the ponytail tighter out of habit. Let her gaze drift from Marlene to the couch where Kizzie had settled, then back. She didn't shift her weight.   You go ahead. I'll take second—gotta check the bike's carb before bed anyway. Won't take long.",
+      "motivation": {
+        "goal": "Settle the shower order without further discussion and give herself a moment of solitary control after the social stretch",
+        "tactic": "Defer the shower to Marlene and cite a practical task as cover for needing a beat alone at her workbench",
+        "emotional_driver": "Controlled territorial steadiness, with a thin edge of needing to recalibrate after letting her guard slip with the blanket offer",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_843/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session843_round001_turn10_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "845_t10_willow",
+      "session_id": "session_845",
+      "turn_index": 10,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene let out a low breath and crossed to the desk, bumping her hip against the edge before pulling a sketchbook out from under a stack of flyers. She tossed it onto the bed without looking.\n\n\\\"Alright. That's the room, then. Kizzie's on the couch, blanket in the bin, blue pillow's hers, bathroom's down the hall. Willow's got her bunk, I've got mine. That's settled.\\\"\n\nShe turned to face the room fully, hands settling on her hips. Her gaze landed on Kizzie first, steady and warm, then flicked to Willow, shorter and drier.\n\n\\\"Kizzie — you said you'd take ton"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Pushed off from where she was leaning against her bunk frame, one hand brushing the wall as she straightened. Crossed to the desk and yanked the bottom drawer open — the sticky one — pulled out a granola bar wrapped in crinkled foil, tossed it onto the couch cushion beside Kizzie's hoodie without looking directly at her."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Emergency snacks. You want one, it's there. I'm not watching you struggle. That's Marlene's hobby, not mine.",
+          "audibility": "directed",
+          "audience": [
+            "Kizzie"
+          ]
+        },
+        {
+          "type": "action",
+          "action": "Let her hand drop and stepped back, rolling one shoulder like she was shaking off stiffness. Kicked her boots off beside her bunk, lined them up neat, then pulled the thin blanket from her own bed down and folded it once, setting it at the foot."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Bathroom's free. I'm done for the night.",
+          "audibility": "public",
+          "audience": []
+        },
+        {
+          "type": "action",
+          "action": "She swung onto her bunk, back to the room, one arm tucked under her pillow. Didn't pull the blanket up yet — just lay there, breathing steady, facing the wall."
+        }
+      ],
+      "beats_text": "Pushed off from where she was leaning against her bunk frame, one hand brushing the wall as she straightened. Crossed to the desk and yanked the bottom drawer open — the sticky one — pulled out a granola bar wrapped in crinkled foil, tossed it onto the couch cushion beside Kizzie's hoodie without looking directly at her.   Emergency snacks. You want one, it's there. I'm not watching you struggle. That's Marlene's hobby, not mine. Let her hand drop and stepped back, rolling one shoulder like she was shaking off stiffness. Kicked her boots off beside her bunk, lined them up neat, then pulled the thin blanket from her own bed down and folded it once, setting it at the foot.   Bathroom's free. I'm done for the night. She swung onto her bunk, back to the room, one arm tucked under her pillow. Didn't pull the blanket up yet — just lay there, breathing steady, facing the wall. ",
+      "motivation": {
+        "goal": "Close the room's negotiation cycle without reopening anything",
+        "tactic": "Offer a single concrete gesture, then withdraw fully into sleep prep — signal settled territory without further discussion",
+        "emotional_driver": "Controlled territorial steadiness — willing to meet clarity with clarity, but done circling",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_845/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session845_round001_turn10_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "846_t3_willow",
+      "session_id": "session_846",
+      "turn_index": 3,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): If this beat includes reentry or off_focal intent, MUST emit root semantic_proposals (self-only) aligned with your beats. Required kinds: reentry or off_focal as applicable.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only when this beat maintains or shifts that participation",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie stopped at the edge of the couch, her fingers brushing the backrest as she felt for the fabric. She didn't sit yet—just stood there, her tail curled loosely around one ankle, her ears rotated to track both of them at once. \\\"I'm not going anywhere. I just want to know which surface I'm meant for, so I can stop hovering.\\\" The question hung in the air, marking a shift from cautious tension to an explicit request for direction.\"\n  },\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene pushed off from the desk, crossed to the couch in three strides, and dropped a hand on the backrest beside Kizzie's fingers—close b"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Took a long drag from the cigarette, held it, let the smoke curl out slow through her nose. Dropped the stub into an empty soda can on the desk with a soft hiss."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Bunk's fine. She's not taking my bunk.",
+          "audibility": "public",
+          "audience": []
+        },
+        {
+          "type": "action",
+          "action": "Pushed up from the chair, crossed to the closet in three flat steps, pulled out a folded mattress topper, and tossed it onto the couch cushion beside Kizzie without looking at her."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Couch folds out. That topper's yours. Sheets in the bottom drawer if the ones on it don't smell right.",
+          "audibility": "directed",
+          "audience": [
+            "Kizzie"
+          ]
+        }
+      ],
+      "beats_text": "Took a long drag from the cigarette, held it, let the smoke curl out slow through her nose. Dropped the stub into an empty soda can on the desk with a soft hiss.   Bunk's fine. She's not taking my bunk. Pushed up from the chair, crossed to the closet in three flat steps, pulled out a folded mattress topper, and tossed it onto the couch cushion beside Kizzie without looking at her.   Couch folds out. That topper's yours. Sheets in the bottom drawer if the ones on it don't smell right.",
+      "motivation": {
+        "goal": "Stabilize the sleeping arrangement on my terms without yielding territory or emotional ground",
+        "tactic": "Shut down the bunk swap option immediately, then provide the couch upgrade as a practical concession that keeps distance intact",
+        "emotional_driver": "Territorial control layered with reluctant care I won't admit to",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_846/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session846_round001_turn03_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "846_t10_willow",
+      "session_id": "session_846",
+      "turn_index": 10,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay, Willow Reeves ONLY): MUST emit root semantic_proposals when covered intent exists in this beat (off_focal, reentry, or excursion_lifecycle). Omit only when no covered intent.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You pulled back from the live exchange in the last beat or two.\n- marlene fletcher has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_c",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Marlene Fletcher\",\n    \"content\": \"Marlene let the silence stretch half a beat after Willow's last line, then pushed off from the desk with a low hum. She crossed to the closet, pulled out a spare pillow from the top shelf, and tossed it onto the couch cushion beside Kizzie's blanket—landing soft, no demand in it. \\\"Alright. Couch with the topper, sheets from the grumpy one, and now a pillow from me. That's a full hospitality package, sweetheart. You're practically a guest of honor.\\\"\n\nShe turned, caught Willow's eye, and held it long enough to say something without speaking. Then she dropped "
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Kept typing. One-handed, thumb hitting enter every few lines, squinting at the housing portal's badly-designed form fields. Didn't look up when Marlene tossed the mattress topper or when the sketchbook hit the floor. Scowled at something on the screen and hit backspace three times."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Gremlin's got work, Marlene. Some of us don't trust the housing office to fix their own mistakes before morning."
+        },
+        {
+          "type": "action",
+          "action": "Two more keystrokes. Then a pause. Fingers hovered. Let out a breath through her nose and dropped her hand from the keyboard."
+        },
+        {
+          "type": "speech",
+          "dialogue": "But yeah. I heard you. Not gonna stare at this thing until my eyes bleed."
+        },
+        {
+          "type": "action",
+          "action": "Snapped the laptop shut. Dropped it on the mattress beside her. Leaned her head back against the cinderblock wall and let her eyes close for two full seconds before opening them again. Didn't move to get out of the bunk."
+        }
+      ],
+      "beats_text": "Kept typing. One-handed, thumb hitting enter every few lines, squinting at the housing portal's badly-designed form fields. Didn't look up when Marlene tossed the mattress topper or when the sketchbook hit the floor. Scowled at something on the screen and hit backspace three times.   Gremlin's got work, Marlene. Some of us don't trust the housing office to fix their own mistakes before morning. Two more keystrokes. Then a pause. Fingers hovered. Let out a breath through her nose and dropped her hand from the keyboard.   But yeah. I heard you. Not gonna stare at this thing until my eyes bleed. Snapped the laptop shut. Dropped it on the mattress beside her. Leaned her head back against the cinderblock wall and let her eyes close for two full seconds before opening them again. Didn't move to get out of the bunk. ",
+      "motivation": {
+        "goal": "Signal that I'm disengaging from the paperwork spiral without fully rejoining the conversation",
+        "tactic": "Finish the typing, close the laptop, and posture as done-but-not-participating — physically present, verbally responsive, but not entering the drawing circle",
+        "emotional_driver": "Reluctant concession to Marlene's boundary call, channeled into stillness rather than words",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_846/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session846_round001_turn10_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    },
+    {
+      "case_id": "847_t11_willow",
+      "session_id": "session_847",
+      "turn_index": 11,
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "actor": "Willow_Reeves",
+      "topology_era": "semantic_eval_v1_next5_plus",
+      "trigger_context": "Traveler (overlay REINFORCED-2, Willow Reeves ONLY): REQUIRED semantic_proposals if beats reference kitchenette/off-focal movement or reentry. Honest report only — not compliance theater.",
+      "participation_context_snip": "RECENT PARTICIPATION ARC (recent beats — do not recite in dialogue):\n- You have been present at the margin of the exchange recently.\n- kizzie has repeatedly tried to pull you back into the conversation.\n- This beat may continue that distance or begin re-engagement.\nCOVERED-CHANGE THRESHOLD (recent arc — do not recite in dialogue):\nIf the recent participation arc places you withdrawn, at the margin, or partly outside the active exchange, a beat that continues, deepens, or reverses that distance may be ``covered_change`` when it materially changes focal participation.\nUse ``covered_change`` only",
+      "transcript_context_snip": [
+        "RECENT SCENE TRANSCRIPT (PERCEPTION-FILTERED FOR THIS CHARACTER):\n[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]\n[\n  {\n    \"role\": \"assistant\",\n    \"speaker\": \"Kizzie\",\n    \"content\": \"Kizzie let her duffel bag slide off the couch cushion and onto the floor, then ran her palm along the seam of the fabric as if testing whether it would hold her weight. She straightened slowly, one ear canting toward Marlene's direction, tracking the scratch of graphite against paper without turning to look at the sketchbook directly. \\\"Bathroom first, then sleep. That's the order. I'll grab the blue towel on the left, since you said those were clean.\\\" She moved past the desk with a deliberate arc that kept the widest possible distance from both occupied bunks, pausin"
+      ],
+      "beats": [
+        {
+          "type": "action",
+          "action": "Scraped the file across the steel one last time, then folded the multitool and tucked it into her pocket. She stretched her shoulders back, the tendons in her neck pulling tight before she let them drop."
+        },
+        {
+          "type": "speech",
+          "dialogue": "Yeah. We're good until morning.",
+          "audibility": "directed",
+          "audience": [
+            "Kizzie"
+          ]
+        },
+        {
+          "type": "action",
+          "action": "Reached over and slapped the light switch near her bunk, plunging her half of the room into shadow. The springs creaked as she settled onto her side, facing the wall."
+        }
+      ],
+      "beats_text": "Scraped the file across the steel one last time, then folded the multitool and tucked it into her pocket. She stretched her shoulders back, the tendons in her neck pulling tight before she let them drop.   Yeah. We're good until morning. Reached over and slapped the light switch near her bunk, plunging her half of the room into shadow. The springs creaked as she settled onto her side, facing the wall. ",
+      "motivation": {
+        "goal": "Close the evening cleanly without further negotiation",
+        "tactic": "Accept Kizzie's offered off-ramp with flat acknowledgment, then physically signal the end of the conversational window",
+        "emotional_driver": "grudging steadiness with territorial patience",
+        "risk_level": "low"
+      },
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      },
+      "semantic_decision": "no_covered_change",
+      "classifier_primary": "F7",
+      "classifier_secondary": [
+        "honest_no_covered_change"
+      ],
+      "failure_bucket": "prose_movement_decision_no_change",
+      "movement_cues": true,
+      "audit_path": "rp_app/data/rp_audits/session_847/round_001/audit_i225_willow_must_remain_v2_offstage_cycles_session847_round001_turn11_willow_reeves_full.json",
+      "pre_triage_label": "ambiguous",
+      "pre_triage_rationale": "Gradual movement/housekeeping prose with no_covered_change — threshold disagreement likely.",
+      "needs_human_review": true
+    }
+  ]
+}

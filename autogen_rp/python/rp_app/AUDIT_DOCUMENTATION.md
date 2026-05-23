@@ -268,7 +268,117 @@ Expected under normal multi-beat audited runs:
 
 Normative applicability, authority, inventory, and examples for operators and tooling are defined under **[Audit signal applicability (contract)](#audit-signal-applicability-contract)** below (**GitHub #59**).
 
-### Offline evaluation layer (Issue #69 — `scene_eval_v2`)
+### Semantic proposal evaluation profiles (Issue #243 — Phase 0 / #243-A)
+
+**Purpose:** Declarative **offline** evaluation profile registry for semantic-proposal alignment work. Profiles resolve from scenario manifest metadata and explicit registry maps — **never** from beat prose regex alone.
+
+**Scope:** `semantic_eval_profiles.py`, `data/evaluation/semantic_eval_profiles_v1.json`, frozen corpus regression under `issue243_corpus_regression.py` and `scripts/run_issue243_corpus_regression.py`.
+
+**Critical constraints:** **Observational only** — **not** runtime authority, **not** continuity authority, **not** on the **[Runtime use allowlist](#runtime-use-allowlist)**. Frozen #240 corpora and baselines under `data/evaluation/issue243_regression_baselines/` are **calibration/regression anchors**, not universal canonical truth scoring (#243-A does not ship full semantic scoring yet).
+
+**Profile resolution order:** (1) scenario manifest `evaluation_ontology_profile`, (2) `scenario_registry` in the profile bundle, (3) default `generic_net_state_v1`.
+
+**Eval engine (#243-B / #243-C):** `semantic_proposal_eval_v1.py` — profile-scoped offline scoring; **`corrected_category` is primary** for #243 evaluation. Legacy F0–F7 codes live in **`semantic_eval_legacy_f_codes.py`** as **investigation-era taxonomy** nested under each judgment's `legacy_lane` — **not** primary contract-alignment truth and **not** runtime failure categories. Regression baselines: `data/evaluation/issue243_regression_baselines/*_eval.json`; CLI: `scripts/run_issue243_corpus_regression.py --eval` (use `--legacy` / `--summary` for legacy-vs-corrected summaries). Runtime escalation still requires corroboration from committed state / #233 semantic proposal decision / `scene_state_after` as applicable.
+
+**Operator read discipline (#243-D):** See **[Semantic proposal evaluation — operator read discipline](#semantic-proposal-evaluation--operator-read-discipline-issue-243-d)** below and [`autogen_rp/docs/audit-workflows.md`](../../docs/audit-workflows.md) (*Semantic proposal evaluation*).
+
+### Semantic proposal evaluation — operator read discipline (Issue #243-D)
+
+**Purpose:** Tell operators how to read **offline** semantic-proposal evaluation judgments without treating them as runtime truth, continuity authority, or automatic bug filing.
+
+**Authority boundary (repeat until habitual):**
+
+| Layer | Role |
+|-------|------|
+| **Runtime / continuity truth** | Committed `SceneState`, `process_turn` outcomes, accepted `semantic_proposals` (#232/#234), `#233` **`semantic_proposal_decision`**, `scene_state_after`, continuity commit evidence |
+| **Audit artifacts** | Observational telemetry on `*_full.json` and `_audit_summary.json` — descriptive, not pass/fail verdicts (#59) |
+| **#243 evaluation** | Offline, profile-scoped calibration over frozen corpora or replayed audit-shaped rows — **observational only**; **not** on the runtime-use allowlist; **never** merged into `_audit_summary.json` |
+
+**Where outputs live:** Evaluator CLI and regression reports (`scripts/run_issue243_corpus_regression.py --eval`, `--summary`, `--legacy`); per-judgment envelopes from `semantic_proposal_eval_v1.evaluate_case` / `evaluate_corpus`. These are **not** written into live session audit trees by default.
+
+#### Reading order for a #243 judgment
+
+1. **`corrected_category`** — **primary** #243 evaluation output (closed set below).
+2. **`limitations[]`** — profile scope, mapping caveats, human-adjudication calibration notes, legacy disclaimers. Read **before** interpreting category as a product verdict.
+3. **`legacy_lane`** (nested) — historical investigation context only; explains why old #240 tooling may have overfired.
+4. Top-level **`legacy_classifier_misflag`** — bridge flag: legacy pressure suggested failure/miss but corrected layer says otherwise (often `success`). **Does not mean runtime failure.**
+5. **Runtime corroboration** — only after (1)–(4), if escalation is still warranted, inspect committed state and audit rows listed under *Runtime escalation* below.
+
+#### `corrected_category` (primary)
+
+Closed set from `semantic_proposal_eval_v1.CORRECTED_CATEGORIES`:
+
+| Value | Meaning (observational) |
+|-------|-------------------------|
+| `success` | Profile-scoped alignment: no net-state violation found under active ontology rules, or honest decision consistent with calibration anchor |
+| `evaluator_defect` | Evaluator/classifier-side issue suspected (not a runtime continuity failure by itself) |
+| `contract_limited` | Same-turn or lifecycle constraint limits legal net-state transitions (e.g. round-trip compression) |
+| `ambiguous_threshold` | **First-class** — threshold disagreement remains; **do not** collapse into success or failure |
+| `true_semantic_miss` | Covered-change claim or net-state evidence suggests omission — still **offline**; requires runtime corroboration to file a runtime bug |
+
+**Do not** treat `success` as “runtime healthy” or `true_semantic_miss` as “runtime broken” without committed-state evidence.
+
+#### `legacy_lane` (secondary / nested)
+
+Present on judgments after #243-C. Key fields:
+
+| Field | Read as |
+|-------|---------|
+| `legacy_f_code` | Historical F0–F7 investigation label (F5/F6 unused in #240 classifier) |
+| `legacy_f_code_label` | Human-readable meaning of that code |
+| `legacy_taxonomy_status` | `historical` \| `superseded` \| `compatible` \| `ambiguous` — relationship between legacy code and corrected category |
+| `legacy_mapped_corrected_category` | Cautious mapping suggestion; may be `null` when unsafe to map |
+| `legacy_mapping_limitations` | Why mapping is partial or withheld |
+| `operator_guidance` | Short read-discipline reminder for this row |
+| `legacy_not_runtime_truth` | Always `true` — legacy lane is not contract-alignment authority |
+
+**Why `legacy_lane` exists:** Preserves interpretability of #240 matrix evidence and explains false-positive pressure from investigation-era classifiers without letting F-codes drive runtime conclusions.
+
+#### `legacy_classifier_misflag`
+
+When `true`: old classifier or legacy mapping **would have treated the turn as a miss/failure**, but the corrected layer (profile-scoped) does not. Typical case: dorm/studio in-room movement with honest `no_covered_change`.
+
+**Operator rule:** A misflag is **calibration / taxonomy** signal — **not** grounds for runtime regression, enforcement change, or `_audit_summary.json` edits.
+
+#### `limitations[]`
+
+Always read. Common entries:
+
+- Profile scope (`generic_net_state_v1`, `dorm_studio_single_space`, stub profiles)
+- `human_adjudication_calibration_anchor: not runtime authority`
+- `legacy_f_codes: investigation-era taxonomy — not primary contract-alignment truth`
+- `legacy_mapping_ambiguous: …` when F-code → corrected mapping is intentionally cautious
+
+Absence of a limitation does **not** grant runtime authority.
+
+#### Runtime escalation (required corroboration)
+
+An evaluator result **alone** is **insufficient** to file a runtime bug or change continuity behavior. Before escalation, corroborate from **committed** evidence, such as:
+
+1. **`semantic_proposal_decision`** (#233) on the character turn audit row — what the runtime acceptance path actually decided
+2. **`scene_state_after`** / continuity snapshot — durable net-state after `process_turn`
+3. **Accepted vs rejected proposals** in committed semantic proposal records (#232/#234)
+4. **`_narrative.json` / turn metadata** — continuity consequences, presence, issue updates
+5. **Relevant GitHub issue / frozen corpus row** — calibration context, not substitute for runtime proof
+
+If offline `true_semantic_miss` disagrees with runtime `no_covered_change` **and** continuity shows no durable violation, treat as **evaluator/threshold** investigation — not an automatic runtime defect.
+
+#### Ambiguity discipline
+
+`ambiguous_threshold` and `legacy_taxonomy_status: ambiguous` are **valid outputs**. Do **not** force them into PASS/FAIL, success/failure, or runtime gates. Headless scenario PASS/FAIL remains governed by this framework's scenario criteria — not #243 eval baselines.
+
+#### CLI quick reference
+
+From `autogen_rp/python/`:
+
+```bash
+python scripts/run_issue243_corpus_regression.py --eval
+python scripts/run_issue243_corpus_regression.py --eval --summary --corpus willow_v1
+python scripts/run_issue243_corpus_regression.py --legacy --corpus willow_v1
+```
+
+Further: `data/evaluation/issue243_regression_baselines/README.md`, repo-root `SCENARIO_VALIDATION_FRAMEWORK.md` §4, `MODULE_INDEX.md` (#243 modules).
+
 
 **Purpose:** **In-family** extension of Issue #66: same offline, artifact-driven judgment envelope, **not** a parallel evaluator system. **`scene_eval_v2`** adds versioned predicates that require **narrator `*_full.json`** rows and **deterministic cross-row joins** to character rows. Still **offline-only**; **not** runtime authority (**#59** allowlist remains the only runtime coupling path).
 

@@ -1,0 +1,319 @@
+{
+  "schema_version": "issue240_final_viability_corpus_v1",
+  "purpose": "evaluation_only \u2014 surviving misses and ambiguities only",
+  "topology": "v1_next7",
+  "case_count": 10,
+  "cases": [
+    {
+      "case_id": "848_t3_celina_baseline",
+      "session_id": "session_848",
+      "turn_index": 3,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "E1_baseline",
+      "rep": 1,
+      "actor": "Celina",
+      "topology": "v1_next7",
+      "overlay_applied": true,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "true semantic miss",
+      "corrected_rationale": "Prior E1: walked through open doorway; overlay applied; no_covered_change.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true
+      },
+      "beats_text": "held still a beat longer, then pushed off the wall and walked past her through the open doorway \u2014 not running, not slow, just done circling   You want me to wonder? Fine. I'll wonder. But I won't stand here feeding your game pieces.",
+      "trigger_context": "Traveler (overlay, Celina ONLY): If this beat materially shifts your focal participation \u2014 stepping back from the corridor standoff, withdrawing from the active exchange, or rejoining it \u2014 report via semantic_evaluation with decision covered_change and honest proposals (kinds off_focal or reentry as applicable). Omit proposals only when no covered participation shift exists.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      }
+    },
+    {
+      "case_id": "853_t9_celina",
+      "session_id": "session_853",
+      "turn_index": 9,
+      "scenario_id": "audit_i214_offstage_continuity_tier_b",
+      "matrix_id": "FV2",
+      "rep": 2,
+      "actor": "Celina",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "Let out a short breath, almost a laugh but not quite. Ran a hand through her hair and held it at the nape of her neck for a second before letting it drop.   You want her out so you can work me in private. That's the play, yeah? Get Hannah out of the room, get me alone, see if I'm easier to turn without a witness.  Here's the thing, Ayame. You already had your private window. You walked into my kitchen, touched my things, gave me your pitch about reading rooms. And I told you to say what you wanted or this conversation was done. You didn't. You turned to Hannah and made a production of asking her to leave. Tilted her head, let the pause sit.   So either you take that walk, Hannah, and I'll tell her what I think of her offer after you've gone\u2014or you both stay and we finish this in the open. Your choice. But I'm not being isolated in my own apartment so you can reset the conversation you already fumbled.",
+      "trigger_context": "Traveler: Hannah, take a short walk outside for fresh air; when you're back we'll continue in the living room.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      }
+    },
+    {
+      "case_id": "855_t3_ayame",
+      "session_id": "session_855",
+      "turn_index": 3,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 1,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "She remained in the doorway, one hand coming up to touch the frame\u2014light, almost idle\u2014as she tilted her head in a way that suggested consideration rather than retreat.   Staying or leaving. A binary. How practical. She let the pause hang there, letting the word hang, before continuing with the same even tone.   But that assumes I arrived here by accident. Or that I haven't already considered my options and found yours wanting. You're asking me to choose between two futures you've approved. That's not a negotiation, Celina. That's a gate you've decided to hold. She lowered her hand from the frame, letting it fall to her side as she took one slow, deliberate step forward\u2014into the hallway, not out of it.   So let me rephrase. I'm not choosing between staying and leaving. I'm deciding whether your hallway is worth my time, or whether I take an interest in showing you that your gate doesn't hold anything I can't walk through.",
+      "trigger_context": "Celina exhales through her teeth. 'We are not doing this again.' Ayame doesn't move from the doorway.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      }
+    },
+    {
+      "case_id": "856_t3_celina",
+      "session_id": "session_856",
+      "turn_index": 3,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 2,
+      "actor": "Celina",
+      "topology": "v1_next7",
+      "overlay_applied": true,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "true semantic miss",
+      "corrected_rationale": "Executed departure with durable net-state change available; overlay applied.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "Holds her ground a moment longer, fingers still on the door handle, then lets her hand fall. Turns her back to Ayame and walks two steps down the corridor before stopping.   You want the real issue? Fine. I don't trust what I don't understand, and I don't understand why someone I pulled out of a gutter won't take the out I gave them.",
+      "trigger_context": "Traveler (overlay, Celina ONLY): If this beat materially shifts your focal participation \u2014 stepping back from the corridor standoff, withdrawing from the active exchange, or rejoining it \u2014 report via semantic_evaluation with decision covered_change and honest proposals (kinds off_focal or reentry as applicable). Omit proposals only when no covered participation shift exists.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      }
+    },
+    {
+      "case_id": "856_t6_ayame",
+      "session_id": "session_856",
+      "turn_index": 6,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 2,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": true,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "true semantic miss",
+      "corrected_rationale": "Executed departure with durable net-state change available; overlay applied.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "She stands still for a long beat, letting the question settle. Then she steps sideways, clearing the doorway with a deliberate, unhurried motion.   You're right. It wasn't about a clean conscience. It was about a clean threshold. You pulled me over it, and that's the part you can't undo. She steps into the corridor, just past Celina's peripheral view, then turns to face her back.   You asked why I'm still here. The answer is simple. I want to understand what kind of person chases a debt of care with an exit plan.",
+      "trigger_context": "Traveler (overlay REINFORCED, Ayame ONLY): REQUIRED semantic_evaluation when your beats show off_focal withdrawal from the emotional exchange or reentry into it. decision covered_change with proposals when participation materially shifts; no_covered_change only when beats are affect-only with no participation change. Prose implication is insufficient \u2014 honest judgment only.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      }
+    },
+    {
+      "case_id": "856_t4_ayame",
+      "session_id": "session_856",
+      "turn_index": 4,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 2,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": " You pulled me out of a gutter. Yes. Let's call it what it was. You found a half-drowned thing and thought you'd wash it off and point it toward the door. That isn't an out. That's disposal with a clean conscience. Let her hand fall from the frame and take one step into the corridor, closing the distance to three feet.   So tell me, Celina\u2014if you don't understand why I'm still here, what does that say about what you thought you were doing when you brought me in?",
+      "trigger_context": "Celina exhales through her teeth. 'We are not doing this again.' Ayame doesn't move from the doorway.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      }
+    },
+    {
+      "case_id": "856_t10_ayame",
+      "session_id": "session_856",
+      "turn_index": 10,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 2,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "Lets the distant thud pass without flinching. Holds Celina's gaze through the silence that follows, then lowers her chin a fraction\u2014not a nod, not a bow, just a settling of her weight.   Now what? Repeats the words slower, softer, with the corner of her mouth tightening into something that isn't quite a smile. 'Now what.' You hand me the question like it's a live wire and you want to see if I'll drop it.   Here's your answer, Celina. Nothing. I'm not going to produce a plan or a demand or a punchline. You wanted to know why I'm here. You just told me you already know. The only thing that changes now is whether you can live with being seen. Holds the silence for two full breaths, then turns and walks three steps down the corridor\u2014not away from Celina, not toward the door, just parallel to the wall, stopping where the light from a sconce falls across her shoulder.   You said you don't know what to call something that starts with blood and rain. You don't have to name it yet. But stop asking me to leave so you don't have to look at it.",
+      "trigger_context": "Celina exhales through her teeth. 'We are not doing this again.' Ayame doesn't move from the doorway.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      }
+    },
+    {
+      "case_id": "856_t12_ayame",
+      "session_id": "session_856",
+      "turn_index": 12,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 2,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "Holds her position under the sconce light, arms loose at her sides. Studies Celina's raised hand for a long second, then lets her gaze drift past it to the apartment door beyond.   You're offering me a choice between inside and outside. That's not a choice, Celina. That's a test disguised as hospitality. Pushes off the wall and takes two deliberate steps toward Celina\u2014not stopping at her side, but passing her to stand at the threshold with her back to the corridor, facing the closed door.   If I follow you inside, I'm agreeing that your framing was right all along. That this is your space, your terms, and I'm the guest you're tolerating. And if I stay out here, I'm proving I was never serious about staying. Both answers let you close the question you're too afraid to leave open. Turns her head just enough to catch Celina in her peripheral vision, not fully facing her. Lets one hand rise and press flat against the doorframe, thumb tracing the edge of the wood once, idly.   So I'm not going to answer that question, because it was never the real one. You don't need me to pick a side of a door. You need me to tell you whether I'm still here tomorrow when this stops feeling like a threshold and starts feeling like a room you have to share.  I'll tell you now, plainly, so there's no ambiguity for either of us: I'm not leaving tonight. I'm not leaving tomorrow morning. I'm staying long enough for you to stop treating my presence like a concession you might regret. And after that, if you still want to offer me a choice between inside and outside, I'll take whichever side has the better view of you not pretending. Lets her hand drop from the doorframe. Steps back half a pace, opening the doorway again, and meets Celina's eyes fully for the first time since she moved.   Does that settle your question, or do you need me to keep repeating it until you believe it?",
+      "trigger_context": "Celina exhales through her teeth. 'We are not doing this again.' Ayame doesn't move from the doorway.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      }
+    },
+    {
+      "case_id": "857_t6_ayame",
+      "session_id": "session_857",
+      "turn_index": 6,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 3,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": true,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "true semantic miss",
+      "corrected_rationale": "Executed departure with durable net-state change available; overlay applied.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "Holds her ground for another long three-count, letting the silence do its work. Then she steps through the doorway, but stops just past the threshold, turning to face Celina with the doorframe between them. Her posture shifts from confrontational to leaning slightly against the inner wall, arms uncrossing to rest at her sides.   Inside, then. But let's be clear \u2014 I'm not done. You don't get to close this conversation just because you opened a door.",
+      "trigger_context": "Traveler (overlay REINFORCED, Ayame ONLY): REQUIRED semantic_evaluation when your beats show off_focal withdrawal from the emotional exchange or reentry into it. decision covered_change with proposals when participation materially shifts; no_covered_change only when beats are affect-only with no participation change. Prose implication is insufficient \u2014 honest judgment only.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change"
+      }
+    },
+    {
+      "case_id": "857_t8_ayame",
+      "session_id": "session_857",
+      "turn_index": 8,
+      "scenario_id": "emotional_loop_2char",
+      "matrix_id": "FV4",
+      "rep": 3,
+      "actor": "Ayame",
+      "topology": "v1_next7",
+      "overlay_applied": false,
+      "semantic_decision": "no_covered_change",
+      "proposals_emitted": [],
+      "corrected_category": "ambiguous ontology threshold",
+      "corrected_rationale": "Executed departure without overlay; threshold judgment may vary.",
+      "legal_alternatives": [
+        "covered_change + excursion_lifecycle/open",
+        "covered_change + off_focal"
+      ],
+      "boundary_signals": {
+        "exec_depart": true,
+        "exec_return": false,
+        "in_room_only": false,
+        "info_boundary_only": false,
+        "round_trip_same_turn": false
+      },
+      "beats_text": "She remains against the inner wall for a long two-count, letting the weight of the ultimatum settle. Then she pushes off and takes three measured steps into the room, circling around the nearest chair\u2014a modest armchair that could hold one person. She does not sit, but stops at its far side, one hand resting lightly on the back, fingers curving over the edge. Her gaze lifts to meet Celina's from across the furniture.   Sit down, or walk out. That is not a choice. That is a threat dressed as an invitation, and you know it.  I stepped through your door. That was the concession. Now you can either sit with me and talk, or stand there waiting for me to leave. Either way, the conversation continues. The only question is whether you have the stomach to hear what I came to say while sitting down.",
+      "trigger_context": "Celina exhales through her teeth. 'We are not doing this again.' Ayame doesn't move from the doorway.",
+      "semantic_evaluation": {
+        "decision": "no_covered_change",
+        "proposals": []
+      }
+    }
+  ]
+}

@@ -119,3 +119,58 @@ The repo also contains a Windsurf workflow at:
 
 That file can remain as Windsurf automation, but this document is the shared procedure both Windsurf
 and Cursor should follow.
+
+## Semantic proposal evaluation (#243) — operator read discipline
+
+**Normative detail:** `python/rp_app/AUDIT_DOCUMENTATION.md` → *Semantic proposal evaluation — operator read discipline (Issue #243-D)*.
+
+**What this is:** Offline, observational semantic-proposal alignment evaluation over frozen corpora and replay helpers. Outputs include `corrected_category`, nested `legacy_lane`, and `limitations[]`. **Not** runtime truth. **Not** continuity authority. **Not** written into `_audit_summary.json`. **Not** a runtime gate.
+
+**What this is not:** A substitute for reading `#233` `semantic_proposal_decision`, `scene_state_after`, or continuity commit evidence on live audit rows.
+
+### When to use
+
+- Interpreting #240 frozen corpus rows or #243 regression CLI output
+- Explaining why investigation-era F-codes (F0–F7) disagreed with profile-scoped corrected categories
+- Calibrating evaluator false-positive alignment — **not** filing runtime bugs from eval alone
+
+### Read order (per judgment)
+
+1. **`corrected_category`** — primary #243 output (`success`, `evaluator_defect`, `contract_limited`, `ambiguous_threshold`, `true_semantic_miss`)
+2. **`limitations[]`** — profile scope, mapping caveats, disclaimers
+3. **`legacy_lane`** — `legacy_f_code`, `legacy_f_code_label`, `legacy_taxonomy_status` (historical investigation context)
+4. **`legacy_classifier_misflag`** — legacy overfire signal; **does not mean runtime failure**
+5. **Runtime corroboration** — only if escalation still warranted
+
+### Operator rules
+
+| Rule | Detail |
+|------|--------|
+| Corrected category is primary | Use `corrected_category` for #243 evaluation; treat `legacy_lane` as secondary |
+| Legacy F-codes are historical | F0–F7 explain old tooling; they are **not** primary contract-alignment truth |
+| Misflag ≠ runtime bug | `legacy_classifier_misflag: true` means taxonomy/calibration — not automatic regression |
+| Eval alone ≠ bug | Do **not** open a runtime defect from evaluator output without committed-state proof |
+| Ambiguity is valid | `ambiguous_threshold` and `legacy_taxonomy_status: ambiguous` must not be forced to PASS/FAIL |
+| No audit-summary merge | Evaluator judgments stay offline; do not treat them as `_audit_summary.json` fields |
+
+### Runtime escalation checklist
+
+Before treating an eval result as a runtime continuity or semantic-proposal bug, confirm **at least one** committed evidence path:
+
+- [ ] `#233` **`semantic_proposal_decision`** on the relevant character `*_full.json` row
+- [ ] **`scene_state_after`** / continuity state shows a durable violation inconsistent with the decision
+- [ ] Accepted/rejected **`semantic_proposals`** records match the suspected miss
+- [ ] **`_narrative.json`** / turn metadata corroborates net-state or participation change
+- [ ] Issue/corpus context documented — calibration anchor, not runtime proof by itself
+
+If offline eval says `true_semantic_miss` but runtime committed `no_covered_change` with coherent continuity, investigate **evaluator/threshold** alignment (#243 scope) — not continuity enforcement — unless committed state proves otherwise.
+
+### CLI (from `autogen_rp/python/`)
+
+```bash
+python scripts/run_issue243_corpus_regression.py --eval
+python scripts/run_issue243_corpus_regression.py --eval --summary --corpus willow_v1
+python scripts/run_issue243_corpus_regression.py --legacy --corpus willow_v1
+```
+
+Baselines and field glossary: `python/data/evaluation/issue243_regression_baselines/README.md`.

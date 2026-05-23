@@ -1,0 +1,122 @@
+{
+  "observational_only": true,
+  "runtime_allowlist": false,
+  "continuity_authority": false,
+  "runtime_gate": false,
+  "purpose": "offline evaluation calibration \u2014 not canonical runtime truth",
+  "schema_version": "issue243_regression_baseline_v1",
+  "issue": 243,
+  "phase": "243-A",
+  "corpus_name": "willow_v1",
+  "corpus_path": "E:/CascadeProjects/Holy Grail RP/autogen_rp/python/data/issue240/adjudication_corpus_willow_v1.json",
+  "corpus_schema_version": "issue240_adjudication_corpus_v1",
+  "generated_from": "calibration scaffolding from frozen #240 corpus labels \u2014 not canonical truth scoring",
+  "case_rows": [
+    {
+      "case_id": "825_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "828_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "831_t3_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "833_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "834_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "clear_no_covered_change",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "837_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "840_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "841_t6_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "841_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "843_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "845_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "846_t3_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "846_t10_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    },
+    {
+      "case_id": "847_t11_willow",
+      "scenario_id": "audit_i225_willow_must_remain_v2_offstage_cycles",
+      "calibration_label": "ambiguous",
+      "profile_id": "dorm_studio_single_space",
+      "profile_resolution": "scenario_registry"
+    }
+  ],
+  "category_counts": {
+    "ambiguous": 13,
+    "clear_no_covered_change": 1
+  },
+  "profile_counts": {
+    "dorm_studio_single_space": 14
+  },
+  "case_count": 14
+}

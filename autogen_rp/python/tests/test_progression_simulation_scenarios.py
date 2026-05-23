@@ -54,6 +54,18 @@ def test_validate_optional_expected_pressure_profile() -> None:
         validate_optional_scenario_fields({"expected_pressure_profile": "extreme"}, "bad")
 
 
+def test_validate_optional_evaluation_ontology_profile() -> None:
+    validate_optional_scenario_fields(
+        {"evaluation_ontology_profile": "generic_net_state_v1"},
+        "x",
+    )
+    with pytest.raises(ValueError, match="evaluation_ontology_profile"):
+        validate_optional_scenario_fields(
+            {"evaluation_ontology_profile": "not_a_real_profile"},
+            "bad",
+        )
+
+
 def test_validate_optional_scene_template_id() -> None:
     validate_optional_scenario_fields(
         {

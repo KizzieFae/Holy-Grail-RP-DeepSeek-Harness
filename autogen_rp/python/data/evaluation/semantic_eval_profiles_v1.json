@@ -1,0 +1,49 @@
+{
+  "schema_version": "semantic_eval_profiles_v1",
+  "issue": 243,
+  "phase": "243-B",
+  "purpose": "offline evaluation profile registry — observational only, not runtime authority",
+  "default_profile_id": "generic_net_state_v1",
+  "profiles": {
+    "generic_net_state_v1": {
+      "profile_id": "generic_net_state_v1",
+      "title": "Generic net-state + proposal legality",
+      "description": "Default offline profile. Applies durable net-state and proposal legality rules only. Does not apply scene-space ontology heuristics.",
+      "status": "active",
+      "limitations": [
+        "Does not classify dorm/studio in-room repositioning.",
+        "Does not infer scene topology from beat prose.",
+        "Departure cues may yield ambiguous_threshold rather than success."
+      ],
+      "placeholder": false
+    },
+    "dorm_studio_single_space": {
+      "profile_id": "dorm_studio_single_space",
+      "title": "Dorm / studio single-space calibration profile",
+      "description": "Profile-scoped ontology plugin calibrated from Issue #240 Willow/dorm evidence. Not universal canonical truth.",
+      "status": "active",
+      "limitations": [
+        "Valid only for scenarios explicitly bound to this profile.",
+        "Does not prove multi-room excursion semantics.",
+        "Human adjudication anchors in final viability corpus are calibration-only."
+      ],
+      "placeholder": false
+    },
+    "multi_room_excursion_v1": {
+      "profile_id": "multi_room_excursion_v1",
+      "title": "Multi-room excursion (stub)",
+      "description": "Placeholder profile for future Tier B / excursion topology evaluation. No mature scoring rules in #243-B.",
+      "status": "stub",
+      "limitations": [
+        "Stub only — emits ambiguous_threshold with explicit limitations.",
+        "Not validated against excursion scenarios yet.",
+        "Do not use for PASS/FAIL or runtime gating."
+      ],
+      "placeholder": true
+    }
+  },
+  "scenario_registry": {
+    "audit_i225_willow_must_remain_v2_offstage_cycles": "dorm_studio_single_space",
+    "emotional_loop_2char": "dorm_studio_single_space"
+  }
+}
