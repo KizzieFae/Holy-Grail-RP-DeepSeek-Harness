@@ -1,4 +1,4 @@
-"""Issue #240 v1_next5+ — mandatory semantic_evaluation wire (investigation-only)."""
+"""Issue #240 v1_next5+ — mandatory semantic_evaluation wire (production default #230)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ _V1_NEXT5_TRUTHY = frozenset({"v1_next5", "v1-next5", "v1next5"})
 _V1_NEXT6_TRUTHY = frozenset({"v1_next6", "v1-next6", "v1next6"})
 _V1_NEXT7_TRUTHY = frozenset({"v1_next7", "v1-next7", "v1next7"})
 _SEMANTIC_EVAL_TOPOLOGIES = _V1_NEXT5_TRUTHY | _V1_NEXT6_TRUTHY | _V1_NEXT7_TRUTHY
+_PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 
 SEMANTIC_EVALUATION_DECISIONS = frozenset({"covered_change", "no_covered_change"})
 _V2_PROPOSAL_KINDS = frozenset({"off_focal", "reentry", "excursion_lifecycle"})
@@ -20,7 +21,12 @@ _MAX_V2_PROPOSAL_TEXT_CODEPOINTS = 256
 
 
 def issue240_semantic_evaluation_enabled() -> bool:
-    return os.environ.get(_ISSUE240_ENV, "").strip().lower() in _SEMANTIC_EVAL_TOPOLOGIES
+    raw = os.environ.get(_ISSUE240_ENV, "").strip().lower()
+    if raw in _PRODUCTION_LEGACY_TRUTHY:
+        return False
+    if not raw:
+        return True
+    return raw in _SEMANTIC_EVAL_TOPOLOGIES
 
 
 def issue240_v2_root_allowlist_extra() -> frozenset[str]:

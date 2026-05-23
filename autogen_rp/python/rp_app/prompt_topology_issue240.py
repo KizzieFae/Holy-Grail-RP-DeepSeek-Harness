@@ -1,15 +1,11 @@
-"""Issue #240 experimental one-pass prompt topology (investigation-only).
+"""Issue #240 one-pass prompt topology (#230 production harmonization).
 
-Gates:
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1`` (also ``1``, ``true``, ``yes``, ``on``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next`` (also ``v1-next``, ``v1next``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next2`` (also ``v1-next2``, ``v1next2``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next3`` (also ``v1-next3``, ``v1next3``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next4`` (also ``v1-next4``, ``v1next4``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next5`` (also ``v1-next5``, ``v1next5``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next6`` (also ``v1-next6``, ``v1next6``)
-- ``RP_ISSUE240_PROMPT_TOPOLOGY=v1_next7`` (also ``v1-next7``, ``v1next7``)
-Default / unset: production ``prompt_builders.build_character_turn_prompt``.
+Default (env unset): validated ``v1_next7`` topology via ``build_character_turn_prompt_issue240_v1_next7``.
+
+Rollback / legacy: ``RP_ISSUE240_PROMPT_TOPOLOGY=production_legacy`` (also ``legacy``, ``off``)
+→ untransformed ``prompt_builders.build_character_turn_prompt`` (pre-harmonization wire).
+
+Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliases as before).
 """
 
 from __future__ import annotations
@@ -30,6 +26,7 @@ _V1_NEXT4_TRUTHY = frozenset({"v1_next4", "v1-next4", "v1next4"})
 _V1_NEXT5_TRUTHY = frozenset({"v1_next5", "v1-next5", "v1next5"})
 _V1_NEXT6_TRUTHY = frozenset({"v1_next6", "v1-next6", "v1next6"})
 _V1_NEXT7_TRUTHY = frozenset({"v1_next7", "v1-next7", "v1next7"})
+_PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 _ISSUE240_LONG_PROMPT_COMPRESS_CHARS = 35_000
 
 ISSUE240_V1_OPENING_MARKER = "Act primarily as this character"
@@ -84,8 +81,16 @@ _V1_NEXT5_SLIM_OUTPUT_RULES = """OUTPUT RULES:
 - Registry settlements (``scene_state_updates.*``): follow system OUTPUT FORMAT; emit only when this beat explicitly settles a bounded scene fact supported by the beat."""
 
 
+def issue240_production_legacy_mode() -> bool:
+    return os.environ.get(_ISSUE240_ENV, "").strip().lower() in _PRODUCTION_LEGACY_TRUTHY
+
+
 def issue240_prompt_topology_mode() -> str | None:
     raw = os.environ.get(_ISSUE240_ENV, "").strip().lower()
+    if raw in _PRODUCTION_LEGACY_TRUTHY:
+        return None
+    if not raw:
+        return "v1_next7"
     if raw in _V1_NEXT7_TRUTHY:
         return "v1_next7"
     if raw in _V1_NEXT6_TRUTHY:
@@ -1043,9 +1048,11 @@ def resolve_character_turn_prompt_builder() -> Callable[..., str]:
         return build_character_turn_prompt_issue240_v1_next
     if mode == "v1":
         return build_character_turn_prompt_issue240_v1
-    return _production_build_character_turn_prompt
+    if issue240_production_legacy_mode():
+        return _production_build_character_turn_prompt
+    return build_character_turn_prompt_issue240_v1_next7
 
 
 def build_character_turn_prompt_for_runtime(**kwargs: Any) -> str:
-    """Runtime entry: production baseline unless ``RP_ISSUE240_PROMPT_TOPOLOGY`` is set."""
+    """Runtime entry: validated ``v1_next7`` by default; legacy/override via env."""
     return resolve_character_turn_prompt_builder()(**kwargs)

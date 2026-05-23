@@ -343,20 +343,14 @@ def test_build_character_turn_prompt_includes_expected_sections_and_rules() -> N
         in prompt
     )
     assert (
-        "Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``, optional ``semantic_proposals``)."
+        "Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``, required ``semantic_evaluation``)."
         in prompt
     )
     assert "Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``." in prompt
-    assert "Covered semantic intent (``semantic_proposals``)" in prompt
-    assert "MUST emit root ``semantic_proposals``" in prompt
-    assert "prose implication is insufficient" in prompt
-    assert "semantic commit intent only" in prompt
-    assert "continuity evaluates and accepts or rejects this turn" in prompt
-    assert "emission alone is not proof of commit" in prompt
-    assert "committing later" not in prompt.lower()
-    assert "#232" not in prompt
-    assert "``off_focal``" in prompt and "``reentry``" in prompt
-    assert "Do not emit root ``presence_changes``" in prompt
+    assert "Root ``semantic_evaluation`` (required every beat)" in prompt
+    assert "Do not emit root ``semantic_proposals``" in prompt
+    assert "prose implication is insufficient" not in prompt
+    assert "``covered_change``" in prompt and "``no_covered_change``" in prompt
     assert "excursion_lifecycle on the move" not in prompt
     assert "spatial_transition when committing location" not in prompt
     assert (

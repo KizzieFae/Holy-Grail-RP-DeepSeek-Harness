@@ -78,8 +78,21 @@ def test_topology_manifest_v1_next7_three_char_profile(monkeypatch: pytest.Monke
     assert "bridge.v6" not in manifest["topology_fingerprint"]
 
 
-def test_topology_manifest_production_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_topology_manifest_default_v1_next7_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("RP_ISSUE240_PROMPT_TOPOLOGY", raising=False)
+    prompt = build_character_turn_prompt_for_runtime(**_minimal_character_prompt_kwargs())
+    manifest = extract_topology_manifest(prompt)
+
+    assert manifest["topology_inferred"] == "v1_next7"
+    assert manifest["expected_profile_id"] == "v1_next7_2char"
+    assert manifest["profile_match"] is True
+    assert manifest["markers"]["semantic_evaluation_required"] is True
+    assert manifest["markers"]["threshold_calibration_v1_next7"] is True
+    assert manifest["markers"]["output_rules_production_semantic_proposals"] is False
+
+
+def test_topology_manifest_production_legacy_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "production_legacy")
     prompt = build_character_turn_prompt_for_runtime(**_minimal_character_prompt_kwargs())
     manifest = extract_topology_manifest(prompt)
 
@@ -87,7 +100,7 @@ def test_topology_manifest_production_profile(monkeypatch: pytest.MonkeyPatch) -
     assert manifest["expected_profile_id"] == "production_baseline"
     assert manifest["profile_match"] is True
     assert manifest["markers"]["opening_production"] is True
-    assert manifest["markers"]["output_rules_production_semantic_proposals"] is True
+    assert manifest["markers"]["semantic_evaluation_required"] is True
     assert manifest["markers"]["semantic_self_report"] is False
 
 

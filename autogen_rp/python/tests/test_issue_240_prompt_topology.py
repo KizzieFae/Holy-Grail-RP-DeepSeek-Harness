@@ -46,7 +46,15 @@ def _clear_issue240_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("RP_ISSUE240_PROMPT_TOPOLOGY", raising=False)
 
 
-def test_issue240_env_gate_off_uses_production_builder() -> None:
+def test_issue240_default_unset_uses_v1_next7_builder() -> None:
+    assert issue240_prompt_topology_mode() == "v1_next7"
+    assert resolve_character_turn_prompt_builder() is build_character_turn_prompt_issue240_v1_next7
+
+
+def test_issue240_production_legacy_uses_untransformed_production_builder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "production_legacy")
     assert issue240_prompt_topology_mode() is None
     assert resolve_character_turn_prompt_builder() is production_build
     kwargs = _minimal_character_prompt_kwargs()

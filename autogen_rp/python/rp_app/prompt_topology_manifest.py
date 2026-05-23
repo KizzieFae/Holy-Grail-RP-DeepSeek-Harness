@@ -112,12 +112,12 @@ def _infer_topology(markers: dict[str, bool]) -> str:
         "semantic_evaluation_required"
     ):
         return "v1_next7"
-    if markers.get("semantic_evaluation_required"):
-        return "v1_next5_plus"
     if markers.get("opening_dual_role") and markers.get("semantic_self_report"):
         return "v1_issue240"
     if markers.get("opening_production"):
         return "production"
+    if markers.get("semantic_evaluation_required"):
+        return "v1_next5_plus"
     return "unknown"
 
 
@@ -387,7 +387,7 @@ def _profile_requirements(profile_id: str) -> tuple[frozenset[str], list[tuple[s
     production_required = frozenset(
         {
             "opening_production",
-            "output_rules_production_semantic_proposals",
+            "semantic_evaluation_required",
         }
     )
     if profile_id == "v1_next7_3char_plus":

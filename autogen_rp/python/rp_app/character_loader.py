@@ -163,33 +163,45 @@ CHARACTER_MOVE_SCHEMA = {
             },
             "description": "Optional scene-state updates for bounded sleeping-surface assignment, housing-call outcome, current suppressant-formulation compatibility, or current location-entry permission facts settled by this move.",
         },
-        "semantic_proposals": {
-            "type": "array",
-            "description": "Required when this turn has off-focal, reentry, or excursion lifecycle intent; omit only when no covered semantic intent exists. Semantic commit intent only (not a commit; continuity evaluates and accepts or rejects this turn). Narrative beats alone do not change continuity focal presence; prose implication is insufficient. Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only for excursion_lifecycle.",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "kind": {
-                        "type": "string",
-                        "enum": ["off_focal", "reentry", "excursion_lifecycle"],
-                        "description": "Proposal kind: off_focal interval, explicit reentry, or excursion lifecycle.",
-                    },
-                    "character": {
-                        "type": "string",
-                        "description": "Character subject of this proposal.",
-                    },
-                    "operation": {
-                        "type": "string",
-                        "enum": ["open", "update", "close"],
-                        "description": "Required when kind is excursion_lifecycle; omit for off_focal and reentry.",
+        "semantic_evaluation": {
+            "type": "object",
+            "description": "Required every beat. decision is covered_change or no_covered_change; include non-empty proposals only when decision is covered_change (self-only off_focal, reentry, or excursion_lifecycle items). Omit proposals when decision is no_covered_change. Do not emit root semantic_proposals or semantic_proposals: [].",
+            "properties": {
+                "decision": {
+                    "type": "string",
+                    "enum": ["covered_change", "no_covered_change"],
+                    "description": "Whether this beat has covered semantic commit intent for continuity.",
+                },
+                "proposals": {
+                    "type": "array",
+                    "description": "Required non-empty when decision is covered_change; omit when no_covered_change. Semantic commit intent only (continuity evaluates and accepts or rejects).",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "kind": {
+                                "type": "string",
+                                "enum": ["off_focal", "reentry", "excursion_lifecycle"],
+                                "description": "Proposal kind: off_focal interval, explicit reentry, or excursion lifecycle.",
+                            },
+                            "character": {
+                                "type": "string",
+                                "description": "Character subject of this proposal.",
+                            },
+                            "operation": {
+                                "type": "string",
+                                "enum": ["open", "update", "close"],
+                                "description": "Required when kind is excursion_lifecycle; omit for off_focal and reentry.",
+                            },
+                        },
+                        "required": ["kind", "character"],
                     },
                 },
-                "required": ["kind", "character"],
             },
+            "required": ["decision"],
         },
     },
-    "required": ["move_schema_version", "beats", "motivation"],
-    "description": "Character move v2: move_schema_version 2, non-empty beats[], motivation, optional scene_state_updates and semantic_proposals.",
+    "required": ["move_schema_version", "beats", "motivation", "semantic_evaluation"],
+    "description": "Character move v2: move_schema_version 2, non-empty beats[], motivation, required semantic_evaluation, optional scene_state_updates.",
 }
 
 
@@ -424,7 +436,7 @@ class CharacterLoader:
                 "OUTPUT FORMAT:",
                 "You must respond with a single JSON object: canonical character move v2.",
                 '  "move_schema_version": 2 (integer, required)',
-                '  "semantic_proposals": [ ... ] — MUST emit when this turn has off-focal, reentry, or excursion lifecycle intent; omit ONLY when no covered semantic intent exists. Narrative beats alone do not change continuity focal presence; prose implication is insufficient. Semantic commit intent only (not a commit; continuity evaluates and accepts or rejects this turn). Each item: kind (off_focal | reentry | excursion_lifecycle), character (required); operation (open | update | close) required only when kind is excursion_lifecycle. Proposals declare covered semantic commit intent for continuity to evaluate (emission alone is not proof of commit). Do not use root presence_changes, excursion_lifecycle, or spatial_transition (ingress rejects them).',
+                '  "semantic_evaluation": { "decision": "covered_change" | "no_covered_change", "proposals": [ ... ] } — REQUIRED every beat. Include non-empty proposals only when decision is covered_change (self-only off_focal, reentry, or excursion_lifecycle items; operation required only for excursion_lifecycle). Omit proposals when decision is no_covered_change. Do not emit root semantic_proposals or semantic_proposals: [].',
                 '  "beats": [ ordered beats — each object is either:',
                 '    {"type": "action", "action": "Brief visible action YOU take only (3rd person). What YOU do, not others."}',
                 '    or {"type": "speech", "dialogue": "What you say out loud (optional audibility / audience on speech beats — see below)"} ]',

@@ -135,7 +135,7 @@ def test_process_turn_wrong_scope_proposal_rejects() -> None:
 
 
 @patch("character_loader.AssistantAgent")
-def test_character_loader_system_prompt_teaches_proposals_not_illegal_roots(
+def test_character_loader_system_prompt_teaches_semantic_evaluation_not_illegal_roots(
     mock_agent_cls: MagicMock,
 ) -> None:
     mock_agent_cls.return_value = MagicMock()
@@ -145,16 +145,8 @@ def test_character_loader_system_prompt_teaches_proposals_not_illegal_roots(
         MagicMock(),
     )
     system = str(mock_agent_cls.call_args.kwargs["system_message"])
-    assert "semantic_proposals" in system
-    assert "semantic commit intent" in system.lower()
-    assert "MUST emit when this turn has off-focal" in system
-    assert "prose implication is insufficient" in system
-    assert "continuity evaluates and accepts or rejects this turn" in system
-    assert "emission alone is not proof of commit" in system
-    assert "committing later" not in system.lower()
-    assert "#232" not in system
-    assert "Do not use root presence_changes" in system
-    assert "ingress rejects them" in system
-    assert "excursion_lifecycle on the move" not in system
-    assert "presence_changes for explicit reentry" not in system
+    assert "semantic_evaluation" in system
+    assert "covered_change" in system
+    assert "no_covered_change" in system
+    assert "Do not emit root semantic_proposals" in system
     assert "spatial_transition when committing location" not in system

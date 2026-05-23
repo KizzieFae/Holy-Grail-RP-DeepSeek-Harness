@@ -27,8 +27,14 @@ def _minimal_v2(**extra: object) -> dict:
 
 
 @pytest.fixture(autouse=True)
-def _enable_v1_next5(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next5")
+def _enable_semantic_eval_ingress(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("RP_ISSUE240_PROMPT_TOPOLOGY", raising=False)
+
+
+def test_semantic_evaluation_enabled_by_default_without_env() -> None:
+    from issue240_semantic_evaluation import issue240_semantic_evaluation_enabled
+
+    assert issue240_semantic_evaluation_enabled() is True
 
 
 def test_semantic_evaluation_no_covered_change_valid() -> None:
