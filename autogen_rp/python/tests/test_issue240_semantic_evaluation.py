@@ -37,6 +37,18 @@ def test_semantic_evaluation_enabled_by_default_without_env() -> None:
     assert issue240_semantic_evaluation_enabled() is True
 
 
+def test_semantic_evaluation_enabled_for_participation_calibration_a(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from issue240_semantic_evaluation import issue240_semantic_evaluation_enabled
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_participation_calibration_a",
+    )
+    assert issue240_semantic_evaluation_enabled() is True
+
+
 def test_semantic_evaluation_no_covered_change_valid() -> None:
     move = _minimal_v2(
         semantic_evaluation={"decision": "no_covered_change"},

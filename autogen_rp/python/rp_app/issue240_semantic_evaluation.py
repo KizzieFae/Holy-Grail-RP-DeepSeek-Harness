@@ -9,7 +9,19 @@ _ISSUE240_ENV = "RP_ISSUE240_PROMPT_TOPOLOGY"
 _V1_NEXT5_TRUTHY = frozenset({"v1_next5", "v1-next5", "v1next5"})
 _V1_NEXT6_TRUTHY = frozenset({"v1_next6", "v1-next6", "v1next6"})
 _V1_NEXT7_TRUTHY = frozenset({"v1_next7", "v1-next7", "v1next7"})
-_SEMANTIC_EVAL_TOPOLOGIES = _V1_NEXT5_TRUTHY | _V1_NEXT6_TRUTHY | _V1_NEXT7_TRUTHY
+_V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_calibration_a",
+        "v1-next7-participation-calibration-a",
+        "v1next7participationcalibrationa",
+    }
+)
+_SEMANTIC_EVAL_TOPOLOGIES = (
+    _V1_NEXT5_TRUTHY
+    | _V1_NEXT6_TRUTHY
+    | _V1_NEXT7_TRUTHY
+    | _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY
+)
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 
 SEMANTIC_EVALUATION_DECISIONS = frozenset({"covered_change", "no_covered_change"})

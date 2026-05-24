@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-
 _ALLOWED_TOP_LEVEL = frozenset(
     {"default_trigger", "by_orchestration_turn", "by_actor_targeted_turn"}
 )
@@ -261,3 +260,44 @@ def make_actor_targeted_character_turn_resolver(
         return base_resolve(orchestration_turn), meta
 
     return resolve
+
+
+def make_forced_speaker_from_actor_targeted_schedule(
+    schedule: UserTriggerSchedule,
+) -> Callable[[int], str | None]:
+    """Return target_actor for orchestration turns with actor-targeted probe overlays."""
+
+    actor_map = schedule.by_actor_targeted_turn
+
+    def resolve(orchestration_turn: int) -> str | None:
+        entry = actor_map.get(orchestration_turn)
+        if entry is None:
+            return None
+        actor = str(entry.target_actor or "").strip()
+        return actor or None
+
+    return resolve
+
+
+def ensure_forced_probe_actor_present(
+    continuity_manager: Any,
+    *,
+    actor_name: str,
+) -> None:
+    """Harness-only: re-enter actor-targeted probe speaker when prior beat offstaged them."""
+    if continuity_manager is None or not str(actor_name or "").strip():
+        return
+    scene_state = getattr(continuity_manager, "scene_state", None)
+    if scene_state is None:
+        return
+    from continuity_presence_pipeline import (
+        manager_apply_canonical_reentry_scratch,
+        manager_presence_scratch_from_scene_state,
+        manager_reconcile_presence_lists_scratch,
+        manager_synchronize_presence_from_canonical_authority,
+    )
+
+    scratch = manager_presence_scratch_from_scene_state(continuity_manager)
+    manager_apply_canonical_reentry_scratch(continuity_manager, scratch, actor_name)
+    manager_reconcile_presence_lists_scratch(continuity_manager, scratch)
+    manager_synchronize_presence_from_canonical_authority(continuity_manager, scratch)

@@ -33,6 +33,7 @@ from prompt_topology_issue240 import (
     build_character_turn_prompt_issue240_v1_next5,
     build_character_turn_prompt_issue240_v1_next6,
     build_character_turn_prompt_issue240_v1_next7,
+    build_character_turn_prompt_issue240_v1_next7_participation_calibration_a,
     issue240_prompt_topology_mode,
     resolve_character_turn_prompt_builder,
     should_compress_long_prompt,
@@ -492,4 +493,30 @@ def test_issue240_v1_next6_unchanged_without_next7_gate(
     monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next6")
     prompt = build_character_turn_prompt_for_runtime(**_three_character_prompt_kwargs())
     assert ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER not in prompt
+
+
+def test_issue240_participation_calibration_a_env_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER,
+    )
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_participation_calibration_a",
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_participation_calibration_a"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_participation_calibration_a
+    )
+    prompt = build_character_turn_prompt_for_runtime(**_minimal_character_prompt_kwargs())
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER in prompt
+    assert "Hall exit with door shut" in prompt
+    assert "Doorway pause, still answering through the open door" in prompt
+    baseline = build_character_turn_prompt_issue240_v1_next7(
+        **_minimal_character_prompt_kwargs()
+    )
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER not in baseline
 

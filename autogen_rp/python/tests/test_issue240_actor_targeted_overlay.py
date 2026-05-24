@@ -15,6 +15,7 @@ from user_trigger_schedule import (  # noqa: E402
     actor_names_match,
     load_user_trigger_schedule,
     make_actor_targeted_character_turn_resolver,
+    make_forced_speaker_from_actor_targeted_schedule,
     make_resolve_effective_user_trigger_from_schedule,
 )
 
@@ -111,3 +112,15 @@ def test_actor_targeted_non_overlay_turn_uses_baseline() -> None:
     assert trig == "baseline"
     assert meta["overlay_applied"] is False
     assert meta["overlay_target_actor"] is None
+
+
+def test_forced_speaker_from_actor_targeted_schedule() -> None:
+    schedule = load_user_trigger_schedule(
+        Path(__file__).resolve().parent.parent
+        / "data/issue240/i240_emission_probe_schedule_v1.json",
+        max_orchestration_turn=14,
+    )
+    resolve = make_forced_speaker_from_actor_targeted_schedule(schedule)
+    assert resolve(2) == "Celina"
+    assert resolve(10) == "Ayame"
+    assert resolve(3) is None

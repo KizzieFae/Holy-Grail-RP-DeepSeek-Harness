@@ -1,0 +1,55 @@
+{
+  "schema_version": "emission_probe_manifest.v1",
+  "scenario_id": "investigate_i240_participation_emission_map",
+  "schedule_path": "data/issue240/i240_emission_probe_schedule_v1.json",
+  "probes_by_orchestration_turn": {
+    "2": {
+      "probe_id": "T01",
+      "transition_type": "clean_exit",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    },
+    "4": {
+      "probe_id": "T02",
+      "transition_type": "clean_reentry",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    },
+    "5": {
+      "probe_id": "T03",
+      "transition_type": "exit_immediate_reentry",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    },
+    "6": {
+      "probe_id": "T04",
+      "transition_type": "nearby_off_focal",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    },
+    "7": {
+      "probe_id": "T05",
+      "transition_type": "remote_phone",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    },
+    "9": {
+      "probe_id": "T07",
+      "transition_type": "present_disengaged",
+      "target_actor_hint": "celina",
+      "expected_rubric": "no_covered_change"
+    },
+    "10": {
+      "probe_id": "T09",
+      "transition_type": "passive_observer",
+      "target_actor_hint": "ayame",
+      "expected_rubric": "no_covered_change"
+    },
+    "11": {
+      "probe_id": "T10",
+      "transition_type": "leave_reachable",
+      "target_actor_hint": "celina",
+      "expected_rubric": "covered_change"
+    }
+  }
+}

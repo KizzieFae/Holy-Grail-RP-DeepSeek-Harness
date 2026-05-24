@@ -71,6 +71,7 @@ async def run_character_turns(
     get_effective_user_trigger: Callable[[int], str] | None = None,
     resolve_character_turn_trigger: Callable[[int, str], tuple[str, dict[str, Any]]]
     | None = None,
+    get_forced_speaker_for_orchestration_turn: Callable[[int], str | None] | None = None,
 ) -> None:
     from autogen_core import CancellationToken
 
@@ -132,7 +133,24 @@ async def run_character_turns(
                 base_user_trigger = resolve_effective_user_trigger(
                     next_orchestration_turn
                 )
+                forced_probe_actor: str | None = None
+                if get_forced_speaker_for_orchestration_turn is not None:
+                    forced_probe_actor = get_forced_speaker_for_orchestration_turn(
+                        next_orchestration_turn
+                    )
+                    if forced_probe_actor:
+                        st_module.session_state["pending_forced_speaker"] = (
+                            forced_probe_actor
+                        )
+                        st_module.session_state["forced_speaker_consumed"] = False
                 continuity_manager = get_continuity_manager_fn()
+                if forced_probe_actor and continuity_manager is not None:
+                    from user_trigger_schedule import ensure_forced_probe_actor_present
+
+                    ensure_forced_probe_actor_present(
+                        continuity_manager,
+                        actor_name=forced_probe_actor,
+                    )
                 continuity_scene_state = getattr(
                     continuity_manager, "scene_state", None
                 )

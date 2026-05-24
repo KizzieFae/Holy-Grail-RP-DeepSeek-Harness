@@ -72,6 +72,7 @@ from user_trigger_schedule import (  # noqa: E402
     UserTriggerScheduleError,
     load_user_trigger_schedule,
     make_actor_targeted_character_turn_resolver,
+    make_forced_speaker_from_actor_targeted_schedule,
     make_resolve_effective_user_trigger_from_schedule,
 )
 
@@ -335,13 +336,26 @@ def main() -> None:
         p.error("--fact-track-out requires --fact-spec")
 
     _issue29_prefix = "investigate_i29_"
+    _issue240_emission_prefix = "investigate_i240_"
+    _issue227_departure_prefix = "investigate_i227_willow_departure_"
+    _issue227_cohesion_prefix = "investigate_i227_cohesion_"
     if args.ignore_end_round:
         if not args.scenario:
             p.error("--ignore-end-round requires --scenario")
-        if not str(args.scenario).startswith(_issue29_prefix):
+        scenario_id = str(args.scenario)
+        if not (
+            scenario_id.startswith(_issue29_prefix)
+            or scenario_id.startswith(_issue240_emission_prefix)
+            or scenario_id.startswith(_issue227_departure_prefix)
+            or scenario_id.startswith(_issue227_cohesion_prefix)
+        ):
             p.error(
-                "--ignore-end-round is only allowed for Issue #29 scenarios "
-                f"(scenario id must start with {_issue29_prefix!r})"
+                "--ignore-end-round is only allowed for Issue #29, #240, or #227 "
+                "investigation scenarios "
+                f"(scenario id must start with {_issue29_prefix!r}, "
+                f"{_issue240_emission_prefix!r}, "
+                f"{_issue227_departure_prefix!r}, or "
+                f"{_issue227_cohesion_prefix!r})"
             )
     if args.issue29_long_run_harness:
         if not args.scenario:
@@ -384,6 +398,7 @@ def main() -> None:
 
     get_effective_user_trigger = None
     resolve_character_turn_trigger = None
+    get_forced_speaker_for_orchestration_turn = None
     if args.user_trigger_schedule is not None:
         try:
             schedule = load_user_trigger_schedule(
@@ -403,6 +418,9 @@ def main() -> None:
             resolve_character_turn_trigger = make_actor_targeted_character_turn_resolver(
                 schedule,
                 base_resolve=get_effective_user_trigger,
+            )
+            get_forced_speaker_for_orchestration_turn = (
+                make_forced_speaker_from_actor_targeted_schedule(schedule)
             )
 
     cli_for_bootstrap_composition: str | None = None
@@ -498,6 +516,7 @@ def main() -> None:
                 failure_classification=args.failure_class,
                 get_effective_user_trigger=get_effective_user_trigger,
                 resolve_character_turn_trigger=resolve_character_turn_trigger,
+                get_forced_speaker_for_orchestration_turn=get_forced_speaker_for_orchestration_turn,
             )
             print(format_simulation_audit_markdown(result))
             if args.metrics_out is not None and result.structured_eval is not None:

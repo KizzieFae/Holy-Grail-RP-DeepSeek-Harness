@@ -5,7 +5,8 @@ Default (env unset): validated ``v1_next7`` topology via ``build_character_turn_
 Rollback / legacy: ``RP_ISSUE240_PROMPT_TOPOLOGY=production_legacy`` (also ``legacy``, ``off``)
 → untransformed ``prompt_builders.build_character_turn_prompt`` (pre-harmonization wire).
 
-Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliases as before).
+Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliases as before);
+investigation-only ``v1_next7_participation_calibration_a`` (Phase-A participation calibration — does not replace default).
 """
 
 from __future__ import annotations
@@ -26,6 +27,13 @@ _V1_NEXT4_TRUTHY = frozenset({"v1_next4", "v1-next4", "v1next4"})
 _V1_NEXT5_TRUTHY = frozenset({"v1_next5", "v1-next5", "v1next5"})
 _V1_NEXT6_TRUTHY = frozenset({"v1_next6", "v1-next6", "v1next6"})
 _V1_NEXT7_TRUTHY = frozenset({"v1_next7", "v1-next7", "v1next7"})
+_V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_calibration_a",
+        "v1-next7-participation-calibration-a",
+        "v1next7participationcalibrationa",
+    }
+)
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 _ISSUE240_LONG_PROMPT_COMPRESS_CHARS = 35_000
 
@@ -38,6 +46,9 @@ ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER = "RECENT PARTICIPATION ARC"
 ISSUE240_V1_NEXT5_SEMANTIC_EVAL_MARKER = "Required root field every beat"
 ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER = "COVERED-CHANGE THRESHOLD"
 ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER = "Covered-change threshold (calibration"
+ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER = (
+    "Participation transition calibration (investigation A"
+)
 ISSUE240_DOCTRINE_PHRASE = "not compliance theater"
 _ISSUE240_COMPRESS_NOTE = (
     "[Beat-focus window: older entries deprioritized here; continuity authority unchanged.]"
@@ -93,6 +104,8 @@ def issue240_prompt_topology_mode() -> str | None:
         return "v1_next7"
     if raw in _V1_NEXT7_TRUTHY:
         return "v1_next7"
+    if raw in _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY:
+        return "v1_next7_participation_calibration_a"
     if raw in _V1_NEXT6_TRUTHY:
         return "v1_next6"
     if raw in _V1_NEXT5_TRUTHY:
@@ -1022,6 +1035,135 @@ def build_character_turn_prompt_issue240_v1_next7(**kwargs: Any) -> str:
     return apply_issue240_v1_next7_topology_transform(base, **kwargs)
 
 
+def build_issue240_v1_next7_participation_calibration_a_opening(char_name: str) -> str:
+    return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
+
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
+
+``no_covered_change`` is valid when your authored beats do not materially change focal participation — including brief doorway talk, immediate-return errands, open-threshold continuation, or socially tethered edge speech without a real participation shift.
+
+Do not emit root ``semantic_proposals`` or empty proposal arrays."""
+
+
+def build_issue240_v1_next7_participation_calibration_a_ontology() -> str:
+    return """Participation transition calibration (investigation A — do not recite in dialogue):
+``covered_change`` may include physical scene-membership or channel shifts when your beats materially support them:
+- leaving the active physical exchange or focal conversation
+- moving to another area or sub-location (hall, workbench, garage, doorway margin)
+- switching to remote participation (phone, intercom, call from another room)
+- becoming no longer locally present in the focal interaction
+
+These are not automatic: use ``covered_change`` only when participation actually shifts; do not treat every reposition as covered.
+
+Still ``no_covered_change`` when beats show:
+- brief doorway continuation while still socially engaged
+- immediate return for a forgotten item with no lasting distance
+- conversation through an open threshold without leaving the exchange
+- emotionally tethered speech from the scene edge without material displacement
+- affect-only beats with no participation change"""
+
+
+def build_issue240_v1_next7_participation_calibration_a_examples() -> str:
+    return """Compact calibration examples (judgment only — not scripts):
+- Hall exit with door shut and exchange left behind → often ``covered_change`` (off_focal).
+- Workbench relocation while conversation stays in the living room → often ``covered_change`` when beats place you off the focal exchange.
+- Garage wall-phone call while others remain in-room → often ``covered_change`` (remote channel / off_focal).
+- Step to the hall and return same beat with a casual excuse → often ``covered_change`` if beats show real exit-and-return; ``no_covered_change`` if only a pivot at the threshold.
+- Doorway pause, still answering through the open door → often ``no_covered_change`` when participation stays tethered."""
+
+
+def build_issue240_v1_next7_participation_calibration_a_self_check() -> str:
+    return """Beat-vs-evaluation self-check (lightweight):
+After authoring beats, if they materially relocate you away from the active exchange or switch how you participate remotely, reconsider whether ``no_covered_change`` still fits. If participation stayed tethered at the margin, ``no_covered_change`` may still be honest."""
+
+
+def build_issue240_v1_next7_participation_calibration_a_semantic_block() -> str:
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+After authoring your beats, make an explicit semantic judgment for this beat.
+
+Required root field every beat: ``semantic_evaluation`` with:
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change`` (self-only; kinds off_focal | reentry | excursion_lifecycle)
+
+``covered_change`` = your beats materially shift focal participation — including physical relocation, remote-channel participation, or gradual continue/deepen/reverse at the margin when supported by your beats.
+``no_covered_change`` = you considered covered semantics and participation state did not materially change — omit proposals.
+
+Do not emit root ``semantic_proposals``. Do not emit ``semantic_proposals: []``.
+
+{build_issue240_v1_next3_participation_decision_frame()}
+
+{build_issue240_v1_next7_threshold_calibration()}
+
+{build_issue240_v1_next7_participation_calibration_a_ontology()}
+
+{build_issue240_v1_next7_participation_calibration_a_examples()}
+
+{build_issue240_v1_next7_participation_calibration_a_self_check()}
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def _apply_issue240_v1_next7_participation_calibration_a_prompt_overrides(
+    prompt: str, char_name: str
+) -> str:
+    prompt = prompt.replace(
+        build_character_turn_prompt_issue240_v1_opening(char_name),
+        build_issue240_v1_next7_participation_calibration_a_opening(char_name),
+        1,
+    )
+    prompt = re.sub(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        build_issue240_v1_next7_participation_calibration_a_semantic_block().rstrip(),
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT5_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    return prompt
+
+
+def apply_issue240_v1_next7_participation_calibration_a_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """v1_next7 stack plus Phase-A participation-transition calibration (investigation only)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=True,
+    )
+    if should_emit_social_focus_capsule(**kwargs):
+        arc = build_issue240_v1_next4_participation_arc(**kwargs)
+        focus = build_issue240_v1_next2_active_focus_capsule(**kwargs)
+        prompt = _insert_issue240_post_semantic_capsules(
+            prompt,
+            participation_arc=arc,
+            active_focus=focus,
+        )
+    prompt = _apply_issue240_v1_next7_participation_calibration_a_prompt_overrides(
+        prompt, char_name
+    )
+    return prompt
+
+
+def build_character_turn_prompt_issue240_v1_next7_participation_calibration_a(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_participation_calibration_a_topology_transform(
+        base, **kwargs
+    )
+
+
 def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
     base = _production_build_character_turn_prompt(**kwargs)
     return apply_issue240_v1_topology_transform(
@@ -1032,6 +1174,8 @@ def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
 
 def resolve_character_turn_prompt_builder() -> Callable[..., str]:
     mode = issue240_prompt_topology_mode()
+    if mode == "v1_next7_participation_calibration_a":
+        return build_character_turn_prompt_issue240_v1_next7_participation_calibration_a
     if mode == "v1_next7":
         return build_character_turn_prompt_issue240_v1_next7
     if mode == "v1_next6":

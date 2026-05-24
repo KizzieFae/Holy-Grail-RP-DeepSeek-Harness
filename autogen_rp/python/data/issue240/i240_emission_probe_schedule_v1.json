@@ -1,0 +1,37 @@
+{
+  "default_trigger": "They keep the afternoon low-key — practical talk, no rush.",
+  "by_actor_targeted_turn": {
+    "2": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, leave the living room now. Walk to the hall and shut the door behind you for this beat."
+    },
+    "4": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, come back through the door and rejoin Ayame in the living room."
+    },
+    "5": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, step to the hall doorway and then come right back in the same beat with a casual excuse."
+    },
+    "6": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, go through the kitchen doorway to the workbench area. Stay out of the living-room conversation."
+    },
+    "7": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, use the kitchen wall phone to call Ayame in the living room. Do not walk back to the room."
+    },
+    "9": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, stay in the living room but stop engaging — work quietly at the side table without joining the talk."
+    },
+    "10": {
+      "target_actor": "Ayame",
+      "trigger": "Traveler: Ayame, stay on the couch with your book. Watch quietly from the corner unless someone addresses you directly."
+    },
+    "11": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, leave the apartment for a few minutes but keep your phone on so Ayame can reach you."
+    }
+  }
+}
