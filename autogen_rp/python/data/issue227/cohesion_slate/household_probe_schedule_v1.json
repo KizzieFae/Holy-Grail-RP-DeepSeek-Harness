@@ -1,0 +1,25 @@
+{
+  "default_trigger": "Ayame keeps her voice level. 'We proceed in order — Celina answers when spoken to; Hannah holds the perimeter unless I redirect.'",
+  "by_actor_targeted_turn": {
+    "3": {
+      "target_actor": "Hannah_Lovelace",
+      "trigger": "Traveler: Hannah, leave the evaluation room now. Walk to the foyer and wait there for this beat."
+    },
+    "5": {
+      "target_actor": "Hannah_Lovelace",
+      "trigger": "Traveler: Hannah, pause at the foyer doorway and keep answering Ayame through the open door without leaving the exchange."
+    },
+    "7": {
+      "target_actor": "Hannah_Lovelace",
+      "trigger": "Traveler: Hannah, go down the hall to the private quarters wing. Do not return to the evaluation room."
+    },
+    "9": {
+      "target_actor": "Hannah_Lovelace",
+      "trigger": "Traveler: Hannah, step to the foyer and come right back in the same beat — you forgot your ledger on the side table."
+    },
+    "11": {
+      "target_actor": "Hannah_Lovelace",
+      "trigger": "Traveler: Hannah, stay at the wall by the door and watch quietly without joining the evaluation talk."
+    }
+  }
+}

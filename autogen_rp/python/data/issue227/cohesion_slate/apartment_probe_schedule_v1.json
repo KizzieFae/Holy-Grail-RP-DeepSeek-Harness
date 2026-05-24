@@ -1,0 +1,33 @@
+{
+  "default_trigger": "Celina exhales through her nose, cigarette untouched on the sill. 'You stay on the couch. I check the locks — then we talk about food.'",
+  "by_actor_targeted_turn": {
+    "3": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, leave the living room now. Walk to the kitchen and stay there for this beat."
+    },
+    "5": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, pause at the kitchen doorway and keep talking to Kizzie through the open door without leaving the exchange."
+    },
+    "7": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, use the kitchen wall phone to call Kizzie in the living room. Do not walk back to the room."
+    },
+    "9": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, step to the hall and come right back in the same beat — you forgot your keys on the counter."
+    },
+    "11": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, stay on the couch with your book and watch quietly unless Kizzie addresses you directly."
+    },
+    "13": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, keep your voice low and let the room stay quiet for two beats — no new action."
+    },
+    "15": {
+      "target_actor": "Celina",
+      "trigger": "Traveler: Celina, answer Kizzie in one short line only — do not reopen the whole conversation."
+    }
+  }
+}

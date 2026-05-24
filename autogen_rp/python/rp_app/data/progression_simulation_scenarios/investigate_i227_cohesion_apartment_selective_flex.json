@@ -1,0 +1,22 @@
+{
+  "id": "investigate_i227_cohesion_apartment_selective_flex",
+  "title": "Issue #227 — apartment slow-burn anchor-selective flex (protector flexible)",
+  "intent": "Broad validation slate D: celina_apartment_recovery_watch_anchor_selective_flex. Same probe schedule as baseline.",
+  "scene_template_id": "celina_apartment_recovery_watch_anchor_selective_flex",
+  "scene_template_role_assignments": {
+    "celina": "protector",
+    "kizzie": "recovering_demi_human"
+  },
+  "character_card_ids": ["celina", "kizzie"],
+  "opening_description": "Celina's apartment after a rescue: blinds drawn, couch blankets, the smell of disinfectant and cigarettes. Kizzie sits curled on the couch; Celina moves between door and kitchen, keeping the space controlled.",
+  "location": "celina_apartment",
+  "trigger_text": "Celina exhales through her nose, cigarette untouched on the sill. 'You stay on the couch. I check the locks — then we talk about food.'",
+  "max_turns": 16,
+  "seed_escalating_issue": false,
+  "beat_shift_active": false,
+  "initial_tension": "low",
+  "initial_phase": "opening",
+  "expected_pressure_profile": "low",
+  "startup_trigger_mode": "overlay",
+  "evaluation_ontology_profile": "generic_net_state_v1"
+}

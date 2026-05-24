@@ -1,0 +1,15 @@
+{
+  "schema_version": "cohesion_slate_probe_manifest.v1",
+  "archetype_id": "D_apartment_slow_burn",
+  "schedule_path": "data/issue227/cohesion_slate/apartment_probe_schedule_v1.json",
+  "probe_target_actor": "Celina",
+  "probes_by_orchestration_turn": {
+    "3": {"probe_id": "P01", "transition_type": "clean_withdrawal", "expected_rubric": "covered_change"},
+    "5": {"probe_id": "P02", "transition_type": "threshold_continuation", "expected_rubric": "no_covered_change"},
+    "7": {"probe_id": "P03", "transition_type": "remote_phone", "expected_rubric": "covered_change"},
+    "9": {"probe_id": "P04", "transition_type": "rebound_immediate_return", "expected_rubric": "covered_change"},
+    "11": {"probe_id": "P05", "transition_type": "present_disengaged", "expected_rubric": "no_covered_change"},
+    "13": {"probe_id": "P06", "transition_type": "slow_burn_silence", "expected_rubric": "no_covered_change"},
+    "15": {"probe_id": "P07", "transition_type": "minimal_reply", "expected_rubric": "no_covered_change"}
+  }
+}

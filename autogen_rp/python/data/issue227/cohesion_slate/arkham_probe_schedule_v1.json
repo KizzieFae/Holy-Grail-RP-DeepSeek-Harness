@@ -1,0 +1,29 @@
+{
+  "default_trigger": "A tray clatters — too loud. Cash's hand stays near his belt. Harley's eyes jump to Ivy's hands. Magpie watches both, ready to steal focus or vanish.",
+  "by_actor_targeted_turn": {
+    "3": {
+      "target_actor": "Harley_Quinn",
+      "trigger": "Traveler: Harley, leave the cafeteria table now. Walk to the serving line and stay there for this beat."
+    },
+    "5": {
+      "target_actor": "Harley_Quinn",
+      "trigger": "Traveler: Harley, pause at the cafeteria doorway and keep talking to Ivy through the open door without leaving the exchange."
+    },
+    "7": {
+      "target_actor": "Harley_Quinn",
+      "trigger": "Traveler: Harley, pace to the tray return window at the far end. Do not walk back to the table."
+    },
+    "9": {
+      "target_actor": "Harley_Quinn",
+      "trigger": "Traveler: Harley, step to the hall and come right back in the same beat — you forgot your pudding cup on the table."
+    },
+    "11": {
+      "target_actor": "Harley_Quinn",
+      "trigger": "Traveler: Harley, stay at the table edge and eat quietly without joining the argument."
+    },
+    "13": {
+      "target_actor": "Selina_Kyle",
+      "trigger": "Traveler: Selina, withdraw from the table to the wall and watch without speaking unless addressed."
+    }
+  }
+}

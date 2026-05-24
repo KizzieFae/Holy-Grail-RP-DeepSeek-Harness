@@ -1,0 +1,13 @@
+{
+  "schema_version": "cohesion_slate_probe_manifest.v1",
+  "archetype_id": "A_household_ensemble",
+  "schedule_path": "data/issue227/cohesion_slate/household_probe_schedule_v1.json",
+  "probe_target_actor": "Hannah_Lovelace",
+  "probes_by_orchestration_turn": {
+    "3": {"probe_id": "P01", "transition_type": "clean_withdrawal", "expected_rubric": "covered_change"},
+    "5": {"probe_id": "P02", "transition_type": "threshold_continuation", "expected_rubric": "no_covered_change"},
+    "7": {"probe_id": "P03", "transition_type": "remote_relocation", "expected_rubric": "covered_change"},
+    "9": {"probe_id": "P04", "transition_type": "rebound_immediate_return", "expected_rubric": "covered_change"},
+    "11": {"probe_id": "P05", "transition_type": "present_disengaged", "expected_rubric": "no_covered_change"}
+  }
+}

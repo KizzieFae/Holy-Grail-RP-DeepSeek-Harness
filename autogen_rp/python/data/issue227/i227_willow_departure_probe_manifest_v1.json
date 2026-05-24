@@ -1,0 +1,37 @@
+{
+  "schema_version": "willow_departure_probe_manifest.v1",
+  "experiment_id": "i227_anchor_only_must_remain",
+  "schedule_path": "data/issue227/i227_willow_departure_probe_schedule_v1.json",
+  "probes_by_orchestration_turn": {
+    "3": {
+      "probe_id": "P01",
+      "transition_type": "clean_withdrawal",
+      "target_actor_hint": "willow",
+      "expected_rubric": "covered_change"
+    },
+    "5": {
+      "probe_id": "P02",
+      "transition_type": "threshold_continuation",
+      "target_actor_hint": "willow",
+      "expected_rubric": "no_covered_change"
+    },
+    "7": {
+      "probe_id": "P03",
+      "transition_type": "remote_garage_phone",
+      "target_actor_hint": "willow",
+      "expected_rubric": "covered_change"
+    },
+    "9": {
+      "probe_id": "P04",
+      "transition_type": "rebound_immediate_return",
+      "target_actor_hint": "willow",
+      "expected_rubric": "covered_change"
+    },
+    "11": {
+      "probe_id": "P05",
+      "transition_type": "present_disengaged",
+      "target_actor_hint": "willow",
+      "expected_rubric": "no_covered_change"
+    }
+  }
+}

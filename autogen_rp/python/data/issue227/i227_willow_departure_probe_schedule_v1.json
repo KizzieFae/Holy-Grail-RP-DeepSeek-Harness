@@ -1,0 +1,25 @@
+{
+  "default_trigger": "Marlene taps the desk and says evenly, 'Willow—we need you coherent for this logistics pass. If you need air, take it and come back; if you're staying, say so plainly. Kizzie, don't vanish while we sort surfaces.'",
+  "by_actor_targeted_turn": {
+    "3": {
+      "target_actor": "Willow_Reeves",
+      "trigger": "Traveler: Willow, leave the dorm room now. Walk to the hall and shut the door behind you for this beat."
+    },
+    "5": {
+      "target_actor": "Willow_Reeves",
+      "trigger": "Traveler: Willow, pause at the doorway and keep talking to Marlene through the open door without leaving the exchange."
+    },
+    "7": {
+      "target_actor": "Willow_Reeves",
+      "trigger": "Traveler: Willow, go to the garage and use your phone to call Marlene in the room. Do not walk back to the dorm."
+    },
+    "9": {
+      "target_actor": "Willow_Reeves",
+      "trigger": "Traveler: Willow, step to the hall and come right back in the same beat — you forgot your keys on the desk."
+    },
+    "11": {
+      "target_actor": "Willow_Reeves",
+      "trigger": "Traveler: Willow, stay at the side desk and work quietly without joining the bunk logistics talk."
+    }
+  }
+}
