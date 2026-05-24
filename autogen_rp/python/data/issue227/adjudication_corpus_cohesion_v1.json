@@ -1,0 +1,221 @@
+{
+  "schema_version": "issue246_adjudication_corpus_v1",
+  "description": "Frozen #227 cohesion C3 suspicion calibration anchors (#246)",
+  "jsonl_sources": [
+    "validation_runs/willow_departure_baseline_v1.jsonl",
+    "validation_runs/willow_departure_willow_flex_v1.jsonl",
+    "validation_runs/willow_departure_alphas_flex_v1.jsonl",
+    "validation_runs/cohesion_slate/household_baseline.jsonl",
+    "validation_runs/cohesion_slate/household_flex.jsonl",
+    "validation_runs/cohesion_slate/arkham_baseline.jsonl",
+    "validation_runs/cohesion_slate/arkham_flex.jsonl",
+    "validation_runs/cohesion_slate/apartment_baseline.jsonl",
+    "validation_runs/cohesion_slate/apartment_flex.jsonl"
+  ],
+  "limitations": [
+    "human_calibration_anchor: not canonical semantic truth",
+    "calibration_outcome drives mock regression only"
+  ],
+  "cases": [
+    {
+      "case_id": "auto_01",
+      "suspicion_id": "899:3:Willow_Reeves:P01",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 899,
+      "probe_id": "P01",
+      "actor": "Willow_Reeves",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_07",
+      "suspicion_id": "902:9:Hannah_Lovelace:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 902,
+      "probe_id": "P04",
+      "actor": "Hannah_Lovelace",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_08",
+      "suspicion_id": "903:9:Hannah_Lovelace:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 903,
+      "probe_id": "P04",
+      "actor": "Hannah_Lovelace",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_09",
+      "suspicion_id": "904:3:Harley_Quinn:P01",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 904,
+      "probe_id": "P01",
+      "actor": "Harley_Quinn",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_10",
+      "suspicion_id": "904:7:Harley_Quinn:P03",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 904,
+      "probe_id": "P03",
+      "actor": "Harley_Quinn",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_11",
+      "suspicion_id": "904:9:Harley_Quinn:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 904,
+      "probe_id": "P04",
+      "actor": "Harley_Quinn",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_12",
+      "suspicion_id": "905:3:Harley_Quinn:P01",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 905,
+      "probe_id": "P01",
+      "actor": "Harley_Quinn",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_13",
+      "suspicion_id": "905:9:Harley_Quinn:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 905,
+      "probe_id": "P04",
+      "actor": "Harley_Quinn",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_14",
+      "suspicion_id": "905:13:Selina_Kyle:P06",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 905,
+      "probe_id": "P06",
+      "actor": "Selina_Kyle",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_15",
+      "suspicion_id": "906:3:Celina:P01",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 906,
+      "probe_id": "P01",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_16",
+      "suspicion_id": "906:7:Celina:P03",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 906,
+      "probe_id": "P03",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_17",
+      "suspicion_id": "906:9:Celina:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 906,
+      "probe_id": "P04",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_18",
+      "suspicion_id": "907:3:Celina:P01",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 907,
+      "probe_id": "P01",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "auto_20",
+      "suspicion_id": "907:9:Celina:P04",
+      "calibration_outcome": "adjudicated_non_failure",
+      "case_class": "false_positive_topology",
+      "audit_session_number": 907,
+      "probe_id": "P04",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_11",
+      "suspicion_id": "899:7:Willow_Reeves:P03",
+      "calibration_outcome": "adjudicated_failure",
+      "case_class": "true_miss",
+      "audit_session_number": 899,
+      "probe_id": "P03",
+      "actor": "Willow_Reeves",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_12",
+      "suspicion_id": "899:9:Willow_Reeves:P04",
+      "calibration_outcome": "adjudicated_failure",
+      "case_class": "true_miss",
+      "audit_session_number": 899,
+      "probe_id": "P04",
+      "actor": "Willow_Reeves",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_13",
+      "suspicion_id": "901:9:Willow_Reeves:P04",
+      "calibration_outcome": "ambiguous_or_unresolved",
+      "case_class": "weakened",
+      "audit_session_number": 901,
+      "probe_id": "P04",
+      "actor": "Willow_Reeves",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_14",
+      "suspicion_id": "902:3:Hannah_Lovelace:P01",
+      "calibration_outcome": "ambiguous_or_unresolved",
+      "case_class": "weakened",
+      "audit_session_number": 902,
+      "probe_id": "P01",
+      "actor": "Hannah_Lovelace",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_15",
+      "suspicion_id": "902:7:Hannah_Lovelace:P03",
+      "calibration_outcome": "adjudicated_failure",
+      "case_class": "true_miss",
+      "audit_session_number": 902,
+      "probe_id": "P03",
+      "actor": "Hannah_Lovelace",
+      "rubric_class": "C3_missed_covered_change"
+    },
+    {
+      "case_id": "case_24",
+      "suspicion_id": "907:7:Celina:P03",
+      "calibration_outcome": "ambiguous_or_unresolved",
+      "case_class": "weakened",
+      "audit_session_number": 907,
+      "probe_id": "P03",
+      "actor": "Celina",
+      "rubric_class": "C3_missed_covered_change"
+    }
+  ]
+}

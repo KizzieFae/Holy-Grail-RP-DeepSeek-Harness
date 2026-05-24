@@ -1,0 +1,9 @@
+{
+  "schema_version": "issue246_adjudication_baseline_v1",
+  "corpus": "cohesion_v1",
+  "raw_deterministic_suspicion_count": 20,
+  "adjudicated_failure_count": 3,
+  "adjudicated_non_failure_count": 14,
+  "ambiguous_or_unresolved_count": 3,
+  "needs_human_review_count": 0
+}

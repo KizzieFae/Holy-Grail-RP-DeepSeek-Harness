@@ -84,6 +84,7 @@ The `id` field inside the file must match `<scenario_id>` (filename without `.js
 | `parity_opening_trigger_smoke` | Minimal manifest with `startup_trigger_mode: parity` (Issue #83 contract / regression) |
 | `operational_baseline_3char_cafeteria` | **Accepted retrieval baseline** cast (Harley, Ivy, Magpie) + cafeteria template for standard OFF vs ON comparisons |
 | `cert_i234_proposal_accept_off_focal` | **#234** bounded L2 accept-path certification overlay (2-char, template-free; not a permanent cert matrix) |
+| `investigate_i240_participation_emission_map` | **#240 Phase A** participation emission mapping harness (2-char; external probe schedule; deterministic `extract_emission_map.py`) |
 
 **Optional scenario fields**
 
@@ -257,6 +258,20 @@ These confirm **code-level** behavior; scenarios confirm **model + pipeline** be
 **Audit JSON** (with `--audit`): written under `autogen_rp/python/rp_app/data/rp_audits/` (session folders + summary), same mechanism as the Streamlit app with auditing enabled.
 
 **Semantic proposal evaluation (Issue #243, offline):** Frozen #240 adjudication corpora plus committed baselines under `autogen_rp/python/data/evaluation/issue243_regression_baselines/` support **observational** profile-scoped evaluation and regression diff (`scripts/run_issue243_corpus_regression.py --eval`). **Operator read discipline (#243-D):** `corrected_category` is the **primary** eval output; `legacy_lane` / F0–F7 are **historical investigation labels**; `legacy_classifier_misflag` does **not** mean runtime failure; **`ambiguous_threshold` is first-class** — do not collapse into PASS/FAIL. Eval results are **not** scenario PASS/FAIL, **not** runtime authority, **not** continuity authority, and **not** a substitute for `#233` / `scene_state_after` read discipline. See `autogen_rp/docs/audit-workflows.md` (*Semantic proposal evaluation*) and `AUDIT_DOCUMENTATION.md` (*#243-D*).
+
+**Participation suspicion adjudication (Issue #246, offline):** C3 rows from cohesion/emission extracts become `participation_suspicion.v1`; offline adjudication (`scripts/run_participation_adjudication.py`) produces `participation_adjudication.v1`. Validation failure metric = **`adjudicated_failure_count`** only (not raw C3). Frozen corpus regression: `scripts/run_issue246_corpus_regression.py --eval`; prior-suite calibration replay vs #227 25-case manual reference: `scripts/run_issue246_prior_suite_validation.py`. **Operator read discipline (#246):** observational report-survival filter only — **not** runtime authority, **not** continuity authority, **not** merged into `_audit_summary.json`; no live LLM CI dependency. See `AUDIT_DOCUMENTATION.md` (*Participation suspicion adjudication*) and `MODULE_INDEX.md` (#246 modules).
+
+**Participation emission mapping (Issue #240 Phase A, investigation harness):** Scenario **`investigate_i240_participation_emission_map`** plus schedule **`data/issue240/i240_emission_probe_schedule_v1.json`** and probe manifest **`data/issue240/i240_emission_probe_manifest_v1.json`**. Schedule text is in-fiction only (no semantic_evaluation / proposal instructions). After an audited run, extract a deterministic matrix:
+
+```bash
+cd autogen_rp/python
+python scripts/run_scene_simulation_llm.py --scenario investigate_i240_participation_emission_map --audit --turns 14 --ignore-end-round --user-trigger-schedule data/issue240/i240_emission_probe_schedule_v1.json
+python scripts/extract_emission_map.py --audit-session-number NNN --summary-out validation_runs/emission_map_v1_summary.json
+```
+
+Use **deep simulation** (default — do **not** pass `--no-deep-simulation-turns`): `--turns` is the per-round character-turn cap; shallow mode limits replies to cast size (2) and will not reach probe turns 2–11.
+
+Output: **`validation_runs/emission_map_v1.jsonl`** (and optional CSV). Rubric classes (`C1`–`C8`) and flags (`F_suspect_miss`, etc.) are **investigation labels** — not runtime gates. Relationship: **#225** validation evidence, **#240** topology observation, **#243** optional follow-on corpus freeze for suspect rows. Phase B (4-char dorm) is deferred.
 
 #### PASS criteria
 

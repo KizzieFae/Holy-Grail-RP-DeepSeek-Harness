@@ -379,6 +379,43 @@ python scripts/run_issue243_corpus_regression.py --legacy --corpus willow_v1
 
 Further: `data/evaluation/issue243_regression_baselines/README.md`, repo-root `SCENARIO_VALIDATION_FRAMEWORK.md` §4, `MODULE_INDEX.md` (#243 modules).
 
+### Participation suspicion adjudication — operator read discipline (Issue #246)
+
+**Purpose:** Read **offline** C3 suspicion adjudication without treating results as runtime truth, continuity authority, or automatic validation failure.
+
+**Pipeline (post-run only):**
+
+1. **Deterministic extract (unchanged):** `emission_map_extract` / `cohesion_slate_extract` emit rubric classes including `C3_missed_covered_change`.
+2. **Suspicion gate:** C3 rows become `participation_suspicion.v1` records — **high-recall suspicion**, not validation failures.
+3. **Adjudication:** `participation_adjudication_v1.py` builds compact bundles; human, mock policy, or **opt-in** LLM adjudication produces `participation_adjudication.v1`.
+4. **Reporting:** Validation summaries use **`adjudicated_failure_count`** for failure metrics. **`raw_deterministic_suspicion_count`** remains visible alongside non-failure, ambiguous, and review-mode tallies.
+
+**Authority boundary:**
+
+| Layer | Role |
+|-------|------|
+| **Runtime / continuity truth** | Committed `SceneState`, `process_turn`, accepted proposals — unchanged |
+| **Deterministic extract** | High-recall C3 suspicion emission — unchanged heuristics in v1 |
+| **#246 adjudication** | Observational report-survival filter only; **not** on #59 allowlist; **never** merged into `_audit_summary.json` |
+
+**Outcome taxonomy (primary):** `flagged` · `adjudicated_failure` · `adjudicated_non_failure` · `ambiguous_or_unresolved` · `needs_human_review`
+
+- `adjudicated_non_failure` means the suspicion **does not survive** into the human-facing failure report — **not** that runtime was semantically "correct".
+- `ambiguous_or_unresolved` is **first-class** — do not collapse into pass/fail.
+- Human corpus labels in `data/issue227/adjudication_corpus_cohesion_v1.json` are **calibration anchors**, not canonical semantic truth.
+- Adjudication **confidence** is reporting confidence only — high confidence does **not** grant runtime authority.
+
+**CLI quick reference** (from `autogen_rp/python/`):
+
+```bash
+python scripts/extract_participation_suspicions.py --jsonl validation_runs/cohesion_slate/household_baseline.jsonl --out validation_runs/participation_adjudication/suspicions.jsonl
+python scripts/run_participation_adjudication.py --suspicions validation_runs/participation_adjudication/suspicions.jsonl --source-jsonl validation_runs/cohesion_slate/household_baseline.jsonl --corpus data/issue227/adjudication_corpus_cohesion_v1.json --out validation_runs/participation_adjudication/adjudication.jsonl --summary-out validation_runs/participation_adjudication/summary.json
+python scripts/run_issue246_corpus_regression.py --eval
+python scripts/run_issue246_prior_suite_validation.py
+```
+
+Further: `data/evaluation/issue246_regression_baselines/README.md`, `data/issue227/manual_adjudication_reference_v1.json`, `MODULE_INDEX.md` (#246 modules).
+
 
 **Purpose:** **In-family** extension of Issue #66: same offline, artifact-driven judgment envelope, **not** a parallel evaluator system. **`scene_eval_v2`** adds versioned predicates that require **narrator `*_full.json`** rows and **deterministic cross-row joins** to character rows. Still **offline-only**; **not** runtime authority (**#59** allowlist remains the only runtime coupling path).
 

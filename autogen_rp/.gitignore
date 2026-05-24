@@ -240,6 +240,10 @@ registry.json
 !/python/data/evaluation/
 !/python/data/evaluation/**/*
 
+# Issue #246 — frozen adjudication corpora + manual reference (#227 seed)
+!/python/data/issue227/
+!/python/data/issue227/*.json
+
 # Scene template JSON (Issue #80 — tracked authored templates; not user-local RP data)
 !/python/data/scene_templates/
 !/python/data/scene_templates/*.json
