@@ -51,6 +51,7 @@ _tmp_hier_edit/
 _tmp_prog_issues/
 .tmp_issues/
 .tmp_*
+governance/rp-app/_issue_bodies/
 
 # Local vendor / IDE export (not canonical repo content)
 deepseek_v4_overview.rtf

@@ -188,3 +188,21 @@ runs/
 tmp_progression_smoke/
 validation_runs/**/*.json
 validation_runs/**/replay_out/
+
+# Issue #249 — durable experiment evidence (override validation_runs/**/*.json above)
+!validation_runs/issue249/
+!validation_runs/issue249/i249_proposal_schema_experiment_results.json
+!validation_runs/issue249/i249_proposal_schema_generalization_results.json
+!validation_runs/issue249/i249_participation_boundary_b_experiment_results.json
+!validation_runs/issue249/i249_participation_boundary_b_clean_experiment_results.json
+
+# Issue #249 — local re-extractable / scratch investigation artifacts
+validation_runs/issue249/session_*.jsonl
+validation_runs/issue249/_*.py
+validation_runs/issue249/extract_i249_*.py
+validation_runs/issue249/run_i249_adjudicated_analysis.py
+validation_runs/issue249/run_i249_pipeline_health_study.py
+validation_runs/issue249/i249_exit_proposal_pipeline_trace.py
+validation_runs/issue249/i249_aggregate_metrics.py
+validation_runs/issue249/i249_manual_review_dump.txt
+validation_runs/issue249/i249_proposal_schema_teaching_draft.txt

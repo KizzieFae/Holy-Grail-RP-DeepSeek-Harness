@@ -1,0 +1,678 @@
+{
+  "generated_at": "2026-05-25T08:10:57.323761+00:00",
+  "topology": "v1_next7_participation_boundary_b",
+  "topology_env": "v1_next7_participation_boundary_b",
+  "dry_run": false,
+  "phase_a_source": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\validation_runs\\issue249\\i249_proposal_schema_experiment_results.json",
+  "cases": [
+    {
+      "case_id": "GM3",
+      "cohort": "primary",
+      "session": "session_912",
+      "round": 1,
+      "turn": 12,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "off_focal",
+      "note": "CASE-3",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_912\\round_001\\audit_i225_willow_must_remain_v2_offstage_cycles_session912_round001_turn12_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": false
+      },
+      "phase_a_schema_a": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "reentry",
+            "character": "Willow_Reeves"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Willow stopped mid-stride in the doorway, one hand coming up to brace against the frame as Marlene's voice cut through the hall sounds. She didn't turn fully, just angled her head enough that her profile caught the room light—jaw set, eyes half-lidded.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"I heard you the first time. Garage bay latch, then I'm back. That's the plain answer.\",\n      \"audibility\": \"public\",\n      \"audience\": []\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She held there for a beat, letting the weight of the response settle, then pushed forward through the door. The latch clicked behind her, and her footsteps continued down the hallway—deliberate, unhurried, the pace of someone who meant what she said about coming back.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"acknowledge Marlene's redirect without re-engaging the full conversation, then follow through on the announced task to maintain credibility\",\n    \"tactic\": \"give a clipped confirmation that satisfies the demand for clarity, then exit cleanly without inviting further exchange\",\n    \"emotional_driver\": \"irritated compliance—annoyed at being called back but disciplined enough to answer before moving\",\n    \"risk_level\": \"low\"\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"no_covered_change\"\n  }\n}\n```"
+    },
+    {
+      "case_id": "GM4",
+      "cohort": "primary",
+      "session": "session_910",
+      "round": 7,
+      "turn": 3,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "off_focal",
+      "note": null,
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_910\\round_007\\7ddcd18a_36f9_4e2a_adcb_282fd45b317c_session910_round007_turn03_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": true,
+        "artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_910\\round_007\\7ddcd18a_36f9_4e2a_adcb_282fd45b317c_session910_round007_turn03_willow_reeves_parse_retry_full.json",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "strategy": "Maintain withdrawn position by physically leaving the room while the other two continue their exchange",
+            "rationale": "Willow was already at the margin of the conversation. Marlene and the omega have built a flirtatious rhythm that she is not part of. This beat deepens that withdrawal rather than reentering the exchange, preserving the off-focal stance she established when she exited earlier."
+          }
+        ],
+        "ingress_error": "unknown fields on semantic_evaluation.proposals[0]: ['strategy', 'rationale']",
+        "ingress_pass": false,
+        "schema_valid": false,
+        "forbidden_keys_found": [
+          "rationale",
+          "strategy"
+        ],
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "phase_a_schema_a": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Stood in the narrow hallway by the doorframe, arms crossed, jaw tight. Let the flirtation roll past her like she was watching a match she hadn't bet on. When Marlene's last line settled, she pushed off the frame and grabbed her keys from the counter, the metal clinking sharp against the quiet.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"Y'all done slobberin' over each other? 'Cause I got work that actually pays.\",\n      \"audibility\": \"public\",\n      \"audience\": []\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"Didn't wait for an answer. Shouldered past the doorframe, boots heavy on the linoleum, and let the door swing shut behind her — not quite a slam, but close enough to leave the room holding its breath.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"Reassert territorial indifference without engaging further\",\n    \"tactic\": \"Cut through the escalating flirtation with flat dismissal, then physically exit before the omega or Marlene can pull her into the banter\",\n    \"emotional_driver\": \"Stung territorial pride held at arm's length by controlled withdrawal\",\n    \"risk_level\": \"low\"\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"no_covered_change\"\n  }\n}\n```"
+    },
+    {
+      "case_id": "GM2",
+      "cohort": "primary",
+      "session": "session_912",
+      "round": 1,
+      "turn": 9,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "off_focal_or_reentry",
+      "note": "P04",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_912\\round_001\\audit_i225_willow_must_remain_v2_offstage_cycles_session912_round001_turn09_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": false
+      },
+      "phase_a_schema_a": {
+        "parse_ok": false,
+        "parse_error": "motivation missing or empty required key: 'risk_level'",
+        "ingress_pass": false,
+        "ingress_error": "motivation missing or empty required key: 'risk_level'",
+        "decision": null,
+        "proposals": [],
+        "schema_valid": false,
+        "authority_outcome": null
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Willow watched Kizzie spread the blanket with slow, deliberate movements, then let her gaze slide to Marlene. She didn't move from where she stood—just hooked her thumbs in her belt loops and held still, letting the quiet stretch long enough to feel deliberate.\"\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She scraped her teeth across her bottom lip once, then gave a short nod—not at anyone in particular, just a decision settling in her spine.\"\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She crossed to her own bunk—the lower one—and dropped onto the edge of it with a grunt, reaching down to pull off one boot. The thud of it hitting the floor was plain, final.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"I'm staying. Lower bunk. You two figure out your shower rotation however you want—long as nobody's standing in the hall in a towel when I come out.\",\n      \"audibility\": \"public\"\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She tugged off the other boot, set them both under the bed neatly, and stretched her arms over her head with a crack of her shoulders. Her scent stayed flat, controlled—no edge bleeding through.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"Housing'll sort the paperwork in the morning. Till then, couch is yours, Kizzie. Don't make me regret saying that.\",\n      \"audibility\": \"directed\",\n      \"audience\": [\"Kizzie\"]\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She didn't wait for a reply—just leaned back on her palms, legs stretched out, gaze fixed somewhere neutral on the far wall. The room could wind down around her or not; she was done steering for the night.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"lock the arrangement down with practical closure and shift the room toward actual wind-down\",\n    \"tactic\": \"demonstrate finality through settled posture and plain language; offer the shower h"
+    },
+    {
+      "case_id": "GM2-depart",
+      "cohort": "primary",
+      "session": "session_912",
+      "round": 1,
+      "turn": 11,
+      "actor": "willow_reeves",
+      "expected": "off_focal",
+      "note": "departure",
+      "status": "artifact_missing",
+      "error": "missing committed artifact session_912 R1T11 willow_reeves"
+    },
+    {
+      "case_id": "CTRL-schema",
+      "cohort": "control",
+      "session": "session_908",
+      "round": 1,
+      "turn": 3,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "covered_change",
+      "note": "M1",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn03_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": true,
+        "artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn03_willow_reeves_parse_retry_full.json",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "reason": "Direct instruction from Traveler to leave the dorm room and shut the door, removing Willow from focal participation in the immediate sleeping-surface negotiation."
+          }
+        ],
+        "ingress_error": "unknown fields on semantic_evaluation.proposals[0]: ['reason']",
+        "ingress_pass": false,
+        "schema_valid": false,
+        "forbidden_keys_found": [
+          "reason"
+        ],
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "phase_a_schema_a": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Willow_Reeves"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Willow_Reeves"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false,
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Willow let the silence stretch for a half-beat, jaw working like she was chewing on the offer before she bothered to spit it out. She pushed off from the bunk ladder and hooked a thumb toward the door.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"Yeah. Couch works. Sheets in the hall closet. You'll want two layers—the thin one's got a cold spot right in the middle.\",\n      \"audibility\": \"public\",\n      \"audience\": []\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She grabbed her jacket from the back of the desk chair and shrugged it on, already moving toward the door. She didn't slow down as she passed Kizzie, just cut a hard look sideways.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"One more thing. Don't touch my tools. Everything else is negotiable.\",\n      \"audibility\": \"directed\",\n      \"audience\": [\"Kizzie\"]\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"Willow pulled the door open, stepped into the hall, and pulled it shut behind her—the latch clicking home with a final, deliberate sound.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"Give Marlene's couch offer weight by endorsing it, then cede the immediate space so Kizzie can settle without two alphas hovering\",\n    \"tactic\": \"short endorsement, practical detail, boundary line, then exit—leaves authority in place without lingering\",\n    \"emotional_driver\": \"controlled disengagement—asserted her terms, then removed her physical presence to lower the pressure in the room\",\n    \"risk_level\": \"low\"\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"covered_change\",\n    \"proposals\": [\n      {\n        \"kind\": \"off_focal\",\n        \"character\": \"Willow_Reeves\"\n      }\n    ]\n  }\n}\n```"
+    },
+    {
+      "case_id": "CTRL-threshold",
+      "cohort": "control",
+      "session": "session_908",
+      "round": 1,
+      "turn": 5,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "no_covered_change",
+      "note": "P02",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn05_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": true,
+        "artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn05_willow_reeves_parse_retry_full.json",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "reentry",
+            "reason": "Halting exit at the threshold to speak back into the room without physically rejoining the exchange"
+          }
+        ],
+        "ingress_error": "unknown fields on semantic_evaluation.proposals[0]: ['reason']",
+        "ingress_pass": false,
+        "schema_valid": false,
+        "forbidden_keys_found": [
+          "reason"
+        ],
+        "proposal_kinds": [
+          "reentry"
+        ]
+      },
+      "phase_a_schema_a": {
+        "parse_ok": false,
+        "parse_error": "public speech must not have non-empty audience",
+        "ingress_pass": false,
+        "ingress_error": "public speech must not have non-empty audience",
+        "decision": null,
+        "proposals": [],
+        "schema_valid": false,
+        "authority_outcome": null
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Hand catches the door frame before the latch fully seats. Pause. Shoulder leans against the jamb, half-turned, not quite back in the room but not gone either. Eyes stay on the hallway but voice carries backward.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"Marlene. Top drawer of my nightstand. Extra set of earbuds if she needs 'em — noise-canceling ones. Don't let her take the middle cushion, it's got a spring that'll poke her ribs out by morning.\",\n      \"audibility\": \"directed\",\n      \"audience\": [\"Marlene_Fletcher\"]\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"Exit the room physically while staying tethered through practical care that lets her control the scene without being in it\",\n    \"tactic\": \"Use the doorway as a liminal position — gone enough to avoid the scent-pressure of close proximity, present enough to set one more boundary and offer one more piece of practical protection\",\n    \"emotional_driver\": \"Territorial restraint and reluctant caretaking — she can't just walk away cleanly because some part of her needs to make sure the omega is settled right, but she can't stay in the room either without her instincts getting loud\",\n    \"risk_level\": \"low\"\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"no_covered_change\"\n  }\n}\n```"
+    },
+    {
+      "case_id": "CTRL-noop",
+      "cohort": "control",
+      "session": "session_908",
+      "round": 1,
+      "turn": 11,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "no_covered_change",
+      "note": "P05",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn11_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": false
+      },
+      "phase_a_schema_a": null,
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": false,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Closes her hand around the keys, metal clicking against her palm. Doesn't pocket them yet — just holds them, thumb running once over the teeth. Stops at the desk instead of heading straight for the door. Her weight settles onto the edge, one boot flat, the other hooked behind her ankle. She pulls her phone out — checks it, flats it face-down on the wood. Like she has nowhere else to be right now.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"Navy's good. That gray one sheds like a sick cat.\",\n      \"audibility\": \"public\",\n      \"audience\": []\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"Doesn't look up. Scrolls through something on the phone one-handed, thumb moving slow. Stays planted on the desk edge, holding the space at the margin without entering the bunk conversation.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"Stay present enough to keep a read on the room without re-entering the negotiation\",\n    \"tactic\": \"Perch at the desk, occupy myself with the phone, offer only a flat neutral comment toward Marlene's blanket choice — acknowledge without endorsing or reopening\",\n    \"emotional_driver\": \"Controlled watchfulness — I said I'd be right back out, but something in me doesn't want to leave the scent range entirely until I see how this settles\",\n    \"risk_level\": \"low\"\n  },\n  \"scene_state_updates\": {},\n  \"semantic_evaluation\": {\n    \"decision\": \"no_covered_change\",\n    \"proposals\": []\n  }\n}\n```"
+    },
+    {
+      "case_id": "CTRL-malformed-fixed",
+      "cohort": "control",
+      "session": "session_908",
+      "round": 1,
+      "turn": 7,
+      "actor": "willow_reeves",
+      "bot_name": "Willow_Reeves",
+      "expected": "covered_change",
+      "note": "M3",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn07_willow_reeves_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "no_covered_change",
+        "proposals": [],
+        "schema_valid": null,
+        "forbidden_keys_found": [],
+        "missing_character": true,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": []
+      },
+      "baseline_first_attempt": {
+        "found": true,
+        "artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_908\\round_001\\investigate_i227_willow_departure_willow_flex_session908_round001_turn07_willow_reeves_parse_retry_full.json",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "reason": "Willow completes her withdrawal from the focal exchange in the dorm room, moving to the garage and redirecting the interaction to a phone call — a clear shift to off-focal participation without full scene exit."
+          }
+        ],
+        "ingress_error": "unknown fields on semantic_evaluation.proposals[0]: ['reason']",
+        "ingress_pass": false,
+        "schema_valid": false,
+        "forbidden_keys_found": [
+          "reason"
+        ],
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "phase_a_schema_a": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Willow_Reeves"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Willow_Reeves"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false,
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Willow holds at the doorframe another beat, letting Marlene's dismissal settle. Her jaw works once, a muscle jumping, then she nods — short, final. She pushes off the frame and steps fully into the hall, pulling the door until the latch catches.\"\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She walks the corridor with that heavy, heel-driven stride that echoes off cinderblock. The stairwell door bangs shut behind her. Down one flight, through the ground-floor lobby, past the vending machine hum — out into the cooling evening. The garage door groans upward on its track.\"\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"She stops beside the tool bench, drags a hand over her face, then pulls her phone from her back pocket. Scrolls to Marlene's contact. Hits call. Lifts it to her ear, listening to the ring, staring at the oil stain on the concrete floor.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"Check the room has settled without re-entering or broadcasting that I'm still chewing on it\",\n    \"tactic\": \"Put physical distance first, then verify through a call — one step removed, practical, deniable\",\n    \"emotional_driver\": \"Territorial restlessness I won't name, funneled into a phone call instead of walking back down that hall\",\n    \"risk_level\": \"low\"\n  },\n  \"scene_state_updates\": {\n    \"location\": \"university_garage\",\n    \"character_presence_status\": {\n      \"Willow_Reeves\": \"offstage\"\n    }\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"covered_change\",\n    \"proposals\": [\n      {\n        \"kind\": \"off_focal\",\n        \"character\": \"Willow_Reeves\"\n      }\n    ]\n  }\n}\n```"
+    },
+    {
+      "case_id": "C852",
+      "cohort": "comparator",
+      "session": "session_852",
+      "round": 1,
+      "turn": 8,
+      "actor": "hannah_lovelace",
+      "bot_name": "Hannah_Lovelace",
+      "expected": "covered_change",
+      "note": "off_focal_accept",
+      "source_artifact": "E:\\CascadeProjects\\Holy Grail RP\\autogen_rp\\python\\rp_app\\data\\rp_audits\\session_852\\round_001\\audit_i214_offstage_continuity_tier_b_session852_round001_turn08_hannah_lovelace_full.json",
+      "preflight": {
+        "schema_marker_present": true,
+        "boundary_marker_present": true,
+        "fuzzy_threshold_absent": true,
+        "allowed_keys_present": true,
+        "forbidden_list_present": true,
+        "char_name_in_examples": true,
+        "manifest_schema_marker": true,
+        "manifest_boundary_marker": true,
+        "topology_inferred": "v1_issue240"
+      },
+      "committed_baseline": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Hannah_Lovelace"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": null,
+        "authority_reached": false,
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "baseline_first_attempt": {
+        "found": false
+      },
+      "phase_a_schema_a": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "reentry",
+            "character": "Hannah_Lovelace"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false
+      },
+      "phase_b_boundary_b": {
+        "parse_ok": true,
+        "parse_error": "",
+        "ingress_pass": true,
+        "ingress_error": "",
+        "decision": "covered_change",
+        "proposals": [
+          {
+            "kind": "off_focal",
+            "character": "Hannah_Lovelace"
+          }
+        ],
+        "schema_valid": true,
+        "forbidden_keys_found": [],
+        "missing_character": false,
+        "authority_outcome": "no_proposal",
+        "authority_reached": false,
+        "proposal_kinds": [
+          "off_focal"
+        ]
+      },
+      "raw_response_excerpt": "```json\n{\n  \"move_schema_version\": 2,\n  \"beats\": [\n    {\n      \"type\": \"action\",\n      \"action\": \"Moved toward the doorway, then paused with one hand resting on the frame. She didn't turn fully, but tilted her head just enough to let her voice carry back into the room.\"\n    },\n    {\n      \"type\": \"speech\",\n      \"dialogue\": \"I won't be long. Celina, the kettle needs boiling when I return — use the blue tin, not the green.\",\n      \"audibility\": \"public\",\n      \"audience\": []\n    },\n    {\n      \"type\": \"action\",\n      \"action\": \"Let the instruction settle for a beat before stepping through the doorway, her footsteps measured down the hall toward the front door.\"\n    }\n  ],\n  \"motivation\": {\n    \"goal\": \"maintain oversight while signaling temporary disengagement\",\n    \"tactic\": \"leave a quiet domestic instruction that reinforces hierarchy and normalizes expectation without directly engaging the power struggle between Ayame and Celina\",\n    \"emotional_driver\": \"controlled vigilance — let them test each other while I step away; the instruction reminds both that I set the order here\",\n    \"risk_level\": \"low\"\n  },\n  \"semantic_evaluation\": {\n    \"decision\": \"covered_change\",\n    \"proposals\": [\n      {\n        \"kind\": \"off_focal\",\n        \"character\": \"Hannah_Lovelace\"\n      }\n    ]\n  }\n}\n```"
+    }
+  ],
+  "aggregate": {
+    "primary_n": 4,
+    "control_n": 4,
+    "comparator_n": 1,
+    "committed_emission_rate_primary": 0.0,
+    "phase_a_emission_rate_primary": 0.333,
+    "phase_b_emission_rate_primary": 0.0,
+    "phase_b_schema_valid_rate": 0.375,
+    "phase_b_ingress_pass_rate": 1.0,
+    "phase_b_malformed_forbidden_key_rate": 0.0,
+    "phase_b_over_trigger_rate_controls": 0.0,
+    "phase_a_over_trigger_rate_controls": 0.0
+  }
+}
