@@ -630,3 +630,59 @@ def test_issue240_participation_boundary_b_clean_isolation(monkeypatch: pytest.M
     )
     assert "covered participation shift" in contaminated
 
+
+def test_issue251_awareness_clean_topology(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE251_AWARENESS_CLEAN_MARKER,
+        ISSUE251_AWARENESS_DOCTRINE_MARKER,
+        ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER,
+        ISSUE251_MIN_SEVERANCE_CLARIFICATION_MARKER,
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        build_issue251_canonical_severance_doctrine_block,
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
+        build_character_turn_prompt_issue240_v1_next7,
+        build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean,
+        issue251_awareness_contamination_hits,
+    )
+
+    monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7_issue251_awareness_clean")
+    assert issue240_prompt_topology_mode() == "v1_next7_issue251_awareness_clean"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert ISSUE251_AWARENESS_DOCTRINE_MARKER in prompt
+    assert ISSUE251_AWARENESS_CLEAN_MARKER in prompt
+    assert ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER in prompt
+    assert ISSUE251_MIN_SEVERANCE_CLARIFICATION_MARKER == ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER
+    canonical = build_issue251_canonical_severance_doctrine_block()
+    assert canonical in prompt
+    assert "Emotional or social withdrawal while still present" in prompt
+    assert "materially leaves the shared live scene" in prompt
+    assert ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE not in prompt
+    assert "continue/deepen/reverse" not in prompt
+    assert "partially withdrawn" not in prompt
+    assert "shared-awareness continuity" in prompt
+    assert "hallway = ``off_focal``" in prompt
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER not in prompt
+    assert ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER not in prompt
+    assert "margin withdrawal/rejoin" not in prompt
+    assert issue251_awareness_contamination_hits(prompt) == []
+    manifest = extract_topology_manifest(prompt)
+    assert manifest.get("markers", {}).get("proposal_schema_teaching_v249_a")
+    assert manifest.get("markers", {}).get("participation_awareness_doctrine_issue251_v1")
+    assert manifest.get("markers", {}).get("participation_awareness_clean_isolation_v251")
+    assert manifest.get("markers", {}).get(
+        "participation_severance_doctrine_issue251_canonical_v1"
+    )
+    assert not manifest.get("markers", {}).get("participation_arc")
+    baseline = build_character_turn_prompt_issue240_v1_next7(**kwargs)
+    assert ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER in baseline or (
+        "margin withdrawal/rejoin" in baseline
+    )
+

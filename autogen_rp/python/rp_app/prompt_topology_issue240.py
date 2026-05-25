@@ -9,7 +9,8 @@ Rollback / legacy: ``RP_ISSUE240_PROMPT_TOPOLOGY=production_legacy`` (also ``leg
 Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliases as before);
 ``v1_next7_proposal_schema_a`` (replay alias — identical to default ``v1_next7``);
 investigation-only ``v1_next7_participation_calibration_a`` (Phase-A participation calibration — does not replace default);
-investigation-only ``v1_next7_participation_boundary_b`` / ``v1_next7_participation_boundary_b_clean`` (Issue #249 ontology experiments — not default).
+investigation-only ``v1_next7_participation_boundary_b`` / ``v1_next7_participation_boundary_b_clean`` (Issue #249 ontology experiments — not default);
+investigation-only ``v1_next7_issue251_awareness_clean`` (Issue #251 — canonical three-line severance doctrine + four-factor awareness block; not production default).
 """
 
 from __future__ import annotations
@@ -58,6 +59,13 @@ _V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY = frozenset(
         "v1next7participationboundarybclean",
     }
 )
+_V1_NEXT7_ISSUE251_AWARENESS_CLEAN_TRUTHY = frozenset(
+    {
+        "v1_next7_issue251_awareness_clean",
+        "v1-next7-issue251-awareness-clean",
+        "v1next7issue251awarenessclean",
+    }
+)
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 _ISSUE240_LONG_PROMPT_COMPRESS_CHARS = 35_000
 
@@ -81,6 +89,16 @@ ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER = (
 )
 ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER = (
     "participation_boundary_clean_isolation_v249_b2"
+)
+ISSUE251_AWARENESS_DOCTRINE_MARKER = "participation_awareness_doctrine_issue251_v1"
+ISSUE251_AWARENESS_CLEAN_MARKER = "participation_awareness_clean_isolation_v251"
+ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER = (
+    "participation_severance_doctrine_issue251_canonical_v1"
+)
+# Alias retained for replay artifacts and historical matrix IDs.
+ISSUE251_MIN_SEVERANCE_CLARIFICATION_MARKER = ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER
+ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE = (
+    "Physical departure alone is not sufficient"
 )
 ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER = (
     "margin withdrawal/rejoin may be ``covered_change``"
@@ -142,6 +160,8 @@ def issue240_prompt_topology_mode() -> str | None:
         return "v1_next7"
     if raw in _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY:
         return "v1_next7_participation_calibration_a"
+    if raw in _V1_NEXT7_ISSUE251_AWARENESS_CLEAN_TRUTHY:
+        return "v1_next7_issue251_awareness_clean"
     if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY:
         return "v1_next7_participation_boundary_b_clean"
     if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY:
@@ -1501,6 +1521,191 @@ def build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean
     )
 
 
+def build_issue251_canonical_severance_doctrine_block() -> str:
+    """Canonical #251 severance lines (accepted); continuity-preservation sentence rejected."""
+    return f"""Canonical participation severance ({ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER} — do not recite in dialogue):
+
+Emotional or social withdrawal while still present in the shared live scene is not ``off_focal``.
+
+Use ``covered_change`` with ``off_focal`` when the character materially leaves the shared live scene.
+
+A withdrawal arc may begin gradually across earlier beats, but the moment the character actually leaves the shared scene is itself a new participation transition."""
+
+
+def build_issue251_min_severance_clarification_block() -> str:
+    """Backward-compatible alias for ``build_issue251_canonical_severance_doctrine_block``."""
+    return build_issue251_canonical_severance_doctrine_block()
+
+
+def build_issue251_awareness_doctrine_block() -> str:
+    return f"""Participation exit doctrine ({ISSUE251_AWARENESS_DOCTRINE_MARKER} — do not recite in dialogue):
+
+``off_focal`` requires **all four** in the same beat window:
+(1) you leave the shared scene interaction space (not margin-only or in-room repositioning),
+(2) you no longer participate in the live exchange (no speaking into it, listening as a member, or staying reachable),
+(3) you lose **natural** visual/auditory observability of the shared scene for those who remain (and reciprocal access to the live exchange),
+(4) shared scene awareness continuity ends — those remaining and you no longer track the live exchange together.
+
+**Not an exit:** doorway/threshold talk; hallway while still audible or engaged; remote contact preserving continuity; adjacent room with natural audibility/visibility; emotional withdrawal alone; temporary-task framing alone; physical displacement alone.
+
+**Do not teach** “hallway = ``off_focal``” or “left room = ``off_focal``”. Teach **loss of shared-awareness continuity**.
+
+**Positive (severed exit):** traverse out of the room and shut the door so the live exchange is no longer audible/visible → ``covered_change`` with ``off_focal``.
+**Negative (continuity preserved):** doorway reply while others still hear you; hallway shout-back; phone call that keeps the exchange live; same-beat return; in-room bunk/couch logistics without severance → ``no_covered_change``.
+
+{build_issue251_min_severance_clarification_block()}"""
+
+
+def build_issue251_awareness_semantic_block(char_name: str) -> str:
+    actor_id = str(char_name or "ACTOR_ID").strip() or "ACTOR_ID"
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+Root ``semantic_evaluation`` required every beat.
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change``; omit when ``no_covered_change``
+
+Proposal schema — allowed keys ONLY: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only).
+- ``kind``: ``off_focal`` | ``reentry`` | ``excursion_lifecycle``
+- ``character``: your acting character runtime id (non-empty)
+- ``operation``: ``open`` | ``update`` | ``close`` — required for ``excursion_lifecycle``; forbidden for ``off_focal`` and ``reentry``
+
+{ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER}
+
+Forbidden on proposals: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``, or any other key.
+
+Examples (use your character id instead of ACTOR_ID):
+{{"decision":"covered_change","proposals":[{{"kind":"off_focal","character":"{actor_id}"}}]}}
+{{"decision":"covered_change","proposals":[{{"kind":"reentry","character":"{actor_id}"}}]}}
+{{"decision":"no_covered_change"}}
+
+``covered_change`` only when beats satisfy all four exit conditions above. Margin, doorway tether, or temporary-task framing without shared-awareness severance → ``no_covered_change``.
+
+Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+
+{build_issue251_awareness_doctrine_block()}
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def build_issue251_awareness_clean_opening(char_name: str) -> str:
+    return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
+
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
+
+Do not emit root ``semantic_proposals`` or empty proposal arrays.
+
+{ISSUE251_AWARENESS_CLEAN_MARKER} — margin/deepen/reverse participation ontology suppressed; canonical severance doctrine + shared-awareness four-factor exit teaching active (investigation topology; not production default)."""
+
+
+def apply_issue251_awareness_clean_prompt_overrides(prompt: str, char_name: str) -> str:
+    clean_opening = build_issue251_awareness_clean_opening(char_name)
+    prompt = prompt.replace(
+        build_character_turn_prompt_issue240_v1_opening(char_name),
+        clean_opening,
+        1,
+    )
+    prompt = prompt.replace(
+        build_issue240_v1_next5_opening(char_name),
+        clean_opening,
+        1,
+    )
+    prompt = re.sub(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        build_issue251_awareness_semantic_block(char_name).rstrip(),
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = _strip_participation_ontology_interpretation_blocks(prompt)
+    if ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER in prompt:
+        prompt = re.sub(
+            rf"\n{re.escape(build_issue240_v1_next7_participation_boundary_b_block())}",
+            "",
+            prompt,
+            count=1,
+        )
+    for stray in (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER,
+        "garage wall-phone",
+        "remote garage",
+    ):
+        if stray in prompt:
+            prompt = prompt.replace(stray, "")
+    if ISSUE251_AWARENESS_CLEAN_MARKER not in prompt:
+        needle = f"You are {char_name},"
+        tag = f"\n\n{ISSUE251_AWARENESS_CLEAN_MARKER} — shared-awareness continuity investigation replay."
+        if needle in prompt:
+            prompt = prompt.replace(needle, needle + tag, 1)
+    return prompt
+
+
+def issue251_awareness_contamination_hits(prompt: str) -> list[str]:
+    """Markers that should be absent in issue251 awareness-clean topology."""
+    hits: list[str] = []
+    for marker in PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS:
+        if marker in prompt:
+            hits.append(marker)
+    extra = (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        "garage wall-phone",
+        "margin withdrawal/rejoin",
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        "continue/deepen/reverse",
+        "partially withdrawn",
+    )
+    for marker in extra:
+        if marker in prompt:
+            hits.append(marker)
+    if ISSUE251_AWARENESS_DOCTRINE_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_AWARENESS_DOCTRINE_MARKER}")
+    if ISSUE251_AWARENESS_CLEAN_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_AWARENESS_CLEAN_MARKER}")
+    if ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER}")
+    return hits
+
+
+def apply_baseline_v1_next7_replay_prompt_overrides(prompt: str, char_name: str) -> str:
+    """Frozen-audit replay baseline arm (production v1_next7 semantic teaching)."""
+    prompt = _apply_issue240_v1_next7_prompt_overrides(prompt, char_name)
+    return apply_issue240_v1_next7_proposal_schema_a_prompt_overrides(prompt, char_name)
+
+
+def apply_issue240_v1_next7_issue251_awareness_clean_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """schema_a + awareness doctrine v2 + canonical severance lines; margin ontology suppressed (#251)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=False,
+    )
+    return apply_issue251_awareness_clean_prompt_overrides(prompt, char_name)
+
+
+def build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_issue251_awareness_clean_topology_transform(
+        base, **kwargs
+    )
+
+
 def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
     base = _production_build_character_turn_prompt(**kwargs)
     return apply_issue240_v1_topology_transform(
@@ -1511,6 +1716,8 @@ def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
 
 def resolve_character_turn_prompt_builder() -> Callable[..., str]:
     mode = issue240_prompt_topology_mode()
+    if mode == "v1_next7_issue251_awareness_clean":
+        return build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean
     if mode == "v1_next7_participation_boundary_b_clean":
         return build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean
     if mode == "v1_next7_participation_boundary_b":

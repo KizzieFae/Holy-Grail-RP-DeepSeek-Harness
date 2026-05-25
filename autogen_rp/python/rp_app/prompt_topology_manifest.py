@@ -14,6 +14,9 @@ from prompt_topology_issue240 import (
     ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER,
     ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
     ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER,
+    ISSUE251_AWARENESS_CLEAN_MARKER,
+    ISSUE251_AWARENESS_DOCTRINE_MARKER,
+    ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER,
     ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
     ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
     ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER,
@@ -47,6 +50,9 @@ MARKER_KEYS: tuple[str, ...] = (
     "proposal_schema_teaching_v249_a",
     "participation_boundary_teaching_v249_b",
     "participation_boundary_clean_isolation_v249_b2",
+    "participation_awareness_doctrine_issue251_v1",
+    "participation_awareness_clean_isolation_v251",
+    "participation_severance_doctrine_issue251_canonical_v1",
     "participation_arc",
     "social_focus_capsule",
     "active_focus_capsule",
@@ -146,6 +152,9 @@ def _marker_fingerprint(markers: dict[str, bool]) -> str:
         "proposal_schema_teaching_v249_a": "schema.v249a",
         "participation_boundary_teaching_v249_b": "boundary.v249b",
         "participation_boundary_clean_isolation_v249_b2": "boundary.clean.b2",
+        "participation_awareness_doctrine_issue251_v1": "awareness.doctrine.v251",
+        "participation_awareness_clean_isolation_v251": "awareness.clean.v251",
+        "participation_severance_doctrine_issue251_canonical_v1": "awareness.severance.canonical.v251",
         "participation_arc": "arc",
         "social_focus_capsule": "social.focus",
         "active_focus_capsule": "active.focus",
@@ -199,6 +208,12 @@ def _detect_markers(system_text: str) -> dict[str, bool]:
         "participation_boundary_teaching_v249_b": ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER
         in system_text,
         "participation_boundary_clean_isolation_v249_b2": ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER
+        in system_text,
+        "participation_awareness_doctrine_issue251_v1": ISSUE251_AWARENESS_DOCTRINE_MARKER
+        in system_text,
+        "participation_awareness_clean_isolation_v251": ISSUE251_AWARENESS_CLEAN_MARKER
+        in system_text,
+        "participation_severance_doctrine_issue251_canonical_v1": ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER
         in system_text,
         "participation_arc": ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER in system_text,
         "social_focus_capsule": ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER in system_text,
