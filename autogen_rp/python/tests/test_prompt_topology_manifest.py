@@ -49,7 +49,9 @@ def test_topology_manifest_v1_next7_two_char_profile(monkeypatch: pytest.MonkeyP
     assert manifest["profile_match"] is True
     assert manifest["markers"]["opening_dual_role"] is True
     assert manifest["markers"]["semantic_evaluation_required"] is True
-    assert manifest["markers"]["threshold_calibration_v1_next7"] is True
+    assert manifest["markers"]["proposal_schema_teaching_v249_a"] is True
+    assert manifest["markers"]["threshold_calibration_v1_next7"] is False
+    assert manifest["markers"]["participation_frame"] is False
     assert manifest["markers"]["participation_arc"] is False
     assert manifest["adjacency"]["semantic_self_report_before_private_state"] is True
     assert "semantic.block" in manifest["topology_fingerprint"]
@@ -68,13 +70,12 @@ def test_topology_manifest_v1_next7_three_char_profile(monkeypatch: pytest.Monke
 
     offsets = manifest["ordering"]["offsets"]
     sem = offsets["semantic_self_report"]
-    frame = offsets["participation_frame"]
-    cal = offsets["threshold_calibration"]
+    schema = offsets["proposal_schema"]
     arc = offsets["participation_arc"]
     focus = offsets["active_focus"]
-    assert sem is not None and frame is not None and cal is not None and arc is not None
+    assert sem is not None and schema is not None and arc is not None
     assert focus is not None
-    assert sem < frame < cal < arc < focus
+    assert sem < schema < arc < focus
     assert "bridge.v6" not in manifest["topology_fingerprint"]
 
 
@@ -87,7 +88,8 @@ def test_topology_manifest_default_v1_next7_profile(monkeypatch: pytest.MonkeyPa
     assert manifest["expected_profile_id"] == "v1_next7_2char"
     assert manifest["profile_match"] is True
     assert manifest["markers"]["semantic_evaluation_required"] is True
-    assert manifest["markers"]["threshold_calibration_v1_next7"] is True
+    assert manifest["markers"]["proposal_schema_teaching_v249_a"] is True
+    assert manifest["markers"]["threshold_calibration_v1_next7"] is False
     assert manifest["markers"]["output_rules_production_semantic_proposals"] is False
 
 

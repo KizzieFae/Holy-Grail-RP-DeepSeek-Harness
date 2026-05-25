@@ -34,11 +34,15 @@ from prompt_topology_issue240 import (
     build_character_turn_prompt_issue240_v1_next6,
     build_character_turn_prompt_issue240_v1_next7,
     build_character_turn_prompt_issue240_v1_next7_participation_calibration_a,
+    build_character_turn_prompt_issue240_v1_next7_participation_boundary_b,
+    build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean,
+    build_character_turn_prompt_issue240_v1_next7_proposal_schema_a,
     issue240_prompt_topology_mode,
     resolve_character_turn_prompt_builder,
     should_compress_long_prompt,
     should_emit_social_focus_capsule,
 )
+from prompt_topology_manifest import extract_topology_manifest
 from test_prompt_builders import _minimal_character_prompt_kwargs
 
 
@@ -450,31 +454,36 @@ def test_issue240_env_gate_v1_next7(monkeypatch: pytest.MonkeyPatch) -> None:
     assert resolve_character_turn_prompt_builder() is build_character_turn_prompt_issue240_v1_next7
 
 
-def test_issue240_v1_next7_calibration_in_semantic_cluster(
+def test_issue240_v1_next7_schema_teaching_in_semantic_cluster(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from prompt_topology_issue240 import ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER
+
     monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7")
     prompt = build_character_turn_prompt_for_runtime(**_three_character_prompt_kwargs())
-    assert ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER in prompt
-    assert "does not require a dramatic or physical exit" in prompt
-    assert "If the recent participation arc places you withdrawn" in prompt
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert "allowed keys ONLY" in prompt
+    assert "Forbidden on proposals:" in prompt
+    assert ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER not in prompt
     assert ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER not in prompt
     sem = prompt.index(ISSUE240_SEMANTIC_BLOCK_HEADER)
-    frame = prompt.index(ISSUE240_V1_NEXT3_PARTICIPATION_FRAME_MARKER)
-    cal = prompt.index(ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER)
+    schema = prompt.index(ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER)
     arc = prompt.index(ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER)
     focus = prompt.index(ISSUE240_V1_NEXT2_ACTIVE_FOCUS_HEADER)
     priv = prompt.index("YOUR PRIVATE STATE:")
-    assert sem < frame < cal < arc < focus < priv
+    assert sem < schema < arc < focus < priv
 
 
 def test_issue240_v1_next7_merged_calibration_no_separate_bridge(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    from prompt_topology_issue240 import ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER
+
     monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7")
     prompt = build_character_turn_prompt_for_runtime(**_three_character_prompt_kwargs())
     assert ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER not in prompt
-    assert ISSUE240_V1_NEXT5_SEMANTIC_EVAL_MARKER in prompt
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert "Forbidden on proposals:" in prompt
 
 
 def test_issue240_v1_next7_size_bounded_on_three_character_lane(
@@ -519,4 +528,105 @@ def test_issue240_participation_calibration_a_env_gate(
         **_minimal_character_prompt_kwargs()
     )
     assert ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER not in baseline
+
+
+def test_issue240_proposal_schema_a_env_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_proposal_schema_a",
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_proposal_schema_a"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_proposal_schema_a
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert "allowed keys ONLY" in prompt
+    assert "``character_id``" in prompt
+    assert kwargs["char_name"] in prompt
+    assert "does not require a dramatic or physical exit" not in prompt
+    assert ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER not in prompt
+    baseline = build_character_turn_prompt_issue240_v1_next7(**kwargs)
+    assert baseline == prompt
+
+
+def test_issue240_proposal_schema_a_output_rules_mirror(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7_proposal_schema_a")
+    prompt = build_character_turn_prompt_for_runtime(**_minimal_character_prompt_kwargs())
+    out_rules = prompt[prompt.index("OUTPUT RULES:") :]
+    assert "Forbidden proposal keys" in out_rules
+    assert "``reason``" in out_rules
+    assert "allowed keys only" in out_rules
+
+
+def test_issue240_participation_boundary_b_env_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
+    )
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_participation_boundary_b",
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_participation_boundary_b"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_participation_boundary_b
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER in prompt
+    assert "off_focal`` requires BOTH" in prompt
+    assert ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER not in prompt
+    assert "margin withdrawal/rejoin" not in prompt
+    assert kwargs["char_name"] in prompt
+    assert "allowed keys ONLY" in prompt
+    manifest = extract_topology_manifest(prompt)
+    assert manifest.get("markers", {}).get("proposal_schema_teaching_v249_a")
+    assert manifest.get("markers", {}).get("participation_boundary_teaching_v249_b")
+
+
+def test_issue240_participation_boundary_b_clean_isolation(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
+        PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS,
+        participation_ontology_contamination_hits,
+    )
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_participation_boundary_b_clean",
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_participation_boundary_b_clean"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER in prompt
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER in prompt
+    assert "off_focal`` requires BOTH" in prompt
+    contamination = participation_ontology_contamination_hits(prompt)
+    assert contamination == [], contamination
+    manifest = extract_topology_manifest(prompt)
+    assert manifest.get("markers", {}).get("proposal_schema_teaching_v249_a")
+    assert manifest.get("markers", {}).get("participation_boundary_clean_isolation_v249_b2")
+    assert not manifest.get("markers", {}).get("participation_arc")
+    assert not manifest.get("markers", {}).get("active_focus_capsule")
+    assert "covered participation shift" not in prompt
+    contaminated = build_character_turn_prompt_issue240_v1_next7_participation_boundary_b(
+        **kwargs
+    )
+    assert "covered participation shift" in contaminated
 

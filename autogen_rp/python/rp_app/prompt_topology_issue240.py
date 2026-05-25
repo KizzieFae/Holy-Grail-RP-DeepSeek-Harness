@@ -1,12 +1,15 @@
 """Issue #240 one-pass prompt topology (#230 production harmonization).
 
-Default (env unset): validated ``v1_next7`` topology via ``build_character_turn_prompt_issue240_v1_next7``.
+Default (env unset): validated ``v1_next7`` topology via ``build_character_turn_prompt_issue240_v1_next7``,
+including canonical Issue #249 proposal-schema teaching (``proposal_schema_teaching_v249_a``).
 
 Rollback / legacy: ``RP_ISSUE240_PROMPT_TOPOLOGY=production_legacy`` (also ``legacy``, ``off``)
 → untransformed ``prompt_builders.build_character_turn_prompt`` (pre-harmonization wire).
 
 Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliases as before);
-investigation-only ``v1_next7_participation_calibration_a`` (Phase-A participation calibration — does not replace default).
+``v1_next7_proposal_schema_a`` (replay alias — identical to default ``v1_next7``);
+investigation-only ``v1_next7_participation_calibration_a`` (Phase-A participation calibration — does not replace default);
+investigation-only ``v1_next7_participation_boundary_b`` / ``v1_next7_participation_boundary_b_clean`` (Issue #249 ontology experiments — not default).
 """
 
 from __future__ import annotations
@@ -34,6 +37,27 @@ _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY = frozenset(
         "v1next7participationcalibrationa",
     }
 )
+_V1_NEXT7_PROPOSAL_SCHEMA_A_TRUTHY = frozenset(
+    {
+        "v1_next7_proposal_schema_a",
+        "v1-next7-proposal-schema-a",
+        "v1next7proposalschemaa",
+    }
+)
+_V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_boundary_b",
+        "v1-next7-participation-boundary-b",
+        "v1next7participationboundaryb",
+    }
+)
+_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_boundary_b_clean",
+        "v1-next7-participation-boundary-b-clean",
+        "v1next7participationboundarybclean",
+    }
+)
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 _ISSUE240_LONG_PROMPT_COMPRESS_CHARS = 35_000
 
@@ -48,6 +72,18 @@ ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER = "COVERED-CHANGE THRESHOLD"
 ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER = "Covered-change threshold (calibration"
 ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER = (
     "Participation transition calibration (investigation A"
+)
+ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER = (
+    "Forbidden on proposals: ``reason``, ``description``"
+)
+ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER = (
+    "Participation boundary (investigation B"
+)
+ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER = (
+    "participation_boundary_clean_isolation_v249_b2"
+)
+ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER = (
+    "margin withdrawal/rejoin may be ``covered_change``"
 )
 ISSUE240_DOCTRINE_PHRASE = "not compliance theater"
 _ISSUE240_COMPRESS_NOTE = (
@@ -106,6 +142,12 @@ def issue240_prompt_topology_mode() -> str | None:
         return "v1_next7"
     if raw in _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY:
         return "v1_next7_participation_calibration_a"
+    if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY:
+        return "v1_next7_participation_boundary_b_clean"
+    if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY:
+        return "v1_next7_participation_boundary_b"
+    if raw in _V1_NEXT7_PROPOSAL_SCHEMA_A_TRUTHY:
+        return "v1_next7_proposal_schema_a"
     if raw in _V1_NEXT6_TRUTHY:
         return "v1_next6"
     if raw in _V1_NEXT5_TRUTHY:
@@ -1010,7 +1052,7 @@ def apply_issue240_v1_next7_topology_transform(
     production_prompt: str,
     **kwargs: Any,
 ) -> str:
-    """v1_next6 stack plus semantic-cluster covered-change threshold calibration."""
+    """v1_next6 stack plus canonical #249 proposal-schema teaching (default v1_next7)."""
     char_name = str(kwargs.get("char_name") or "")
     base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
     prompt = apply_issue240_v1_topology_transform(
@@ -1027,6 +1069,7 @@ def apply_issue240_v1_next7_topology_transform(
             active_focus=focus,
         )
     prompt = _apply_issue240_v1_next7_prompt_overrides(prompt, char_name)
+    prompt = apply_issue240_v1_next7_proposal_schema_a_prompt_overrides(prompt, char_name)
     return prompt
 
 
@@ -1164,6 +1207,300 @@ def build_character_turn_prompt_issue240_v1_next7_participation_calibration_a(
     )
 
 
+_V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES = """OUTPUT RULES:
+- Only output a single JSON object: canonical character move v2 (integer ``move_schema_version`` 2, non-empty ``beats[]``, ``motivation``, optional ``scene_state_updates``, required ``semantic_evaluation``).
+- Do not emit root-level ``action``, ``dialogue``, ``audibility``, or ``audience``. Put visible action and speech only inside ``beats[]`` as ``type: action`` or ``type: speech`` objects, in true beat order.
+- Root ``semantic_evaluation`` (required): ``decision`` is ``covered_change`` or ``no_covered_change``. When ``covered_change``, ``proposals`` is a non-empty array of objects with allowed keys only: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only). Each proposal needs ``kind`` and non-empty ``character``. Forbidden proposal keys: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``. When ``no_covered_change``, omit ``proposals``. Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+- Each ``type: action`` beat has non-empty ``action`` (visible self-only, third person). Each ``type: speech`` beat has non-empty ``dialogue``. On speech beats, optional ``audibility`` is one of ``public``, ``directed``, ``private``; for ``directed`` or ``private``, include non-empty ``audience``.
+- Keep action beats concrete and observable; let speech sound natural and in-character.
+- Registry settlements (``scene_state_updates.*``): follow system OUTPUT FORMAT; emit only when this beat explicitly settles a bounded scene fact supported by the beat."""
+
+
+def build_issue240_v1_next7_proposal_schema_a_semantic_block(char_name: str) -> str:
+    actor_id = str(char_name or "ACTOR_ID").strip() or "ACTOR_ID"
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+Root ``semantic_evaluation`` required every beat.
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change``; omit when ``no_covered_change``
+
+Proposal schema — allowed keys ONLY: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only).
+- ``kind``: ``off_focal`` | ``reentry`` | ``excursion_lifecycle``
+- ``character``: your acting character runtime id (non-empty)
+- ``operation``: ``open`` | ``update`` | ``close`` — required for ``excursion_lifecycle``; forbidden for ``off_focal`` and ``reentry``
+
+{ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER}
+
+Forbidden on proposals: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``, or any other key.
+
+Examples (use your character id instead of ACTOR_ID):
+{{"decision":"covered_change","proposals":[{{"kind":"off_focal","character":"{actor_id}"}}]}}
+{{"decision":"covered_change","proposals":[{{"kind":"reentry","character":"{actor_id}"}}]}}
+{{"decision":"no_covered_change"}}
+
+``covered_change`` only when beats materially shift focal participation. Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+
+Threshold: margin withdrawal/rejoin may be ``covered_change`` when beats support it; honest ``no_covered_change`` when participation did not materially change.
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def apply_issue240_v1_next7_proposal_schema_a_prompt_overrides(
+    prompt: str, char_name: str
+) -> str:
+    prompt = re.sub(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        build_issue240_v1_next7_proposal_schema_a_semantic_block(char_name).rstrip(),
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    return prompt
+
+
+def apply_issue240_v1_next7_proposal_schema_a_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """Alias for default v1_next7 (canonical #249 schema teaching). Kept for replay env compatibility."""
+    return apply_issue240_v1_next7_topology_transform(production_prompt, **kwargs)
+
+
+def build_character_turn_prompt_issue240_v1_next7_proposal_schema_a(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_proposal_schema_a_topology_transform(base, **kwargs)
+
+
+def build_issue240_v1_next7_participation_boundary_b_block() -> str:
+    return """Participation boundary (investigation B — do not recite in dialogue):
+
+``off_focal`` requires BOTH:
+(1) you leave the active interaction space, AND
+(2) you lose natural participation with the live exchange — you no longer follow, speak into, or stay reachable as a member of it.
+
+Movement alone is not enough. Doorway talk, open-door replies, edge-of-room speech, and brief practical hops that stay tethered → usually ``no_covered_change``.
+
+When beats show you leave the exchange AND stop participating naturally (hall with door shut; garage or other task with the room exchange left behind) → ``covered_change`` with ``off_focal``."""
+
+
+def build_issue240_v1_next7_participation_boundary_b_semantic_block(char_name: str) -> str:
+    actor_id = str(char_name or "ACTOR_ID").strip() or "ACTOR_ID"
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+Root ``semantic_evaluation`` required every beat.
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change``; omit when ``no_covered_change``
+
+Proposal schema — allowed keys ONLY: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only).
+- ``kind``: ``off_focal`` | ``reentry`` | ``excursion_lifecycle``
+- ``character``: your acting character runtime id (non-empty)
+- ``operation``: ``open`` | ``update`` | ``close`` — required for ``excursion_lifecycle``; forbidden for ``off_focal`` and ``reentry``
+
+{ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER}
+
+Forbidden on proposals: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``, or any other key.
+
+Examples (use your character id instead of ACTOR_ID):
+{{"decision":"covered_change","proposals":[{{"kind":"off_focal","character":"{actor_id}"}}]}}
+{{"decision":"covered_change","proposals":[{{"kind":"reentry","character":"{actor_id}"}}]}}
+{{"decision":"no_covered_change"}}
+
+Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+
+{build_issue240_v1_next7_participation_boundary_b_block()}
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def apply_issue240_v1_next7_participation_boundary_b_prompt_overrides(
+    prompt: str, char_name: str
+) -> str:
+    prompt = re.sub(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        build_issue240_v1_next7_participation_boundary_b_semantic_block(char_name).rstrip(),
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    return prompt
+
+
+def apply_issue240_v1_next7_participation_boundary_b_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """v1_next7 + schema_a + Issue #249 Phase-B participation-boundary teaching (investigation only)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=True,
+    )
+    if should_emit_social_focus_capsule(**kwargs):
+        arc = build_issue240_v1_next4_participation_arc(**kwargs)
+        focus = build_issue240_v1_next2_active_focus_capsule(**kwargs)
+        prompt = _insert_issue240_post_semantic_capsules(
+            prompt,
+            participation_arc=arc,
+            active_focus=focus,
+        )
+    prompt = _apply_issue240_v1_next7_prompt_overrides(prompt, char_name)
+    prompt = apply_issue240_v1_next7_participation_boundary_b_prompt_overrides(
+        prompt, char_name
+    )
+    return prompt
+
+
+def build_character_turn_prompt_issue240_v1_next7_participation_boundary_b(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_participation_boundary_b_topology_transform(
+        base, **kwargs
+    )
+
+
+PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS: tuple[str, ...] = (
+    ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER,
+    ISSUE240_V1_NEXT2_ACTIVE_FOCUS_HEADER,
+    ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER,
+    ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER,
+    ISSUE240_V1_NEXT3_PARTICIPATION_FRAME_MARKER,
+    ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+    ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+    "partially withdrawn",
+    "pulled back from the focal exchange",
+    "pulled back from the live exchange",
+    "In the live exchange now:",
+    "In the room with the live exchange",
+    "outside the focal exchange recently",
+    "focal participation shift",
+    "materially change focal participation",
+    "margin withdrawal/rejoin",
+    "Stepping away from the live exchange",
+)
+
+
+def _strip_participation_ontology_interpretation_blocks(prompt: str) -> str:
+    """Remove ontology-bearing participation capsules/heuristics (Phase B.2 isolation)."""
+    out = prompt
+    strip_headers = (
+        ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER,
+        ISSUE240_V1_NEXT2_ACTIVE_FOCUS_HEADER,
+        ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER,
+        ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER,
+    )
+    next_anchor = (
+        r"YOUR PRIVATE STATE:|CURRENT SCENE STATE:|CAST ROLE MAP:|"
+        r"RECENT STRUCTURED ACTIONS|FOR THIS BEAT — SEMANTIC|TRIGGER FOR THIS BEAT:"
+    )
+    for header in strip_headers:
+        pattern = rf"\n{re.escape(header)}.*?(?=\n\n(?:{next_anchor}))"
+        out = re.sub(pattern, "\n", out, count=1, flags=re.DOTALL)
+    out = out.replace(build_issue240_v1_next3_participation_decision_frame(), "")
+    out = out.replace(build_issue240_v1_next7_threshold_calibration(), "")
+    out = re.sub(
+        r"Honest ``no_covered_change`` is valid when your authored beats contain no covered participation shift\.\n\n",
+        "",
+        out,
+        count=1,
+    )
+    return out
+
+
+def build_issue240_v1_next7_participation_boundary_b_clean_opening(char_name: str) -> str:
+    return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
+
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
+
+Do not emit root ``semantic_proposals`` or empty proposal arrays.
+
+{ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER} — ontology interpretation capsules suppressed for this investigation replay."""
+
+
+def apply_issue240_v1_next7_participation_boundary_b_clean_prompt_overrides(
+    prompt: str, char_name: str
+) -> str:
+    clean_opening = build_issue240_v1_next7_participation_boundary_b_clean_opening(char_name)
+    prompt = prompt.replace(
+        build_character_turn_prompt_issue240_v1_opening(char_name),
+        clean_opening,
+        1,
+    )
+    prompt = prompt.replace(
+        build_issue240_v1_next5_opening(char_name),
+        clean_opening,
+        1,
+    )
+    prompt = apply_issue240_v1_next7_participation_boundary_b_prompt_overrides(
+        prompt, char_name
+    )
+    prompt = _strip_participation_ontology_interpretation_blocks(prompt)
+    if ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER not in prompt:
+        needle = f"You are {char_name},"
+        tag = (
+            f"\n\n{ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER} — "
+            "ontology interpretation capsules suppressed for this investigation replay."
+        )
+        if needle in prompt:
+            prompt = prompt.replace(needle, needle + tag, 1)
+    return prompt
+
+
+def participation_ontology_contamination_hits(prompt: str) -> list[str]:
+    """Return contamination marker substrings still present (empty = clean isolation)."""
+    hits: list[str] = []
+    for marker in PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS:
+        if marker in prompt:
+            hits.append(marker)
+    if ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER}")
+    return hits
+
+
+def apply_issue240_v1_next7_participation_boundary_b_clean_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """schema_a + boundary block; participation interpretation capsules suppressed (#249 B.2)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=False,
+    )
+    return apply_issue240_v1_next7_participation_boundary_b_clean_prompt_overrides(
+        prompt, char_name
+    )
+
+
+def build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_participation_boundary_b_clean_topology_transform(
+        base, **kwargs
+    )
+
+
 def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
     base = _production_build_character_turn_prompt(**kwargs)
     return apply_issue240_v1_topology_transform(
@@ -1174,6 +1511,12 @@ def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
 
 def resolve_character_turn_prompt_builder() -> Callable[..., str]:
     mode = issue240_prompt_topology_mode()
+    if mode == "v1_next7_participation_boundary_b_clean":
+        return build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean
+    if mode == "v1_next7_participation_boundary_b":
+        return build_character_turn_prompt_issue240_v1_next7_participation_boundary_b
+    if mode == "v1_next7_proposal_schema_a":
+        return build_character_turn_prompt_issue240_v1_next7_proposal_schema_a
     if mode == "v1_next7_participation_calibration_a":
         return build_character_turn_prompt_issue240_v1_next7_participation_calibration_a
     if mode == "v1_next7":

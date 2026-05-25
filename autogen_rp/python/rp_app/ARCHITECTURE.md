@@ -393,6 +393,26 @@ A **read-only** **SETTLED SCENE FACTS** block is injected into Director and char
 
 **Character prompts only — EVIDENCE & AUTHORITY DISCIPLINE:** a **static** instruction block in `prompt_builders.py` (after binding constraints, before **OUTPUT RULES**) discourages stating **unsupported** concrete specifics as clinical / institutional / “noted” fact while still allowing strong pressure and contestable bluffing. Prompt-only; no schema or validator changes.
 
+#### Issue #240 / #249 character prompt topology (default `v1_next7`)
+
+**Default (env unset):** `resolve_character_turn_prompt_builder()` → `build_character_turn_prompt_issue240_v1_next7` in `prompt_topology_issue240.py`. Rollback: `RP_ISSUE240_PROMPT_TOPOLOGY=production_legacy` (also `legacy`, `off`).
+
+**Canonical #249 proposal-schema teaching (2026-05):** Default `v1_next7` includes marker **`proposal_schema_teaching_v249_a`** — concise explicit teaching for root **`semantic_evaluation.proposals`**:
+
+| Allowed proposal keys | `kind`, `character`, optional `operation` (`excursion_lifecycle` only) |
+| Forbidden proposal keys | `reason`, `description`, `rationale`, `strategy`, `subject`, `character_id`, any other key |
+| Required when emitting | Non-empty **`character`** on every proposal object |
+
+Teaching appears in the **semantic self-report cluster** and is mirrored in slim **OUTPUT RULES** (`_V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES`). Compact JSON examples use the acting character runtime id. **Validator strictness unchanged** — ingress still rejects forbidden keys; teaching aligns model output with existing contract.
+
+**Replay alias:** `RP_ISSUE240_PROMPT_TOPOLOGY=v1_next7_proposal_schema_a` is identical to default `v1_next7` (kept for investigation reruns).
+
+**Explicitly not in default:** Phase B/B.2 participation-boundary ontology experiments (`v1_next7_participation_boundary_b`, `v1_next7_participation_boundary_b_clean`) — investigation-only; see **#251** (genuine missed emission) and **#250** (retry flattening).
+
+**Observability:** `prompt_topology_manifest.extract_topology_manifest()` infers `v1_next7` from `proposal_schema_teaching_v249_a` + semantic-evaluation markers; profile **`v1_next7_2char` / `v1_next7_3char_plus`**. Tests: `tests/test_issue_240_prompt_topology.py`, `tests/test_prompt_topology_manifest.py`.
+
+**Evidence:** `autogen_rp/python/validation_runs/issue249/` (Phase A experiment + generalization matrix). **#230 lineage:** harmonized `semantic_evaluation` wire; schema teaching does not alter #224 doctrine or proposal-kind legality.
+
 ### 4. Narrator Rendering
 
 **v2 (GitHub #139):** The narrator is **presentation only**; it does **not** choose visibility. ``execute_character_turn`` supplies a pre-selected structured view:

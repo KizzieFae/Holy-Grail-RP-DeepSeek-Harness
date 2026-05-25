@@ -16,11 +16,35 @@ _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY = frozenset(
         "v1next7participationcalibrationa",
     }
 )
+_V1_NEXT7_PROPOSAL_SCHEMA_A_TRUTHY = frozenset(
+    {
+        "v1_next7_proposal_schema_a",
+        "v1-next7-proposal-schema-a",
+        "v1next7proposalschemaa",
+    }
+)
+_V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_boundary_b",
+        "v1-next7-participation-boundary-b",
+        "v1next7participationboundaryb",
+    }
+)
+_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY = frozenset(
+    {
+        "v1_next7_participation_boundary_b_clean",
+        "v1-next7-participation-boundary-b-clean",
+        "v1next7participationboundarybclean",
+    }
+)
 _SEMANTIC_EVAL_TOPOLOGIES = (
     _V1_NEXT5_TRUTHY
     | _V1_NEXT6_TRUTHY
     | _V1_NEXT7_TRUTHY
     | _V1_NEXT7_PARTICIPATION_CALIBRATION_A_TRUTHY
+    | _V1_NEXT7_PROPOSAL_SCHEMA_A_TRUTHY
+    | _V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY
+    | _V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY
 )
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 

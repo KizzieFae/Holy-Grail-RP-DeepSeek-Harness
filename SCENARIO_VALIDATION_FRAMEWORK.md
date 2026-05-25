@@ -274,6 +274,8 @@ Use **deep simulation** (default — do **not** pass `--no-deep-simulation-turns
 
 Output: **`validation_runs/emission_map_v1.jsonl`** (and optional CSV). Rubric classes (`C1`–`C8`) and flags (`F_suspect_miss`, etc.) are **investigation labels** — not runtime gates. Relationship: **#225** validation evidence, **#240** topology observation, **#243** optional follow-on corpus freeze for suspect rows. Phase B (4-char dorm) is deferred.
 
+**Proposal-schema teaching validation (Issue #249, canonical in default `v1_next7`):** Rerun harnesses under `autogen_rp/python/validation_runs/issue249/` validate concise explicit **`semantic_evaluation.proposals`** teaching (allowed keys `kind` / `character` / optional `operation`; forbidden `reason`, `description`, `rationale`, `strategy`, `subject`, `character_id`). Default unset `RP_ISSUE240_PROMPT_TOPOLOGY` uses canonical teaching; `v1_next7_proposal_schema_a` is a replay alias. **Out of scope here:** Phase B/B.2 ontology experiments, retry flattening (**#250**), genuine missed-emission (**#251**). Key artifacts: `i249_proposal_schema_experiment_results.json`, `i249_proposal_schema_generalization_results.json`. Implementation: `prompt_topology_issue240.py`, `prompt_topology_manifest.py`.
+
 #### PASS criteria
 
 **PASS** requires **both**:

@@ -12,6 +12,9 @@ from prompt_topology_issue240 import (
     ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER,
     ISSUE240_V1_NEXT5_SEMANTIC_EVAL_MARKER,
     ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER,
+    ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+    ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER,
+    ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
     ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
     ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER,
     ISSUE240_V1_OPENING_MARKER,
@@ -41,6 +44,9 @@ MARKER_KEYS: tuple[str, ...] = (
     "semantic_evaluation_examples",
     "threshold_bridge_v1_next6",
     "threshold_calibration_v1_next7",
+    "proposal_schema_teaching_v249_a",
+    "participation_boundary_teaching_v249_b",
+    "participation_boundary_clean_isolation_v249_b2",
     "participation_arc",
     "social_focus_capsule",
     "active_focus_capsule",
@@ -61,6 +67,7 @@ ORDERING_SECTIONS: tuple[str, ...] = (
     "trigger",
     "semantic_self_report",
     "participation_frame",
+    "proposal_schema",
     "threshold_calibration",
     "participation_arc",
     "threshold_bridge",
@@ -108,6 +115,10 @@ def _infer_present_character_count(system_text: str) -> int | None:
 
 
 def _infer_topology(markers: dict[str, bool]) -> str:
+    if markers.get("proposal_schema_teaching_v249_a") and markers.get(
+        "semantic_evaluation_required"
+    ):
+        return "v1_next7"
     if markers.get("threshold_calibration_v1_next7") and markers.get(
         "semantic_evaluation_required"
     ):
@@ -132,6 +143,9 @@ def _marker_fingerprint(markers: dict[str, bool]) -> str:
         "semantic_evaluation_examples": "eval.examples",
         "threshold_bridge_v1_next6": "bridge.v6",
         "threshold_calibration_v1_next7": "cal.v7",
+        "proposal_schema_teaching_v249_a": "schema.v249a",
+        "participation_boundary_teaching_v249_b": "boundary.v249b",
+        "participation_boundary_clean_isolation_v249_b2": "boundary.clean.b2",
         "participation_arc": "arc",
         "social_focus_capsule": "social.focus",
         "active_focus_capsule": "active.focus",
@@ -180,6 +194,12 @@ def _detect_markers(system_text: str) -> dict[str, bool]:
         "threshold_bridge_v1_next6": ISSUE240_V1_NEXT6_THRESHOLD_BRIDGE_HEADER in system_text,
         "threshold_calibration_v1_next7": ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER
         in system_text,
+        "proposal_schema_teaching_v249_a": ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER
+        in system_text,
+        "participation_boundary_teaching_v249_b": ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER
+        in system_text,
+        "participation_boundary_clean_isolation_v249_b2": ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_MARKER
+        in system_text,
         "participation_arc": ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER in system_text,
         "social_focus_capsule": ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER in system_text,
         "active_focus_capsule": ISSUE240_V1_NEXT2_ACTIVE_FOCUS_HEADER in system_text,
@@ -216,6 +236,11 @@ def _ordering_offsets(system_text: str, markers: dict[str, bool]) -> dict[str, i
             system_text, ISSUE240_V1_NEXT3_PARTICIPATION_FRAME_MARKER
         )
         if markers["participation_frame"]
+        else None,
+        "proposal_schema": _find_offset(
+            system_text, ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER
+        )
+        if markers["proposal_schema_teaching_v249_a"]
         else None,
         "threshold_calibration": _find_offset(
             system_text, ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER
@@ -288,6 +313,7 @@ def _adjacency(
     semantic_cluster_end = sem
     for key in (
         "participation_frame",
+        "proposal_schema",
         "threshold_calibration",
         "participation_arc",
         "threshold_bridge",
@@ -357,9 +383,8 @@ def _profile_requirements(profile_id: str) -> tuple[frozenset[str], list[tuple[s
         {
             "opening_dual_role",
             "semantic_self_report",
-            "participation_frame",
             "semantic_evaluation_required",
-            "threshold_calibration_v1_next7",
+            "proposal_schema_teaching_v249_a",
             "priorities_compressed_5_7",
             "output_rules_slim",
         }
@@ -372,15 +397,13 @@ def _profile_requirements(profile_id: str) -> tuple[frozenset[str], list[tuple[s
     )
     ordering_2char = [
         ("trigger", "semantic_self_report"),
-        ("semantic_self_report", "participation_frame"),
-        ("participation_frame", "threshold_calibration"),
-        ("threshold_calibration", "private_state"),
+        ("semantic_self_report", "proposal_schema"),
+        ("proposal_schema", "private_state"),
         ("private_state", "output_rules"),
     ]
     ordering_3char = [
-        ("semantic_self_report", "participation_frame"),
-        ("participation_frame", "threshold_calibration"),
-        ("threshold_calibration", "participation_arc"),
+        ("semantic_self_report", "proposal_schema"),
+        ("proposal_schema", "participation_arc"),
         ("participation_arc", "active_focus"),
         ("active_focus", "private_state"),
     ]
