@@ -4,7 +4,7 @@
 
 Quick map for **where to change what**. Architecture rules: [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md), [autogen_rp/docs/architecture.md](./autogen_rp/docs/architecture.md), and [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Authored files (Character / Template / Bootstrap / Opener):** [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md). **Canonical compiled knowledge (retrieval envelope):** [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) — offline compile (`schema_version` 2 default, 3 additive canonical fields); **runtime** still reads only legacy projection fields on chunks; continuity authoritative.
 
-**Constraints (recurring):** Keep `app.py` thin. Do not fix continuity/orchestration bugs by bloating Director prompts. Preserve `must_remain` as **structural presence**, not “must speak every turn.”
+**Constraints (recurring):** Keep `app.py` thin. Do not fix continuity/orchestration bugs by bloating Director prompts. Preserve `must_remain` as **structural presence**, not “must speak every turn.” Production scene templates use **`cohesion_policy: anchor_only`** only (#245): anchor effective **`must_remain`** (interim until #247); non-anchor default **`flexible`**; non-anchor **`must_remain`** overrides require **`cohesion_rationale`**.
 
 For **diagnosis order** and layer rules, see [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md).
 
@@ -196,7 +196,8 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 |--------|----------------|----------------|-------|
 | `scene_lifecycle_start.py` | Start scene, team setup | `scene_template`, `scene_opener` | |
 | `scene_lifecycle_actions.py` | End scene, skip, close, recreate team | `session_lifecycle`, continuity | |
-| `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80) | `data/scene_templates` | `list_templates` skips `*_initial_message` / `*_progression` (see **Template-associated support files** in `AUTHORED_SOURCE_CONTRACT.md` §1) |
+| `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80), **`cohesion_policy`** (#245) | `data/scene_templates`, `scene_template_cohesion` | `list_templates` skips `*_initial_message` / `*_progression` (see **Template-associated support files** in `AUTHORED_SOURCE_CONTRACT.md` §1) |
+| `scene_template_cohesion.py` | **#245** `anchor_only` effective `presence_constraint` resolver + load validation | `scene_template.py`, `app_state_scene.py` | Missing `cohesion_policy` fails load; non-anchor `must_remain` requires `cohesion_rationale` |
 | `scene_opener.py` | Opening text / initial message resolution | `autogen_characters` | |
 | `scene_exit_detection.py` | Hard departure **heuristic** signals (observational / classifier) | text / moves | **Not** covered-semantic commit authority; commit path removed **#235** |
 | `session_lifecycle_save.py` | Persist session + continuity + audit ids | `SessionManager` | |
