@@ -91,17 +91,19 @@ This keeps dialogue ephemeral while preserving the story state that actually mat
 
 ## Scene Templates V1
 
-Scene templates are a minimal first-pass scene setup asset for multi-character stability.
+Scene templates define multi-character scene setup and **anchor-only cohesion policy** (Issue #245).
 
 Templates live in:
 
 `python/data/scene_templates/*.json`
 
-Current V1 schema:
+Current schema (required fields in bold):
 
 ```json
 {
   "template_id": "household_entry_evaluation",
+  "cohesion_policy": "anchor_only",
+  "anchor_role_name": "applicant",
   "premise": "A newcomer is evaluated while the host and guard remain present.",
   "opening_text": "The household receives a newcomer inside a controlled interior space...",
   "role_slots": [
@@ -109,19 +111,34 @@ Current V1 schema:
       "role_name": "host",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Household evaluation requires the host to remain in the shared focal evaluation space.",
       "authority": "high"
+    },
+    {
+      "role_name": "guard",
+      "required": false,
+      "authority": "medium"
     }
   ]
 }
 ```
 
+**`cohesion_policy`** (required): must be **`anchor_only`**. Missing or invalid values fail template load.
+
+**Effective `presence_constraint`** under `anchor_only`:
+
+- **Anchor** (`anchor_role_name`): always **`must_remain`** (interim until Issue #247 anchor relocation validates).
+- **Non-anchor** (default): **`flexible`** when `presence_constraint` is omitted.
+- **Non-anchor override**: authored **`must_remain`** requires non-empty **`cohesion_rationale`** describing scene-cohesion function (not merely authority or requiredness).
+
 `opening_text` is an **optional** on-disk field (legacy / compatibility). For **Start Scene** in **template-asset** mode, the Streamlit app resolves opening prose from **Opener** JSON assets and the sidebar (explicit selection when multiple openers exist for the **template**—**GitHub #101**); **`character_asset`** is for **authored** scenario/bootstrap, **headless** / CLI, and **legacy** paths, not the Streamlit opening UI (**#108**). It does not inject template card `opening_text` as the primary source for that path. See **[AUTHORED_SOURCE_CONTRACT.md](../../../AUTHORED_SOURCE_CONTRACT.md)**.
 
-Role-slot fields are intentionally minimal in V1:
+Role-slot fields:
 
 - `role_name`
 - `required`
-- `presence_constraint`
+- optional authored `presence_constraint` (`must_remain` | `flexible`)
+- optional `cohesion_rationale` (required for non-anchor `must_remain`)
 - optional informational `authority`
 
 **`anchor_role_name`** (required in template JSON): exactly one `role_slots[].role_name` designated as the focal anchor for setup-seam resolution (Issue #80); must match a slot string on disk.

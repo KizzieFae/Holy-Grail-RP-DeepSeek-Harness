@@ -1,5 +1,6 @@
 {
   "template_id": "hannah_estate_dependency_confrontation",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "adult_child",
   "premise": "Inside a locked private study on the estate, two adults: a controlling mother and her adult child. She deploys surveillance-sourced material presented as evidence—photographs, dossier-style personal detail, and a concealed romantic or infatuation-based attachment to a third party—to exert proprietary authority and coercive emotional pressure and to tighten the same mother–adult child control and dependency-tinged dynamic; the surface conflict is study-bound, evidence-forward inquiry and cross-examination rather than care or comfort as the dominant register. All participants in this scene are adults.",
   "role_slots": [
@@ -7,6 +8,7 @@
       "role_name": "controlling_mother",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Study-bound confrontation requires the mother to remain in the shared focal space.",
       "authority": "high"
     },
     {

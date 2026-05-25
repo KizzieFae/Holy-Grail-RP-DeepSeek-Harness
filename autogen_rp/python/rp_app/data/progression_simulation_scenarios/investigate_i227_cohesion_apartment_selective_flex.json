@@ -1,8 +1,8 @@
 {
   "id": "investigate_i227_cohesion_apartment_selective_flex",
   "title": "Issue #227 — apartment slow-burn anchor-selective flex (protector flexible)",
-  "intent": "Broad validation slate D: celina_apartment_recovery_watch_anchor_selective_flex. Same probe schedule as baseline.",
-  "scene_template_id": "celina_apartment_recovery_watch_anchor_selective_flex",
+  "intent": "Broad validation slate D: celina_apartment_recovery_watch (anchor_only migrated). Same probe schedule as baseline.",
+  "scene_template_id": "celina_apartment_recovery_watch",
   "scene_template_role_assignments": {
     "celina": "protector",
     "kizzie": "recovering_demi_human"

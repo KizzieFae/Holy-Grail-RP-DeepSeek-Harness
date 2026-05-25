@@ -1,5 +1,6 @@
 {
   "template_id": "arkham_asylum_shower_predation",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "new_arrival",
   "premise": "A mandatory shower block in Arkham's female ward leaves a new arrival exposed in a known blind-spot environment while predatory inmates test boundaries under the cover of routine.",
   "role_slots": [
@@ -13,18 +14,19 @@
       "role_name": "predator_primary",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Shower predation beat requires the primary predator to remain in the shared blind-spot space.",
       "authority": "low"
     },
     {
       "role_name": "predator_secondary",
       "required": false,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Secondary predator pressure depends on remaining in the shared shower focal space.",
       "authority": "low"
     },
     {
       "role_name": "observer_or_staff_interrupt",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "medium"
     }
   ]

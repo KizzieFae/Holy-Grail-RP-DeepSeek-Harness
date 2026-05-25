@@ -1,8 +1,8 @@
 {
   "id": "investigate_i227_cohesion_household_selective_flex",
   "title": "Issue #227 — household ensemble anchor-selective flex (guard flexible)",
-  "intent": "Broad validation slate A/B: ayame_household_entry_evaluation_anchor_selective_flex. Same probe schedule as baseline.",
-  "scene_template_id": "ayame_household_entry_evaluation_anchor_selective_flex",
+  "intent": "Broad validation slate A/B: ayame_household_entry_evaluation (anchor_only migrated). Same probe schedule as baseline.",
+  "scene_template_id": "ayame_household_entry_evaluation",
   "scene_template_role_assignments": {
     "ayame": "host",
     "celina": "applicant",

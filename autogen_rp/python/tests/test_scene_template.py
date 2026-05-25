@@ -20,6 +20,7 @@ def test_scene_template_requires_anchor_role_name(tmp_path: Path) -> None:
         json.dumps(
             {
                 "template_id": "t",
+                "cohesion_policy": "anchor_only",
                 "premise": "p",
                 "opening_text": "o",
                 "role_slots": [
@@ -44,6 +45,7 @@ def test_scene_template_manager_loads_minimal_template(tmp_path: Path) -> None:
         json.dumps(
             {
                 "template_id": "mansion_interview",
+                "cohesion_policy": "anchor_only",
                 "premise": "A newcomer is evaluated inside a controlled household.",
                 "opening_text": "The interview begins under careful observation.",
                 "anchor_role_name": "host",
@@ -56,7 +58,6 @@ def test_scene_template_manager_loads_minimal_template(tmp_path: Path) -> None:
                     {
                         "role_name": "guard",
                         "required": False,
-                        "presence_constraint": "must_remain",
                         "authority": "medium",
                     },
                 ],
@@ -84,6 +85,7 @@ def test_validate_role_assignments_requires_explicit_role_for_each_selected_char
         json.dumps(
             {
                 "template_id": "parlor_scene",
+                "cohesion_policy": "anchor_only",
                 "premise": "A tense meeting in the parlor.",
                 "opening_text": "Everyone gathers in the parlor.",
                 "anchor_role_name": "host",
@@ -96,7 +98,6 @@ def test_validate_role_assignments_requires_explicit_role_for_each_selected_char
                     {
                         "role_name": "guest",
                         "required": True,
-                        "presence_constraint": "must_remain",
                     },
                 ],
             },
@@ -126,6 +127,7 @@ def test_validate_role_assignments_accepts_valid_explicit_assignments(
         json.dumps(
             {
                 "template_id": "parlor_scene",
+                "cohesion_policy": "anchor_only",
                 "premise": "A tense meeting in the parlor.",
                 "opening_text": "Everyone gathers in the parlor.",
                 "anchor_role_name": "host",
@@ -138,7 +140,6 @@ def test_validate_role_assignments_accepts_valid_explicit_assignments(
                     {
                         "role_name": "guest",
                         "required": True,
-                        "presence_constraint": "must_remain",
                     },
                 ],
             },
@@ -166,6 +167,7 @@ def test_scene_template_manager_ignores_template_owned_initial_message_files(
         json.dumps(
             {
                 "template_id": "arkham_asylum_cell_intake",
+                "cohesion_policy": "anchor_only",
                 "premise": "A new arrival is locked into a cell.",
                 "opening_text": "The cell door closes.",
                 "anchor_role_name": "new_arrival",
@@ -209,6 +211,7 @@ def test_scene_template_manager_ignores_template_owned_progression_support_files
         json.dumps(
             {
                 "template_id": "arkham_asylum_cell_intake",
+                "cohesion_policy": "anchor_only",
                 "premise": "A new arrival is locked into a cell.",
                 "opening_text": "The cell door closes.",
                 "anchor_role_name": "new_arrival",
@@ -268,12 +271,17 @@ def test_mess_hall_arena_uses_high_authority_staff_response_slot() -> None:
 
     assert witness_role_slot is not None
     assert witness_role_slot.required is False
-    assert witness_role_slot.presence_constraint == "flexible"
     assert witness_role_slot.authority == "medium"
     assert role_slot is not None
     assert role_slot.required is False
-    assert role_slot.presence_constraint == "flexible"
     assert role_slot.authority == "high"
+    from scene_template_cohesion import resolve_effective_presence_constraint
+
+    assert (
+        resolve_effective_presence_constraint(template, witness_role_slot) == "flexible"
+    )
+    assert resolve_effective_presence_constraint(template, role_slot) == "must_remain"
+    assert role_slot.cohesion_rationale
 
 
 def test_celina_recovery_template_stays_grounded_and_slow_recovery() -> None:

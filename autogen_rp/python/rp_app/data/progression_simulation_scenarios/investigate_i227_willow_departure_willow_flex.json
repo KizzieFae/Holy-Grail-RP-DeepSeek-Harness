@@ -1,8 +1,8 @@
 {
   "id": "investigate_i227_willow_departure_willow_flex",
   "title": "Issue #227 — Willow departure (anchor + Marlene must_remain; Willow flexible)",
-  "intent": "Experimental arm: marlene_willow_dorm_omega_misassignment_anchor_willow_flexible template. Same probe schedule as baseline. Extract via scripts/extract_willow_departure_experiment.py.",
-  "scene_template_id": "marlene_willow_dorm_omega_misassignment_anchor_willow_flexible",
+  "intent": "Issue #245 migrated template: marlene_willow_dorm_omega_misassignment with anchor_only cohesion (Willow flexible by default). Same probe schedule as baseline.",
+  "scene_template_id": "marlene_willow_dorm_omega_misassignment",
   "scene_template_role_assignments": {
     "kizzie": "misassigned_omega_student",
     "marlene": "alpha_roommate_marlene",

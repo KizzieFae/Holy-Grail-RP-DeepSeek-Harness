@@ -1,5 +1,6 @@
 {
   "template_id": "marlene_willow_dorm_omega_misassignment",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "misassigned_omega_student",
   "premise": "A housing clerical error places an adult omega student into a cramped alpha-controlled dorm room already shared by two alpha roommates. In a modern but messy alpha/omega/beta campus system, suppressants, policy, and accommodation rules exist, yet scent, instinct, territory, and heat-adjacent pressure still shape the emotional reality of the room.",
   "sleeping_surface_slots": [
@@ -14,13 +15,11 @@
     {
       "role_name": "alpha_roommate_marlene",
       "required": true,
-      "presence_constraint": "must_remain",
       "authority": "high"
     },
     {
       "role_name": "alpha_roommate_willow",
       "required": true,
-      "presence_constraint": "must_remain",
       "authority": "high"
     },
     {

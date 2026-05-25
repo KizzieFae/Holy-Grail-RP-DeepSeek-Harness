@@ -1,5 +1,6 @@
 {
   "template_id": "arkham_asylum_cell_intake",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "new_arrival",
   "premise": "A sealed women's ward isolation cell (two cots, shared head, a reinforced door, and a high observation aperture) makes first contact intimate before the larger system commits: whoever already reads the room sets tempo for cohabitation, and noise from the corridor is a reminder that power can re-enter at any moment. Intake is lived here; informal hierarchy and fear of the next move (rounds, shower blocks, the mess) shape what gets said and what is deferred until staff, a ward peer enforcer, or a credentialed officer steps into view.",
   "role_slots": [
@@ -13,18 +14,17 @@
       "role_name": "cell_resident",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Cell cohabitation requires the resident to remain in the shared intake focal space.",
       "authority": "low"
     },
     {
       "role_name": "ward_enforcer",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "medium"
     },
     {
       "role_name": "officer_or_clinician",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "high"
     }
   ]

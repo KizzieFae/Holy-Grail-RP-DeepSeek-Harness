@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from continuity_state import IssueState, IssueStatus
+from scene_template_cohesion import resolve_effective_presence_constraint
 
 
 def _role_text(value: Any) -> str:
@@ -443,7 +444,9 @@ def resolve_scene_template_setup(
         if slot is None:
             continue
         role_assignments[character_name] = slot.role_name
-        character_presence_constraints[character_name] = slot.presence_constraint
+        character_presence_constraints[character_name] = (
+            resolve_effective_presence_constraint(template, slot)
+        )
         if slot.authority:
             character_authority_labels[character_name] = slot.authority
 

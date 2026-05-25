@@ -1,5 +1,6 @@
 {
   "template_id": "yukiko_shrine_guided_visit",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "primary_visitor",
   "premise": "A guided shrine visit is built around a core interaction between head miko and visitor but can naturally expand to include other shrine participants or companions without breaking the scene.",
   "role_slots": [
@@ -7,6 +8,7 @@
       "role_name": "head_miko",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Guided visit requires the head miko to remain at the shrine focal interaction space.",
       "authority": "high"
     },
     {
@@ -18,19 +20,16 @@
     {
       "role_name": "junior_miko",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "medium"
     },
     {
       "role_name": "visitor_companion",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "low"
     },
     {
       "role_name": "shrine_attendant",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "medium"
     }
   ]

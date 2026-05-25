@@ -3,30 +3,44 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-VALID_PRESENCE_CONSTRAINTS = {"must_remain", "flexible"}
+from scene_template_cohesion import (
+    COHESION_POLICY_ANCHOR_ONLY,
+    VALID_PRESENCE_CONSTRAINTS,
+    normalize_cohesion_policy,
+    validate_template_cohesion,
+)
 
 
 @dataclass
 class SceneRoleSlot:
     role_name: str
     required: bool
-    presence_constraint: str
+    presence_constraint: str = ""
     authority: str = ""
+    cohesion_rationale: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "role_name": self.role_name,
             "required": self.required,
-            "presence_constraint": self.presence_constraint,
             "authority": self.authority,
         }
+        if self.presence_constraint:
+            out["presence_constraint"] = self.presence_constraint
+        if self.cohesion_rationale:
+            out["cohesion_rationale"] = self.cohesion_rationale
+        return out
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SceneRoleSlot":
-        presence_constraint = str(data.get("presence_constraint", "") or "").strip()
-        if presence_constraint not in VALID_PRESENCE_CONSTRAINTS:
+        presence_raw = data.get("presence_constraint", "")
+        presence_constraint = (
+            str(presence_raw).strip() if presence_raw is not None else ""
+        )
+        if presence_constraint and presence_constraint not in VALID_PRESENCE_CONSTRAINTS:
             raise ValueError(
-                f"Invalid presence_constraint '{presence_constraint}'. Expected one of {sorted(VALID_PRESENCE_CONSTRAINTS)}."
+                f"Invalid presence_constraint '{presence_constraint}'. "
+                f"Expected one of {sorted(VALID_PRESENCE_CONSTRAINTS)}."
             )
         role_name = str(data.get("role_name", "") or "").strip()
         if not role_name:
@@ -36,6 +50,7 @@ class SceneRoleSlot:
             required=bool(data.get("required", False)),
             presence_constraint=presence_constraint,
             authority=str(data.get("authority", "") or "").strip(),
+            cohesion_rationale=str(data.get("cohesion_rationale", "") or "").strip(),
         )
 
 
@@ -71,6 +86,7 @@ class SceneTemplate:
     opening_text: str
     role_slots: list[SceneRoleSlot]
     anchor_role_name: str = ""
+    cohesion_policy: str = COHESION_POLICY_ANCHOR_ONLY
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
     sleeping_surface_slots: list[str] = field(default_factory=list)
     location_entry_slots: list[str] = field(default_factory=list)
@@ -78,6 +94,7 @@ class SceneTemplate:
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
             "template_id": self.template_id,
+            "cohesion_policy": self.cohesion_policy,
             "premise": self.premise,
             "opening_text": self.opening_text,
             "role_slots": [slot.to_dict() for slot in self.role_slots],
@@ -100,6 +117,10 @@ class SceneTemplate:
         template_id = str(data.get("template_id", "") or "").strip()
         if not template_id:
             raise ValueError("Scene template is missing template_id.")
+        cohesion_policy = normalize_cohesion_policy(
+            str(data.get("cohesion_policy", "") or ""),
+            template_id=template_id,
+        )
         role_slots = [
             SceneRoleSlot.from_dict(item)
             for item in data.get("role_slots", [])
@@ -114,8 +135,6 @@ class SceneTemplate:
             for item in data.get("initial_messages", [])
             if isinstance(item, dict)
         ]
-        # Template Exclude: progression_profile is not read from canonical template JSON; use
-        # {template_id}_progression.json and progression_advisory.load_progression_profile_for_template_id.
         sleeping_surface_slots = [
             str(item).strip()
             for item in data.get("sleeping_surface_slots", [])
@@ -141,16 +160,19 @@ class SceneTemplate:
                 f"Scene template '{template_id}': anchor_role_name {anchor_raw!r} "
                 "does not match any role_slots[].role_name."
             )
-        return cls(
+        template = cls(
             template_id=template_id,
             premise=str(data.get("premise", "") or "").strip(),
             opening_text=str(data.get("opening_text", "") or "").strip(),
             role_slots=role_slots,
             anchor_role_name=anchor_slot.role_name,
+            cohesion_policy=cohesion_policy,
             initial_messages=initial_messages,
             sleeping_surface_slots=sleeping_surface_slots,
             location_entry_slots=location_entry_slots,
         )
+        validate_template_cohesion(template)
+        return template
 
 
 @dataclass
@@ -210,7 +232,8 @@ class SceneTemplateManager:
         template = SceneTemplate.from_dict(data)
         if template.template_id != template_id:
             raise ValueError(
-                f"Scene template id mismatch: file '{template_id}.json' contains '{template.template_id}'."
+                f"Scene template id mismatch: file '{template_id}.json' contains "
+                f"'{template.template_id}'."
             )
         return template
 
@@ -280,7 +303,8 @@ def validate_role_assignments(
     for character_id, role_name in normalized_assignments.items():
         if role_name not in valid_roles:
             issues.append(
-                f"Character '{character_id}' was assigned unknown role '{role_name}' for template '{template.template_id}'"
+                f"Character '{character_id}' was assigned unknown role '{role_name}' "
+                f"for template '{template.template_id}'"
             )
             continue
         assigned_roles.add(role_name)

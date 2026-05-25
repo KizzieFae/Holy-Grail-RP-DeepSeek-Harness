@@ -1,5 +1,6 @@
 {
   "template_id": "arkham_asylum_mess_hall_arena",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "new_arrival",
   "premise": "A line-served women's ward mess hall is a low-privacy, high-visibility room: long tables, plastic chairs, and worn murals under hard lighting force parallel attention to food, pecking order, and staff sightlines. Predatory talk, a sudden impulse grab, or a pairwise blow-up at a table can all escalate in full view; guards and uniformed response sit at the room's margin with proximity but not always instant reach, so the beat can fork between coordinated table pressure, an opportunistic disruption that re-routes authority, and dyadic public volatility before the room is reset.",
   "opening_text": "",
@@ -13,31 +14,28 @@
     {
       "role_name": "instigator",
       "required": true,
-      "presence_constraint": "must_remain",
       "authority": "low"
     },
     {
       "role_name": "instigator_accomplice",
       "required": true,
-      "presence_constraint": "must_remain",
       "authority": "low"
     },
     {
       "role_name": "witness_or_intervenor",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "medium"
     },
     {
       "role_name": "guard_or_staff_response",
       "required": false,
-      "presence_constraint": "flexible",
+      "presence_constraint": "must_remain",
+      "cohesion_rationale": "Staff margin role must stay scene-visible for authority response beats.",
       "authority": "high"
     },
     {
       "role_name": "impulse_disruptor",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "low"
     }
   ],

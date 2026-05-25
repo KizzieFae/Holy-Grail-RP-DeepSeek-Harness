@@ -1,5 +1,6 @@
 {
   "template_id": "ayame_household_entry_evaluation",
+  "cohesion_policy": "anchor_only",
   "anchor_role_name": "applicant",
   "premise": "A newcomer is brought into a controlled household space for evaluation while the host and at least one established presence remain actively involved.",
   "location_entry_slots": [
@@ -12,6 +13,7 @@
       "role_name": "host",
       "required": true,
       "presence_constraint": "must_remain",
+      "cohesion_rationale": "Household evaluation requires the host to remain in the shared focal evaluation space.",
       "authority": "high"
     },
     {
@@ -23,13 +25,11 @@
     {
       "role_name": "guard",
       "required": false,
-      "presence_constraint": "must_remain",
       "authority": "medium"
     },
     {
       "role_name": "observer",
       "required": false,
-      "presence_constraint": "flexible",
       "authority": "low"
     }
   ]
