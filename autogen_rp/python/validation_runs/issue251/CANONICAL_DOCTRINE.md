@@ -2,13 +2,13 @@
 
 **GitHub system of record:** [Issue #251](https://github.com/KizzieFae/Holy_Grail_RP/issues/251). Local harness index: [README.md](./README.md).
 
-**Not** production default (`v1_next7` unchanged). **Not** `validated` on #251.
+**Not** production default (`v1_next7` unchanged). **Not** `validated` on #251. Issue #251: **`implemented`** (canonization accepted; validation deferred).
 
 ---
 
-## Governance-review candidate (authoritative for current posture)
+## Landed canonical severance (investigation topology)
 
-**Status:** Doctrine-isolation arc **frozen**. Candidate for **governance / canonization review** only — no further ontology experimentation in this phase.
+**Status:** Landed on `main` via [PR #252](https://github.com/KizzieFae/Holy_Grail_RP/pull/252) (`076efac`). **Canonical severance ontology for #251 scope** — investigation topology only; ontology experimentation **frozen/closed**.
 
 | Field | Value |
 |-------|--------|

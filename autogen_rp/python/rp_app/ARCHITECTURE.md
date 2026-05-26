@@ -407,7 +407,7 @@ Teaching appears in the **semantic self-report cluster** and is mirrored in slim
 
 **Replay alias:** `RP_ISSUE240_PROMPT_TOPOLOGY=v1_next7_proposal_schema_a` is identical to default `v1_next7` (kept for investigation reruns).
 
-**Explicitly not in default:** Phase B/B.2 participation-boundary ontology experiments (`v1_next7_participation_boundary_b`, `v1_next7_participation_boundary_b_clean`) — investigation-only; see **#251** (genuine missed emission) and **#250** (retry flattening).
+**Explicitly not in default:** Phase B/B.2 participation-boundary ontology experiments (`v1_next7_participation_boundary_b`, `v1_next7_participation_boundary_b_clean`) — investigation-only; see **#251** (landed exit-ontology investigation topology `v1_next7_issue251_physical_severance_guarded_v1` — `validation_runs/issue251/CANONICAL_DOCTRINE.md`; not production default) and **#250** (retry flattening).
 
 **Observability:** `prompt_topology_manifest.extract_topology_manifest()` infers `v1_next7` from `proposal_schema_teaching_v249_a` + semantic-evaluation markers; profile **`v1_next7_2char` / `v1_next7_3char_plus`**. Tests: `tests/test_issue_240_prompt_topology.py`, `tests/test_prompt_topology_manifest.py`.
 
