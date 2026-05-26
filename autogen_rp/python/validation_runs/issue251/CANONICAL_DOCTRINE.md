@@ -1,12 +1,66 @@
-# Issue #251 — canonical severance doctrine (working)
+# Issue #251 — severance doctrine index
 
-**Status:** Accepted as canonical **working doctrine** for investigation topology `v1_next7_issue251_awareness_clean`. **Not** production default; **not** `validated` on #251.
+**GitHub system of record:** [Issue #251](https://github.com/KizzieFae/Holy_Grail_RP/issues/251). Local harness index: [README.md](./README.md).
 
-**GitHub resume:** [Issue #251](https://github.com/KizzieFae/Holy_Grail_RP/issues/251) — body sections *Canonical simplified severance doctrine*, *Broad adjudicated replay matrix*, *Remaining narrowed failure type*; evidence index [comment](https://github.com/KizzieFae/Holy_Grail_RP/issues/251#issuecomment-4537220243).
+**Not** production default (`v1_next7` unchanged). **Not** `validated` on #251.
 
-## Canonical three-line severance (prompt)
+---
 
-Emitted via `build_issue251_canonical_severance_doctrine_block()` in `rp_app/prompt_topology_issue240.py`, marker `participation_severance_doctrine_issue251_canonical_v1`, appended inside the four-factor awareness doctrine block for topology `RP_ISSUE240_PROMPT_TOPOLOGY=v1_next7_issue251_awareness_clean`.
+## Governance-review candidate (authoritative for current posture)
+
+**Status:** Doctrine-isolation arc **frozen**. Candidate for **governance / canonization review** only — no further ontology experimentation in this phase.
+
+| Field | Value |
+|-------|--------|
+| **Topology** | `v1_next7_issue251_physical_severance_guarded_v1` |
+| **Env** | `RP_ISSUE240_PROMPT_TOPOLOGY=v1_next7_issue251_physical_severance_guarded_v1` |
+| **Variant** | `simplified_structural_v1` |
+| **Doctrine marker** | `participation_physical_severance_guarded_doctrine_issue251_v1` |
+| **Code** | `build_issue251_physical_severance_guarded_doctrine_block()` in `rp_app/prompt_topology_issue240.py` |
+
+**Doctrine text (frozen — do not edit without governance):**
+
+```text
+``off_focal`` means the character has fully left the shared scene.
+
+Use ``covered_change`` with ``off_focal`` only when this beat ends with:
+(1) the character outside the shared scene space, and
+(2) the live exchange with those who remain no longer continuing.
+
+Do not complete or assume exits the beat does not complete.
+
+Moving toward an exit, standing in a doorway, partial exits, turning away, silence, emotional withdrawal, or reduced engagement are not ``off_focal`` by themselves.
+```
+
+**Full-suite evidence (n=103, excluded `901-T9`, `P03`):**
+
+| Metric | Simplified baseline | Arm B | Old Arm C (cinematic guarded) |
+|--------|-------------------:|------:|------------------------------:|
+| Guard false `off_focal` | **10/66 (15.2%)** | 19/66 (28.8%) | 24/66 (36.4%) |
+| GM3 S1/L3 | **5/10** | 5/10 | 4/10 |
+| L2 ambiguous rate | **0.204** | 0.243 | 0.262 |
+
+**Threshold anchors (full suite):** `NE-900T5`, `NE-P02`, `NE-901T5`, `NE-CTRL-GM2` — **0/3** guard FP each.
+
+**Rejected after baseline freeze:** `simplified_structural_finalpatch_v1` — localized gains on `NE-GM4` / `EXIT-B-910R5T3` destabilized `NE-P02`.
+
+**Markdown evidence index:**
+
+- `i251_physical_severance_guarded_simplified_fullsuite_comparison.md`
+- `i251_physical_severance_guarded_simplified_fullsuite_guard_delta.md`
+- `i251_physical_severance_guarded_simplified_fullsuite_gm3_summary.md`
+
+---
+
+## Historical — hybrid awareness era (`hybrid_awareness_v1`)
+
+**Superseded** for canonization candidacy. Retained for archaeology and n=32 broad-matrix readouts.
+
+| Field | Value |
+|-------|--------|
+| **Topology** | `v1_next7_issue251_awareness_clean` |
+| **Marker** | `participation_severance_doctrine_issue251_canonical_v1` |
+| **Code** | `build_issue251_canonical_severance_doctrine_block()` |
 
 ```text
 Emotional or social withdrawal while still present in the shared live scene is not ``off_focal``.
@@ -16,34 +70,45 @@ Use ``covered_change`` with ``off_focal`` when the character materially leaves t
 A withdrawal arc may begin gradually across earlier beats, but the moment the character actually leaves the shared scene is itself a new participation transition.
 ```
 
-**#249 proposal-schema teaching** remains in the same topology (allowed keys `kind` / `character` / optional `operation`; forbidden `reason`, etc.).
+**Artifacts:** `i251_exit_stability_matrix.json`, `i251_exit_stability_matrix_adjudicated.json` (n=32). Adjudicated read ~86% vs deterministic S1 ~56%.
+
+---
+
+## Doctrine-isolation arc (summary)
+
+| Arm | Topology | Outcome |
+|-----|----------|---------|
+| **A** | `v1_next7_issue251_awareness_clean` | Hybrid awareness — historical baseline |
+| **B** | `v1_next7_issue251_physical_severance_v1` | Physical severance — GM3 OK, guard FP regressed |
+| **Old C** | guarded + cinematic doctrine | Worst guard FP on full suite |
+| **Simplified C** | guarded + structural doctrine | **Selected** — best guard tradeoff, anti-completion decisive |
+
+**Key findings:** anti-completion rule; structural simplification vs cinematic framing; scoped preflight (#249 contamination isolation); L2 adjudication remained healthy.
+
+---
+
+## Residual watchlist (non-blocking)
+
+| ID | Finding | Disposition |
+|----|---------|-------------|
+| `NE-GM4` | Doorway / re-entry guard FP (3/3 full suite) | Residual edge — not foundational ontology failure |
+| `EXIT-B-910R5T3` | Explicit exit under-trigger (0/3 S1 full suite) | Future targeted harness |
+| Parse / unparsed pockets | S2 structural contamination | **#249 lane** — not #251 doctrine reopen |
+
+---
 
 ## Rejected (do not restore)
 
-- Continuity-preservation sentence: *Physical departure alone is not sufficient for `off_focal` if the character remains an active participant in the same live exchange.* — tested in `i251_min_clarification_ab_v2_continuity_matrix.json`; worsened P03 / GM3 stability.
-- Margin / deepen / reverse participation ontology, partially-withdrawn capsules, fuzzy threshold calibration strings.
+- Continuity-preservation sentence (*Physical departure alone is not sufficient…*) — `i251_min_clarification_ab_v2_continuity_matrix.json`
+- Margin / deepen / reverse participation ontology
+- `simplified_structural_finalpatch_v1` surgical patch
 
-## Evidence (adjudicated replay)
+---
 
-| Artifact | Role |
-|----------|------|
-| `i251_exit_stability_matrix.json` | 32-case ordinary-exit matrix (deterministic) |
-| `i251_exit_stability_matrix_adjudicated.json` | + #243-B/`evaluate_case` adjudication layer |
-| `i251_min_clarification_ab_matrix.json` | GM3/P03 severance-only A/B |
-| `i251_anchor_matrix.json` / `i251_guard_matrix.json` | Anchor/guard pack |
-
-**Adjudicated read (broad matrix, n=32):** overall semantic correctness **~86%** vs deterministic S1 **~56%**; non-exit cohort **~96%** adjudicated OK; **21** samples structurally contaminated (#249 lane) but semantically correct. Meaning-heavy readouts must include **both** deterministic and adjudicated layers (`i251_replay_adjudication.py`).
-
-## Remaining failure type (narrowed)
-
-Focus next work on **temporary / hesitation / threshold exits** and **departure-completion ambiguity** (e.g. GM3 ten-minute framing, doorway linger, staged departures, rebound beats misread as exit). Do **not** broaden back to margin/deepen/reverse or remote-phone core doctrine.
-
-Remote/phone continuity: document as **rare edge cases** outside the current core ordinary-exit validation cohort.
-
-## Lane separation (unchanged)
+## Lane separation
 
 - **#224** — continuity authority (committed state > audit)
 - **#246** — adjudication observational only
 - **#249** — structural / ingress / schema
 - **#250** — retry flatten
-- **#251** — genuine missed emission / exit ontology (this doctrine)
+- **#251** — exit ontology / missed emission (this doctrine)

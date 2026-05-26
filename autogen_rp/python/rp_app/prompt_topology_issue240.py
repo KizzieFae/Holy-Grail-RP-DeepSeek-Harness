@@ -10,7 +10,9 @@ Experimental overrides: ``v1``, ``v1_next`` … ``v1_next7`` (same truthy aliase
 ``v1_next7_proposal_schema_a`` (replay alias — identical to default ``v1_next7``);
 investigation-only ``v1_next7_participation_calibration_a`` (Phase-A participation calibration — does not replace default);
 investigation-only ``v1_next7_participation_boundary_b`` / ``v1_next7_participation_boundary_b_clean`` (Issue #249 ontology experiments — not default);
-investigation-only ``v1_next7_issue251_awareness_clean`` (Issue #251 — canonical three-line severance doctrine + four-factor awareness block; not production default).
+investigation-only ``v1_next7_issue251_awareness_clean`` (Issue #251 — hybrid shared-awareness severance; not production default);
+investigation-only ``v1_next7_issue251_physical_severance_v1`` (Issue #251 — physical/perceptual severance isolation; not production default);
+investigation-only ``v1_next7_issue251_physical_severance_guarded_v1`` (Issue #251 — Arm C guarded physical/perceptual severance; not production default).
 """
 
 from __future__ import annotations
@@ -66,6 +68,20 @@ _V1_NEXT7_ISSUE251_AWARENESS_CLEAN_TRUTHY = frozenset(
         "v1next7issue251awarenessclean",
     }
 )
+_V1_NEXT7_ISSUE251_PHYSICAL_SEVERANCE_TRUTHY = frozenset(
+    {
+        "v1_next7_issue251_physical_severance_v1",
+        "v1-next7-issue251-physical-severance-v1",
+        "v1next7issue251physicalseverancev1",
+    }
+)
+_V1_NEXT7_ISSUE251_PHYSICAL_SEVERANCE_GUARDED_TRUTHY = frozenset(
+    {
+        "v1_next7_issue251_physical_severance_guarded_v1",
+        "v1-next7-issue251-physical-severance-guarded-v1",
+        "v1next7issue251physicalseveranceguardedv1",
+    }
+)
 _PRODUCTION_LEGACY_TRUTHY = frozenset({"production_legacy", "legacy", "off"})
 _ISSUE240_LONG_PROMPT_COMPRESS_CHARS = 35_000
 
@@ -97,6 +113,18 @@ ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER = (
 )
 # Alias retained for replay artifacts and historical matrix IDs.
 ISSUE251_MIN_SEVERANCE_CLARIFICATION_MARKER = ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER
+ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER = (
+    "participation_physical_severance_isolation_v251"
+)
+ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER = (
+    "participation_physical_severance_doctrine_issue251_v1"
+)
+ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER = (
+    "participation_physical_severance_guarded_isolation_v251"
+)
+ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER = (
+    "participation_physical_severance_guarded_doctrine_issue251_v1"
+)
 ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE = (
     "Physical departure alone is not sufficient"
 )
@@ -162,6 +190,10 @@ def issue240_prompt_topology_mode() -> str | None:
         return "v1_next7_participation_calibration_a"
     if raw in _V1_NEXT7_ISSUE251_AWARENESS_CLEAN_TRUTHY:
         return "v1_next7_issue251_awareness_clean"
+    if raw in _V1_NEXT7_ISSUE251_PHYSICAL_SEVERANCE_GUARDED_TRUTHY:
+        return "v1_next7_issue251_physical_severance_guarded_v1"
+    if raw in _V1_NEXT7_ISSUE251_PHYSICAL_SEVERANCE_TRUTHY:
+        return "v1_next7_issue251_physical_severance_v1"
     if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_CLEAN_TRUTHY:
         return "v1_next7_participation_boundary_b_clean"
     if raw in _V1_NEXT7_PARTICIPATION_BOUNDARY_B_TRUTHY:
@@ -1676,6 +1708,181 @@ def issue251_awareness_contamination_hits(prompt: str) -> list[str]:
     return hits
 
 
+def build_issue251_physical_severance_doctrine_block() -> str:
+    return f"""Participation exit doctrine ({ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER} — do not recite in dialogue):
+
+``off_focal`` when **this beat completes physical/perceptual severance** from the shared live scene:
+
+(1) you leave the shared scene interaction space (not in-room repositioning or margin-only movement), **and**
+(2) the live exchange is no longer naturally audible/visible between those who remain and you (perceptual severance).
+
+**Completion rule:** judge severance by how the beat **ends**, not by interim threshold talk. Doorway speech, timers, or “back soon” framing during an exit arc do **not** prevent ``off_focal`` if the beat ends with completed physical/perceptual severance.
+
+**Emotional or social withdrawal** while still present in the shared live scene is not ``off_focal``.
+
+A withdrawal arc may begin gradually across earlier beats, but the moment physical/perceptual severance completes is itself a new participation transition.
+
+**NOT ``off_focal``:**
+- in-room bunk/couch/logistics without leaving the shared scene interaction space;
+- same-beat return before severance completes;
+- remote contact that keeps the live exchange naturally audible/visible;
+- adjacent space where the exchange remains naturally audible/visible;
+- beat ends still inside the shared scene interaction space (threshold linger without crossing).
+
+**Canonical positive (completed severance):**
+traverse out of the room and shut the door (or equivalent boundary) so the live exchange is no longer naturally audible/visible → ``covered_change`` with ``off_focal``.
+
+**Canonical negative (severance not completed):**
+beat ends with character still inside the room, or still naturally audible/visible to those remaining without completed boundary crossing → ``no_covered_change``."""
+
+
+def build_issue251_physical_severance_semantic_block(char_name: str) -> str:
+    actor_id = str(char_name or "ACTOR_ID").strip() or "ACTOR_ID"
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+Root ``semantic_evaluation`` required every beat.
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change``; omit when ``no_covered_change``
+
+Proposal schema — allowed keys ONLY: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only).
+- ``kind``: ``off_focal`` | ``reentry`` | ``excursion_lifecycle``
+- ``character``: your acting character runtime id (non-empty)
+- ``operation``: ``open`` | ``update`` | ``close`` — required for ``excursion_lifecycle``; forbidden for ``off_focal`` and ``reentry``
+
+{ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER}
+
+Forbidden on proposals: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``, or any other key.
+
+Examples (use your character id instead of ACTOR_ID):
+{{"decision":"covered_change","proposals":[{{"kind":"off_focal","character":"{actor_id}"}}]}}
+{{"decision":"covered_change","proposals":[{{"kind":"reentry","character":"{actor_id}"}}]}}
+{{"decision":"no_covered_change"}}
+
+``covered_change`` with ``off_focal`` only when this beat completes physical/perceptual severance (see doctrine block below). If severance has not completed in this beat, use ``no_covered_change``.
+
+Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+
+{build_issue251_physical_severance_doctrine_block()}
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def build_issue251_physical_severance_clean_opening(char_name: str) -> str:
+    return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
+
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
+
+Do not emit root ``semantic_proposals`` or empty proposal arrays.
+
+{ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER} — margin/deepen/reverse participation ontology suppressed; physical/perceptual severance exit doctrine active (investigation topology; not production default)."""
+
+
+def apply_issue251_physical_severance_prompt_overrides(prompt: str, char_name: str) -> str:
+    clean_opening = build_issue251_physical_severance_clean_opening(char_name)
+    for old_opening in (
+        build_character_turn_prompt_issue240_v1_opening(char_name),
+        build_issue240_v1_next5_opening(char_name),
+    ):
+        if old_opening in prompt:
+            prompt = prompt.replace(old_opening, clean_opening, 1)
+            break
+    else:
+        production_opening = "You are taking your next turn in an ongoing roleplay scene."
+        if production_opening in prompt and ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER not in prompt:
+            prompt = prompt.replace(production_opening, clean_opening, 1)
+
+    semantic_block = build_issue251_physical_severance_semantic_block(char_name).rstrip()
+    prompt, replaced = re.subn(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        semantic_block,
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    if replaced == 0 and ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER not in prompt:
+        output_rules = "OUTPUT RULES:"
+        if output_rules in prompt:
+            prompt = prompt.replace(
+                output_rules,
+                semantic_block + "\n\n" + output_rules,
+                1,
+            )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = _strip_participation_ontology_interpretation_blocks(prompt)
+    if ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER in prompt:
+        prompt = re.sub(
+            rf"\n{re.escape(build_issue240_v1_next7_participation_boundary_b_block())}",
+            "",
+            prompt,
+            count=1,
+        )
+    for stray in (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER,
+        "garage wall-phone",
+        "remote garage",
+    ):
+        if stray in prompt:
+            prompt = prompt.replace(stray, "")
+    if ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER not in prompt:
+        needle = f"You are {char_name},"
+        tag = f"\n\n{ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER} — physical/perceptual severance investigation replay."
+        if needle in prompt:
+            prompt = prompt.replace(needle, needle + tag, 1)
+    return prompt
+
+
+_ISSUE251_PHYSICAL_SEVERANCE_FORBIDDEN_PHRASES: tuple[str, ...] = (
+    "all four",
+    "shared-awareness continuity",
+    "shared scene awareness continuity ends",
+    "temporary-task framing alone",
+    "physical displacement alone",
+    "doorway tether",
+    "Margin, doorway tether, or temporary-task framing without shared-awareness severance",
+    "no longer participate in the live exchange",
+)
+
+
+def issue251_physical_severance_contamination_hits(prompt: str) -> list[str]:
+    """Markers/phrases that must be absent in physical-severance topology (#251 Arm B)."""
+    hits: list[str] = []
+    for marker in PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS:
+        if marker in prompt:
+            hits.append(marker)
+    extra = (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        "garage wall-phone",
+        "margin withdrawal/rejoin",
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        "continue/deepen/reverse",
+        "partially withdrawn",
+        ISSUE251_AWARENESS_DOCTRINE_MARKER,
+        ISSUE251_AWARENESS_CLEAN_MARKER,
+        ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER,
+    )
+    for marker in extra:
+        if marker in prompt:
+            hits.append(marker)
+    for phrase in _ISSUE251_PHYSICAL_SEVERANCE_FORBIDDEN_PHRASES:
+        if phrase in prompt:
+            hits.append(f"forbidden_phrase:{phrase}")
+    if ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER}")
+    if ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER}")
+    return hits
+
+
 def apply_baseline_v1_next7_replay_prompt_overrides(prompt: str, char_name: str) -> str:
     """Frozen-audit replay baseline arm (production v1_next7 semantic teaching)."""
     prompt = _apply_issue240_v1_next7_prompt_overrides(prompt, char_name)
@@ -1706,6 +1913,209 @@ def build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean(
     )
 
 
+def apply_issue240_v1_next7_issue251_physical_severance_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """schema_a + physical/perceptual severance doctrine; margin ontology suppressed (#251 Arm B)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=False,
+    )
+    return apply_issue251_physical_severance_prompt_overrides(prompt, char_name)
+
+
+def build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_v1(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_issue251_physical_severance_topology_transform(
+        base, **kwargs
+    )
+
+
+def build_issue251_physical_severance_guarded_doctrine_block() -> str:
+    return f"""Participation exit doctrine ({ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER} — do not recite in dialogue):
+
+``off_focal`` means the character has fully left the shared scene.
+
+Use ``covered_change`` with ``off_focal`` only when this beat ends with:
+(1) the character outside the shared scene space, and
+(2) the live exchange with those who remain no longer continuing.
+
+Do not complete or assume exits the beat does not complete.
+
+Moving toward an exit, standing in a doorway, partial exits, turning away, silence, emotional withdrawal, or reduced engagement are not ``off_focal`` by themselves."""
+
+
+def build_issue251_physical_severance_guarded_semantic_block(char_name: str) -> str:
+    actor_id = str(char_name or "ACTOR_ID").strip() or "ACTOR_ID"
+    return f"""{ISSUE240_SEMANTIC_BLOCK_HEADER} (same move you are authoring):
+
+Root ``semantic_evaluation`` required every beat.
+- ``decision``: ``covered_change`` or ``no_covered_change``
+- ``proposals``: non-empty array only when ``decision`` is ``covered_change``; omit when ``no_covered_change``
+
+Proposal schema — allowed keys ONLY: ``kind``, ``character``, optional ``operation`` (``excursion_lifecycle`` only).
+- ``kind``: ``off_focal`` | ``reentry`` | ``excursion_lifecycle``
+- ``character``: your acting character runtime id (non-empty)
+- ``operation``: ``open`` | ``update`` | ``close`` — required for ``excursion_lifecycle``; forbidden for ``off_focal`` and ``reentry``
+
+{ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER}
+
+Forbidden on proposals: ``reason``, ``description``, ``rationale``, ``strategy``, ``subject``, ``character_id``, or any other key.
+
+Examples (use your character id instead of ACTOR_ID):
+{{"decision":"covered_change","proposals":[{{"kind":"off_focal","character":"{actor_id}"}}]}}
+{{"decision":"covered_change","proposals":[{{"kind":"reentry","character":"{actor_id}"}}]}}
+{{"decision":"no_covered_change"}}
+
+``covered_change`` with ``off_focal`` only per the exit doctrine below. If the beat does not end with completed departure, use ``no_covered_change``.
+
+Do not emit root ``semantic_proposals`` or ``semantic_proposals: []``.
+
+{build_issue251_physical_severance_guarded_doctrine_block()}
+
+Do not explain this analysis in dialogue or action beats."""
+
+
+def build_issue251_physical_severance_guarded_clean_opening(char_name: str) -> str:
+    return f"""You are {char_name}, taking your next turn in an ongoing roleplay scene.
+
+Act primarily as this character: voice, pressure, subtext, and in-character judgment come first. Every beat also requires an explicit root ``semantic_evaluation`` judgment (see trigger-adjacent self-report below and OUTPUT RULES).
+
+Do not emit root ``semantic_proposals`` or empty proposal arrays.
+
+{ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER} — margin/deepen/reverse participation ontology suppressed; guarded structural exit doctrine active (investigation topology; not production default)."""
+
+
+def apply_issue251_physical_severance_guarded_prompt_overrides(prompt: str, char_name: str) -> str:
+    clean_opening = build_issue251_physical_severance_guarded_clean_opening(char_name)
+    for old_opening in (
+        build_character_turn_prompt_issue240_v1_opening(char_name),
+        build_issue240_v1_next5_opening(char_name),
+        build_issue251_physical_severance_clean_opening(char_name),
+    ):
+        if old_opening in prompt:
+            prompt = prompt.replace(old_opening, clean_opening, 1)
+            break
+    else:
+        production_opening = "You are taking your next turn in an ongoing roleplay scene."
+        if production_opening in prompt and ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER not in prompt:
+            prompt = prompt.replace(production_opening, clean_opening, 1)
+
+    semantic_block = build_issue251_physical_severance_guarded_semantic_block(char_name).rstrip()
+    prompt, replaced = re.subn(
+        rf"{re.escape(ISSUE240_SEMANTIC_BLOCK_HEADER)}.*?Do not explain this analysis in dialogue or action beats\.",
+        semantic_block,
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    if replaced == 0 and ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER not in prompt:
+        output_rules = "OUTPUT RULES:"
+        if output_rules in prompt:
+            prompt = prompt.replace(
+                output_rules,
+                semantic_block + "\n\n" + output_rules,
+                1,
+            )
+    prompt = re.sub(
+        r"OUTPUT RULES:.*\Z",
+        _V1_NEXT7_PROPOSAL_SCHEMA_A_SLIM_OUTPUT_RULES + "\n",
+        prompt,
+        count=1,
+        flags=re.DOTALL,
+    )
+    prompt = _strip_participation_ontology_interpretation_blocks(prompt)
+    if ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER in prompt:
+        prompt = re.sub(
+            rf"\n{re.escape(build_issue240_v1_next7_participation_boundary_b_block())}",
+            "",
+            prompt,
+            count=1,
+        )
+    for stray in (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_CALIBRATION_A_MARKER,
+        "garage wall-phone",
+        "remote garage",
+    ):
+        if stray in prompt:
+            prompt = prompt.replace(stray, "")
+    if ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER not in prompt:
+        needle = f"You are {char_name},"
+        tag = (
+            f"\n\n{ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER} — "
+            "guarded structural exit doctrine investigation replay."
+        )
+        if needle in prompt:
+            prompt = prompt.replace(needle, needle + tag, 1)
+    return prompt
+
+
+def issue251_physical_severance_guarded_contamination_hits(prompt: str) -> list[str]:
+    """Markers/phrases that must be absent in guarded physical-severance topology (#251 Arm C)."""
+    hits: list[str] = []
+    for marker in PARTICIPATION_ONTOLOGY_CONTAMINATION_MARKERS:
+        if marker in prompt:
+            hits.append(marker)
+    extra = (
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        "garage wall-phone",
+        "margin withdrawal/rejoin",
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        "continue/deepen/reverse",
+        "partially withdrawn",
+        ISSUE251_AWARENESS_DOCTRINE_MARKER,
+        ISSUE251_AWARENESS_CLEAN_MARKER,
+        ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER,
+    )
+    for marker in extra:
+        if marker in prompt:
+            hits.append(marker)
+    for phrase in _ISSUE251_PHYSICAL_SEVERANCE_FORBIDDEN_PHRASES:
+        if phrase in prompt:
+            hits.append(f"forbidden_phrase:{phrase}")
+    if ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER}")
+    if ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER not in prompt:
+        hits.append(f"missing:{ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER}")
+    return hits
+
+
+def apply_issue240_v1_next7_issue251_physical_severance_guarded_topology_transform(
+    production_prompt: str,
+    **kwargs: Any,
+) -> str:
+    """schema_a + guarded physical/perceptual severance doctrine; margin ontology suppressed (#251 Arm C)."""
+    char_name = str(kwargs.get("char_name") or "")
+    base = apply_issue240_v1_next2_long_prompt_compression(production_prompt, **kwargs)
+    prompt = apply_issue240_v1_topology_transform(
+        base,
+        char_name=char_name,
+        include_participation_frame=False,
+    )
+    return apply_issue251_physical_severance_guarded_prompt_overrides(prompt, char_name)
+
+
+def build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_guarded_v1(
+    **kwargs: Any,
+) -> str:
+    base = _production_build_character_turn_prompt(**kwargs)
+    return apply_issue240_v1_next7_issue251_physical_severance_guarded_topology_transform(
+        base, **kwargs
+    )
+
+
 def build_character_turn_prompt_issue240_v1(**kwargs: Any) -> str:
     base = _production_build_character_turn_prompt(**kwargs)
     return apply_issue240_v1_topology_transform(
@@ -1718,6 +2128,10 @@ def resolve_character_turn_prompt_builder() -> Callable[..., str]:
     mode = issue240_prompt_topology_mode()
     if mode == "v1_next7_issue251_awareness_clean":
         return build_character_turn_prompt_issue240_v1_next7_issue251_awareness_clean
+    if mode == "v1_next7_issue251_physical_severance_guarded_v1":
+        return build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_guarded_v1
+    if mode == "v1_next7_issue251_physical_severance_v1":
+        return build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_v1
     if mode == "v1_next7_participation_boundary_b_clean":
         return build_character_turn_prompt_issue240_v1_next7_participation_boundary_b_clean
     if mode == "v1_next7_participation_boundary_b":
