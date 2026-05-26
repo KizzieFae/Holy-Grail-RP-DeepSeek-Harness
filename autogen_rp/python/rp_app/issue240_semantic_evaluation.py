@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Any
 
@@ -175,3 +176,120 @@ def extract_semantic_evaluation_decision(move: dict[str, Any] | None) -> str | N
         return None
     decision = str(ev.get("decision") or "").strip()
     return decision if decision in SEMANTIC_EVALUATION_DECISIONS else None
+
+
+# Issue #250 repair lane — strip only; first-pass ingress unchanged.
+_FORBIDDEN_PROPOSAL_HELPER_KEYS = frozenset(
+    {"reason", "strategy", "rationale", "explanation", "justification"}
+)
+
+
+def _proposal_kinds_from_loose(loose: dict[str, Any]) -> list[str]:
+    kinds: list[str] = []
+    ev = loose.get("semantic_evaluation")
+    if isinstance(ev, dict):
+        props = ev.get("proposals")
+        if isinstance(props, list):
+            for item in props:
+                if isinstance(item, dict):
+                    k = str(item.get("kind", "") or "").strip()
+                    if k:
+                        kinds.append(k)
+    sp = loose.get("semantic_proposals")
+    if isinstance(sp, list):
+        for item in sp:
+            if isinstance(item, dict):
+                k = str(item.get("kind", "") or "").strip()
+                if k:
+                    kinds.append(k)
+    return kinds
+
+
+def extract_parse_repair_semantic_snapshot(loose: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(loose, dict):
+        return {
+            "semantic_decision": None,
+            "proposal_kinds": [],
+        }
+    decision = extract_semantic_evaluation_decision(loose)
+    if decision is None:
+        sp = loose.get("semantic_proposals")
+        if isinstance(sp, list) and sp:
+            decision = "covered_change"
+    return {
+        "semantic_decision": decision,
+        "proposal_kinds": _proposal_kinds_from_loose(loose),
+    }
+
+
+def _strip_proposal_item(item: dict[str, Any], *, acting_character: str) -> dict[str, Any]:
+    out = {k: v for k, v in item.items() if k in _V2_PROPOSAL_ITEM_KEYS}
+    if not str(out.get("character", "") or "").strip():
+        actor = str(acting_character or "").strip()
+        if actor:
+            out["character"] = actor
+    return out
+
+
+def _repair_semantic_evaluation_block(
+    ev: dict[str, Any], *, acting_character: str
+) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    decision = ev.get("decision")
+    if decision in SEMANTIC_EVALUATION_DECISIONS:
+        out["decision"] = decision
+    props = ev.get("proposals")
+    if isinstance(props, list) and props:
+        cleaned: list[dict[str, Any]] = []
+        for item in props:
+            if isinstance(item, dict):
+                cleaned.append(_strip_proposal_item(item, acting_character=acting_character))
+        if cleaned:
+            out["proposals"] = cleaned
+    return out
+
+
+def attempt_deterministic_ingress_repair(
+    loose: dict[str, Any],
+    *,
+    acting_character: str,
+) -> tuple[Any | None, str]:
+    """Repair-lane only (#250). Returns (CanonicalV2Move|None, error)."""
+    from character_move_ingress import ingest_character_move_json_object
+
+    if not isinstance(loose, dict):
+        return None, "repair requires a JSON object"
+    from character_move_ingress import (
+        V2_ROOT_ALLOWLIST,
+        _beat_allowed_keys,
+        issue240_v2_root_allowlist_extra,
+    )
+
+    work = json.loads(json.dumps(loose))
+    allow_root = V2_ROOT_ALLOWLIST | issue240_v2_root_allowlist_extra()
+    work = {k: v for k, v in work.items() if k in allow_root}
+    beats = work.get("beats")
+    if isinstance(beats, list):
+        cleaned_beats: list[dict[str, Any]] = []
+        for b in beats:
+            if not isinstance(b, dict):
+                continue
+            bt = b.get("type")
+            allowed = _beat_allowed_keys(bt)
+            cleaned_beats.append({k: v for k, v in b.items() if k in allowed})
+        work["beats"] = cleaned_beats
+    if "semantic_evaluation" in work and "semantic_proposals" in work:
+        work.pop("semantic_proposals", None)
+    ev_raw = work.get("semantic_evaluation")
+    if isinstance(ev_raw, dict):
+        work["semantic_evaluation"] = _repair_semantic_evaluation_block(
+            ev_raw, acting_character=acting_character
+        )
+    sp_raw = work.get("semantic_proposals")
+    if isinstance(sp_raw, list):
+        work["semantic_proposals"] = [
+            _strip_proposal_item(item, acting_character=acting_character)
+            for item in sp_raw
+            if isinstance(item, dict)
+        ]
+    return ingest_character_move_json_object(work)

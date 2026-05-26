@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -48,7 +49,13 @@ from audit_semantic_proposal_decision import (
     build_semantic_proposal_decision,
     should_emit_semantic_proposal_decision,
 )
+from character_move_ingress import parse_character_move_for_attempt
+from character_move_schema_repair import format_schema_repair_retry_note
+from response_validation_parsing import parse_character_move as _default_parse_character_move
 from issue240_semantic_evaluation import (
+    attempt_deterministic_ingress_repair,
+    extract_parse_repair_semantic_snapshot,
+    extract_semantic_evaluation_decision,
     issue240_semantic_evaluation_enabled,
     normalize_issue240_semantic_evaluation_for_continuity,
 )
@@ -242,12 +249,22 @@ def _build_character_attempt_prompt(
     proposal_legality_retry_triggered: bool = False,
     proposal_legality_retry_reason: str = "",
     proposal_legality_retry_reason_code: str = "",
+    schema_repair_retry_triggered: bool = False,
+    schema_repair_prior_raw: str = "",
+    schema_repair_ingress_error: str = "",
 ) -> str:
     attempt_prompt = task_prompt
     if attempt_index < 1:
         return attempt_prompt
     retry_notes: list[str] = []
-    if parse_retry_triggered:
+    if schema_repair_retry_triggered:
+        retry_notes.append(
+            format_schema_repair_retry_note(
+                prior_raw_emission=schema_repair_prior_raw,
+                ingress_error=schema_repair_ingress_error,
+            )
+        )
+    elif parse_retry_triggered:
         retry_notes.append(_CHARACTER_MOVE_PARSE_JSON_DISCIPLINE_NOTE)
     if duplicate_retry_triggered:
         retry_notes.append(
@@ -555,6 +572,52 @@ def _apply_continuity_and_progression_gate(
     )
 
 
+def _build_parse_repair_audit_fields(
+  repair_lane: dict[str, Any] | None,
+  *,
+  final_move: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not repair_lane:
+        return {"retry_mode": "none"}
+    snap = repair_lane.get("first_snapshot") if isinstance(repair_lane, dict) else {}
+    if not isinstance(snap, dict):
+        snap = {}
+    first_decision = snap.get("semantic_decision")
+    first_kinds = snap.get("proposal_kinds")
+    if not isinstance(first_kinds, list):
+        first_kinds = []
+    final_decision = extract_semantic_evaluation_decision(final_move)
+    kinds_changed = False
+    if final_move and isinstance(final_move.get("semantic_proposals"), list):
+        final_kinds = [
+            str(p.get("kind", "") or "").strip()
+            for p in final_move["semantic_proposals"]
+            if isinstance(p, dict)
+        ]
+        kinds_changed = final_kinds != list(first_kinds)
+    decision_changed = (
+        first_decision is not None
+        and final_decision is not None
+        and first_decision != final_decision
+    )
+    raw_digest = str(repair_lane.get("raw_digest", "") or "")
+    ingress_err = str(repair_lane.get("ingress_error", "") or "")
+    if len(ingress_err) > 500:
+        ingress_err = ingress_err[:497] + "..."
+    return {
+        "retry_mode": str(repair_lane.get("retry_mode", "none") or "none"),
+        "first_attempt_rejected": bool(repair_lane.get("first_attempt_rejected")),
+        "first_attempt_failure_stage": str(
+            repair_lane.get("first_attempt_failure_stage", "") or ""
+        ),
+        "first_attempt_ingress_error": ingress_err,
+        "first_attempt_semantic_decision": first_decision,
+        "first_attempt_proposal_kinds": list(first_kinds),
+        "semantic_decision_changed": bool(decision_changed or kinds_changed),
+        "first_attempt_raw_response_digest": raw_digest,
+    }
+
+
 def _turn_execution_metadata(
     *,
     attempt_index: int,
@@ -573,6 +636,8 @@ def _turn_execution_metadata(
     proposal_coherence_stats_snapshot: dict[str, Any] | None,
     proposal_legality_retry_triggered: bool,
     proposal_legality_retry_reason: str,
+    parse_repair_lane: dict[str, Any] | None = None,
+    final_move_for_repair_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     meta: dict[str, Any] = {
         "attempt_index": attempt_index,
@@ -613,6 +678,11 @@ def _turn_execution_metadata(
             "success_after_retry" if proposal_legality_retry_triggered else "no_retry"
         ),
     }
+    meta.update(
+        _build_parse_repair_audit_fields(
+            parse_repair_lane, final_move=final_move_for_repair_audit
+        )
+    )
     return meta
 
 
@@ -817,6 +887,10 @@ async def run_character_attempt_phase(
     proposal_authority_context: ProposalAuthorityContext | None = None
     parse_retry_triggered = False
     parse_retry_reason = ""
+    schema_repair_retry_triggered = False
+    schema_repair_prior_raw = ""
+    schema_repair_ingress_error = ""
+    parse_repair_lane: dict[str, Any] | None = None
     continuity_applied_in_execute = False
     continuity_transaction_snapshot: dict[str, Any] | None = None
 
@@ -843,6 +917,9 @@ async def run_character_attempt_phase(
             proposal_legality_retry_triggered=proposal_legality_retry_triggered,
             proposal_legality_retry_reason=proposal_legality_retry_reason,
             proposal_legality_retry_reason_code=proposal_legality_retry_reason_code,
+            schema_repair_retry_triggered=schema_repair_retry_triggered,
+            schema_repair_prior_raw=schema_repair_prior_raw,
+            schema_repair_ingress_error=schema_repair_ingress_error,
         )
 
         task = TextMessage(content=attempt_prompt, source="system")
@@ -871,11 +948,80 @@ async def run_character_attempt_phase(
             )
             return None
 
-        move, error = parse_character_move_fn(char_raw_response)
+        repair_lane_enabled = parse_character_move_fn is _default_parse_character_move
+        if repair_lane_enabled:
+            move, error, failure_class, loose_dict = parse_character_move_for_attempt(
+                char_raw_response
+            )
+        else:
+            move, error = parse_character_move_fn(char_raw_response)
+            failure_class = "ok" if not error and move is not None else "unrecoverable"
+            loose_dict = None
         if error or move is None:
-            if has_more_attempts:
+            ingress_err = error or "Character move could not be parsed"
+            if (
+                repair_lane_enabled
+                and failure_class == "schema_recoverable"
+                and isinstance(loose_dict, dict)
+            ):
+                snap = extract_parse_repair_semantic_snapshot(loose_dict)
+                raw_digest = hashlib.sha256(
+                    char_raw_response.encode("utf-8")
+                ).hexdigest()
+                repaired, repair_err = attempt_deterministic_ingress_repair(
+                    loose_dict, acting_character=next_actor
+                )
+                if not repair_err and repaired is not None:
+                    move = repaired
+                    parse_repair_lane = {
+                        "retry_mode": "deterministic_repair",
+                        "first_attempt_rejected": True,
+                        "first_attempt_failure_stage": "parse_schema_repair",
+                        "ingress_error": ingress_err,
+                        "first_snapshot": snap,
+                        "raw_digest": raw_digest,
+                    }
+                    error = ""
+                elif has_more_attempts:
+                    schema_repair_retry_triggered = True
+                    schema_repair_prior_raw = char_raw_response
+                    schema_repair_ingress_error = ingress_err
+                    parse_retry_triggered = True
+                    parse_retry_reason = ingress_err
+                    parse_repair_lane = {
+                        "retry_mode": "llm_schema_repair",
+                        "first_attempt_rejected": True,
+                        "first_attempt_failure_stage": "parse_schema_repair",
+                        "ingress_error": ingress_err,
+                        "first_snapshot": snap,
+                        "raw_digest": raw_digest,
+                    }
+                    log_turn_failure_fn(
+                        round_number=round_number,
+                        turn_number=turn_number,
+                        bot_name=next_actor,
+                        bot_type="character",
+                        stage="parse_schema_repair",
+                        reason=ingress_err,
+                        input_messages=[{"role": "system", "content": attempt_prompt}],
+                        raw_response=char_raw_response,
+                        parsed_output=decision,
+                        context_snapshot={
+                            "director_decision": decision,
+                            "character_names": char_names,
+                            "attempt_index": attempt_index,
+                        },
+                        metadata={"summary_blocks": character_summary_block_audit},
+                        effective_user_trigger=effective_user_trigger,
+                    )
+                    st_module.session_state["selector_decisions"].append(
+                        f"Retrying {next_actor} after schema-recoverable parse failure "
+                        f"(repair lane)."
+                    )
+                    continue
+            elif has_more_attempts:
                 parse_retry_triggered = True
-                parse_retry_reason = error or "Character move could not be parsed"
+                parse_retry_reason = ingress_err
                 log_turn_failure_fn(
                     round_number=round_number,
                     turn_number=turn_number,
@@ -898,6 +1044,7 @@ async def run_character_attempt_phase(
                     f"Retrying {next_actor} after character move parse failure."
                 )
                 continue
+        if error or move is None:
             actors_failed_this_round.append(next_actor)
             log_turn_failure_fn(
                 round_number=round_number,
@@ -905,7 +1052,7 @@ async def run_character_attempt_phase(
                 bot_name=next_actor,
                 bot_type="character",
                 stage="parse",
-                reason=error or "Character move could not be parsed",
+                reason=ingress_err if failure_class != "ok" else (error or "Character move could not be parsed"),
                 input_messages=[{"role": "system", "content": attempt_prompt}],
                 raw_response=char_raw_response,
                 parsed_output=decision,
@@ -1270,6 +1417,15 @@ async def run_character_attempt_phase(
             )
 
         stats_snap = st_module.session_state.get("proposal_coherence_stats")
+        if parse_repair_lane is None and parse_retry_triggered:
+            parse_repair_lane = {
+                "retry_mode": "regenerate",
+                "first_attempt_rejected": True,
+                "first_attempt_failure_stage": "parse_retry",
+                "ingress_error": parse_retry_reason,
+                "first_snapshot": {},
+                "raw_digest": "",
+            }
         turn_execution_metadata = _turn_execution_metadata(
             attempt_index=attempt_index,
             parse_retry_triggered=parse_retry_triggered,
@@ -1289,6 +1445,8 @@ async def run_character_attempt_phase(
             ),
             proposal_legality_retry_triggered=proposal_legality_retry_triggered,
             proposal_legality_retry_reason=proposal_legality_retry_reason,
+            parse_repair_lane=parse_repair_lane,
+            final_move_for_repair_audit=dict(move),
         )
 
         cm_for_audit = get_continuity_manager_fn()

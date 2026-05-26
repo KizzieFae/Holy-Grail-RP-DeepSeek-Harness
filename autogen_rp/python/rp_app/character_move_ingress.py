@@ -10,7 +10,9 @@ path returns a plain ``dict`` that is canonical v2 per ``ARCHITECTURE.md``
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Literal
+
+ParseFailureClass = Literal["ok", "unrecoverable", "schema_recoverable"]
 
 from character_move_adapters import CanonicalV2Move
 from issue240_semantic_evaluation import (
@@ -272,6 +274,83 @@ def parse_character_move_content_to_v2(content: str) -> tuple[CanonicalV2Move | 
 
     Rejects duplicate keys at ``json.loads`` (before :func:`ingest_character_move_json_object`).
     """
+    move, err, _fc, _loose = parse_character_move_for_attempt(content)
+    return move, err
+
+
+def has_meaningful_rp_body(data: dict[str, Any]) -> bool:
+    """True when beats and motivation are present enough for schema-recoverable repair (#250)."""
+    beats = data.get("beats")
+    if not isinstance(beats, list) or len(beats) < 1:
+        return False
+    mot = data.get("motivation")
+    if not isinstance(mot, dict):
+        return False
+    for req in ("goal", "tactic", "emotional_driver", "risk_level"):
+        if not str(mot.get(req, "") or "").strip():
+            return False
+    return True
+
+
+def classify_ingress_failure(error: str, data: dict[str, Any] | None) -> ParseFailureClass:
+    """Classify after JSON load failed strict ingest (repair lane routing only)."""
+    err = str(error or "").strip()
+    if not err:
+        return "ok"
+    if data is None or not isinstance(data, dict):
+        return "unrecoverable"
+    if not has_meaningful_rp_body(data):
+        return "unrecoverable"
+
+    unrecoverable_prefixes = (
+        "No JSON object found",
+        "Unclosed markdown",
+        "Invalid JSON:",
+        "Parse error:",
+        "duplicate key",
+        "JSON payload must be an object",
+        "move_schema_version is required",
+        "move_schema_version must be a JSON integer",
+        "Unsupported move_schema_version",
+        "invalid mixed document",
+        "prohibited root key",
+        "beats must be a non-empty array",
+        "beats exceeds cap",
+        "action string exceeds cap",
+        "dialogue string exceeds cap",
+        "motivation must be an object",
+        "motivation missing or empty required key",
+        "each beat must be an object",
+        "invalid beat type",
+        "action beat requires non-empty action",
+        "speech beat requires non-empty dialogue",
+        "semantic_proposals: [] is not allowed",
+    )
+    if any(err.startswith(p) or p in err for p in unrecoverable_prefixes):
+        return "unrecoverable"
+
+    recoverable_markers = (
+        "unknown fields on semantic_evaluation",
+        "unknown fields on semantic_proposals",
+        "semantic_evaluation.proposals[",
+        "semantic_evaluation and root semantic_proposals",
+        "unknown v2 root keys",
+        "invalid semantic_evaluation.proposals",
+        "semantic_evaluation.decision must be",
+        "semantic_evaluation must be a JSON object",
+        "semantic_evaluation.proposals must be",
+    )
+    if any(m in err for m in recoverable_markers):
+        return "schema_recoverable"
+
+    if "unknown fields on" in err and "beat" in err:
+        return "schema_recoverable"
+
+    return "unrecoverable"
+
+
+def load_loose_character_move_dict(content: str) -> tuple[dict[str, Any] | None, str]:
+    """JSON load only (no strict ingest). For repair-lane classification."""
     json_str, uerr = unwrap_fenced_json_object(content)
     if uerr:
         return None, uerr
@@ -283,4 +362,19 @@ def parse_character_move_content_to_v2(content: str) -> tuple[CanonicalV2Move | 
         return None, f"Parse error: {e}"
     if not isinstance(data, dict):
         return None, "JSON payload must be an object"
-    return ingest_character_move_json_object(data)
+    return data, ""
+
+
+def parse_character_move_for_attempt(
+    content: str,
+) -> tuple[CanonicalV2Move | None, str, ParseFailureClass, dict[str, Any] | None]:
+    """Strict parse plus failure class and loose dict for #250 repair lane."""
+    loose, load_err = load_loose_character_move_dict(content)
+    if load_err:
+        return None, load_err, "unrecoverable", None
+    assert loose is not None
+    move, err = ingest_character_move_json_object(loose)
+    if not err and move is not None:
+        return move, "", "ok", loose
+    failure_class = classify_ingress_failure(err or "ingress rejected", loose)
+    return None, err or "ingress rejected", failure_class, loose
