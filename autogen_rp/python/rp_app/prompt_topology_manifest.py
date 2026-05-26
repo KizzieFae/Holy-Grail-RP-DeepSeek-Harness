@@ -17,6 +17,10 @@ from prompt_topology_issue240 import (
     ISSUE251_AWARENESS_CLEAN_MARKER,
     ISSUE251_AWARENESS_DOCTRINE_MARKER,
     ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER,
+    ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER,
+    ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER,
+    ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER,
+    ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER,
     ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
     ISSUE240_V1_NEXT7_THRESHOLD_CALIBRATION_MARKER,
     ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER,
@@ -53,6 +57,10 @@ MARKER_KEYS: tuple[str, ...] = (
     "participation_awareness_doctrine_issue251_v1",
     "participation_awareness_clean_isolation_v251",
     "participation_severance_doctrine_issue251_canonical_v1",
+    "participation_physical_severance_doctrine_issue251_v1",
+    "participation_physical_severance_isolation_v251",
+    "participation_physical_severance_guarded_doctrine_issue251_v1",
+    "participation_physical_severance_guarded_isolation_v251",
     "participation_arc",
     "social_focus_capsule",
     "active_focus_capsule",
@@ -121,6 +129,10 @@ def _infer_present_character_count(system_text: str) -> int | None:
 
 
 def _infer_topology(markers: dict[str, bool]) -> str:
+    if markers.get("participation_physical_severance_guarded_doctrine_issue251_v1"):
+        return "v1_next7_issue251_physical_severance_guarded_v1"
+    if markers.get("participation_physical_severance_doctrine_issue251_v1"):
+        return "v1_next7_issue251_physical_severance_v1"
     if markers.get("proposal_schema_teaching_v249_a") and markers.get(
         "semantic_evaluation_required"
     ):
@@ -155,6 +167,10 @@ def _marker_fingerprint(markers: dict[str, bool]) -> str:
         "participation_awareness_doctrine_issue251_v1": "awareness.doctrine.v251",
         "participation_awareness_clean_isolation_v251": "awareness.clean.v251",
         "participation_severance_doctrine_issue251_canonical_v1": "awareness.severance.canonical.v251",
+        "participation_physical_severance_doctrine_issue251_v1": "physical.severance.doctrine.v251",
+        "participation_physical_severance_isolation_v251": "physical.severance.isolation.v251",
+        "participation_physical_severance_guarded_doctrine_issue251_v1": "physical.severance.guarded.doctrine.v251",
+        "participation_physical_severance_guarded_isolation_v251": "physical.severance.guarded.isolation.v251",
         "participation_arc": "arc",
         "social_focus_capsule": "social.focus",
         "active_focus_capsule": "active.focus",
@@ -214,6 +230,14 @@ def _detect_markers(system_text: str) -> dict[str, bool]:
         "participation_awareness_clean_isolation_v251": ISSUE251_AWARENESS_CLEAN_MARKER
         in system_text,
         "participation_severance_doctrine_issue251_canonical_v1": ISSUE251_CANONICAL_SEVERANCE_DOCTRINE_MARKER
+        in system_text,
+        "participation_physical_severance_doctrine_issue251_v1": ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER
+        in system_text,
+        "participation_physical_severance_isolation_v251": ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER
+        in system_text,
+        "participation_physical_severance_guarded_doctrine_issue251_v1": ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER
+        in system_text,
+        "participation_physical_severance_guarded_isolation_v251": ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER
         in system_text,
         "participation_arc": ISSUE240_V1_NEXT4_PARTICIPATION_ARC_HEADER in system_text,
         "social_focus_capsule": ISSUE240_V1_NEXT_SOCIAL_FOCUS_HEADER in system_text,

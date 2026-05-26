@@ -686,3 +686,106 @@ def test_issue251_awareness_clean_topology(monkeypatch: pytest.MonkeyPatch) -> N
         "margin withdrawal/rejoin" in baseline
     )
 
+
+def test_issue251_physical_severance_topology(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE251_AWARENESS_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER,
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
+        build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_v1,
+        issue251_physical_severance_contamination_hits,
+    )
+    from prompt_topology_manifest import extract_topology_manifest
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY", "v1_next7_issue251_physical_severance_v1"
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_issue251_physical_severance_v1"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_v1
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER in prompt
+    assert ISSUE251_AWARENESS_DOCTRINE_MARKER not in prompt
+    assert "shared-awareness continuity" not in prompt
+    assert "all four" not in prompt
+    assert "temporary-task framing alone" not in prompt
+    assert "physical displacement alone" not in prompt
+    assert "doorway tether" not in prompt
+    assert ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE not in prompt
+    assert "continue/deepen/reverse" not in prompt
+    assert "physical/perceptual severance" in prompt
+    assert ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER not in prompt
+    assert ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER not in prompt
+    assert issue251_physical_severance_contamination_hits(prompt) == []
+    manifest = extract_topology_manifest(prompt)
+    assert manifest.get("markers", {}).get("proposal_schema_teaching_v249_a")
+    assert manifest.get("markers", {}).get(
+        "participation_physical_severance_doctrine_issue251_v1"
+    )
+    assert manifest.get("markers", {}).get("participation_physical_severance_isolation_v251")
+
+
+def test_issue251_physical_severance_guarded_topology(monkeypatch: pytest.MonkeyPatch) -> None:
+    from prompt_topology_issue240 import (
+        ISSUE251_AWARENESS_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER,
+        ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER,
+        ISSUE251_REJECTED_CONTINUITY_PRESERVATION_PHRASE,
+        ISSUE240_V1_NEXT7_FUZZY_THRESHOLD_MARKER,
+        ISSUE240_V1_NEXT7_PARTICIPATION_BOUNDARY_B_MARKER,
+        ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER,
+        build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_guarded_v1,
+        build_issue251_physical_severance_guarded_doctrine_block,
+        issue251_physical_severance_guarded_contamination_hits,
+    )
+    from prompt_topology_manifest import extract_topology_manifest
+
+    monkeypatch.setenv(
+        "RP_ISSUE240_PROMPT_TOPOLOGY",
+        "v1_next7_issue251_physical_severance_guarded_v1",
+    )
+    assert issue240_prompt_topology_mode() == "v1_next7_issue251_physical_severance_guarded_v1"
+    assert (
+        resolve_character_turn_prompt_builder()
+        is build_character_turn_prompt_issue240_v1_next7_issue251_physical_severance_guarded_v1
+    )
+    kwargs = _minimal_character_prompt_kwargs()
+    prompt = build_character_turn_prompt_for_runtime(**kwargs)
+    assert ISSUE240_V1_NEXT7_PROPOSAL_SCHEMA_A_MARKER in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_GUARDED_DOCTRINE_MARKER in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_GUARDED_ISOLATION_MARKER in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_DOCTRINE_MARKER not in prompt
+    assert ISSUE251_PHYSICAL_SEVERANCE_ISOLATION_MARKER not in prompt
+    assert ISSUE251_AWARENESS_DOCTRINE_MARKER not in prompt
+    assert "shared-awareness continuity" not in prompt
+    assert "all four" not in prompt
+    assert "temporary-task framing alone" not in prompt
+    assert "doorway tether" not in prompt
+    doctrine = build_issue251_physical_severance_guarded_doctrine_block()
+    assert "perceptual severance" not in doctrine
+    assert "ordinary unaided" not in doctrine
+    assert "shared scene boundary" not in doctrine
+    assert "exit arc" not in doctrine
+    assert "Do not complete or assume exits the beat does not complete." in prompt
+    assert "fully left the shared scene" in prompt
+    assert issue251_physical_severance_guarded_contamination_hits(prompt) == []
+    manifest = extract_topology_manifest(prompt)
+    assert manifest.get("topology_inferred") == "v1_next7_issue251_physical_severance_guarded_v1"
+    assert manifest.get("markers", {}).get(
+        "participation_physical_severance_guarded_doctrine_issue251_v1"
+    )
+    assert manifest.get("markers", {}).get(
+        "participation_physical_severance_guarded_isolation_v251"
+    )
+
