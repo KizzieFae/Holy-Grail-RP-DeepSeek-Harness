@@ -24,6 +24,7 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-dsh-replatforming-authority.md` | Governing principles for behavioral-preservation re-platform onto DSH |
 | `rp-app/v2-behavioral-evidence-inventory.md` | Existing audits, tests, and artifacts by capability |
 | `rp-app/v2-capability-dsh-mapping.md` | Capability → DSH mapping and proposed target architecture |
+| `rp-app/v2-runtime-boundary-decision.md` | **V2 runtime boundary & session topology decision** (full-weight architecture proposal) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
 
 ## Related
