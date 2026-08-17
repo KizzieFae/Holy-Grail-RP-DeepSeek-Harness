@@ -179,7 +179,15 @@ The boundary hypothesis survives implementation. Refinements identified:
 
 ## 12. Repository state
 
-(Filled at commit time.)
+| Field | Value |
+|-------|-------|
+| Commit | `a0295d462b3eb1a371ee5cd95a5931db0c2a17e2` |
+| Branch | `main` |
+| Push status | pushed to `origin/main` |
+| Final HEAD | `a0295d462b3eb1a371ee5cd95a5931db0c2a17e2` |
+| Working tree | clean |
+
+**Non-LLM regression:** `1361 passed, 1 failed, 2 skipped` — failure is pre-existing `test_descriptive_exit_updates_authoritative_presence_state`.
 
 ---
 
