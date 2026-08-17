@@ -1,6 +1,12 @@
-# Holy Grail RP
+# Holy Grail RP DeepSeek Harness
 
-Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**, implemented on an AutoGen-based runtime. The product evolves from **card-based, scene-forward** operation toward a **knowledge-driven, packet-based** architecture (see PRD).
+**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). This repository contains the **V1 AutoGen implementation** (known-good baseline) and **V2 governance** for the upcoming DSH migration.
+
+**Start here for harness work:** [CHECKPOINT_BASELINE_DSH.md](./CHECKPOINT_BASELINE_DSH.md) · [V2 authority](./governance/rp-app/v2-dsh-replatforming-authority.md)
+
+---
+
+Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**, implemented on an AutoGen-based runtime (V1). The product evolves from **card-based, scene-forward** operation toward a **knowledge-driven, packet-based** architecture (see PRD), with V2 targeting DSH as the runtime substrate.
 
 ## Start here
 

@@ -3,7 +3,8 @@
 # Do not add template pins, sync state, checksums, manifests, or path-map data here.
 
 [github]
-repository = "KizzieFae/Holy_Grail_RP"
+repository = "KizzieFae/Holy-Grail-RP-DeepSeek-Harness"
+upstream_repository = "KizzieFae/Holy_Grail_RP"
 
 [agents]
 canonical_entrypoint = "autogen_rp/AGENTS.md"
