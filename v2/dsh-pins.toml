@@ -1,0 +1,15 @@
+# Pinned DSH/Cordis versions for V2 boundary prototype (2026-03-17).
+# Upstream evaluated at architecture decision: dsh@0.1.0-rc.7, cordis@4.0.1 — unchanged.
+
+[cordis]
+version = "4.0.1"
+
+[dsh]
+agent = "0.1.0-rc.7"
+agent_loop = "0.1.0-rc.7"
+agent_loop_testkit = "0.1.0-rc.7"
+llm = "0.1.0-rc.7"
+session = "0.1.0-rc.7"
+session_persistence = "0.1.0-rc.7"
+system_prompt = "0.1.0-rc.7"
+cordis_plugin_loader = "1.0.2"

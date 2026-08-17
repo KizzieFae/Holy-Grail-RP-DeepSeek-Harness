@@ -4,7 +4,7 @@
 **Date:** 2026-03-17  
 **Baseline anchor:** `12489a93146c9673a66518d7b3cc2a3ec02fba3b`  
 **DSH evaluated:** `@deepseek-ai/dsh@0.1.0-rc.7`, `@deepseek-ai/cordis@4.0.1` (npm registry)  
-**Implementation authorization:** none
+**Implementation authorization:** boundary prototype slice completed — see `v2-boundary-prototype.md`
 
 **Governing principle (unchanged):**
 

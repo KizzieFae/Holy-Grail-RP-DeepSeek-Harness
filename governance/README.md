@@ -25,7 +25,9 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-behavioral-evidence-inventory.md` | Existing audits, tests, and artifacts by capability |
 | `rp-app/v2-capability-dsh-mapping.md` | Capability → DSH mapping and proposed target architecture |
 | `rp-app/v2-runtime-boundary-decision.md` | **V2 runtime boundary & session topology decision** (full-weight architecture proposal) |
+| `rp-app/v2-boundary-prototype.md` | **V2 boundary prototype implementation report** (narrow vertical slice) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
+| `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
 
 ## Related
 

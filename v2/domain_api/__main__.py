@@ -1,0 +1,30 @@
+"""Run the prototype Domain API HTTP server."""
+
+from __future__ import annotations
+
+import argparse
+
+from domain_api.http_transport import serve
+from domain_api.kernel import DomainKernel
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Holy Grail Domain API (prototype HTTP)")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8765)
+    args = parser.parse_args()
+
+    kernel = DomainKernel()
+    kernel.create_scene()
+    server = serve(kernel, host=args.host, port=args.port)
+    print(f"Domain API listening on http://{args.host}:{args.port}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
