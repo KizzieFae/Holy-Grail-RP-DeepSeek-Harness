@@ -231,7 +231,12 @@ No unnecessary DSH log dependency. V1 deprecation justified but deletion prematu
 
 ## 21. Repository state
 
-(Updated after commit/push)
+| Field | Value |
+|-------|-------|
+| Commit | `6088192` — `feat(v2): M8 durable transcript projection` |
+| Branch | `main` |
+| `origin/main` | aligned after push |
+| Working tree | clean |
 
 ---
 
