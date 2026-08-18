@@ -4,7 +4,7 @@
 **Date:** 2026-08-18  
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **Two-character slice anchor:** `8ee633b`  
-**Implementation HEAD:** (see §16 after commit)
+**Implementation HEAD:** `d6295e1`
 
 ---
 
@@ -97,7 +97,11 @@ Returns `character_roles` for runtime role assignment.
 
 ## 16. Repository state
 
-(See commit after push.)
+| Field | Value |
+|-------|-------|
+| Commit | `d6295e1` — feat(v2): complete generic cast round semantic completion |
+| Branch | `main` |
+| `origin/main` | aligned after push |
 
 ---
 
