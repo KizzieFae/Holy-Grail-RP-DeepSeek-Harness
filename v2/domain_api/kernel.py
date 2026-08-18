@@ -68,6 +68,13 @@ from .session_repository import (  # noqa: E402
     SessionRepository,
 )
 from .session_setup import setup_provenance_for_ui  # noqa: E402
+from .memory_retrieval import build_session_memory_projection  # noqa: E402
+from .memory_write_policy import (  # noqa: E402
+    apply_character_turn_memory,
+    apply_user_turn_memory,
+    restore_character_states,
+    snapshot_character_states,
+)
 from .setup_catalog import (  # noqa: E402
     list_characters_catalog,
     list_scene_templates_catalog,
@@ -179,6 +186,12 @@ class DomainKernel:
 
     def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
+        char_snapshot = snapshot_character_states(fixture)
+        apply_user_turn_memory(
+            fixture,
+            user_name=req.speaker,
+            content=req.content,
+        )
         entry = append_history_entry(
             fixture.rp_history,
             kind="user",
@@ -191,7 +204,12 @@ class DomainKernel:
             },
         )
         if isinstance(self.store, SessionRepository):
-            self.store.persist(fixture)
+            try:
+                self.store.persist(fixture)
+            except PersistenceError:
+                restore_character_states(fixture, char_snapshot)
+                fixture.rp_history.pop()
+                raise
         return entry
 
     def record_presentation(self, req: PresentationRecordRequest) -> dict[str, Any]:
@@ -498,6 +516,8 @@ class DomainKernel:
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
         private_secret = fixture.character_private_secrets.get(req.character_id, "")
+        character_state = fixture.character_states.get(req.character_id)
+        memory_projection = build_session_memory_projection(character_state)
         contributions: list[PromptContribution] = [
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene",
@@ -543,27 +563,46 @@ class DomainKernel:
             )
         contributions.extend(
             (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-character",
-                source_kind="character_profile",
-                authority_class="authoritative",
-                knowledge_ids=(f"character:{req.character_id}",),
-                priority=20,
-                content=(
-                    f"You are {req.character_id} ({req.role}). "
-                    "Respond with a single JSON object: canonical character move v2."
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-character",
+                    source_kind="character_profile",
+                    authority_class="authoritative",
+                    knowledge_ids=(f"character:{req.character_id}",),
+                    priority=20,
+                    content=(
+                        f"You are {req.character_id} ({req.role}). "
+                        "Respond with a single JSON object: canonical character move v2."
+                    ),
+                    provenance={"character_id": req.character_id, "role": req.role},
                 ),
-                provenance={"character_id": req.character_id, "role": req.role},
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-character-private",
-                source_kind="character_private",
-                authority_class="authoritative",
-                knowledge_ids=(f"character-private:{req.character_id}",),
-                priority=25,
-                content=f"Character-private knowledge for {req.character_id}: {private_secret}",
-                provenance={"character_id": req.character_id, "visibility": "character_only"},
-            ),
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-character-private",
+                    source_kind="character_private",
+                    authority_class="authoritative",
+                    knowledge_ids=(f"character-private:{req.character_id}",),
+                    priority=25,
+                    content=f"Character-private knowledge for {req.character_id}: {private_secret}",
+                    provenance={"character_id": req.character_id, "visibility": "character_only"},
+                ),
+            )
+        )
+        if memory_projection is not None:
+            memory_content, memory_provenance = memory_projection
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-character-memory",
+                    source_kind="character_memory",
+                    authority_class="derived",
+                    knowledge_ids=(f"character-memory:{req.character_id}",),
+                    priority=22,
+                    content=memory_content,
+                    provenance={
+                        "character_id": req.character_id,
+                        **memory_provenance,
+                    },
+                )
+            )
+        contributions.append(
             PromptContribution(
                 contribution_id=f"{manifest_id}-instruction",
                 source_kind="inference_instruction",
@@ -576,7 +615,6 @@ class DomainKernel:
                 ),
                 provenance={"inference_id": req.inference_id},
             ),
-            )
         )
         return PromptContributionManifest(
             manifest_id=manifest_id,
@@ -799,6 +837,13 @@ class DomainKernel:
             director_decision=director_decision,
             other_characters=others,
         )
+        char_snapshot = snapshot_character_states(fixture)
+        apply_character_turn_memory(
+            fixture,
+            acting_character=req.character_id,
+            move=move,
+            director_decision=director_decision,
+        )
         after_turn = mgr.turn_counter
         commit_id = f"hg-commit-{uuid.uuid4()}"
         fixture.committed_move_count += 1
@@ -856,6 +901,7 @@ class DomainKernel:
             except PersistenceError as exc:
                 if isinstance(repository, SessionRepository) and manager_snapshot is not None:
                     repository.restore_manager(fixture, manager_snapshot)
+                    restore_character_states(fixture, char_snapshot)
                     if round_snapshot is not None:
                         rnd.director_decision = round_snapshot["director_decision"]
                         rnd.committed_character_id = round_snapshot["committed_character_id"]
