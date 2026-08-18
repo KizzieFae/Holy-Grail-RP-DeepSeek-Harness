@@ -1,9 +1,0 @@
----
-description: Testing expectations for Python changes
-globs:
-  - "python/**/*.py"
-  - "python/tests/**/*.py"
-alwaysApply: false
----
-
-@governance/policies/testing-expectations.md

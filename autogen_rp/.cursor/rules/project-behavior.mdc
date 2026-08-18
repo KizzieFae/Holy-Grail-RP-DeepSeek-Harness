@@ -1,7 +1,0 @@
----
-description: Repo-wide working behavior and source-of-truth routing
-globs:
-alwaysApply: true
----
-
-@governance/policies/project-behavior-holy-grail.md

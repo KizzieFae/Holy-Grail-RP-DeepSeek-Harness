@@ -1,9 +1,0 @@
----
-description: Protect architecture boundaries and preserve current design intent
-globs:
-  - "python/rp_app/**/*.py"
-  - "python/**/*.py"
-alwaysApply: false
----
-
-@governance/policies/architecture-protection.md
