@@ -14,19 +14,27 @@ if str(_RP_APP) not in sys.path:
 
 from character_move_adapters import legacy_move_text_for_validation  # noqa: E402
 from response_validation import validate_bot_response  # noqa: E402
-from response_validation_parsing import parse_character_move  # noqa: E402
+from response_validation_parsing import (  # noqa: E402
+    parse_character_move,
+    parse_director_decision,
+)
 
 from .contract import (  # noqa: E402
     CommitRequest,
     CommitResponse,
     ContextPrepareRequest,
+    DirectorContextPrepareRequest,
+    DirectorDecisionResult,
+    DirectorDecisionValidationRequest,
     PromptContribution,
     PromptContributionManifest,
+    RoundStartRequest,
+    RoundStartResponse,
     SceneStateSnapshot,
     ValidationRequest,
     ValidationResponse,
 )
-from .fixture_store import FixtureStore, SceneFixture  # noqa: E402
+from .fixture_store import FixtureStore, RoundFixture, SceneFixture  # noqa: E402
 
 PROTOTYPE_VALID_MOVE: dict[str, Any] = {
     "move_schema_version": 2,
@@ -38,6 +46,14 @@ PROTOTYPE_VALID_MOVE: dict[str, Any] = {
         "risk_level": "low",
     },
     "semantic_evaluation": {"decision": "no_covered_change"},
+}
+
+PROTOTYPE_DIRECTOR_DECISION: dict[str, Any] = {
+    "next_actor": "Alice",
+    "end_round": False,
+    "reason": "Alice has not spoken yet.",
+    "environment_event": "",
+    "tension_shift": "",
 }
 
 
@@ -60,11 +76,37 @@ class DomainKernel:
             committed_move_count=fixture.committed_move_count,
         )
 
-    def prepare_context(self, req: ContextPrepareRequest) -> PromptContributionManifest:
+    def start_round(self, req: RoundStartRequest) -> RoundStartResponse:
         fixture = self.store.require(req.hg_scene_id)
         mgr = fixture.manager
+        round_id = f"hg-round-{uuid.uuid4()}"
+        fixture.rounds.append(
+            RoundFixture(
+                hg_round_id=round_id,
+                hg_scene_id=req.hg_scene_id,
+                turn_index=int(mgr.turn_counter),
+            )
+        )
+        return RoundStartResponse(
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=round_id,
+            turn_index=int(mgr.turn_counter),
+        )
+
+    def _require_round(self, fixture: SceneFixture, hg_round_id: str) -> RoundFixture:
+        for rnd in fixture.rounds:
+            if rnd.hg_round_id == hg_round_id:
+                return rnd
+        raise KeyError(f"unknown hg_round_id: {hg_round_id}")
+
+    def prepare_director_context(
+        self, req: DirectorContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        mgr = fixture.manager
         assert mgr.scene_state is not None
-        manifest_id = f"manifest-{req.inference_id}-{req.attempt_index}"
+        manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
         contributions = (
@@ -78,8 +120,68 @@ class DomainKernel:
                     f"Scene location: {location}. Present characters: {present}. "
                     f"Continuity turn counter: {mgr.turn_counter}."
                 ),
+                provenance={"hg_scene_id": req.hg_scene_id, "hg_round_id": req.hg_round_id},
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-director-scratch",
+                source_kind="director_scratch",
+                authority_class="derived",
+                knowledge_ids=(f"director:{req.inference_id}",),
+                priority=20,
+                content=(
+                    "Director scratch: weigh participation balance and select the next actor. "
+                    "Do not assume character-private knowledge."
+                ),
+                provenance={"inference_id": req.inference_id, "role": "director"},
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-instruction",
+                source_kind="inference_instruction",
+                authority_class="derived",
+                knowledge_ids=(f"inference:{req.inference_id}",),
+                priority=30,
+                content=(
+                    "Output only JSON with next_actor, end_round, reason, environment_event, "
+                    "tension_shift."
+                ),
+                provenance={"inference_id": req.inference_id},
+            ),
+        )
+        return PromptContributionManifest(
+            manifest_id=manifest_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            role="director",
+            character_id=None,
+            turn_index=rnd.turn_index,
+            attempt_index=req.attempt_index,
+            contributions=contributions,
+        )
+
+    def prepare_context(self, req: ContextPrepareRequest) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        manifest_id = f"manifest-character-{req.inference_id}-{req.attempt_index}"
+        location = str(mgr.scene_state.location or "unknown")
+        present = ", ".join(fixture.cast)
+        private_secret = fixture.character_private_secrets.get(req.character_id, "")
+        contributions = (
+            PromptContribution(
+                contribution_id=f"{manifest_id}-scene",
+                source_kind="scene_state",
+                authority_class="authoritative",
+                knowledge_ids=(f"scene:{req.hg_scene_id}",),
+                priority=10,
+                content=(
+                    f"Scene location: {location}. Present characters: {present}. "
+                    f"Continuity turn counter: {mgr.turn_counter}."
+                ),
                 provenance={
                     "hg_scene_id": req.hg_scene_id,
+                    "hg_round_id": req.hg_round_id,
                     "turn_index": req.turn_index,
                 },
             ),
@@ -94,6 +196,15 @@ class DomainKernel:
                     "Respond with a single JSON object: canonical character move v2."
                 ),
                 provenance={"character_id": req.character_id, "role": req.role},
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-character-private",
+                source_kind="character_private",
+                authority_class="authoritative",
+                knowledge_ids=(f"character-private:{req.character_id}",),
+                priority=25,
+                content=f"Character-private knowledge for {req.character_id}: {private_secret}",
+                provenance={"character_id": req.character_id, "visibility": "character_only"},
             ),
             PromptContribution(
                 contribution_id=f"{manifest_id}-instruction",
@@ -112,10 +223,54 @@ class DomainKernel:
             manifest_id=manifest_id,
             inference_id=req.inference_id,
             hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            role="character",
             character_id=req.character_id,
             turn_index=req.turn_index,
             attempt_index=req.attempt_index,
             contributions=contributions,
+        )
+
+    def validate_director_decision(
+        self, req: DirectorDecisionValidationRequest
+    ) -> DirectorDecisionResult:
+        fixture = self.store.require(req.hg_scene_id)
+        self._require_round(fixture, req.hg_round_id)
+
+        raw = req.raw_model_output
+        if raw is None:
+            raw = json.dumps(req.proposed_decision, ensure_ascii=False)
+
+        parsed, parse_err = parse_director_decision(
+            raw,
+            participant_names=list(fixture.cast),
+            available_actors=list(fixture.cast),
+        )
+        if parse_err or parsed is None:
+            return DirectorDecisionResult(
+                accepted=False,
+                validation_class="parse_error",
+                reason=parse_err or "parse failed",
+                retryable=True,
+            )
+
+        next_actor = str(parsed.get("next_actor", "") or "").strip()
+        if not next_actor:
+            return DirectorDecisionResult(
+                accepted=False,
+                validation_class="domain_rule",
+                reason="Director decision must select next_actor for this slice",
+                retryable=True,
+                normalized_decision=dict(parsed),
+            )
+
+        return DirectorDecisionResult(
+            accepted=True,
+            validation_class="accepted",
+            reason="",
+            retryable=False,
+            normalized_decision=dict(parsed),
+            selected_character_id=next_actor,
         )
 
     def validate_move(self, req: ValidationRequest) -> ValidationResponse:
@@ -166,6 +321,7 @@ class DomainKernel:
 
     def commit_move(self, req: CommitRequest) -> CommitResponse:
         fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
         mgr = fixture.manager
         if mgr.turn_counter != req.expected_turn_index:
             return CommitResponse(
@@ -181,10 +337,8 @@ class DomainKernel:
             )
 
         others = [c for c in fixture.cast if c != req.character_id]
-        next_actor = others[0] if others else req.character_id
-        director_decision = {"next_actor": next_actor, "end_round": False, "reason": "prototype"}
+        director_decision = dict(req.director_decision)
 
-        before_turn = mgr.turn_counter
         mgr.process_turn(
             acting_character=req.character_id,
             move=dict(req.validated_move),
@@ -195,6 +349,7 @@ class DomainKernel:
         commit_id = f"hg-commit-{uuid.uuid4()}"
         fixture.committed_move_count += 1
         fixture.commit_ids.append(commit_id)
+        rnd.director_decision = director_decision
 
         return CommitResponse(
             committed=True,

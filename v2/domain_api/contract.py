@@ -13,6 +13,8 @@ AuthorityClass = Literal["authoritative", "derived", "suggestive"]
 SourceKind = Literal[
     "scene_state",
     "character_profile",
+    "character_private",
+    "director_scratch",
     "continuity_summary",
     "director_decision",
     "inference_instruction",
@@ -29,11 +31,54 @@ ValidationClass = Literal[
 @dataclass(frozen=True)
 class ContextPrepareRequest:
     hg_scene_id: str
+    hg_round_id: str
     inference_id: str
     character_id: str
     role: str
     turn_index: int
     attempt_index: int
+
+
+@dataclass(frozen=True)
+class DirectorContextPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    turn_index: int
+    attempt_index: int
+
+
+@dataclass(frozen=True)
+class RoundStartRequest:
+    hg_scene_id: str
+
+
+@dataclass(frozen=True)
+class RoundStartResponse:
+    hg_scene_id: str
+    hg_round_id: str
+    turn_index: int
+
+
+@dataclass(frozen=True)
+class DirectorDecisionValidationRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    turn_index: int
+    attempt_index: int
+    proposed_decision: dict[str, Any]
+    raw_model_output: str | None = None
+
+
+@dataclass(frozen=True)
+class DirectorDecisionResult:
+    accepted: bool
+    validation_class: ValidationClass
+    reason: str
+    retryable: bool
+    normalized_decision: dict[str, Any] | None = None
+    selected_character_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -52,7 +97,9 @@ class PromptContributionManifest:
     manifest_id: str
     inference_id: str
     hg_scene_id: str
-    character_id: str
+    hg_round_id: str
+    role: str
+    character_id: str | None
     turn_index: int
     attempt_index: int
     contributions: tuple[PromptContribution, ...]
@@ -62,6 +109,7 @@ class PromptContributionManifest:
 class ValidationRequest:
     inference_id: str
     hg_scene_id: str
+    hg_round_id: str
     character_id: str
     role: str
     turn_index: int
@@ -83,8 +131,10 @@ class ValidationResponse:
 class CommitRequest:
     inference_id: str
     hg_scene_id: str
+    hg_round_id: str
     character_id: str
     validated_move: dict[str, Any]
+    director_decision: dict[str, Any]
     expected_turn_index: int
 
 

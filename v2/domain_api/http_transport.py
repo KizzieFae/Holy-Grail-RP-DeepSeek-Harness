@@ -1,8 +1,4 @@
-"""Prototype HTTP transport for the Domain API (replaceable; not architectural).
-
-The Domain API contract in ``contract.py`` is transport-neutral. This module
-exists only to exercise the Python↔DSH boundary locally during the V2 prototype.
-"""
+"""Prototype HTTP transport for the Domain API (replaceable; not architectural)."""
 
 from __future__ import annotations
 
@@ -15,6 +11,9 @@ from urllib.parse import urlparse
 from .contract import (
     CommitRequest,
     ContextPrepareRequest,
+    DirectorContextPrepareRequest,
+    DirectorDecisionValidationRequest,
+    RoundStartRequest,
     ValidationRequest,
 )
 from .kernel import DomainKernel
@@ -58,9 +57,36 @@ class DomainApiHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             data = self._read_json()
+            if path == "/v1/rounds/start":
+                req = RoundStartRequest(hg_scene_id=str(data["hg_scene_id"]))
+                self._send_json(200, self.kernel.start_round(req))
+                return
+            if path == "/v1/director/context/prepare":
+                req = DirectorContextPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    turn_index=int(data.get("turn_index", 0)),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                )
+                self._send_json(200, self.kernel.prepare_director_context(req))
+                return
+            if path == "/v1/director/decisions/validate":
+                req = DirectorDecisionValidationRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    turn_index=int(data.get("turn_index", 0)),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                    proposed_decision=dict(data.get("proposed_decision") or {}),
+                    raw_model_output=data.get("raw_model_output"),
+                )
+                self._send_json(200, self.kernel.validate_director_decision(req))
+                return
             if path == "/v1/context/prepare":
                 req = ContextPrepareRequest(
                     hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
                     inference_id=str(data["inference_id"]),
                     character_id=str(data["character_id"]),
                     role=str(data.get("role", "guest")),
@@ -73,6 +99,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 req = ValidationRequest(
                     inference_id=str(data["inference_id"]),
                     hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
                     character_id=str(data["character_id"]),
                     role=str(data.get("role", "guest")),
                     turn_index=int(data.get("turn_index", 0)),
@@ -86,8 +113,10 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 req = CommitRequest(
                     inference_id=str(data["inference_id"]),
                     hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
                     character_id=str(data["character_id"]),
                     validated_move=dict(data["validated_move"]),
+                    director_decision=dict(data["director_decision"]),
                     expected_turn_index=int(data["expected_turn_index"]),
                 )
                 self._send_json(200, self.kernel.commit_move(req))

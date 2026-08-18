@@ -5,7 +5,6 @@
   "description": "V2 boundary prototype: minimal DSH/Cordis RP inference composition",
   "type": "module",
   "scripts": {
-    "prototype": "node src/run-prototype.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

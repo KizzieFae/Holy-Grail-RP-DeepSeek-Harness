@@ -17,12 +17,22 @@ from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E4
 
 
 @dataclass
+class RoundFixture:
+    hg_round_id: str
+    hg_scene_id: str
+    turn_index: int
+    director_decision: dict[str, Any] | None = None
+
+
+@dataclass
 class SceneFixture:
     hg_scene_id: str
     manager: ContinuityManager
     cast: list[str]
     committed_move_count: int = 0
     commit_ids: list[str] = field(default_factory=list)
+    character_private_secrets: dict[str, str] = field(default_factory=dict)
+    rounds: list[RoundFixture] = field(default_factory=list)
 
 
 def create_prototype_scene(
@@ -42,7 +52,13 @@ def create_prototype_scene(
     assert mgr.scene_state is not None
     mgr.scene_state.role_assignments = {cast[0]: "guest", cast[1]: "staff"}
     finalize_continuity_setup_seam(mgr, cast=list(cast))
-    return SceneFixture(hg_scene_id=scene_id, manager=mgr, cast=list(cast))
+    secrets = {name: f"private-{name}-{uuid.uuid4().hex[:8]}" for name in cast}
+    return SceneFixture(
+        hg_scene_id=scene_id,
+        manager=mgr,
+        cast=list(cast),
+        character_private_secrets=secrets,
+    )
 
 
 class FixtureStore:

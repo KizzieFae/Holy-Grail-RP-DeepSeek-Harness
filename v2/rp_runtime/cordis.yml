@@ -1,6 +1,4 @@
-# Minimal RP-oriented DSH composition for the V2 boundary prototype.
-# Boot is programmatic (see src/character-inference-slice.ts); this file documents
-# the intended plugin spine without coding-agent tools (bash/editor/fs/sandbox).
+# Minimal RP-oriented DSH composition for the V2 runtime.
 
 - id: llm
   name: '@deepseek-ai/dsh-llm'
@@ -22,5 +20,5 @@
   config:
     agents: []
 
-# Mock LLM adapter and Holy Grail boundary orchestration are registered in code
-# (prototype-only) rather than as permanent Cordis plugins.
+# Holy Grail RP runtime orchestration is provided by the in-repo Cordis service:
+# v2/rp_runtime/src/plugins/hg-rp-runtime/service.mjs (HolyGrailRpRuntime)
