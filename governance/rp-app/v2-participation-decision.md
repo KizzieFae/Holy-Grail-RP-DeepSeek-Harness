@@ -5,7 +5,7 @@
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **Presence/eligibility anchor:** `7738f00`  
 **Investigation anchor:** `22b9bbc`  
-**Implementation HEAD:** `e30f666`
+**Implementation HEAD:** `bc01b47` (implementation `e30f666`, governance `bc01b47`)
 
 ---
 
