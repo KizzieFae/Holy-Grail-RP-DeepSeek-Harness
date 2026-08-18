@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 _MOD_NAME = 'memory_layer.storage'
-_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_MODULES = Path(__file__).resolve().parents[4] / "v2" / "domain" / "modules"
 _IMPL = _MODULES / 'memory_layer/storage.py'
 if str(_MODULES) not in sys.path:
     sys.path.insert(0, str(_MODULES))

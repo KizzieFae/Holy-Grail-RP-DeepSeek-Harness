@@ -38,12 +38,41 @@ else:
 globals().update({{k: v for k, v in _mod.__dict__.items() if not k.startswith("_")}})
 '''
 
+SHIM_NESTED = '''\
+"""Legacy V1 import shim — implementation in v2/domain/modules/{relpath}."""
+
+from __future__ import annotations
+
+import importlib.util
+import sys
+from pathlib import Path
+
+_MOD_NAME = {modname!r}
+_MODULES = Path(__file__).resolve().parents[4] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / {relpath!r}
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
+
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {{_IMPL}}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
+
+globals().update({{k: v for k, v in _mod.__dict__.items() if not k.startswith("_")}})
+'''
+
 
 def main() -> None:
     count = 0
     for path in sorted(RP_APP.glob("*.py")):
         name = path.stem
-        if name == "character_loader":
+        if name in {"character_loader", "__init__"}:
             continue
         impl = MODULES / f"{name}.py"
         if not impl.is_file():
@@ -74,7 +103,7 @@ from memory_layer.facade import *  # noqa: F403
         shim = ml_dir / fname
         modname = f"memory_layer.{fname[:-3]}"
         shim.write_text(
-            SHIM.format(relpath=f"memory_layer/{fname}", modname=modname),
+            SHIM_NESTED.format(relpath=f"memory_layer/{fname}", modname=modname),
             encoding="utf-8",
         )
         count += 1
