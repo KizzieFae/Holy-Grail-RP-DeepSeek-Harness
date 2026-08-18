@@ -5,7 +5,7 @@
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **Mature architecture anchor:** `8cd68d4`  
 **M1 HgContextBridge anchor:** `50715d1`  
-**Implementation HEAD:** _(set at commit)_
+**Implementation HEAD:** `c6e8a07`
 
 ---
 
