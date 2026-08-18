@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M13 investigation anchor:** `05dd758`  
-**M13.3 completion HEAD:** _(set at commit)_
+**M13.3 completion HEAD:** `c7beebf`
 
 **Objective:** Remove Microsoft AutoGen .NET vendor tree and upstream monorepo infrastructure with zero Holy Grail consumers. No runtime behavior change.
 
