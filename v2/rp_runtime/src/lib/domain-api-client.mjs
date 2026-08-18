@@ -17,6 +17,16 @@ async function postJson(metrics, baseUrl, path, body, label) {
   return res.json();
 }
 
+async function getJson(metrics, baseUrl, path, label) {
+  trackBoundaryCall(metrics, label, {});
+  const res = await fetch(`${baseUrl}${path}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Domain API ${path} failed (${res.status}): ${text}`);
+  }
+  return res.json();
+}
+
 export function createDomainApiClient(baseUrl) {
   const metrics = { calls: [] };
   return {
@@ -83,6 +93,20 @@ export function createDomainApiClient(baseUrl) {
       const res = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(hgSessionId)}/state`);
       if (!res.ok) throw new Error(`getSessionState failed: ${res.status}`);
       return res.json();
+    },
+    listCharacters() {
+      return getJson(metrics, baseUrl, '/v1/catalog/characters', 'listCharacters');
+    },
+    listSceneTemplates() {
+      return getJson(metrics, baseUrl, '/v1/catalog/scene-templates', 'listSceneTemplates');
+    },
+    listTemplateOpeners(templateId) {
+      return getJson(
+        metrics,
+        baseUrl,
+        `/v1/catalog/scene-templates/${encodeURIComponent(templateId)}/openers`,
+        'listTemplateOpeners',
+      );
     },
     async getSceneState(hgSceneId) {
       return this.getSessionState(hgSceneId);

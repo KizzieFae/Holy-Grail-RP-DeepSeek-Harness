@@ -6,6 +6,7 @@ export function detectForcedSpeaker(content, {
   participantNames = [],
   previousParticipantSpeaker = null,
   resolveDisplayName = (name) => name,
+  characterFileIds = {},
 } = {}) {
   if (!content || !participantNames.length) return null;
 
@@ -19,6 +20,11 @@ export function detectForcedSpeaker(content, {
     ]);
     const resolved = String(resolveDisplayName(name) || '').trim().toLowerCase();
     if (resolved) variants.add(resolved);
+    const fileId = characterFileIds[name];
+    if (fileId) {
+      variants.add(String(fileId).toLowerCase());
+      variants.add(String(fileId).toLowerCase().replace(/_/g, ' '));
+    }
 
     const ordered = [...variants].filter(Boolean).sort((a, b) => b.length - a.length);
     for (const variant of ordered) {

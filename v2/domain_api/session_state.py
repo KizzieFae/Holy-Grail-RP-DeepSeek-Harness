@@ -60,6 +60,8 @@ class LiveSession:
     continuity_version: int = 0
     commit_dedup_index: dict[str, dict[str, Any]] = field(default_factory=dict)
     rp_history: list[dict[str, Any]] = field(default_factory=list)
+    setup_snapshot: dict[str, Any] = field(default_factory=dict)
+    character_file_ids: dict[str, str] = field(default_factory=dict)
 
     @property
     def session_id(self) -> str:

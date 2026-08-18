@@ -38,6 +38,22 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
         });
       }
 
+      if (req.method === 'GET' && path === '/api/characters') {
+        const characters = await applicationClient.listCharacters();
+        return sendJson(res, 200, { characters });
+      }
+
+      if (req.method === 'GET' && path === '/api/scene-templates') {
+        const sceneTemplates = await applicationClient.listSceneTemplates();
+        return sendJson(res, 200, { scene_templates: sceneTemplates });
+      }
+
+      if (req.method === 'GET' && path.startsWith('/api/scene-templates/') && path.endsWith('/openers')) {
+        const templateId = path.slice('/api/scene-templates/'.length, -'/openers'.length);
+        const openers = await applicationClient.listTemplateOpeners(templateId);
+        return sendJson(res, 200, { template_id: templateId, openers });
+      }
+
       if (req.method === 'POST' && path === '/api/sessions/create') {
         const body = await readJson(req);
         const session = await applicationClient.createSession(body);

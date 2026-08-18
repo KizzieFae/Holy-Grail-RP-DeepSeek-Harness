@@ -20,6 +20,7 @@ from continuity_manager import ContinuityManager  # noqa: E402
 from session_manager import SessionManager  # noqa: E402
 
 from .contract import CommitResponse  # noqa: E402
+from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
     V2_HOST_METADATA_KEY,
     LiveSession,
@@ -65,17 +66,33 @@ class SessionRepository:
         self,
         *,
         cast: list[str] | None = None,
+        characters: list[str] | None = None,
+        scene_template_id: str | None = None,
+        role_assignments: dict[str, str] | None = None,
+        opening: dict[str, Any] | None = None,
         location: str = "Workshop",
         hg_session_id: str | None = None,
         opening_description: str | None = None,
+        characters_dir: str | Path | None = None,
     ) -> LiveSession:
-        session = initialize_live_session(
-            hg_session_id=hg_session_id,
-            location=location,
-            cast=cast,
-            opening_description=opening_description
-            or "A quiet workshop for Holy Grail domain host sessions.",
-        )
+        if characters:
+            session = create_live_session_from_setup(
+                character_files=list(characters),
+                scene_template_id=scene_template_id,
+                role_assignments=role_assignments,
+                opening=opening,
+                location=location if location != "Workshop" else None,
+                hg_session_id=hg_session_id,
+                characters_dir=characters_dir,
+            )
+        else:
+            session = initialize_live_session(
+                hg_session_id=hg_session_id,
+                location=location,
+                cast=cast,
+                opening_description=opening_description
+                or "A quiet workshop for Holy Grail domain host sessions.",
+            )
         self._cache[session.hg_scene_id] = session
         self.persist(session)
         return session
@@ -192,6 +209,8 @@ class SessionRepository:
                 "continuity_version": session.continuity_version,
                 "commit_dedup_index": dict(session.commit_dedup_index),
                 "rp_history": list(session.rp_history),
+                "setup_snapshot": copy.deepcopy(session.setup_snapshot),
+                "character_file_ids": dict(session.character_file_ids),
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -250,6 +269,8 @@ class SessionRepository:
             continuity_version=int(host_state.get("continuity_version", 0)),
             commit_dedup_index=dict(host_state.get("commit_dedup_index") or {}),
             rp_history=list(host_state.get("rp_history") or []),
+            setup_snapshot=dict(host_state.get("setup_snapshot") or {}),
+            character_file_ids=dict(host_state.get("character_file_ids") or {}),
             rounds=[],
         )
 

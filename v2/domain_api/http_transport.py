@@ -67,6 +67,10 @@ class DomainApiHandler(BaseHTTPRequestHandler):
             if path == "/v1/sessions/create":
                 req = SessionCreateRequest(
                     cast=tuple(data["cast"]) if data.get("cast") else None,
+                    characters=tuple(data["characters"]) if data.get("characters") else None,
+                    scene_template_id=data.get("scene_template_id"),
+                    role_assignments=dict(data.get("role_assignments") or {}),
+                    opening=dict(data.get("opening") or {}) if data.get("opening") else None,
                     location=str(data.get("location", "Workshop")),
                     hg_session_id=data.get("hg_session_id"),
                 )
@@ -74,6 +78,10 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     201,
                     self.kernel.create_session(
                         cast=list(req.cast) if req.cast else None,
+                        characters=list(req.characters) if req.characters else None,
+                        scene_template_id=req.scene_template_id,
+                        role_assignments=req.role_assignments,
+                        opening=req.opening,
                         location=req.location,
                         hg_session_id=req.hg_session_id,
                     ),
@@ -213,6 +221,21 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     "status": "ok" if healthy else "degraded",
                     "service": "holy-grail-domain-host",
                 },
+            )
+            return
+        if path == "/v1/catalog/characters":
+            self._send_json(200, {"characters": self.kernel.list_characters()})
+            return
+        if path == "/v1/catalog/scene-templates":
+            self._send_json(200, {"scene_templates": self.kernel.list_scene_templates()})
+            return
+        if path.startswith("/v1/catalog/scene-templates/") and path.endswith("/openers"):
+            template_id = path.removeprefix("/v1/catalog/scene-templates/").removesuffix(
+                "/openers"
+            )
+            self._send_json(
+                200,
+                {"template_id": template_id, "openers": self.kernel.list_template_openers(template_id)},
             )
             return
         if path.startswith("/v1/sessions/") and path.endswith("/state"):

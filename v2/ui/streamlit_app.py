@@ -38,12 +38,20 @@ def init_state() -> None:
         st.session_state.transcript = []
     if "runtime_status" not in st.session_state:
         st.session_state.runtime_status = "unknown"
+    if "character_catalog" not in st.session_state:
+        st.session_state.character_catalog = []
+    if "template_catalog" not in st.session_state:
+        st.session_state.template_catalog = []
+    if "setup_provenance" not in st.session_state:
+        st.session_state.setup_provenance = None
 
 
 def refresh_status() -> None:
     try:
         status = api_request("GET", "/api/status")
-        st.session_state.runtime_status = status.get("health", {}).get("application_status", "ready")
+        st.session_state.runtime_status = status.get("health", {}).get(
+            "application_status", "ready"
+        )
         if status.get("active_session_id"):
             st.session_state.hg_session_id = status["active_session_id"]
         if status.get("transcript"):
@@ -52,25 +60,98 @@ def refresh_status() -> None:
         st.session_state.runtime_status = f"unavailable: {exc}"
 
 
+def load_catalogs() -> None:
+    try:
+        st.session_state.character_catalog = api_request("GET", "/api/characters").get(
+            "characters", []
+        )
+        st.session_state.template_catalog = api_request("GET", "/api/scene-templates").get(
+            "scene_templates", []
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def render_sidebar() -> None:
     st.sidebar.header("Holy Grail V2")
     st.sidebar.caption(f"API: {API_BASE}")
 
-    cast_input = st.sidebar.text_input("Cast (comma-separated)", "Alice")
+    load_catalogs()
+    characters = st.session_state.character_catalog
+    templates = st.session_state.template_catalog
+
+    if characters:
+        labels = {
+            item["character_id"]: f"{item['display_name']} ({item['character_id']})"
+            for item in characters
+        }
+        selected_ids = st.sidebar.multiselect(
+            "Character cards",
+            options=list(labels.keys()),
+            format_func=lambda cid: labels[cid],
+        )
+    else:
+        st.sidebar.warning("Character catalog unavailable — using prototype cast.")
+        selected_ids = []
+
+    template_id = None
+    if templates:
+        template_labels = {
+            item["template_id"]: item["template_id"].replace("_", " ")
+            for item in templates
+        }
+        template_choice = st.sidebar.selectbox(
+            "Scene template (optional)",
+            options=["(none)"] + list(template_labels.keys()),
+            format_func=lambda tid: "No template" if tid == "(none)" else template_labels[tid],
+        )
+        if template_choice != "(none)":
+            template_id = template_choice
+
+    opening_mode = st.sidebar.selectbox(
+        "Opening",
+        options=["minimal", "custom"],
+        help="Template opener assets can be added in a follow-up slice.",
+    )
+    custom_opening = ""
+    if opening_mode == "custom":
+        custom_opening = st.sidebar.text_area("Custom opening text", height=80)
+
     if st.sidebar.button("Create session"):
-        cast = [name.strip() for name in cast_input.split(",") if name.strip()]
-        result = api_request("POST", "/api/sessions/create", {"cast": cast})
-        st.session_state.hg_session_id = result["session"]["hg_session_id"]
+        if selected_ids:
+            payload: dict = {"characters": selected_ids}
+            if template_id:
+                payload["scene_template_id"] = template_id
+            if opening_mode == "custom" and custom_opening.strip():
+                payload["opening"] = {"mode": "custom", "text": custom_opening.strip()}
+            else:
+                payload["opening"] = {"mode": "minimal"}
+        else:
+            cast_input = st.sidebar.text_input("Prototype cast", "Alice", key="proto_cast")
+            payload = {"cast": [name.strip() for name in cast_input.split(",") if name.strip()]}
+
+        result = api_request("POST", "/api/sessions/create", payload)
+        session = result["session"]
+        st.session_state.hg_session_id = session["hg_session_id"]
+        st.session_state.setup_provenance = session.get("setup_provenance")
         st.session_state.transcript = []
         st.sidebar.success(f"Created {st.session_state.hg_session_id}")
 
     resume_id = st.sidebar.text_input("Resume session id", st.session_state.hg_session_id or "")
     if st.sidebar.button("Open session") and resume_id.strip():
         result = api_request("POST", "/api/sessions/open", {"hg_session_id": resume_id.strip()})
-        st.session_state.hg_session_id = result["session"]["hg_session_id"]
-        transcript = api_request("GET", f"/api/sessions/{st.session_state.hg_session_id}/transcript")
+        session = result["session"]
+        st.session_state.hg_session_id = session["hg_session_id"]
+        st.session_state.setup_provenance = session.get("setup_provenance")
+        transcript = api_request(
+            "GET", f"/api/sessions/{st.session_state.hg_session_id}/transcript"
+        )
         st.session_state.transcript = transcript.get("transcript", [])
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
+
+    if st.session_state.setup_provenance:
+        st.sidebar.subheader("Session setup")
+        st.sidebar.json(st.session_state.setup_provenance)
 
     if st.session_state.hg_session_id:
         try:

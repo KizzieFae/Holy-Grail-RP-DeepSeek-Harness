@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-HistoryKind = Literal["user", "committed_turn", "presentation"]
+HistoryKind = Literal["user", "committed_turn", "presentation", "opening"]
 
 
 @dataclass(frozen=True)
@@ -108,6 +108,19 @@ def project_history_to_transcript(history: list[dict[str, Any]]) -> list[dict[st
     transcript: list[dict[str, Any]] = []
 
     for entry in entries:
+        if entry.kind == "opening":
+            transcript.append(
+                {
+                    "role": "assistant",
+                    "content": entry.content,
+                    "speaker": "Narrator",
+                    "entry_id": entry.entry_id,
+                    "sequence_index": entry.sequence_index,
+                    "opening": True,
+                }
+            )
+            continue
+
         if entry.kind == "user":
             transcript.append(
                 {

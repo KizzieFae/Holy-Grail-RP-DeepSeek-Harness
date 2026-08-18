@@ -40,6 +40,8 @@ export class HolyGrailApplicationClient {
     });
     this.activeSessionId = null;
     this.activeCast = [...DEFAULT_CAST];
+    this.characterFileIds = {};
+    this.setupProvenance = null;
     this.transcript = [];
     this.lastSpeaker = null;
     this.status = 'idle';
@@ -85,16 +87,27 @@ export class HolyGrailApplicationClient {
     this.roundInProgress = false;
   }
 
-  async createSession({ cast = DEFAULT_CAST, location = 'Workshop', hgSessionId } = {}) {
+  async createSession(input = {}) {
     this._requireReady();
     const api = this.orchestrator._domainClient();
-    const created = await api.createSession({
-      cast,
-      location,
-      hg_session_id: hgSessionId,
-    });
-    this.activeSessionId = created.hg_session_id;
-    this.activeCast = [...(created.present_characters ?? cast)];
+    const body = {};
+    if (input.characters?.length) {
+      body.characters = input.characters;
+      if (input.scene_template_id) body.scene_template_id = input.scene_template_id;
+      if (input.sceneTemplateId) body.scene_template_id = input.sceneTemplateId;
+      if (input.role_assignments) body.role_assignments = input.role_assignments;
+      if (input.roleAssignments) body.role_assignments = input.roleAssignments;
+      if (input.opening) body.opening = input.opening;
+      if (input.location) body.location = input.location;
+    } else {
+      body.cast = input.cast ?? DEFAULT_CAST;
+      body.location = input.location ?? 'Workshop';
+    }
+    if (input.hgSessionId ?? input.hg_session_id) {
+      body.hg_session_id = input.hgSessionId ?? input.hg_session_id;
+    }
+    const created = await api.createSession(body);
+    this._applySessionPayload(created);
     await this._refreshTranscript();
     return this._sessionView(created);
   }
@@ -103,10 +116,30 @@ export class HolyGrailApplicationClient {
     this._requireReady();
     const api = this.orchestrator._domainClient();
     const opened = await api.openSession(hgSessionId);
-    this.activeSessionId = opened.hg_session_id;
-    this.activeCast = [...(opened.present_characters ?? DEFAULT_CAST)];
+    this._applySessionPayload(opened);
     await this._refreshTranscript();
     return this._sessionView(opened);
+  }
+
+  async listCharacters() {
+    this._requireReady();
+    const api = this.orchestrator._domainClient();
+    const payload = await api.listCharacters();
+    return payload.characters ?? [];
+  }
+
+  async listSceneTemplates() {
+    this._requireReady();
+    const api = this.orchestrator._domainClient();
+    const payload = await api.listSceneTemplates();
+    return payload.scene_templates ?? [];
+  }
+
+  async listTemplateOpeners(templateId) {
+    this._requireReady();
+    const api = this.orchestrator._domainClient();
+    const payload = await api.listTemplateOpeners(templateId);
+    return payload.openers ?? [];
   }
 
   async getSessionState() {
@@ -136,6 +169,7 @@ export class HolyGrailApplicationClient {
       forcedDesignation = detectForcedSpeaker(userMessage, {
         participantNames: cast,
         previousParticipantSpeaker: this.lastSpeaker,
+        characterFileIds: this.characterFileIds,
       });
     }
 
@@ -193,7 +227,16 @@ export class HolyGrailApplicationClient {
       location: payload.location ?? 'Workshop',
       continuity_version: payload.continuity_version ?? 0,
       committed_move_count: payload.committed_move_count ?? 0,
+      setup_provenance: payload.setup_provenance ?? this.setupProvenance,
+      character_file_ids: payload.character_file_ids ?? this.characterFileIds,
     };
+  }
+
+  _applySessionPayload(payload) {
+    this.activeSessionId = payload.hg_session_id;
+    this.activeCast = [...(payload.present_characters ?? DEFAULT_CAST)];
+    this.characterFileIds = { ...(payload.character_file_ids ?? {}) };
+    this.setupProvenance = payload.setup_provenance ?? null;
   }
 
   _requireReady() {

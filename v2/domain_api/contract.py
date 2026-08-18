@@ -222,6 +222,10 @@ class NarratorContextPrepareRequest:
 @dataclass(frozen=True)
 class SessionCreateRequest:
     cast: tuple[str, ...] | None = None
+    characters: tuple[str, ...] | None = None
+    scene_template_id: str | None = None
+    role_assignments: dict[str, str] | None = None
+    opening: dict[str, Any] | None = None
     location: str = "Workshop"
     hg_session_id: str | None = None
 
@@ -266,6 +270,8 @@ class SessionInfoResponse:
     committed_move_count: int
     present_characters: tuple[str, ...]
     location: str
+    setup_provenance: dict[str, Any] | None = None
+    character_file_ids: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)

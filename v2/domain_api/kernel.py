@@ -67,6 +67,12 @@ from .session_repository import (  # noqa: E402
     PersistenceError,
     SessionRepository,
 )
+from .session_setup import setup_provenance_for_ui  # noqa: E402
+from .setup_catalog import (  # noqa: E402
+    list_characters_catalog,
+    list_scene_templates_catalog,
+    list_template_openers_catalog,
+)
 from .session_state import (  # noqa: E402
     CharacterTurnRecord,
     LiveSession,
@@ -246,7 +252,18 @@ class DomainKernel:
             committed_move_count=int(session.committed_move_count),
             present_characters=present,
             location=str(mgr.scene_state.location or ""),
+            setup_provenance=setup_provenance_for_ui(session.setup_snapshot) or None,
+            character_file_ids=dict(session.character_file_ids) or None,
         )
+
+    def list_characters(self) -> list[dict[str, Any]]:
+        return list_characters_catalog()
+
+    def list_scene_templates(self) -> list[dict[str, Any]]:
+        return list_scene_templates_catalog()
+
+    def list_template_openers(self, template_id: str) -> list[dict[str, Any]]:
+        return list_template_openers_catalog(template_id)
 
     def scene_snapshot(self, hg_scene_id: str) -> SceneStateSnapshot:
         fixture = self.store.require(hg_scene_id)
