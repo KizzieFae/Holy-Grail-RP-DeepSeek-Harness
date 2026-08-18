@@ -1,66 +1,26 @@
-"""Continuity mutation pipeline (Issue #81 — spatial + excursion lifecycle).
-
-Typed mutation requests, composer with D → S → M precedence per canonical atom,
-global validation, and atomic application to ``SceneState`` / excursion store
-inside ``process_turn``.
-
-**#170:** Mechanical split across ``continuity_mutation_pipeline_*`` modules; this
-file is the stable public façade — import from here only unless an explicit
-exemption is recorded.
-"""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_mutation_pipeline.py."""
 
 from __future__ import annotations
 
-from continuity_mutation_pipeline_apply import apply_resolved_mutations
-from continuity_mutation_pipeline_audit import resolved_mutations_audit_payload
-from continuity_mutation_pipeline_compose import (
-    compose_resolved_mutations,
-    mutation_resolution_key,
-)
-from continuity_mutation_pipeline_extract import (
-    extract_d_excursion_candidates,
-    extract_d_spatial_candidates,
-    extract_m_excursion_candidates,
-    extract_m_spatial_candidates,
-    extract_s_candidates,
-)
-from continuity_mutation_pipeline_types import (
-    MAX_EXCURSION_ID_LEN,
-    MAX_EXCURSION_PARTICIPANTS,
-    MAX_SPATIAL_LOCATION_LEN,
-    CanonicalAtom,
-    ContinuityMutationError,
-    ContinuityMutationType,
-    MutationRequest,
-    MutationResolutionKey,
-    MutationSourceClass,
-)
-from continuity_mutation_pipeline_validate import (
-    validate_excursion_lifecycle_move_shape,
-    validate_resolved_mutations_globally,
-    validate_spatial_transition_move_shape,
-)
+import importlib.util
+import sys
+from pathlib import Path
 
-__all__ = [
-    "MAX_EXCURSION_ID_LEN",
-    "MAX_EXCURSION_PARTICIPANTS",
-    "MAX_SPATIAL_LOCATION_LEN",
-    "CanonicalAtom",
-    "ContinuityMutationError",
-    "ContinuityMutationType",
-    "MutationRequest",
-    "MutationResolutionKey",
-    "MutationSourceClass",
-    "apply_resolved_mutations",
-    "compose_resolved_mutations",
-    "extract_d_excursion_candidates",
-    "extract_d_spatial_candidates",
-    "extract_m_excursion_candidates",
-    "extract_m_spatial_candidates",
-    "extract_s_candidates",
-    "mutation_resolution_key",
-    "resolved_mutations_audit_payload",
-    "validate_excursion_lifecycle_move_shape",
-    "validate_resolved_mutations_globally",
-    "validate_spatial_transition_move_shape",
-]
+_MOD_NAME = 'continuity_mutation_pipeline'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_mutation_pipeline.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
+
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
+
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

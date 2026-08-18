@@ -1,27 +1,26 @@
-"""Compiled regex patterns for consequence classification (Issue #159)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_consequence_classifier_regexes.py."""
 
-import re
+from __future__ import annotations
 
-# Geometry: "turn" only counts as movement when a standalone verb and not negated
-# (avoids "did not turn", "didn't turn", "not turning", etc.).
-GEOMETRY_NEGATED_TURN_PHRASE = re.compile(
-    r"(?:did\s+not|didn't|does\s+not|don't)\s+turn(?:ed|s|ing)?\b|\bnot\s+turn(?:ed|s|ing)?\b",
-    re.IGNORECASE,
-)
-GEOMETRY_TURN_VERB = re.compile(r"\bturn(?:ed|s|ing)?\b", re.IGNORECASE)
+import importlib.util
+import sys
+from pathlib import Path
 
-# REFUSAL legacy: standalone words only (avoids "nothing", "notice", "know", "snow", etc.).
-REFUSAL_LEGACY_NO_OR_NOT_WORD = re.compile(r"\b(?:no|not)\b", re.IGNORECASE)
+_MOD_NAME = 'continuity_consequence_classifier_regexes'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_consequence_classifier_regexes.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-# ACCESS_GRANTED: "can" must not match inside "can't" (ASCII or Unicode apostrophe).
-ACCESS_GRANTED_CAN_WORD = re.compile(
-    r"\bcan\b(?!['\u2019]t\b)",
-    re.IGNORECASE,
-)
-# AGREEMENT: whole-word only (avoids yes/yesterday, agree/disagree, fine/refine).
-AGREEMENT_BOUNDARY_WORDS = re.compile(
-    r"\b(?:yes|agree|fine|alright)\b",
-    re.IGNORECASE,
-)
-# COMMITMENT: "will" must not match inside compounds like "goodwill".
-COMMITMENT_WILL_WORD = re.compile(r"\bwill\b", re.IGNORECASE)
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
+
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

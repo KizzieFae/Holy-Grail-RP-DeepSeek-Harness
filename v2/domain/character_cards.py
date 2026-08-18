@@ -198,13 +198,9 @@ CHARACTER_MOVE_SCHEMA: dict[str, Any] = {
 
 def default_characters_dir() -> Path:
     """Resolve the repository character-card directory."""
-    return (
-        Path(__file__).resolve().parents[2]
-        / "autogen_rp"
-        / "python"
-        / "data"
-        / "autogen_characters"
-    )
+    from domain.paths import characters_data_dir
+
+    return characters_data_dir()
 
 
 def make_agent_identifier(name: str) -> str:

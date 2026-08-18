@@ -10,6 +10,9 @@ from typing import Any
 _V2 = Path(__file__).resolve().parents[1]
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
+from domain.bootstrap import ensure_domain_paths  # noqa: E402
+
+ensure_domain_paths()
 
 from domain.character_cards import CharacterCardLoader  # noqa: E402
 from scene_opener import OpenerManager  # noqa: E402

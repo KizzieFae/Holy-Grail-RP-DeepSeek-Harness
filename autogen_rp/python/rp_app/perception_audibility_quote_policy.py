@@ -1,38 +1,26 @@
-"""Policy for whether interpretations may quote dialogue (observer-scoped)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/perception_audibility_quote_policy.py."""
 
 from __future__ import annotations
 
-from typing import Any
+import importlib.util
+import sys
+from pathlib import Path
 
-from character_move_adapters import is_canonical_v2_move
+_MOD_NAME = 'perception_audibility_quote_policy'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'perception_audibility_quote_policy.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-from perception_audibility_visibility import (
-    speech_beat_viewer_may_perceive,
-    viewer_may_perceive_dialogue,
-)
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-def observer_may_quote_dialogue_in_interpretation(
-    move: dict[str, Any],
-    *,
-    acting_character: str,
-    observer_character: str,
-) -> bool:
-    """Whether interpretations may include quoted dialogue for this observer."""
-    if is_canonical_v2_move(move):
-        beats = move.get("beats")
-        if not isinstance(beats, list):
-            return True
-        for b in beats:
-            if not isinstance(b, dict) or b.get("type") != "speech":
-                continue
-            if speech_beat_viewer_may_perceive(
-                b,
-                acting_character=acting_character,
-                viewer_character=observer_character,
-            ):
-                return True
-        return False
-    return viewer_may_perceive_dialogue(
-        move, acting_character=acting_character, viewer_character=observer_character
-    )
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

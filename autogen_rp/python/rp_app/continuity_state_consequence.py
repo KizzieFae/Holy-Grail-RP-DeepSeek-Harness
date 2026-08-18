@@ -1,70 +1,26 @@
-"""Consequence taxonomy and detected-consequence row (types only)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_state_consequence.py."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
+import importlib.util
+import sys
+from pathlib import Path
 
+_MOD_NAME = 'continuity_state_consequence'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_state_consequence.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-class ConsequenceCategory(Enum):
-    """Semantic consequence types detected from structured move analysis.
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-    These categories capture the dramatic function of a turn rather than
-    its surface phrasing, enabling robust consequence detection across
-    varied character voices and scene dynamics.
-    """
-
-    # Authority dynamics
-    AUTHORITY_ASSERTED = "authority_asserted"
-    AUTHORITY_CHALLENGED = "authority_challenged"
-
-    # Agreement/alignment
-    REFUSAL = "refusal"
-    AGREEMENT = "agreement"
-    COMMITMENT = "commitment"
-
-    # Territory/presence
-    TERRITORIAL_CLAIM = "territorial_claim"
-    TERRITORIAL_DENIAL = "territorial_denial"
-    ARRIVAL = "arrival"
-    EXIT = "exit"
-    REPOSITIONING = "repositioning"
-
-    # Access/control
-    ACCESS_GRANTED = "access_granted"
-    ACCESS_DENIED = "access_denied"
-
-    # Scene mediation
-    MEDIATION_ATTEMPTED = "mediation_attempted"
-    INTERCEPTION = "interception"
-
-    # Tension trajectory
-    ESCALATION = "escalation"
-    DEESCALATION = "deescalation"
-
-    # Information state
-    REVELATION = "revelation"
-    CONCEALMENT = "concealment"
-
-    # Persistent scene reality (deterministic lexical signals; not issue pressure)
-    PHYSICAL_STATE_SET = "physical_state_set"
-    MEDICAL_STATE_SET = "medical_state_set"
-
-    # Future pressure
-    DECISION_MADE = "decision_made"
-    PLAN_COMMITTED = "plan_committed"
-    DEPENDENCY_ADVANCED = "dependency_advanced"
-
-
-@dataclass(frozen=True)
-class DetectedConsequence:
-    """A consequence detected from turn analysis.
-
-    Captures what category was detected, confidence level, which fields
-    contributed to the detection, and the specific excerpt that triggered it.
-    """
-
-    category: ConsequenceCategory
-    confidence: str  # 'strong', 'moderate', 'weak'
-    source_fields: list[str]  # Which input fields contributed
-    excerpt: str  # Specific text that triggered detection (truncated)
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

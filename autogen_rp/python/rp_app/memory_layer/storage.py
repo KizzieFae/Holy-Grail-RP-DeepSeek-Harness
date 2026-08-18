@@ -1,34 +1,26 @@
-"""Append-only episodic storage: sole callers of CharacterStateManager.remember_event."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/memory_layer/storage.py."""
 
 from __future__ import annotations
 
-from typing import Protocol
+import importlib.util
+import sys
+from pathlib import Path
 
+_MOD_NAME = 'memory_layer.storage'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'memory_layer/storage.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-class _EpisodicStore(Protocol):
-    def remember_event(
-        self, name: str, event_summary: str, interpretation: str = ""
-    ) -> None: ...
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-def append_actor_episodic(
-    state_manager: _EpisodicStore | None,
-    character: str,
-    *,
-    event_summary: str,
-    interpretation: str,
-) -> None:
-    if not state_manager or not character:
-        return
-    state_manager.remember_event(character, event_summary, interpretation)
-
-
-def append_observer_episodic(
-    state_manager: _EpisodicStore | None,
-    observer: str,
-    *,
-    observed_line: str,
-) -> None:
-    if not state_manager or not observer:
-        return
-    state_manager.remember_event(observer, observed_line, "")
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

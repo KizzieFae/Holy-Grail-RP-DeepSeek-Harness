@@ -1,56 +1,26 @@
-"""Persistent scene-state signals aligned with scene_grounding (Issue #159)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_consequence_classifier_grounding.py."""
 
-from typing import Any
+from __future__ import annotations
 
-from continuity_consequence_classifier_move_tools import (
-    move_with_flat_text_for_deterministic_tools,
-)
+import importlib.util
+import sys
+from pathlib import Path
 
-try:
-    from continuity_state import ConsequenceCategory, DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import ConsequenceCategory, DetectedConsequence
+_MOD_NAME = 'continuity_consequence_classifier_grounding'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_consequence_classifier_grounding.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-def detect_persistent_scene_state(move: dict[str, Any]) -> list[DetectedConsequence]:
-    """Lexical scene-state signals; must match ``grounding_state_signals_from_move``."""
-    try:
-        from scene_grounding import (
-            SIGNAL_BANDAGE_APPLIED,
-            SIGNAL_PHONE_BROKEN,
-            SIGNAL_WEAPON_ON_TABLE,
-            grounding_state_signals_from_move,
-        )
-    except ImportError:
-        from python.rp_app.scene_grounding import (
-            SIGNAL_BANDAGE_APPLIED,
-            SIGNAL_PHONE_BROKEN,
-            SIGNAL_WEAPON_ON_TABLE,
-            grounding_state_signals_from_move,
-        )
-
-    tm = move_with_flat_text_for_deterministic_tools(move)
-    signals = grounding_state_signals_from_move(tm)
-    results: list[DetectedConsequence] = []
-    excerpt_src = f"{tm.get('dialogue', '')} {tm.get('action', '')}".strip()
-    excerpt = excerpt_src[:80] if excerpt_src else ""
-
-    if SIGNAL_PHONE_BROKEN in signals or SIGNAL_WEAPON_ON_TABLE in signals:
-        results.append(
-            DetectedConsequence(
-                category=ConsequenceCategory.PHYSICAL_STATE_SET,
-                confidence="strong",
-                source_fields=["dialogue", "action"],
-                excerpt=excerpt,
-            )
-        )
-    if SIGNAL_BANDAGE_APPLIED in signals:
-        results.append(
-            DetectedConsequence(
-                category=ConsequenceCategory.MEDICAL_STATE_SET,
-                confidence="strong",
-                source_fields=["dialogue", "action"],
-                excerpt=excerpt,
-            )
-        )
-    return results
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

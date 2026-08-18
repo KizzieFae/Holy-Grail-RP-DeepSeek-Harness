@@ -1,25 +1,26 @@
-"""Deterministic normalization helpers for resolved outcome registry."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/resolved_outcome_normalize.py."""
 
 from __future__ import annotations
 
-import re
+import importlib.util
+import sys
+from pathlib import Path
 
+_MOD_NAME = 'resolved_outcome_normalize'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'resolved_outcome_normalize.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-def encode_slot_key(aspect_id: str, subject_id: str) -> str:
-    return f"{aspect_id}::{subject_id}"
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-def normalize_scene_commitment_token(s: str, *, max_len: int = 64) -> str:
-    t = re.sub(r"[^a-z0-9_:]+", "_", str(s or "").lower().strip()).strip("_")
-    if len(t) > max_len:
-        t = t[:max_len].rstrip("_")
-    return t or "x"
-
-
-def normalize_outcome_fragment(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", str(value or "").lower()).strip("_") or "x"
-
-
-# Stable private aliases matching pre-split `resolved_outcome_registry` naming.
-_normalize_scene_commitment_token = normalize_scene_commitment_token
-_normalize_outcome_fragment = normalize_outcome_fragment
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

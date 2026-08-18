@@ -8,12 +8,12 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-_RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
 _V2 = Path(__file__).resolve().parents[1]
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
+from domain.bootstrap import ensure_domain_paths  # noqa: E402
+
+ensure_domain_paths()
 
 from domain.character_cards import (  # noqa: E402
     CharacterCardLoader,

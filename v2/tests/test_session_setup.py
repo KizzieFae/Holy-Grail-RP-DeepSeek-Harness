@@ -10,9 +10,12 @@ import unittest
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
-_RP_APP = _ROOT / "autogen_rp" / "python" / "rp_app"
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
+_V2 = _ROOT / "v2"
+if str(_V2) not in sys.path:
+    sys.path.insert(0, str(_V2))
+from domain.bootstrap import ensure_domain_paths  # noqa: E402
+
+ensure_domain_paths()
 
 from v2.domain_api.contract import ContextPrepareRequest, RoundStartRequest
 from v2.domain_api.kernel import DomainKernel

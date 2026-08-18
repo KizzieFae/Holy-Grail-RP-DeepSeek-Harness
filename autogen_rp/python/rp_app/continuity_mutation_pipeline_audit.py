@@ -1,21 +1,26 @@
-"""Turn metadata audit payload for resolved mutations (#170)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_mutation_pipeline_audit.py."""
 
 from __future__ import annotations
 
-from typing import Any
+import importlib.util
+import sys
+from pathlib import Path
 
-from continuity_mutation_pipeline_types import MutationRequest, MutationResolutionKey
+_MOD_NAME = 'continuity_mutation_pipeline_audit'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_mutation_pipeline_audit.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-def resolved_mutations_audit_payload(
-    resolved: dict[MutationResolutionKey, MutationRequest],
-) -> dict[str, Any]:
-    """Structured snapshot for ``turn_metadata`` / audits."""
-    out: dict[str, Any] = {}
-    for key, req in resolved.items():
-        out[key.audit_slug()] = {
-            "mutation_type": req.mutation_type.value,
-            "source": req.source.value,
-            "payload": dict(req.payload),
-        }
-    return out
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

@@ -1,56 +1,26 @@
-"""Shared types for resolved-outcome registry aspects."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/resolved_outcome_spec.py."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Callable, Protocol
+import importlib.util
+import sys
+from pathlib import Path
 
+_MOD_NAME = 'resolved_outcome_spec'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'resolved_outcome_spec.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-@dataclass(frozen=True)
-class NormalizedCandidate:
-    aspect_id: str
-    subject_id: str
-    value: dict[str, str]
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-@dataclass(frozen=True)
-class PromotionContext:
-    """Read-only context for promotion_policy.evaluate (do not mutate manager)."""
-
-    turn_index: int
-    consequence_tags: frozenset[str]
-    manager: Any
-
-
-@dataclass(frozen=True)
-class PromotionDecision:
-    promote: bool
-    source: str | None
-    rule_id: str
-    issue_id: str | None
-    reject_reason: str
-    success_reason: str
-
-
-class PromotionPolicy(Protocol):
-    def evaluate(
-        self, candidate: NormalizedCandidate, ctx: PromotionContext
-    ) -> PromotionDecision: ...
-
-
-@dataclass(frozen=True)
-class AspectSpec:
-    aspect_id: str
-    outcome_class: str
-    legacy_category: str
-    legacy_key: str
-    parse_candidates: Callable[
-        [dict[str, Any], Any], tuple[list[NormalizedCandidate], str]
-    ]
-    slot_key_fn: Callable[[NormalizedCandidate], str]
-    build_outcome_id: Callable[[NormalizedCandidate, int, str], str]
-    is_revocation: Callable[[NormalizedCandidate], bool]
-    promotion_policy: PromotionPolicy
-    superseded_reason: str
-    revoked_reason: str
-    conflicting_candidates_reason: str = "multiple_candidates_unsupported"
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

@@ -10,10 +10,12 @@ from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
 _V2 = _ROOT / "v2"
-_RP_APP = _ROOT / "autogen_rp" / "python" / "rp_app"
-for path in (_V2, _RP_APP):
+for path in (_V2,):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
+from domain.bootstrap import ensure_domain_paths  # noqa: E402
+
+ensure_domain_paths()
 
 from domain_api.contract import (  # noqa: E402
     CommitRequest,

@@ -1,59 +1,26 @@
-from typing import Any
+"""Legacy V1 import shim — implementation in v2/domain/modules/character_state_manager.py."""
 
-from character_state_model import CharacterState
+from __future__ import annotations
 
+import importlib.util
+import sys
+from pathlib import Path
 
-class CharacterStateManager:
-    """Manages state for all characters in a scene."""
+_MOD_NAME = 'character_state_manager'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'character_state_manager.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-    def __init__(self) -> None:
-        self._states: dict[str, CharacterState] = {}
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-    def register_character(self, name: str, state: CharacterState) -> None:
-        self._states[name] = state
-
-    def get_state(self, name: str) -> CharacterState | None:
-        return self._states.get(name)
-
-    def update_character_move(
-        self,
-        name: str,
-        action: str,
-        dialogue: str,
-        motivation: dict[str, Any] | str | None,
-    ) -> None:
-        if state := self._states.get(name):
-            state.update_from_move(action, dialogue, motivation)
-
-    def remember_event(
-        self, name: str, event_summary: str, interpretation: str = ""
-    ) -> None:
-        if state := self._states.get(name):
-            state.remember_event(event_summary, interpretation)
-
-    def public_state_snapshot(self) -> dict[str, dict[str, Any]]:
-        return {
-            name: {
-                "core_goals": state.core_goals
-                or ([state.long_term_goal] if state.long_term_goal else []),
-                "long_term_goal": state.long_term_goal,
-                "medium_term_goal": state.medium_term_goal,
-                "current_objective": state.current_objective,
-                "short_term_tactic": state.short_term_tactic,
-                "local_task_goal": state.local_task_goal,
-                "local_task_tactic": state.local_task_tactic,
-                "emotional_state": state.emotional_state,
-                "stress_level": state.stress_level,
-            }
-            for name, state in self._states.items()
-        }
-
-    def to_dict(self) -> dict[str, dict[str, Any]]:
-        return {name: state.to_dict() for name, state in self._states.items()}
-
-    @classmethod
-    def from_dict(cls, data: dict[str, dict[str, Any]]) -> "CharacterStateManager":
-        manager = cls()
-        for name, state_data in data.items():
-            manager.register_character(name, CharacterState.from_dict(state_data))
-        return manager
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

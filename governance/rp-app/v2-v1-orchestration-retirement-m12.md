@@ -445,7 +445,7 @@ Before removing AutoGen from the repository:
 | Phase | Focus | Retires | Gate |
 |-------|-------|---------|------|
 | **M12.1** | Split `character_loader`; framework-neutral card I/O | AutoGen from shared loader | V2 93+51 green |
-| **M12.2** | Extract `v2/domain/` package from `rp_app` helpers | `sys.path` rp_app injection | Import boundary tests |
+| **M12.2** | Extract `v2/domain/` package from `rp_app` helpers | `sys.path` rp_app injection | **done** — V2 106+51 green |
 | **M12.3** | Fence `legacy/v1-orchestration/`; move turn_runner spine | app turn loop from default CI | Legacy test target explicit |
 | **M12.4** | Delete fenced V1 orchestration after legacy CI port | turn_runner, model_client, app.py | No default launch to V1 |
 | **M12.5** | Opening/bootstrap parity OR explicit product deferral | bootstrap_composition V1 path | Governance decision |

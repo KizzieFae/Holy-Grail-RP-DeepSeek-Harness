@@ -1,23 +1,12 @@
-"""Scene memory layer: episodic writes (Phase A); read/format for prompts (Phase B)."""
+"""Legacy V1 memory_layer shim — implementation in v2/domain/modules/memory_layer/."""
 
-from memory_layer.facade import (
-    commit_character_turn_memory,
-    commit_user_message_memory,
-    resolve_present_characters,
-)
-from memory_layer.retrieval import (
-    EpisodicPromptSnapshot,
-    build_character_state_context_for_prompt,
-    build_episodic_prompt_snapshot,
-    format_episodic_prompt_sections,
-)
+from __future__ import annotations
 
-__all__ = [
-    "EpisodicPromptSnapshot",
-    "build_character_state_context_for_prompt",
-    "build_episodic_prompt_snapshot",
-    "commit_character_turn_memory",
-    "commit_user_message_memory",
-    "format_episodic_prompt_sections",
-    "resolve_present_characters",
-]
+import sys
+from pathlib import Path
+
+_MODULES = Path(__file__).resolve().parents[4] / "v2" / "domain" / "modules"
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
+
+from memory_layer.facade import *  # noqa: F403

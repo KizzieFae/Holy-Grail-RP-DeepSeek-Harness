@@ -1,20 +1,26 @@
-"""Shared datetime parsing for continuity_state serialization paths."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_state_datetime.py."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import importlib.util
+import sys
+from pathlib import Path
 
+_MOD_NAME = 'continuity_state_datetime'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_state_datetime.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-def _parse_datetime(value: object | None) -> datetime:
-    if value is None or not str(value).strip():
-        return _utc_now()
-    parsed = datetime.fromisoformat(str(value))
-    return (
-        parsed.astimezone(timezone.utc)
-        if parsed.tzinfo is not None
-        else parsed.replace(tzinfo=timezone.utc)
-    )
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

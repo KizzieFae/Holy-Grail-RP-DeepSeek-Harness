@@ -1,46 +1,26 @@
-"""Aggregate continuity snapshot for persistence and prompts."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_state_snapshot.py."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
+import importlib.util
+import sys
+from pathlib import Path
 
-from continuity_state_canon import CanonAnchor
-from continuity_state_interpretation import CharacterInterpretation
-from continuity_state_issue import IssueState
-from continuity_state_public_event import PublicEvent
-from continuity_state_scene import SceneState
-from continuity_state_summary import SummaryBlock
+_MOD_NAME = 'continuity_state_snapshot'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_state_snapshot.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-@dataclass
-class ContinuitySnapshot:
-    """A complete snapshot of durable story state at a point in time.
-
-    Used for persistence and for assembling layered prompts.
-    """
-
-    scene_state: SceneState
-    active_issues: list[IssueState]
-    recent_public_events: list[PublicEvent]
-    character_interpretations: dict[str, list[CharacterInterpretation]]  # by character
-    canon_anchors: list[CanonAnchor]
-    summary_blocks: list[SummaryBlock]
-    snapshot_at: datetime
-
-    def to_dict(self) -> dict:
-        """Serialize a snapshot for debugging or persistence."""
-        return {
-            "scene_state": self.scene_state.to_dict(),
-            "active_issues": [issue.to_dict() for issue in self.active_issues],
-            "recent_public_events": [
-                event.to_dict() for event in self.recent_public_events
-            ],
-            "character_interpretations": {
-                name: [item.to_dict() for item in items]
-                for name, items in self.character_interpretations.items()
-            },
-            "canon_anchors": [anchor.to_dict() for anchor in self.canon_anchors],
-            "summary_blocks": [summary.to_dict() for summary in self.summary_blocks],
-            "snapshot_at": self.snapshot_at.isoformat(),
-        }
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

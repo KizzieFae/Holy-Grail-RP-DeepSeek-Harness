@@ -1,21 +1,26 @@
-"""Dedupe detected consequences (Issue #159)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_consequence_classifier_dedupe.py."""
 
-try:
-    from continuity_state import DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import DetectedConsequence
+from __future__ import annotations
 
+import importlib.util
+import sys
+from pathlib import Path
 
-def dedupe_detected_consequences(
-    items: list[DetectedConsequence],
-) -> list[DetectedConsequence]:
-    """Keep first occurrence per category; preserve multi-label distinct categories."""
-    seen: set[str] = set()
-    out: list[DetectedConsequence] = []
-    for item in items:
-        key = item.category.value
-        if key in seen:
-            continue
-        seen.add(key)
-        out.append(item)
-    return out
+_MOD_NAME = 'continuity_consequence_classifier_dedupe'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_consequence_classifier_dedupe.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
+
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
+
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

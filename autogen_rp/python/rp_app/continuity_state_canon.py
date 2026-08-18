@@ -1,50 +1,26 @@
-"""Canon anchor facts."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_state_canon.py."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
+import importlib.util
+import sys
+from pathlib import Path
 
-from continuity_state_datetime import _parse_datetime
+_MOD_NAME = 'continuity_state_canon'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_state_canon.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-@dataclass
-class CanonAnchor:
-    """A protected truth that should resist casual drift.
-
-    Canon anchors are stable facts about characters, world, or relationships
-    that should not be altered by temporary scene dynamics.
-    """
-
-    anchor_id: str
-    category: str  # 'character_trait', 'world_fact', 'relationship', 'event'
-    subject: str  # who/what this anchor applies to
-    statement: str  # the protected truth
-    source: str  # how this was established
-    established_at: datetime
-    protected: bool = True  # if True, requires explicit override to change
-
-    def to_dict(self) -> dict:
-        """Serialize the anchor for persistence."""
-        return {
-            "anchor_id": self.anchor_id,
-            "category": self.category,
-            "subject": self.subject,
-            "statement": self.statement,
-            "source": self.source,
-            "established_at": self.established_at.isoformat(),
-            "protected": self.protected,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "CanonAnchor":
-        """Restore an anchor from persisted data."""
-        return cls(
-            anchor_id=str(data.get("anchor_id", "")),
-            category=str(data.get("category", "")),
-            subject=str(data.get("subject", "")),
-            statement=str(data.get("statement", "")),
-            source=str(data.get("source", "")),
-            established_at=_parse_datetime(data.get("established_at")),
-            protected=bool(data.get("protected", True)),
-        )
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

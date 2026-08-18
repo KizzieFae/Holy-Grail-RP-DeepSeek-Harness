@@ -7,9 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-_RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
+_V2 = Path(__file__).resolve().parents[1]
+if str(_V2) not in sys.path:
+    sys.path.insert(0, str(_V2))
+from domain.bootstrap import ensure_domain_paths  # noqa: E402
+
+ensure_domain_paths()
 
 from scene_grounding import (  # noqa: E402
     format_character_binding_constraints_section,

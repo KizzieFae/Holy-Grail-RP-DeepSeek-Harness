@@ -1,39 +1,26 @@
-"""Canon anchor surface for ContinuityManager (mechanical extraction)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_manager_canon_surface.py."""
 
 from __future__ import annotations
 
-from typing import Any, Optional
+import importlib.util
+import sys
+from pathlib import Path
 
-from continuity_canon_anchors import (
-    get_relevant_canon_anchors as get_relevant_canon_anchors_impl,
-    get_scene_canon_anchors as get_scene_canon_anchors_impl,
-    seed_character_canon_anchors as seed_character_canon_anchors_impl,
-    upsert_canon_anchor as upsert_canon_anchor_impl,
-)
+_MOD_NAME = 'continuity_manager_canon_surface'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_manager_canon_surface.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
-from continuity_state import CanonAnchor
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-
-def upsert_canon_anchor(manager: Any, anchor: CanonAnchor) -> None:
-    upsert_canon_anchor_impl(manager, anchor)
-
-
-def seed_character_canon_anchors(
-    manager: Any, character_states: dict[str, Any]
-) -> None:
-    seed_character_canon_anchors_impl(manager, character_states)
-
-
-def get_relevant_canon_anchors(
-    manager: Any,
-    character_name: str,
-    participants: Optional[list[str]] = None,
-    limit: int = 6,
-) -> list[CanonAnchor]:
-    return get_relevant_canon_anchors_impl(
-        manager, character_name, participants=participants, limit=limit
-    )
-
-
-def get_scene_canon_anchors(manager: Any, limit: int = 10) -> list[CanonAnchor]:
-    return get_scene_canon_anchors_impl(manager, limit)
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})

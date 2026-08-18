@@ -1,61 +1,26 @@
-"""Normalization helpers for continuity mutation payloads (#170)."""
+"""Legacy V1 import shim — implementation in v2/domain/modules/continuity_mutation_pipeline_normalize.py."""
 
 from __future__ import annotations
 
-from typing import Any
+import importlib.util
+import sys
+from pathlib import Path
 
-from continuity_mutation_pipeline_types import (
-    ContinuityMutationError,
-    MAX_EXCURSION_ID_LEN,
-    MAX_EXCURSION_PARTICIPANTS,
-    MAX_SPATIAL_LOCATION_LEN,
-)
+_MOD_NAME = 'continuity_mutation_pipeline_normalize'
+_MODULES = Path(__file__).resolve().parents[3] / "v2" / "domain" / "modules"
+_IMPL = _MODULES / 'continuity_mutation_pipeline_normalize.py'
+if str(_MODULES) not in sys.path:
+    sys.path.insert(0, str(_MODULES))
 
+_existing = sys.modules.get(_MOD_NAME)
+if _existing is None or Path(getattr(_existing, "__file__", "")).resolve() != _IMPL.resolve():
+    _spec = importlib.util.spec_from_file_location(_MOD_NAME, _IMPL)
+    if _spec is None or _spec.loader is None:
+        raise ImportError(f"Cannot load domain module: {_IMPL}")
+    _mod = importlib.util.module_from_spec(_spec)
+    sys.modules[_MOD_NAME] = _mod
+    _spec.loader.exec_module(_mod)
+else:
+    _mod = _existing
 
-def _normalize_spatial_location(value: Any) -> str:
-    if not isinstance(value, str):
-        raise ContinuityMutationError("spatial_transition.location must be a string")
-    s = value.strip()
-    if not s:
-        raise ContinuityMutationError(
-            "spatial_transition.location must be a non-empty string when spatial_transition is present"
-        )
-    if len(s) > MAX_SPATIAL_LOCATION_LEN:
-        raise ContinuityMutationError("spatial_transition.location exceeds maximum length")
-    return s
-
-
-def _normalize_excursion_id(value: Any, *, required: bool) -> str:
-    if value is None or value == "":
-        if required:
-            raise ContinuityMutationError("excursion_lifecycle.excursion_id is required")
-        return ""
-    if not isinstance(value, str):
-        raise ContinuityMutationError("excursion_lifecycle.excursion_id must be a string")
-    s = value.strip()
-    if not s:
-        if required:
-            raise ContinuityMutationError("excursion_lifecycle.excursion_id must be non-empty")
-        return ""
-    if len(s) > MAX_EXCURSION_ID_LEN:
-        raise ContinuityMutationError("excursion_lifecycle.excursion_id exceeds maximum length")
-    return s
-
-
-def _normalize_participant_ids(raw: Any, *, field_label: str) -> list[str]:
-    if raw is None:
-        raise ContinuityMutationError(f"{field_label} is required")
-    if not isinstance(raw, list):
-        raise ContinuityMutationError(f"{field_label} must be a list")
-    out: list[str] = []
-    for x in raw:
-        if not isinstance(x, str):
-            raise ContinuityMutationError(f"{field_label} entries must be strings")
-        s = x.strip()
-        if s:
-            out.append(s)
-    if not out:
-        raise ContinuityMutationError(f"{field_label} must be non-empty")
-    if len(out) > MAX_EXCURSION_PARTICIPANTS:
-        raise ContinuityMutationError(f"{field_label} exceeds maximum length")
-    return out
+globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})
