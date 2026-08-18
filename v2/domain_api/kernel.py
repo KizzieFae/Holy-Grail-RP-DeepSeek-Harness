@@ -40,6 +40,8 @@ from .contract import (  # noqa: E402
     EligibleActorsResponse,
     EligibleActorEntry,
     NarratorContextPrepareRequest,
+    ParticipationDecision,
+    ParticipationDecisionRequest,
     PromptContribution,
     PromptContributionManifest,
     RoundStartRequest,
@@ -49,6 +51,7 @@ from .contract import (  # noqa: E402
     ValidationResponse,
 )
 from .fixture_store import CharacterTurnRecord, FixtureStore, RoundFixture, SceneFixture  # noqa: E402
+from .participation_policy import evaluate_participation_policy  # noqa: E402
 
 PROTOTYPE_VALID_MOVE: dict[str, Any] = {
     "move_schema_version": 2,
@@ -172,6 +175,9 @@ class DomainKernel:
                 return rnd
         raise KeyError(f"unknown hg_round_id: {hg_round_id}")
 
+    def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
+        return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
+
     def _presence_status(self, fixture: SceneFixture, character_id: str) -> str:
         mgr = fixture.manager
         assert mgr.scene_state is not None
@@ -252,6 +258,7 @@ class DomainKernel:
         return EligibleActorsResponse(
             hg_scene_id=req.hg_scene_id,
             hg_round_id=req.hg_round_id,
+            eligibility_snapshot_id=self._eligibility_snapshot_id(rnd),
             eligible_actors=tuple(available),
             actors_used_this_round=tuple(rnd.actors_used_this_round),
             character_roles=character_roles,
@@ -268,6 +275,22 @@ class DomainKernel:
                 str(name)
                 for name in (getattr(mgr.scene_state, "absent_but_relevant", None) or ())
             ),
+        )
+
+    def participation_decision(
+        self, req: ParticipationDecisionRequest
+    ) -> ParticipationDecision:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        eligibility = self.eligible_actors(
+            EligibleActorsRequest(hg_scene_id=req.hg_scene_id, hg_round_id=req.hg_round_id)
+        )
+        return evaluate_participation_policy(
+            fixture=fixture,
+            rnd=rnd,
+            eligibility=eligibility,
+            eligibility_snapshot_id=req.eligibility_snapshot_id,
+            forced_designation=req.forced_designation,
         )
 
     def prepare_director_context(
@@ -447,6 +470,17 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         available = self._available_actors(fixture, rnd)
+        current_snapshot_id = self._eligibility_snapshot_id(rnd)
+        if req.eligibility_snapshot_id and req.eligibility_snapshot_id != current_snapshot_id:
+            return DirectorDecisionResult(
+                accepted=False,
+                validation_class="continuity_anchor",
+                reason=(
+                    f"stale eligibility snapshot: expected {current_snapshot_id}, "
+                    f"got {req.eligibility_snapshot_id}"
+                ),
+                retryable=False,
+            )
 
         raw = req.raw_model_output
         if raw is None:
@@ -493,6 +527,24 @@ class DomainKernel:
                     f"Director selected ineligible actor {next_actor}"
                     + (f" ({exclusion})" if exclusion else "")
                     + f"; eligible: {', '.join(available) or 'none'}"
+                ),
+                retryable=True,
+                normalized_decision=dict(parsed),
+            )
+
+        constraint = str(req.director_constraint_actor or "").strip()
+        if (
+            constraint
+            and constraint in available
+            and not req.continuation_c2_skip
+            and next_actor != constraint
+        ):
+            return DirectorDecisionResult(
+                accepted=False,
+                validation_class="domain_rule",
+                reason=(
+                    f"Director selected {next_actor} but participation constraint "
+                    f"requires {constraint}"
                 ),
                 retryable=True,
                 normalized_decision=dict(parsed),
@@ -601,6 +653,8 @@ class DomainKernel:
                 director_decision=director_decision,
             )
         )
+        rnd.spotlight_history.append(req.character_id)
+        rnd.eligibility_epoch += 1
 
         return CommitResponse(
             committed=True,

@@ -15,6 +15,7 @@ from .contract import (
     DirectorDecisionValidationRequest,
     EligibleActorsRequest,
     NarratorContextPrepareRequest,
+    ParticipationDecisionRequest,
     RoundStartRequest,
     ValidationRequest,
 )
@@ -70,6 +71,15 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.eligible_actors(req))
                 return
+            if path == "/v1/rounds/participation-decision":
+                req = ParticipationDecisionRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    eligibility_snapshot_id=str(data["eligibility_snapshot_id"]),
+                    forced_designation=data.get("forced_designation"),
+                )
+                self._send_json(200, self.kernel.participation_decision(req))
+                return
             if path == "/v1/director/context/prepare":
                 req = DirectorContextPrepareRequest(
                     hg_scene_id=str(data["hg_scene_id"]),
@@ -90,6 +100,9 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     attempt_index=int(data.get("attempt_index", 0)),
                     proposed_decision=dict(data.get("proposed_decision") or {}),
                     raw_model_output=data.get("raw_model_output"),
+                    eligibility_snapshot_id=data.get("eligibility_snapshot_id"),
+                    director_constraint_actor=data.get("director_constraint_actor"),
+                    continuation_c2_skip=bool(data.get("continuation_c2_skip", False)),
                 )
                 self._send_json(200, self.kernel.validate_director_decision(req))
                 return

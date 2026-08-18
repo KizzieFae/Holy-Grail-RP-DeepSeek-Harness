@@ -34,6 +34,9 @@ export function createDomainApiClient(baseUrl) {
     getEligibleActors(body) {
       return postJson(metrics, baseUrl, '/v1/rounds/eligible-actors', body, 'getEligibleActors');
     },
+    getParticipationDecision(body) {
+      return postJson(metrics, baseUrl, '/v1/rounds/participation-decision', body, 'getParticipationDecision');
+    },
     prepareDirectorContext(body) {
       return postJson(metrics, baseUrl, '/v1/director/context/prepare', body, 'prepareDirectorContext');
     },

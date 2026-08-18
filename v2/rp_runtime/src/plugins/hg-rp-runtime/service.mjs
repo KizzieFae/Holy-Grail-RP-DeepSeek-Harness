@@ -30,12 +30,39 @@ function classifyRoundCompletion(completionReason) {
 
 function eligibilityTrace(eligibility) {
   return {
+    eligibility_snapshot_id: eligibility.eligibility_snapshot_id ?? null,
     eligible_actors: eligibility.eligible_actors ?? [],
     actors_used_this_round: eligibility.actors_used_this_round ?? [],
     present_characters: eligibility.present_characters ?? [],
     offstage_characters: eligibility.offstage_characters ?? [],
     absent_but_relevant: eligibility.absent_but_relevant ?? [],
     actors: eligibility.actors ?? [],
+  };
+}
+
+function participationTrace(participation) {
+  return {
+    eligibility_snapshot_id: participation.eligibility_snapshot_id ?? null,
+    selection_mode: participation.selection_mode ?? null,
+    selected_actor: participation.selected_actor ?? null,
+    director_required: Boolean(participation.director_required),
+    director_constraint_actor: participation.director_constraint_actor ?? null,
+    participation_sources: participation.participation_sources ?? [],
+    reason: participation.reason ?? '',
+    forced_designation_ignored: Boolean(participation.forced_designation_ignored),
+    forced_designation_ignore_reason: participation.forced_designation_ignore_reason ?? null,
+    continuation_c2_skip: Boolean(participation.continuation_c2_skip),
+  };
+}
+
+function syntheticDirectorDecision(characterId, reason) {
+  return {
+    next_actor: characterId,
+    end_round: false,
+    reason: reason ?? `Participation policy selected ${characterId}.`,
+    environment_event: '',
+    tension_shift: '',
+    source: 'participation_policy',
   };
 }
 
@@ -107,6 +134,7 @@ export default class HolyGrailRpRuntime extends Service {
     actorsUsedThisRound,
     turnIndex,
     eligibilitySnapshot,
+    participationContext,
   }) {
     let directorAttempt = directorAttemptSeed;
     let directorAccepted = false;
@@ -163,6 +191,9 @@ export default class HolyGrailRpRuntime extends Service {
         attempt_index: directorAttempt,
         proposed_decision: proposed,
         raw_model_output: directorRun.raw,
+        eligibility_snapshot_id: participationContext?.eligibilitySnapshotId ?? eligibilitySnapshot?.eligibility_snapshot_id,
+        director_constraint_actor: participationContext?.directorConstraintActor ?? null,
+        continuation_c2_skip: Boolean(participationContext?.continuationC2Skip),
       });
 
       if (!validation.accepted) {
@@ -500,6 +531,8 @@ export default class HolyGrailRpRuntime extends Service {
     let completionReason = null;
     let lastDirectorInferenceSessionId = null;
     let characterRoles = {};
+    let pendingForcedDesignation = options.forcedDesignation ?? options.forced_designation ?? null;
+    let forcedDesignationConsumed = false;
 
     while (true) {
       if (characterTurns.length >= defensiveTurnCeiling) {
@@ -532,24 +565,68 @@ export default class HolyGrailRpRuntime extends Service {
         actors_used_this_round: actorsUsedThisRound,
       });
 
-      const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
-      const directorPhase = await this._runDirectorPhase({
-        api,
-        sceneAgent,
-        sceneSessionId,
-        hgSceneId,
-        hgRoundId,
-        directorInferenceId,
-        directorAttemptSeed,
-        mockDirectorResponses,
-        directorResponseIndex,
-        actorsUsedThisRound,
-        turnIndex: initialTurnIndex,
-        eligibilitySnapshot,
+      const participation = await api.getParticipationDecision({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        eligibility_snapshot_id: eligibility.eligibility_snapshot_id,
+        forced_designation: forcedDesignationConsumed ? null : pendingForcedDesignation,
       });
+      const participationSnapshot = participationTrace(participation);
+
+      appendHgEvent(sceneAgent.session, 'hg/participation-decision', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        character_turn_index: characterTurns.length,
+        participation: participationSnapshot,
+        eligibility_snapshot: eligibilitySnapshot,
+      });
+
+      let directorPhase;
+      if (participation.selection_mode === 'direct' && participation.selected_actor) {
+        if ((participation.participation_sources ?? []).includes('forced_designation')) {
+          forcedDesignationConsumed = true;
+        }
+        directorPhase = {
+          accepted: true,
+          endRound: false,
+          directorDecision: syntheticDirectorDecision(
+            participation.selected_actor,
+            participation.reason,
+          ),
+          selectedCharacterId: participation.selected_actor,
+          directorManifestId: null,
+          directorInferenceSessionId: null,
+          directorAttempt: directorAttemptSeed,
+          directorResponseIndex,
+          participationDirect: true,
+        };
+      } else {
+        const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
+        directorPhase = await this._runDirectorPhase({
+          api,
+          sceneAgent,
+          sceneSessionId,
+          hgSceneId,
+          hgRoundId,
+          directorInferenceId,
+          directorAttemptSeed,
+          mockDirectorResponses,
+          directorResponseIndex,
+          actorsUsedThisRound,
+          turnIndex: initialTurnIndex,
+          eligibilitySnapshot,
+          participationContext: {
+            eligibilitySnapshotId: eligibility.eligibility_snapshot_id,
+            directorConstraintActor: participation.director_constraint_actor ?? null,
+            continuationC2Skip: participation.continuation_c2_skip,
+          },
+        });
+        directorPhase.participationDirect = false;
+      }
       directorAttemptSeed = directorPhase.directorAttempt;
       directorResponseIndex = directorPhase.directorResponseIndex;
-      lastDirectorInferenceSessionId = directorPhase.directorInferenceSessionId;
+      if (directorPhase.directorInferenceSessionId) {
+        lastDirectorInferenceSessionId = directorPhase.directorInferenceSessionId;
+      }
 
       if (!directorPhase.accepted) {
         completionReason = 'director_failure';

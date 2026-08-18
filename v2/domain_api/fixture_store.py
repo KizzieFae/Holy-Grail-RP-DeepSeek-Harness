@@ -37,6 +37,8 @@ class RoundFixture:
     continuity_turn_index: int | None = None
     actors_used_this_round: list[str] = field(default_factory=list)
     character_turns: list[CharacterTurnRecord] = field(default_factory=list)
+    spotlight_history: list[str] = field(default_factory=list)
+    eligibility_epoch: int = 0
 
 
 @dataclass

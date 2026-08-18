@@ -81,6 +81,7 @@ class EligibleActorEntry:
 class EligibleActorsResponse:
     hg_scene_id: str
     hg_round_id: str
+    eligibility_snapshot_id: str
     eligible_actors: tuple[str, ...]
     actors_used_this_round: tuple[str, ...]
     character_roles: dict[str, str]
@@ -88,6 +89,33 @@ class EligibleActorsResponse:
     present_characters: tuple[str, ...]
     offstage_characters: tuple[str, ...]
     absent_but_relevant: tuple[str, ...]
+
+
+SelectionMode = Literal["direct", "director"]
+
+
+@dataclass(frozen=True)
+class ParticipationDecisionRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    eligibility_snapshot_id: str
+    forced_designation: str | None = None
+
+
+@dataclass(frozen=True)
+class ParticipationDecision:
+    hg_scene_id: str
+    hg_round_id: str
+    eligibility_snapshot_id: str
+    selection_mode: SelectionMode
+    selected_actor: str | None
+    director_required: bool
+    director_constraint_actor: str | None
+    participation_sources: tuple[str, ...]
+    reason: str
+    forced_designation_ignored: bool = False
+    forced_designation_ignore_reason: str | None = None
+    continuation_c2_skip: bool = False
 
 
 @dataclass(frozen=True)
@@ -99,6 +127,9 @@ class DirectorDecisionValidationRequest:
     attempt_index: int
     proposed_decision: dict[str, Any]
     raw_model_output: str | None = None
+    eligibility_snapshot_id: str | None = None
+    director_constraint_actor: str | None = None
+    continuation_c2_skip: bool = False
 
 
 @dataclass(frozen=True)
