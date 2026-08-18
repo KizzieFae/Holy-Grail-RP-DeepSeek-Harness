@@ -3,7 +3,7 @@
 **Status:** Completed (M12.2 — framework-neutral domain library extraction)  
 **Date:** 2026-08-18  
 **M12.1 anchor:** `e89508d`  
-**Implementation HEAD:** (see §25 after commit)
+**Implementation HEAD:** `07e8777`
 
 ---
 
