@@ -13,6 +13,8 @@ if str(_RP_APP) not in sys.path:
     sys.path.insert(0, str(_RP_APP))
 
 from character_move_adapters import legacy_move_text_for_validation  # noqa: E402
+from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
+from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response  # noqa: E402
 from response_validation_parsing import (  # noqa: E402
     parse_character_move,
@@ -26,6 +28,7 @@ from .contract import (  # noqa: E402
     DirectorContextPrepareRequest,
     DirectorDecisionResult,
     DirectorDecisionValidationRequest,
+    NarratorContextPrepareRequest,
     PromptContribution,
     PromptContributionManifest,
     RoundStartRequest,
@@ -350,6 +353,10 @@ class DomainKernel:
         fixture.committed_move_count += 1
         fixture.commit_ids.append(commit_id)
         rnd.director_decision = director_decision
+        rnd.committed_character_id = req.character_id
+        rnd.committed_move = dict(req.validated_move)
+        rnd.domain_commit_id = commit_id
+        rnd.continuity_turn_index = after_turn
 
         return CommitResponse(
             committed=True,
@@ -362,3 +369,115 @@ class DomainKernel:
     def record_uncommitted_proposal(self, hg_scene_id: str) -> None:
         """Explicit no-op documenting that proposals do not mutate continuity."""
         self.store.require(hg_scene_id)
+
+    def prepare_narrator_context(
+        self, req: NarratorContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        if rnd.committed_move is None or rnd.committed_character_id is None:
+            raise ValueError("narrator context requires a committed move for this round")
+        if rnd.domain_commit_id != req.domain_commit_id:
+            raise ValueError(
+                f"domain_commit_id mismatch: expected {rnd.domain_commit_id}, "
+                f"got {req.domain_commit_id}"
+            )
+        if rnd.continuity_turn_index != req.continuity_turn_index:
+            raise ValueError(
+                f"continuity_turn_index mismatch: expected {rnd.continuity_turn_index}, "
+                f"got {req.continuity_turn_index}"
+            )
+        if rnd.committed_character_id != req.character_id:
+            raise ValueError(
+                f"character_id mismatch: expected {rnd.committed_character_id}, "
+                f"got {req.character_id}"
+            )
+
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        manifest_id = f"manifest-narrator-{req.inference_id}"
+        location = str(mgr.scene_state.location or "unknown")
+        present = ", ".join(fixture.cast)
+        director_decision = dict(rnd.director_decision or {})
+        environment_event = str(director_decision.get("environment_event", "") or "")
+        narrate_move = redact_structured_move_for_orchestration(
+            dict(rnd.committed_move),
+            present_characters=list(fixture.cast),
+        )
+        scene_context = (
+            f"Location: {location}. Present: {present}. "
+            f"Continuity turn counter after commit: {mgr.turn_counter}."
+        )
+        render_instruction = build_narrator_render_prompt(
+            char_name=req.character_id,
+            action="",
+            dialogue="",
+            environment_event=environment_event,
+            scene_context=scene_context,
+            structured_move=narrate_move,
+        )
+        committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
+        contributions = (
+            PromptContribution(
+                contribution_id=f"{manifest_id}-scene",
+                source_kind="scene_state",
+                authority_class="authoritative",
+                knowledge_ids=(f"scene:{req.hg_scene_id}",),
+                priority=10,
+                content=scene_context,
+                provenance={
+                    "hg_scene_id": req.hg_scene_id,
+                    "hg_round_id": req.hg_round_id,
+                    "domain_commit_id": req.domain_commit_id,
+                    "continuity_turn_index": req.continuity_turn_index,
+                },
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-committed-move",
+                source_kind="committed_move",
+                authority_class="authoritative",
+                knowledge_ids=(f"commit:{req.domain_commit_id}",),
+                priority=20,
+                content=(
+                    f"Committed character move for {req.character_id} "
+                    f"(domain_commit_id={req.domain_commit_id}):\n{committed_move_json}"
+                ),
+                provenance={
+                    "character_id": req.character_id,
+                    "domain_commit_id": req.domain_commit_id,
+                    "visibility": "presentation",
+                },
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-director-decision",
+                source_kind="director_decision",
+                authority_class="authoritative",
+                knowledge_ids=(f"round:{req.hg_round_id}",),
+                priority=25,
+                content=(
+                    "Accepted director decision for this round: "
+                    f"{json.dumps(director_decision, ensure_ascii=False)}"
+                ),
+                provenance={"hg_round_id": req.hg_round_id},
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-instruction",
+                source_kind="inference_instruction",
+                authority_class="derived",
+                knowledge_ids=(f"inference:{req.inference_id}",),
+                priority=30,
+                content=render_instruction,
+                provenance={"inference_id": req.inference_id, "role": "narrator"},
+            ),
+        )
+        return PromptContributionManifest(
+            manifest_id=manifest_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            role="narrator",
+            character_id=req.character_id,
+            turn_index=rnd.turn_index,
+            attempt_index=0,
+            contributions=contributions,
+        )

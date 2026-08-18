@@ -19,6 +19,7 @@ from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
+    NarratorContextPrepareRequest,
     RoundStartRequest,
     ValidationRequest,
 )
@@ -218,6 +219,112 @@ def test_commit_uses_authoritative_continuity_path(kernel: DomainKernel) -> None
     snapshot = kernel.scene_snapshot(hg_scene_id)
     assert snapshot.turn_counter == 1
     assert snapshot.committed_move_count == 1
+
+
+def _commit_valid_move(kernel: DomainKernel) -> tuple[str, str, str, int]:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    validation = kernel.validate_move(
+        ValidationRequest(
+            inference_id="inf-commit",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            role="guest",
+            turn_index=0,
+            attempt_index=0,
+            proposed_move=PROTOTYPE_VALID_MOVE,
+            raw_model_output=json.dumps(PROTOTYPE_VALID_MOVE),
+        )
+    )
+    assert validation.accepted is True
+    assert validation.normalized_move is not None
+    commit = kernel.commit_move(
+        CommitRequest(
+            inference_id="inf-commit",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            validated_move=validation.normalized_move,
+            director_decision=PROTOTYPE_DIRECTOR_DECISION,
+            expected_turn_index=0,
+        )
+    )
+    assert commit.committed is True
+    assert commit.domain_commit_id is not None
+    assert commit.continuity_turn_index is not None
+    return hg_scene_id, hg_round_id, commit.domain_commit_id, commit.continuity_turn_index
+
+
+def test_narrator_context_excludes_private_and_director_scratch(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id, domain_commit_id, continuity_turn_index = _commit_valid_move(kernel)
+    manifest = kernel.prepare_narrator_context(
+        NarratorContextPrepareRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id="inf-narrator-1",
+            character_id="Alice",
+            domain_commit_id=domain_commit_id,
+            continuity_turn_index=continuity_turn_index,
+        )
+    )
+    kinds = {c.source_kind for c in manifest.contributions}
+    assert manifest.role == "narrator"
+    assert "character_private" not in kinds
+    assert "director_scratch" not in kinds
+    assert "committed_move" in kinds
+    assert "scene_state" in kinds
+
+
+def test_narrator_context_requires_commit(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    with pytest.raises(ValueError, match="narrator context requires a committed move"):
+        kernel.prepare_narrator_context(
+            NarratorContextPrepareRequest(
+                hg_scene_id=hg_scene_id,
+                hg_round_id=hg_round_id,
+                inference_id="inf-narrator-2",
+                character_id="Alice",
+                domain_commit_id="hg-commit-missing",
+                continuity_turn_index=1,
+            )
+        )
+
+
+def test_narrator_context_reflects_committed_move_not_rejected_attempt(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    rejected = kernel.validate_move(
+        ValidationRequest(
+            inference_id="inf-reject",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            role="guest",
+            turn_index=0,
+            attempt_index=0,
+            proposed_move=_invalid_move(),
+            raw_model_output=json.dumps(_invalid_move()),
+        )
+    )
+    assert rejected.accepted is False
+    hg_scene_id, hg_round_id, domain_commit_id, continuity_turn_index = _commit_valid_move(kernel)
+    manifest = kernel.prepare_narrator_context(
+        NarratorContextPrepareRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id="inf-narrator-3",
+            character_id="Alice",
+            domain_commit_id=domain_commit_id,
+            continuity_turn_index=continuity_turn_index,
+        )
+    )
+    committed = next(c for c in manifest.contributions if c.source_kind == "committed_move")
+    assert "nods thoughtfully" in committed.content
+    assert "parse_error" not in committed.content
+
+
+def test_narrator_has_no_commit_path(kernel: DomainKernel) -> None:
+    assert not hasattr(kernel, "commit_narration")
+    assert not hasattr(kernel, "validate_narration")
 
 
 def test_http_transport_round_trip(kernel: DomainKernel) -> None:

@@ -27,6 +27,7 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-runtime-boundary-decision.md` | **V2 runtime boundary & session topology decision** (full-weight architecture proposal) |
 | `rp-app/v2-boundary-prototype.md` | **V2 boundary prototype implementation report** (narrow vertical slice) |
 | `rp-app/v2-director-character-orchestration.md` | **V2 Director + Character orchestration slice** (multi-role proof) |
+| `rp-app/v2-narrator-orchestration.md` | **V2 Narrator orchestration slice** (three-role basic round) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
 | `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
 

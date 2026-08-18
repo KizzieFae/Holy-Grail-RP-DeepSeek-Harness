@@ -17,6 +17,7 @@ SourceKind = Literal[
     "director_scratch",
     "continuity_summary",
     "director_decision",
+    "committed_move",
     "inference_instruction",
 ]
 ValidationClass = Literal[
@@ -146,6 +147,16 @@ class CommitResponse:
     hg_scene_id: str
     inference_id: str
     reason: str = ""
+
+
+@dataclass(frozen=True)
+class NarratorContextPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    character_id: str
+    domain_commit_id: str
+    continuity_turn_index: int
 
 
 @dataclass(frozen=True)

@@ -61,6 +61,102 @@ export default class HolyGrailRpRuntime extends Service {
     return { raw, inferenceSessionId: String(agent.id) };
   }
 
+  _correlation({ hgSceneId, hgRoundId, sceneSessionId }) {
+    return baseCorrelation({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      dsh_scene_session_id: String(sceneSessionId),
+    });
+  }
+
+  async _runNarratorPresentation({
+    api,
+    sceneAgent,
+    sceneSessionId,
+    hgSceneId,
+    hgRoundId,
+    characterId,
+    domainCommitId,
+    continuityTurnIndex,
+    narratorInferenceId,
+    mockNarratorResponses,
+  }) {
+    const manifest = await api.prepareNarratorContext({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      inference_id: narratorInferenceId,
+      character_id: characterId,
+      domain_commit_id: domainCommitId,
+      continuity_turn_index: continuityTurnIndex,
+    });
+    const manifestId = String(manifest.manifest_id);
+
+    appendHgEvent(sceneAgent.session, 'hg/narrator-started', {
+      ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      inference_id: narratorInferenceId,
+      role: 'narrator',
+      character_id: characterId,
+      manifest_id: manifestId,
+      domain_commit_id: domainCommitId,
+      continuity_turn_index: continuityTurnIndex,
+    });
+
+    try {
+      const narratorRun = await this._runEphemeralInference({
+        inferenceId: narratorInferenceId,
+        prompt: 'Render the committed character move as scene narration only.',
+        manifest,
+        mockResponses: mockNarratorResponses?.length
+          ? mockNarratorResponses
+          : ['She nodded thoughtfully, taking in the workshop around her.'],
+      });
+      const presentationText = narratorRun.raw.trim();
+      if (!presentationText) {
+        throw new Error('narrator produced empty presentation output');
+      }
+
+      appendHgEvent(sceneAgent.session, 'hg/narrator-completed', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: narratorInferenceId,
+        narrator_inference_session_id: narratorRun.inferenceSessionId,
+        role: 'narrator',
+        character_id: characterId,
+        manifest_id: manifestId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+        presentation_text: presentationText,
+      });
+
+      return {
+        presentation_rendered: true,
+        presentation_text: presentationText,
+        presentation_failed: false,
+        narrator_inference_session_id: narratorRun.inferenceSessionId,
+        narrator_manifest_id: manifestId,
+      };
+    } catch (error) {
+      appendHgEvent(sceneAgent.session, 'hg/narrator-failed', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: narratorInferenceId,
+        role: 'narrator',
+        character_id: characterId,
+        manifest_id: manifestId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+        reason: String(error?.message ?? error),
+        presentation_failure_class: 'runtime_render',
+        canon_preserved: true,
+      });
+      return {
+        presentation_rendered: false,
+        presentation_text: null,
+        presentation_failed: true,
+        presentation_failure_reason: String(error?.message ?? error),
+        narrator_manifest_id: manifestId,
+      };
+    }
+  }
+
   async runCharacterInference(options) {
     const api = this._domainClient(options.domainApi?.baseUrl);
     const characterId = options.characterId ?? 'Alice';
@@ -488,11 +584,7 @@ export default class HolyGrailRpRuntime extends Service {
       continuityTurnIndex = Number(commit.continuity_turn_index);
       domainCommitId = String(commit.domain_commit_id ?? '');
       appendHgEvent(sceneAgent.session, 'hg/move-committed', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
         role: 'character',
@@ -502,6 +594,34 @@ export default class HolyGrailRpRuntime extends Service {
         continuity_turn_index: continuityTurnIndex,
         domain_commit_id: domainCommitId,
       });
+    }
+
+    let narratorResult = {
+      presentation_rendered: false,
+      presentation_text: null,
+      presentation_failed: false,
+      narrator_inference_id: null,
+      narrator_inference_session_id: null,
+      narrator_manifest_id: null,
+    };
+
+    if (committed && domainCommitId && continuityTurnIndex != null) {
+      const narratorInferenceId = options.narratorInferenceId ?? `inf-narrator-${crypto.randomUUID()}`;
+      narratorResult = {
+        narrator_inference_id: narratorInferenceId,
+        ...(await this._runNarratorPresentation({
+          api,
+          sceneAgent,
+          sceneSessionId,
+          hgSceneId,
+          hgRoundId,
+          characterId: selectedCharacterId,
+          domainCommitId,
+          continuityTurnIndex,
+          narratorInferenceId,
+          mockNarratorResponses: options.mockNarratorResponses,
+        })),
+      };
     }
 
     return {
@@ -517,6 +637,13 @@ export default class HolyGrailRpRuntime extends Service {
       dsh_scene_session_id: String(sceneSessionId),
       continuity_turn_index: continuityTurnIndex,
       domain_commit_id: domainCommitId,
+      presentation_rendered: narratorResult.presentation_rendered,
+      presentation_text: narratorResult.presentation_text,
+      presentation_failed: narratorResult.presentation_failed,
+      presentation_failure_reason: narratorResult.presentation_failure_reason ?? null,
+      narrator_inference_id: narratorResult.narrator_inference_id,
+      narrator_inference_session_id: narratorResult.narrator_inference_session_id ?? null,
+      narrator_manifest_id: narratorResult.narrator_manifest_id ?? null,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
     };

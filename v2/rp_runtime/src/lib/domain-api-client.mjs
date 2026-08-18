@@ -46,6 +46,9 @@ export function createDomainApiClient(baseUrl) {
     commitMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/commit', body, 'commitMove');
     },
+    prepareNarratorContext(body) {
+      return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
+    },
     async getSceneState(hgSceneId) {
       trackBoundaryCall(metrics, 'getSceneState', { hg_scene_id: hgSceneId });
       const res = await fetch(`${baseUrl}/v1/scenes/${encodeURIComponent(hgSceneId)}/state`);

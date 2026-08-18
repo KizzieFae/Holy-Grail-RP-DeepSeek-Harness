@@ -13,6 +13,7 @@ from .contract import (
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
+    NarratorContextPrepareRequest,
     RoundStartRequest,
     ValidationRequest,
 )
@@ -120,6 +121,17 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     expected_turn_index=int(data["expected_turn_index"]),
                 )
                 self._send_json(200, self.kernel.commit_move(req))
+                return
+            if path == "/v1/narrator/context/prepare":
+                req = NarratorContextPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    continuity_turn_index=int(data["continuity_turn_index"]),
+                )
+                self._send_json(200, self.kernel.prepare_narrator_context(req))
                 return
             if path == "/v1/scenes":
                 fixture = self.kernel.create_scene(

@@ -22,6 +22,10 @@ class RoundFixture:
     hg_scene_id: str
     turn_index: int
     director_decision: dict[str, Any] | None = None
+    committed_character_id: str | None = None
+    committed_move: dict[str, Any] | None = None
+    domain_commit_id: str | None = None
+    continuity_turn_index: int | None = None
 
 
 @dataclass
