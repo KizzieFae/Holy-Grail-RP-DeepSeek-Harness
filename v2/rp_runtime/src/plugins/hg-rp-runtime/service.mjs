@@ -6,12 +6,18 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import {
+  agentOptionsFromProfile,
+  mockInferenceProfile,
+  resolveInferenceProfile,
+} from '../../lib/inference-profile.mjs';
+import { extractInferenceTrace } from '../../lib/inference-trace.mjs';
+import {
   finalAssistantText,
   parseJsonObject,
   registerManifestContributions,
   waitForIdle,
 } from '../../lib/inference-utils.mjs';
-import { HG_MOCK_MODEL, HG_MOCK_PROVIDER, HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
+import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
 import { appendHgEvent, baseCorrelation } from './events.mjs';
 
 function roleForCharacter(characterId, characterRoles = {}) {
@@ -78,6 +84,13 @@ export default class HolyGrailRpRuntime extends Service {
     await mountAgentLoopTestDependencies(this.ctx, {
       systemPrompt: { persona: options.persona ?? 'Holy Grail RP runtime.' },
     });
+    if (options.inference?.mountDeepSeek || this.config.inference?.mountDeepSeek) {
+      const { mountDeepSeekProvider } = await import('../../lib/mount-deepseek-provider.mjs');
+      await mountDeepSeekProvider(this.ctx, {
+        ...this.config.inference?.deepseek,
+        ...options.inference?.deepseek,
+      });
+    }
     await this.ctx.plugin(AgentLoop, { agents: [] });
   }
 
@@ -90,15 +103,22 @@ export default class HolyGrailRpRuntime extends Service {
     prompt,
     manifest,
     mockResponses,
+    modelProfile,
   }) {
-    const adapter = new HgMockLlmAdapter(
-      mockResponses.length ? mockResponses : ['{}'],
+    const profile = resolveInferenceProfile(this.config.inference, modelProfile);
+    let disposeAdapter = () => {};
+
+    if (profile.kind === 'mock') {
+      const adapter = new HgMockLlmAdapter(
+        mockResponses.length ? mockResponses : ['{}'],
+      );
+      disposeAdapter = this.ctx.llm.registerAdapter([profile.provider], adapter);
+    }
+
+    const agent = this.ctx.agentLoop.create(
+      SessionId(`hg-inf-${inferenceId}`),
+      agentOptionsFromProfile(profile),
     );
-    const disposeAdapter = this.ctx.llm.registerAdapter([HG_MOCK_PROVIDER], adapter);
-    const agent = this.ctx.agentLoop.create(SessionId(`hg-inf-${inferenceId}`), {
-      provider: HG_MOCK_PROVIDER,
-      model: HG_MOCK_MODEL,
-    });
     const releaseManifest = registerManifestContributions(agent, manifest?.contributions);
     agent.followup(
       createUserMessage({
@@ -107,10 +127,29 @@ export default class HolyGrailRpRuntime extends Service {
       }),
     );
     await waitForIdle(this.ctx, agent);
-    const raw = finalAssistantText(agent.session.events);
+
+    const contributionIds = (manifest?.contributions ?? []).map(
+      (entry) => String(entry.contribution_id),
+    );
+    const trace = extractInferenceTrace(agent.session.events, {
+      provider: profile.provider,
+      model: profile.model,
+      reasoningEffort: profile.reasoningEffort ?? null,
+      manifestId: manifest?.manifest_id ?? null,
+      contributionIds,
+    });
+    const raw = trace.assistant_text;
     releaseManifest();
     disposeAdapter();
-    return { raw, inferenceSessionId: String(agent.id) };
+
+    return {
+      raw,
+      inferenceSessionId: String(agent.id),
+      trace,
+      failed: trace.failed,
+      failure: trace.failure,
+      inferenceSessionEvents: [...agent.session.events],
+    };
   }
 
   _correlation({ hgSceneId, hgRoundId, sceneSessionId }) {
@@ -513,10 +552,10 @@ export default class HolyGrailRpRuntime extends Service {
     );
 
     const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
-    const sceneAgent = this.ctx.agentLoop.create(sceneSessionId, {
-      provider: HG_MOCK_PROVIDER,
-      model: HG_MOCK_MODEL,
-    });
+    const sceneAgent = this.ctx.agentLoop.create(
+      sceneSessionId,
+      agentOptionsFromProfile(mockInferenceProfile()),
+    );
 
     appendHgEvent(sceneAgent.session, 'hg/round-started', {
       ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
@@ -760,10 +799,10 @@ export default class HolyGrailRpRuntime extends Service {
     const beforeState = await api.getSceneState(hgSceneId);
     const expectedTurnIndex = Number(beforeState.turn_counter ?? 0);
     const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
-    const sceneAgent = this.ctx.agentLoop.create(sceneSessionId, {
-      provider: HG_MOCK_PROVIDER,
-      model: HG_MOCK_MODEL,
-    });
+    const sceneAgent = this.ctx.agentLoop.create(
+      sceneSessionId,
+      agentOptionsFromProfile(mockInferenceProfile()),
+    );
 
     const directorDecision = options.directorDecision ?? {
       next_actor: characterId,
@@ -778,9 +817,13 @@ export default class HolyGrailRpRuntime extends Service {
     let continuityTurnIndex = null;
     let domainCommitId = null;
     let manifestId = '';
+    let inferenceTrace = null;
+    let providerFailure = null;
     const mockResponses = options.mockResponses ?? [];
+    const modelProfile = options.modelProfile ?? options.model_profile ?? null;
+    const maxAttempts = mockResponses.length > 0 ? mockResponses.length : 1;
 
-    while (attemptIndex < mockResponses.length && !committed) {
+    while (attemptIndex < maxAttempts && !committed) {
       const manifest = await api.prepareCharacterContext({
         hg_scene_id: hgSceneId,
         hg_round_id: hgRoundId,
@@ -792,12 +835,42 @@ export default class HolyGrailRpRuntime extends Service {
       });
       manifestId = String(manifest.manifest_id);
 
-      const { raw } = await this._runEphemeralInference({
+      const inferenceRun = await this._runEphemeralInference({
         inferenceId: `${inferenceId}-${attemptIndex}`,
-        prompt: 'Produce your character move as JSON only.',
+        prompt: options.prompt ?? (
+          'Respond with a single JSON object only (no markdown). '
+          + 'Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."}],'
+          + '"motivation":{"goal":"...","tactic":"...","emotional_driver":"...","risk_level":"low"},'
+          + '"semantic_evaluation":{"decision":"no_covered_change"}}'
+        ),
         manifest,
-        mockResponses: [mockResponses[attemptIndex]],
+        mockResponses: mockResponses.length ? [mockResponses[attemptIndex]] : [],
+        modelProfile,
       });
+      inferenceTrace = inferenceRun.trace;
+
+      if (inferenceRun.failed) {
+        providerFailure = inferenceRun.failure;
+        appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
+          ...baseCorrelation({
+            hg_scene_id: hgSceneId,
+            hg_round_id: hgRoundId,
+            dsh_scene_session_id: String(sceneSessionId),
+          }),
+          inference_id: inferenceId,
+          role: 'character',
+          character_id: characterId,
+          attempt_index: attemptIndex,
+          manifest_id: manifestId,
+          provider: inferenceTrace?.provider ?? null,
+          model: inferenceTrace?.model ?? null,
+          failure: providerFailure,
+          inference_trace: inferenceTrace,
+        });
+        break;
+      }
+
+      const { raw } = inferenceRun;
 
       let proposed;
       try {
@@ -909,6 +982,8 @@ export default class HolyGrailRpRuntime extends Service {
       dsh_scene_session_id: String(sceneSessionId),
       continuity_turn_index: continuityTurnIndex,
       domain_commit_id: domainCommitId,
+      inference_trace: inferenceTrace,
+      provider_failure: providerFailure,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
     };

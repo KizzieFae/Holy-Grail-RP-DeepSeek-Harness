@@ -11,6 +11,7 @@ export const HG_EVENT_TYPES = [
   'hg/move-proposed',
   'hg/move-rejected',
   'hg/move-committed',
+  'hg/inference-failed',
   'hg/narrator-started',
   'hg/narrator-completed',
   'hg/narrator-failed',
