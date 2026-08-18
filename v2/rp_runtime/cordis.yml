@@ -20,5 +20,6 @@
   config:
     agents: []
 
-# Holy Grail RP runtime orchestration is provided by the in-repo Cordis service:
-# v2/rp_runtime/src/plugins/hg-rp-runtime/service.mjs (HolyGrailRpRuntime)
+# Holy Grail RP runtime orchestration is provided by the in-repo Cordis services:
+# - v2/rp_runtime/src/plugins/hg-context-bridge/service.mjs (HgContextBridge)
+# - v2/rp_runtime/src/plugins/hg-rp-runtime/service.mjs (HolyGrailRpRuntime)

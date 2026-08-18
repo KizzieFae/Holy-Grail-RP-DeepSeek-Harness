@@ -5,6 +5,7 @@ import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
+import HgContextBridge from '../hg-context-bridge/service.mjs';
 import {
   agentOptionsFromProfile,
   inferenceAttemptLimit,
@@ -21,7 +22,6 @@ import {
 import {
   finalAssistantText,
   parseJsonObject,
-  registerManifestContributions,
   waitForIdle,
 } from '../../lib/inference-utils.mjs';
 import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
@@ -88,6 +88,9 @@ export default class HolyGrailRpRuntime extends Service {
   }
 
   async mountStack(options) {
+    if (!this.ctx.hgContextBridge) {
+      new HgContextBridge(this.ctx);
+    }
     await mountAgentLoopTestDependencies(this.ctx, {
       systemPrompt: { persona: options.persona ?? 'Holy Grail RP runtime.' },
     });
@@ -126,7 +129,10 @@ export default class HolyGrailRpRuntime extends Service {
       SessionId(`hg-inf-${inferenceId}`),
       agentOptionsFromProfile(profile),
     );
-    const releaseManifest = registerManifestContributions(agent, manifest?.contributions);
+    const contextRegistration = this.ctx.hgContextBridge.registerManifest({
+      agent,
+      manifest,
+    });
     agent.followup(
       createUserMessage({
         content: [{ type: 'text', text: prompt }],
@@ -135,18 +141,16 @@ export default class HolyGrailRpRuntime extends Service {
     );
     await waitForIdle(this.ctx, agent);
 
-    const contributionIds = (manifest?.contributions ?? []).map(
-      (entry) => String(entry.contribution_id),
-    );
+    const contributionIds = contextRegistration.contributionIds;
     const trace = extractInferenceTrace(agent.session.events, {
       provider: profile.provider,
       model: profile.model,
       reasoningEffort: profile.reasoningEffort ?? null,
-      manifestId: manifest?.manifest_id ?? null,
+      manifestId: contextRegistration.manifestId,
       contributionIds,
     });
     const raw = trace.assistant_text;
-    releaseManifest();
+    contextRegistration.dispose();
     disposeAdapter();
 
     return {

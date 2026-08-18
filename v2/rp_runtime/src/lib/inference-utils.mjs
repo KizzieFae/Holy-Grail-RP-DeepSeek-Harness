@@ -28,21 +28,6 @@ export function parseJsonObject(text) {
   return JSON.parse(trimmed.slice(start, end + 1));
 }
 
-export function registerManifestContributions(agent, contributions) {
-  const disposers = [];
-  for (const contribution of contributions ?? []) {
-    const dispose = agent.ctx.systemPrompt.context({
-      name: String(contribution.contribution_id),
-      order: Number(contribution.priority ?? 0),
-      text: String(contribution.content ?? ''),
-    });
-    disposers.push(dispose);
-  }
-  return () => {
-    for (const dispose of disposers) dispose();
-  };
-}
-
 export function trackBoundaryCall(metrics, label, body) {
   const payload = JSON.stringify(body ?? {});
   metrics.calls.push({
