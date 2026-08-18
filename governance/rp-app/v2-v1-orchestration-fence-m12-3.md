@@ -3,7 +3,7 @@
 **Status:** Completed (M12.3 — physical legacy fence; no deletion)  
 **Date:** 2026-08-18  
 **M12.2 anchor:** `be96cf9`  
-**Implementation HEAD:** `8c74ced` (+ shim fix follow-up)
+**Implementation HEAD:** `e0d5337`
 
 ---
 
