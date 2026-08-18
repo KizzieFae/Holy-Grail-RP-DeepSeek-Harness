@@ -31,9 +31,11 @@ KNOWN_CORPUS_SCHEMAS: Final[frozenset[str]] = frozenset(
     }
 )
 
-_DATA_ROOT = Path(__file__).resolve().parent / "data"
-_DEFAULT_BASELINES_DIR = _DATA_ROOT / "evaluation" / "issue243_regression_baselines"
-_DEFAULT_ISSUE240_DIR = _DATA_ROOT / "issue240"
+from legacy.v1_orchestration.paths import autogen_python_dir
+
+_DATA_ROOT = autogen_python_dir()
+_DEFAULT_BASELINES_DIR = _DATA_ROOT / "data" / "evaluation" / "issue243_regression_baselines"
+_DEFAULT_ISSUE240_DIR = _DATA_ROOT / "data" / "issue240"
 
 DEFAULT_FROZEN_CORPORA: Final[tuple[tuple[str, Path], ...]] = (
     ("willow_v1", _DEFAULT_ISSUE240_DIR / "adjudication_corpus_willow_v1.json"),

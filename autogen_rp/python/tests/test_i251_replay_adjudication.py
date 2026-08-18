@@ -9,7 +9,8 @@ from pathlib import Path
 import pytest
 
 _PY = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(_PY / "rp_app"))
+_REPO = Path(__file__).resolve().parents[3]
+_AUDIT_ROOT = _REPO / "legacy" / "v1_orchestration" / "data" / "rp_audits"
 sys.path.insert(0, str(_PY / "validation_runs" / "issue251"))
 
 from i251_replay_adjudication import (  # noqa: E402
@@ -35,7 +36,7 @@ def test_classify_lane_structural() -> None:
 
 
 def test_adjudicate_exit_row_908p01() -> None:
-    audit = _PY / "rp_app/data/rp_audits/session_908/round_001"
+    audit = _AUDIT_ROOT / "session_908/round_001"
     hits = sorted(audit.glob("*turn03_willow_reeves_full.json"))
     hits = [p for p in hits if "parse_retry" not in p.name]
     if not hits:
@@ -68,10 +69,10 @@ def test_merge_matrix_minimal() -> None:
                 "cohort": "non_exit",
                 "doctrine_expected": "no_covered_change",
                 "source_artifact": str(
-                    _PY
-                    / "rp_app/data/rp_audits/session_908/round_001"
+                    _AUDIT_ROOT
+                    / "session_908/round_001"
                     / sorted(
-                        (_PY / "rp_app/data/rp_audits/session_908/round_001").glob(
+                        (_AUDIT_ROOT / "session_908/round_001").glob(
                             "*turn05_willow_reeves_full.json"
                         )
                     )[0]

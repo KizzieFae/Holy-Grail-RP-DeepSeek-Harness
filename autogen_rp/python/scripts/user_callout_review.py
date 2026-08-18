@@ -14,10 +14,13 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-_PY_ROOT = Path(__file__).resolve().parents[1]
-_RP_APP = _PY_ROOT / "rp_app"
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from legacy.v1_orchestration.bootstrap import ensure_v1_orchestration_paths
+
+ensure_v1_orchestration_paths()
 
 from user_callout_review_store import (  # noqa: E402
     UserCalloutReviewStoreError,

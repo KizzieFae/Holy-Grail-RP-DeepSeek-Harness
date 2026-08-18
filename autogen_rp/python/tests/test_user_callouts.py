@@ -41,7 +41,9 @@ def test_primary_prefers_character_over_narrator(tmp_path: Path) -> None:
 
 
 def test_path_relative_to_python_dir_roundtrip(tmp_path: Path) -> None:
-    anchor = Path(uc.__file__).resolve().parent.parent
+    from legacy.v1_orchestration.paths import autogen_python_dir
+
+    anchor = autogen_python_dir()
     p = anchor / "data" / "x.txt"
     rel = path_relative_to_python_dir(p)
     assert rel.replace("\\", "/") == "data/x.txt"

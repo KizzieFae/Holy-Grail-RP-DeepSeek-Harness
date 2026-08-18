@@ -22,7 +22,9 @@ from participation_suspicion_extract import (
 MANUAL_REFERENCE_SCHEMA: Final[str] = "issue227_manual_adjudication_reference_v1"
 PRIOR_SUITE_REPORT_SCHEMA: Final[str] = "issue246_prior_suite_validation_report_v1"
 
-_DATA_ROOT = Path(__file__).resolve().parent / "data"
+from legacy.v1_orchestration.paths import autogen_python_dir
+
+_DATA_ROOT = autogen_python_dir() / "data"
 _DEFAULT_REFERENCE = _DATA_ROOT / "issue227" / "manual_adjudication_reference_v1.json"
 _DEFAULT_JSONL_ROOT = _DATA_ROOT.parent / "validation_runs"
 

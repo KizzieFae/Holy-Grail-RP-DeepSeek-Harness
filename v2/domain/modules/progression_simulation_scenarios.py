@@ -15,7 +15,9 @@ import re
 from pathlib import Path
 from typing import Any
 
-_SCENARIOS_DIR = Path(__file__).resolve().parent / "data" / "progression_simulation_scenarios"
+from domain.paths import autogen_python_data_dir
+
+_SCENARIOS_DIR = autogen_python_data_dir() / "progression_simulation_scenarios"
 
 _EXPECTED_PRESSURE_PROFILES = frozenset({"low", "medium", "high"})
 _STARTUP_TRIGGER_MODES = frozenset({"parity", "overlay"})

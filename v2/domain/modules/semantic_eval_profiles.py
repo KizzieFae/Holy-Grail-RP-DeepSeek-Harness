@@ -28,8 +28,10 @@ OBSERVATIONAL_EVAL_DISCLAIMER: Final[dict[str, bool | str]] = {
     "purpose": "offline evaluation calibration — not canonical runtime truth",
 }
 
+from domain.paths import autogen_python_data_dir
+
 _DEFAULT_PROFILES_PATH = (
-    Path(__file__).resolve().parent.parent / "data" / "evaluation" / "semantic_eval_profiles_v1.json"
+    autogen_python_data_dir() / "evaluation" / "semantic_eval_profiles_v1.json"
 )
 
 

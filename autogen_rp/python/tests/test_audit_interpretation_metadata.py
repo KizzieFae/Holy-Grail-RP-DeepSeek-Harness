@@ -76,6 +76,6 @@ def test_merge_scene_grounding_audit_family_summary_when_facts() -> None:
 
 def test_no_runtime_import_of_signal_interpretation_in_enforcement() -> None:
     """Guard: progression_enforcement must not reference audit interpretation key."""
-    root = Path(__file__).resolve().parent.parent / "rp_app"
+    root = Path(__file__).resolve().parents[3] / "legacy" / "v1_orchestration"
     text = (root / "progression_enforcement.py").read_text(encoding="utf-8")
     assert "signal_interpretation" not in text

@@ -9,6 +9,7 @@ _ROOT = Path(__file__).resolve().parents[3]
 _MODULE_INDEX = _ROOT / "MODULE_INDEX.md"
 _SEARCH_PATHS = (
     _ROOT / "autogen_rp" / "python" / "rp_app",
+    _ROOT / "legacy" / "v1_orchestration",
     _ROOT / "autogen_rp" / "python" / "scripts",
 )
 
