@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M12.3 validation anchor:** `1c9e499`  
-**M12.4 completion HEAD:** (see §25 after commit)
+**M12.4 completion HEAD:** `2407f27`
 
 **Governing principle:** Retire obsolete mechanisms, not valuable domain semantics.
 
