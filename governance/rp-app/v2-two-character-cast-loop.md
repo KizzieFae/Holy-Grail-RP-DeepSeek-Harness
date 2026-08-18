@@ -4,7 +4,7 @@
 **Date:** 2026-08-18  
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **Three-role round anchor:** `5a77eb5`  
-**Implementation HEAD:** (see §16 after commit)
+**Implementation HEAD:** `8bda5c9`
 
 ---
 
@@ -210,7 +210,11 @@ No `character1`/`character2` permanent architecture — only `character_turn_ind
 
 ## 16. Repository state
 
-(See commit after push.)
+| Field | Value |
+|-------|-------|
+| Commit | `8bda5c9` — feat(v2): add two-character cast loop orchestration |
+| Branch | `main` |
+| `origin/main` | aligned after push |
 
 ---
 
