@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M12.4 anchor:** `9830f3d`  
-**M12.5 completion HEAD:** `TBD` (see §27)
+**M12.5 completion HEAD:** `0e958e3`
 
 **Objective:** Remove obsolete vendored AutoGen packages and prove Holy Grail V2 operates without any AutoGen dependency.
 
