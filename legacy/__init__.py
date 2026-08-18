@@ -1,5 +1,3 @@
-"""Legacy V1 runtime components (retirement in progress).
+"""Retired V1 namespace — domain lives in ``v2.domain``; orchestration deleted M12.4."""
 
-Fenced orchestration: ``legacy.v1_orchestration``
-Permanent domain: ``v2.domain``
-"""
+from __future__ import annotations

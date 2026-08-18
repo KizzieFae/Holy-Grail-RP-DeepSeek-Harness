@@ -1,9 +1,6 @@
 """Dedupe detected consequences (Issue #159)."""
 
-try:
-    from continuity_state import DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import DetectedConsequence
+from continuity_state import DetectedConsequence
 
 
 def dedupe_detected_consequences(

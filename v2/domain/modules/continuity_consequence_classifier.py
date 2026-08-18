@@ -12,15 +12,8 @@ from character_move_adapters import (
     legacy_flat_dialogue_text,
 )
 
-try:
-    from scene_exit_detection import detect_exit_from_scene
-except ImportError:
-    from python.rp_app.scene_exit_detection import detect_exit_from_scene
-
-try:
-    from continuity_state import DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import DetectedConsequence
+from continuity_state import DetectedConsequence
+from scene_exit_detection import detect_exit_from_scene
 
 import continuity_consequence_classifier_constants as _constants
 from continuity_consequence_classifier_dedupe import dedupe_detected_consequences

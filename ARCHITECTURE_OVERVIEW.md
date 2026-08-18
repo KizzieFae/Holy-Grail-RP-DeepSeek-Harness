@@ -1,5 +1,7 @@
 # Architecture overview
 
+> **M12.4 (2026-08-18):** Production RP execution is **V2 only** — `v2/domain_api` (Domain Host) + `v2/rp_runtime` (DSH/Cordis). The V1 AutoGen/Streamlit/`turn_runner` path has been retired. See `governance/rp-app/v2-v1-orchestration-deletion-m12-4.md`.
+
 This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) for engineers and tools. Authoritative product intent remains in the PRD.
 
 ## Three layers
@@ -21,9 +23,10 @@ This document expands the three-layer model in [Holy Grail PRD.md](./Holy%20Grai
                                 │ bounded prompts / structured context
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  RP execution (AutoGen runtime — current bulk: rp_app)        │
-│  Director, orchestration, characters, Narrator, validation,  │
-│  continuity engine, Scene Grounding (MVP spec), audit        │
+│  RP execution (V2 — Domain Host + DSH runtime)                │
+│  Director phase, character phase, Narrator, validation,       │
+│  continuity engine, Scene Grounding (MVP spec), trace/audit   │
+│  (V1 AutoGen turn_runner path retired M12.4)                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 

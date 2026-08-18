@@ -6,28 +6,17 @@ from continuity_consequence_classifier_move_tools import (
     move_with_flat_text_for_deterministic_tools,
 )
 
-try:
-    from continuity_state import ConsequenceCategory, DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import ConsequenceCategory, DetectedConsequence
+from continuity_state import ConsequenceCategory, DetectedConsequence
 
 
 def detect_persistent_scene_state(move: dict[str, Any]) -> list[DetectedConsequence]:
     """Lexical scene-state signals; must match ``grounding_state_signals_from_move``."""
-    try:
-        from scene_grounding import (
-            SIGNAL_BANDAGE_APPLIED,
-            SIGNAL_PHONE_BROKEN,
-            SIGNAL_WEAPON_ON_TABLE,
-            grounding_state_signals_from_move,
-        )
-    except ImportError:
-        from python.rp_app.scene_grounding import (
-            SIGNAL_BANDAGE_APPLIED,
-            SIGNAL_PHONE_BROKEN,
-            SIGNAL_WEAPON_ON_TABLE,
-            grounding_state_signals_from_move,
-        )
+    from scene_grounding import (
+        SIGNAL_BANDAGE_APPLIED,
+        SIGNAL_PHONE_BROKEN,
+        SIGNAL_WEAPON_ON_TABLE,
+        grounding_state_signals_from_move,
+    )
 
     tm = move_with_flat_text_for_deterministic_tools(move)
     signals = grounding_state_signals_from_move(tm)

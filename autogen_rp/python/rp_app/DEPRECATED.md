@@ -1,23 +1,25 @@
-# DEPRECATED — `rp_app` namespace (M12.3)
+# DEPRECATED — `autogen_rp/python/rp_app` (M12.4)
 
-This directory is **not** the Holy Grail production runtime.
+**Status:** Retired. No substantive modules remain.
 
-## Production (V2)
+## Current architecture
 
-```text
-Launch-Holy-Grail-V2.bat
-cd v2/rp_runtime && npm run app
-```
+| Layer | Location |
+|-------|----------|
+| Domain semantics | `v2/domain/modules/` |
+| Domain API / Host | `v2/domain_api/` |
+| Production runtime | `v2/rp_runtime/` (DSH + supervisor) |
+| Launch | `Launch-Holy-Grail-V2.bat` or `npm run app` in `v2/rp_runtime` |
 
-## What remains here
+## History
 
-- **Domain shims** — forward imports to `v2/domain/modules/` (M12.2)
-- **No orchestration** — `turn_runner`, `app.py`, `model_client`, UI, and AutoGen wiring moved to `legacy/v1_orchestration/`
+- **M8:** Streamlit `app.py` deprecated as production entry.
+- **M12.2:** Domain modules extracted to `v2/domain/modules/`; this directory held import shims.
+- **M12.3:** V1 orchestration fenced under `legacy/v1_orchestration/`.
+- **M12.4:** Fenced orchestration and all shims deleted. V2 is the sole production path.
 
-## Legacy V1 (retirement-only)
+## Tests
 
-```text
-python -m legacy.v1_orchestration --check-imports
-```
+Domain tests import via `domain.bootstrap.ensure_domain_paths()` (see `autogen_rp/python/tests/conftest.py`).
 
-See `governance/rp-app/v2-v1-orchestration-fence-m12-3.md`.
+Historical V1 orchestration evidence: `governance/archive/v1-runtime/`.

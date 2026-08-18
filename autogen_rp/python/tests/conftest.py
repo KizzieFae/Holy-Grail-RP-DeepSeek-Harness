@@ -5,12 +5,15 @@ import sys
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+_V2 = _REPO_ROOT / "v2"
+for path in (_REPO_ROOT, _V2):
+    text = str(path)
+    if text not in sys.path:
+        sys.path.insert(0, text)
 
-from legacy.v1_orchestration.bootstrap import ensure_v1_orchestration_paths
+from domain.bootstrap import ensure_domain_paths
 
-ensure_v1_orchestration_paths()
+ensure_domain_paths()
 
 _TESTS_DIR = Path(__file__).resolve().parent
 if str(_TESTS_DIR) not in sys.path:
@@ -45,16 +48,3 @@ def deepseek_api_key():
     if not api_key:
         pytest.skip("DEEPSEEK_API_KEY environment variable not set")
     return api_key
-
-
-@pytest.fixture
-async def deepseek_model_client(deepseek_api_key):
-    """Fixture to create a DeepSeek model client."""
-    from model_client import create_deepseek_client
-
-    client = create_deepseek_client(api_key=deepseek_api_key)
-
-    yield client
-
-    # Cleanup
-    await client.close()

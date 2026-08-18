@@ -2,17 +2,8 @@
 
 from typing import Any
 
-try:
-    from continuity_state import ConsequenceCategory, DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import ConsequenceCategory, DetectedConsequence
-
-try:
-    from scene_exit_detection import dialogue_has_territorial_removal_language
-except ImportError:
-    from python.rp_app.scene_exit_detection import (
-        dialogue_has_territorial_removal_language,
-    )
+from continuity_state import ConsequenceCategory, DetectedConsequence
+from scene_exit_detection import dialogue_has_territorial_removal_language
 
 from continuity_consequence_classifier_signals import action_indicates_geometry_repositioning
 

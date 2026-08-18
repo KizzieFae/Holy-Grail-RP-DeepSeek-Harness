@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
-
-from continuity_setup_seam_v77 import (  # noqa: E402
+from continuity_setup_seam_v77 import (
     ensure_interim_anchor_role_fallback_for_finalize,
     finalize_continuity_setup_seam,
 )

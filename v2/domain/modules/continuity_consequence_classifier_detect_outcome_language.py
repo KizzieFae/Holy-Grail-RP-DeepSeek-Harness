@@ -2,17 +2,8 @@
 
 from typing import Any
 
-try:
-    from continuity_resolved_outcomes import extract_sleeping_surface_candidates
-except ImportError:
-    from python.rp_app.continuity_resolved_outcomes import (
-        extract_sleeping_surface_candidates,
-    )
-
-try:
-    from continuity_state import ConsequenceCategory, DetectedConsequence
-except ImportError:
-    from python.rp_app.continuity_state import ConsequenceCategory, DetectedConsequence
+from continuity_resolved_outcomes import extract_sleeping_surface_candidates
+from continuity_state import ConsequenceCategory, DetectedConsequence
 
 from continuity_consequence_classifier_regexes import (
     ACCESS_GRANTED_CAN_WORD,
