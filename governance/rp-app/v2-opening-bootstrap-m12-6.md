@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M12.5 anchor:** `46f2000`  
-**M12.6 completion HEAD:** (see §25 after commit)
+**M12.6 completion HEAD:** `ce64a59`
 
 **Objective:** Complete useful Holy Grail opening/bootstrap behaviors in permanent V2 architecture so production sessions can start without any deleted V1 runtime.
 
@@ -303,7 +303,12 @@ Do not implement without Governance review.
 
 ## 25. Repository state
 
-Recorded after commit/push in this slice.
+| Field | Value |
+|-------|-------|
+| Commit | `ce64a59` — `feat(v2): complete opening/bootstrap parity (M12.6)` |
+| Branch | `main` |
+| Pushed | `origin/main` |
+| Working tree | clean |
 
 ---
 
