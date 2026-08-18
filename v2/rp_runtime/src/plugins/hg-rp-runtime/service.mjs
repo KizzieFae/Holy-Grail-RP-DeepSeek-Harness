@@ -28,6 +28,17 @@ function classifyRoundCompletion(completionReason) {
   return { completion_status: 'aborted', completion_class: 'failure' };
 }
 
+function eligibilityTrace(eligibility) {
+  return {
+    eligible_actors: eligibility.eligible_actors ?? [],
+    actors_used_this_round: eligibility.actors_used_this_round ?? [],
+    present_characters: eligibility.present_characters ?? [],
+    offstage_characters: eligibility.offstage_characters ?? [],
+    absent_but_relevant: eligibility.absent_but_relevant ?? [],
+    actors: eligibility.actors ?? [],
+  };
+}
+
 export default class HolyGrailRpRuntime extends Service {
   static name = 'hgRpRuntime';
 
@@ -95,6 +106,7 @@ export default class HolyGrailRpRuntime extends Service {
     directorResponseIndex,
     actorsUsedThisRound,
     turnIndex,
+    eligibilitySnapshot,
   }) {
     let directorAttempt = directorAttemptSeed;
     let directorAccepted = false;
@@ -140,6 +152,7 @@ export default class HolyGrailRpRuntime extends Service {
         proposed_decision: proposed,
         raw_model_output: directorRun.raw,
         actors_used_this_round: actorsUsedThisRound,
+        eligibility_snapshot: eligibilitySnapshot,
       });
 
       const validation = await api.validateDirectorDecision({
@@ -162,6 +175,8 @@ export default class HolyGrailRpRuntime extends Service {
           validation_class: String(validation.validation_class ?? 'unknown'),
           reason: String(validation.reason ?? ''),
           retryable: Boolean(validation.retryable),
+          proposed_decision: proposed,
+          eligibility_snapshot: eligibilitySnapshot,
         });
         directorAttempt += 1;
         directorResponseIndex += 1;
@@ -185,6 +200,7 @@ export default class HolyGrailRpRuntime extends Service {
         normalized_decision: directorDecision,
         end_round: endRound,
         actors_used_this_round: actorsUsedThisRound,
+        eligibility_snapshot: eligibilitySnapshot,
       });
       directorResponseIndex += 1;
     }
@@ -495,13 +511,26 @@ export default class HolyGrailRpRuntime extends Service {
         hg_scene_id: hgSceneId,
         hg_round_id: hgRoundId,
       });
+      const eligibilitySnapshot = eligibilityTrace(eligibility);
       characterRoles = eligibility.character_roles ?? {};
       const eligibleActors = eligibility.eligible_actors ?? [];
 
       if (!eligibleActors.length) {
         completionReason = 'no_eligible_actors';
+        appendHgEvent(sceneAgent.session, 'hg/eligibility-exhausted', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          eligibility_snapshot: eligibilitySnapshot,
+          actors_used_this_round: actorsUsedThisRound,
+        });
         break;
       }
+
+      appendHgEvent(sceneAgent.session, 'hg/eligibility-snapshot', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        character_turn_index: characterTurns.length,
+        eligibility_snapshot: eligibilitySnapshot,
+        actors_used_this_round: actorsUsedThisRound,
+      });
 
       const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
       const directorPhase = await this._runDirectorPhase({
@@ -516,6 +545,7 @@ export default class HolyGrailRpRuntime extends Service {
         directorResponseIndex,
         actorsUsedThisRound,
         turnIndex: initialTurnIndex,
+        eligibilitySnapshot,
       });
       directorAttemptSeed = directorPhase.directorAttempt;
       directorResponseIndex = directorPhase.directorResponseIndex;

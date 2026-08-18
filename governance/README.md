@@ -30,6 +30,7 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-narrator-orchestration.md` | **V2 Narrator orchestration slice** (three-role basic round) |
 | `rp-app/v2-two-character-cast-loop.md` | **V2 two-character cast loop slice** (multi-character orchestration proof) |
 | `rp-app/v2-generic-cast-round.md` | **V2 generic cast round semantics** (semantic completion) |
+| `rp-app/v2-presence-eligibility-parity.md` | **V2 presence/eligibility parity** (authoritative domain projection) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
 | `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
 

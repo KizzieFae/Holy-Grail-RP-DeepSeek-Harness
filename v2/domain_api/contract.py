@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 AuthorityClass = Literal["authoritative", "derived", "suggestive"]
+EligibilityStatus = Literal["eligible", "ineligible"]
 SourceKind = Literal[
     "scene_state",
     "character_profile",
@@ -69,12 +70,24 @@ class EligibleActorsRequest:
 
 
 @dataclass(frozen=True)
+class EligibleActorEntry:
+    character_id: str
+    eligibility_status: EligibilityStatus
+    presence_status: str
+    exclusion_reason: str | None = None
+
+
+@dataclass(frozen=True)
 class EligibleActorsResponse:
     hg_scene_id: str
     hg_round_id: str
     eligible_actors: tuple[str, ...]
     actors_used_this_round: tuple[str, ...]
     character_roles: dict[str, str]
+    actors: tuple[EligibleActorEntry, ...]
+    present_characters: tuple[str, ...]
+    offstage_characters: tuple[str, ...]
+    absent_but_relevant: tuple[str, ...]
 
 
 @dataclass(frozen=True)

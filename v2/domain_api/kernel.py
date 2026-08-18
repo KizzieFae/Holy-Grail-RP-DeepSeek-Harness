@@ -16,10 +16,17 @@ from character_move_adapters import legacy_move_text_for_validation  # noqa: E40
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response  # noqa: E402
-from response_validation_selection import get_available_actors  # noqa: E402
+from response_validation_selection import (  # noqa: E402
+    eligible_agent_keys_for_present_characters,
+    get_available_actors,
+)
 from response_validation_parsing import (  # noqa: E402
     parse_character_move,
     parse_director_decision,
+)
+from issue240_semantic_evaluation import (  # noqa: E402
+    issue240_semantic_evaluation_enabled,
+    normalize_issue240_semantic_evaluation_for_continuity,
 )
 
 from .contract import (  # noqa: E402
@@ -31,6 +38,7 @@ from .contract import (  # noqa: E402
     DirectorDecisionValidationRequest,
     EligibleActorsRequest,
     EligibleActorsResponse,
+    EligibleActorEntry,
     NarratorContextPrepareRequest,
     PromptContribution,
     PromptContributionManifest,
@@ -102,6 +110,21 @@ PROTOTYPE_ALICE_BLUEPRINT_MOVE: dict[str, Any] = {
     "semantic_evaluation": {"decision": "no_covered_change"},
 }
 
+PROTOTYPE_ALICE_OFFSTAGE_MOVE: dict[str, Any] = {
+    "move_schema_version": 2,
+    "beats": [{"type": "action", "action": "steps into the hallway"}],
+    "motivation": {
+        "goal": "withdraw",
+        "tactic": "leave the focal scene",
+        "emotional_driver": "tense",
+        "risk_level": "low",
+    },
+    "semantic_evaluation": {
+        "decision": "covered_change",
+        "proposals": [{"kind": "off_focal", "character": "Alice"}],
+    },
+}
+
 
 class DomainKernel:
     def __init__(self, store: FixtureStore | None = None) -> None:
@@ -114,11 +137,15 @@ class DomainKernel:
         fixture = self.store.require(hg_scene_id)
         mgr = fixture.manager
         assert mgr.scene_state is not None
+        present = tuple(
+            str(name)
+            for name in (getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+        )
         return SceneStateSnapshot(
             hg_scene_id=hg_scene_id,
             location=str(mgr.scene_state.location or ""),
             turn_counter=int(mgr.turn_counter),
-            present_characters=tuple(fixture.cast),
+            present_characters=present,
             committed_move_count=fixture.committed_move_count,
         )
 
@@ -145,24 +172,79 @@ class DomainKernel:
                 return rnd
         raise KeyError(f"unknown hg_round_id: {hg_round_id}")
 
-    def _available_actors(self, fixture: SceneFixture, rnd: RoundFixture) -> list[str]:
+    def _presence_status(self, fixture: SceneFixture, character_id: str) -> str:
         mgr = fixture.manager
         assert mgr.scene_state is not None
-        present = list(getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+        offstage = set(getattr(mgr.scene_state, "offstage_characters", None) or [])
+        present = set(getattr(mgr.scene_state, "present_characters", None) or [])
+        absent = set(getattr(mgr.scene_state, "absent_but_relevant", None) or [])
+        if character_id in offstage:
+            return "offstage"
+        if character_id in present:
+            return "present"
+        if character_id in absent:
+            return "absent_but_relevant"
+        if character_id in fixture.cast:
+            return "not_present"
+        return "not_in_cast"
+
+    def _exclusion_reason(
+        self, fixture: SceneFixture, rnd: RoundFixture, character_id: str
+    ) -> str | None:
+        if character_id not in fixture.cast:
+            return "not_in_cast"
+        if character_id in rnd.actors_used_this_round:
+            return "already_used_this_round"
+        presence = self._presence_status(fixture, character_id)
+        if presence == "offstage":
+            return "offstage"
+        if presence == "absent_but_relevant":
+            return "absent_but_relevant"
+        if presence == "not_present":
+            return "not_present"
+        return None
+
+    def _eligibility_projection(
+        self, fixture: SceneFixture, rnd: RoundFixture
+    ) -> tuple[list[str], tuple[EligibleActorEntry, ...]]:
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        present_labels = list(getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+        eligible_present = eligible_agent_keys_for_present_characters(
+            present_labels,
+            list(fixture.cast),
+            display_name_for_key=lambda key: key,
+        )
         offstage = list(getattr(mgr.scene_state, "offstage_characters", None) or [])
-        return get_available_actors(
+        available = get_available_actors(
             list(fixture.cast),
             list(rnd.actors_used_this_round),
-            present,
+            eligible_present,
             offstage,
         )
+        actors: list[EligibleActorEntry] = []
+        for character_id in fixture.cast:
+            exclusion = self._exclusion_reason(fixture, rnd, character_id)
+            actors.append(
+                EligibleActorEntry(
+                    character_id=character_id,
+                    eligibility_status="eligible" if character_id in available else "ineligible",
+                    presence_status=self._presence_status(fixture, character_id),
+                    exclusion_reason=exclusion,
+                )
+            )
+        return available, tuple(actors)
+
+    def _available_actors(self, fixture: SceneFixture, rnd: RoundFixture) -> list[str]:
+        available, _ = self._eligibility_projection(fixture, rnd)
+        return available
 
     def eligible_actors(self, req: EligibleActorsRequest) -> EligibleActorsResponse:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         mgr = fixture.manager
         assert mgr.scene_state is not None
-        available = self._available_actors(fixture, rnd)
+        available, actors = self._eligibility_projection(fixture, rnd)
         role_assignments = dict(getattr(mgr.scene_state, "role_assignments", {}) or {})
         character_roles = {
             name: str(role_assignments.get(name, "guest")) for name in fixture.cast
@@ -173,6 +255,19 @@ class DomainKernel:
             eligible_actors=tuple(available),
             actors_used_this_round=tuple(rnd.actors_used_this_round),
             character_roles=character_roles,
+            actors=actors,
+            present_characters=tuple(
+                str(name)
+                for name in (getattr(mgr.scene_state, "present_characters", None) or ())
+            ),
+            offstage_characters=tuple(
+                str(name)
+                for name in (getattr(mgr.scene_state, "offstage_characters", None) or ())
+            ),
+            absent_but_relevant=tuple(
+                str(name)
+                for name in (getattr(mgr.scene_state, "absent_but_relevant", None) or ())
+            ),
         )
 
     def prepare_director_context(
@@ -184,7 +279,10 @@ class DomainKernel:
         assert mgr.scene_state is not None
         manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
         location = str(mgr.scene_state.location or "unknown")
-        present = ", ".join(fixture.cast)
+        present_labels = list(getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+        offstage_labels = list(getattr(mgr.scene_state, "offstage_characters", None) or [])
+        present = ", ".join(present_labels) if present_labels else "none"
+        offstage = ", ".join(offstage_labels) if offstage_labels else "none"
         used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
         available = self._available_actors(fixture, rnd)
         used_label = ", ".join(used) if used else "none"
@@ -198,9 +296,10 @@ class DomainKernel:
                 priority=10,
                 content=(
                     f"Scene location: {location}. Present characters: {present}. "
+                    f"Offstage characters: {offstage}. "
                     f"Continuity turn counter: {mgr.turn_counter}. "
                     f"Actors already used this round: {used_label}. "
-                    f"Available actors: {available_label}."
+                    f"Eligible actors: {available_label}."
                 ),
                 provenance={"hg_scene_id": req.hg_scene_id, "hg_round_id": req.hg_round_id},
             ),
@@ -356,7 +455,7 @@ class DomainKernel:
         parsed, parse_err = parse_director_decision(
             raw,
             participant_names=list(fixture.cast),
-            available_actors=available,
+            available_actors=list(fixture.cast),
         )
         if parse_err or parsed is None:
             return DirectorDecisionResult(
@@ -386,12 +485,14 @@ class DomainKernel:
                 normalized_decision=dict(parsed),
             )
         if next_actor not in available:
+            exclusion = self._exclusion_reason(fixture, rnd, next_actor)
             return DirectorDecisionResult(
                 accepted=False,
                 validation_class="domain_rule",
                 reason=(
-                    f"Director selected unavailable actor {next_actor}; "
-                    f"available: {', '.join(available) or 'none'}"
+                    f"Director selected ineligible actor {next_actor}"
+                    + (f" ({exclusion})" if exclusion else "")
+                    + f"; eligible: {', '.join(available) or 'none'}"
                 ),
                 retryable=True,
                 normalized_decision=dict(parsed),
@@ -471,10 +572,13 @@ class DomainKernel:
 
         others = [c for c in fixture.cast if c != req.character_id]
         director_decision = dict(req.director_decision)
+        move = dict(req.validated_move)
+        if issue240_semantic_evaluation_enabled():
+            move = normalize_issue240_semantic_evaluation_for_continuity(move)
 
         mgr.process_turn(
             acting_character=req.character_id,
-            move=dict(req.validated_move),
+            move=move,
             director_decision=director_decision,
             other_characters=others,
         )

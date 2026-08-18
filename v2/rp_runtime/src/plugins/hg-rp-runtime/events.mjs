@@ -2,6 +2,8 @@
 
 export const HG_EVENT_TYPES = [
   'hg/round-started',
+  'hg/eligibility-snapshot',
+  'hg/eligibility-exhausted',
   'hg/director-proposed',
   'hg/director-rejected',
   'hg/director-accepted',
