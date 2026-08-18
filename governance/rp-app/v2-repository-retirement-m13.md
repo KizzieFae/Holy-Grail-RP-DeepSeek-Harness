@@ -3,7 +3,7 @@
 **Status:** Investigation complete (design only — no moves/deletions)  
 **Date:** 2026-08-18  
 **M12.8 functional-completion anchor:** `37c563e`  
-**M13 investigation HEAD:** _(set at commit)_
+**M13 investigation HEAD:** `489852c`
 
 **Objective:** Design the final repository-retirement plan after V2 functional completion. **No implementation in M13.**
 
