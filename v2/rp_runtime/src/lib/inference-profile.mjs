@@ -73,3 +73,34 @@ export function agentOptionsFromProfile(profile) {
   }
   return options;
 }
+
+/**
+ * Resolve per-role inference profiles from runtime options.
+ * Each role may later use a different model; all may share one profile in this slice.
+ */
+export function resolveRoleProfiles(options = {}, runtimeConfig = {}) {
+  const grouped = options.roleProfiles ?? options.role_profiles ?? {};
+  const shared = options.modelProfile
+    ?? options.model_profile
+    ?? grouped.default
+    ?? runtimeConfig?.defaultProfile
+    ?? null;
+
+  const fallback = shared ?? mockInferenceProfile();
+
+  return {
+    director: grouped.director ?? grouped.directorProfile ?? options.directorProfile ?? fallback,
+    character: grouped.character ?? grouped.characterProfile ?? options.characterProfile ?? fallback,
+    narrator: grouped.narrator ?? grouped.narratorProfile ?? options.narratorProfile ?? fallback,
+  };
+}
+
+/** Attempt budget when mock responses are not supplied. */
+export function inferenceAttemptLimit(mockResponses, liveMaxAttempts = 3) {
+  return mockResponses.length > 0 ? mockResponses.length : liveMaxAttempts;
+}
+
+/** Whether any role profile targets the real DSH provider. */
+export function usesLiveProvider(roleProfiles) {
+  return Object.values(roleProfiles).some((profile) => profile?.kind === 'dsh');
+}

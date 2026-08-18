@@ -7,10 +7,17 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import {
   agentOptionsFromProfile,
+  inferenceAttemptLimit,
   mockInferenceProfile,
   resolveInferenceProfile,
+  resolveRoleProfiles,
 } from '../../lib/inference-profile.mjs';
 import { extractInferenceTrace } from '../../lib/inference-trace.mjs';
+import {
+  LIVE_CHARACTER_PROMPT,
+  LIVE_DIRECTOR_PROMPT,
+  LIVE_NARRATOR_PROMPT,
+} from '../../lib/live-inference-prompts.mjs';
 import {
   finalAssistantText,
   parseJsonObject,
@@ -174,6 +181,9 @@ export default class HolyGrailRpRuntime extends Service {
     turnIndex,
     eligibilitySnapshot,
     participationContext,
+    modelProfile,
+    liveMaxAttempts,
+    prompt,
   }) {
     let directorAttempt = directorAttemptSeed;
     let directorAccepted = false;
@@ -181,9 +191,12 @@ export default class HolyGrailRpRuntime extends Service {
     let directorManifestId = '';
     let selectedCharacterId = null;
     let directorInferenceSessionId = null;
+    let directorInferenceTrace = null;
     let endRound = false;
+    const attemptLimit = inferenceAttemptLimit(mockDirectorResponses, liveMaxAttempts);
+    let attemptsUsed = 0;
 
-    while (directorResponseIndex < mockDirectorResponses.length && !directorAccepted) {
+    while (!directorAccepted && attemptsUsed < attemptLimit) {
       const manifest = await api.prepareDirectorContext({
         hg_scene_id: hgSceneId,
         hg_round_id: hgRoundId,
@@ -196,11 +209,32 @@ export default class HolyGrailRpRuntime extends Service {
 
       const directorRun = await this._runEphemeralInference({
         inferenceId: `${directorInferenceId}-${directorAttempt}`,
-        prompt: 'Produce your director decision as JSON only.',
+        prompt: prompt ?? 'Produce your director decision as JSON only.',
         manifest,
-        mockResponses: [mockDirectorResponses[directorResponseIndex]],
+        mockResponses: mockDirectorResponses.length
+          ? [mockDirectorResponses[directorResponseIndex]]
+          : [],
+        modelProfile,
       });
       directorInferenceSessionId = directorRun.inferenceSessionId;
+      directorInferenceTrace = directorRun.trace;
+
+      if (directorRun.failed) {
+        appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          inference_id: directorInferenceId,
+          director_inference_session_id: directorInferenceSessionId,
+          role: 'director',
+          attempt_index: directorAttempt,
+          manifest_id: directorManifestId,
+          failure: directorRun.failure,
+          inference_trace: directorInferenceTrace,
+        });
+        directorAttempt += 1;
+        directorResponseIndex += 1;
+        attemptsUsed += 1;
+        continue;
+      }
 
       let proposed;
       try {
@@ -220,6 +254,7 @@ export default class HolyGrailRpRuntime extends Service {
         raw_model_output: directorRun.raw,
         actors_used_this_round: actorsUsedThisRound,
         eligibility_snapshot: eligibilitySnapshot,
+        inference_trace: directorInferenceTrace,
       });
 
       const validation = await api.validateDirectorDecision({
@@ -250,6 +285,7 @@ export default class HolyGrailRpRuntime extends Service {
         });
         directorAttempt += 1;
         directorResponseIndex += 1;
+        attemptsUsed += 1;
         continue;
       }
 
@@ -282,6 +318,7 @@ export default class HolyGrailRpRuntime extends Service {
       selectedCharacterId,
       directorManifestId,
       directorInferenceSessionId,
+      directorInferenceTrace,
       directorAttempt,
       directorResponseIndex,
     };
@@ -299,6 +336,9 @@ export default class HolyGrailRpRuntime extends Service {
     mockResponses,
     characterTurnIndex,
     characterRole,
+    modelProfile,
+    liveMaxAttempts,
+    prompt,
   }) {
     const role = characterRole ?? roleForCharacter(characterId);
     let attemptIndex = 0;
@@ -307,8 +347,10 @@ export default class HolyGrailRpRuntime extends Service {
     let domainCommitId = null;
     let characterManifestId = '';
     let characterInferenceSessionId = null;
+    let characterInferenceTrace = null;
+    const attemptLimit = inferenceAttemptLimit(mockResponses, liveMaxAttempts);
 
-    while (attemptIndex < mockResponses.length && !committed) {
+    while (!committed && attemptIndex < attemptLimit) {
       const state = await api.getSceneState(hgSceneId);
       const expectedTurnIndex = Number(state.turn_counter ?? 0);
       const manifest = await api.prepareCharacterContext({
@@ -324,11 +366,30 @@ export default class HolyGrailRpRuntime extends Service {
 
       const characterRun = await this._runEphemeralInference({
         inferenceId: `${characterInferenceId}-${attemptIndex}`,
-        prompt: 'Produce your character move as JSON only.',
+        prompt: prompt ?? 'Produce your character move as JSON only.',
         manifest,
-        mockResponses: [mockResponses[attemptIndex]],
+        mockResponses: mockResponses.length ? [mockResponses[attemptIndex]] : [],
+        modelProfile,
       });
       characterInferenceSessionId = characterRun.inferenceSessionId;
+      characterInferenceTrace = characterRun.trace;
+
+      if (characterRun.failed) {
+        appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          inference_id: characterInferenceId,
+          character_inference_session_id: characterInferenceSessionId,
+          role: 'character',
+          character_id: characterId,
+          character_turn_index: characterTurnIndex,
+          attempt_index: attemptIndex,
+          manifest_id: characterManifestId,
+          failure: characterRun.failure,
+          inference_trace: characterInferenceTrace,
+        });
+        attemptIndex += 1;
+        continue;
+      }
 
       let proposed;
       try {
@@ -348,6 +409,7 @@ export default class HolyGrailRpRuntime extends Service {
         manifest_id: characterManifestId,
         proposed_move: proposed,
         raw_model_output: characterRun.raw,
+        inference_trace: characterInferenceTrace,
       });
 
       const validation = await api.validateMove({
@@ -430,6 +492,7 @@ export default class HolyGrailRpRuntime extends Service {
       domainCommitId,
       characterManifestId,
       characterInferenceSessionId,
+      characterInferenceTrace,
     };
   }
 
@@ -445,6 +508,8 @@ export default class HolyGrailRpRuntime extends Service {
     narratorInferenceId,
     mockNarratorResponses,
     characterTurnIndex,
+    modelProfile,
+    prompt,
   }) {
     const manifest = await api.prepareNarratorContext({
       hg_scene_id: hgSceneId,
@@ -468,14 +533,23 @@ export default class HolyGrailRpRuntime extends Service {
     });
 
     try {
+      const narratorMockFallback = modelProfile?.kind === 'mock'
+        ? ['She nodded thoughtfully, taking in the workshop around her.']
+        : [];
       const narratorRun = await this._runEphemeralInference({
         inferenceId: narratorInferenceId,
-        prompt: 'Render the committed character move as scene narration only.',
+        prompt: prompt ?? 'Render the committed character move as scene narration only.',
         manifest,
         mockResponses: mockNarratorResponses?.length
           ? mockNarratorResponses
-          : ['She nodded thoughtfully, taking in the workshop around her.'],
+          : narratorMockFallback,
+        modelProfile,
       });
+
+      if (narratorRun.failed) {
+        throw new Error(narratorRun.failure?.message ?? 'narrator provider inference failed');
+      }
+
       const presentationText = narratorRun.raw.trim();
       if (!presentationText) {
         throw new Error('narrator produced empty presentation output');
@@ -492,6 +566,7 @@ export default class HolyGrailRpRuntime extends Service {
         domain_commit_id: domainCommitId,
         continuity_turn_index: continuityTurnIndex,
         presentation_text: presentationText,
+        inference_trace: narratorRun.trace,
       });
 
       return {
@@ -500,6 +575,7 @@ export default class HolyGrailRpRuntime extends Service {
         presentation_failed: false,
         narrator_inference_session_id: narratorRun.inferenceSessionId,
         narrator_manifest_id: manifestId,
+        narrator_inference_trace: narratorRun.trace,
       };
     } catch (error) {
       appendHgEvent(sceneAgent.session, 'hg/narrator-failed', {
@@ -532,6 +608,20 @@ export default class HolyGrailRpRuntime extends Service {
       ?? (options.mockCharacterResponses ? [options.mockCharacterResponses] : []);
     const mockNarratorTurnResponses = options.mockNarratorTurnResponses
       ?? (options.mockNarratorResponses ? [options.mockNarratorResponses] : []);
+    const roleProfiles = resolveRoleProfiles(options, this.config.inference);
+    const liveMaxAttempts = Number(options.liveMaxAttempts ?? 3);
+    const livePrompts = options.livePrompts ?? {};
+    const roundStartedAt = Date.now();
+    const roleTimings = {
+      director_ms: [],
+      character_ms: [],
+      narrator_ms: [],
+    };
+    const roleTraces = {
+      director: null,
+      character: null,
+      narrator: null,
+    };
 
     let hgSceneId = options.hgSceneId;
     if (!hgSceneId) {
@@ -640,6 +730,7 @@ export default class HolyGrailRpRuntime extends Service {
         };
       } else {
         const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
+        const directorStartedAt = Date.now();
         directorPhase = await this._runDirectorPhase({
           api,
           sceneAgent,
@@ -658,7 +749,12 @@ export default class HolyGrailRpRuntime extends Service {
             directorConstraintActor: participation.director_constraint_actor ?? null,
             continuationC2Skip: participation.continuation_c2_skip,
           },
+          modelProfile: roleProfiles.director,
+          liveMaxAttempts,
+          prompt: livePrompts.director ?? LIVE_DIRECTOR_PROMPT,
         });
+        roleTimings.director_ms.push(Date.now() - directorStartedAt);
+        roleTraces.director = directorPhase.directorInferenceTrace ?? null;
         directorPhase.participationDirect = false;
       }
       directorAttemptSeed = directorPhase.directorAttempt;
@@ -683,6 +779,7 @@ export default class HolyGrailRpRuntime extends Service {
       const characterTurnIndex = characterTurns.length;
       const characterInferenceId = `inf-character-${characterTurnIndex}-${crypto.randomUUID()}`;
       const characterResponses = mockCharacterTurnResponses[characterTurnIndex] ?? [];
+      const characterStartedAt = Date.now();
       const characterTurn = await this._runCharacterTurn({
         api,
         sceneAgent,
@@ -695,7 +792,12 @@ export default class HolyGrailRpRuntime extends Service {
         mockResponses: characterResponses,
         characterTurnIndex,
         characterRole: roleForCharacter(directorPhase.selectedCharacterId, characterRoles),
+        modelProfile: roleProfiles.character,
+        liveMaxAttempts,
+        prompt: livePrompts.character ?? LIVE_CHARACTER_PROMPT,
       });
+      roleTimings.character_ms.push(Date.now() - characterStartedAt);
+      roleTraces.character = characterTurn.characterInferenceTrace ?? null;
 
       if (!characterTurn.committed) {
         completionReason = 'character_failure';
@@ -706,6 +808,7 @@ export default class HolyGrailRpRuntime extends Service {
 
       const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
       const narratorResponses = mockNarratorTurnResponses[characterTurnIndex] ?? [];
+      const narratorStartedAt = Date.now();
       const narratorResult = await this._runNarratorPresentation({
         api,
         sceneAgent,
@@ -718,7 +821,11 @@ export default class HolyGrailRpRuntime extends Service {
         narratorInferenceId,
         mockNarratorResponses: narratorResponses,
         characterTurnIndex,
+        modelProfile: roleProfiles.narrator,
+        prompt: livePrompts.narrator ?? LIVE_NARRATOR_PROMPT,
       });
+      roleTimings.narrator_ms.push(Date.now() - narratorStartedAt);
+      roleTraces.narrator = narratorResult.narrator_inference_trace ?? null;
 
       characterTurns.push({
         character_turn_index: characterTurnIndex,
@@ -776,6 +883,14 @@ export default class HolyGrailRpRuntime extends Service {
       defensive_turn_ceiling: defensiveTurnCeiling,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
+      role_profiles: roleProfiles,
+      role_inference_traces: roleTraces,
+      round_timing_ms: {
+        total: Date.now() - roundStartedAt,
+        director: roleTimings.director_ms,
+        character: roleTimings.character_ms,
+        narrator: roleTimings.narrator_ms,
+      },
     };
   }
 
