@@ -25,6 +25,7 @@ from domain_api.contract import (  # noqa: E402
     ValidationRequest,
 )
 from domain_api.http_transport import DomainApiHandler  # noqa: E402
+from domain_api.fixture_store import FixtureStore
 from domain_api.kernel import (  # noqa: E402
     PROTOTYPE_ALICE_BLUEPRINT_MOVE,
     PROTOTYPE_BOB_MOVE,
@@ -51,7 +52,7 @@ def _invalid_move() -> dict:
 
 @pytest.fixture
 def kernel() -> DomainKernel:
-    k = DomainKernel()
+    k = DomainKernel(store=FixtureStore())
     scene = k.create_scene()
     k.start_round(RoundStartRequest(hg_scene_id=scene.hg_scene_id))
     return k

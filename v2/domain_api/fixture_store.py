@@ -1,100 +1,49 @@
-"""In-memory scene fixtures for the V2 boundary prototype."""
+"""Test-only in-memory session store. Not production authority."""
 
 from __future__ import annotations
 
-import sys
-import uuid
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
-_RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
-
-from continuity_manager import ContinuityManager  # noqa: E402
-from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E402
-
-
-@dataclass
-class CharacterTurnRecord:
-    character_id: str
-    committed_move: dict[str, Any]
-    domain_commit_id: str
-    continuity_turn_index: int
-    director_decision: dict[str, Any]
-
-
-@dataclass
-class RoundFixture:
-    hg_round_id: str
-    hg_scene_id: str
-    turn_index: int
-    director_decision: dict[str, Any] | None = None
-    committed_character_id: str | None = None
-    committed_move: dict[str, Any] | None = None
-    domain_commit_id: str | None = None
-    continuity_turn_index: int | None = None
-    actors_used_this_round: list[str] = field(default_factory=list)
-    character_turns: list[CharacterTurnRecord] = field(default_factory=list)
-    spotlight_history: list[str] = field(default_factory=list)
-    eligibility_epoch: int = 0
-
-
-@dataclass
-class SceneFixture:
-    hg_scene_id: str
-    manager: ContinuityManager
-    cast: list[str]
-    committed_move_count: int = 0
-    commit_ids: list[str] = field(default_factory=list)
-    character_private_secrets: dict[str, str] = field(default_factory=dict)
-    rounds: list[RoundFixture] = field(default_factory=list)
-
-
-def create_prototype_scene(
-    *,
-    hg_scene_id: str | None = None,
-    location: str = "Workshop",
-    cast: list[str] | None = None,
-) -> SceneFixture:
-    cast = cast or ["Alice", "Bob"]
-    scene_id = hg_scene_id or f"hg-scene-{uuid.uuid4()}"
-    mgr = ContinuityManager()
-    mgr.initialize_scene(
-        location=location,
-        opening_description="A quiet workshop for boundary prototype tests.",
-        present_characters=list(cast),
-    )
-    assert mgr.scene_state is not None
-    roles = ["guest", "staff", "witness", "observer"]
-    mgr.scene_state.role_assignments = {
-        name: roles[index % len(roles)] for index, name in enumerate(cast)
-    }
-    finalize_continuity_setup_seam(mgr, cast=list(cast))
-    secrets = {name: f"private-{name}-{uuid.uuid4().hex[:8]}" for name in cast}
-    return SceneFixture(
-        hg_scene_id=scene_id,
-        manager=mgr,
-        cast=list(cast),
-        character_private_secrets=secrets,
-    )
+from .session_state import LiveSession, initialize_live_session
 
 
 class FixtureStore:
-    def __init__(self) -> None:
-        self._scenes: dict[str, SceneFixture] = {}
+    """In-memory session store for deterministic unit tests only."""
 
-    def create_scene(self, **kwargs: Any) -> SceneFixture:
-        fixture = create_prototype_scene(**kwargs)
+    def __init__(self) -> None:
+        self._scenes: dict[str, LiveSession] = {}
+
+    def create_scene(self, **kwargs: Any) -> LiveSession:
+        fixture = initialize_live_session(
+            hg_session_id=kwargs.get("hg_scene_id") or kwargs.get("hg_session_id"),
+            location=kwargs.get("location", "Workshop"),
+            cast=kwargs.get("cast"),
+        )
         self._scenes[fixture.hg_scene_id] = fixture
         return fixture
 
-    def get(self, hg_scene_id: str) -> SceneFixture | None:
+    def create_session(self, **kwargs: Any) -> LiveSession:
+        return self.create_scene(**kwargs)
+
+    def get(self, hg_scene_id: str) -> LiveSession | None:
         return self._scenes.get(hg_scene_id)
 
-    def require(self, hg_scene_id: str) -> SceneFixture:
+    def require(self, hg_scene_id: str) -> LiveSession:
         fixture = self.get(hg_scene_id)
         if fixture is None:
             raise KeyError(f"unknown hg_scene_id: {hg_scene_id}")
         return fixture
+
+    def persist(self, session: LiveSession) -> None:
+        """No-op for in-memory test fixtures."""
+
+    def open_session(self, hg_session_id: str) -> LiveSession:
+        return self.require(hg_session_id)
+
+    def health_ok(self) -> bool:
+        return True
+
+
+def create_prototype_scene(**kwargs: Any) -> LiveSession:
+    """Backward-compatible helper for tests."""
+    return initialize_live_session(**kwargs)

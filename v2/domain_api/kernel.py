@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import sys
 import uuid
@@ -47,11 +48,22 @@ from .contract import (  # noqa: E402
     RoundStartRequest,
     RoundStartResponse,
     SceneStateSnapshot,
+    SessionInfoResponse,
     ValidationRequest,
     ValidationResponse,
 )
-from .fixture_store import CharacterTurnRecord, FixtureStore, RoundFixture, SceneFixture  # noqa: E402
+from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
+from .session_repository import (  # noqa: E402
+    CommitDedupRecord,
+    PersistenceError,
+    SessionRepository,
+)
+from .session_state import (  # noqa: E402
+    CharacterTurnRecord,
+    LiveSession,
+    RoundFixture,
+)
 
 PROTOTYPE_VALID_MOVE: dict[str, Any] = {
     "move_schema_version": 2,
@@ -130,26 +142,59 @@ PROTOTYPE_ALICE_OFFSTAGE_MOVE: dict[str, Any] = {
 
 
 class DomainKernel:
-    def __init__(self, store: FixtureStore | None = None) -> None:
-        self.store = store or FixtureStore()
+    def __init__(
+        self,
+        repository: SessionRepository | None = None,
+        *,
+        store: FixtureStore | None = None,
+    ) -> None:
+        if store is not None and repository is not None:
+            raise ValueError("cannot specify both store and repository")
+        if store is not None:
+            self.store = store
+        else:
+            self.store = repository or SessionRepository()
 
-    def create_scene(self, **kwargs: Any) -> SceneFixture:
+    def create_session(self, **kwargs: Any) -> SessionInfoResponse:
+        session = self.store.create_session(**kwargs)
+        return self._session_info(session)
+
+    def open_session(self, hg_session_id: str) -> SessionInfoResponse:
+        session = self.store.open_session(hg_session_id)
+        return self._session_info(session)
+
+    def create_scene(self, **kwargs: Any) -> LiveSession:
+        """Transitional prototype scene creation; prefer create_session in production."""
         return self.store.create_scene(**kwargs)
 
-    def scene_snapshot(self, hg_scene_id: str) -> SceneStateSnapshot:
-        fixture = self.store.require(hg_scene_id)
-        mgr = fixture.manager
+    def _session_info(self, session: LiveSession) -> SessionInfoResponse:
+        mgr = session.manager
         assert mgr.scene_state is not None
         present = tuple(
             str(name)
-            for name in (getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+            for name in (getattr(mgr.scene_state, "present_characters", None) or session.cast)
         )
+        return SessionInfoResponse(
+            hg_session_id=session.hg_session_id,
+            hg_scene_id=session.hg_scene_id,
+            turn_counter=int(mgr.turn_counter),
+            continuity_version=int(session.continuity_version),
+            committed_move_count=int(session.committed_move_count),
+            present_characters=present,
+            location=str(mgr.scene_state.location or ""),
+        )
+
+    def scene_snapshot(self, hg_scene_id: str) -> SceneStateSnapshot:
+        fixture = self.store.require(hg_scene_id)
+        info = self._session_info(fixture)
         return SceneStateSnapshot(
             hg_scene_id=hg_scene_id,
-            location=str(mgr.scene_state.location or ""),
-            turn_counter=int(mgr.turn_counter),
-            present_characters=present,
-            committed_move_count=fixture.committed_move_count,
+            location=info.location,
+            turn_counter=info.turn_counter,
+            present_characters=info.present_characters,
+            committed_move_count=info.committed_move_count,
+            hg_session_id=info.hg_session_id,
+            continuity_version=info.continuity_version,
         )
 
     def start_round(self, req: RoundStartRequest) -> RoundStartResponse:
@@ -169,7 +214,7 @@ class DomainKernel:
             turn_index=int(mgr.turn_counter),
         )
 
-    def _require_round(self, fixture: SceneFixture, hg_round_id: str) -> RoundFixture:
+    def _require_round(self, fixture: LiveSession, hg_round_id: str) -> RoundFixture:
         for rnd in fixture.rounds:
             if rnd.hg_round_id == hg_round_id:
                 return rnd
@@ -178,7 +223,7 @@ class DomainKernel:
     def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
         return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
 
-    def _presence_status(self, fixture: SceneFixture, character_id: str) -> str:
+    def _presence_status(self, fixture: LiveSession, character_id: str) -> str:
         mgr = fixture.manager
         assert mgr.scene_state is not None
         offstage = set(getattr(mgr.scene_state, "offstage_characters", None) or [])
@@ -195,7 +240,7 @@ class DomainKernel:
         return "not_in_cast"
 
     def _exclusion_reason(
-        self, fixture: SceneFixture, rnd: RoundFixture, character_id: str
+        self, fixture: LiveSession, rnd: RoundFixture, character_id: str
     ) -> str | None:
         if character_id not in fixture.cast:
             return "not_in_cast"
@@ -211,7 +256,7 @@ class DomainKernel:
         return None
 
     def _eligibility_projection(
-        self, fixture: SceneFixture, rnd: RoundFixture
+        self, fixture: LiveSession, rnd: RoundFixture
     ) -> tuple[list[str], tuple[EligibleActorEntry, ...]]:
         mgr = fixture.manager
         assert mgr.scene_state is not None
@@ -241,7 +286,7 @@ class DomainKernel:
             )
         return available, tuple(actors)
 
-    def _available_actors(self, fixture: SceneFixture, rnd: RoundFixture) -> list[str]:
+    def _available_actors(self, fixture: LiveSession, rnd: RoundFixture) -> list[str]:
         available, _ = self._eligibility_projection(fixture, rnd)
         return available
 
@@ -609,6 +654,22 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         mgr = fixture.manager
+
+        repository = self.store
+        dedup_key: str | None = None
+        if isinstance(repository, SessionRepository):
+            dedup_key = repository.commit_dedup_key(
+                hg_scene_id=req.hg_scene_id,
+                inference_id=req.inference_id,
+                expected_turn_index=req.expected_turn_index,
+                character_id=req.character_id,
+                validated_move=dict(req.validated_move),
+                director_decision=dict(req.director_decision),
+            )
+            existing = repository.get_commit_dedup(dedup_key)
+            if existing is not None:
+                return existing.response
+
         if mgr.turn_counter != req.expected_turn_index:
             return CommitResponse(
                 committed=False,
@@ -627,6 +688,29 @@ class DomainKernel:
         move = dict(req.validated_move)
         if issue240_semantic_evaluation_enabled():
             move = normalize_issue240_semantic_evaluation_for_continuity(move)
+
+        manager_snapshot: dict[str, Any] | None = None
+        round_snapshot: dict[str, Any] | None = None
+        host_snapshot: dict[str, Any] | None = None
+        if isinstance(repository, SessionRepository):
+            manager_snapshot = repository.snapshot_manager(fixture)
+            round_snapshot = {
+                "director_decision": rnd.director_decision,
+                "committed_character_id": rnd.committed_character_id,
+                "committed_move": copy.deepcopy(rnd.committed_move)
+                if rnd.committed_move is not None
+                else None,
+                "domain_commit_id": rnd.domain_commit_id,
+                "continuity_turn_index": rnd.continuity_turn_index,
+                "actors_used_this_round": list(rnd.actors_used_this_round),
+                "character_turns": copy.deepcopy(rnd.character_turns),
+                "spotlight_history": list(rnd.spotlight_history),
+                "eligibility_epoch": rnd.eligibility_epoch,
+            }
+            host_snapshot = {
+                "committed_move_count": fixture.committed_move_count,
+                "commit_ids": list(fixture.commit_ids),
+            }
 
         mgr.process_turn(
             acting_character=req.character_id,
@@ -656,13 +740,51 @@ class DomainKernel:
         rnd.spotlight_history.append(req.character_id)
         rnd.eligibility_epoch += 1
 
-        return CommitResponse(
+        if hasattr(repository, "persist"):
+            try:
+                repository.persist(fixture)
+            except PersistenceError as exc:
+                if isinstance(repository, SessionRepository) and manager_snapshot is not None:
+                    repository.restore_manager(fixture, manager_snapshot)
+                    if round_snapshot is not None:
+                        rnd.director_decision = round_snapshot["director_decision"]
+                        rnd.committed_character_id = round_snapshot["committed_character_id"]
+                        rnd.committed_move = round_snapshot["committed_move"]
+                        rnd.domain_commit_id = round_snapshot["domain_commit_id"]
+                        rnd.continuity_turn_index = round_snapshot["continuity_turn_index"]
+                        rnd.actors_used_this_round = round_snapshot["actors_used_this_round"]
+                        rnd.character_turns = round_snapshot["character_turns"]
+                        rnd.spotlight_history = round_snapshot["spotlight_history"]
+                        rnd.eligibility_epoch = round_snapshot["eligibility_epoch"]
+                    if host_snapshot is not None:
+                        fixture.committed_move_count = host_snapshot["committed_move_count"]
+                        fixture.commit_ids = host_snapshot["commit_ids"]
+                return CommitResponse(
+                    committed=False,
+                    continuity_turn_index=None,
+                    domain_commit_id=None,
+                    hg_scene_id=req.hg_scene_id,
+                    inference_id=req.inference_id,
+                    reason=str(exc),
+                )
+
+        response = CommitResponse(
             committed=True,
             continuity_turn_index=after_turn,
             domain_commit_id=commit_id,
             hg_scene_id=req.hg_scene_id,
             inference_id=req.inference_id,
         )
+        if isinstance(repository, SessionRepository) and dedup_key is not None:
+            repository.record_commit_dedup(
+                dedup_key,
+                CommitDedupRecord(
+                    domain_commit_id=commit_id,
+                    continuity_turn_index=after_turn,
+                    response=response,
+                ),
+            )
+        return response
 
     def record_uncommitted_proposal(self, hg_scene_id: str) -> None:
         """Explicit no-op documenting that proposals do not mutate continuity."""

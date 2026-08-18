@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from .contract import EligibleActorsResponse, ParticipationDecision
-from .fixture_store import RoundFixture, SceneFixture
+from .session_state import LiveSession, RoundFixture
+
+SceneFixture = LiveSession
 
 _CONTINUATION_SUPERSEDING_TAGS = frozenset(
     {

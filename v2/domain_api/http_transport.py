@@ -1,4 +1,4 @@
-"""Prototype HTTP transport for the Domain API (replaceable; not architectural)."""
+"""Production localhost HTTP transport for the Holy Grail Domain API."""
 
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ from .contract import (
     NarratorContextPrepareRequest,
     ParticipationDecisionRequest,
     RoundStartRequest,
+    SessionCreateRequest,
+    SessionOpenRequest,
     ValidationRequest,
 )
 from .kernel import DomainKernel
@@ -60,6 +62,25 @@ class DomainApiHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         try:
             data = self._read_json()
+            if path == "/v1/sessions/create":
+                req = SessionCreateRequest(
+                    cast=tuple(data["cast"]) if data.get("cast") else None,
+                    location=str(data.get("location", "Workshop")),
+                    hg_session_id=data.get("hg_session_id"),
+                )
+                self._send_json(
+                    201,
+                    self.kernel.create_session(
+                        cast=list(req.cast) if req.cast else None,
+                        location=req.location,
+                        hg_session_id=req.hg_session_id,
+                    ),
+                )
+                return
+            if path == "/v1/sessions/open":
+                req = SessionOpenRequest(hg_session_id=str(data["hg_session_id"]))
+                self._send_json(200, self.kernel.open_session(req.hg_session_id))
+                return
             if path == "/v1/rounds/start":
                 req = RoundStartRequest(hg_scene_id=str(data["hg_scene_id"]))
                 self._send_json(200, self.kernel.start_round(req))
@@ -164,11 +185,15 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 self._send_json(201, self.kernel.scene_snapshot(fixture.hg_scene_id))
                 return
             self._send_json(404, {"error": "not found"})
-        except (KeyError, TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:
             self._send_json(400, {"error": str(exc)})
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
+        if path == "/health":
+            healthy = getattr(self.kernel.store, "health_ok", lambda: True)()
+            self._send_json(200 if healthy else 503, {"status": "ok" if healthy else "degraded"})
+            return
         if path.startswith("/v1/scenes/") and path.endswith("/state"):
             hg_scene_id = path.removeprefix("/v1/scenes/").removesuffix("/state")
             try:
@@ -179,7 +204,13 @@ class DomainApiHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "not found"})
 
 
-def serve(kernel: DomainKernel, host: str = "127.0.0.1", port: int = 8765) -> ThreadingHTTPServer:
+def serve(
+    kernel: DomainKernel,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+) -> ThreadingHTTPServer:
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        raise ValueError("Domain API host must be localhost-only")
     handler = type(
         "BoundDomainApiHandler",
         (DomainApiHandler,),

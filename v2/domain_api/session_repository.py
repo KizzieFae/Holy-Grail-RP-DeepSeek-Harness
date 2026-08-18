@@ -1,0 +1,238 @@
+"""Production session repository backed by V1 SessionManager persistence."""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+import sys
+import uuid
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Protocol
+
+_RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
+if str(_RP_APP) not in sys.path:
+    sys.path.insert(0, str(_RP_APP))
+
+from character_state_model import CharacterState  # noqa: E402
+from continuity_manager import ContinuityManager  # noqa: E402
+from session_manager import SessionManager  # noqa: E402
+
+from .contract import CommitResponse  # noqa: E402
+from .session_state import (  # noqa: E402
+    V2_HOST_METADATA_KEY,
+    LiveSession,
+    initialize_live_session,
+)
+
+
+class PersistenceError(RuntimeError):
+    """Raised when authoritative state cannot be durably persisted."""
+
+
+@dataclass(frozen=True)
+class CommitDedupRecord:
+    domain_commit_id: str
+    continuity_turn_index: int
+    response: CommitResponse
+
+
+class SessionStore(Protocol):
+    def create_scene(self, **kwargs: Any) -> LiveSession: ...
+
+    def require(self, hg_scene_id: str) -> LiveSession: ...
+
+    def get(self, hg_scene_id: str) -> LiveSession | None: ...
+
+
+class SessionRepository:
+    """Authoritative session store with synchronous V1 file persistence."""
+
+    def __init__(self, sessions_dir: str | Path | None = None) -> None:
+        self._session_manager = SessionManager(sessions_dir)
+        self._cache: dict[str, LiveSession] = {}
+        self._commit_dedup: dict[str, CommitDedupRecord] = {}
+
+    @property
+    def sessions_dir(self) -> Path:
+        return self._session_manager.sessions_dir
+
+    def health_ok(self) -> bool:
+        return self._session_manager.sessions_dir.exists()
+
+    def create_session(
+        self,
+        *,
+        cast: list[str] | None = None,
+        location: str = "Workshop",
+        hg_session_id: str | None = None,
+        opening_description: str | None = None,
+    ) -> LiveSession:
+        session = initialize_live_session(
+            hg_session_id=hg_session_id,
+            location=location,
+            cast=cast,
+            opening_description=opening_description
+            or "A quiet workshop for Holy Grail domain host sessions.",
+        )
+        self._cache[session.hg_scene_id] = session
+        self.persist(session)
+        return session
+
+    def open_session(self, hg_session_id: str) -> LiveSession:
+        if hg_session_id in self._cache:
+            return self._cache[hg_session_id]
+        session_data = self._session_manager.load_session(hg_session_id)
+        session = self._hydrate_session(hg_session_id, session_data)
+        self._cache[session.hg_scene_id] = session
+        return session
+
+    def create_scene(self, **kwargs: Any) -> LiveSession:
+        """Transitional alias for prototype ``POST /v1/scenes`` compatibility."""
+        return self.create_session(
+            cast=kwargs.get("cast"),
+            location=kwargs.get("location", "Workshop"),
+            hg_session_id=kwargs.get("hg_scene_id") or kwargs.get("hg_session_id"),
+        )
+
+    def get(self, hg_scene_id: str) -> LiveSession | None:
+        if hg_scene_id in self._cache:
+            return self._cache[hg_scene_id]
+        session_file = self._session_manager.sessions_dir / f"{hg_scene_id}.json"
+        if not session_file.exists():
+            return None
+        try:
+            return self.open_session(hg_scene_id)
+        except FileNotFoundError:
+            return None
+
+    def require(self, hg_scene_id: str) -> LiveSession:
+        session = self.get(hg_scene_id)
+        if session is None:
+            raise KeyError(f"unknown hg_scene_id: {hg_scene_id}")
+        return session
+
+    def persist(self, session: LiveSession) -> None:
+        session.continuity_version += 1
+        payload = self._build_session_payload(session)
+        try:
+            self._session_manager.save_session(**payload)
+        except OSError as exc:
+            session.continuity_version -= 1
+            raise PersistenceError(f"failed to persist session {session.hg_session_id}") from exc
+
+    def commit_dedup_key(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        expected_turn_index: int,
+        character_id: str,
+        validated_move: dict[str, Any],
+        director_decision: dict[str, Any],
+    ) -> str:
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                {
+                    "validated_move": validated_move,
+                    "director_decision": director_decision,
+                    "character_id": character_id,
+                },
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        return (
+            f"{hg_scene_id}:{inference_id}:{expected_turn_index}:{character_id}:{fingerprint}"
+        )
+
+    def get_commit_dedup(self, dedup_key: str) -> CommitDedupRecord | None:
+        return self._commit_dedup.get(dedup_key)
+
+    def record_commit_dedup(self, dedup_key: str, record: CommitDedupRecord) -> None:
+        self._commit_dedup[dedup_key] = record
+
+    def snapshot_manager(self, session: LiveSession) -> dict[str, Any]:
+        return session.manager.to_dict()
+
+    def restore_manager(self, session: LiveSession, snapshot: dict[str, Any]) -> None:
+        session.manager = ContinuityManager.from_dict(snapshot)
+
+    def _build_session_payload(self, session: LiveSession) -> dict[str, Any]:
+        assert session.manager.scene_state is not None
+        char_states_dict = {
+            name: state.to_dict() for name, state in session.character_states.items()
+        }
+        metadata: dict[str, Any] = {
+            "summary": f"V2 domain host session with {', '.join(session.cast)}",
+            "character_states": char_states_dict,
+            "continuity_state": session.manager.to_dict(),
+            V2_HOST_METADATA_KEY: {
+                "committed_move_count": session.committed_move_count,
+                "commit_ids": list(session.commit_ids),
+                "character_private_secrets": dict(session.character_private_secrets),
+                "continuity_version": session.continuity_version,
+            },
+            "scene_role_assignments": dict(
+                getattr(session.manager.scene_state, "role_assignments", {}) or {}
+            ),
+        }
+        return {
+            "session_id": session.hg_session_id,
+            "team_state": {
+                "type": "v2_domain_host_minimal",
+                "scene_state": {
+                    "opening_description": str(
+                        session.manager.scene_state.opening_description or ""
+                    ),
+                    "location": str(session.manager.scene_state.location or ""),
+                },
+            },
+            "characters": list(session.cast),
+            "metadata": metadata,
+            "player_character": None,
+            "chat_history": [],
+        }
+
+    def _hydrate_session(self, hg_session_id: str, session_data: dict[str, Any]) -> LiveSession:
+        metadata = session_data.get("metadata") or {}
+        continuity_data = metadata.get("continuity_state")
+        if not continuity_data:
+            raise ValueError(f"session {hg_session_id} missing continuity_state metadata")
+
+        manager = ContinuityManager.from_dict(continuity_data)
+        cast = [str(name) for name in session_data.get("characters") or []]
+        if not cast and manager.scene_state is not None:
+            cast = list(manager.scene_state.present_characters or [])
+
+        character_states: dict[str, CharacterState] = {}
+        for name, state_dict in (metadata.get("character_states") or {}).items():
+            if isinstance(state_dict, dict):
+                character_states[str(name)] = CharacterState.from_dict(state_dict)
+
+        host_state = metadata.get(V2_HOST_METADATA_KEY) or {}
+        secrets = dict(host_state.get("character_private_secrets") or {})
+        if not secrets:
+            for name in cast:
+                state = character_states.get(name)
+                if state and state.private_memories:
+                    secrets[name] = str(state.private_memories[0])
+
+        return LiveSession(
+            hg_session_id=hg_session_id,
+            hg_scene_id=hg_session_id,
+            manager=manager,
+            cast=cast,
+            character_states=character_states,
+            committed_move_count=int(host_state.get("committed_move_count", 0)),
+            commit_ids=list(host_state.get("commit_ids") or []),
+            character_private_secrets=secrets,
+            continuity_version=int(host_state.get("continuity_version", 0)),
+            rounds=[],
+        )
+
+    def clear_cache(self) -> None:
+        """Drop in-memory cache (for restart simulation tests)."""
+        self._cache.clear()
+        self._commit_dedup.clear()

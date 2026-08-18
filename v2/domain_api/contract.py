@@ -220,9 +220,34 @@ class NarratorContextPrepareRequest:
 
 
 @dataclass(frozen=True)
+class SessionCreateRequest:
+    cast: tuple[str, ...] | None = None
+    location: str = "Workshop"
+    hg_session_id: str | None = None
+
+
+@dataclass(frozen=True)
+class SessionOpenRequest:
+    hg_session_id: str
+
+
+@dataclass(frozen=True)
+class SessionInfoResponse:
+    hg_session_id: str
+    hg_scene_id: str
+    turn_counter: int
+    continuity_version: int
+    committed_move_count: int
+    present_characters: tuple[str, ...]
+    location: str
+
+
+@dataclass(frozen=True)
 class SceneStateSnapshot:
     hg_scene_id: str
     location: str
     turn_counter: int
     present_characters: tuple[str, ...]
     committed_move_count: int
+    hg_session_id: str = ""
+    continuity_version: int = 0

@@ -19,6 +19,7 @@ from domain_api.contract import (  # noqa: E402
     RoundStartRequest,
     ValidationRequest,
 )
+from domain_api.fixture_store import FixtureStore
 from domain_api.kernel import (  # noqa: E402
     PROTOTYPE_ALICE_OFFSTAGE_MOVE,
     PROTOTYPE_DIRECTOR_DECISION,
@@ -29,7 +30,7 @@ from domain_api.kernel import (  # noqa: E402
 
 @pytest.fixture
 def kernel() -> DomainKernel:
-    k = DomainKernel()
+    k = DomainKernel(store=FixtureStore())
     scene = k.create_scene()
     k.start_round(RoundStartRequest(hg_scene_id=scene.hg_scene_id))
     return k
