@@ -3,7 +3,7 @@
 **Status:** Completed (M12.1 — framework-neutral character card I/O split)  
 **Date:** 2026-08-18  
 **M12 retirement-plan anchor:** `6c2209c`  
-**Implementation HEAD:** (see §18 after commit)
+**Implementation HEAD:** `1c82d9b`
 
 ---
 
@@ -162,7 +162,9 @@ Tests:
 
 ```text
 python -m pytest v2/tests/ -q                    → 102 passed (+9 M12.1)
+cd v2/rp_runtime && npm test                      → 51 passed
 python -m pytest autogen_rp/python/tests/test_character_loader.py -q → 2 passed
+python -m pytest autogen_rp/python/tests/test_issue_230_phase_a_semantic_proposals.py::test_character_loader_system_prompt_teaches_semantic_evaluation_not_illegal_roots -q → 1 passed
 ```
 
 ---
