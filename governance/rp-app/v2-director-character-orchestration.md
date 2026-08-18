@@ -199,7 +199,12 @@ Multi-role orchestration works with scene-session correlation + ephemeral infere
 
 ## 15. Repository state
 
-(Filled at commit.)
+| Field | Value |
+|-------|-------|
+| Commit | `2135ef7a602444c84123de831ad25ff3e3df4bef` |
+| Branch | `main` |
+| Push status | pushed to `origin/main` |
+| Working tree | clean |
 
 ---
 
