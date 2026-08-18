@@ -18,7 +18,7 @@ uses **full** stored lines (no redaction) so orchestration sees verbatim content
 **#169:** Mechanical split across ``perception_audibility_*`` modules; this file is the
 stable public façade — import from here only unless an explicit exemption is recorded.
 
-See ``autogen_rp/python/rp_app/ARCHITECTURE.md`` (perception / audibility).
+See governance archive for historical perception/audibility architecture notes.
 """
 
 from __future__ import annotations

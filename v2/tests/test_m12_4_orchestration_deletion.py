@@ -45,10 +45,8 @@ class OrchestrationDeletionM124Tests(unittest.TestCase):
     def test_legacy_orchestration_tree_removed(self) -> None:
         self.assertFalse((_ROOT / "legacy" / "v1_orchestration").exists())
 
-    def test_rp_app_has_no_runtime_modules(self) -> None:
-        rp_app = _ROOT / "autogen_rp" / "python" / "rp_app"
-        py_files = [p for p in rp_app.rglob("*.py") if p.name != "__init__.py"]
-        self.assertEqual(py_files, [])
+    def test_rp_app_namespace_removed(self) -> None:
+        self.assertFalse((_ROOT / "autogen_rp" / "python" / "rp_app").exists())
 
     def test_no_turn_runner_in_production_tree(self) -> None:
         offenders: list[str] = []

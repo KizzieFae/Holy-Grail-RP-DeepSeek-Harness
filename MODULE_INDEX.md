@@ -1,6 +1,6 @@
 # RP app module index
 
-> **M12.4 (2026-08-18):** V1 orchestration (`turn_runner`, Streamlit `app.py`, AutoGen runtime) has been **deleted**. Permanent domain modules live in **`v2/domain/modules/`**; production runtime is **`v2/rp_runtime`** via `Launch-Holy-Grail-V2.bat`. This index remains as historical reference for module responsibilities; use `governance/archive/v1-runtime/` and `governance/rp-app/v2-v1-orchestration-deletion-m12-4.md` for retirement context.
+> **M12.5 (2026-08-18):** Vendored AutoGen packages removed. Holy Grail V2 has no runtime or test dependency on AutoGen. See `governance/rp-app/v2-autogen-package-removal-m12-5.md`.
 
 **Location (historical):** Modules below referred to **`autogen_rp/python/rp_app/`** before M12.4. Domain implementations are now under **`v2/domain/modules/`**.
 

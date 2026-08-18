@@ -1,4 +1,4 @@
-"""Guard: bare `pytest` from autogen_rp/python must not collect vendored packages/* by default."""
+"""Guard: bare `pytest` from autogen_rp/python must collect only tests/."""
 
 from __future__ import annotations
 
