@@ -5,7 +5,7 @@
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **M1 HgContextBridge anchor:** `50715d1`  
 **M2 HgPhaseExecutors anchor:** `4f3e135`  
-**Implementation HEAD:** _(set at commit)_
+**Implementation HEAD:** `380e333`
 
 ---
 
