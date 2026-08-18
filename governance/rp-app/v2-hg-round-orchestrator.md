@@ -3,7 +3,7 @@
 **Status:** Completed (M4 — slim orchestrator promotion)  
 **Date:** 2026-08-18  
 **M3 HgTraceEmitter anchor:** `8a6aade`  
-**Implementation HEAD:** _(set at commit)_
+**Implementation HEAD:** `b9018ff`
 
 ---
 
