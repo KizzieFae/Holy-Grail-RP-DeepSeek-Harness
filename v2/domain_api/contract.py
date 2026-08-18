@@ -16,6 +16,8 @@ SourceKind = Literal[
     "character_profile",
     "character_private",
     "character_memory",
+    "authored_character_knowledge",
+    "scene_reference",
     "director_scratch",
     "continuity_summary",
     "director_decision",

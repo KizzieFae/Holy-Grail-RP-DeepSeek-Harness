@@ -161,10 +161,7 @@ def create_live_session_from_setup(
         cast.append(display_name)
         state = create_character_state_from_card(card)
         character_states[display_name] = state
-        lore = card.get("lore_facts") or []
-        if lore:
-            secrets[display_name] = str(lore[0])
-        elif state.private_memories:
+        if state.private_memories:
             secrets[display_name] = str(state.private_memories[0])
 
     scene_setup, setup_error = _resolve_scene_setup(

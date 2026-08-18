@@ -134,13 +134,26 @@ class SessionSetupTests(unittest.TestCase):
         kinds = {item.source_kind for item in manifest.contributions}
         self.assertIn("character_profile", kinds)
         self.assertIn("scene_state", kinds)
-        private = [c for c in manifest.contributions if c.source_kind == "character_private"]
-        self.assertTrue(private)
-        self.assertTrue(all("Kizzie" in c.content or "Kizzie" in str(c.provenance) for c in private))
+        authored = [
+            c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"
+        ]
+        self.assertTrue(authored)
+        self.assertTrue(
+            all(c.authority_class == "suggestive" for c in authored)
+        )
+        self.assertTrue(all("Kizzie" in str(c.provenance) for c in authored))
         joined = "\n".join(c.content for c in manifest.contributions)
+        self.assertIn("one-tailed Kitsune", joined)
         self.assertNotIn("system_prompt", joined.lower())
-        willow_private = [c for c in manifest.contributions if "Willow" in c.content and c.source_kind == "character_private"]
-        self.assertEqual(willow_private, [])
+        willow_authored = [
+            c
+            for c in manifest.contributions
+            if c.source_kind == "authored_character_knowledge"
+            and "Willow" in str(c.provenance.get("character_id", ""))
+        ]
+        self.assertEqual(willow_authored, [])
+        scene_ref = [c for c in manifest.contributions if c.source_kind == "scene_reference"]
+        self.assertTrue(scene_ref)
 
 
 if __name__ == "__main__":

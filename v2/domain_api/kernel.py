@@ -70,6 +70,7 @@ from .session_repository import (  # noqa: E402
 from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
+from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -176,6 +177,7 @@ class DomainKernel:
             self.store = store
         else:
             self.store = repository or SessionRepository()
+        self._knowledge_service = KnowledgeService()
 
     def _memory_service(self) -> MemoryService | None:
         if isinstance(self.store, SessionRepository):
@@ -565,6 +567,9 @@ class DomainKernel:
                 fixture.character_states.get(req.character_id)
             )
             memory_projections = [single] if single is not None else []
+        knowledge_projections = self._knowledge_service.project_context(
+            fixture, character_id=req.character_id
+        )
         contributions: list[PromptContribution] = [
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene",
@@ -622,6 +627,27 @@ class DomainKernel:
                     ),
                     provenance={"character_id": req.character_id, "role": req.role},
                 ),
+            )
+        )
+        for index, (source_kind, knowledge_content, knowledge_provenance) in enumerate(
+            knowledge_projections
+        ):
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-knowledge-{index}",
+                    source_kind=source_kind,
+                    authority_class="suggestive",
+                    knowledge_ids=tuple(knowledge_provenance.get("knowledge_ids") or ()),
+                    priority=21 + index,
+                    content=knowledge_content,
+                    provenance={
+                        "character_id": req.character_id,
+                        **knowledge_provenance,
+                    },
+                )
+            )
+        if private_secret.strip():
+            contributions.append(
                 PromptContribution(
                     contribution_id=f"{manifest_id}-character-private",
                     source_kind="character_private",
@@ -630,9 +656,8 @@ class DomainKernel:
                     priority=25,
                     content=f"Character-private knowledge for {req.character_id}: {private_secret}",
                     provenance={"character_id": req.character_id, "visibility": "character_only"},
-                ),
+                )
             )
-        )
         for index, (memory_content, memory_provenance) in enumerate(memory_projections):
             contributions.append(
                 PromptContribution(
@@ -642,7 +667,7 @@ class DomainKernel:
                     knowledge_ids=(
                         f"character-memory:{req.character_id}:{memory_provenance.get('memory_lane', 'session')}",
                     ),
-                    priority=22 + index,
+                    priority=26 + index,
                     content=memory_content,
                     provenance={
                         "character_id": req.character_id,
