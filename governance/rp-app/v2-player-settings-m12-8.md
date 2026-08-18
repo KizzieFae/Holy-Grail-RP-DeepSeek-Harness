@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M12.7 anchor:** `55df462`  
-**M12.8 completion HEAD:** _(set at commit)_
+**M12.8 completion HEAD:** `8673a28`
 
 **Objective:** Complete V2 user-facing configuration for player identity and production inference settings without making Streamlit an authoritative runtime/domain store.
 
