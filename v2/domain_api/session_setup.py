@@ -28,6 +28,7 @@ from scene_template import (  # noqa: E402
 )
 from scene_template_cohesion import resolve_effective_presence_constraint  # noqa: E402
 
+from .memory_scope import resolve_memory_scope_id  # noqa: E402
 from .session_history import append_history_entry  # noqa: E402
 from .session_state import LiveSession  # noqa: E402
 
@@ -140,6 +141,7 @@ def create_live_session_from_setup(
     location: str | None = None,
     hg_session_id: str | None = None,
     characters_dir: str | Path | None = None,
+    memory_scope_id: str | None = None,
 ) -> LiveSession:
     if not character_files:
         raise ValueError("at least one character file id is required")
@@ -213,12 +215,19 @@ def create_live_session_from_setup(
         )
         for issue in build_initial_scene_issues(scene_setup):
             mgr.issues[issue.issue_id] = issue
+    elif role_assignments:
+        mgr.scene_state.role_assignments = {
+            names_by_file.get(file_id, file_id): str(role)
+            for file_id, role in role_assignments.items()
+        }
 
     finalize_continuity_setup_seam(mgr, cast=list(cast))
 
     template_snapshot = None
     if scene_template_id:
         template_snapshot = SceneTemplateManager().load_template(scene_template_id).to_dict()
+
+    resolved_scope = resolve_memory_scope_id(memory_scope_id)
 
     setup_snapshot = {
         "character_files": list(character_files),
@@ -229,6 +238,7 @@ def create_live_session_from_setup(
         "role_assignments_by_file": dict(role_assignments or {}),
         "opening": opening_metadata,
         "location": resolved_location,
+        "memory_scope_id": resolved_scope,
     }
 
     rp_history: list[dict[str, Any]] = []
@@ -250,6 +260,7 @@ def create_live_session_from_setup(
         rp_history=rp_history,
         setup_snapshot=setup_snapshot,
         character_file_ids={names_by_file[f]: f for f in character_files},
+        memory_scope_id=resolved_scope,
     )
 
 
@@ -265,4 +276,5 @@ def setup_provenance_for_ui(snapshot: dict[str, Any]) -> dict[str, Any]:
         "role_assignments_by_file": dict(snapshot.get("role_assignments_by_file") or {}),
         "opening": dict(snapshot.get("opening") or {}),
         "location": snapshot.get("location"),
+        "memory_scope_id": snapshot.get("memory_scope_id"),
     }

@@ -42,6 +42,7 @@ export class HolyGrailApplicationClient {
     this.activeCast = [...DEFAULT_CAST];
     this.characterFileIds = {};
     this.setupProvenance = null;
+    this.memoryScopeId = null;
     this.transcript = [];
     this.lastSpeaker = null;
     this.status = 'idle';
@@ -105,6 +106,9 @@ export class HolyGrailApplicationClient {
     }
     if (input.hgSessionId ?? input.hg_session_id) {
       body.hg_session_id = input.hgSessionId ?? input.hg_session_id;
+    }
+    if (input.memoryScopeId ?? input.memory_scope_id) {
+      body.memory_scope_id = input.memoryScopeId ?? input.memory_scope_id;
     }
     const created = await api.createSession(body);
     this._applySessionPayload(created);
@@ -229,6 +233,7 @@ export class HolyGrailApplicationClient {
       committed_move_count: payload.committed_move_count ?? 0,
       setup_provenance: payload.setup_provenance ?? this.setupProvenance,
       character_file_ids: payload.character_file_ids ?? this.characterFileIds,
+      memory_scope_id: payload.memory_scope_id ?? this.memoryScopeId,
     };
   }
 
@@ -237,6 +242,7 @@ export class HolyGrailApplicationClient {
     this.activeCast = [...(payload.present_characters ?? DEFAULT_CAST)];
     this.characterFileIds = { ...(payload.character_file_ids ?? {}) };
     this.setupProvenance = payload.setup_provenance ?? null;
+    this.memoryScopeId = payload.memory_scope_id ?? null;
   }
 
   _requireReady() {

@@ -20,6 +20,8 @@ from continuity_manager import ContinuityManager  # noqa: E402
 from session_manager import SessionManager  # noqa: E402
 
 from .contract import CommitResponse  # noqa: E402
+from .cross_scope_memory_repository import CrossScopeMemoryRepository  # noqa: E402
+from .memory_service import MemoryService  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
     V2_HOST_METADATA_KEY,
@@ -54,6 +56,10 @@ class SessionRepository:
         self._session_manager = SessionManager(sessions_dir)
         self._cache: dict[str, LiveSession] = {}
         self._commit_dedup: dict[str, CommitDedupRecord] = {}
+        self._cross_scope_repo = CrossScopeMemoryRepository(
+            self._session_manager.sessions_dir / "_cross_scope_memory"
+        )
+        self.memory_service = MemoryService(self._cross_scope_repo)
 
     @property
     def sessions_dir(self) -> Path:
@@ -74,6 +80,7 @@ class SessionRepository:
         hg_session_id: str | None = None,
         opening_description: str | None = None,
         characters_dir: str | Path | None = None,
+        memory_scope_id: str | None = None,
     ) -> LiveSession:
         if characters:
             session = create_live_session_from_setup(
@@ -84,6 +91,7 @@ class SessionRepository:
                 location=location if location != "Workshop" else None,
                 hg_session_id=hg_session_id,
                 characters_dir=characters_dir,
+                memory_scope_id=memory_scope_id,
             )
         else:
             session = initialize_live_session(
@@ -92,6 +100,7 @@ class SessionRepository:
                 cast=cast,
                 opening_description=opening_description
                 or "A quiet workshop for Holy Grail domain host sessions.",
+                memory_scope_id=memory_scope_id,
             )
         self._cache[session.hg_scene_id] = session
         self.persist(session)
@@ -211,6 +220,7 @@ class SessionRepository:
                 "rp_history": list(session.rp_history),
                 "setup_snapshot": copy.deepcopy(session.setup_snapshot),
                 "character_file_ids": dict(session.character_file_ids),
+                "memory_scope_id": session.memory_scope_id,
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -271,6 +281,7 @@ class SessionRepository:
             rp_history=list(host_state.get("rp_history") or []),
             setup_snapshot=dict(host_state.get("setup_snapshot") or {}),
             character_file_ids=dict(host_state.get("character_file_ids") or {}),
+            memory_scope_id=str(host_state.get("memory_scope_id") or ""),
             rounds=[],
         )
 

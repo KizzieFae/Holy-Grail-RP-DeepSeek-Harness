@@ -16,6 +16,8 @@ from character_state_model import CharacterState  # noqa: E402
 from continuity_manager import ContinuityManager  # noqa: E402
 from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E402
 
+from .memory_scope import resolve_memory_scope_id  # noqa: E402
+
 V2_HOST_METADATA_KEY = "v2_host_state"
 
 
@@ -62,6 +64,7 @@ class LiveSession:
     rp_history: list[dict[str, Any]] = field(default_factory=list)
     setup_snapshot: dict[str, Any] = field(default_factory=dict)
     character_file_ids: dict[str, str] = field(default_factory=dict)
+    memory_scope_id: str = ""
 
     @property
     def session_id(self) -> str:
@@ -78,6 +81,7 @@ def initialize_live_session(
     location: str = "Workshop",
     cast: list[str] | None = None,
     opening_description: str = "A quiet workshop for boundary prototype tests.",
+    memory_scope_id: str | None = None,
 ) -> LiveSession:
     cast = cast or ["Alice", "Bob"]
     session_id = hg_session_id or f"hg-session-{uuid.uuid4()}"
@@ -107,4 +111,6 @@ def initialize_live_session(
         cast=list(cast),
         character_states=character_states,
         character_private_secrets=secrets,
+        memory_scope_id=resolve_memory_scope_id(memory_scope_id),
+        character_file_ids={name: name.strip().lower().replace(" ", "_") for name in cast},
     )

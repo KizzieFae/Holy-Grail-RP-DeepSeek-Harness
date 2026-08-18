@@ -44,6 +44,8 @@ def init_state() -> None:
         st.session_state.template_catalog = []
     if "setup_provenance" not in st.session_state:
         st.session_state.setup_provenance = None
+    if "memory_scope_id" not in st.session_state:
+        st.session_state.memory_scope_id = None
 
 
 def refresh_status() -> None:
@@ -117,6 +119,12 @@ def render_sidebar() -> None:
     if opening_mode == "custom":
         custom_opening = st.sidebar.text_area("Custom opening text", height=80)
 
+    memory_scope_input = st.sidebar.text_input(
+        "Memory scope (optional — leave blank for new isolated scope)",
+        "",
+        help="Reuse an existing memory_scope_id to share cross-session relationship memory.",
+    )
+
     if st.sidebar.button("Create session"):
         if selected_ids:
             payload: dict = {"characters": selected_ids}
@@ -129,11 +137,14 @@ def render_sidebar() -> None:
         else:
             cast_input = st.sidebar.text_input("Prototype cast", "Alice", key="proto_cast")
             payload = {"cast": [name.strip() for name in cast_input.split(",") if name.strip()]}
+        if memory_scope_input.strip():
+            payload["memory_scope_id"] = memory_scope_input.strip()
 
         result = api_request("POST", "/api/sessions/create", payload)
         session = result["session"]
         st.session_state.hg_session_id = session["hg_session_id"]
         st.session_state.setup_provenance = session.get("setup_provenance")
+        st.session_state.memory_scope_id = session.get("memory_scope_id")
         st.session_state.transcript = []
         st.sidebar.success(f"Created {st.session_state.hg_session_id}")
 
@@ -149,9 +160,12 @@ def render_sidebar() -> None:
         st.session_state.transcript = transcript.get("transcript", [])
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
 
-    if st.session_state.setup_provenance:
+    if st.session_state.setup_provenance or st.session_state.memory_scope_id:
         st.sidebar.subheader("Session setup")
-        st.sidebar.json(st.session_state.setup_provenance)
+        if st.session_state.memory_scope_id:
+            st.sidebar.caption(f"memory_scope_id: {st.session_state.memory_scope_id}")
+        if st.session_state.setup_provenance:
+            st.sidebar.json(st.session_state.setup_provenance)
 
     if st.session_state.hg_session_id:
         try:

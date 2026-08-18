@@ -73,6 +73,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     opening=dict(data.get("opening") or {}) if data.get("opening") else None,
                     location=str(data.get("location", "Workshop")),
                     hg_session_id=data.get("hg_session_id"),
+                    memory_scope_id=data.get("memory_scope_id"),
                 )
                 self._send_json(
                     201,
@@ -84,6 +85,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         opening=req.opening,
                         location=req.location,
                         hg_session_id=req.hg_session_id,
+                        memory_scope_id=req.memory_scope_id,
                     ),
                 )
                 return
@@ -222,6 +224,9 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     "service": "holy-grail-domain-host",
                 },
             )
+            return
+        if path == "/v1/catalog/memory-scopes":
+            self._send_json(200, {"memory_scopes": self.kernel.list_memory_scopes()})
             return
         if path == "/v1/catalog/characters":
             self._send_json(200, {"characters": self.kernel.list_characters()})

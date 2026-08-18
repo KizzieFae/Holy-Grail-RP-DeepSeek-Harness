@@ -69,6 +69,7 @@ from .session_repository import (  # noqa: E402
 )
 from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
+from .memory_service import MemoryService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -176,6 +177,11 @@ class DomainKernel:
         else:
             self.store = repository or SessionRepository()
 
+    def _memory_service(self) -> MemoryService | None:
+        if isinstance(self.store, SessionRepository):
+            return self.store.memory_service
+        return None
+
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
         session = self.store.create_session(**kwargs)
         return self._session_info(session)
@@ -186,12 +192,25 @@ class DomainKernel:
 
     def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
-        char_snapshot = snapshot_character_states(fixture)
-        apply_user_turn_memory(
-            fixture,
-            user_name=req.speaker,
-            content=req.content,
+        memory_service = self._memory_service()
+        char_snapshot = (
+            memory_service.snapshot_character_states(fixture)
+            if memory_service is not None
+            else snapshot_character_states(fixture)
         )
+        history_before = (
+            memory_service.relationship_history_snapshot(fixture, req.speaker)
+            if memory_service is not None
+            else {}
+        )
+        if memory_service is not None:
+            memory_service.write_user_turn_memory(
+                fixture, user_name=req.speaker, content=req.content
+            )
+        else:
+            apply_user_turn_memory(
+                fixture, user_name=req.speaker, content=req.content
+            )
         entry = append_history_entry(
             fixture.rp_history,
             kind="user",
@@ -203,13 +222,26 @@ class DomainKernel:
                 "speaker": req.speaker,
             },
         )
+        projection_records = []
+        if memory_service is not None:
+            projection_records = memory_service.build_user_relationship_projection(
+                fixture,
+                user_name=req.speaker,
+                history_before=history_before,
+                source_hg_round_id=req.hg_round_id,
+            )
         if isinstance(self.store, SessionRepository):
             try:
                 self.store.persist(fixture)
             except PersistenceError:
-                restore_character_states(fixture, char_snapshot)
+                if memory_service is not None:
+                    memory_service.restore_character_states(fixture, char_snapshot)
+                else:
+                    restore_character_states(fixture, char_snapshot)
                 fixture.rp_history.pop()
                 raise
+            if memory_service is not None:
+                memory_service.project_cross_scope_after_persist(fixture, projection_records)
         return entry
 
     def record_presentation(self, req: PresentationRecordRequest) -> dict[str, Any]:
@@ -272,7 +304,14 @@ class DomainKernel:
             location=str(mgr.scene_state.location or ""),
             setup_provenance=setup_provenance_for_ui(session.setup_snapshot) or None,
             character_file_ids=dict(session.character_file_ids) or None,
+            memory_scope_id=session.memory_scope_id or None,
         )
+
+    def list_memory_scopes(self) -> list[dict[str, str]]:
+        memory_service = self._memory_service()
+        if memory_service is None:
+            return []
+        return memory_service.list_memory_scopes()
 
     def list_characters(self) -> list[dict[str, Any]]:
         return list_characters_catalog()
@@ -516,8 +555,16 @@ class DomainKernel:
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
         private_secret = fixture.character_private_secrets.get(req.character_id, "")
-        character_state = fixture.character_states.get(req.character_id)
-        memory_projection = build_session_memory_projection(character_state)
+        memory_service = self._memory_service()
+        if memory_service is not None:
+            memory_projections = memory_service.retrieve_memory_contributions(
+                fixture, character_id=req.character_id
+            )
+        else:
+            single = build_session_memory_projection(
+                fixture.character_states.get(req.character_id)
+            )
+            memory_projections = [single] if single is not None else []
         contributions: list[PromptContribution] = [
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene",
@@ -586,15 +633,16 @@ class DomainKernel:
                 ),
             )
         )
-        if memory_projection is not None:
-            memory_content, memory_provenance = memory_projection
+        for index, (memory_content, memory_provenance) in enumerate(memory_projections):
             contributions.append(
                 PromptContribution(
-                    contribution_id=f"{manifest_id}-character-memory",
+                    contribution_id=f"{manifest_id}-character-memory-{index}",
                     source_kind="character_memory",
                     authority_class="derived",
-                    knowledge_ids=(f"character-memory:{req.character_id}",),
-                    priority=22,
+                    knowledge_ids=(
+                        f"character-memory:{req.character_id}:{memory_provenance.get('memory_lane', 'session')}",
+                    ),
+                    priority=22 + index,
                     content=memory_content,
                     provenance={
                         "character_id": req.character_id,
@@ -837,13 +885,26 @@ class DomainKernel:
             director_decision=director_decision,
             other_characters=others,
         )
-        char_snapshot = snapshot_character_states(fixture)
-        apply_character_turn_memory(
-            fixture,
-            acting_character=req.character_id,
-            move=move,
-            director_decision=director_decision,
+        char_snapshot = (
+            self._memory_service().snapshot_character_states(fixture)
+            if self._memory_service() is not None
+            else snapshot_character_states(fixture)
         )
+        memory_service = self._memory_service()
+        if memory_service is not None:
+            memory_service.write_character_turn_memory(
+                fixture,
+                acting_character=req.character_id,
+                move=move,
+                director_decision=director_decision,
+            )
+        else:
+            apply_character_turn_memory(
+                fixture,
+                acting_character=req.character_id,
+                move=move,
+                director_decision=director_decision,
+            )
         after_turn = mgr.turn_counter
         commit_id = f"hg-commit-{uuid.uuid4()}"
         fixture.committed_move_count += 1
@@ -901,7 +962,10 @@ class DomainKernel:
             except PersistenceError as exc:
                 if isinstance(repository, SessionRepository) and manager_snapshot is not None:
                     repository.restore_manager(fixture, manager_snapshot)
-                    restore_character_states(fixture, char_snapshot)
+                    if memory_service is not None:
+                        memory_service.restore_character_states(fixture, char_snapshot)
+                    else:
+                        restore_character_states(fixture, char_snapshot)
                     if round_snapshot is not None:
                         rnd.director_decision = round_snapshot["director_decision"]
                         rnd.committed_character_id = round_snapshot["committed_character_id"]

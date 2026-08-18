@@ -229,6 +229,7 @@ class SessionCreateRequest:
     opening: dict[str, Any] | None = None
     location: str = "Workshop"
     hg_session_id: str | None = None
+    memory_scope_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -273,6 +274,7 @@ class SessionInfoResponse:
     location: str
     setup_provenance: dict[str, Any] | None = None
     character_file_ids: dict[str, str] | None = None
+    memory_scope_id: str | None = None
 
 
 @dataclass(frozen=True)
