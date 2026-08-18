@@ -191,6 +191,7 @@ class SessionRepository:
                 "character_private_secrets": dict(session.character_private_secrets),
                 "continuity_version": session.continuity_version,
                 "commit_dedup_index": dict(session.commit_dedup_index),
+                "rp_history": list(session.rp_history),
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -248,6 +249,7 @@ class SessionRepository:
             character_private_secrets=secrets,
             continuity_version=int(host_state.get("continuity_version", 0)),
             commit_dedup_index=dict(host_state.get("commit_dedup_index") or {}),
+            rp_history=list(host_state.get("rp_history") or []),
             rounds=[],
         )
 

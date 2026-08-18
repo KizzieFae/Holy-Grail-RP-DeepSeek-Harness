@@ -1,5 +1,9 @@
 """Streamlit UI for RP app.
 
+DEPRECATED (M8): This V1 production entrypoint is superseded by Holy Grail V2.
+Use `Launch-Holy-Grail-V2.bat` or `cd v2/rp_runtime && npm run app` instead.
+Removal conditions: see governance/rp-app/v2-durable-transcript-m8.md.
+
 Multi-character roleplay interface with session management.
 """
 

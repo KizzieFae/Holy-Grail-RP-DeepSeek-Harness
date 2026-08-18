@@ -61,6 +61,14 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
         return sendJson(res, 200, { state });
       }
 
+      if (req.method === 'GET' && path.startsWith('/api/sessions/') && path.endsWith('/transcript')) {
+        const hgSessionId = path.slice('/api/sessions/'.length, -'/transcript'.length);
+        if (hgSessionId !== applicationClient.activeSessionId) {
+          await applicationClient.openSession(hgSessionId);
+        }
+        return sendJson(res, 200, { transcript: applicationClient.getTranscript() });
+      }
+
       if (req.method === 'GET' && path === '/api/transcript') {
         return sendJson(res, 200, { transcript: applicationClient.getTranscript() });
       }

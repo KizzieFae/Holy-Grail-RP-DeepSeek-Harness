@@ -59,6 +59,7 @@ class LiveSession:
     rounds: list[RoundFixture] = field(default_factory=list)
     continuity_version: int = 0
     commit_dedup_index: dict[str, dict[str, Any]] = field(default_factory=dict)
+    rp_history: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def session_id(self) -> str:

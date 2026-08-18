@@ -1,4 +1,7 @@
 import { trackBoundaryCall } from './inference-utils.mjs';
+import { projectHistoryToTranscript } from './project-history.mjs';
+
+export { projectHistoryToTranscript };
 
 async function postJson(metrics, baseUrl, path, body, label) {
   trackBoundaryCall(metrics, label, body);
@@ -35,6 +38,18 @@ export function createDomainApiClient(baseUrl) {
         { hg_session_id: hgSessionId },
         'openSession',
       );
+    },
+    recordUserTurn(body) {
+      return postJson(metrics, baseUrl, '/v1/sessions/history/user-turn', body, 'recordUserTurn');
+    },
+    recordPresentation(body) {
+      return postJson(metrics, baseUrl, '/v1/sessions/history/presentation', body, 'recordPresentation');
+    },
+    async getSessionHistory(hgSessionId) {
+      trackBoundaryCall(metrics, 'getSessionHistory', { hg_session_id: hgSessionId });
+      const res = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(hgSessionId)}/history`);
+      if (!res.ok) throw new Error(`getSessionHistory failed: ${res.status}`);
+      return res.json();
     },
     startRound(body) {
       return postJson(metrics, baseUrl, '/v1/rounds/start', body, 'startRound');

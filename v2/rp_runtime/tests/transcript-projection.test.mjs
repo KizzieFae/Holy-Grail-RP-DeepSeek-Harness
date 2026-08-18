@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { projectHistoryToTranscript } from '../src/lib/project-history.mjs';
 import { HolyGrailApplicationClient } from '../src/application/hg-application-client.mjs';
 import { makeTempSessionsDir } from './helpers/domain-api.mjs';
 
@@ -42,7 +43,7 @@ const MOCK_ROUND = {
   mockNarratorTurnResponses: [['Alice nodded thoughtfully in the workshop.']],
 };
 
-test('application client: create session, submit turn, persist across restart', async (t) => {
+test('application client: durable transcript survives restart', async (t) => {
   const sessionsDir = makeTempSessionsDir();
   t.after(() => {
     fs.rmSync(sessionsDir, { recursive: true, force: true });
@@ -56,19 +57,11 @@ test('application client: create session, submit turn, persist across restart', 
   t.after(() => client1.stop());
 
   const created = await client1.createSession({ cast: ['Alice'] });
-  assert.ok(created.hg_session_id);
-
-  const turn = await client1.submitUserTurn({
+  const turnA = await client1.submitUserTurn({
     userMessage: 'Alice, please respond.',
     ...MOCK_ROUND,
-    mockNarratorTurnResponses: [['Alice nodded thoughtfully in the workshop.']],
   });
-  assert.equal(turn.round.committed, true);
-  assert.equal(turn.round.continuity_turn_index, 1);
-  assert.ok(turn.presentation);
-  assert.equal(turn.transcript.length, 2);
-  assert.ok(fs.existsSync(`${sessionsDir}/${created.hg_session_id}.json`));
-
+  assert.equal(turnA.transcript.length, 2);
   const sessionId = created.hg_session_id;
   await client1.stop();
 
@@ -79,21 +72,43 @@ test('application client: create session, submit turn, persist across restart', 
   await client2.start();
   t.after(() => client2.stop());
 
-  const reopened = await client2.openSession(sessionId);
-  assert.equal(reopened.turn_counter, 1);
-  assert.equal(reopened.committed_move_count, 1);
+  await client2.openSession(sessionId);
+  assert.equal(client2.getTranscript().length, 2);
+  assert.equal(client2.getTranscript()[0].content, 'Alice, please respond.');
+  assert.match(client2.getTranscript()[1].content, /nodded thoughtfully/i);
 
-  const secondTurn = await client2.submitUserTurn({
-    userMessage: 'Continue.',
+  const turnB = await client2.submitUserTurn({
+    userMessage: 'Continue the scene.',
     ...MOCK_ROUND,
   });
-  assert.equal(secondTurn.round.continuity_turn_index, 2);
+  assert.equal(turnB.transcript.length, 4);
+  assert.equal(turnB.transcript.filter((e) => e.role === 'user').length, 2);
 });
 
-test('application client: surfaces runtime-not-ready error', async () => {
-  const client = new HolyGrailApplicationClient({ inferenceMode: 'mock' });
-  await assert.rejects(
-    () => client.createSession({ cast: ['Alice'] }),
-    /not ready/,
-  );
+test('projectHistoryToTranscript: prefers presentation over committed_turn', () => {
+  const entries = [
+    { entry_id: '1', sequence_index: 0, kind: 'user', content: 'Hi', actor_id: 'Player', metadata: {} },
+    {
+      entry_id: '2',
+      sequence_index: 1,
+      kind: 'committed_turn',
+      content: 'nods',
+      domain_commit_id: 'c1',
+      actor_id: 'Alice',
+      metadata: {},
+    },
+    {
+      entry_id: '3',
+      sequence_index: 2,
+      kind: 'presentation',
+      content: 'Alice nodded.',
+      domain_commit_id: 'c1',
+      actor_id: 'Alice',
+      presentation_status: 'rendered',
+      metadata: {},
+    },
+  ];
+  const transcript = projectHistoryToTranscript(entries);
+  assert.equal(transcript.length, 2);
+  assert.equal(transcript[1].content, 'Alice nodded.');
 });

@@ -95,8 +95,7 @@ export class HolyGrailApplicationClient {
     });
     this.activeSessionId = created.hg_session_id;
     this.activeCast = [...(created.present_characters ?? cast)];
-    this.transcript = [];
-    this.lastSpeaker = null;
+    await this._refreshTranscript();
     return this._sessionView(created);
   }
 
@@ -106,8 +105,7 @@ export class HolyGrailApplicationClient {
     const opened = await api.openSession(hgSessionId);
     this.activeSessionId = opened.hg_session_id;
     this.activeCast = [...(opened.present_characters ?? DEFAULT_CAST)];
-    this.transcript = [];
-    this.lastSpeaker = null;
+    await this._refreshTranscript();
     return this._sessionView(opened);
   }
 
@@ -141,8 +139,9 @@ export class HolyGrailApplicationClient {
       });
     }
 
-    this.transcript.push({
-      role: 'user',
+    const api = this.orchestrator._domainClient();
+    await api.recordUserTurn({
+      hg_session_id: this.activeSessionId,
       content: userMessage,
       speaker: input.userName ?? 'Player',
       forced_designation: forcedDesignation,
@@ -159,16 +158,9 @@ export class HolyGrailApplicationClient {
         ...this._resolveInferenceOptions(input),
       };
       const roundResult = await this.orchestrator.runRound(roundOptions);
+      await this._recordRoundPresentations(api, roundResult);
+      await this._refreshTranscript();
       const presentation = presentationFromRound(roundResult);
-
-      if (presentation) {
-        this.transcript.push({
-          role: 'assistant',
-          content: presentation,
-          speaker: roundResult.selected_character_id ?? 'Narrator',
-          presentation_failed: Boolean(roundResult.presentation_failed),
-        });
-      }
 
       if (roundResult.selected_character_id) {
         this.lastSpeaker = roundResult.selected_character_id;
@@ -213,6 +205,49 @@ export class HolyGrailApplicationClient {
   _requireActiveSession() {
     if (!this.activeSessionId) {
       throw new Error('no active hg_session_id — create or open a session first');
+    }
+  }
+
+  async _refreshTranscript() {
+    if (!this.activeSessionId) {
+      this.transcript = [];
+      this.lastSpeaker = null;
+      return;
+    }
+    const api = this.orchestrator._domainClient();
+    const history = await api.getSessionHistory(this.activeSessionId);
+    this.transcript = [...(history.transcript ?? [])];
+    const lastAssistant = [...this.transcript].reverse().find((entry) => entry.role === 'assistant');
+    if (lastAssistant?.speaker && lastAssistant.speaker !== 'Narrator') {
+      this.lastSpeaker = lastAssistant.speaker;
+    }
+  }
+
+  async _recordRoundPresentations(api, roundResult) {
+    const turns = roundResult.character_turns ?? [];
+    if (turns.length) {
+      for (const turn of turns) {
+        if (!turn.domain_commit_id) continue;
+        await api.recordPresentation({
+          hg_session_id: this.activeSessionId,
+          domain_commit_id: turn.domain_commit_id,
+          hg_round_id: roundResult.hg_round_id,
+          character_id: turn.character_id,
+          presentation_text: turn.presentation_text,
+          presentation_failed: Boolean(turn.presentation_failed),
+        });
+      }
+      return;
+    }
+    if (roundResult.domain_commit_id) {
+      await api.recordPresentation({
+        hg_session_id: this.activeSessionId,
+        domain_commit_id: roundResult.domain_commit_id,
+        hg_round_id: roundResult.hg_round_id,
+        character_id: roundResult.selected_character_id ?? 'Character',
+        presentation_text: roundResult.presentation_text,
+        presentation_failed: Boolean(roundResult.presentation_failed),
+      });
     }
   }
 

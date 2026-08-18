@@ -68,7 +68,8 @@ def render_sidebar() -> None:
     if st.sidebar.button("Open session") and resume_id.strip():
         result = api_request("POST", "/api/sessions/open", {"hg_session_id": resume_id.strip()})
         st.session_state.hg_session_id = result["session"]["hg_session_id"]
-        st.session_state.transcript = []
+        transcript = api_request("GET", f"/api/sessions/{st.session_state.hg_session_id}/transcript")
+        st.session_state.transcript = transcript.get("transcript", [])
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
 
     if st.session_state.hg_session_id:

@@ -232,6 +232,32 @@ class SessionOpenRequest:
 
 
 @dataclass(frozen=True)
+class UserTurnRecordRequest:
+    hg_session_id: str
+    content: str
+    speaker: str = "Player"
+    forced_designation: str | None = None
+    hg_round_id: str | None = None
+
+
+@dataclass(frozen=True)
+class PresentationRecordRequest:
+    hg_session_id: str
+    domain_commit_id: str
+    hg_round_id: str
+    character_id: str
+    presentation_text: str | None = None
+    presentation_failed: bool = False
+
+
+@dataclass(frozen=True)
+class SessionHistoryResponse:
+    hg_session_id: str
+    entries: tuple[dict[str, Any], ...]
+    transcript: tuple[dict[str, Any], ...]
+
+
+@dataclass(frozen=True)
 class SessionInfoResponse:
     hg_session_id: str
     hg_scene_id: str

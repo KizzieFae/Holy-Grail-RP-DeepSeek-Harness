@@ -19,6 +19,8 @@ from .contract import (
     RoundStartRequest,
     SessionCreateRequest,
     SessionOpenRequest,
+    UserTurnRecordRequest,
+    PresentationRecordRequest,
     ValidationRequest,
 )
 from .kernel import DomainKernel
@@ -176,6 +178,27 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.prepare_narrator_context(req))
                 return
+            if path == "/v1/sessions/history/user-turn":
+                req = UserTurnRecordRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    content=str(data["content"]),
+                    speaker=str(data.get("speaker", "Player")),
+                    forced_designation=data.get("forced_designation"),
+                    hg_round_id=data.get("hg_round_id"),
+                )
+                self._send_json(201, self.kernel.record_user_turn(req))
+                return
+            if path == "/v1/sessions/history/presentation":
+                req = PresentationRecordRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    character_id=str(data["character_id"]),
+                    presentation_text=data.get("presentation_text"),
+                    presentation_failed=bool(data.get("presentation_failed", False)),
+                )
+                self._send_json(201, self.kernel.record_presentation(req))
+                return
             self._send_json(404, {"error": "not found"})
         except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:
             self._send_json(400, {"error": str(exc)})
@@ -196,6 +219,13 @@ class DomainApiHandler(BaseHTTPRequestHandler):
             hg_session_id = path.removeprefix("/v1/sessions/").removesuffix("/state")
             try:
                 self._send_json(200, self.kernel.scene_snapshot(hg_session_id))
+            except KeyError:
+                self._send_json(404, {"error": "unknown session"})
+            return
+        if path.startswith("/v1/sessions/") and path.endswith("/history"):
+            hg_session_id = path.removeprefix("/v1/sessions/").removesuffix("/history")
+            try:
+                self._send_json(200, self.kernel.get_session_history(hg_session_id))
             except KeyError:
                 self._send_json(404, {"error": "unknown session"})
             return

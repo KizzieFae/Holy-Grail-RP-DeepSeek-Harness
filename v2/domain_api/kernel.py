@@ -49,11 +49,19 @@ from .contract import (  # noqa: E402
     RoundStartResponse,
     SceneStateSnapshot,
     SessionInfoResponse,
+    SessionHistoryResponse,
+    PresentationRecordRequest,
+    UserTurnRecordRequest,
     ValidationRequest,
     ValidationResponse,
 )
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
+from .session_history import (  # noqa: E402
+    append_history_entry,
+    project_history_to_transcript,
+    summarize_committed_move,
+)
 from .session_repository import (  # noqa: E402
     CommitDedupRecord,
     PersistenceError,
@@ -162,6 +170,62 @@ class DomainKernel:
     def open_session(self, hg_session_id: str) -> SessionInfoResponse:
         session = self.store.open_session(hg_session_id)
         return self._session_info(session)
+
+    def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        entry = append_history_entry(
+            fixture.rp_history,
+            kind="user",
+            content=req.content,
+            actor_id=req.speaker,
+            hg_round_id=req.hg_round_id,
+            metadata={
+                "forced_designation": req.forced_designation,
+                "speaker": req.speaker,
+            },
+        )
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return entry
+
+    def record_presentation(self, req: PresentationRecordRequest) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        status = "failed" if req.presentation_failed else "rendered"
+        content = (req.presentation_text or "").strip()
+        if not content:
+            committed = next(
+                (
+                    item
+                    for item in reversed(fixture.rp_history)
+                    if item.get("kind") == "committed_turn"
+                    and item.get("domain_commit_id") == req.domain_commit_id
+                ),
+                None,
+            )
+            content = str(committed.get("content") if committed else "[presentation unavailable]")
+        entry = append_history_entry(
+            fixture.rp_history,
+            kind="presentation",
+            content=content,
+            hg_round_id=req.hg_round_id,
+            domain_commit_id=req.domain_commit_id,
+            actor_id=req.character_id,
+            presentation_status=status,
+            metadata={"renderer": "narrator"},
+        )
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return entry
+
+    def get_session_history(self, hg_session_id: str) -> SessionHistoryResponse:
+        fixture = self.store.require(hg_session_id)
+        entries = tuple(dict(item) for item in fixture.rp_history)
+        transcript = tuple(project_history_to_transcript(fixture.rp_history))
+        return SessionHistoryResponse(
+            hg_session_id=hg_session_id,
+            entries=entries,
+            transcript=transcript,
+        )
 
     def create_scene(self, **kwargs: Any) -> LiveSession:
         """Transitional prototype scene creation; prefer create_session in production."""
@@ -739,6 +803,17 @@ class DomainKernel:
         )
         rnd.spotlight_history.append(req.character_id)
         rnd.eligibility_epoch += 1
+
+        if isinstance(repository, SessionRepository):
+            append_history_entry(
+                fixture.rp_history,
+                kind="committed_turn",
+                content=summarize_committed_move(dict(req.validated_move)),
+                hg_round_id=req.hg_round_id,
+                domain_commit_id=commit_id,
+                actor_id=req.character_id,
+                metadata={"continuity_turn_index": after_turn},
+            )
 
         response = CommitResponse(
             committed=True,

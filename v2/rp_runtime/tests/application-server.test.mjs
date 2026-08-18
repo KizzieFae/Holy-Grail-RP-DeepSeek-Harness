@@ -36,6 +36,7 @@ const MOCK_ROUND = {
       semantic_evaluation: { decision: 'no_covered_change' },
     }),
   ]],
+  mockNarratorTurnResponses: [['Alice nodded thoughtfully in the workshop.']],
 };
 
 test('app server: health, session create, turn submit', async (t) => {
