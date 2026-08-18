@@ -385,7 +385,7 @@ No new RP scenarios required for M12.
 | `semantic_validation.py` | A | Domain validation | ✅ | turn_runner | — | remove |
 | `continuity_manager.py` | B | same | ✅ | V2 domain_api | Extract first | extract/rehome |
 | `session_manager.py` | B | SessionRepository | ✅ | V2 | Extract persistence | extract/rehome |
-| `character_loader.py` | B | card load | ✅ | V2 setup | Split create_agent | extract/rehome |
+| `character_loader.py` | B → **M12.1 done** | card load | ✅ | V2 setup | Split create_agent | **extracted** → `v2/domain/character_cards.py` |
 | `scene_grounding.py` | B | projector | ✅ | V2 | — | extract/rehome |
 | `response_validation*.py` | B | kernel validate | ✅ | V2 | — | extract/rehome |
 | `memory_layer.*` | B | MemoryService | ✅ | V2 | — | extract/rehome |

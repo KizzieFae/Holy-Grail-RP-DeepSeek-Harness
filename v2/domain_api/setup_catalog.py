@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-_RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
-if str(_RP_APP) not in sys.path:
-    sys.path.insert(0, str(_RP_APP))
+_V2 = Path(__file__).resolve().parents[1]
+if str(_V2) not in sys.path:
+    sys.path.insert(0, str(_V2))
 
-from character_loader import CharacterLoader  # noqa: E402
+from domain.character_cards import CharacterCardLoader  # noqa: E402
 from scene_opener import OpenerManager  # noqa: E402
 from scene_template import SceneTemplateManager  # noqa: E402
 
@@ -25,7 +25,7 @@ def _public_character_summary(card: dict[str, Any], file_id: str) -> dict[str, A
 
 
 def list_characters_catalog() -> list[dict[str, Any]]:
-    loader = CharacterLoader()
+    loader = CharacterCardLoader()
     catalog: list[dict[str, Any]] = []
     for file_id in loader.list_available_characters():
         card = loader.load_character_card(file_id)

@@ -9,6 +9,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from character_loader import CharacterLoader  # noqa: E402
 from character_move_ingress import (  # noqa: E402
@@ -134,7 +137,7 @@ def test_process_turn_wrong_scope_proposal_rejects() -> None:
         )
 
 
-@patch("character_loader.AssistantAgent")
+@patch("legacy.v1_autogen_agents.AssistantAgent")
 def test_character_loader_system_prompt_teaches_semantic_evaluation_not_illegal_roots(
     mock_agent_cls: MagicMock,
 ) -> None:

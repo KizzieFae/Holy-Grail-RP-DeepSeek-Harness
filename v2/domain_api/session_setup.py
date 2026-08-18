@@ -9,14 +9,20 @@ from pathlib import Path
 from typing import Any
 
 _RP_APP = Path(__file__).resolve().parents[2] / "autogen_rp" / "python" / "rp_app"
+_V2 = Path(__file__).resolve().parents[1]
 if str(_RP_APP) not in sys.path:
     sys.path.insert(0, str(_RP_APP))
+if str(_V2) not in sys.path:
+    sys.path.insert(0, str(_V2))
 
+from domain.character_cards import (  # noqa: E402
+    CharacterCardLoader,
+    normalize_relationships,
+)
 from app_state_scene import (  # noqa: E402
     apply_scene_setup_to_scene_state,
     build_initial_scene_issues,
 )
-from character_loader import CharacterLoader, _normalize_relationships  # noqa: E402
 from character_state_model import CharacterState  # noqa: E402
 from continuity_manager import ContinuityManager  # noqa: E402
 from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E402
@@ -45,7 +51,7 @@ def create_character_state_from_card(card: dict[str, Any]) -> CharacterState:
         voice_profile=dict(card.get("voice_profile", {}) or {}),
         reaction_profile=dict(card.get("reaction_profile", {}) or {}),
         speech_fingerprint=dict(card.get("speech_fingerprint", {}) or {}),
-        relationships=_normalize_relationships(card.get("relationships", {})),
+        relationships=normalize_relationships(card.get("relationships", {})),
     )
 
 
@@ -146,7 +152,7 @@ def create_live_session_from_setup(
     if not character_files:
         raise ValueError("at least one character file id is required")
 
-    loader = CharacterLoader(characters_dir)
+    loader = CharacterCardLoader(characters_dir)
     cards: dict[str, dict[str, Any]] = {}
     names_by_file: dict[str, str] = {}
     character_states: dict[str, CharacterState] = {}
