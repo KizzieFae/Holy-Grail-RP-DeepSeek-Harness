@@ -74,11 +74,12 @@ test('three-role round: director → character → commit → narrator', async (
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runDirectorCharacterRound({
+  const result = await runtime.runRound({
     domainApi: { baseUrl },
+    createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
-    mockCharacterResponses: [JSON.stringify(VALID_MOVE)],
-    mockNarratorResponses: [NARRATOR_PROSE],
+    mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
+    mockNarratorTurnResponses: [[NARRATOR_PROSE]],
   });
 
   assert.equal(result.committed, true);
@@ -114,17 +115,18 @@ test('three-role round: commit failure skips narrator', async (t) => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runDirectorCharacterRound({
+  const result = await runtime.runRound({
     domainApi: { baseUrl },
+    createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
-    mockCharacterResponses: [
+    mockCharacterTurnResponses: [[
       JSON.stringify({
         move_schema_version: 2,
         beats: [],
         motivation: { goal: 'x', tactic: 'x', emotional_driver: 'x', risk_level: 'x' },
       }),
-    ],
-    mockNarratorResponses: [NARRATOR_PROSE],
+    ]],
+    mockNarratorTurnResponses: [[NARRATOR_PROSE]],
   });
 
   assert.equal(result.committed, false);
@@ -146,11 +148,12 @@ test('narrator failure after commit preserves canon', async (t) => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runDirectorCharacterRound({
+  const result = await runtime.runRound({
     domainApi: { baseUrl },
+    createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
-    mockCharacterResponses: [JSON.stringify(VALID_MOVE)],
-    mockNarratorResponses: [''],
+    mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
+    mockNarratorTurnResponses: [['']],
   });
 
   assert.equal(result.committed, true);

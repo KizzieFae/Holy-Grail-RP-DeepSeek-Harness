@@ -65,7 +65,10 @@ def create_prototype_scene(
         present_characters=list(cast),
     )
     assert mgr.scene_state is not None
-    mgr.scene_state.role_assignments = {cast[0]: "guest", cast[1]: "staff"}
+    roles = ["guest", "staff", "witness", "observer"]
+    mgr.scene_state.role_assignments = {
+        name: roles[index % len(roles)] for index, name in enumerate(cast)
+    }
     finalize_continuity_setup_seam(mgr, cast=list(cast))
     secrets = {name: f"private-{name}-{uuid.uuid4().hex[:8]}" for name in cast}
     return SceneFixture(

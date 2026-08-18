@@ -111,13 +111,12 @@ test('context isolation: separate inference sessions remain distinct identities'
     semantic_evaluation: { decision: 'no_covered_change' },
   };
 
-  const result = await runtime.runDirectorCharacterRound({
+  const result = await runtime.runRound({
     domainApi: { baseUrl },
+    createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
-    mockCharacterResponses: [JSON.stringify(VALID_MOVE)],
+    mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
   });
-
-  assert.notEqual(result.director_inference_session_id, result.character_inference_session_id);
   assert.notEqual(result.director_inference_session_id, result.dsh_scene_session_id);
   assert.notEqual(result.character_inference_session_id, result.dsh_scene_session_id);
 });

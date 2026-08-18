@@ -14,8 +14,18 @@ import {
 import { HG_MOCK_MODEL, HG_MOCK_PROVIDER, HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
 import { appendHgEvent, baseCorrelation } from './events.mjs';
 
-function roleForCharacter(characterId) {
-  return characterId === 'Alice' ? 'guest' : 'staff';
+function roleForCharacter(characterId, characterRoles = {}) {
+  return characterRoles[characterId] ?? (characterId === 'Alice' ? 'guest' : 'staff');
+}
+
+function classifyRoundCompletion(completionReason) {
+  if (completionReason === 'director_end_round' || completionReason === 'no_eligible_actors') {
+    return { completion_status: 'completed', completion_class: 'semantic' };
+  }
+  if (completionReason === 'defensive_turn_ceiling') {
+    return { completion_status: 'completed', completion_class: 'defensive' };
+  }
+  return { completion_status: 'aborted', completion_class: 'failure' };
 }
 
 export default class HolyGrailRpRuntime extends Service {
@@ -202,8 +212,9 @@ export default class HolyGrailRpRuntime extends Service {
     characterInferenceId,
     mockResponses,
     characterTurnIndex,
+    characterRole,
   }) {
-    const role = roleForCharacter(characterId);
+    const role = characterRole ?? roleForCharacter(characterId);
     let attemptIndex = 0;
     let committed = false;
     let continuityTurnIndex = null;
@@ -430,7 +441,6 @@ export default class HolyGrailRpRuntime extends Service {
 
   async runRound(options) {
     const api = this._domainClient(options.domainApi?.baseUrl);
-    const characterTurnLimit = Number(options.characterTurnLimit ?? 1);
     const mockDirectorResponses = [...(options.mockDirectorResponses ?? [])];
     const mockCharacterTurnResponses = options.mockCharacterTurnResponses
       ?? (options.mockCharacterResponses ? [options.mockCharacterResponses] : []);
@@ -439,12 +449,21 @@ export default class HolyGrailRpRuntime extends Service {
 
     let hgSceneId = options.hgSceneId;
     if (!hgSceneId) {
-      const created = await api.createScene({ cast: ['Alice', 'Bob'] });
+      const created = await api.createScene(options.createScene ?? { cast: ['Alice', 'Bob'] });
       hgSceneId = String(created.hg_scene_id);
     }
     const round = await api.startRound({ hg_scene_id: hgSceneId });
     const hgRoundId = String(round.hg_round_id);
     const initialTurnIndex = Number(round.turn_index ?? 0);
+    const sceneState = await api.getSceneState(hgSceneId);
+    const castSize = Array.isArray(sceneState.present_characters)
+      ? sceneState.present_characters.length
+      : 2;
+    const defensiveTurnCeiling = Number(
+      options.defensiveTurnCeiling
+      ?? options.maxCharacterTurns
+      ?? Math.max(castSize, 1) * 2,
+    );
 
     const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
     const sceneAgent = this.ctx.agentLoop.create(sceneSessionId, {
@@ -455,18 +474,35 @@ export default class HolyGrailRpRuntime extends Service {
     appendHgEvent(sceneAgent.session, 'hg/round-started', {
       ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
       turn_index: initialTurnIndex,
-      character_turn_limit: characterTurnLimit,
+      defensive_turn_ceiling: defensiveTurnCeiling,
     });
 
     const characterTurns = [];
     const actorsUsedThisRound = [];
     let directorResponseIndex = 0;
     let directorAttemptSeed = 0;
-    let roundCompleted = false;
-    let completionReason = 'character_turn_limit_reached';
+    let completionReason = null;
     let lastDirectorInferenceSessionId = null;
+    let characterRoles = {};
 
-    while (characterTurns.length < characterTurnLimit) {
+    while (true) {
+      if (characterTurns.length >= defensiveTurnCeiling) {
+        completionReason = 'defensive_turn_ceiling';
+        break;
+      }
+
+      const eligibility = await api.getEligibleActors({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+      });
+      characterRoles = eligibility.character_roles ?? {};
+      const eligibleActors = eligibility.eligible_actors ?? [];
+
+      if (!eligibleActors.length) {
+        completionReason = 'no_eligible_actors';
+        break;
+      }
+
       const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
       const directorPhase = await this._runDirectorPhase({
         api,
@@ -486,16 +522,15 @@ export default class HolyGrailRpRuntime extends Service {
       lastDirectorInferenceSessionId = directorPhase.directorInferenceSessionId;
 
       if (!directorPhase.accepted) {
-        completionReason = 'director_not_accepted';
+        completionReason = 'director_failure';
         break;
       }
       if (directorPhase.endRound) {
-        roundCompleted = true;
         completionReason = 'director_end_round';
         break;
       }
       if (!directorPhase.selectedCharacterId) {
-        completionReason = 'director_missing_next_actor';
+        completionReason = 'director_failure';
         break;
       }
 
@@ -513,10 +548,11 @@ export default class HolyGrailRpRuntime extends Service {
         characterInferenceId,
         mockResponses: characterResponses,
         characterTurnIndex,
+        characterRole: roleForCharacter(directorPhase.selectedCharacterId, characterRoles),
       });
 
       if (!characterTurn.committed) {
-        completionReason = 'character_not_committed';
+        completionReason = 'character_failure';
         break;
       }
 
@@ -552,22 +588,29 @@ export default class HolyGrailRpRuntime extends Service {
       });
     }
 
-    if (characterTurns.length >= characterTurnLimit) {
-      roundCompleted = true;
+    if (completionReason === null) {
+      completionReason = 'no_eligible_actors';
     }
+
+    const { completion_status: completionStatus, completion_class: completionClass } =
+      classifyRoundCompletion(completionReason);
 
     appendHgEvent(sceneAgent.session, 'hg/round-completed', {
       ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      completion_status: completionStatus,
+      completion_class: completionClass,
       completion_reason: completionReason,
       character_turn_count: characterTurns.length,
       actors_used_this_round: actorsUsedThisRound,
-      round_completed: roundCompleted,
+      defensive_turn_ceiling: defensiveTurnCeiling,
     });
 
     const lastTurn = characterTurns[characterTurns.length - 1] ?? null;
     return {
-      round_completed: roundCompleted,
+      completion_status: completionStatus,
+      completion_class: completionClass,
       completion_reason: completionReason,
+      round_completed: completionStatus === 'completed',
       character_turn_count: characterTurns.length,
       character_turns: characterTurns,
       actors_used_this_round: actorsUsedThisRound,
@@ -584,23 +627,10 @@ export default class HolyGrailRpRuntime extends Service {
       presentation_rendered: lastTurn?.presentation_rendered ?? false,
       presentation_text: lastTurn?.presentation_text ?? null,
       presentation_failed: lastTurn?.presentation_failed ?? false,
+      defensive_turn_ceiling: defensiveTurnCeiling,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
     };
-  }
-
-  async runDirectorCharacterRound(options) {
-    return this.runRound({
-      ...options,
-      characterTurnLimit: options.characterTurnLimit ?? 1,
-    });
-  }
-
-  async runTwoCharacterRound(options) {
-    return this.runRound({
-      ...options,
-      characterTurnLimit: 2,
-    });
   }
 
   async runCharacterInference(options) {

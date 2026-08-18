@@ -19,6 +19,7 @@ from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
+    EligibleActorsRequest,
     NarratorContextPrepareRequest,
     RoundStartRequest,
     ValidationRequest,
@@ -349,6 +350,22 @@ def test_director_rejects_already_used_actor(kernel: DomainKernel) -> None:
         )
     )
     assert result.accepted is False
+
+
+def test_eligible_actors_excludes_used_cast_members(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    before = kernel.eligible_actors(
+        EligibleActorsRequest(hg_scene_id=hg_scene_id, hg_round_id=hg_round_id)
+    )
+    assert "Alice" in before.eligible_actors
+    assert "Bob" in before.eligible_actors
+    _commit_valid_move(kernel)
+    after = kernel.eligible_actors(
+        EligibleActorsRequest(hg_scene_id=hg_scene_id, hg_round_id=hg_round_id)
+    )
+    assert "Alice" not in after.eligible_actors
+    assert "Bob" in after.eligible_actors
+    assert tuple(after.actors_used_this_round) == ("Alice",)
 
 
 def test_director_accepts_end_round(kernel: DomainKernel) -> None:

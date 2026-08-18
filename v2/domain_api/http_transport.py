@@ -13,6 +13,7 @@ from .contract import (
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
+    EligibleActorsRequest,
     NarratorContextPrepareRequest,
     RoundStartRequest,
     ValidationRequest,
@@ -61,6 +62,13 @@ class DomainApiHandler(BaseHTTPRequestHandler):
             if path == "/v1/rounds/start":
                 req = RoundStartRequest(hg_scene_id=str(data["hg_scene_id"]))
                 self._send_json(200, self.kernel.start_round(req))
+                return
+            if path == "/v1/rounds/eligible-actors":
+                req = EligibleActorsRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                )
+                self._send_json(200, self.kernel.eligible_actors(req))
                 return
             if path == "/v1/director/context/prepare":
                 req = DirectorContextPrepareRequest(

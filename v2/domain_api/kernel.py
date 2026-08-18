@@ -16,6 +16,7 @@ from character_move_adapters import legacy_move_text_for_validation  # noqa: E40
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response  # noqa: E402
+from response_validation_selection import get_available_actors  # noqa: E402
 from response_validation_parsing import (  # noqa: E402
     parse_character_move,
     parse_director_decision,
@@ -28,6 +29,8 @@ from .contract import (  # noqa: E402
     DirectorContextPrepareRequest,
     DirectorDecisionResult,
     DirectorDecisionValidationRequest,
+    EligibleActorsRequest,
+    EligibleActorsResponse,
     NarratorContextPrepareRequest,
     PromptContribution,
     PromptContributionManifest,
@@ -143,8 +146,34 @@ class DomainKernel:
         raise KeyError(f"unknown hg_round_id: {hg_round_id}")
 
     def _available_actors(self, fixture: SceneFixture, rnd: RoundFixture) -> list[str]:
-        used = set(rnd.actors_used_this_round)
-        return [name for name in fixture.cast if name not in used]
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        present = list(getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
+        offstage = list(getattr(mgr.scene_state, "offstage_characters", None) or [])
+        return get_available_actors(
+            list(fixture.cast),
+            list(rnd.actors_used_this_round),
+            present,
+            offstage,
+        )
+
+    def eligible_actors(self, req: EligibleActorsRequest) -> EligibleActorsResponse:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        available = self._available_actors(fixture, rnd)
+        role_assignments = dict(getattr(mgr.scene_state, "role_assignments", {}) or {})
+        character_roles = {
+            name: str(role_assignments.get(name, "guest")) for name in fixture.cast
+        }
+        return EligibleActorsResponse(
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            eligible_actors=tuple(available),
+            actors_used_this_round=tuple(rnd.actors_used_this_round),
+            character_roles=character_roles,
+        )
 
     def prepare_director_context(
         self, req: DirectorContextPrepareRequest

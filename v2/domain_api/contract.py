@@ -63,6 +63,21 @@ class RoundStartResponse:
 
 
 @dataclass(frozen=True)
+class EligibleActorsRequest:
+    hg_scene_id: str
+    hg_round_id: str
+
+
+@dataclass(frozen=True)
+class EligibleActorsResponse:
+    hg_scene_id: str
+    hg_round_id: str
+    eligible_actors: tuple[str, ...]
+    actors_used_this_round: tuple[str, ...]
+    character_roles: dict[str, str]
+
+
+@dataclass(frozen=True)
 class DirectorDecisionValidationRequest:
     hg_scene_id: str
     hg_round_id: str

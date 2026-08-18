@@ -94,7 +94,7 @@ test('two-character round: director sequences Alice then Bob with per-turn narra
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runTwoCharacterRound({
+  const result = await runtime.runRound({
     domainApi: { baseUrl },
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_ALICE),
@@ -110,7 +110,8 @@ test('two-character round: director sequences Alice then Bob with per-turn narra
     ],
   });
 
-  assert.equal(result.round_completed, true);
+  assert.equal(result.completion_reason, 'no_eligible_actors');
+  assert.equal(result.completion_class, 'semantic');
   assert.equal(result.character_turn_count, 2);
   assert.deepEqual(result.actors_used_this_round, ['Alice', 'Bob']);
   assert.equal(result.character_turns[0].character_id, 'Alice');
