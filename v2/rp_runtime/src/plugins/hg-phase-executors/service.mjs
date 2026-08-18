@@ -1,7 +1,9 @@
 import { Service } from '@deepseek-ai/cordis';
 
+import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import HgContextBridge from '../hg-context-bridge/service.mjs';
 import HgTraceEmitter from '../hg-trace-emitter/service.mjs';
+import { runCharacterInferenceSlice } from './character-inference-slice.mjs';
 import { runCharacterPhase } from './character-phase.mjs';
 import { runDirectorPhase } from './director-phase.mjs';
 import { createInferenceSubstrate } from './inference-substrate.mjs';
@@ -46,6 +48,19 @@ export default class HgPhaseExecutors extends Service {
     return runNarratorPhase({
       ...this._phaseDeps(),
       ...params,
+    });
+  }
+
+  runCharacterInference(options) {
+    const api = createDomainApiClient(
+      options.domainApi?.baseUrl ?? this.config.domainApi?.baseUrl,
+    );
+    return runCharacterInferenceSlice({
+      ctx: this.ctx,
+      trace: this.ctx.hgTraceEmitter,
+      runEphemeralInference: this.runEphemeralInference.bind(this),
+      api,
+      options,
     });
   }
 

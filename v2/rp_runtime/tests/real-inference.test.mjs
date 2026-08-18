@@ -48,12 +48,12 @@ test('real DeepSeek inference: DSH provider boundary with trace evidence', {
     await once(proc, 'exit');
   });
 
-  const { runtime } = await createHolyGrailRpContext({
+  const { phaseExecutors } = await createHolyGrailRpContext({
     domainApi: { baseUrl },
     inference: { mountDeepSeek: true },
   });
 
-  const result = await runtime.runCharacterInference({
+  const result = await phaseExecutors.runCharacterInference({
     domainApi: { baseUrl },
     characterId: 'Alice',
     modelProfile: deepseekInferenceProfile({

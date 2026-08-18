@@ -89,12 +89,12 @@ test('two-character round: director sequences Alice then Bob with per-turn narra
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_ALICE),

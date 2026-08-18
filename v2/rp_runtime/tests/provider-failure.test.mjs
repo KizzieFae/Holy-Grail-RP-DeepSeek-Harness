@@ -44,7 +44,7 @@ test('provider failure: missing credential does not mutate domain state', async 
     await once(proc, 'exit');
   });
 
-  const { runtime } = await createHolyGrailRpContext({
+  const { phaseExecutors } = await createHolyGrailRpContext({
     domainApi: { baseUrl },
     inference: {
       mountDeepSeek: true,
@@ -61,7 +61,7 @@ test('provider failure: missing credential does not mutate domain state', async 
     .then((res) => res.json());
   const turnBefore = Number(before.turn_counter ?? 0);
 
-  const result = await runtime.runCharacterInference({
+  const result = await phaseExecutors.runCharacterInference({
     domainApi: { baseUrl },
     hgSceneId: created.hg_scene_id,
     characterId: 'Alice',

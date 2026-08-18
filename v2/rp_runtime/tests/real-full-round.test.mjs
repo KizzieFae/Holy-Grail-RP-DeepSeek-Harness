@@ -57,7 +57,7 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({
+  const { ctx, orchestrator } = await createHolyGrailRpContext({
     domainApi: { baseUrl },
     inference: { mountDeepSeek: true },
   });
@@ -65,7 +65,7 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     roleProfiles: {

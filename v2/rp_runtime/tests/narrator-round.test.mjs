@@ -69,12 +69,12 @@ test('three-role round: director → character → commit → narrator', async (
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
@@ -110,12 +110,12 @@ test('three-role round: commit failure skips narrator', async (t) => {
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
@@ -143,12 +143,12 @@ test('narrator failure after commit preserves canon', async (t) => {
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],

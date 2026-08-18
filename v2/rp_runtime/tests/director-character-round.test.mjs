@@ -63,12 +63,12 @@ test('director-character round: full orchestration with correlation', async (t) 
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
@@ -111,12 +111,12 @@ test('director-character round: director rejection does not commit', async (t) =
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     mockDirectorResponses: [JSON.stringify({ next_actor: 'Zelda', end_round: false, reason: 'x' })],
     mockCharacterResponses: [JSON.stringify(VALID_MOVE)],
@@ -136,12 +136,12 @@ test('director-character round: records boundary call metrics', async (t) => {
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],

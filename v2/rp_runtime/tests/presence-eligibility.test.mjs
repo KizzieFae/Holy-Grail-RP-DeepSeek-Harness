@@ -68,12 +68,12 @@ test('presence: off_focal commit narrows later eligibility to remaining present 
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [
@@ -105,12 +105,12 @@ test('presence: director cannot select offstage actor after presence mutation', 
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [

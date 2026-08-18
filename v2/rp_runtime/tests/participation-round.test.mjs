@@ -58,12 +58,12 @@ test('participation: forced designation selects Alice without Director inference
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     forcedDesignation: 'Alice',
@@ -89,12 +89,12 @@ test('participation: ineligible forced designation falls back to Director', asyn
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob'] },
     forcedDesignation: 'Carol',
@@ -117,12 +117,12 @@ test('participation: forced designation consumed only once per round invocation'
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob'] },
     forcedDesignation: 'Alice',

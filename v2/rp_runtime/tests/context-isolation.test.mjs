@@ -92,7 +92,7 @@ test('context isolation: separate inference sessions remain distinct identities'
   });
 
   const { createHolyGrailRpContext } = await import('../src/bootstrap.mjs');
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
@@ -111,7 +111,7 @@ test('context isolation: separate inference sessions remain distinct identities'
     semantic_evaluation: { decision: 'no_covered_change' },
   };
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],

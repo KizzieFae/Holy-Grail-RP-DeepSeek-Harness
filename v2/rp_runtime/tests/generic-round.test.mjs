@@ -66,12 +66,12 @@ test('generic round: director end_round completes without further character turn
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [JSON.stringify(DIRECTOR_END)],
@@ -91,12 +91,12 @@ test('generic round: actor exhaustion completes without extra director call', as
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(DIRECTOR_FOR('Alice'))],
@@ -117,12 +117,12 @@ test('generic round: defensive turn ceiling is distinct from semantic completion
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast: ['Alice', 'Bob', 'Carol'] },
     defensiveTurnCeiling: 1,
@@ -146,13 +146,13 @@ test('generic round: three-character cast executes until actor exhaustion', asyn
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
   const cast = ['Alice', 'Bob', 'Carol'];
-  const result = await runtime.runRound({
+  const result = await orchestrator.runRound({
     domainApi: { baseUrl },
     createScene: { cast },
     mockDirectorResponses: cast.map((name) => JSON.stringify(DIRECTOR_FOR(name))),

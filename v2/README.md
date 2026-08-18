@@ -8,7 +8,7 @@ Narrow vertical slice proving the agreed Python↔DSH architecture boundary.
 |------|------|
 | `domain_api/` | Transport-neutral Domain API contract + authoritative Python kernel |
 | `domain_api/http_transport.py` | **Prototype-only** HTTP localhost transport |
-| `rp_runtime/src/plugins/hg-rp-runtime/` | **Holy Grail RP Cordis runtime service** (orchestration) |
+| `rp_runtime/src/plugins/hg-round-orchestrator/` | **HgRoundOrchestrator** Cordis service (round lifecycle) |
 | `rp_runtime/src/lib/` | Shared inference utilities and Domain API client |
 | `dsh-pins.toml` | Explicit pinned DSH/Cordis versions |
 | `tests/` | Python authority/traceability tests |

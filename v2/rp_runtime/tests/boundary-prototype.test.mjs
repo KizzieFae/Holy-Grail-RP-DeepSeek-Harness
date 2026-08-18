@@ -77,12 +77,12 @@ test('boundary prototype: reject then commit with correlated hg events', async (
     await once(proc, 'exit');
   });
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, phaseExecutors } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runCharacterInference({
+  const result = await phaseExecutors.runCharacterInference({
     domainApi: { baseUrl },
     mockResponses: [JSON.stringify(INVALID_MOVE), JSON.stringify(VALID_MOVE)],
   });
@@ -115,12 +115,12 @@ test('boundary prototype: DSH-only proposal does not commit', async (t) => {
   const created = await createRes.json();
   const hgSceneId = created.hg_scene_id;
 
-  const { ctx, runtime } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  const { ctx, phaseExecutors } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
     await ctx.fiber.dispose();
   });
 
-  const result = await runtime.runCharacterInference({
+  const result = await phaseExecutors.runCharacterInference({
     domainApi: { baseUrl },
     hgSceneId,
     mockResponses: [JSON.stringify(INVALID_MOVE)],

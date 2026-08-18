@@ -1,12 +1,8 @@
 import { Service } from '@deepseek-ai/cordis';
-import AgentLoop from '@deepseek-ai/dsh-agent-loop';
-import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
-import HgContextBridge from '../hg-context-bridge/service.mjs';
-import HgPhaseExecutors, { roleForCharacter } from '../hg-phase-executors/index.mjs';
-import HgTraceEmitter from '../hg-trace-emitter/service.mjs';
+import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
 import {
   agentOptionsFromProfile,
   mockInferenceProfile,
@@ -17,81 +13,23 @@ import {
   LIVE_DIRECTOR_PROMPT,
   LIVE_NARRATOR_PROMPT,
 } from '../../lib/live-inference-prompts.mjs';
-import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import {
+  classifyRoundCompletion,
+  eligibilityTrace,
+  participationDirectorDecision,
+  participationTrace,
+} from './round-helpers.mjs';
 
-function classifyRoundCompletion(completionReason) {
-  if (completionReason === 'director_end_round' || completionReason === 'no_eligible_actors') {
-    return { completion_status: 'completed', completion_class: 'semantic' };
-  }
-  if (completionReason === 'defensive_turn_ceiling') {
-    return { completion_status: 'completed', completion_class: 'defensive' };
-  }
-  return { completion_status: 'aborted', completion_class: 'failure' };
-}
-
-function eligibilityTrace(eligibility) {
-  return {
-    eligibility_snapshot_id: eligibility.eligibility_snapshot_id ?? null,
-    eligible_actors: eligibility.eligible_actors ?? [],
-    actors_used_this_round: eligibility.actors_used_this_round ?? [],
-    present_characters: eligibility.present_characters ?? [],
-    offstage_characters: eligibility.offstage_characters ?? [],
-    absent_but_relevant: eligibility.absent_but_relevant ?? [],
-    actors: eligibility.actors ?? [],
-  };
-}
-
-function participationTrace(participation) {
-  return {
-    eligibility_snapshot_id: participation.eligibility_snapshot_id ?? null,
-    selection_mode: participation.selection_mode ?? null,
-    selected_actor: participation.selected_actor ?? null,
-    director_required: Boolean(participation.director_required),
-    director_constraint_actor: participation.director_constraint_actor ?? null,
-    participation_sources: participation.participation_sources ?? [],
-    reason: participation.reason ?? '',
-    forced_designation_ignored: Boolean(participation.forced_designation_ignored),
-    forced_designation_ignore_reason: participation.forced_designation_ignore_reason ?? null,
-    continuation_c2_skip: Boolean(participation.continuation_c2_skip),
-  };
-}
-
-function syntheticDirectorDecision(characterId, reason) {
-  return {
-    next_actor: characterId,
-    end_round: false,
-    reason: reason ?? `Participation policy selected ${characterId}.`,
-    environment_event: '',
-    tension_shift: '',
-    source: 'participation_policy',
-  };
-}
-
-export default class HolyGrailRpRuntime extends Service {
-  static name = 'hgRpRuntime';
+/**
+ * Round lifecycle orchestrator: eligibility, participation, phase sequencing,
+ * completion classification, and application-facing round results.
+ */
+export default class HgRoundOrchestrator extends Service {
+  static name = 'hgRoundOrchestrator';
 
   constructor(ctx, config = {}) {
-    super(ctx, HolyGrailRpRuntime.name);
+    super(ctx, HgRoundOrchestrator.name);
     this.config = config;
-  }
-
-  async mountStack(options) {
-    if (!this.ctx.hgContextBridge) {
-      new HgContextBridge(this.ctx);
-    }
-    HgTraceEmitter.ensure(this.ctx);
-    HgPhaseExecutors.ensure(this.ctx, this.config);
-    await mountAgentLoopTestDependencies(this.ctx, {
-      systemPrompt: { persona: options.persona ?? 'Holy Grail RP runtime.' },
-    });
-    if (options.inference?.mountDeepSeek || this.config.inference?.mountDeepSeek) {
-      const { mountDeepSeekProvider } = await import('../../lib/mount-deepseek-provider.mjs');
-      await mountDeepSeekProvider(this.ctx, {
-        ...this.config.inference?.deepseek,
-        ...options.inference?.deepseek,
-      });
-    }
-    await this.ctx.plugin(AgentLoop, { agents: [] });
   }
 
   _domainClient(baseUrl) {
@@ -213,7 +151,7 @@ export default class HolyGrailRpRuntime extends Service {
         directorPhase = {
           accepted: true,
           endRound: false,
-          directorDecision: syntheticDirectorDecision(
+          directorDecision: participationDirectorDecision(
             participation.selected_actor,
             participation.reason,
           ),
@@ -386,194 +324,6 @@ export default class HolyGrailRpRuntime extends Service {
         character: roleTimings.character_ms,
         narrator: roleTimings.narrator_ms,
       },
-    };
-  }
-
-  async runCharacterInference(options) {
-    const api = this._domainClient(options.domainApi?.baseUrl);
-    const phaseExecutors = this.ctx.hgPhaseExecutors;
-    const trace = this.ctx.hgTraceEmitter;
-    const characterId = options.characterId ?? 'Alice';
-    const role = options.role ?? 'guest';
-    const inferenceId = options.inferenceId ?? `inf-char-${crypto.randomUUID()}`;
-
-    let hgSceneId = options.hgSceneId;
-    let hgRoundId = options.hgRoundId;
-    if (!hgSceneId) {
-      const created = await api.createScene({ cast: ['Alice', 'Bob'] });
-      hgSceneId = String(created.hg_scene_id);
-    }
-    if (!hgRoundId) {
-      const round = await api.startRound({ hg_scene_id: hgSceneId });
-      hgRoundId = String(round.hg_round_id);
-    }
-
-    const beforeState = await api.getSceneState(hgSceneId);
-    const expectedTurnIndex = Number(beforeState.turn_counter ?? 0);
-    const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
-    const sceneAgent = this.ctx.agentLoop.create(
-      sceneSessionId,
-      agentOptionsFromProfile(mockInferenceProfile()),
-    );
-    const scope = { hgSceneId, hgRoundId, sceneSessionId };
-
-    const directorDecision = options.directorDecision ?? {
-      next_actor: characterId,
-      end_round: false,
-      reason: 'character-only slice',
-      environment_event: '',
-      tension_shift: '',
-    };
-
-    let attemptIndex = 0;
-    let committed = false;
-    let continuityTurnIndex = null;
-    let domainCommitId = null;
-    let manifestId = '';
-    let inferenceTrace = null;
-    let providerFailure = null;
-    const mockResponses = options.mockResponses ?? [];
-    const modelProfile = options.modelProfile ?? options.model_profile ?? null;
-    const maxAttempts = mockResponses.length > 0 ? mockResponses.length : 1;
-
-    while (attemptIndex < maxAttempts && !committed) {
-      const manifest = await api.prepareCharacterContext({
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        inference_id: inferenceId,
-        character_id: characterId,
-        role,
-        turn_index: expectedTurnIndex,
-        attempt_index: attemptIndex,
-      });
-      manifestId = String(manifest.manifest_id);
-
-      const inferenceRun = await phaseExecutors.runEphemeralInference({
-        inferenceId: `${inferenceId}-${attemptIndex}`,
-        prompt: options.prompt ?? (
-          'Respond with a single JSON object only (no markdown). '
-          + 'Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."}],'
-          + '"motivation":{"goal":"...","tactic":"...","emotional_driver":"...","risk_level":"low"},'
-          + '"semantic_evaluation":{"decision":"no_covered_change"}}'
-        ),
-        manifest,
-        mockResponses: mockResponses.length ? [mockResponses[attemptIndex]] : [],
-        modelProfile,
-      });
-      inferenceTrace = inferenceRun.trace;
-
-      if (inferenceRun.failed) {
-        providerFailure = inferenceRun.failure;
-        trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
-          inference_id: inferenceId,
-          role: 'character',
-          character_id: characterId,
-          attempt_index: attemptIndex,
-          manifest_id: manifestId,
-          provider: inferenceTrace?.provider ?? null,
-          model: inferenceTrace?.model ?? null,
-          failure: providerFailure,
-          inference_trace: inferenceTrace,
-        });
-        break;
-      }
-
-      const { raw } = inferenceRun;
-
-      let proposed;
-      try {
-        proposed = parseJsonObject(raw);
-      } catch (error) {
-        proposed = { parse_error: String(error) };
-      }
-
-      trace.emit(sceneAgent.session, 'hg/move-proposed', scope, {
-        inference_id: inferenceId,
-        role: 'character',
-        character_id: characterId,
-        attempt_index: attemptIndex,
-        manifest_id: manifestId,
-        proposed_move: proposed,
-        raw_model_output: raw,
-      });
-
-      const validation = await api.validateMove({
-        inference_id: inferenceId,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        character_id: characterId,
-        role,
-        turn_index: expectedTurnIndex,
-        attempt_index: attemptIndex,
-        proposed_move: proposed,
-        raw_model_output: raw,
-      });
-
-      if (!validation.accepted) {
-        trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
-          inference_id: inferenceId,
-          role: 'character',
-          character_id: characterId,
-          attempt_index: attemptIndex,
-          validation_class: String(validation.validation_class ?? 'unknown'),
-          reason: String(validation.reason ?? ''),
-          retryable: Boolean(validation.retryable),
-        });
-        attemptIndex += 1;
-        continue;
-      }
-
-      const commit = await api.commitMove({
-        inference_id: inferenceId,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        character_id: characterId,
-        validated_move: validation.normalized_move ?? proposed,
-        director_decision: directorDecision,
-        expected_turn_index: expectedTurnIndex,
-      });
-
-      if (!commit.committed) {
-        trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
-          inference_id: inferenceId,
-          role: 'character',
-          character_id: characterId,
-          attempt_index: attemptIndex,
-          validation_class: 'continuity_anchor',
-          reason: String(commit.reason ?? 'commit rejected'),
-          retryable: false,
-        });
-        attemptIndex += 1;
-        continue;
-      }
-
-      committed = true;
-      continuityTurnIndex = Number(commit.continuity_turn_index);
-      domainCommitId = String(commit.domain_commit_id ?? '');
-      trace.emit(sceneAgent.session, 'hg/move-committed', scope, {
-        inference_id: inferenceId,
-        role: 'character',
-        character_id: characterId,
-        attempt_index: attemptIndex,
-        manifest_id: manifestId,
-        continuity_turn_index: continuityTurnIndex,
-        domain_commit_id: domainCommitId,
-      });
-    }
-
-    return {
-      committed,
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      inference_id: inferenceId,
-      character_id: characterId,
-      dsh_scene_session_id: String(sceneSessionId),
-      continuity_turn_index: continuityTurnIndex,
-      domain_commit_id: domainCommitId,
-      inference_trace: inferenceTrace,
-      provider_failure: providerFailure,
-      scene_events: [...sceneAgent.session.events],
-      boundary_metrics: api.metrics,
     };
   }
 }
