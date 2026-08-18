@@ -242,7 +242,12 @@ The Node supervisor model is the correct production entrypoint. Health identity 
 
 ## 16. Repository state
 
-(Updated after commit/push)
+| Field | Value |
+|-------|-------|
+| Commit | `0703fe3` — `feat(v2): M6 supervised runtime startup` |
+| Branch | `main` |
+| `origin/main` | aligned after push |
+| Working tree | clean |
 
 ---
 
