@@ -35,6 +35,7 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-participation-decision.md` | **V2 ParticipationDecision implementation** (participation policy seam) |
 | `rp-app/v2-real-deepseek-provider.md` | **V2 real DeepSeek provider integration** (DSH production inference substrate) |
 | `rp-app/v2-real-full-round.md` | **V2 real full-round validation** (Director → Character → commit → Narrator on live DSH) |
+| `rp-app/v2-mature-plugin-architecture.md` | **V2 mature plugin/service architecture investigation** (design only) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
 | `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
 
