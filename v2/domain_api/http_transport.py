@@ -199,13 +199,6 @@ class DomainApiHandler(BaseHTTPRequestHandler):
             except KeyError:
                 self._send_json(404, {"error": "unknown session"})
             return
-        if path.startswith("/v1/scenes/") and path.endswith("/state"):
-            hg_scene_id = path.removeprefix("/v1/scenes/").removesuffix("/state")
-            try:
-                self._send_json(200, self.kernel.scene_snapshot(hg_scene_id))
-            except KeyError:
-                self._send_json(404, {"error": "unknown scene"})
-            return
         self._send_json(404, {"error": "not found"})
 
 

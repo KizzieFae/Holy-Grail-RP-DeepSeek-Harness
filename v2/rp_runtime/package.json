@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node bin/hg-runtime.mjs",
+    "app": "node bin/hg-app.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {
