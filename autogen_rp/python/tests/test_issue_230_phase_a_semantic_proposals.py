@@ -137,7 +137,7 @@ def test_process_turn_wrong_scope_proposal_rejects() -> None:
         )
 
 
-@patch("legacy.v1_autogen_agents.AssistantAgent")
+@patch("v1_autogen_agents.AssistantAgent")
 def test_character_loader_system_prompt_teaches_semantic_evaluation_not_illegal_roots(
     mock_agent_cls: MagicMock,
 ) -> None:

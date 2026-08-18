@@ -4,13 +4,17 @@ import os
 import sys
 from pathlib import Path
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from legacy.v1_orchestration.bootstrap import ensure_v1_orchestration_paths
+
+ensure_v1_orchestration_paths()
+
 _TESTS_DIR = Path(__file__).resolve().parent
 if str(_TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(_TESTS_DIR))
-
-_RP_APP_DIR = Path(__file__).resolve().parent.parent / "rp_app"
-if str(_RP_APP_DIR) not in sys.path:
-    sys.path.insert(0, str(_RP_APP_DIR))
 
 import pytest
 

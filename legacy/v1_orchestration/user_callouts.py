@@ -16,13 +16,14 @@ from pathlib import Path
 from typing import Any
 
 from audit_logger_paths import get_session_path
+from legacy.v1_orchestration.paths import autogen_python_dir
 
 USER_CALLOUTS_SCHEMA = "user_callouts.v1"
 USER_CALLOUTS_SCHEMA_VERSION = 1
 USER_CALLOUTS_FILENAME = "user_callouts_v1.json"
 
-# Paths in ``artifact_refs`` are relative to ``autogen_rp/python/`` (parent of ``rp_app``).
-_PATH_ANCHOR: Path = Path(__file__).resolve().parent.parent
+# Paths in ``artifact_refs`` are relative to ``autogen_rp/python/``.
+_PATH_ANCHOR: Path = autogen_python_dir()
 
 
 class UserCalloutDocumentError(ValueError):

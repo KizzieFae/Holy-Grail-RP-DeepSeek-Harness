@@ -25,7 +25,9 @@ ISSUE_LINKS_SCHEMA = "user_callout_issue_links.v1"
 ISSUE_LINKS_SCHEMA_VERSION = 1
 ISSUE_LINKS_FILENAME = "_user_callout_issue_links_v1.json"
 
-PATH_ANCHOR = Path(__file__).resolve().parent.parent
+from legacy.v1_orchestration.paths import autogen_python_dir
+
+PATH_ANCHOR = autogen_python_dir()
 
 ReviewDisposition = Literal["unreviewed", "dismissed"]
 

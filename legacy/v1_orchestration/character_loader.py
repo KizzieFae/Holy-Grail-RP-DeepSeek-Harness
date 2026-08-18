@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 _V2 = _REPO_ROOT / "v2"
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -27,7 +27,7 @@ class CharacterLoader(CharacterCardLoader):
     """V1 loader: neutral card I/O plus legacy AutoGen agent construction."""
 
     def create_agent(self, character_card: dict[str, Any], model_client: Any) -> tuple[Any, Any]:
-        from legacy.v1_autogen_agents import create_character_agent
+        from v1_autogen_agents import create_character_agent
 
         return create_character_agent(character_card, model_client)
 

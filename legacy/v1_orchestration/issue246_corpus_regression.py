@@ -18,7 +18,7 @@ ISSUE246_CORPUS_SCHEMA: Final[str] = "issue246_adjudication_corpus_v1"
 ISSUE246_BASELINE_SCHEMA: Final[str] = "issue246_adjudication_baseline_v1"
 ISSUE246_REPORT_SCHEMA: Final[str] = "issue246_adjudication_regression_report_v1"
 
-_DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+_DATA_ROOT = Path(__file__).resolve().parent / "data"
 _DEFAULT_CORPUS = _DATA_ROOT / "issue227" / "adjudication_corpus_cohesion_v1.json"
 _DEFAULT_BASELINES_DIR = _DATA_ROOT / "evaluation" / "issue246_regression_baselines"
 

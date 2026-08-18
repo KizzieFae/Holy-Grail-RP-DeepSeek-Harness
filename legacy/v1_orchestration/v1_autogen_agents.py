@@ -4,15 +4,11 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_RP_APP = _REPO_ROOT / "autogen_rp" / "python" / "rp_app"
-_V2 = _REPO_ROOT / "v2"
-for path in (_RP_APP, _V2):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+from legacy.v1_orchestration.bootstrap import ensure_v1_orchestration_paths
+
+ensure_v1_orchestration_paths()
 
 from autogen_agentchat.agents import AssistantAgent  # noqa: E402
 from autogen_core.model_context import BufferedChatCompletionContext  # noqa: E402

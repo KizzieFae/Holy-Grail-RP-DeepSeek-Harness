@@ -31,7 +31,7 @@ KNOWN_CORPUS_SCHEMAS: Final[frozenset[str]] = frozenset(
     }
 )
 
-_DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+_DATA_ROOT = Path(__file__).resolve().parent / "data"
 _DEFAULT_BASELINES_DIR = _DATA_ROOT / "evaluation" / "issue243_regression_baselines"
 _DEFAULT_ISSUE240_DIR = _DATA_ROOT / "issue240"
 
