@@ -1,5 +1,12 @@
 import { detectForcedSpeaker } from './detect-forced-speaker.mjs';
-import { deepseekInferenceProfile, mockInferenceProfile, agentOptionsFromProfile } from '../lib/inference-profile.mjs';
+import {
+  buildInferenceOptions,
+  defaultRuntimeSettings,
+  settingsView,
+  validateRuntimeSettings,
+  validateSessionSetup,
+} from './application-settings.mjs';
+import { agentOptionsFromProfile, mockInferenceProfile } from '../lib/inference-profile.mjs';
 import { HolyGrailRuntimeSupervisor } from '../runtime-supervisor/supervisor.mjs';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
@@ -44,6 +51,10 @@ export class HolyGrailApplicationClient {
     this.characterFileIds = {};
     this.setupProvenance = null;
     this.memoryScopeId = null;
+    this.userPersonaId = 'Player';
+    this.runtimeSettings = defaultRuntimeSettings({
+      inferenceMode: options.inferenceMode,
+    });
     this.transcript = [];
     this.lastSpeaker = null;
     this.status = 'idle';
@@ -91,6 +102,10 @@ export class HolyGrailApplicationClient {
 
   async createSession(input = {}) {
     this._requireReady();
+    const validation = validateSessionSetup(input);
+    if (!validation.valid) {
+      throw new Error(validation.errors.join('; '));
+    }
     const api = this.orchestrator._domainClient();
     const body = {};
     if (input.characters?.length) {
@@ -110,6 +125,13 @@ export class HolyGrailApplicationClient {
     }
     if (input.memoryScopeId ?? input.memory_scope_id) {
       body.memory_scope_id = input.memoryScopeId ?? input.memory_scope_id;
+    }
+    if (input.playerCharacterFileId ?? input.player_character_file_id) {
+      body.player_character_file_id =
+        input.playerCharacterFileId ?? input.player_character_file_id;
+    }
+    if (input.userPersonaId ?? input.user_persona_id) {
+      body.user_persona_id = input.userPersonaId ?? input.user_persona_id;
     }
     const created = await api.createSession(body);
     this._applySessionPayload(created);
@@ -131,6 +153,32 @@ export class HolyGrailApplicationClient {
     this._applySessionPayload(opened);
     await this._refreshTranscript();
     return this._sessionView(opened);
+  }
+
+  getRuntimeSettings() {
+    return { ...this.runtimeSettings };
+  }
+
+  updateRuntimeSettings(patch = {}) {
+    const merged = { ...this.runtimeSettings, ...patch };
+    const validation = validateRuntimeSettings(merged);
+    if (!validation.valid) {
+      throw new Error(validation.errors.join('; '));
+    }
+    this.runtimeSettings = merged;
+    return this.getRuntimeSettings();
+  }
+
+  getSettingsView() {
+    return settingsView(this.runtimeSettings);
+  }
+
+  validateSessionSetup(input = {}) {
+    return validateSessionSetup(input);
+  }
+
+  validateRuntimeSettings(input = {}) {
+    return validateRuntimeSettings(input);
   }
 
   async listCharacters() {
@@ -195,7 +243,7 @@ export class HolyGrailApplicationClient {
     await api.recordUserTurn({
       hg_session_id: this.activeSessionId,
       content: userMessage,
-      speaker: input.userName ?? 'Player',
+      speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
       forced_designation: forcedDesignation,
     });
 
@@ -257,6 +305,7 @@ export class HolyGrailApplicationClient {
     this.characterFileIds = { ...(payload.character_file_ids ?? {}) };
     this.setupProvenance = payload.setup_provenance ?? null;
     this.memoryScopeId = payload.memory_scope_id ?? null;
+    this.userPersonaId = this.setupProvenance?.user_persona_id ?? 'Player';
   }
 
   _requireReady() {
@@ -337,10 +386,14 @@ export class HolyGrailApplicationClient {
       agentOptionsFromProfile(mockInferenceProfile()),
     );
 
+    const inference = buildInferenceOptions(
+      { ...this.runtimeSettings, ...input },
+      { inferenceMode: this.options.inferenceMode },
+    );
     const modelProfile =
       input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
         ? mockInferenceProfile()
-        : deepseekInferenceProfile({ reasoningEffort: 'off', maxTokens: 512 });
+        : inference.roleProfiles.opening;
 
     const openingResult = await phaseExecutors.runOpening({
       api,
@@ -379,18 +432,23 @@ export class HolyGrailApplicationClient {
       };
     }
 
-    if (input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock') {
+    const inference = buildInferenceOptions(
+      { ...this.runtimeSettings, ...input },
+      { inferenceMode: this.options.inferenceMode ?? input.inferenceMode },
+    );
+
+    if (inference.inferenceMode === 'mock') {
       return {
         mockDirectorResponses: input.mockDirectorResponses ?? [
           JSON.stringify({
-            next_actor: this.activeCast[0] ?? 'Alice',
+            next_actor: this._firstAiActor(),
             end_round: false,
             reason: 'Character should respond.',
             environment_event: '',
             tension_shift: '',
           }),
           JSON.stringify({
-            next_actor: this.activeCast[0] ?? 'Alice',
+            next_actor: this._firstAiActor(),
             end_round: true,
             reason: 'Round complete.',
             environment_event: '',
@@ -415,18 +473,16 @@ export class HolyGrailApplicationClient {
       };
     }
 
-    const liveProfile = deepseekInferenceProfile({
-      reasoningEffort: input.reasoningEffort ?? 'low',
-      maxTokens: input.maxTokens ?? 768,
-    });
     return {
-      roleProfiles: input.roleProfiles ?? {
-        director: liveProfile,
-        character: liveProfile,
-        narrator: deepseekInferenceProfile({ reasoningEffort: 'off', maxTokens: 384 }),
-      },
-      liveMaxAttempts: input.liveMaxAttempts ?? 5,
+      roleProfiles: inference.roleProfiles,
+      liveMaxAttempts: inference.liveMaxAttempts,
     };
+  }
+
+  _firstAiActor() {
+    const controlModes = this.setupProvenance?.control_modes ?? {};
+    const aiActor = this.activeCast.find((name) => controlModes[name] !== 'player');
+    return aiActor ?? this.activeCast[0] ?? 'Alice';
   }
 }
 

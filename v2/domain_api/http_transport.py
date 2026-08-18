@@ -77,6 +77,8 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     location=str(data.get("location", "Workshop")),
                     hg_session_id=data.get("hg_session_id"),
                     memory_scope_id=data.get("memory_scope_id"),
+                    player_character_file_id=data.get("player_character_file_id"),
+                    user_persona_id=data.get("user_persona_id"),
                 )
                 self._send_json(
                     201,
@@ -89,6 +91,8 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         location=req.location,
                         hg_session_id=req.hg_session_id,
                         memory_scope_id=req.memory_scope_id,
+                        player_character_file_id=req.player_character_file_id,
+                        user_persona_id=req.user_persona_id,
                     ),
                 )
                 return

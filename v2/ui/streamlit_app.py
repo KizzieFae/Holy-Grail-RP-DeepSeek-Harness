@@ -48,6 +48,14 @@ def init_state() -> None:
         st.session_state.memory_scope_id = None
     if "template_openers" not in st.session_state:
         st.session_state.template_openers = []
+    if "user_persona_id" not in st.session_state:
+        st.session_state.user_persona_id = "Player"
+    if "player_character_file_id" not in st.session_state:
+        st.session_state.player_character_file_id = None
+    if "reasoning_effort" not in st.session_state:
+        st.session_state.reasoning_effort = "low"
+    if "role_routing" not in st.session_state:
+        st.session_state.role_routing = "simple"
 
 
 def refresh_status() -> None:
@@ -76,11 +84,35 @@ def load_catalogs() -> None:
         pass
 
 
+def load_runtime_settings() -> None:
+    try:
+        payload = api_request("GET", "/api/settings/runtime")
+        runtime = payload.get("runtime", {})
+        if runtime.get("reasoningEffort"):
+            st.session_state.reasoning_effort = runtime["reasoningEffort"]
+        if runtime.get("roleRouting"):
+            st.session_state.role_routing = runtime["roleRouting"]
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def save_runtime_settings() -> None:
+    api_request(
+        "PUT",
+        "/api/settings/runtime",
+        {
+            "reasoningEffort": st.session_state.reasoning_effort,
+            "roleRouting": st.session_state.role_routing,
+        },
+    )
+
+
 def render_sidebar() -> None:
     st.sidebar.header("Holy Grail V2")
     st.sidebar.caption(f"API: {API_BASE}")
 
     load_catalogs()
+    load_runtime_settings()
     characters = st.session_state.character_catalog
     templates = st.session_state.template_catalog
 
@@ -98,6 +130,37 @@ def render_sidebar() -> None:
         st.sidebar.warning("Character catalog unavailable — using prototype cast.")
         selected_ids = []
 
+    st.sidebar.subheader("Player identity")
+    st.session_state.user_persona_id = st.sidebar.text_input(
+        "Your display name",
+        st.session_state.user_persona_id,
+        help="Stable user persona label for transcript and memory attribution.",
+    )
+    player_options = ["(external user)"] + selected_ids
+    player_labels = {
+        "(external user)": "External user (not a cast character)",
+        **{
+            cid: labels[cid] if characters else cid
+            for cid in selected_ids
+        },
+    }
+    player_choice = st.sidebar.selectbox(
+        "Play as",
+        options=player_options,
+        format_func=lambda cid: player_labels.get(cid, cid),
+        index=0
+        if not st.session_state.player_character_file_id
+        else (
+            player_options.index(st.session_state.player_character_file_id)
+            if st.session_state.player_character_file_id in player_options
+            else 0
+        ),
+    )
+    st.session_state.player_character_file_id = (
+        None if player_choice == "(external user)" else player_choice
+    )
+
+    st.sidebar.subheader("Session setup")
     template_id = None
     template_meta = None
     if templates:
@@ -162,10 +225,31 @@ def render_sidebar() -> None:
         custom_opening = st.sidebar.text_area("Custom opening text", height=80)
 
     memory_scope_input = st.sidebar.text_input(
-        "Memory scope (optional — leave blank for new isolated scope)",
+        "Continuity scope ID (optional)",
         "",
-        help="Reuse an existing memory_scope_id to share cross-session relationship memory.",
+        help="Reuse an existing memory_scope_id for shared world continuity across sessions.",
     )
+
+    st.sidebar.subheader("Model settings")
+    st.session_state.reasoning_effort = st.sidebar.selectbox(
+        "Reasoning level",
+        options=["off", "low", "high", "max"],
+        index=["off", "low", "high", "max"].index(st.session_state.reasoning_effort),
+        help="Applies to Director and Character inference. Narrator stays off for latency.",
+    )
+    with st.sidebar.expander("Advanced model routing"):
+        st.session_state.role_routing = st.radio(
+            "Role routing",
+            options=["simple", "advanced"],
+            index=0 if st.session_state.role_routing == "simple" else 1,
+            help="Simple uses one model for Director/Character. Advanced enables per-role overrides via API.",
+        )
+    if st.sidebar.button("Apply model settings"):
+        try:
+            save_runtime_settings()
+            st.sidebar.success("Model settings updated for subsequent turns.")
+        except Exception as exc:  # noqa: BLE001
+            st.sidebar.error(str(exc))
 
     if st.sidebar.button("Create session"):
         if selected_ids:
@@ -196,12 +280,25 @@ def render_sidebar() -> None:
             payload = {"cast": [name.strip() for name in cast_input.split(",") if name.strip()]}
         if memory_scope_input.strip():
             payload["memory_scope_id"] = memory_scope_input.strip()
+        if st.session_state.user_persona_id.strip():
+            payload["user_persona_id"] = st.session_state.user_persona_id.strip()
+        if st.session_state.player_character_file_id:
+            payload["player_character_file_id"] = st.session_state.player_character_file_id
 
+        save_runtime_settings()
         result = api_request("POST", "/api/sessions/create", payload)
         session = result["session"]
         st.session_state.hg_session_id = session["hg_session_id"]
         st.session_state.setup_provenance = session.get("setup_provenance")
         st.session_state.memory_scope_id = session.get("memory_scope_id")
+        if st.session_state.setup_provenance:
+            st.session_state.user_persona_id = (
+                st.session_state.setup_provenance.get("user_persona_id")
+                or st.session_state.user_persona_id
+            )
+            st.session_state.player_character_file_id = (
+                st.session_state.setup_provenance.get("player_character_file_id")
+            )
         st.session_state.transcript = result.get("transcript", [])
         st.sidebar.success(f"Created {st.session_state.hg_session_id}")
 
@@ -218,11 +315,17 @@ def render_sidebar() -> None:
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
 
     if st.session_state.setup_provenance or st.session_state.memory_scope_id:
-        st.sidebar.subheader("Session setup")
+        st.sidebar.subheader("Active session")
         if st.session_state.memory_scope_id:
-            st.sidebar.caption(f"memory_scope_id: {st.session_state.memory_scope_id}")
+            st.sidebar.caption(f"Continuity scope: {st.session_state.memory_scope_id}")
         if st.session_state.setup_provenance:
-            st.sidebar.json(st.session_state.setup_provenance)
+            provenance = st.session_state.setup_provenance
+            if provenance.get("player_character_display_name"):
+                st.sidebar.caption(
+                    f"Player character: {provenance['player_character_display_name']}"
+                )
+            elif provenance.get("user_persona_id"):
+                st.sidebar.caption(f"User persona: {provenance['user_persona_id']}")
 
     if st.session_state.hg_session_id:
         try:
@@ -250,7 +353,14 @@ def render_chat() -> None:
         return
 
     try:
-        result = api_request("POST", "/api/turns/submit", {"userMessage": prompt})
+        result = api_request(
+            "POST",
+            "/api/turns/submit",
+            {
+                "userMessage": prompt,
+                "userName": st.session_state.user_persona_id,
+            },
+        )
         st.session_state.transcript = result.get("transcript", st.session_state.transcript)
         st.rerun()
     except Exception as exc:  # noqa: BLE001

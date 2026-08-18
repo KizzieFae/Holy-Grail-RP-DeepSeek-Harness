@@ -27,6 +27,7 @@ from .cross_scope_memory_repository import CrossScopeMemoryRepository  # noqa: E
 from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
+from .player_identity import resolve_player_display_name  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
     V2_HOST_METADATA_KEY,
@@ -94,6 +95,8 @@ class SessionRepository:
         opening_description: str | None = None,
         characters_dir: str | Path | None = None,
         memory_scope_id: str | None = None,
+        player_character_file_id: str | None = None,
+        user_persona_id: str | None = None,
     ) -> LiveSession:
         if characters:
             session = create_live_session_from_setup(
@@ -105,6 +108,8 @@ class SessionRepository:
                 hg_session_id=hg_session_id,
                 characters_dir=characters_dir,
                 memory_scope_id=memory_scope_id,
+                player_character_file_id=player_character_file_id,
+                user_persona_id=user_persona_id,
             )
         else:
             session = initialize_live_session(
@@ -239,6 +244,15 @@ class SessionRepository:
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
             ),
         }
+        player_file = None
+        player_display = None
+        if session.setup_snapshot:
+            player_file = session.setup_snapshot.get("player_character_file_id")
+            names_by_file = dict(session.setup_snapshot.get("names_by_file") or {})
+            player_display = resolve_player_display_name(
+                player_character_file_id=str(player_file) if player_file else None,
+                names_by_file=names_by_file,
+            )
         return {
             "session_id": session.hg_session_id,
             "team_state": {
@@ -252,7 +266,7 @@ class SessionRepository:
             },
             "characters": list(session.cast),
             "metadata": metadata,
-            "player_character": None,
+            "player_character": player_display,
             "chat_history": [],
         }
 

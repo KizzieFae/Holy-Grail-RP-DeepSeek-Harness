@@ -35,6 +35,11 @@ from scene_template import (  # noqa: E402
 from scene_template_cohesion import resolve_effective_presence_constraint  # noqa: E402
 
 from .memory_scope import resolve_memory_scope_id  # noqa: E402
+from .player_identity import (  # noqa: E402
+    build_control_modes,
+    normalize_user_persona_id,
+    resolve_player_display_name,
+)
 from .session_history import append_history_entry  # noqa: E402
 from .session_state import LiveSession  # noqa: E402
 
@@ -61,6 +66,7 @@ def _resolve_scene_setup(
     character_files: list[str],
     role_assignments_by_file: dict[str, str],
     names_by_file: dict[str, str],
+    player_character_file_id: str | None = None,
 ) -> tuple[dict[str, Any] | None, str]:
     if not template_id:
         return None, ""
@@ -72,6 +78,7 @@ def _resolve_scene_setup(
         template,
         character_files,
         raw_assignments,
+        player_character_file=player_character_file_id,
     )
     if issues:
         return None, "; ".join(issues)
@@ -154,9 +161,18 @@ def create_live_session_from_setup(
     hg_session_id: str | None = None,
     characters_dir: str | Path | None = None,
     memory_scope_id: str | None = None,
+    player_character_file_id: str | None = None,
+    user_persona_id: str | None = None,
 ) -> LiveSession:
     if not character_files:
         raise ValueError("at least one character file id is required")
+
+    resolved_player_file = (
+        str(player_character_file_id).strip() if player_character_file_id else ""
+    ) or None
+    if resolved_player_file and resolved_player_file not in character_files:
+        raise ValueError("player_character_file_id must be one of the selected characters")
+    resolved_persona = normalize_user_persona_id(user_persona_id)
 
     loader = CharacterCardLoader(characters_dir)
     cards: dict[str, dict[str, Any]] = {}
@@ -181,6 +197,7 @@ def create_live_session_from_setup(
         character_files=list(character_files),
         role_assignments_by_file=dict(role_assignments or {}),
         names_by_file=names_by_file,
+        player_character_file_id=resolved_player_file,
     )
     if setup_error:
         raise ValueError(setup_error)
@@ -235,6 +252,14 @@ def create_live_session_from_setup(
         template_snapshot = SceneTemplateManager().load_template(scene_template_id).to_dict()
 
     resolved_scope = resolve_memory_scope_id(memory_scope_id)
+    player_display_name = resolve_player_display_name(
+        player_character_file_id=resolved_player_file,
+        names_by_file=names_by_file,
+    )
+    control_modes = build_control_modes(
+        cast_display_names=list(cast),
+        player_display_name=player_display_name,
+    )
 
     setup_snapshot = {
         "character_files": list(character_files),
@@ -246,6 +271,9 @@ def create_live_session_from_setup(
         "opening": {**(opening or {}), **opening_metadata},
         "location": resolved_location,
         "memory_scope_id": resolved_scope,
+        "player_character_file_id": resolved_player_file,
+        "user_persona_id": resolved_persona,
+        "control_modes": control_modes,
     }
 
     rp_history: list[dict[str, Any]] = []
@@ -278,6 +306,7 @@ def setup_provenance_for_ui(snapshot: dict[str, Any]) -> dict[str, Any]:
     if not snapshot:
         return {}
     names_by_file = dict(snapshot.get("names_by_file") or {})
+    player_file = str(snapshot.get("player_character_file_id") or "").strip() or None
     return {
         "character_ids": list(snapshot.get("character_files") or []),
         "character_display_names": list(names_by_file.values()),
@@ -286,4 +315,11 @@ def setup_provenance_for_ui(snapshot: dict[str, Any]) -> dict[str, Any]:
         "opening": dict(snapshot.get("opening") or {}),
         "location": snapshot.get("location"),
         "memory_scope_id": snapshot.get("memory_scope_id"),
+        "player_character_file_id": player_file,
+        "player_character_display_name": resolve_player_display_name(
+            player_character_file_id=player_file,
+            names_by_file=names_by_file,
+        ),
+        "user_persona_id": normalize_user_persona_id(snapshot.get("user_persona_id")),
+        "control_modes": dict(snapshot.get("control_modes") or {}),
     }

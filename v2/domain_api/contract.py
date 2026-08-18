@@ -252,6 +252,8 @@ class SessionCreateRequest:
     location: str = "Workshop"
     hg_session_id: str | None = None
     memory_scope_id: str | None = None
+    player_character_file_id: str | None = None
+    user_persona_id: str | None = None
 
 
 @dataclass(frozen=True)

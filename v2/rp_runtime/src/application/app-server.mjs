@@ -54,6 +54,25 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
         return sendJson(res, 200, { template_id: templateId, openers });
       }
 
+      if (req.method === 'GET' && path === '/api/settings/defaults') {
+        return sendJson(res, 200, applicationClient.getSettingsView());
+      }
+
+      if (req.method === 'GET' && path === '/api/settings/runtime') {
+        return sendJson(res, 200, { runtime: applicationClient.getRuntimeSettings() });
+      }
+
+      if (req.method === 'PUT' && path === '/api/settings/runtime') {
+        const body = await readJson(req);
+        try {
+          const runtime = applicationClient.updateRuntimeSettings(body);
+          return sendJson(res, 200, { runtime });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
+        }
+      }
+
       if (req.method === 'POST' && path === '/api/sessions/create') {
         const body = await readJson(req);
         const session = await applicationClient.createSession(body);

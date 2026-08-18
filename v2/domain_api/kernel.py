@@ -78,6 +78,7 @@ from .session_repository import (  # noqa: E402
     SessionRepository,
 )
 from .opening_prompt import build_opening_generation_instruction  # noqa: E402
+from .player_identity import is_player_controlled  # noqa: E402
 from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
@@ -408,6 +409,8 @@ class DomainKernel:
             return "absent_but_relevant"
         if presence == "not_present":
             return "not_present"
+        if is_player_controlled(fixture.setup_snapshot, character_id):
+            return "player_controlled"
         return None
 
     def _eligibility_projection(
@@ -428,6 +431,11 @@ class DomainKernel:
             eligible_present,
             offstage,
         )
+        available = [
+            actor
+            for actor in available
+            if not is_player_controlled(fixture.setup_snapshot, actor)
+        ]
         actors: list[EligibleActorEntry] = []
         for character_id in fixture.cast:
             exclusion = self._exclusion_reason(fixture, rnd, character_id)
