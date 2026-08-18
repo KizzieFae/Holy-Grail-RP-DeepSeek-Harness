@@ -57,7 +57,10 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
       if (req.method === 'POST' && path === '/api/sessions/create') {
         const body = await readJson(req);
         const session = await applicationClient.createSession(body);
-        return sendJson(res, 201, { session });
+        return sendJson(res, 201, {
+          session,
+          transcript: applicationClient.getTranscript(),
+        });
       }
 
       if (req.method === 'POST' && path === '/api/sessions/open') {

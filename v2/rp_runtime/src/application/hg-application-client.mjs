@@ -1,6 +1,7 @@
 import { detectForcedSpeaker } from './detect-forced-speaker.mjs';
-import { deepseekInferenceProfile } from '../lib/inference-profile.mjs';
+import { deepseekInferenceProfile, mockInferenceProfile, agentOptionsFromProfile } from '../lib/inference-profile.mjs';
 import { HolyGrailRuntimeSupervisor } from '../runtime-supervisor/supervisor.mjs';
+import { SessionId } from '@deepseek-ai/dsh-session';
 
 const DEFAULT_CAST = ['Alice'];
 
@@ -112,6 +113,13 @@ export class HolyGrailApplicationClient {
     }
     const created = await api.createSession(body);
     this._applySessionPayload(created);
+    const openingMode = String(body.opening?.mode ?? '').toLowerCase();
+    if (openingMode === 'generated') {
+      await this._generateAndPersistOpening({
+        ...input,
+        mockOpeningResponses: input.mockOpeningResponses,
+      });
+    }
     await this._refreshTranscript();
     return this._sessionView(created);
   }
@@ -144,6 +152,12 @@ export class HolyGrailApplicationClient {
     const api = this.orchestrator._domainClient();
     const payload = await api.listTemplateOpeners(templateId);
     return payload.openers ?? [];
+  }
+
+  async generateOpening(input = {}) {
+    this._requireReady();
+    this._requireActiveSession();
+    return this._generateAndPersistOpening(input);
   }
 
   async getSessionState() {
@@ -300,6 +314,61 @@ export class HolyGrailApplicationClient {
     }
   }
 
+  async _generateAndPersistOpening(input = {}) {
+    const api = this.orchestrator._domainClient();
+    const history = await api.getSessionHistory(this.activeSessionId);
+    const hasOpening = (history.entries ?? []).some((entry) => entry.kind === 'opening');
+    if (hasOpening) {
+      return { presentation_rendered: true, skipped: true };
+    }
+
+    const phaseExecutors = this.supervisor.runtime?.phaseExecutors;
+    const trace = this.supervisor.runtime?.traceEmitter;
+    if (!phaseExecutors || !trace) {
+      throw new Error('opening generation requires DSH phase executors');
+    }
+
+    const hgSessionId = this.activeSessionId;
+    const hgSceneId = hgSessionId;
+    const openingInferenceId = `opening-${crypto.randomUUID()}`;
+    const sceneSessionId = SessionId(`hg-opening-${crypto.randomUUID()}`);
+    const sceneAgent = this.supervisor.runtime.ctx.agentLoop.create(
+      sceneSessionId,
+      agentOptionsFromProfile(mockInferenceProfile()),
+    );
+
+    const modelProfile =
+      input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
+        ? mockInferenceProfile()
+        : deepseekInferenceProfile({ reasoningEffort: 'off', maxTokens: 512 });
+
+    const openingResult = await phaseExecutors.runOpening({
+      api,
+      trace,
+      sceneAgent,
+      sceneSessionId,
+      hgSessionId,
+      hgSceneId,
+      openingInferenceId,
+      mockOpeningResponses: input.mockOpeningResponses,
+      modelProfile,
+      maxAttempts: Number(input.openingMaxAttempts ?? 2),
+    });
+
+    if (openingResult.presentation_rendered && openingResult.presentation_text) {
+      await api.persistOpening({
+        hg_session_id: hgSessionId,
+        inference_id: openingResult.inference_id ?? openingInferenceId,
+        presentation_text: openingResult.presentation_text,
+        presentation_failed: false,
+        manifest_id: openingResult.opening_manifest_id,
+      });
+      await this._refreshTranscript();
+    }
+
+    return openingResult;
+  }
+
   _resolveInferenceOptions(input) {
     if (input.mockDirectorResponses || input.mockCharacterTurnResponses) {
       return {
@@ -342,6 +411,7 @@ export class HolyGrailApplicationClient {
           }),
         ]],
         mockNarratorTurnResponses: input.mockNarratorTurnResponses,
+        mockOpeningResponses: input.mockOpeningResponses,
       };
     }
 

@@ -43,6 +43,8 @@ from .contract import (  # noqa: E402
     EligibleActorsRequest,
     EligibleActorsResponse,
     EligibleActorEntry,
+    OpeningContextPrepareRequest,
+    OpeningPersistRequest,
     NarratorContextPrepareRequest,
     ParticipationDecision,
     ParticipationDecisionRequest,
@@ -75,6 +77,7 @@ from .session_repository import (  # noqa: E402
     PersistenceError,
     SessionRepository,
 )
+from .opening_prompt import build_opening_generation_instruction  # noqa: E402
 from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
@@ -1054,6 +1057,145 @@ class DomainKernel:
     def record_uncommitted_proposal(self, hg_scene_id: str) -> None:
         """Explicit no-op documenting that proposals do not mutate continuity."""
         self.store.require(hg_scene_id)
+
+    def prepare_opening_context(
+        self, req: OpeningContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_session_id)
+        opening_entry_id = f"opening-{req.hg_session_id}"
+        if any(
+            item.get("entry_id") == opening_entry_id or item.get("kind") == "opening"
+            for item in fixture.rp_history
+        ):
+            raise ValueError("opening presentation already materialized")
+
+        mgr = fixture.manager
+        assert mgr.scene_state is not None
+        hg_scene_id = fixture.hg_scene_id
+        hg_round_id = "opening-bootstrap"
+        manifest_id = f"manifest-opening-{req.inference_id}"
+        snapshot = fixture.setup_snapshot or {}
+        scene_template = dict(snapshot.get("scene_template") or {})
+        premise = str(
+            scene_template.get("premise")
+            or getattr(mgr.scene_state, "opening_description", "")
+            or ""
+        ).strip()
+
+        auth_projections = project_authoritative_context(
+            fixture,
+            role="narrator",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+        )
+        contributions: list[PromptContribution] = list(
+            self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        )
+
+        if premise:
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-scene-reference",
+                    source_kind="scene_reference",
+                    authority_class="authoritative",
+                    knowledge_ids=(f"template:{scene_template.get('template_id', 'scene')}",),
+                    priority=8,
+                    content=f"Scene premise (authoritative): {premise}",
+                    provenance={
+                        "hg_scene_id": hg_scene_id,
+                        "template_id": scene_template.get("template_id"),
+                    },
+                )
+            )
+
+        profile_lines: list[str] = []
+        cards = dict(snapshot.get("character_cards") or {})
+        for display_name in fixture.cast:
+            card = None
+            file_id = fixture.character_file_ids.get(display_name)
+            if file_id and file_id in cards:
+                card = cards[file_id]
+            if not card:
+                continue
+            description = str(card.get("description", "")).strip()
+            personality = str(card.get("personality", "")).strip()
+            profile_lines.append(
+                f"- {display_name}: {description}"
+                + (f" Personality: {personality}" if personality else "")
+            )
+        if profile_lines:
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-character-profiles",
+                    source_kind="character_profile",
+                    authority_class="authoritative",
+                    knowledge_ids=tuple(f"profile:{name}" for name in fixture.cast),
+                    priority=10,
+                    content="Character profiles (authoritative setup):\n" + "\n".join(profile_lines),
+                    provenance={"cast": list(fixture.cast)},
+                )
+            )
+
+        contributions.append(
+            PromptContribution(
+                contribution_id=f"{manifest_id}-instruction",
+                source_kind="inference_instruction",
+                authority_class="derived",
+                knowledge_ids=(f"inference:{req.inference_id}",),
+                priority=30,
+                content=build_opening_generation_instruction(
+                    present_characters=list(fixture.cast),
+                    premise=premise,
+                ),
+                provenance={"inference_id": req.inference_id, "role": "opening"},
+            )
+        )
+        return PromptContributionManifest(
+            manifest_id=manifest_id,
+            inference_id=req.inference_id,
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            role="opening",
+            character_id=None,
+            turn_index=0,
+            attempt_index=0,
+            contributions=tuple(contributions),
+        )
+
+    def persist_opening_presentation(self, req: OpeningPersistRequest) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        entry_id = f"opening-{req.hg_session_id}"
+        existing = next(
+            (item for item in fixture.rp_history if item.get("entry_id") == entry_id),
+            None,
+        )
+        if existing is not None:
+            return dict(existing)
+
+        content = str(req.presentation_text or "").strip()
+        if not content:
+            raise ValueError("opening presentation text is required")
+
+        snapshot = fixture.setup_snapshot or {}
+        opening_meta = dict(snapshot.get("opening") or {})
+        opening_meta.update(
+            {
+                "mode": "generated",
+                "inference_id": req.inference_id,
+                "manifest_id": req.manifest_id,
+            }
+        )
+        entry = append_history_entry(
+            fixture.rp_history,
+            kind="opening",
+            content=content,
+            entry_id=entry_id,
+            presentation_status="failed" if req.presentation_failed else "rendered",
+            metadata={"opening": True, **opening_meta},
+        )
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return entry
 
     def prepare_narrator_context(
         self, req: NarratorContextPrepareRequest

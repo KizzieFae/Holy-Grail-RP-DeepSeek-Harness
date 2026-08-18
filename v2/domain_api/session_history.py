@@ -65,19 +65,33 @@ def summarize_committed_move(move: dict[str, Any]) -> str:
     return "; ".join(actions) if actions else "[committed action]"
 
 
+def find_history_entry_by_id(
+    history: list[dict[str, Any]], entry_id: str
+) -> dict[str, Any] | None:
+    for item in history:
+        if str(item.get("entry_id", "")) == entry_id:
+            return item
+    return None
+
+
 def append_history_entry(
     history: list[dict[str, Any]],
     *,
     kind: HistoryKind,
     content: str,
+    entry_id: str | None = None,
     hg_round_id: str | None = None,
     domain_commit_id: str | None = None,
     actor_id: str | None = None,
     presentation_status: str | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if entry_id:
+        existing = find_history_entry_by_id(history, entry_id)
+        if existing is not None:
+            return existing
     entry = RpHistoryEntry(
-        entry_id=f"hg-hist-{uuid.uuid4()}",
+        entry_id=entry_id or f"hg-hist-{uuid.uuid4()}",
         sequence_index=len(history),
         kind=kind,
         content=content,

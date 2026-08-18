@@ -218,6 +218,21 @@ class CommitResponse:
 
 
 @dataclass(frozen=True)
+class OpeningContextPrepareRequest:
+    hg_session_id: str
+    inference_id: str
+
+
+@dataclass(frozen=True)
+class OpeningPersistRequest:
+    hg_session_id: str
+    inference_id: str
+    presentation_text: str
+    presentation_failed: bool = False
+    manifest_id: str | None = None
+
+
+@dataclass(frozen=True)
 class NarratorContextPrepareRequest:
     hg_scene_id: str
     hg_round_id: str

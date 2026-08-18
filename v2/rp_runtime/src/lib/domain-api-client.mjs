@@ -88,6 +88,12 @@ export function createDomainApiClient(baseUrl) {
     prepareNarratorContext(body) {
       return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
     },
+    prepareOpeningContext(body) {
+      return postJson(metrics, baseUrl, '/v1/opening/context/prepare', body, 'prepareOpeningContext');
+    },
+    persistOpening(body) {
+      return postJson(metrics, baseUrl, '/v1/sessions/opening/persist', body, 'persistOpening');
+    },
     async getSessionState(hgSessionId) {
       trackBoundaryCall(metrics, 'getSessionState', { hg_session_id: hgSessionId });
       const res = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(hgSessionId)}/state`);

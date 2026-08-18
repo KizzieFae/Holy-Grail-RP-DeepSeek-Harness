@@ -121,7 +121,13 @@ def _resolve_opening_text(
         metadata["text"] = text
         return text, metadata
 
-    if mode == "template" and template_id:
+    if mode == "generated":
+        metadata["deferred"] = True
+        return "", metadata
+
+    if mode == "template":
+        if not template_id:
+            raise ValueError("template opening mode requires scene_template_id")
         opener_id = str(opening.get("opener_id", "default") or "default")
         manager = OpenerManager()
         for opener in manager.get_template_openers(template_id):
@@ -129,13 +135,13 @@ def _resolve_opening_text(
                 metadata["opener_id"] = opener_id
                 metadata["label"] = opener.label
                 return str(opener.text).strip(), metadata
-        return "", {**metadata, "error": f"unknown opener_id: {opener_id}"}
+        raise ValueError(f"unknown opener_id: {opener_id}")
 
-    premise = ""
-    if scene_setup:
-        premise = str(scene_setup.get("premise", "") or "").strip()
+    if mode != "minimal":
+        raise ValueError(f"unsupported opening mode: {mode}")
+
     metadata["source"] = "premise"
-    return premise, metadata
+    return "", metadata
 
 
 def create_live_session_from_setup(
@@ -184,10 +190,8 @@ def create_live_session_from_setup(
         template_id=scene_template_id,
         scene_setup=scene_setup,
     )
-    opening_description = opening_text or (
-        str(scene_setup.get("premise", "") if scene_setup else "")
-        or "A Holy Grail roleplay session begins."
-    )
+    premise_text = str(scene_setup.get("premise", "") if scene_setup else "").strip()
+    opening_description = opening_text or premise_text or "A Holy Grail roleplay session begins."
     resolved_location = (
         location
         or str(opening.get("location", "") if opening else "")
@@ -239,7 +243,7 @@ def create_live_session_from_setup(
         "scene_template_id": scene_template_id,
         "scene_template": template_snapshot,
         "role_assignments_by_file": dict(role_assignments or {}),
-        "opening": opening_metadata,
+        "opening": {**(opening or {}), **opening_metadata},
         "location": resolved_location,
         "memory_scope_id": resolved_scope,
     }
@@ -250,6 +254,8 @@ def create_live_session_from_setup(
             rp_history,
             kind="opening",
             content=opening_text,
+            entry_id=f"opening-{session_id}",
+            presentation_status="authored",
             metadata={"opening": True, **opening_metadata},
         )
 

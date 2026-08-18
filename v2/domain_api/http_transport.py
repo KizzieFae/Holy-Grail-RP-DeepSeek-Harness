@@ -14,6 +14,8 @@ from .contract import (
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
     EligibleActorsRequest,
+    OpeningContextPrepareRequest,
+    OpeningPersistRequest,
     NarratorContextPrepareRequest,
     ParticipationDecisionRequest,
     RoundStartRequest,
@@ -218,6 +220,23 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     presentation_failed=bool(data.get("presentation_failed", False)),
                 )
                 self._send_json(201, self.kernel.record_presentation(req))
+                return
+            if path == "/v1/opening/context/prepare":
+                req = OpeningContextPrepareRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    inference_id=str(data["inference_id"]),
+                )
+                self._send_json(200, self.kernel.prepare_opening_context(req))
+                return
+            if path == "/v1/sessions/opening/persist":
+                req = OpeningPersistRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    inference_id=str(data["inference_id"]),
+                    presentation_text=str(data.get("presentation_text", "")),
+                    presentation_failed=bool(data.get("presentation_failed", False)),
+                    manifest_id=data.get("manifest_id"),
+                )
+                self._send_json(201, self.kernel.persist_opening_presentation(req))
                 return
             self._send_json(404, {"error": "not found"})
         except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:

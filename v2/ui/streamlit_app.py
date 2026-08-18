@@ -46,6 +46,8 @@ def init_state() -> None:
         st.session_state.setup_provenance = None
     if "memory_scope_id" not in st.session_state:
         st.session_state.memory_scope_id = None
+    if "template_openers" not in st.session_state:
+        st.session_state.template_openers = []
 
 
 def refresh_status() -> None:
@@ -97,6 +99,7 @@ def render_sidebar() -> None:
         selected_ids = []
 
     template_id = None
+    template_meta = None
     if templates:
         template_labels = {
             item["template_id"]: item["template_id"].replace("_", " ")
@@ -109,11 +112,50 @@ def render_sidebar() -> None:
         )
         if template_choice != "(none)":
             template_id = template_choice
+            template_meta = next(
+                (item for item in templates if item["template_id"] == template_id),
+                None,
+            )
+
+    role_assignments: dict[str, str] = {}
+    if template_id and template_meta:
+        st.sidebar.caption("Assign character cards to template roles")
+        for slot in template_meta.get("role_slots", []):
+            role_name = slot.get("role_name", "")
+            if not role_name:
+                continue
+            role_assignments[role_name] = st.sidebar.selectbox(
+                f"Role: {role_name}",
+                options=["(unassigned)"] + selected_ids,
+                format_func=lambda cid: "Unassigned" if cid == "(unassigned)" else cid,
+                key=f"role_{template_id}_{role_name}",
+            )
+
+    opener_id = None
+    if template_id:
+        try:
+            opener_payload = api_request(
+                "GET", f"/api/scene-templates/{template_id}/openers"
+            )
+            st.session_state.template_openers = opener_payload.get("openers", [])
+        except Exception:  # noqa: BLE001
+            st.session_state.template_openers = []
+        openers = st.session_state.template_openers
+        if openers:
+            opener_labels = {
+                item["opener_id"]: item.get("label") or item["opener_id"]
+                for item in openers
+            }
+            opener_id = st.sidebar.selectbox(
+                "Template opener",
+                options=list(opener_labels.keys()),
+                format_func=lambda oid: opener_labels[oid],
+            )
 
     opening_mode = st.sidebar.selectbox(
         "Opening",
-        options=["minimal", "custom"],
-        help="Template opener assets can be added in a follow-up slice.",
+        options=["minimal", "custom", "template", "generated"],
+        help="Minimal uses premise only. Template uses authored opener assets. Generated uses DSH inference.",
     )
     custom_opening = ""
     if opening_mode == "custom":
@@ -130,10 +172,25 @@ def render_sidebar() -> None:
             payload: dict = {"characters": selected_ids}
             if template_id:
                 payload["scene_template_id"] = template_id
+                assignments_by_file = {
+                    char_id: role_name
+                    for role_name, char_id in role_assignments.items()
+                    if char_id and char_id != "(unassigned)"
+                }
+                if assignments_by_file:
+                    payload["role_assignments"] = assignments_by_file
+            opening_payload: dict = {"mode": opening_mode}
             if opening_mode == "custom" and custom_opening.strip():
-                payload["opening"] = {"mode": "custom", "text": custom_opening.strip()}
-            else:
-                payload["opening"] = {"mode": "minimal"}
+                opening_payload["text"] = custom_opening.strip()
+            elif opening_mode == "template":
+                if not template_id:
+                    st.sidebar.error("Template opening requires a scene template.")
+                    return
+                if not opener_id:
+                    st.sidebar.error("Select a template opener before creating the session.")
+                    return
+                opening_payload["opener_id"] = opener_id
+            payload["opening"] = opening_payload
         else:
             cast_input = st.sidebar.text_input("Prototype cast", "Alice", key="proto_cast")
             payload = {"cast": [name.strip() for name in cast_input.split(",") if name.strip()]}
@@ -145,7 +202,7 @@ def render_sidebar() -> None:
         st.session_state.hg_session_id = session["hg_session_id"]
         st.session_state.setup_provenance = session.get("setup_provenance")
         st.session_state.memory_scope_id = session.get("memory_scope_id")
-        st.session_state.transcript = []
+        st.session_state.transcript = result.get("transcript", [])
         st.sidebar.success(f"Created {st.session_state.hg_session_id}")
 
     resume_id = st.sidebar.text_input("Resume session id", st.session_state.hg_session_id or "")

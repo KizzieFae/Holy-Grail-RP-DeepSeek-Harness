@@ -16,6 +16,9 @@ export const HG_EVENT_TYPES = [
   'hg/narrator-started',
   'hg/narrator-completed',
   'hg/narrator-failed',
+  'hg/opening-started',
+  'hg/opening-completed',
+  'hg/opening-failed',
   'hg/round-completed',
 ];
 
