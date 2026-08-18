@@ -18,6 +18,25 @@ export function createDomainApiClient(baseUrl) {
   const metrics = { calls: [] };
   return {
     metrics,
+    async health() {
+      trackBoundaryCall(metrics, 'health', {});
+      const res = await fetch(`${baseUrl}/health`);
+      if (!res.ok) throw new Error(`health failed: ${res.status}`);
+      return res.json();
+    },
+    createSession(body = {}) {
+      return postJson(metrics, baseUrl, '/v1/sessions/create', body, 'createSession');
+    },
+    openSession(hgSessionId) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/open',
+        { hg_session_id: hgSessionId },
+        'openSession',
+      );
+    },
+    /** @deprecated Transitional/test-only — production uses createSession/openSession */
     async createScene(body = {}) {
       trackBoundaryCall(metrics, 'createScene', body);
       const res = await fetch(`${baseUrl}/v1/scenes`, {

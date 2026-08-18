@@ -96,6 +96,7 @@ test('two-character round: director sequences Alice then Bob with per-turn narra
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_ALICE),
       JSON.stringify(DIRECTOR_BOB),

@@ -70,7 +70,7 @@ test('director-character round: full orchestration with correlation', async (t) 
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
   });
@@ -118,6 +118,7 @@ test('director-character round: director rejection does not commit', async (t) =
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify({ next_actor: 'Zelda', end_round: false, reason: 'x' })],
     mockCharacterResponses: [JSON.stringify(VALID_MOVE)],
   });
@@ -143,7 +144,7 @@ test('director-character round: records boundary call metrics', async (t) => {
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
   });

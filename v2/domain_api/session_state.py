@@ -58,6 +58,7 @@ class LiveSession:
     character_private_secrets: dict[str, str] = field(default_factory=dict)
     rounds: list[RoundFixture] = field(default_factory=list)
     continuity_version: int = 0
+    commit_dedup_index: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
     def session_id(self) -> str:

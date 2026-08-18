@@ -76,7 +76,7 @@ test('three-role round: director → character → commit → narrator', async (
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
     mockNarratorTurnResponses: [[NARRATOR_PROSE]],
@@ -117,7 +117,7 @@ test('three-role round: commit failure skips narrator', async (t) => {
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[
       JSON.stringify({
@@ -150,7 +150,7 @@ test('narrator failure after commit preserves canon', async (t) => {
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
     mockNarratorTurnResponses: [['']],

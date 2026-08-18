@@ -15,6 +15,7 @@ test('HgTraceEmitter: emits typed events with normalized correlation', async (t)
   const sceneSessionId = SessionId('hg-scene-trace-test');
   const session = { events: [], append(type, data) { this.events.push({ type, data }); return data; } };
   const scope = {
+    hgSessionId: 'session-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
     sceneSessionId,
@@ -28,6 +29,7 @@ test('HgTraceEmitter: emits typed events with normalized correlation', async (t)
   assert.equal(session.events.length, 1);
   assert.equal(session.events[0].type, 'hg/round-started');
   assert.deepEqual(session.events[0].data, {
+    hg_session_id: 'session-1',
     hg_scene_id: 'scene-1',
     hg_round_id: 'round-1',
     dsh_scene_session_id: String(sceneSessionId),

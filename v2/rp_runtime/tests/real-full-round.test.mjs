@@ -67,7 +67,7 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     roleProfiles: {
       director: LIVE_PROFILE,
       character: LIVE_PROFILE,

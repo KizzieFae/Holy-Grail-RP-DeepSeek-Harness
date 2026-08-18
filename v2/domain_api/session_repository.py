@@ -7,7 +7,7 @@ import hashlib
 import json
 import sys
 import uuid
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -86,6 +86,7 @@ class SessionRepository:
         session_data = self._session_manager.load_session(hg_session_id)
         session = self._hydrate_session(hg_session_id, session_data)
         self._cache[session.hg_scene_id] = session
+        self._restore_commit_dedup(session)
         return session
 
     def create_scene(self, **kwargs: Any) -> LiveSession:
@@ -150,8 +151,24 @@ class SessionRepository:
     def get_commit_dedup(self, dedup_key: str) -> CommitDedupRecord | None:
         return self._commit_dedup.get(dedup_key)
 
-    def record_commit_dedup(self, dedup_key: str, record: CommitDedupRecord) -> None:
+    def record_commit_dedup(
+        self, dedup_key: str, record: CommitDedupRecord, session: LiveSession
+    ) -> None:
         self._commit_dedup[dedup_key] = record
+        session.commit_dedup_index[dedup_key] = {
+            "domain_commit_id": record.domain_commit_id,
+            "continuity_turn_index": record.continuity_turn_index,
+            "response": asdict(record.response),
+        }
+
+    def _restore_commit_dedup(self, session: LiveSession) -> None:
+        for key, entry in session.commit_dedup_index.items():
+            response_data = entry.get("response") or {}
+            self._commit_dedup[key] = CommitDedupRecord(
+                domain_commit_id=str(entry["domain_commit_id"]),
+                continuity_turn_index=int(entry["continuity_turn_index"]),
+                response=CommitResponse(**response_data),
+            )
 
     def snapshot_manager(self, session: LiveSession) -> dict[str, Any]:
         return session.manager.to_dict()
@@ -173,6 +190,7 @@ class SessionRepository:
                 "commit_ids": list(session.commit_ids),
                 "character_private_secrets": dict(session.character_private_secrets),
                 "continuity_version": session.continuity_version,
+                "commit_dedup_index": dict(session.commit_dedup_index),
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -229,6 +247,7 @@ class SessionRepository:
             commit_ids=list(host_state.get("commit_ids") or []),
             character_private_secrets=secrets,
             continuity_version=int(host_state.get("continuity_version", 0)),
+            commit_dedup_index=dict(host_state.get("commit_dedup_index") or {}),
             rounds=[],
         )
 

@@ -740,6 +740,24 @@ class DomainKernel:
         rnd.spotlight_history.append(req.character_id)
         rnd.eligibility_epoch += 1
 
+        response = CommitResponse(
+            committed=True,
+            continuity_turn_index=after_turn,
+            domain_commit_id=commit_id,
+            hg_scene_id=req.hg_scene_id,
+            inference_id=req.inference_id,
+        )
+        if isinstance(repository, SessionRepository) and dedup_key is not None:
+            repository.record_commit_dedup(
+                dedup_key,
+                CommitDedupRecord(
+                    domain_commit_id=commit_id,
+                    continuity_turn_index=after_turn,
+                    response=response,
+                ),
+                fixture,
+            )
+
         if hasattr(repository, "persist"):
             try:
                 repository.persist(fixture)
@@ -759,6 +777,9 @@ class DomainKernel:
                     if host_snapshot is not None:
                         fixture.committed_move_count = host_snapshot["committed_move_count"]
                         fixture.commit_ids = host_snapshot["commit_ids"]
+                    if dedup_key is not None:
+                        fixture.commit_dedup_index.pop(dedup_key, None)
+                        repository._commit_dedup.pop(dedup_key, None)
                 return CommitResponse(
                     committed=False,
                     continuity_turn_index=None,
@@ -767,23 +788,6 @@ class DomainKernel:
                     inference_id=req.inference_id,
                     reason=str(exc),
                 )
-
-        response = CommitResponse(
-            committed=True,
-            continuity_turn_index=after_turn,
-            domain_commit_id=commit_id,
-            hg_scene_id=req.hg_scene_id,
-            inference_id=req.inference_id,
-        )
-        if isinstance(repository, SessionRepository) and dedup_key is not None:
-            repository.record_commit_dedup(
-                dedup_key,
-                CommitDedupRecord(
-                    domain_commit_id=commit_id,
-                    continuity_turn_index=after_turn,
-                    response=response,
-                ),
-            )
         return response
 
     def record_uncommitted_proposal(self, hg_scene_id: str) -> None:

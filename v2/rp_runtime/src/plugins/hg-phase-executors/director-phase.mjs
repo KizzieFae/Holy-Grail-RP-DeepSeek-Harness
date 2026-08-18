@@ -7,6 +7,7 @@ export async function runDirectorPhase({
   api,
   sceneAgent,
   sceneSessionId,
+  hgSessionId,
   hgSceneId,
   hgRoundId,
   directorInferenceId,
@@ -32,7 +33,7 @@ export async function runDirectorPhase({
   const attemptLimit = inferenceAttemptLimit(mockDirectorResponses, liveMaxAttempts);
   let attemptsUsed = 0;
   let responseIndex = directorResponseIndex;
-  const scope = { hgSceneId, hgRoundId, sceneSessionId };
+  const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   while (!directorAccepted && attemptsUsed < attemptLimit) {
     const manifest = await api.prepareDirectorContext({

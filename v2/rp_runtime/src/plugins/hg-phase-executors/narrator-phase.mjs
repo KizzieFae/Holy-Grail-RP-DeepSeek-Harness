@@ -4,6 +4,7 @@ export async function runNarratorPhase({
   api,
   sceneAgent,
   sceneSessionId,
+  hgSessionId,
   hgSceneId,
   hgRoundId,
   characterId,
@@ -24,7 +25,7 @@ export async function runNarratorPhase({
     continuity_turn_index: continuityTurnIndex,
   });
   const manifestId = String(manifest.manifest_id);
-  const scope = { hgSceneId, hgRoundId, sceneSessionId };
+  const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   trace.emit(sceneAgent.session, 'hg/narrator-started', scope, {
     inference_id: narratorInferenceId,

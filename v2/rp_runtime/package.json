@@ -5,7 +5,7 @@
   "description": "V2 boundary prototype: minimal DSH/Cordis RP inference composition",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {
     "@deepseek-ai/cordis": "4.0.1",

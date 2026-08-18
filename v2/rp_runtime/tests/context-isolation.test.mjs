@@ -1,37 +1,8 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
-
-async function startDomainApi(port) {
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env: { ...process.env, PYTHONPATH: path.join(repoRoot, 'v2') } },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 40; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-      });
-      if (res.ok) return { proc, baseUrl, scene: await res.json() };
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
-}
+import { startDomainApi } from './helpers/domain-api.mjs';
 
 async function postJson(baseUrl, pathName, body) {
   const res = await fetch(`${baseUrl}${pathName}`, {
@@ -45,7 +16,7 @@ async function postJson(baseUrl, pathName, body) {
 
 test('context isolation: director manifest excludes character-private contributions', async (t) => {
   const port = 23765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port);
+  const { proc, baseUrl, scene } = await startDomainApi(port, { withSession: true });
   t.after(async () => {
     proc.kill();
     await once(proc, 'exit');
@@ -74,8 +45,6 @@ test('context isolation: director manifest excludes character-private contributi
   assert.equal(directorKinds.has('character_private'), false);
   assert.equal(characterKinds.has('director_scratch'), false);
   assert.equal(characterKinds.has('character_private'), true);
-  assert.equal(directorKinds.has('director_scratch'), true);
-
   const privateContribution = character.contributions.find((c) => c.source_kind === 'character_private');
   assert.ok(privateContribution.content.includes('Character-private knowledge'));
   for (const contribution of director.contributions) {
@@ -113,7 +82,7 @@ test('context isolation: separate inference sessions remain distinct identities'
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
     mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
   });
@@ -123,7 +92,7 @@ test('context isolation: separate inference sessions remain distinct identities'
 
 test('context isolation: narrator manifest excludes director scratch and character-private', async (t) => {
   const port = 28765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port);
+  const { proc, baseUrl, scene } = await startDomainApi(port, { withSession: true });
   t.after(async () => {
     proc.kill();
     await once(proc, 'exit');
@@ -185,4 +154,74 @@ test('context isolation: narrator manifest excludes director scratch and charact
     assert.equal(String(contribution.content).includes('Character-private knowledge'), false);
     assert.equal(String(contribution.content).includes('Director scratch'), false);
   }
+});
+
+test('context isolation: character context excludes director scratch', async (t) => {
+  const port = 24765 + Math.floor(Math.random() * 1000);
+  const { proc, baseUrl } = await startDomainApi(port, { withSession: true });
+  t.after(async () => {
+    proc.kill();
+    await once(proc, 'exit');
+  });
+
+  const scene = await postJson(baseUrl, '/v1/sessions/create', { cast: ['Alice'] });
+  const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
+  const character = await postJson(baseUrl, '/v1/context/prepare', {
+    hg_scene_id: scene.hg_scene_id,
+    hg_round_id: round.hg_round_id,
+    inference_id: 'inf-char-scratch',
+    character_id: 'Alice',
+    role: 'guest',
+    turn_index: round.turn_index,
+    attempt_index: 0,
+  });
+  const kinds = new Set(character.contributions.map((c) => c.source_kind));
+  assert.equal(kinds.has('director_scratch'), false);
+});
+
+test('context isolation: round orchestration preserves role boundaries', async (t) => {
+  const port = 25765 + Math.floor(Math.random() * 1000);
+  const { proc, baseUrl } = await startDomainApi(port);
+  t.after(async () => {
+    proc.kill();
+    await once(proc, 'exit');
+  });
+
+  const { createHolyGrailRpContext } = await import('../src/bootstrap.mjs');
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  t.after(async () => {
+    await ctx.fiber.dispose();
+  });
+
+  const VALID_MOVE = {
+    move_schema_version: 2,
+    beats: [{ type: 'action', action: 'nods thoughtfully' }],
+    motivation: {
+      goal: 'acknowledge',
+      tactic: 'subtle gesture',
+      emotional_driver: 'calm',
+      risk_level: 'low',
+    },
+    semantic_evaluation: { decision: 'no_covered_change' },
+  };
+  const VALID_DIRECTOR = {
+    next_actor: 'Alice',
+    end_round: false,
+    reason: 'Alice should speak next.',
+    environment_event: '',
+    tension_shift: '',
+  };
+
+  const result = await orchestrator.runRound({
+    domainApi: { baseUrl },
+    session: { mode: 'create', cast: ['Alice'] },
+    mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
+    mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
+  });
+
+  const directorProposed = result.scene_events.find((e) => e.type === 'hg/director-proposed');
+  const characterProposed = result.scene_events.find((e) => e.type === 'hg/move-proposed');
+  assert.ok(directorProposed?.data?.hg_session_id);
+  assert.equal(directorProposed.data.hg_session_id, result.hg_session_id);
+  assert.equal(characterProposed.data.hg_session_id, result.hg_session_id);
 });

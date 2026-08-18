@@ -2,6 +2,7 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { agentOptionsFromProfile, mockInferenceProfile } from '../../lib/inference-profile.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 
 const DEFAULT_CHARACTER_PROMPT = (
   'Respond with a single JSON object only (no markdown). '
@@ -24,11 +25,17 @@ export async function runCharacterInferenceSlice({
   const role = options.role ?? 'guest';
   const inferenceId = options.inferenceId ?? `inf-char-${crypto.randomUUID()}`;
 
+  let hgSessionId = options.hgSessionId;
   let hgSceneId = options.hgSceneId;
   let hgRoundId = options.hgRoundId;
   if (!hgSceneId) {
-    const created = await api.createScene({ cast: ['Alice', 'Bob'] });
-    hgSceneId = String(created.hg_scene_id);
+    const sessionInfo = await resolveRoundSession(api, {
+      session: options.session ?? { mode: 'create', cast: ['Alice', 'Bob'] },
+    });
+    hgSessionId = sessionInfo.hgSessionId;
+    hgSceneId = sessionInfo.hgSceneId;
+  } else if (!hgSessionId) {
+    hgSessionId = hgSceneId;
   }
   if (!hgRoundId) {
     const round = await api.startRound({ hg_scene_id: hgSceneId });
@@ -42,7 +49,7 @@ export async function runCharacterInferenceSlice({
     sceneSessionId,
     agentOptionsFromProfile(mockInferenceProfile()),
   );
-  const scope = { hgSceneId, hgRoundId, sceneSessionId };
+  const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   const directorDecision = options.directorDecision ?? {
     next_actor: characterId,
@@ -183,6 +190,7 @@ export async function runCharacterInferenceSlice({
 
   return {
     committed,
+    hg_session_id: hgSessionId,
     hg_scene_id: hgSceneId,
     hg_round_id: hgRoundId,
     inference_id: inferenceId,

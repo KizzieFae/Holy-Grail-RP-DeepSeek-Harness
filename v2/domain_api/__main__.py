@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 from domain_api.http_transport import serve
 from domain_api.kernel import DomainKernel
@@ -15,7 +16,8 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
 
-    repository = SessionRepository()
+    sessions_dir = os.environ.get("HG_SESSIONS_DIR")
+    repository = SessionRepository(sessions_dir) if sessions_dir else SessionRepository()
     kernel = DomainKernel(repository=repository)
     server = serve(kernel, host=args.host, port=args.port)
     print(f"Holy Grail Domain Host listening on http://{args.host}:{args.port}")

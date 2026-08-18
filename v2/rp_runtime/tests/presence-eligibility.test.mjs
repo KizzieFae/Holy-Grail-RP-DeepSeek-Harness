@@ -75,7 +75,7 @@ test('presence: off_focal commit narrows later eligibility to remaining present 
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_FOR('Alice')),
       JSON.stringify(DIRECTOR_FOR('Bob')),
@@ -112,7 +112,7 @@ test('presence: director cannot select offstage actor after presence mutation', 
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_FOR('Alice')),
       JSON.stringify(DIRECTOR_FOR('Alice')),

@@ -37,6 +37,7 @@ export default class HgTraceEmitter extends Service {
    */
   correlation(scope) {
     return {
+      hg_session_id: scope.hgSessionId ?? scope.hgSceneId,
       hg_scene_id: scope.hgSceneId,
       hg_round_id: scope.hgRoundId,
       dsh_scene_session_id: String(scope.sceneSessionId),

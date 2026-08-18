@@ -193,6 +193,56 @@ def test_persistence_failure_rolls_back_live_state(
     assert reopened.turn_counter == before_turn
 
 
+def test_commit_dedup_survives_repository_restart(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    validation = kernel.validate_move(
+        ValidationRequest(
+            inference_id="inf-restart-idem",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            role="guest",
+            turn_index=0,
+            attempt_index=0,
+            proposed_move=PROTOTYPE_VALID_MOVE,
+            raw_model_output=json.dumps(PROTOTYPE_VALID_MOVE),
+        )
+    )
+    assert validation.normalized_move is not None
+    request = CommitRequest(
+        inference_id="inf-restart-idem",
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Alice",
+        validated_move=validation.normalized_move,
+        director_decision=PROTOTYPE_DIRECTOR_DECISION,
+        expected_turn_index=0,
+    )
+    first = kernel.commit_move(request)
+    assert first.committed is True
+    dedup_key = repository.commit_dedup_key(
+        hg_scene_id=hg_scene_id,
+        inference_id=request.inference_id,
+        expected_turn_index=request.expected_turn_index,
+        character_id=request.character_id,
+        validated_move=dict(request.validated_move),
+        director_decision=dict(request.director_decision),
+    )
+    session_id = info.hg_session_id
+    sessions_dir = repository.sessions_dir
+    repository.clear_cache()
+    restarted_repo = SessionRepository(sessions_dir)
+    session = restarted_repo.open_session(session_id)
+    assert dedup_key in session.commit_dedup_index
+    record = restarted_repo.get_commit_dedup(dedup_key)
+    assert record is not None
+    assert record.domain_commit_id == first.domain_commit_id
+
+
 def test_health_endpoint_via_kernel_store(repository: SessionRepository) -> None:
     assert repository.health_ok() is True
 

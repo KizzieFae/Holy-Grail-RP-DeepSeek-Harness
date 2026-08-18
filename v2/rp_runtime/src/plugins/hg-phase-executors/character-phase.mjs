@@ -8,6 +8,7 @@ export async function runCharacterPhase({
   api,
   sceneAgent,
   sceneSessionId,
+  hgSessionId,
   hgSceneId,
   hgRoundId,
   characterId,
@@ -29,7 +30,7 @@ export async function runCharacterPhase({
   let characterInferenceSessionId = null;
   let characterInferenceTrace = null;
   const attemptLimit = inferenceAttemptLimit(mockResponses, liveMaxAttempts);
-  const scope = { hgSceneId, hgRoundId, sceneSessionId };
+  const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   while (!committed && attemptIndex < attemptLimit) {
     const state = await api.getSceneState(hgSceneId);

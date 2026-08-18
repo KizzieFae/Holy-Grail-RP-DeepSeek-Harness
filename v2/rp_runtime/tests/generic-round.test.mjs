@@ -73,7 +73,7 @@ test('generic round: director end_round completes without further character turn
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     mockDirectorResponses: [JSON.stringify(DIRECTOR_END)],
   });
 
@@ -98,7 +98,7 @@ test('generic round: actor exhaustion completes without extra director call', as
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     mockDirectorResponses: [JSON.stringify(DIRECTOR_FOR('Alice'))],
     mockCharacterTurnResponses: [[JSON.stringify(MOVE)]],
   });
@@ -124,7 +124,7 @@ test('generic round: defensive turn ceiling is distinct from semantic completion
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob', 'Carol'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob', 'Carol'] },
     defensiveTurnCeiling: 1,
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_FOR('Alice')),
@@ -154,7 +154,7 @@ test('generic round: three-character cast executes until actor exhaustion', asyn
   const cast = ['Alice', 'Bob', 'Carol'];
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast },
+    session: { mode: 'create', cast },
     mockDirectorResponses: cast.map((name) => JSON.stringify(DIRECTOR_FOR(name))),
     mockCharacterTurnResponses: cast.map(() => [JSON.stringify(MOVE)]),
   });

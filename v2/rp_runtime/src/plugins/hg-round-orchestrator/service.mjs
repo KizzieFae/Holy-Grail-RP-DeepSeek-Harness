@@ -2,6 +2,7 @@ import { Service } from '@deepseek-ai/cordis';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
+import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
 import {
   agentOptionsFromProfile,
@@ -60,11 +61,11 @@ export default class HgRoundOrchestrator extends Service {
       narrator: null,
     };
 
-    let hgSceneId = options.hgSceneId;
-    if (!hgSceneId) {
-      const created = await api.createScene(options.createScene ?? { cast: ['Alice', 'Bob'] });
-      hgSceneId = String(created.hg_scene_id);
-    }
+    const sessionInfo = await resolveRoundSession(api, options);
+    const hgSessionId = sessionInfo.hgSessionId;
+    const hgSceneId = sessionInfo.hgSceneId;
+    const continuityVersion = sessionInfo.continuityVersion;
+
     const round = await api.startRound({ hg_scene_id: hgSceneId });
     const hgRoundId = String(round.hg_round_id);
     const initialTurnIndex = Number(round.turn_index ?? 0);
@@ -78,16 +79,17 @@ export default class HgRoundOrchestrator extends Service {
       ?? Math.max(castSize, 1) * 2,
     );
 
-    const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
+    const sceneSessionId = SessionId(`hg-exec-${crypto.randomUUID()}`);
     const sceneAgent = this.ctx.agentLoop.create(
       sceneSessionId,
       agentOptionsFromProfile(mockInferenceProfile()),
     );
-    const scope = { hgSceneId, hgRoundId, sceneSessionId };
+    const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
     trace.emit(sceneAgent.session, 'hg/round-started', scope, {
       turn_index: initialTurnIndex,
       defensive_turn_ceiling: defensiveTurnCeiling,
+      continuity_version: continuityVersion,
     });
 
     const characterTurns = [];
@@ -169,6 +171,7 @@ export default class HgRoundOrchestrator extends Service {
           api,
           sceneAgent,
           sceneSessionId,
+          hgSessionId,
           hgSceneId,
           hgRoundId,
           directorInferenceId,
@@ -218,6 +221,7 @@ export default class HgRoundOrchestrator extends Service {
         api,
         sceneAgent,
         sceneSessionId,
+        hgSessionId,
         hgSceneId,
         hgRoundId,
         characterId: directorPhase.selectedCharacterId,
@@ -247,6 +251,7 @@ export default class HgRoundOrchestrator extends Service {
         api,
         sceneAgent,
         sceneSessionId,
+        hgSessionId,
         hgSceneId,
         hgRoundId,
         characterId: characterTurn.characterId,
@@ -292,6 +297,8 @@ export default class HgRoundOrchestrator extends Service {
     });
 
     const lastTurn = characterTurns[characterTurns.length - 1] ?? null;
+    const finalSceneState = await api.getSceneState(hgSceneId);
+
     return {
       completion_status: completionStatus,
       completion_class: completionClass,
@@ -301,8 +308,10 @@ export default class HgRoundOrchestrator extends Service {
       character_turns: characterTurns,
       actors_used_this_round: actorsUsedThisRound,
       committed: characterTurns.length > 0,
+      hg_session_id: hgSessionId,
       hg_scene_id: hgSceneId,
       hg_round_id: hgRoundId,
+      continuity_version: Number(finalSceneState.continuity_version ?? continuityVersion),
       dsh_scene_session_id: String(sceneSessionId),
       director_inference_session_id: lastDirectorInferenceSessionId,
       character_inference_session_id: lastTurn?.character_inference_session_id ?? null,

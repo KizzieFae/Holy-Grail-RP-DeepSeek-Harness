@@ -65,7 +65,7 @@ test('participation: forced designation selects Alice without Director inference
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice'] },
+    session: { mode: 'create', cast: ['Alice'] },
     forcedDesignation: 'Alice',
     mockDirectorResponses: [JSON.stringify(DIRECTOR_FOR('Bob'))],
     mockCharacterTurnResponses: [[JSON.stringify(MOVE)]],
@@ -96,7 +96,7 @@ test('participation: ineligible forced designation falls back to Director', asyn
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     forcedDesignation: 'Carol',
     mockDirectorResponses: [JSON.stringify(DIRECTOR_FOR('Alice'))],
     mockCharacterTurnResponses: [[JSON.stringify(MOVE)]],
@@ -124,7 +124,7 @@ test('participation: forced designation consumed only once per round invocation'
 
   const result = await orchestrator.runRound({
     domainApi: { baseUrl },
-    createScene: { cast: ['Alice', 'Bob'] },
+    session: { mode: 'create', cast: ['Alice', 'Bob'] },
     forcedDesignation: 'Alice',
     mockDirectorResponses: [
       JSON.stringify(DIRECTOR_FOR('Bob')),
