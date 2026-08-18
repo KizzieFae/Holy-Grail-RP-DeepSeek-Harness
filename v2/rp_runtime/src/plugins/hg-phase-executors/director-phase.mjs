@@ -1,10 +1,9 @@
 import { inferenceAttemptLimit } from '../../lib/inference-profile.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
-import { appendHgEvent } from '../hg-rp-runtime/events.mjs';
 
 export async function runDirectorPhase({
   runEphemeralInference,
-  correlation,
+  trace,
   api,
   sceneAgent,
   sceneSessionId,
@@ -33,6 +32,7 @@ export async function runDirectorPhase({
   const attemptLimit = inferenceAttemptLimit(mockDirectorResponses, liveMaxAttempts);
   let attemptsUsed = 0;
   let responseIndex = directorResponseIndex;
+  const scope = { hgSceneId, hgRoundId, sceneSessionId };
 
   while (!directorAccepted && attemptsUsed < attemptLimit) {
     const manifest = await api.prepareDirectorContext({
@@ -58,8 +58,7 @@ export async function runDirectorPhase({
     directorInferenceTrace = directorRun.trace;
 
     if (directorRun.failed) {
-      appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
-        ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
         inference_id: directorInferenceId,
         director_inference_session_id: directorInferenceSessionId,
         role: 'director',
@@ -81,8 +80,7 @@ export async function runDirectorPhase({
       proposed = { parse_error: String(error) };
     }
 
-    appendHgEvent(sceneAgent.session, 'hg/director-proposed', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/director-proposed', scope, {
       inference_id: directorInferenceId,
       director_inference_session_id: directorInferenceSessionId,
       role: 'director',
@@ -109,8 +107,7 @@ export async function runDirectorPhase({
     });
 
     if (!validation.accepted) {
-      appendHgEvent(sceneAgent.session, 'hg/director-rejected', {
-        ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/director-rejected', scope, {
         inference_id: directorInferenceId,
         director_inference_session_id: directorInferenceSessionId,
         role: 'director',
@@ -133,8 +130,7 @@ export async function runDirectorPhase({
     selectedCharacterId = endRound
       ? null
       : String(validation.selected_character_id ?? directorDecision.next_actor ?? '');
-    appendHgEvent(sceneAgent.session, 'hg/director-accepted', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/director-accepted', scope, {
       inference_id: directorInferenceId,
       director_inference_session_id: directorInferenceSessionId,
       role: 'director',

@@ -6,6 +6,7 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import HgContextBridge from '../hg-context-bridge/service.mjs';
 import HgPhaseExecutors, { roleForCharacter } from '../hg-phase-executors/index.mjs';
+import HgTraceEmitter from '../hg-trace-emitter/service.mjs';
 import {
   agentOptionsFromProfile,
   mockInferenceProfile,
@@ -17,7 +18,6 @@ import {
   LIVE_NARRATOR_PROMPT,
 } from '../../lib/live-inference-prompts.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
-import { appendHgEvent, baseCorrelation } from './events.mjs';
 
 function classifyRoundCompletion(completionReason) {
   if (completionReason === 'director_end_round' || completionReason === 'no_eligible_actors') {
@@ -79,6 +79,7 @@ export default class HolyGrailRpRuntime extends Service {
     if (!this.ctx.hgContextBridge) {
       new HgContextBridge(this.ctx);
     }
+    HgTraceEmitter.ensure(this.ctx);
     HgPhaseExecutors.ensure(this.ctx, this.config);
     await mountAgentLoopTestDependencies(this.ctx, {
       systemPrompt: { persona: options.persona ?? 'Holy Grail RP runtime.' },
@@ -97,17 +98,10 @@ export default class HolyGrailRpRuntime extends Service {
     return createDomainApiClient(baseUrl ?? this.config.domainApi?.baseUrl);
   }
 
-  _correlation({ hgSceneId, hgRoundId, sceneSessionId }) {
-    return baseCorrelation({
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      dsh_scene_session_id: String(sceneSessionId),
-    });
-  }
-
   async runRound(options) {
     const api = this._domainClient(options.domainApi?.baseUrl);
     const phaseExecutors = this.ctx.hgPhaseExecutors;
+    const trace = this.ctx.hgTraceEmitter;
     const mockDirectorResponses = [...(options.mockDirectorResponses ?? [])];
     const mockCharacterTurnResponses = options.mockCharacterTurnResponses
       ?? (options.mockCharacterResponses ? [options.mockCharacterResponses] : []);
@@ -151,9 +145,9 @@ export default class HolyGrailRpRuntime extends Service {
       sceneSessionId,
       agentOptionsFromProfile(mockInferenceProfile()),
     );
+    const scope = { hgSceneId, hgRoundId, sceneSessionId };
 
-    appendHgEvent(sceneAgent.session, 'hg/round-started', {
-      ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/round-started', scope, {
       turn_index: initialTurnIndex,
       defensive_turn_ceiling: defensiveTurnCeiling,
     });
@@ -184,16 +178,14 @@ export default class HolyGrailRpRuntime extends Service {
 
       if (!eligibleActors.length) {
         completionReason = 'no_eligible_actors';
-        appendHgEvent(sceneAgent.session, 'hg/eligibility-exhausted', {
-          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        trace.emit(sceneAgent.session, 'hg/eligibility-exhausted', scope, {
           eligibility_snapshot: eligibilitySnapshot,
           actors_used_this_round: actorsUsedThisRound,
         });
         break;
       }
 
-      appendHgEvent(sceneAgent.session, 'hg/eligibility-snapshot', {
-        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/eligibility-snapshot', scope, {
         character_turn_index: characterTurns.length,
         eligibility_snapshot: eligibilitySnapshot,
         actors_used_this_round: actorsUsedThisRound,
@@ -207,8 +199,7 @@ export default class HolyGrailRpRuntime extends Service {
       });
       const participationSnapshot = participationTrace(participation);
 
-      appendHgEvent(sceneAgent.session, 'hg/participation-decision', {
-        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/participation-decision', scope, {
         character_turn_index: characterTurns.length,
         participation: participationSnapshot,
         eligibility_snapshot: eligibilitySnapshot,
@@ -353,8 +344,7 @@ export default class HolyGrailRpRuntime extends Service {
     const { completion_status: completionStatus, completion_class: completionClass } =
       classifyRoundCompletion(completionReason);
 
-    appendHgEvent(sceneAgent.session, 'hg/round-completed', {
-      ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/round-completed', scope, {
       completion_status: completionStatus,
       completion_class: completionClass,
       completion_reason: completionReason,
@@ -402,6 +392,7 @@ export default class HolyGrailRpRuntime extends Service {
   async runCharacterInference(options) {
     const api = this._domainClient(options.domainApi?.baseUrl);
     const phaseExecutors = this.ctx.hgPhaseExecutors;
+    const trace = this.ctx.hgTraceEmitter;
     const characterId = options.characterId ?? 'Alice';
     const role = options.role ?? 'guest';
     const inferenceId = options.inferenceId ?? `inf-char-${crypto.randomUUID()}`;
@@ -424,6 +415,7 @@ export default class HolyGrailRpRuntime extends Service {
       sceneSessionId,
       agentOptionsFromProfile(mockInferenceProfile()),
     );
+    const scope = { hgSceneId, hgRoundId, sceneSessionId };
 
     const directorDecision = options.directorDecision ?? {
       next_actor: characterId,
@@ -472,12 +464,7 @@ export default class HolyGrailRpRuntime extends Service {
 
       if (inferenceRun.failed) {
         providerFailure = inferenceRun.failure;
-        appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
+        trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
           inference_id: inferenceId,
           role: 'character',
           character_id: characterId,
@@ -500,12 +487,7 @@ export default class HolyGrailRpRuntime extends Service {
         proposed = { parse_error: String(error) };
       }
 
-      appendHgEvent(sceneAgent.session, 'hg/move-proposed', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
+      trace.emit(sceneAgent.session, 'hg/move-proposed', scope, {
         inference_id: inferenceId,
         role: 'character',
         character_id: characterId,
@@ -528,12 +510,7 @@ export default class HolyGrailRpRuntime extends Service {
       });
 
       if (!validation.accepted) {
-        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
+        trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
           inference_id: inferenceId,
           role: 'character',
           character_id: characterId,
@@ -557,12 +534,7 @@ export default class HolyGrailRpRuntime extends Service {
       });
 
       if (!commit.committed) {
-        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
+        trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
           inference_id: inferenceId,
           role: 'character',
           character_id: characterId,
@@ -578,12 +550,7 @@ export default class HolyGrailRpRuntime extends Service {
       committed = true;
       continuityTurnIndex = Number(commit.continuity_turn_index);
       domainCommitId = String(commit.domain_commit_id ?? '');
-      appendHgEvent(sceneAgent.session, 'hg/move-committed', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
+      trace.emit(sceneAgent.session, 'hg/move-committed', scope, {
         inference_id: inferenceId,
         role: 'character',
         character_id: characterId,

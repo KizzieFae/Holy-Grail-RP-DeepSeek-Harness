@@ -1,8 +1,6 @@
-import { appendHgEvent } from '../hg-rp-runtime/events.mjs';
-
 export async function runNarratorPhase({
   runEphemeralInference,
-  correlation,
+  trace,
   api,
   sceneAgent,
   sceneSessionId,
@@ -26,9 +24,9 @@ export async function runNarratorPhase({
     continuity_turn_index: continuityTurnIndex,
   });
   const manifestId = String(manifest.manifest_id);
+  const scope = { hgSceneId, hgRoundId, sceneSessionId };
 
-  appendHgEvent(sceneAgent.session, 'hg/narrator-started', {
-    ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+  trace.emit(sceneAgent.session, 'hg/narrator-started', scope, {
     inference_id: narratorInferenceId,
     role: 'narrator',
     character_id: characterId,
@@ -61,8 +59,7 @@ export async function runNarratorPhase({
       throw new Error('narrator produced empty presentation output');
     }
 
-    appendHgEvent(sceneAgent.session, 'hg/narrator-completed', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/narrator-completed', scope, {
       inference_id: narratorInferenceId,
       narrator_inference_session_id: narratorRun.inferenceSessionId,
       role: 'narrator',
@@ -84,8 +81,7 @@ export async function runNarratorPhase({
       narrator_inference_trace: narratorRun.trace,
     };
   } catch (error) {
-    appendHgEvent(sceneAgent.session, 'hg/narrator-failed', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/narrator-failed', scope, {
       inference_id: narratorInferenceId,
       role: 'narrator',
       character_id: characterId,

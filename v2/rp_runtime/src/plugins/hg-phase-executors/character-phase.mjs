@@ -1,11 +1,10 @@
 import { inferenceAttemptLimit } from '../../lib/inference-profile.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
-import { appendHgEvent } from '../hg-rp-runtime/events.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
 export async function runCharacterPhase({
   runEphemeralInference,
-  correlation,
+  trace,
   api,
   sceneAgent,
   sceneSessionId,
@@ -30,6 +29,7 @@ export async function runCharacterPhase({
   let characterInferenceSessionId = null;
   let characterInferenceTrace = null;
   const attemptLimit = inferenceAttemptLimit(mockResponses, liveMaxAttempts);
+  const scope = { hgSceneId, hgRoundId, sceneSessionId };
 
   while (!committed && attemptIndex < attemptLimit) {
     const state = await api.getSceneState(hgSceneId);
@@ -56,8 +56,7 @@ export async function runCharacterPhase({
     characterInferenceTrace = characterRun.trace;
 
     if (characterRun.failed) {
-      appendHgEvent(sceneAgent.session, 'hg/inference-failed', {
-        ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
         role: 'character',
@@ -79,8 +78,7 @@ export async function runCharacterPhase({
       proposed = { parse_error: String(error) };
     }
 
-    appendHgEvent(sceneAgent.session, 'hg/move-proposed', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/move-proposed', scope, {
       inference_id: characterInferenceId,
       character_inference_session_id: characterInferenceSessionId,
       role: 'character',
@@ -106,8 +104,7 @@ export async function runCharacterPhase({
     });
 
     if (!validation.accepted) {
-      appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-        ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
         role: 'character',
@@ -133,8 +130,7 @@ export async function runCharacterPhase({
     });
 
     if (!commit.committed) {
-      appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-        ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
         role: 'character',
@@ -152,8 +148,7 @@ export async function runCharacterPhase({
     committed = true;
     continuityTurnIndex = Number(commit.continuity_turn_index);
     domainCommitId = String(commit.domain_commit_id ?? '');
-    appendHgEvent(sceneAgent.session, 'hg/move-committed', {
-      ...correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+    trace.emit(sceneAgent.session, 'hg/move-committed', scope, {
       inference_id: characterInferenceId,
       character_inference_session_id: characterInferenceSessionId,
       role: 'character',

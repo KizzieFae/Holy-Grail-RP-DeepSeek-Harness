@@ -1,7 +1,7 @@
 import { Service } from '@deepseek-ai/cordis';
 
 import HgContextBridge from '../hg-context-bridge/service.mjs';
-import { baseCorrelation } from '../hg-rp-runtime/events.mjs';
+import HgTraceEmitter from '../hg-trace-emitter/service.mjs';
 import { runCharacterPhase } from './character-phase.mjs';
 import { runDirectorPhase } from './director-phase.mjs';
 import { createInferenceSubstrate } from './inference-substrate.mjs';
@@ -21,18 +21,10 @@ export default class HgPhaseExecutors extends Service {
     this.runEphemeralInference = substrate.runEphemeralInference;
   }
 
-  _correlation({ hgSceneId, hgRoundId, sceneSessionId }) {
-    return baseCorrelation({
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      dsh_scene_session_id: String(sceneSessionId),
-    });
-  }
-
   _phaseDeps() {
     return {
       runEphemeralInference: this.runEphemeralInference.bind(this),
-      correlation: this._correlation.bind(this),
+      trace: this.ctx.hgTraceEmitter,
     };
   }
 
@@ -61,6 +53,7 @@ export default class HgPhaseExecutors extends Service {
     if (!ctx.hgContextBridge) {
       new HgContextBridge(ctx);
     }
+    HgTraceEmitter.ensure(ctx);
     if (!ctx.hgPhaseExecutors) {
       new HgPhaseExecutors(ctx, config);
     }
