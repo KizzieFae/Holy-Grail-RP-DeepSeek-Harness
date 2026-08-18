@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M12.6 anchor:** `2e9cbf4`  
-**M12.7 completion HEAD:** (see §26 after commit)
+**M12.7 completion HEAD:** `1f6a34c`
 
 **Objective:** Migrate useful V1 retrieval-index behavior into permanent V2 KnowledgeService / ContextAssembly without resurrecting deleted V1 prompt runtime.
 
@@ -286,4 +286,9 @@ Remaining required gaps: player/settings UX. Optional: narrator semantic retry, 
 
 ## 26. Repository state
 
-Recorded after commit/push in this slice.
+| Field | Value |
+|-------|-------|
+| Commit | `1f6a34c` — `feat(v2): migrate retrieval-index capability (M12.7)` |
+| Branch | `main` |
+| Pushed | `origin/main` |
+| Working tree | clean |
