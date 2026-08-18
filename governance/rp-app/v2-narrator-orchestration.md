@@ -4,7 +4,7 @@
 **Date:** 2026-08-18  
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **Director + Character anchor:** `193c768`  
-**Implementation HEAD:** (see §14 after commit)
+**Implementation HEAD:** `8dd458c`
 
 ---
 
@@ -175,7 +175,11 @@ When narrator fails after successful commit:
 
 ## 14. Repository state
 
-(See commit message and final HEAD after push.)
+| Field | Value |
+|-------|-------|
+| Commit | `8dd458c` — feat(v2): add Narrator DSH orchestration after domain commit |
+| Branch | `main` |
+| `origin/main` | aligned after push |
 
 ---
 
