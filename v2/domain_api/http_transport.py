@@ -20,6 +20,7 @@ from .contract import (
     SessionCreateRequest,
     SessionOpenRequest,
     UserTurnRecordRequest,
+    UserProfileSetRequest,
     PresentationRecordRequest,
     ValidationRequest,
 )
@@ -197,6 +198,15 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     hg_round_id=data.get("hg_round_id"),
                 )
                 self._send_json(201, self.kernel.record_user_turn(req))
+                return
+            if path == "/v1/sessions/user-profile":
+                req = UserProfileSetRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    profile_key=str(data["profile_key"]),
+                    content=str(data["content"]),
+                    user_persona_id=str(data.get("user_persona_id", "Player")),
+                )
+                self._send_json(200, self.kernel.set_user_profile_fact(req))
                 return
             if path == "/v1/sessions/history/presentation":
                 req = PresentationRecordRequest(

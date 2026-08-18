@@ -21,7 +21,9 @@ from session_manager import SessionManager  # noqa: E402
 
 from .contract import CommitResponse  # noqa: E402
 from .cross_scope_memory_repository import CrossScopeMemoryRepository  # noqa: E402
+from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
+from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
     V2_HOST_METADATA_KEY,
@@ -59,11 +61,19 @@ class SessionRepository:
         self._cross_scope_repo = CrossScopeMemoryRepository(
             self._session_manager.sessions_dir / "_cross_scope_memory"
         )
+        self._scope_knowledge_repo = ScopeKnowledgeRepository(
+            self._session_manager.sessions_dir / "_scope_knowledge"
+        )
         self.memory_service = MemoryService(self._cross_scope_repo)
+        self.knowledge_service = KnowledgeService(self._scope_knowledge_repo)
 
     @property
     def sessions_dir(self) -> Path:
         return self._session_manager.sessions_dir
+
+    @property
+    def scope_knowledge_repo(self) -> ScopeKnowledgeRepository:
+        return self._scope_knowledge_repo
 
     def health_ok(self) -> bool:
         return self._session_manager.sessions_dir.exists()

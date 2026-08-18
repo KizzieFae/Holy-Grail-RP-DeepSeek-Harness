@@ -20,7 +20,6 @@ from domain_api.contract import (  # noqa: E402
     UserTurnRecordRequest,
 )
 from domain_api.kernel import DomainKernel  # noqa: E402
-from domain_api.knowledge_service import KnowledgeService  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
 
 
@@ -29,7 +28,7 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
         self.kernel = DomainKernel(repository=self.repo)
-        self.knowledge = KnowledgeService()
+        self.knowledge = self.repo.knowledge_service
 
     def tearDown(self) -> None:
         shutil.rmtree(self._tmpdir, ignore_errors=True)

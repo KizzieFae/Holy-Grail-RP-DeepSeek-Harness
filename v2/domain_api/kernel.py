@@ -52,6 +52,7 @@ from .contract import (  # noqa: E402
     SessionHistoryResponse,
     PresentationRecordRequest,
     UserTurnRecordRequest,
+    UserProfileSetRequest,
     ValidationRequest,
     ValidationResponse,
 )
@@ -177,11 +178,15 @@ class DomainKernel:
             self.store = store
         else:
             self.store = repository or SessionRepository()
-        self._knowledge_service = KnowledgeService()
 
     def _memory_service(self) -> MemoryService | None:
         if isinstance(self.store, SessionRepository):
             return self.store.memory_service
+        return None
+
+    def _knowledge_service(self) -> KnowledgeService | None:
+        if isinstance(self.store, SessionRepository):
+            return self.store.knowledge_service
         return None
 
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
@@ -567,7 +572,8 @@ class DomainKernel:
                 fixture.character_states.get(req.character_id)
             )
             memory_projections = [single] if single is not None else []
-        knowledge_projections = self._knowledge_service.project_context(
+        knowledge_service = self._knowledge_service() or KnowledgeService()
+        knowledge_projections = knowledge_service.project_context(
             fixture, character_id=req.character_id
         )
         contributions: list[PromptContribution] = [
@@ -636,7 +642,9 @@ class DomainKernel:
                 PromptContribution(
                     contribution_id=f"{manifest_id}-knowledge-{index}",
                     source_kind=source_kind,
-                    authority_class="suggestive",
+                    authority_class=str(
+                        knowledge_provenance.get("authority_class", "suggestive")
+                    ),
                     knowledge_ids=tuple(knowledge_provenance.get("knowledge_ids") or ()),
                     priority=21 + index,
                     content=knowledge_content,
@@ -1015,7 +1023,25 @@ class DomainKernel:
                     inference_id=req.inference_id,
                     reason=str(exc),
                 )
+            knowledge_service = self._knowledge_service()
+            if knowledge_service is not None:
+                knowledge_service.promote_after_commit(
+                    fixture,
+                    source_domain_commit_id=commit_id,
+                )
         return response
+
+    def set_user_profile_fact(self, req: UserProfileSetRequest) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        knowledge_service = self._knowledge_service()
+        if knowledge_service is None:
+            raise ValueError("user profile writes require SessionRepository-backed knowledge store")
+        return knowledge_service.write_user_profile(
+            fixture,
+            profile_key=req.profile_key,
+            content=req.content,
+            user_persona_id=req.user_persona_id,
+        )
 
     def record_uncommitted_proposal(self, hg_scene_id: str) -> None:
         """Explicit no-op documenting that proposals do not mutate continuity."""

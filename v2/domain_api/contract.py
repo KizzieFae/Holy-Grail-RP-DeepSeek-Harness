@@ -18,6 +18,8 @@ SourceKind = Literal[
     "character_memory",
     "authored_character_knowledge",
     "scene_reference",
+    "learned_world_knowledge",
+    "user_profile",
     "director_scratch",
     "continuity_summary",
     "director_decision",
@@ -246,6 +248,14 @@ class UserTurnRecordRequest:
     speaker: str = "Player"
     forced_designation: str | None = None
     hg_round_id: str | None = None
+
+
+@dataclass(frozen=True)
+class UserProfileSetRequest:
+    hg_session_id: str
+    profile_key: str
+    content: str
+    user_persona_id: str = "Player"
 
 
 @dataclass(frozen=True)
