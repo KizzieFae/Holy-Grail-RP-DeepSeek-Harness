@@ -16,11 +16,9 @@ async function postJson(baseUrl, pathName, body) {
 
 test('context isolation: director manifest excludes character-private contributions', async (t) => {
   const port = 23765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port, { withSession: true });
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { withSession: true });
+  const { baseUrl, scene } = host;
+  t.after(() => host.stop());
 
   const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
   const director = await postJson(baseUrl, '/v1/director/context/prepare', {
@@ -54,11 +52,9 @@ test('context isolation: director manifest excludes character-private contributi
 
 test('context isolation: separate inference sessions remain distinct identities', async (t) => {
   const port = 24765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { createHolyGrailRpContext } = await import('../src/bootstrap.mjs');
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
@@ -92,11 +88,9 @@ test('context isolation: separate inference sessions remain distinct identities'
 
 test('context isolation: narrator manifest excludes director scratch and character-private', async (t) => {
   const port = 28765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port, { withSession: true });
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { withSession: true });
+  const { baseUrl, scene } = host;
+  t.after(() => host.stop());
 
   const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
   const VALID_MOVE = {
@@ -158,11 +152,9 @@ test('context isolation: narrator manifest excludes director scratch and charact
 
 test('context isolation: character context excludes director scratch', async (t) => {
   const port = 24765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port, { withSession: true });
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { withSession: true });
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const scene = await postJson(baseUrl, '/v1/sessions/create', { cast: ['Alice'] });
   const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
@@ -181,11 +173,9 @@ test('context isolation: character context excludes director scratch', async (t)
 
 test('context isolation: round orchestration preserves role boundaries', async (t) => {
   const port = 25765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { createHolyGrailRpContext } = await import('../src/bootstrap.mjs');
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });

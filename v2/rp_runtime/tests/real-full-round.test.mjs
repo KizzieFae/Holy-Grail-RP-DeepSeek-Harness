@@ -1,46 +1,17 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { createTestSession, fetchSessionState, startDomainApi } from './helpers/domain-api.mjs';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { deepseekInferenceProfile } from '../src/lib/inference-profile.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
 const hasLiveKey = Boolean(process.env.DEEPSEEK_API_KEY?.trim());
 
 const LIVE_PROFILE = deepseekInferenceProfile({
   reasoningEffort: 'low',
   maxTokens: 768,
 });
-
-async function startDomainApi(port) {
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env: { ...process.env, PYTHONPATH: path.join(repoRoot, 'v2') } },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 40; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cast: ['Alice'] }),
-      });
-      if (res.ok) return { proc, baseUrl };
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
-}
 
 function findEvent(events, type) {
   return events.find((event) => event.type === type) ?? null;
@@ -51,11 +22,9 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
   timeout: 180_000,
 }, async (t) => {
   const port = 23765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({
     domainApi: { baseUrl },

@@ -266,6 +266,7 @@ def test_http_health_and_session_lifecycle(sessions_dir: Path) -> None:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/health") as resp:
             health = json.loads(resp.read().decode("utf-8"))
         assert health["status"] == "ok"
+        assert health["service"] == "holy-grail-domain-host"
 
         create_req = urllib.request.Request(
             f"http://127.0.0.1:{port}/v1/sessions/create",

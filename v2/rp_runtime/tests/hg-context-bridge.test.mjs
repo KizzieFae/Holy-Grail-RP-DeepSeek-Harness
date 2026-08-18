@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { createTestSession, fetchSessionState, startDomainApi } from './helpers/domain-api.mjs';
 
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { SessionId } from '@deepseek-ai/dsh-session';
@@ -13,33 +11,6 @@ import { extractInferenceTrace } from '../src/lib/inference-trace.mjs';
 import { waitForIdle } from '../src/lib/inference-utils.mjs';
 import { HgMockLlmAdapter } from '../src/mock-llm-adapter.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
-
-async function startDomainApi(port) {
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env: { ...process.env, PYTHONPATH: path.join(repoRoot, 'v2') } },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 40; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-      });
-      if (res.ok) return { proc, baseUrl, scene: await res.json() };
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
-}
 
 async function postJson(baseUrl, pathName, body) {
   const res = await fetch(`${baseUrl}${pathName}`, {
@@ -53,11 +24,9 @@ async function postJson(baseUrl, pathName, body) {
 
 test('HgContextBridge: manifest contributions correlate to DSH inference trace', async (t) => {
   const port = 29765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { withSession: true });
+  const { baseUrl, scene } = host;
+  t.after(() => host.stop());
 
   const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
   const manifest = await postJson(baseUrl, '/v1/context/prepare', {
@@ -111,11 +80,9 @@ test('HgContextBridge: manifest contributions correlate to DSH inference trace',
 
 test('HgContextBridge: scoped registrations do not leak across inference agents', async (t) => {
   const port = 30765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl, scene } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { withSession: true });
+  const { baseUrl, scene } = host;
+  t.after(() => host.stop());
 
   const round = await postJson(baseUrl, '/v1/rounds/start', { hg_scene_id: scene.hg_scene_id });
   const directorManifest = await postJson(baseUrl, '/v1/director/context/prepare', {

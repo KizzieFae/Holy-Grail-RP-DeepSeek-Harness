@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
-import { makeTempSessionsDir, startDomainApi } from './helpers/domain-api.mjs';
+import { makeTempSessionsDir, startDomainApi, fetchSessionState } from './helpers/domain-api.mjs';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -41,11 +41,9 @@ test('production session: full round persists durable state', async (t) => {
   });
 
   const port = 31765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port, { sessionsDir });
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { sessionsDir });
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
@@ -98,14 +96,12 @@ test('production session: Domain Host restart resumes between rounds', async (t)
   const hgSessionId = round1.hg_session_id;
 
   await ctx1.fiber.dispose();
-  host1.proc.kill();
-  await once(host1.proc, 'exit');
+  await host1.stop();
 
   const port2 = 33765 + Math.floor(Math.random() * 1000);
   const host2 = await startDomainApi(port2, { sessionsDir });
   t.after(async () => {
-    host2.proc.kill();
-    await once(host2.proc, 'exit');
+    await host2.stop();
   });
 
   const { ctx: ctx2, orchestrator: orch2 } = await createHolyGrailRpContext({
@@ -134,11 +130,9 @@ test('production session: DSH restart uses new execution session for same HG ses
   });
 
   const port = 34765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port, { sessionsDir });
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port, { sessionsDir });
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx: ctx1, orchestrator: orch1 } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   const first = await orch1.runRound({
@@ -164,8 +158,7 @@ test('production session: DSH restart uses new execution session for same HG ses
   assert.equal(second.hg_session_id, first.hg_session_id);
   assert.notEqual(second.dsh_scene_session_id, first.dsh_scene_session_id);
 
-  const stateRes = await fetch(`${baseUrl}/v1/scenes/${encodeURIComponent(first.hg_scene_id)}/state`);
-  const state = await stateRes.json();
+  const state = await fetchSessionState(baseUrl, first.hg_session_id);
   assert.equal(state.turn_counter, 1);
   assert.equal(state.committed_move_count, 1);
 });

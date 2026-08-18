@@ -1,15 +1,9 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
+import { createTestSession, fetchSessionState, startDomainApi } from './helpers/domain-api.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
+import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 
 const ALICE_MOVE = {
   move_schema_version: 2,
@@ -51,30 +45,6 @@ const DIRECTOR_BOB = {
   tension_shift: '',
 };
 
-async function startDomainApi(port) {
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env: { ...process.env, PYTHONPATH: path.join(repoRoot, 'v2') } },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 40; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-      });
-      if (res.ok) return { proc, baseUrl };
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
-}
-
 function eventIndexes(events, type) {
   return events
     .map((event, index) => (event.type === type ? index : -1))
@@ -83,11 +53,9 @@ function eventIndexes(events, type) {
 
 test('two-character round: director sequences Alice then Bob with per-turn narration', async (t) => {
   const port = 29765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
@@ -130,26 +98,18 @@ test('two-character round: director sequences Alice then Bob with per-turn narra
   assert.ok(narratorIndexes[0] < commitIndexes[1]);
   assert.ok(commitIndexes[1] < narratorIndexes[1]);
 
-  const stateRes = await fetch(`${baseUrl}/v1/scenes/${encodeURIComponent(result.hg_scene_id)}/state`);
-  const state = await stateRes.json();
+  const state = await fetchSessionState(baseUrl, result.hg_session_id);
   assert.equal(state.turn_counter, 2);
   assert.equal(state.committed_move_count, 2);
 });
 
 test('two-character round: Bob context projection excludes Alice private knowledge', async (t) => {
   const port = 30765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
-  const sceneRes = await fetch(`${baseUrl}/v1/scenes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-  });
-  const scene = await sceneRes.json();
+  const scene = await createTestSession(baseUrl, ['Alice', 'Bob']);
   const roundRes = await fetch(`${baseUrl}/v1/rounds/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -219,18 +179,11 @@ test('two-character round: Bob context projection excludes Alice private knowled
 
 test('two-character round: rejected Alice attempt stays out of Bob projection', async (t) => {
   const port = 31765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
-  const sceneRes = await fetch(`${baseUrl}/v1/scenes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-  });
-  const scene = await sceneRes.json();
+  const scene = await createTestSession(baseUrl, ['Alice', 'Bob']);
   const roundRes = await fetch(`${baseUrl}/v1/rounds/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

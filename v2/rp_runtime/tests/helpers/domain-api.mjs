@@ -1,56 +1,64 @@
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
-export const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
+import { startDomainHost, stopDomainHostProcess } from '../../src/runtime-supervisor/domain-host-process.mjs';
+
+export { repoRoot, defaultPythonExecutable } from '../../src/lib/runtime-config.mjs';
 
 /**
- * @param {number} port
- * @param {{ sessionsDir?: string }} [options]
+ * Start a Domain Host for integration tests using production supervisor primitives.
  */
 export async function startDomainApi(port, options = {}) {
-  const env = {
-    ...process.env,
-    PYTHONPATH: path.join(repoRoot, 'v2'),
+  const host = await startDomainHost({
+    host: '127.0.0.1',
+    port,
+    sessionsDir: options.sessionsDir,
+    timeoutMs: options.timeoutMs,
+  });
+  const result = {
+    proc: host.proc,
+    baseUrl: host.baseUrl,
+    async stop() {
+      await stopDomainHostProcess(host.proc);
+    },
   };
-  if (options.sessionsDir) {
-    env.HG_SESSIONS_DIR = options.sessionsDir;
+  if (options.withSession) {
+    result.scene = await createTestSession(host.baseUrl, options.cast ?? ['Alice', 'Bob']);
   }
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 80; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/health`);
-      if (res.ok) {
-        const result = { proc, baseUrl };
-        if (options.withSession) {
-          const createRes = await fetch(`${baseUrl}/v1/sessions/create`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cast: options.cast ?? ['Alice', 'Bob'] }),
-          });
-          if (!createRes.ok) throw new Error('failed to create session');
-          result.scene = await createRes.json();
-        }
-        return result;
-      }
-    } catch {
-      // server not ready
-    }
-    await new Promise((r) => setTimeout(r, 150));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
+  return result;
+}
+
+export async function createTestSession(baseUrl, cast = ['Alice', 'Bob']) {
+  const res = await fetch(`${baseUrl}/v1/sessions/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cast }),
+  });
+  if (!res.ok) throw new Error(`sessions/create failed: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchSessionState(baseUrl, hgSessionId) {
+  const res = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(hgSessionId)}/state`);
+  if (!res.ok) throw new Error(`session state failed: ${res.status}`);
+  return res.json();
 }
 
 export function makeTempSessionsDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'hg-sessions-'));
+}
+
+export async function withDomainHost(t, options, fn) {
+  const host = await startDomainHost({
+    host: '127.0.0.1',
+    port: options.port,
+    sessionsDir: options.sessionsDir,
+  });
+  t.after(async () => {
+    await stopDomainHostProcess(host.proc);
+    await once(host.proc, 'exit').catch(() => {});
+  });
+  return fn(host);
 }

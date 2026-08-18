@@ -36,17 +36,6 @@ export function createDomainApiClient(baseUrl) {
         'openSession',
       );
     },
-    /** @deprecated Transitional/test-only — production uses createSession/openSession */
-    async createScene(body = {}) {
-      trackBoundaryCall(metrics, 'createScene', body);
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`createScene failed: ${res.status}`);
-      return res.json();
-    },
     startRound(body) {
       return postJson(metrics, baseUrl, '/v1/rounds/start', body, 'startRound');
     },
@@ -74,11 +63,14 @@ export function createDomainApiClient(baseUrl) {
     prepareNarratorContext(body) {
       return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
     },
-    async getSceneState(hgSceneId) {
-      trackBoundaryCall(metrics, 'getSceneState', { hg_scene_id: hgSceneId });
-      const res = await fetch(`${baseUrl}/v1/scenes/${encodeURIComponent(hgSceneId)}/state`);
-      if (!res.ok) throw new Error(`getSceneState failed: ${res.status}`);
+    async getSessionState(hgSessionId) {
+      trackBoundaryCall(metrics, 'getSessionState', { hg_session_id: hgSessionId });
+      const res = await fetch(`${baseUrl}/v1/sessions/${encodeURIComponent(hgSessionId)}/state`);
+      if (!res.ok) throw new Error(`getSessionState failed: ${res.status}`);
       return res.json();
+    },
+    async getSceneState(hgSceneId) {
+      return this.getSessionState(hgSceneId);
     },
   };
 }

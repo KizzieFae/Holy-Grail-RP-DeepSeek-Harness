@@ -176,14 +176,6 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.prepare_narrator_context(req))
                 return
-            if path == "/v1/scenes":
-                fixture = self.kernel.create_scene(
-                    hg_scene_id=data.get("hg_scene_id"),
-                    location=data.get("location", "Workshop"),
-                    cast=data.get("cast"),
-                )
-                self._send_json(201, self.kernel.scene_snapshot(fixture.hg_scene_id))
-                return
             self._send_json(404, {"error": "not found"})
         except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:
             self._send_json(400, {"error": str(exc)})
@@ -192,7 +184,20 @@ class DomainApiHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/health":
             healthy = getattr(self.kernel.store, "health_ok", lambda: True)()
-            self._send_json(200 if healthy else 503, {"status": "ok" if healthy else "degraded"})
+            self._send_json(
+                200 if healthy else 503,
+                {
+                    "status": "ok" if healthy else "degraded",
+                    "service": "holy-grail-domain-host",
+                },
+            )
+            return
+        if path.startswith("/v1/sessions/") and path.endswith("/state"):
+            hg_session_id = path.removeprefix("/v1/sessions/").removesuffix("/state")
+            try:
+                self._send_json(200, self.kernel.scene_snapshot(hg_session_id))
+            except KeyError:
+                self._send_json(404, {"error": "unknown session"})
             return
         if path.startswith("/v1/scenes/") and path.endswith("/state"):
             hg_scene_id = path.removeprefix("/v1/scenes/").removesuffix("/state")

@@ -5,6 +5,7 @@
   "description": "V2 boundary prototype: minimal DSH/Cordis RP inference composition",
   "type": "module",
   "scripts": {
+    "start": "node bin/hg-runtime.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {

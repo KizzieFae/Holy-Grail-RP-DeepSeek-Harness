@@ -1,15 +1,9 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
+import { createTestSession, fetchSessionState, startDomainApi } from './helpers/domain-api.mjs';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const venvPython = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
+import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 
 const MOVE = {
   move_schema_version: 2,
@@ -34,37 +28,11 @@ const DIRECTOR_END = {
   tension_shift: '',
 };
 
-async function startDomainApi(port) {
-  const proc = spawn(
-    venvPython,
-    ['-m', 'domain_api', '--host', '127.0.0.1', '--port', String(port)],
-    { cwd: path.join(repoRoot, 'v2'), env: { ...process.env, PYTHONPATH: path.join(repoRoot, 'v2') } },
-  );
-  const baseUrl = `http://127.0.0.1:${port}`;
-  for (let i = 0; i < 40; i += 1) {
-    try {
-      const res = await fetch(`${baseUrl}/v1/scenes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cast: ['Alice', 'Bob'] }),
-      });
-      if (res.ok) return { proc, baseUrl };
-    } catch {
-      // not ready
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  proc.kill();
-  throw new Error('Domain API server failed to start');
-}
-
 test('generic round: director end_round completes without further character turns', async (t) => {
   const port = 32765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
@@ -85,11 +53,9 @@ test('generic round: director end_round completes without further character turn
 
 test('generic round: actor exhaustion completes without extra director call', async (t) => {
   const port = 33765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
@@ -111,11 +77,9 @@ test('generic round: actor exhaustion completes without extra director call', as
 
 test('generic round: defensive turn ceiling is distinct from semantic completion', async (t) => {
   const port = 34765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
@@ -140,11 +104,9 @@ test('generic round: defensive turn ceiling is distinct from semantic completion
 
 test('generic round: three-character cast executes until actor exhaustion', async (t) => {
   const port = 35765 + Math.floor(Math.random() * 1000);
-  const { proc, baseUrl } = await startDomainApi(port);
-  t.after(async () => {
-    proc.kill();
-    await once(proc, 'exit');
-  });
+  const host = await startDomainApi(port);
+  const { baseUrl } = host;
+  t.after(() => host.stop());
 
   const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
   t.after(async () => {
