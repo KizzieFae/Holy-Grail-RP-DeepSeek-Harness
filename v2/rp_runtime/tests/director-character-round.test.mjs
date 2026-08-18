@@ -123,7 +123,7 @@ test('director-character round: director rejection does not commit', async (t) =
   });
 
   assert.equal(result.committed, false);
-  assert.equal(result.director_accepted, false);
+  assert.equal(result.completion_reason, 'director_not_accepted');
   assert.ok(result.scene_events.some((e) => e.type === 'hg/director-rejected'));
   assert.equal(result.scene_events.some((e) => e.type === 'hg/move-committed'), false);
 });

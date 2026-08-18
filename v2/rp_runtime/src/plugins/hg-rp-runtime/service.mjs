@@ -14,6 +14,10 @@ import {
 import { HG_MOCK_MODEL, HG_MOCK_PROVIDER, HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
 import { appendHgEvent, baseCorrelation } from './events.mjs';
 
+function roleForCharacter(characterId) {
+  return characterId === 'Alice' ? 'guest' : 'staff';
+}
+
 export default class HolyGrailRpRuntime extends Service {
   static name = 'hgRpRuntime';
 
@@ -69,6 +73,269 @@ export default class HolyGrailRpRuntime extends Service {
     });
   }
 
+  async _runDirectorPhase({
+    api,
+    sceneAgent,
+    sceneSessionId,
+    hgSceneId,
+    hgRoundId,
+    directorInferenceId,
+    directorAttemptSeed,
+    mockDirectorResponses,
+    directorResponseIndex,
+    actorsUsedThisRound,
+    turnIndex,
+  }) {
+    let directorAttempt = directorAttemptSeed;
+    let directorAccepted = false;
+    let directorDecision = null;
+    let directorManifestId = '';
+    let selectedCharacterId = null;
+    let directorInferenceSessionId = null;
+    let endRound = false;
+
+    while (directorResponseIndex < mockDirectorResponses.length && !directorAccepted) {
+      const manifest = await api.prepareDirectorContext({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        inference_id: directorInferenceId,
+        turn_index: turnIndex,
+        attempt_index: directorAttempt,
+        actors_used_this_round: actorsUsedThisRound,
+      });
+      directorManifestId = String(manifest.manifest_id);
+
+      const directorRun = await this._runEphemeralInference({
+        inferenceId: `${directorInferenceId}-${directorAttempt}`,
+        prompt: 'Produce your director decision as JSON only.',
+        manifest,
+        mockResponses: [mockDirectorResponses[directorResponseIndex]],
+      });
+      directorInferenceSessionId = directorRun.inferenceSessionId;
+
+      let proposed;
+      try {
+        proposed = parseJsonObject(directorRun.raw);
+      } catch (error) {
+        proposed = { parse_error: String(error) };
+      }
+
+      appendHgEvent(sceneAgent.session, 'hg/director-proposed', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: directorInferenceId,
+        director_inference_session_id: directorInferenceSessionId,
+        role: 'director',
+        attempt_index: directorAttempt,
+        manifest_id: directorManifestId,
+        proposed_decision: proposed,
+        raw_model_output: directorRun.raw,
+        actors_used_this_round: actorsUsedThisRound,
+      });
+
+      const validation = await api.validateDirectorDecision({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        inference_id: directorInferenceId,
+        turn_index: turnIndex,
+        attempt_index: directorAttempt,
+        proposed_decision: proposed,
+        raw_model_output: directorRun.raw,
+      });
+
+      if (!validation.accepted) {
+        appendHgEvent(sceneAgent.session, 'hg/director-rejected', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          inference_id: directorInferenceId,
+          director_inference_session_id: directorInferenceSessionId,
+          role: 'director',
+          attempt_index: directorAttempt,
+          validation_class: String(validation.validation_class ?? 'unknown'),
+          reason: String(validation.reason ?? ''),
+          retryable: Boolean(validation.retryable),
+        });
+        directorAttempt += 1;
+        directorResponseIndex += 1;
+        continue;
+      }
+
+      directorAccepted = true;
+      directorDecision = validation.normalized_decision ?? proposed;
+      endRound = Boolean(directorDecision.end_round);
+      selectedCharacterId = endRound
+        ? null
+        : String(validation.selected_character_id ?? directorDecision.next_actor ?? '');
+      appendHgEvent(sceneAgent.session, 'hg/director-accepted', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: directorInferenceId,
+        director_inference_session_id: directorInferenceSessionId,
+        role: 'director',
+        attempt_index: directorAttempt,
+        manifest_id: directorManifestId,
+        selected_character_id: selectedCharacterId,
+        normalized_decision: directorDecision,
+        end_round: endRound,
+        actors_used_this_round: actorsUsedThisRound,
+      });
+      directorResponseIndex += 1;
+    }
+
+    return {
+      accepted: directorAccepted,
+      endRound,
+      directorDecision,
+      selectedCharacterId,
+      directorManifestId,
+      directorInferenceSessionId,
+      directorAttempt,
+      directorResponseIndex,
+    };
+  }
+
+  async _runCharacterTurn({
+    api,
+    sceneAgent,
+    sceneSessionId,
+    hgSceneId,
+    hgRoundId,
+    characterId,
+    directorDecision,
+    characterInferenceId,
+    mockResponses,
+    characterTurnIndex,
+  }) {
+    const role = roleForCharacter(characterId);
+    let attemptIndex = 0;
+    let committed = false;
+    let continuityTurnIndex = null;
+    let domainCommitId = null;
+    let characterManifestId = '';
+    let characterInferenceSessionId = null;
+
+    while (attemptIndex < mockResponses.length && !committed) {
+      const state = await api.getSceneState(hgSceneId);
+      const expectedTurnIndex = Number(state.turn_counter ?? 0);
+      const manifest = await api.prepareCharacterContext({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        inference_id: characterInferenceId,
+        character_id: characterId,
+        role,
+        turn_index: expectedTurnIndex,
+        attempt_index: attemptIndex,
+      });
+      characterManifestId = String(manifest.manifest_id);
+
+      const characterRun = await this._runEphemeralInference({
+        inferenceId: `${characterInferenceId}-${attemptIndex}`,
+        prompt: 'Produce your character move as JSON only.',
+        manifest,
+        mockResponses: [mockResponses[attemptIndex]],
+      });
+      characterInferenceSessionId = characterRun.inferenceSessionId;
+
+      let proposed;
+      try {
+        proposed = parseJsonObject(characterRun.raw);
+      } catch (error) {
+        proposed = { parse_error: String(error) };
+      }
+
+      appendHgEvent(sceneAgent.session, 'hg/move-proposed', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: characterInferenceId,
+        character_inference_session_id: characterInferenceSessionId,
+        role: 'character',
+        character_id: characterId,
+        character_turn_index: characterTurnIndex,
+        attempt_index: attemptIndex,
+        manifest_id: characterManifestId,
+        proposed_move: proposed,
+        raw_model_output: characterRun.raw,
+      });
+
+      const validation = await api.validateMove({
+        inference_id: characterInferenceId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        character_id: characterId,
+        role,
+        turn_index: expectedTurnIndex,
+        attempt_index: attemptIndex,
+        proposed_move: proposed,
+        raw_model_output: characterRun.raw,
+      });
+
+      if (!validation.accepted) {
+        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          inference_id: characterInferenceId,
+          character_inference_session_id: characterInferenceSessionId,
+          role: 'character',
+          character_id: characterId,
+          character_turn_index: characterTurnIndex,
+          attempt_index: attemptIndex,
+          validation_class: String(validation.validation_class ?? 'unknown'),
+          reason: String(validation.reason ?? ''),
+          retryable: Boolean(validation.retryable),
+        });
+        attemptIndex += 1;
+        continue;
+      }
+
+      const commit = await api.commitMove({
+        inference_id: characterInferenceId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        character_id: characterId,
+        validated_move: validation.normalized_move ?? proposed,
+        director_decision: directorDecision,
+        expected_turn_index: expectedTurnIndex,
+      });
+
+      if (!commit.committed) {
+        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
+          ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+          inference_id: characterInferenceId,
+          character_inference_session_id: characterInferenceSessionId,
+          role: 'character',
+          character_id: characterId,
+          character_turn_index: characterTurnIndex,
+          attempt_index: attemptIndex,
+          validation_class: 'continuity_anchor',
+          reason: String(commit.reason ?? 'commit rejected'),
+          retryable: false,
+        });
+        attemptIndex += 1;
+        continue;
+      }
+
+      committed = true;
+      continuityTurnIndex = Number(commit.continuity_turn_index);
+      domainCommitId = String(commit.domain_commit_id ?? '');
+      appendHgEvent(sceneAgent.session, 'hg/move-committed', {
+        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+        inference_id: characterInferenceId,
+        character_inference_session_id: characterInferenceSessionId,
+        role: 'character',
+        character_id: characterId,
+        character_turn_index: characterTurnIndex,
+        attempt_index: attemptIndex,
+        manifest_id: characterManifestId,
+        continuity_turn_index: continuityTurnIndex,
+        domain_commit_id: domainCommitId,
+      });
+    }
+
+    return {
+      committed,
+      characterId,
+      continuityTurnIndex,
+      domainCommitId,
+      characterManifestId,
+      characterInferenceSessionId,
+    };
+  }
+
   async _runNarratorPresentation({
     api,
     sceneAgent,
@@ -80,6 +347,7 @@ export default class HolyGrailRpRuntime extends Service {
     continuityTurnIndex,
     narratorInferenceId,
     mockNarratorResponses,
+    characterTurnIndex,
   }) {
     const manifest = await api.prepareNarratorContext({
       hg_scene_id: hgSceneId,
@@ -96,6 +364,7 @@ export default class HolyGrailRpRuntime extends Service {
       inference_id: narratorInferenceId,
       role: 'narrator',
       character_id: characterId,
+      character_turn_index: characterTurnIndex,
       manifest_id: manifestId,
       domain_commit_id: domainCommitId,
       continuity_turn_index: continuityTurnIndex,
@@ -121,6 +390,7 @@ export default class HolyGrailRpRuntime extends Service {
         narrator_inference_session_id: narratorRun.inferenceSessionId,
         role: 'narrator',
         character_id: characterId,
+        character_turn_index: characterTurnIndex,
         manifest_id: manifestId,
         domain_commit_id: domainCommitId,
         continuity_turn_index: continuityTurnIndex,
@@ -140,6 +410,7 @@ export default class HolyGrailRpRuntime extends Service {
         inference_id: narratorInferenceId,
         role: 'narrator',
         character_id: characterId,
+        character_turn_index: characterTurnIndex,
         manifest_id: manifestId,
         domain_commit_id: domainCommitId,
         continuity_turn_index: continuityTurnIndex,
@@ -155,6 +426,181 @@ export default class HolyGrailRpRuntime extends Service {
         narrator_manifest_id: manifestId,
       };
     }
+  }
+
+  async runRound(options) {
+    const api = this._domainClient(options.domainApi?.baseUrl);
+    const characterTurnLimit = Number(options.characterTurnLimit ?? 1);
+    const mockDirectorResponses = [...(options.mockDirectorResponses ?? [])];
+    const mockCharacterTurnResponses = options.mockCharacterTurnResponses
+      ?? (options.mockCharacterResponses ? [options.mockCharacterResponses] : []);
+    const mockNarratorTurnResponses = options.mockNarratorTurnResponses
+      ?? (options.mockNarratorResponses ? [options.mockNarratorResponses] : []);
+
+    let hgSceneId = options.hgSceneId;
+    if (!hgSceneId) {
+      const created = await api.createScene({ cast: ['Alice', 'Bob'] });
+      hgSceneId = String(created.hg_scene_id);
+    }
+    const round = await api.startRound({ hg_scene_id: hgSceneId });
+    const hgRoundId = String(round.hg_round_id);
+    const initialTurnIndex = Number(round.turn_index ?? 0);
+
+    const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
+    const sceneAgent = this.ctx.agentLoop.create(sceneSessionId, {
+      provider: HG_MOCK_PROVIDER,
+      model: HG_MOCK_MODEL,
+    });
+
+    appendHgEvent(sceneAgent.session, 'hg/round-started', {
+      ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      turn_index: initialTurnIndex,
+      character_turn_limit: characterTurnLimit,
+    });
+
+    const characterTurns = [];
+    const actorsUsedThisRound = [];
+    let directorResponseIndex = 0;
+    let directorAttemptSeed = 0;
+    let roundCompleted = false;
+    let completionReason = 'character_turn_limit_reached';
+    let lastDirectorInferenceSessionId = null;
+
+    while (characterTurns.length < characterTurnLimit) {
+      const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
+      const directorPhase = await this._runDirectorPhase({
+        api,
+        sceneAgent,
+        sceneSessionId,
+        hgSceneId,
+        hgRoundId,
+        directorInferenceId,
+        directorAttemptSeed,
+        mockDirectorResponses,
+        directorResponseIndex,
+        actorsUsedThisRound,
+        turnIndex: initialTurnIndex,
+      });
+      directorAttemptSeed = directorPhase.directorAttempt;
+      directorResponseIndex = directorPhase.directorResponseIndex;
+      lastDirectorInferenceSessionId = directorPhase.directorInferenceSessionId;
+
+      if (!directorPhase.accepted) {
+        completionReason = 'director_not_accepted';
+        break;
+      }
+      if (directorPhase.endRound) {
+        roundCompleted = true;
+        completionReason = 'director_end_round';
+        break;
+      }
+      if (!directorPhase.selectedCharacterId) {
+        completionReason = 'director_missing_next_actor';
+        break;
+      }
+
+      const characterTurnIndex = characterTurns.length;
+      const characterInferenceId = `inf-character-${characterTurnIndex}-${crypto.randomUUID()}`;
+      const characterResponses = mockCharacterTurnResponses[characterTurnIndex] ?? [];
+      const characterTurn = await this._runCharacterTurn({
+        api,
+        sceneAgent,
+        sceneSessionId,
+        hgSceneId,
+        hgRoundId,
+        characterId: directorPhase.selectedCharacterId,
+        directorDecision: directorPhase.directorDecision,
+        characterInferenceId,
+        mockResponses: characterResponses,
+        characterTurnIndex,
+      });
+
+      if (!characterTurn.committed) {
+        completionReason = 'character_not_committed';
+        break;
+      }
+
+      actorsUsedThisRound.push(characterTurn.characterId);
+
+      const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
+      const narratorResponses = mockNarratorTurnResponses[characterTurnIndex] ?? [];
+      const narratorResult = await this._runNarratorPresentation({
+        api,
+        sceneAgent,
+        sceneSessionId,
+        hgSceneId,
+        hgRoundId,
+        characterId: characterTurn.characterId,
+        domainCommitId: characterTurn.domainCommitId,
+        continuityTurnIndex: characterTurn.continuityTurnIndex,
+        narratorInferenceId,
+        mockNarratorResponses: narratorResponses,
+        characterTurnIndex,
+      });
+
+      characterTurns.push({
+        character_turn_index: characterTurnIndex,
+        character_id: characterTurn.characterId,
+        director_decision: directorPhase.directorDecision,
+        domain_commit_id: characterTurn.domainCommitId,
+        continuity_turn_index: characterTurn.continuityTurnIndex,
+        character_inference_session_id: characterTurn.characterInferenceSessionId,
+        narrator_inference_session_id: narratorResult.narrator_inference_session_id ?? null,
+        presentation_rendered: narratorResult.presentation_rendered,
+        presentation_text: narratorResult.presentation_text,
+        presentation_failed: narratorResult.presentation_failed,
+      });
+    }
+
+    if (characterTurns.length >= characterTurnLimit) {
+      roundCompleted = true;
+    }
+
+    appendHgEvent(sceneAgent.session, 'hg/round-completed', {
+      ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
+      completion_reason: completionReason,
+      character_turn_count: characterTurns.length,
+      actors_used_this_round: actorsUsedThisRound,
+      round_completed: roundCompleted,
+    });
+
+    const lastTurn = characterTurns[characterTurns.length - 1] ?? null;
+    return {
+      round_completed: roundCompleted,
+      completion_reason: completionReason,
+      character_turn_count: characterTurns.length,
+      character_turns: characterTurns,
+      actors_used_this_round: actorsUsedThisRound,
+      committed: characterTurns.length > 0,
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      dsh_scene_session_id: String(sceneSessionId),
+      director_inference_session_id: lastDirectorInferenceSessionId,
+      character_inference_session_id: lastTurn?.character_inference_session_id ?? null,
+      narrator_inference_session_id: lastTurn?.narrator_inference_session_id ?? null,
+      selected_character_id: lastTurn?.character_id ?? null,
+      continuity_turn_index: lastTurn?.continuity_turn_index ?? null,
+      domain_commit_id: lastTurn?.domain_commit_id ?? null,
+      presentation_rendered: lastTurn?.presentation_rendered ?? false,
+      presentation_text: lastTurn?.presentation_text ?? null,
+      presentation_failed: lastTurn?.presentation_failed ?? false,
+      scene_events: [...sceneAgent.session.events],
+      boundary_metrics: api.metrics,
+    };
+  }
+
+  async runDirectorCharacterRound(options) {
+    return this.runRound({
+      ...options,
+      characterTurnLimit: options.characterTurnLimit ?? 1,
+    });
+  }
+
+  async runTwoCharacterRound(options) {
+    return this.runRound({
+      ...options,
+      characterTurnLimit: 2,
+    });
   }
 
   async runCharacterInference(options) {
@@ -326,324 +772,6 @@ export default class HolyGrailRpRuntime extends Service {
       dsh_scene_session_id: String(sceneSessionId),
       continuity_turn_index: continuityTurnIndex,
       domain_commit_id: domainCommitId,
-      scene_events: [...sceneAgent.session.events],
-      boundary_metrics: api.metrics,
-    };
-  }
-
-  async runDirectorCharacterRound(options) {
-    const api = this._domainClient(options.domainApi?.baseUrl);
-    const directorResponses = options.mockDirectorResponses ?? [];
-    const characterResponses = options.mockCharacterResponses ?? [];
-
-    let hgSceneId = options.hgSceneId;
-    if (!hgSceneId) {
-      const created = await api.createScene({ cast: ['Alice', 'Bob'] });
-      hgSceneId = String(created.hg_scene_id);
-    }
-    const round = await api.startRound({ hg_scene_id: hgSceneId });
-    const hgRoundId = String(round.hg_round_id);
-    const turnIndex = Number(round.turn_index ?? 0);
-
-    const sceneSessionId = SessionId(`hg-scene-${hgSceneId}`);
-    const sceneAgent = this.ctx.agentLoop.create(sceneSessionId, {
-      provider: HG_MOCK_PROVIDER,
-      model: HG_MOCK_MODEL,
-    });
-
-    appendHgEvent(sceneAgent.session, 'hg/round-started', {
-      ...baseCorrelation({
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        dsh_scene_session_id: String(sceneSessionId),
-      }),
-      turn_index: turnIndex,
-    });
-
-    const directorInferenceId = options.directorInferenceId ?? `inf-director-${crypto.randomUUID()}`;
-    let directorAttempt = 0;
-    let directorAccepted = false;
-    let directorDecision = null;
-    let directorManifestId = '';
-    let selectedCharacterId = null;
-    let directorInferenceSessionId = null;
-
-    while (directorAttempt < directorResponses.length && !directorAccepted) {
-      const manifest = await api.prepareDirectorContext({
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        inference_id: directorInferenceId,
-        turn_index: turnIndex,
-        attempt_index: directorAttempt,
-      });
-      directorManifestId = String(manifest.manifest_id);
-
-      const directorRun = await this._runEphemeralInference({
-        inferenceId: `${directorInferenceId}-${directorAttempt}`,
-        prompt: 'Produce your director decision as JSON only.',
-        manifest,
-        mockResponses: [directorResponses[directorAttempt]],
-      });
-      directorInferenceSessionId = directorRun.inferenceSessionId;
-
-      let proposed;
-      try {
-        proposed = parseJsonObject(directorRun.raw);
-      } catch (error) {
-        proposed = { parse_error: String(error) };
-      }
-
-      appendHgEvent(sceneAgent.session, 'hg/director-proposed', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
-        inference_id: directorInferenceId,
-        director_inference_session_id: directorInferenceSessionId,
-        role: 'director',
-        attempt_index: directorAttempt,
-        manifest_id: directorManifestId,
-        proposed_decision: proposed,
-        raw_model_output: directorRun.raw,
-      });
-
-      const validation = await api.validateDirectorDecision({
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        inference_id: directorInferenceId,
-        turn_index: turnIndex,
-        attempt_index: directorAttempt,
-        proposed_decision: proposed,
-        raw_model_output: directorRun.raw,
-      });
-
-      if (!validation.accepted) {
-        appendHgEvent(sceneAgent.session, 'hg/director-rejected', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
-          inference_id: directorInferenceId,
-          director_inference_session_id: directorInferenceSessionId,
-          role: 'director',
-          attempt_index: directorAttempt,
-          validation_class: String(validation.validation_class ?? 'unknown'),
-          reason: String(validation.reason ?? ''),
-          retryable: Boolean(validation.retryable),
-        });
-        directorAttempt += 1;
-        continue;
-      }
-
-      directorAccepted = true;
-      directorDecision = validation.normalized_decision ?? proposed;
-      selectedCharacterId = String(validation.selected_character_id ?? directorDecision.next_actor);
-      appendHgEvent(sceneAgent.session, 'hg/director-accepted', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
-        inference_id: directorInferenceId,
-        director_inference_session_id: directorInferenceSessionId,
-        role: 'director',
-        attempt_index: directorAttempt,
-        manifest_id: directorManifestId,
-        selected_character_id: selectedCharacterId,
-        normalized_decision: directorDecision,
-      });
-    }
-
-    if (!directorAccepted || !directorDecision || !selectedCharacterId) {
-      return {
-        committed: false,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        director_accepted: false,
-        scene_events: [...sceneAgent.session.events],
-        boundary_metrics: api.metrics,
-      };
-    }
-
-    const characterInferenceId = options.characterInferenceId ?? `inf-character-${crypto.randomUUID()}`;
-    let characterAttempt = 0;
-    let committed = false;
-    let continuityTurnIndex = null;
-    let domainCommitId = null;
-    let characterManifestId = '';
-    let characterInferenceSessionId = null;
-
-    while (characterAttempt < characterResponses.length && !committed) {
-      const manifest = await api.prepareCharacterContext({
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        inference_id: characterInferenceId,
-        character_id: selectedCharacterId,
-        role: selectedCharacterId === 'Alice' ? 'guest' : 'staff',
-        turn_index: turnIndex,
-        attempt_index: characterAttempt,
-      });
-      characterManifestId = String(manifest.manifest_id);
-
-      const characterRun = await this._runEphemeralInference({
-        inferenceId: `${characterInferenceId}-${characterAttempt}`,
-        prompt: 'Produce your character move as JSON only.',
-        manifest,
-        mockResponses: [characterResponses[characterAttempt]],
-      });
-      characterInferenceSessionId = characterRun.inferenceSessionId;
-
-      let proposed;
-      try {
-        proposed = parseJsonObject(characterRun.raw);
-      } catch (error) {
-        proposed = { parse_error: String(error) };
-      }
-
-      appendHgEvent(sceneAgent.session, 'hg/move-proposed', {
-        ...baseCorrelation({
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-          dsh_scene_session_id: String(sceneSessionId),
-        }),
-        inference_id: characterInferenceId,
-        character_inference_session_id: characterInferenceSessionId,
-        role: 'character',
-        character_id: selectedCharacterId,
-        attempt_index: characterAttempt,
-        manifest_id: characterManifestId,
-        proposed_move: proposed,
-        raw_model_output: characterRun.raw,
-      });
-
-      const validation = await api.validateMove({
-        inference_id: characterInferenceId,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        character_id: selectedCharacterId,
-        role: selectedCharacterId === 'Alice' ? 'guest' : 'staff',
-        turn_index: turnIndex,
-        attempt_index: characterAttempt,
-        proposed_move: proposed,
-        raw_model_output: characterRun.raw,
-      });
-
-      if (!validation.accepted) {
-        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
-          inference_id: characterInferenceId,
-          character_inference_session_id: characterInferenceSessionId,
-          role: 'character',
-          character_id: selectedCharacterId,
-          attempt_index: characterAttempt,
-          validation_class: String(validation.validation_class ?? 'unknown'),
-          reason: String(validation.reason ?? ''),
-          retryable: Boolean(validation.retryable),
-        });
-        characterAttempt += 1;
-        continue;
-      }
-
-      const commit = await api.commitMove({
-        inference_id: characterInferenceId,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-        character_id: selectedCharacterId,
-        validated_move: validation.normalized_move ?? proposed,
-        director_decision: directorDecision,
-        expected_turn_index: turnIndex,
-      });
-
-      if (!commit.committed) {
-        appendHgEvent(sceneAgent.session, 'hg/move-rejected', {
-          ...baseCorrelation({
-            hg_scene_id: hgSceneId,
-            hg_round_id: hgRoundId,
-            dsh_scene_session_id: String(sceneSessionId),
-          }),
-          inference_id: characterInferenceId,
-          character_inference_session_id: characterInferenceSessionId,
-          role: 'character',
-          character_id: selectedCharacterId,
-          attempt_index: characterAttempt,
-          validation_class: 'continuity_anchor',
-          reason: String(commit.reason ?? 'commit rejected'),
-          retryable: false,
-        });
-        characterAttempt += 1;
-        continue;
-      }
-
-      committed = true;
-      continuityTurnIndex = Number(commit.continuity_turn_index);
-      domainCommitId = String(commit.domain_commit_id ?? '');
-      appendHgEvent(sceneAgent.session, 'hg/move-committed', {
-        ...this._correlation({ hgSceneId, hgRoundId, sceneSessionId }),
-        inference_id: characterInferenceId,
-        character_inference_session_id: characterInferenceSessionId,
-        role: 'character',
-        character_id: selectedCharacterId,
-        attempt_index: characterAttempt,
-        manifest_id: characterManifestId,
-        continuity_turn_index: continuityTurnIndex,
-        domain_commit_id: domainCommitId,
-      });
-    }
-
-    let narratorResult = {
-      presentation_rendered: false,
-      presentation_text: null,
-      presentation_failed: false,
-      narrator_inference_id: null,
-      narrator_inference_session_id: null,
-      narrator_manifest_id: null,
-    };
-
-    if (committed && domainCommitId && continuityTurnIndex != null) {
-      const narratorInferenceId = options.narratorInferenceId ?? `inf-narrator-${crypto.randomUUID()}`;
-      narratorResult = {
-        narrator_inference_id: narratorInferenceId,
-        ...(await this._runNarratorPresentation({
-          api,
-          sceneAgent,
-          sceneSessionId,
-          hgSceneId,
-          hgRoundId,
-          characterId: selectedCharacterId,
-          domainCommitId,
-          continuityTurnIndex,
-          narratorInferenceId,
-          mockNarratorResponses: options.mockNarratorResponses,
-        })),
-      };
-    }
-
-    return {
-      committed,
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      director_inference_id: directorInferenceId,
-      director_inference_session_id: directorInferenceSessionId,
-      character_inference_id: characterInferenceId,
-      character_inference_session_id: characterInferenceSessionId,
-      selected_character_id: selectedCharacterId,
-      director_decision: directorDecision,
-      dsh_scene_session_id: String(sceneSessionId),
-      continuity_turn_index: continuityTurnIndex,
-      domain_commit_id: domainCommitId,
-      presentation_rendered: narratorResult.presentation_rendered,
-      presentation_text: narratorResult.presentation_text,
-      presentation_failed: narratorResult.presentation_failed,
-      presentation_failure_reason: narratorResult.presentation_failure_reason ?? null,
-      narrator_inference_id: narratorResult.narrator_inference_id,
-      narrator_inference_session_id: narratorResult.narrator_inference_session_id ?? null,
-      narrator_manifest_id: narratorResult.narrator_manifest_id ?? null,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
     };

@@ -17,6 +17,15 @@ from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E4
 
 
 @dataclass
+class CharacterTurnRecord:
+    character_id: str
+    committed_move: dict[str, Any]
+    domain_commit_id: str
+    continuity_turn_index: int
+    director_decision: dict[str, Any]
+
+
+@dataclass
 class RoundFixture:
     hg_round_id: str
     hg_scene_id: str
@@ -26,6 +35,8 @@ class RoundFixture:
     committed_move: dict[str, Any] | None = None
     domain_commit_id: str | None = None
     continuity_turn_index: int | None = None
+    actors_used_this_round: list[str] = field(default_factory=list)
+    character_turns: list[CharacterTurnRecord] = field(default_factory=list)
 
 
 @dataclass

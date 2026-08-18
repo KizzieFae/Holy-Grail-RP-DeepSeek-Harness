@@ -37,7 +37,7 @@ from .contract import (  # noqa: E402
     ValidationRequest,
     ValidationResponse,
 )
-from .fixture_store import FixtureStore, RoundFixture, SceneFixture  # noqa: E402
+from .fixture_store import CharacterTurnRecord, FixtureStore, RoundFixture, SceneFixture  # noqa: E402
 
 PROTOTYPE_VALID_MOVE: dict[str, Any] = {
     "move_schema_version": 2,
@@ -57,6 +57,46 @@ PROTOTYPE_DIRECTOR_DECISION: dict[str, Any] = {
     "reason": "Alice has not spoken yet.",
     "environment_event": "",
     "tension_shift": "",
+}
+
+PROTOTYPE_DIRECTOR_DECISION_BOB: dict[str, Any] = {
+    "next_actor": "Bob",
+    "end_round": False,
+    "reason": "Bob has not spoken yet.",
+    "environment_event": "",
+    "tension_shift": "",
+}
+
+PROTOTYPE_DIRECTOR_END_ROUND: dict[str, Any] = {
+    "next_actor": "",
+    "end_round": True,
+    "reason": "Both characters have acted this round.",
+    "environment_event": "",
+    "tension_shift": "",
+}
+
+PROTOTYPE_BOB_MOVE: dict[str, Any] = {
+    "move_schema_version": 2,
+    "beats": [{"type": "action", "action": "examines the blueprint Alice left on the table"}],
+    "motivation": {
+        "goal": "inspect",
+        "tactic": "careful study",
+        "emotional_driver": "curious",
+        "risk_level": "low",
+    },
+    "semantic_evaluation": {"decision": "no_covered_change"},
+}
+
+PROTOTYPE_ALICE_BLUEPRINT_MOVE: dict[str, Any] = {
+    "move_schema_version": 2,
+    "beats": [{"type": "action", "action": "places the blueprint on the table"}],
+    "motivation": {
+        "goal": "share",
+        "tactic": "visible placement",
+        "emotional_driver": "helpful",
+        "risk_level": "low",
+    },
+    "semantic_evaluation": {"decision": "no_covered_change"},
 }
 
 
@@ -102,6 +142,10 @@ class DomainKernel:
                 return rnd
         raise KeyError(f"unknown hg_round_id: {hg_round_id}")
 
+    def _available_actors(self, fixture: SceneFixture, rnd: RoundFixture) -> list[str]:
+        used = set(rnd.actors_used_this_round)
+        return [name for name in fixture.cast if name not in used]
+
     def prepare_director_context(
         self, req: DirectorContextPrepareRequest
     ) -> PromptContributionManifest:
@@ -112,6 +156,10 @@ class DomainKernel:
         manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
+        used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
+        available = self._available_actors(fixture, rnd)
+        used_label = ", ".join(used) if used else "none"
+        available_label = ", ".join(available) if available else "none"
         contributions = (
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene",
@@ -121,7 +169,9 @@ class DomainKernel:
                 priority=10,
                 content=(
                     f"Scene location: {location}. Present characters: {present}. "
-                    f"Continuity turn counter: {mgr.turn_counter}."
+                    f"Continuity turn counter: {mgr.turn_counter}. "
+                    f"Actors already used this round: {used_label}. "
+                    f"Available actors: {available_label}."
                 ),
                 provenance={"hg_scene_id": req.hg_scene_id, "hg_round_id": req.hg_round_id},
             ),
@@ -171,7 +221,7 @@ class DomainKernel:
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
         private_secret = fixture.character_private_secrets.get(req.character_id, "")
-        contributions = (
+        contributions: list[PromptContribution] = [
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene",
                 source_kind="scene_state",
@@ -188,6 +238,34 @@ class DomainKernel:
                     "turn_index": req.turn_index,
                 },
             ),
+        ]
+        if rnd.character_turns:
+            prior_lines = []
+            for turn in rnd.character_turns:
+                move_json = json.dumps(turn.committed_move, ensure_ascii=False)
+                prior_lines.append(
+                    f"- {turn.character_id} (commit {turn.domain_commit_id}): {move_json}"
+                )
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-continuity-summary",
+                    source_kind="continuity_summary",
+                    authority_class="authoritative",
+                    knowledge_ids=tuple(
+                        f"commit:{turn.domain_commit_id}" for turn in rnd.character_turns
+                    ),
+                    priority=15,
+                    content=(
+                        "Committed turns earlier in this round:\n" + "\n".join(prior_lines)
+                    ),
+                    provenance={
+                        "hg_round_id": req.hg_round_id,
+                        "visibility": "orchestration_projection",
+                    },
+                )
+            )
+        contributions.extend(
+            (
             PromptContribution(
                 contribution_id=f"{manifest_id}-character",
                 source_kind="character_profile",
@@ -221,6 +299,7 @@ class DomainKernel:
                 ),
                 provenance={"inference_id": req.inference_id},
             ),
+            )
         )
         return PromptContributionManifest(
             manifest_id=manifest_id,
@@ -238,7 +317,8 @@ class DomainKernel:
         self, req: DirectorDecisionValidationRequest
     ) -> DirectorDecisionResult:
         fixture = self.store.require(req.hg_scene_id)
-        self._require_round(fixture, req.hg_round_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        available = self._available_actors(fixture, rnd)
 
         raw = req.raw_model_output
         if raw is None:
@@ -247,7 +327,7 @@ class DomainKernel:
         parsed, parse_err = parse_director_decision(
             raw,
             participant_names=list(fixture.cast),
-            available_actors=list(fixture.cast),
+            available_actors=available,
         )
         if parse_err or parsed is None:
             return DirectorDecisionResult(
@@ -257,12 +337,33 @@ class DomainKernel:
                 retryable=True,
             )
 
+        if bool(parsed.get("end_round")):
+            return DirectorDecisionResult(
+                accepted=True,
+                validation_class="accepted",
+                reason="",
+                retryable=False,
+                normalized_decision=dict(parsed),
+                selected_character_id=None,
+            )
+
         next_actor = str(parsed.get("next_actor", "") or "").strip()
         if not next_actor:
             return DirectorDecisionResult(
                 accepted=False,
                 validation_class="domain_rule",
-                reason="Director decision must select next_actor for this slice",
+                reason="Director decision must select next_actor or set end_round",
+                retryable=True,
+                normalized_decision=dict(parsed),
+            )
+        if next_actor not in available:
+            return DirectorDecisionResult(
+                accepted=False,
+                validation_class="domain_rule",
+                reason=(
+                    f"Director selected unavailable actor {next_actor}; "
+                    f"available: {', '.join(available) or 'none'}"
+                ),
                 retryable=True,
                 normalized_decision=dict(parsed),
             )
@@ -357,6 +458,16 @@ class DomainKernel:
         rnd.committed_move = dict(req.validated_move)
         rnd.domain_commit_id = commit_id
         rnd.continuity_turn_index = after_turn
+        rnd.actors_used_this_round.append(req.character_id)
+        rnd.character_turns.append(
+            CharacterTurnRecord(
+                character_id=req.character_id,
+                committed_move=dict(req.validated_move),
+                domain_commit_id=commit_id,
+                continuity_turn_index=after_turn,
+                director_decision=director_decision,
+            )
+        )
 
         return CommitResponse(
             committed=True,
@@ -375,21 +486,23 @@ class DomainKernel:
     ) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        if rnd.committed_move is None or rnd.committed_character_id is None:
-            raise ValueError("narrator context requires a committed move for this round")
-        if rnd.domain_commit_id != req.domain_commit_id:
+        turn_record = next(
+            (turn for turn in rnd.character_turns if turn.domain_commit_id == req.domain_commit_id),
+            None,
+        )
+        if turn_record is None:
             raise ValueError(
-                f"domain_commit_id mismatch: expected {rnd.domain_commit_id}, "
-                f"got {req.domain_commit_id}"
+                f"narrator context requires a committed move for domain_commit_id "
+                f"{req.domain_commit_id}"
             )
-        if rnd.continuity_turn_index != req.continuity_turn_index:
+        if turn_record.continuity_turn_index != req.continuity_turn_index:
             raise ValueError(
-                f"continuity_turn_index mismatch: expected {rnd.continuity_turn_index}, "
+                f"continuity_turn_index mismatch: expected {turn_record.continuity_turn_index}, "
                 f"got {req.continuity_turn_index}"
             )
-        if rnd.committed_character_id != req.character_id:
+        if turn_record.character_id != req.character_id:
             raise ValueError(
-                f"character_id mismatch: expected {rnd.committed_character_id}, "
+                f"character_id mismatch: expected {turn_record.character_id}, "
                 f"got {req.character_id}"
             )
 
@@ -398,15 +511,15 @@ class DomainKernel:
         manifest_id = f"manifest-narrator-{req.inference_id}"
         location = str(mgr.scene_state.location or "unknown")
         present = ", ".join(fixture.cast)
-        director_decision = dict(rnd.director_decision or {})
+        director_decision = dict(turn_record.director_decision)
         environment_event = str(director_decision.get("environment_event", "") or "")
         narrate_move = redact_structured_move_for_orchestration(
-            dict(rnd.committed_move),
+            dict(turn_record.committed_move),
             present_characters=list(fixture.cast),
         )
         scene_context = (
             f"Location: {location}. Present: {present}. "
-            f"Continuity turn counter after commit: {mgr.turn_counter}."
+            f"Continuity turn counter after commit: {turn_record.continuity_turn_index}."
         )
         render_instruction = build_narrator_render_prompt(
             char_name=req.character_id,

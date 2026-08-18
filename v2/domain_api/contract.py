@@ -47,6 +47,7 @@ class DirectorContextPrepareRequest:
     inference_id: str
     turn_index: int
     attempt_index: int
+    actors_used_this_round: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

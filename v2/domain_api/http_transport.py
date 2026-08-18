@@ -69,6 +69,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     inference_id=str(data["inference_id"]),
                     turn_index=int(data.get("turn_index", 0)),
                     attempt_index=int(data.get("attempt_index", 0)),
+                    actors_used_this_round=tuple(data.get("actors_used_this_round") or ()),
                 )
                 self._send_json(200, self.kernel.prepare_director_context(req))
                 return

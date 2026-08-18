@@ -11,6 +11,7 @@ export const HG_EVENT_TYPES = [
   'hg/narrator-started',
   'hg/narrator-completed',
   'hg/narrator-failed',
+  'hg/round-completed',
 ];
 
 export function appendHgEvent(session, type, data) {

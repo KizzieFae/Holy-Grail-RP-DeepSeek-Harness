@@ -25,7 +25,11 @@ from domain_api.contract import (  # noqa: E402
 )
 from domain_api.http_transport import DomainApiHandler  # noqa: E402
 from domain_api.kernel import (  # noqa: E402
+    PROTOTYPE_ALICE_BLUEPRINT_MOVE,
+    PROTOTYPE_BOB_MOVE,
     PROTOTYPE_DIRECTOR_DECISION,
+    PROTOTYPE_DIRECTOR_DECISION_BOB,
+    PROTOTYPE_DIRECTOR_END_ROUND,
     PROTOTYPE_VALID_MOVE,
     DomainKernel,
 )
@@ -325,6 +329,94 @@ def test_narrator_context_reflects_committed_move_not_rejected_attempt(kernel: D
 def test_narrator_has_no_commit_path(kernel: DomainKernel) -> None:
     assert not hasattr(kernel, "commit_narration")
     assert not hasattr(kernel, "validate_narration")
+
+
+def test_director_rejects_already_used_actor(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    _commit_valid_move(kernel)
+    fixture = kernel.store.require(hg_scene_id)
+    rnd = fixture.rounds[-1]
+    assert "Alice" in rnd.actors_used_this_round
+    result = kernel.validate_director_decision(
+        DirectorDecisionValidationRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id="inf-dir-repeat",
+            turn_index=1,
+            attempt_index=0,
+            proposed_decision=PROTOTYPE_DIRECTOR_DECISION,
+            raw_model_output=json.dumps(PROTOTYPE_DIRECTOR_DECISION),
+        )
+    )
+    assert result.accepted is False
+
+
+def test_director_accepts_end_round(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    result = kernel.validate_director_decision(
+        DirectorDecisionValidationRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id="inf-dir-end",
+            turn_index=0,
+            attempt_index=0,
+            proposed_decision=PROTOTYPE_DIRECTOR_END_ROUND,
+            raw_model_output=json.dumps(PROTOTYPE_DIRECTOR_END_ROUND),
+        )
+    )
+    assert result.accepted is True
+    assert result.selected_character_id is None
+
+
+def test_bob_context_includes_alice_committed_projection(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    alice_validation = kernel.validate_move(
+        ValidationRequest(
+            inference_id="inf-alice-blueprint",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            role="guest",
+            turn_index=0,
+            attempt_index=0,
+            proposed_move=PROTOTYPE_ALICE_BLUEPRINT_MOVE,
+            raw_model_output=json.dumps(PROTOTYPE_ALICE_BLUEPRINT_MOVE),
+        )
+    )
+    assert alice_validation.accepted is True
+    assert alice_validation.normalized_move is not None
+    commit = kernel.commit_move(
+        CommitRequest(
+            inference_id="inf-alice-blueprint",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            validated_move=alice_validation.normalized_move,
+            director_decision=PROTOTYPE_DIRECTOR_DECISION,
+            expected_turn_index=0,
+        )
+    )
+    assert commit.committed is True
+    bob_manifest = kernel.prepare_context(
+        ContextPrepareRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id="inf-bob-projection",
+            character_id="Bob",
+            role="staff",
+            turn_index=commit.continuity_turn_index or 1,
+            attempt_index=0,
+        )
+    )
+    summary = next(
+        c for c in bob_manifest.contributions if c.source_kind == "continuity_summary"
+    )
+    assert "places the blueprint on the table" in summary.content
+    alice_private = kernel.store.require(hg_scene_id).character_private_secrets["Alice"]
+    bob_private = kernel.store.require(hg_scene_id).character_private_secrets["Bob"]
+    for contribution in bob_manifest.contributions:
+        assert alice_private not in contribution.content
+    assert any(bob_private in c.content for c in bob_manifest.contributions)
 
 
 def test_http_transport_round_trip(kernel: DomainKernel) -> None:
