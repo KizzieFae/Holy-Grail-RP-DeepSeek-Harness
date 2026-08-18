@@ -3,7 +3,7 @@
 **Status:** Completed (M10.1 — session-local MemoryWritePolicy + context retrieval)  
 **Date:** 2026-08-18  
 **M10 investigation anchor:** `1a41571`  
-**Implementation HEAD:** (see §19 after commit)
+**Implementation HEAD:** `a3699d5`
 
 ---
 
@@ -123,7 +123,7 @@ Memory contributions include provenance:
 
 ## 11. Repository state
 
-| Commit | (pending) |
+| Commit | `a3699d5` — `feat(v2): M10.1 session-local memory write and retrieval` |
 
 ---
 
