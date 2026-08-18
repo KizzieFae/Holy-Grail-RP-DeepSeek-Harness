@@ -4,7 +4,7 @@
 **Date:** 2026-08-18  
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **ParticipationDecision anchor:** `baf507e`  
-**Implementation HEAD:** (recorded in commit message)
+**Implementation HEAD:** `760423b`
 
 ---
 
