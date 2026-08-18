@@ -32,6 +32,7 @@ This directory holds **project-owned governance**: template sync rules, canonica
 | `rp-app/v2-generic-cast-round.md` | **V2 generic cast round semantics** (semantic completion) |
 | `rp-app/v2-presence-eligibility-parity.md` | **V2 presence/eligibility parity** (authoritative domain projection) |
 | `rp-app/v2-participation-control-investigation.md` | **V2 continuation/forced-speaker investigation** (design only) |
+| `rp-app/v2-participation-decision.md` | **V2 ParticipationDecision implementation** (participation policy seam) |
 | `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
 | `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
 
