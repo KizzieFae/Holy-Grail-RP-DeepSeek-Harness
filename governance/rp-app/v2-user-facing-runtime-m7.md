@@ -270,4 +270,9 @@ Refinements: application presentation transcript is session-scoped in the UI lay
 
 ## 19. Repository state
 
-(Updated after commit/push)
+| Field | Value |
+|-------|-------|
+| Commit | `f84ead5` — `feat(v2): M7 user-facing runtime and UI integration` |
+| Branch | `main` |
+| `origin/main` | aligned after push |
+| Working tree | clean |
