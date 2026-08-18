@@ -13,6 +13,9 @@ AuthorityClass = Literal["authoritative", "derived", "suggestive"]
 EligibilityStatus = Literal["eligible", "ineligible"]
 SourceKind = Literal[
     "scene_state",
+    "continuity_canon",
+    "scene_grounding",
+    "active_constraints",
     "character_profile",
     "character_private",
     "character_memory",

@@ -56,6 +56,10 @@ from .contract import (  # noqa: E402
     ValidationRequest,
     ValidationResponse,
 )
+from .continuity_context_projector import (  # noqa: E402
+    AuthoritativeContextContribution,
+    project_authoritative_context,
+)
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
 from .session_history import (  # noqa: E402
@@ -483,6 +487,24 @@ class DomainKernel:
             forced_designation=req.forced_designation,
         )
 
+    @staticmethod
+    def _auth_contributions_to_prompt(
+        manifest_id: str,
+        projections: list[AuthoritativeContextContribution],
+    ) -> list[PromptContribution]:
+        return [
+            PromptContribution(
+                contribution_id=f"{manifest_id}-{proj.source_kind}",
+                source_kind=proj.source_kind,  # type: ignore[arg-type]
+                authority_class=proj.authority_class,  # type: ignore[arg-type]
+                knowledge_ids=proj.knowledge_ids,
+                priority=proj.priority,
+                content=proj.content,
+                provenance=dict(proj.provenance),
+            )
+            for proj in projections
+        ]
+
     def prepare_director_context(
         self, req: DirectorContextPrepareRequest
     ) -> PromptContributionManifest:
@@ -491,31 +513,22 @@ class DomainKernel:
         mgr = fixture.manager
         assert mgr.scene_state is not None
         manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
-        location = str(mgr.scene_state.location or "unknown")
-        present_labels = list(getattr(mgr.scene_state, "present_characters", None) or fixture.cast)
-        offstage_labels = list(getattr(mgr.scene_state, "offstage_characters", None) or [])
-        present = ", ".join(present_labels) if present_labels else "none"
-        offstage = ", ".join(offstage_labels) if offstage_labels else "none"
         used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
         available = self._available_actors(fixture, rnd)
-        used_label = ", ".join(used) if used else "none"
-        available_label = ", ".join(available) if available else "none"
-        contributions = (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-scene",
-                source_kind="scene_state",
-                authority_class="authoritative",
-                knowledge_ids=(f"scene:{req.hg_scene_id}",),
-                priority=10,
-                content=(
-                    f"Scene location: {location}. Present characters: {present}. "
-                    f"Offstage characters: {offstage}. "
-                    f"Continuity turn counter: {mgr.turn_counter}. "
-                    f"Actors already used this round: {used_label}. "
-                    f"Eligible actors: {available_label}."
-                ),
-                provenance={"hg_scene_id": req.hg_scene_id, "hg_round_id": req.hg_round_id},
-            ),
+        auth_projections = project_authoritative_context(
+            fixture,
+            role="director",
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            turn_index=req.turn_index,
+            actors_used_this_round=used,
+            eligible_actors=available,
+        )
+        contributions: list[PromptContribution] = list(
+            self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        )
+        contributions.extend(
+            (
             PromptContribution(
                 contribution_id=f"{manifest_id}-director-scratch",
                 source_kind="director_scratch",
@@ -540,6 +553,7 @@ class DomainKernel:
                 ),
                 provenance={"inference_id": req.inference_id},
             ),
+            )
         )
         return PromptContributionManifest(
             manifest_id=manifest_id,
@@ -559,8 +573,6 @@ class DomainKernel:
         mgr = fixture.manager
         assert mgr.scene_state is not None
         manifest_id = f"manifest-character-{req.inference_id}-{req.attempt_index}"
-        location = str(mgr.scene_state.location or "unknown")
-        present = ", ".join(fixture.cast)
         private_secret = fixture.character_private_secrets.get(req.character_id, "")
         memory_service = self._memory_service()
         if memory_service is not None:
@@ -576,24 +588,17 @@ class DomainKernel:
         knowledge_projections = knowledge_service.project_context(
             fixture, character_id=req.character_id
         )
-        contributions: list[PromptContribution] = [
-            PromptContribution(
-                contribution_id=f"{manifest_id}-scene",
-                source_kind="scene_state",
-                authority_class="authoritative",
-                knowledge_ids=(f"scene:{req.hg_scene_id}",),
-                priority=10,
-                content=(
-                    f"Scene location: {location}. Present characters: {present}. "
-                    f"Continuity turn counter: {mgr.turn_counter}."
-                ),
-                provenance={
-                    "hg_scene_id": req.hg_scene_id,
-                    "hg_round_id": req.hg_round_id,
-                    "turn_index": req.turn_index,
-                },
-            ),
-        ]
+        auth_projections = project_authoritative_context(
+            fixture,
+            role="character",
+            character_id=req.character_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            turn_index=req.turn_index,
+        )
+        contributions: list[PromptContribution] = list(
+            self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        )
         if rnd.character_turns:
             prior_lines = []
             for turn in rnd.character_turns:
@@ -1075,17 +1080,30 @@ class DomainKernel:
         mgr = fixture.manager
         assert mgr.scene_state is not None
         manifest_id = f"manifest-narrator-{req.inference_id}"
-        location = str(mgr.scene_state.location or "unknown")
-        present = ", ".join(fixture.cast)
+        present_labels = list(
+            getattr(mgr.scene_state, "present_characters", None) or fixture.cast
+        )
         director_decision = dict(turn_record.director_decision)
         environment_event = str(director_decision.get("environment_event", "") or "")
         narrate_move = redact_structured_move_for_orchestration(
             dict(turn_record.committed_move),
-            present_characters=list(fixture.cast),
+            present_characters=present_labels,
         )
-        scene_context = (
-            f"Location: {location}. Present: {present}. "
-            f"Continuity turn counter after commit: {turn_record.continuity_turn_index}."
+        auth_projections = project_authoritative_context(
+            fixture,
+            role="narrator",
+            character_id=req.character_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            continuity_turn_index=turn_record.continuity_turn_index,
+        )
+        scene_context = next(
+            (proj.content for proj in auth_projections if proj.source_kind == "scene_state"),
+            (
+                f"Location: {mgr.scene_state.location or 'unknown'}. "
+                f"Present: {', '.join(present_labels)}. "
+                f"Continuity turn counter after commit: {turn_record.continuity_turn_index}."
+            ),
         )
         render_instruction = build_narrator_render_prompt(
             char_name=req.character_id,
@@ -1096,21 +1114,11 @@ class DomainKernel:
             structured_move=narrate_move,
         )
         committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
-        contributions = (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-scene",
-                source_kind="scene_state",
-                authority_class="authoritative",
-                knowledge_ids=(f"scene:{req.hg_scene_id}",),
-                priority=10,
-                content=scene_context,
-                provenance={
-                    "hg_scene_id": req.hg_scene_id,
-                    "hg_round_id": req.hg_round_id,
-                    "domain_commit_id": req.domain_commit_id,
-                    "continuity_turn_index": req.continuity_turn_index,
-                },
-            ),
+        contributions: list[PromptContribution] = list(
+            self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        )
+        contributions.extend(
+            (
             PromptContribution(
                 contribution_id=f"{manifest_id}-committed-move",
                 source_kind="committed_move",
@@ -1148,6 +1156,7 @@ class DomainKernel:
                 content=render_instruction,
                 provenance={"inference_id": req.inference_id, "role": "narrator"},
             ),
+            )
         )
         return PromptContributionManifest(
             manifest_id=manifest_id,
