@@ -5,6 +5,6 @@ Permanent domain code lives under ``domain/`` (cards, paths, bootstrap) and
 Legacy V1 imports ``rp_app`` shims that delegate here.
 """
 
-from domain.bootstrap import ensure_domain_paths
+from .bootstrap import ensure_domain_paths
 
 __all__ = ["ensure_domain_paths"]
