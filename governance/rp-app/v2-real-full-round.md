@@ -5,7 +5,7 @@
 **Architecture anchor:** `2ee410321f19e57c4579821ce590f701ccf2eedf`  
 **ParticipationDecision anchor:** `baf507e`  
 **Real-provider anchor:** `1503060`  
-**Implementation HEAD:** (recorded in commit message)
+**Implementation HEAD:** `47b0d63`
 
 ---
 
