@@ -1,17 +1,20 @@
-"""Domain Host knowledge orchestration: authored (M11.1) + scope lanes (M11.2)."""
+"""Domain Host knowledge orchestration: authored (M11.1) + scope lanes (M11.2) + retrieval index (M12.7)."""
 
 from __future__ import annotations
 
+import json
 import logging
+import os
+from pathlib import Path
 from typing import Any
 
 from .authored_knowledge import (
     AuthoredKnowledgeRecord,
     compile_authored_records_from_snapshot,
     format_knowledge_content,
-    select_authored_records,
     setup_snapshot_hash,
 )
+from .compiled_index_provider import CompiledIndexRetrievalProvider
 from .knowledge_write_policy import (
     ALLOWED_USER_PROFILE_KEYS,
     build_learned_world_records,
@@ -27,15 +30,46 @@ from .scope_knowledge_repository import (
     ScopeKnowledgeRepository,
 )
 from .session_state import LiveSession
+from .retrieval_selection import (
+    RetrievalDiagnostics,
+    RetrievalQueryContext,
+    character_index_keys,
+    merge_authored_record_sets,
+    select_retrieval_records,
+)
 
 _logger = logging.getLogger(__name__)
+
+
+def _default_index_path() -> str | None:
+    for key in ("HG_RETRIEVAL_INDEX_PATH", "RP_RETRIEVED_CONTEXT_INDEX"):
+        value = os.environ.get(key, "").strip()
+        if value:
+            return value
+    return None
 
 
 class KnowledgeService:
     """Backend-independent knowledge retrieval and promotion for ContextAssembly."""
 
-    def __init__(self, scope_repo: ScopeKnowledgeRepository | None = None) -> None:
+    def __init__(
+        self,
+        scope_repo: ScopeKnowledgeRepository | None = None,
+        *,
+        retrieval_provider: CompiledIndexRetrievalProvider | None = None,
+        retrieval_index_path: str | Path | None = None,
+    ) -> None:
         self._scope_repo = scope_repo
+        if retrieval_provider is not None:
+            self._retrieval_provider = retrieval_provider
+        else:
+            resolved_path = retrieval_index_path or _default_index_path()
+            self._retrieval_provider = (
+                CompiledIndexRetrievalProvider(resolved_path)
+                if resolved_path
+                else CompiledIndexRetrievalProvider()
+            )
+        self._last_retrieval_diagnostics: dict[str, RetrievalDiagnostics] = {}
 
     @property
     def scope_repo(self) -> ScopeKnowledgeRepository | None:
@@ -44,22 +78,78 @@ class KnowledgeService:
     def compile_snapshot_records(self, fixture: LiveSession) -> list[AuthoredKnowledgeRecord]:
         return compile_authored_records_from_snapshot(fixture.setup_snapshot or {})
 
+    def _build_query_context(
+        self,
+        fixture: LiveSession,
+        *,
+        character_id: str,
+    ) -> RetrievalQueryContext:
+        file_id = fixture.character_file_ids.get(character_id)
+        template_id = str(
+            (fixture.setup_snapshot or {}).get("scene_template_id") or ""
+        ).strip() or None
+        return RetrievalQueryContext(
+            character_file_id=file_id,
+            character_display_name=character_id,
+            session_template_id=template_id,
+            character_index_keys=character_index_keys(
+                character_file_id=file_id,
+                character_display_name=character_id,
+            ),
+        )
+
+    def _supplemental_index_records(
+        self,
+        fixture: LiveSession,
+        *,
+        character_id: str,
+    ) -> list[AuthoredKnowledgeRecord]:
+        if not self._retrieval_provider.is_configured():
+            return []
+        try:
+            return self._retrieval_provider.query(
+                self._build_query_context(fixture, character_id=character_id)
+            )
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            _logger.warning(
+                "compiled retrieval index query failed for session %s: %s",
+                fixture.hg_session_id,
+                exc,
+            )
+            return []
+
     def retrieve_authored(
         self,
         fixture: LiveSession,
         *,
         character_id: str,
     ) -> tuple[list[AuthoredKnowledgeRecord], list[AuthoredKnowledgeRecord]]:
-        file_id = fixture.character_file_ids.get(character_id)
-        template_id = str(
-            (fixture.setup_snapshot or {}).get("scene_template_id") or ""
-        ).strip() or None
-        records = self.compile_snapshot_records(fixture)
-        return select_authored_records(
-            records,
-            character_file_id=file_id,
-            session_template_id=template_id,
+        snapshot_records = self.compile_snapshot_records(fixture)
+        supplemental_records = self._supplemental_index_records(
+            fixture, character_id=character_id
         )
+        merged, dedupe_dropped = merge_authored_record_sets(
+            snapshot_records, supplemental_records
+        )
+        query_ctx = self._build_query_context(fixture, character_id=character_id)
+        diagnostics = RetrievalDiagnostics(
+            provider_id=self._retrieval_provider.provider_id,
+            index_path=self._retrieval_provider.index_path,
+            setup_snapshot_hash=setup_snapshot_hash(fixture.setup_snapshot or {}),
+            dedupe_dropped=dedupe_dropped,
+        )
+        character_records, scene_records = select_retrieval_records(
+            merged,
+            character_file_id=query_ctx.character_file_id,
+            session_template_id=query_ctx.session_template_id,
+            diagnostics=diagnostics,
+        )
+        self._last_retrieval_diagnostics[character_id] = diagnostics
+        return character_records, scene_records
+
+    def last_retrieval_diagnostics(self, character_id: str) -> dict[str, Any]:
+        diag = self._last_retrieval_diagnostics.get(character_id)
+        return diag.to_dict() if diag is not None else {}
 
     def promote_after_commit(
         self,
@@ -208,6 +298,7 @@ class KnowledgeService:
                         "setup_snapshot_hash": snap_hash,
                         "authority_class": "suggestive",
                         "authority_note": "suggestive_reference_not_current_canon",
+                        "retrieval_diagnostics": self.last_retrieval_diagnostics(character_id),
                     },
                 )
             )
@@ -232,6 +323,7 @@ class KnowledgeService:
                         ),
                         "authority_class": "suggestive",
                         "authority_note": "suggestive_reference_not_current_canon",
+                        "retrieval_diagnostics": self.last_retrieval_diagnostics(character_id),
                     },
                 )
             )

@@ -172,6 +172,62 @@ def _compile_scene_template_reference(
     return records
 
 
+def _format_role_slot(slot: dict[str, Any]) -> str:
+    role_name = str(slot.get("role_name", "") or "").strip()
+    parts = [f"role={role_name}"] if role_name else []
+    for key in ("required", "authority", "presence_constraint"):
+        if key in slot and slot[key] is not None:
+            parts.append(f"{key}={slot[key]}")
+    return ", ".join(parts)
+
+
+def _compile_template_role_slots(
+    *,
+    template: dict[str, Any],
+    template_id: str,
+    snapshot_hash: str,
+) -> list[AuthoredKnowledgeRecord]:
+    role_slots = template.get("role_slots")
+    if not isinstance(role_slots, list):
+        return []
+    row, _fallback = resolve_adapter_row("template", "role_slots")
+    records: list[AuthoredKnowledgeRecord] = []
+    for index, slot in enumerate(role_slots):
+        if not isinstance(slot, dict):
+            continue
+        text = _format_role_slot(slot)
+        if not text:
+            continue
+        source_ref = f"snapshot:{template_id}:role_slots:{index}"
+        knowledge_kind = row.knowledge_type
+        records.append(
+            AuthoredKnowledgeRecord(
+                knowledge_id=compute_knowledge_id(
+                    source_ref=source_ref,
+                    text=text,
+                    knowledge_kind=knowledge_kind,
+                ),
+                knowledge_kind=knowledge_kind,
+                content=text,
+                authority_class=_v2_authority(row.authority_class),
+                visibility=row.visibility,
+                subject_character_file_id=None,
+                source_kind="scene_template",
+                source_asset_id=template_id,
+                provenance={
+                    "knowledge_lane": "scene_reference",
+                    "source_field": "role_slots",
+                    "source_ref": source_ref,
+                    "source_index": index + len(SCENE_REFERENCE_FIELDS),
+                    "canonical_authority_class": row.authority_class,
+                    "setup_snapshot_hash": snapshot_hash,
+                    "source_scene_template_id": template_id,
+                },
+            )
+        )
+    return records
+
+
 def compile_authored_records_from_snapshot(
     snapshot: dict[str, Any],
 ) -> list[AuthoredKnowledgeRecord]:
@@ -198,6 +254,13 @@ def compile_authored_records_from_snapshot(
     if template_id and isinstance(template, dict):
         records.extend(
             _compile_scene_template_reference(
+                template=template,
+                template_id=template_id,
+                snapshot_hash=snap_hash,
+            )
+        )
+        records.extend(
+            _compile_template_role_slots(
                 template=template,
                 template_id=template_id,
                 snapshot_hash=snap_hash,
