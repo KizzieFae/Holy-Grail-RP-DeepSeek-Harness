@@ -41,7 +41,7 @@ Tests bootstrap `v2/domain` via `domain.bootstrap.ensure_domain_paths()` (see `v
 |------|---------|
 | `data/` | Legacy local data (migration source for M13.1); may still exist on disk |
 | `scripts/` | Non-production investigation utilities |
-| `validation_runs/` | Historical validation evidence (markdown + neutral helpers) |
+| Validation evidence (historical) | `governance/archive/validation-runs/` |
 | `.venv/` (under `autogen_rp/python/`) | **Legacy local** venv residue — not used by production (see repo-root `.venv`) |
 
 ## History

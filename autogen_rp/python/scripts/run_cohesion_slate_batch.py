@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 PY_ROOT = Path(__file__).resolve().parents[1]
 RUNS = [
     (
@@ -49,7 +51,7 @@ RUNS = [
 
 
 def main() -> None:
-    log_dir = PY_ROOT / "validation_runs" / "cohesion_slate"
+    log_dir = VALIDATION_RUNS_ARCHIVE / "cohesion_slate"
     log_dir.mkdir(parents=True, exist_ok=True)
     for label, scenario, turns, schedule in RUNS:
         log_path = log_dir / f"run_{label}.log"

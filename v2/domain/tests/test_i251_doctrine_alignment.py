@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
-from domain.paths import repo_root
-
-sys.path.insert(0, str(repo_root() / "autogen_rp" / "python" / "validation_runs" / "issue251"))
+_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "issue251"
+if str(_FIXTURES) not in sys.path:
+    sys.path.insert(0, str(_FIXTURES))
 
 from i251_doctrine_alignment import (  # noqa: E402
     evaluate_doctrine_alignment,

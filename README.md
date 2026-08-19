@@ -35,7 +35,7 @@ Historical V1 Streamlit paths under `autogen_rp/python/rp_app/` were removed in 
 ## Repository layout (historical note)
 
 - **`autogen_rp/`** — AutoGen monorepo fork. Active RP work lives under **`autogen_rp/python/rp_app/`** (Streamlit app, continuity, validation, audits).
-- **Headless simulation tee / redirect:** Save console capture files under **`autogen_rp/python/runs/`** or **`autogen_rp/python/validation_runs/`**, not next to the PRD at repo root — see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
+- **Headless simulation tee / redirect:** Do not write ad-hoc console captures to the repository root. Historical validation evidence: [`governance/archive/validation-runs/`](./governance/archive/validation-runs/README.md) — see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
 - **`autogen_rp/AGENTS.md`** — AI assistant working rules for this subtree.
 - **`autogen_rp/docs/`** — Shared technical docs (repo map, testing, audit workflows, [rp-data layout](./autogen_rp/docs/rp-data-layout.md), [scene-grounding-layer](./autogen_rp/docs/scene-grounding-layer.md)).
 ## RP app quick pointers

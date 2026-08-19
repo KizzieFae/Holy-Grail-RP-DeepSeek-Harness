@@ -8,13 +8,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 _PY = Path(__file__).resolve().parent.parent
 _REPO_SHA = (
     subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=_PY.parent.parent)
     .decode()
     .strip()
 )
-_RUN_ROOT = _PY / "validation_runs" / "issue230_stepB" / _REPO_SHA[:12]
+_RUN_ROOT = VALIDATION_RUNS_ARCHIVE / "issue230_stepB" / _REPO_SHA[:12]
 _PROMPT_OUT = _PY / "data" / "issue240_runs" / "issue230_stepb_prompts" / _REPO_SHA[:12]
 
 SLICES = [

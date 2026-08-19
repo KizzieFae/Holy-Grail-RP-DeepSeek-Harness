@@ -12,8 +12,9 @@ _PY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PY / "rp_app"))
 
 from participation_suspicion_extract import make_suspicion_id  # noqa: E402
+from _archive_paths import VALIDATION_RUNS_ARCHIVE  # noqa: E402
 
-VR = _PY / "validation_runs"
+VR = VALIDATION_RUNS_ARCHIVE
 
 # Manual review anchors from issue227_selective_cohesion_evidence_synthesis.md
 ANCHORS: dict[tuple[int, str, str], tuple[str, str]] = {

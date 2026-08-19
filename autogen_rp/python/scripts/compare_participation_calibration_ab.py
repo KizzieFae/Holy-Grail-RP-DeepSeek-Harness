@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 _PY_ROOT = Path(__file__).resolve().parents[1]
 _RUBRIC_KEYS = (
     "C1_correct_no_change",
@@ -33,7 +35,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Compare baseline vs calibrated emission-map summaries.")
     p.add_argument("--baseline-summary", type=Path, required=True)
     p.add_argument("--calibrated-summary", type=Path, required=True)
-    p.add_argument("--out", type=Path, default=_PY_ROOT / "validation_runs" / "participation_calibration_ab_comparison.json")
+    p.add_argument("--out", type=Path, default=VALIDATION_RUNS_ARCHIVE / "participation_calibration_ab_comparison.json")
     args = p.parse_args()
 
     baseline = _load_summary(args.baseline_summary)

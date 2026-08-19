@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 _PY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PY / "rp_app"))
 
@@ -20,9 +22,9 @@ from issue246_prior_suite_validation import (  # noqa: E402
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #246 prior-suite validation")
     ap.add_argument("--reference", type=Path, default=default_reference_path())
-    ap.add_argument("--jsonl-root", type=Path, default=_PY / "validation_runs")
-    ap.add_argument("--out", type=Path, default=_PY / "validation_runs" / "participation_adjudication" / "prior_suite_validation_report.json")
-    ap.add_argument("--markdown-out", type=Path, default=_PY / "validation_runs" / "participation_adjudication" / "prior_suite_validation_report.md")
+    ap.add_argument("--jsonl-root", type=Path, default=VALIDATION_RUNS_ARCHIVE)
+    ap.add_argument("--out", type=Path, default=VALIDATION_RUNS_ARCHIVE / "participation_adjudication" / "prior_suite_validation_report.json")
+    ap.add_argument("--markdown-out", type=Path, default=VALIDATION_RUNS_ARCHIVE / "participation_adjudication" / "prior_suite_validation_report.md")
     ap.add_argument(
         "--policy-only",
         action="store_true",

@@ -26,7 +26,7 @@ Refer to the repository's Issues tab for active and historical investigations.
 
 Scenario headless matrix + classifier pytest + mandatory audit sampling completed; phase **closed** (no code changes in the wave). Summary:
 
-- **GitHub #24:** Prompt integrity (id/display cast assembly) **re-validated** — **no regression** in sampled audits. **`session_388`–`session_393`** under `rp_app/data/rp_audits/`. Structured metrics: `autogen_rp/python/validation_runs/plan_execution/*.json`.
+- **GitHub #24:** Prompt integrity (id/display cast assembly) **re-validated** — **no regression** in sampled audits. **`session_388`–`session_393`** under `rp_app/data/rp_audits/`. Structured metrics: `governance/archive/validation-runs/plan_execution/*.json`.
 - **Pytest:** `tests/test_continuity_consequence_classifier.py`, `tests/test_progression_enforcement.py` — **51 passed** at wave close.
 - **Exit vs presence:** Exercised with stimulus on **`long_session`** (session **393**).
 - **Progression:** No retries in metrics; **watch** — one non_qualifying turn on second **`emotional_loop_2char`** run.

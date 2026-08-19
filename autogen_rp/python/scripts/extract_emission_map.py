@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 _PY_ROOT = Path(__file__).resolve().parents[1]
 _RP_APP = _PY_ROOT / "rp_app"
 if str(_RP_APP) not in sys.path:
@@ -57,7 +59,7 @@ def main() -> None:
     p.add_argument(
         "--out-jsonl",
         type=Path,
-        default=_PY_ROOT / "validation_runs" / "emission_map_v1.jsonl",
+        default=VALIDATION_RUNS_ARCHIVE / "emission_map_v1.jsonl",
         help="Output JSONL path",
     )
     p.add_argument(

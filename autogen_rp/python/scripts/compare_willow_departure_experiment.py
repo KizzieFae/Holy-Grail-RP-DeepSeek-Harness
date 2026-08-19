@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from _archive_paths import VALIDATION_RUNS_ARCHIVE
+
 _PY_ROOT = Path(__file__).resolve().parents[1]
 _RUBRIC_KEYS = (
     "C1_correct_no_change",
@@ -54,7 +56,7 @@ def main() -> None:
     p.add_argument(
         "--out",
         type=Path,
-        default=_PY_ROOT / "validation_runs" / "willow_departure_experiment_comparison.json",
+        default=VALIDATION_RUNS_ARCHIVE / "willow_departure_experiment_comparison.json",
     )
     args = p.parse_args()
 

@@ -21,13 +21,14 @@ __pycache__/
 # Canonical Holy Grail Python virtual environment (M13.4)
 .venv/
 
-# One-off headless harness outputs under validation_runs/ root (keep plan_execution/*.json etc. tracked)
-autogen_rp/python/validation_runs/*.log
-autogen_rp/python/validation_runs/*metrics*.json
-autogen_rp/python/validation_runs/*repro*.json
-autogen_rp/python/validation_runs/*survival*.json
-autogen_rp/python/validation_runs/*_schedule.json
-autogen_rp/python/validation_runs/*_stdout.txt
+# Historical validation evidence archive (tracked; M13.5) — ignore ad-hoc generated noise only
+governance/archive/validation-runs/*.log
+governance/archive/validation-runs/*metrics*.json
+governance/archive/validation-runs/*repro*.json
+governance/archive/validation-runs/*survival*.json
+governance/archive/validation-runs/*_schedule.json
+governance/archive/validation-runs/*_stdout.txt
+governance/archive/validation-runs/**/_run_*.py
 
 # Root: local headless LLM simulation tee logs (run_scene_simulation_llm.py)
 /*_run*_audit.log
@@ -46,7 +47,7 @@ data/*
 data/fixtures/progression_simulation_scenarios/
 
 # One-off validation/investigation harness scripts (e.g. AppTest drives); not production source
-autogen_rp/python/validation_runs/**/_run_*.py
+governance/archive/validation-runs/**/_run_*.py
 
 # Temporary research / local notes
 memplace.txt

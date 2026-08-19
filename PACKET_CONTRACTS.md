@@ -8,7 +8,7 @@ These are **architectural contracts** for the **packaging layer** described in [
 
 For runtime behavior today, see `autogen_rp/python/rp_app/ARCHITECTURE.md` and `prompt_builders.py`.
 
-**Post–#24 headless validation (2026-04-07):** Six scenario configurations with **`--audit`** confirmed sampled character prompts remained consistent with the cast/reconstruction contract (audits **`session_388`–`session_393`**; **`structured_eval`** JSON under `autogen_rp/python/validation_runs/plan_execution/`). **No regression** of id/display roster assembly on that evidence set. See **`SCENARIO_VALIDATION_FRAMEWORK.md`**.
+**Post–#24 headless validation (2026-04-07):** Six scenario configurations with **`--audit`** confirmed sampled character prompts remained consistent with the cast/reconstruction contract (audits **`session_388`–`session_393`**; **`structured_eval`** JSON under `governance/archive/validation-runs/plan_execution/`). **No regression** of id/display roster assembly on that evidence set. See **`SCENARIO_VALIDATION_FRAMEWORK.md`**.
 
 ---
 
