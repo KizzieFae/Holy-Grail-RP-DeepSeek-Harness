@@ -39,6 +39,44 @@ _PRODUCTION_FORBIDDEN_TOKENS = (
     "rp_app",
 )
 
+_CURRENT_NAVIGATION_DOCS = (
+    _ROOT / "AGENTS.md",
+    _ROOT / "ARCHITECTURE_OVERVIEW.md",
+    _ROOT / "MODULE_INDEX.md",
+    _ROOT / "DEBUGGING_GUIDE.md",
+    _ROOT / "docs" / "architecture.md",
+    _ROOT / "docs" / "repo-map.md",
+    _ROOT / "docs" / "rp-data-layout.md",
+    _ROOT / "docs" / "core-operating-invariants.md",
+    _ROOT / "v2" / "README.md",
+)
+
+_RETIRED_TURN_LOOP_LANDINGS = (
+    "app_turn_director.py",
+    "turn_runner.py",
+    "orchestration_helpers.py",
+    "app_turn_prompting.py",
+    "model_client.py",
+    "llm_client.py",
+    "headless_scene_simulation.py",
+    "bootstrap_composition.py",
+    "ui_chat.py",
+    "session_lifecycle_save.py",
+    "session_lifecycle_load.py",
+    "context_builder.py",
+    "memory_store.py",
+    "prompt_store.py",
+    "python/rp_app/",
+    "autogen_rp/",
+)
+
+_LIVE_RESPONSIBILITY_ROOTS = (
+    "v2/domain",
+    "v2/domain_api",
+    "v2/rp_runtime",
+    "v2/ui",
+)
+
 
 def _iter_python_files(*roots: Path) -> list[Path]:
     out: list[Path] = []
@@ -282,6 +320,34 @@ class RepositoryArchitectureTests(unittest.TestCase):
             bindings["cursor_rules"]["workspace_root_rules"],
         ):
             self.assertTrue((_ROOT / rel).exists(), rel)
+
+    def test_current_navigation_docs_avoid_retired_turn_loop_landings(self) -> None:
+        """Current-system maps must not send operators to deleted Streamlit turn-loop files."""
+        offenders: list[str] = []
+        for path in _CURRENT_NAVIGATION_DOCS:
+            text = path.read_text(encoding="utf-8")
+            for token in _RETIRED_TURN_LOOP_LANDINGS:
+                if token in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {token}")
+        self.assertEqual(offenders, [])
+
+    def test_current_navigation_docs_collectively_name_live_responsibility_roots(self) -> None:
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in _CURRENT_NAVIGATION_DOCS)
+        missing = [root for root in _LIVE_RESPONSIBILITY_ROOTS if root not in combined]
+        self.assertEqual(missing, [])
+
+    def test_current_navigation_surface_excludes_historical_governance_records(self) -> None:
+        nav_rel = {path.relative_to(_ROOT).as_posix() for path in _CURRENT_NAVIGATION_DOCS}
+        self.assertTrue((_ROOT / "governance" / "rp-app").is_dir())
+        leaked = [
+            rel
+            for rel in nav_rel
+            if rel.startswith("governance/rp-app/v2-")
+            or "/fresh-start-" in rel
+        ]
+        self.assertEqual(leaked, [])
+        for path in _CURRENT_NAVIGATION_DOCS:
+            self.assertTrue(path.is_file(), path)
 
 
 if __name__ == "__main__":

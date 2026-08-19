@@ -22,18 +22,18 @@ Shared guardrails for Holy Grail RP. Product orientation: [ARCHITECTURE_OVERVIEW
 ## Runtime stack
 
 ```text
-Application client / UI
-        ↓
-Domain API client
-        ↓
-RP runtime (DSH / Cordis)  ↔  Domain Host (v2/domain_api)
+Presentation (v2/ui/streamlit_app.py)
+        ↓ HTTP
+Node application / DSH runtime (v2/rp_runtime/)
+        ↓ HTTP (domain-api-client)
+Domain Host (v2/domain_api/)
         ↓
 domain library (v2/domain/modules/)
         ↓
 data/  (HG_DATA_DIR)
 ```
 
-**Domain truth** lives in continuity and repositories. **Orchestration** selects speakers and merges structured history. **Inference** runs through DSH. **Packaging** assembles bounded prompt context; it does not replace continuity authority.
+**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host projection plus domain `prompt_builders.py`; `HgContextBridge` only transports manifests. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
 
 ---
 
@@ -51,9 +51,9 @@ Holy Grail RP uses Director + character agents + Narrator + continuity manager.
 
 ### Scene-start spine
 
-Fresh scenes use one canonical continuity init/apply ordering (`scene_start_bootstrap`, `restore_or_initialize_continuity_manager`). Application UI and harness inputs are **separate surfaces** into that spine—not divergent template-application models.
+Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup_seam_v77`, Host `session_setup.py`). Application UI and test/runtime inputs are **separate surfaces** into that spine—not divergent template-application models.
 
-**Opener selection (UI):** template-owned Opener JSON or custom text; multiple template openers require an explicit pick before scene start. Harness paths carry opener choice via scenario/bootstrap composition.
+**Opener selection (UI):** template-owned Opener JSON or custom text; multiple template openers require an explicit pick before scene start. The UI posts that choice through the Node application API. Test and DSH paths carry opener choice on Host session-create payloads. DSH `opening-phase.mjs` runs opening inference when the setup requests generated opening text.
 
 ### Core responsibilities
 
@@ -69,7 +69,7 @@ Fresh scenes use one canonical continuity init/apply ordering (`scene_start_boot
 
 - Do not move long-horizon continuity into prompts or unbounded transcripts.
 - Do not treat Director prompt edits as the default runtime fix.
-- Keep application composition layers thin.
+- Keep the Domain Host as the composition boundary; keep the UI a presentation client.
 - **Progression advisory** is advisory only — it must not write continuity truth or mutate `CharacterState`.
 - **Scene Grounding** is read-only prompt projection from continuity — not a second authority ([PRD](../Holy%20Grail%20PRD.md) §5.8, [scene-grounding-layer.md](./scene-grounding-layer.md)).
 
@@ -95,8 +95,8 @@ When debugging scene quality or continuity:
 5. summary retrieval and compression
 6. validation and enforcement boundaries
 7. memory layer read path (`memory_layer/retrieval.py`)
-8. Director logic
-9. Narrator rendering polish
+8. Director logic (Host prepare/validate + DSH director phase)
+9. Narrator rendering polish (DSH narrator phase)
 
 Full workflow: [audit-workflows.md](./audit-workflows.md).
 
@@ -115,7 +115,7 @@ Runtime validation is split under `v2/domain/modules/`:
 
 Validators **reject or annotate**; they do not replace Director selection or continuity commits.
 
-**Director fallback:** on JSON parse failure, `decision` includes `"source": "fallback"`. Turn-selection preemption validation is skipped for fallback decisions; memory writes for committed turns are not.
+**Director fallback:** on JSON parse failure, Host/DSH decision handling may record `"source": "fallback"`. Turn-selection preemption validation is skipped for fallback decisions; memory writes for committed turns are not.
 
 ---
 
@@ -126,10 +126,11 @@ Validators **reject or annotate**; they do not replace Director selection or con
 - **Writes:** commit-time only, perception-filtered observers (`memory_layer/facade`, `writes`, `storage`).
 - **Reads:** `memory_layer/retrieval.py` builds episodic sections for `state_context`.
 
-### `state_context` contract
+### Prompt context contract
 
-- Composed only in `app_turn_prompting.build_character_turn_prompt` via `build_character_state_context_for_prompt`.
-- `prompt_builders` inserts `state_context` unchanged — no direct re-read of memory buckets.
+- Character/Director/Narrator **interpretation** is composed in Domain Host (`continuity_context_projector.py`, `kernel.prepare_*`) using domain `prompt_builders.py` and memory/retrieval services.
+- `prompt_builders` formats prompt text; it does not re-read memory buckets or own round sequencing.
+- DSH `HgContextBridge` registers the Host manifest on an ephemeral inference agent and does not reinterpret authority classes.
 
 ---
 

@@ -1,6 +1,6 @@
 # Scene Grounding Layer (MVP) — Technical Specification
 
-**Status:** MVP implemented in `rp_app/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and `transaction:scene_commitment` (transactional scene commitments, GitHub #127).  
+**Status:** MVP implemented in `v2/domain/modules/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and `transaction:scene_commitment` (transactional scene commitments, GitHub #127).  
 **Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8.  
 **Placement:** Derived **after** continuity updates per turn, consumed **before** LLM calls in the packaging/prompt path.
 
@@ -109,7 +109,7 @@ Authoritative state lives in **`ContinuityManager.resolved_outcomes`** for aspec
 
 **MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and **`transaction:scene_commitment`**; do not treat it as a general second state system.
 
-**Narrow runtime enforcement (`sleeping_surface` only):** After promotion and projection, **`response_validation_binding_sleeping_surface`** may **reject** moves that **deny** or **incorrectly reassign** the settled sleeping surface (deterministic; **one** structured retry in `turn_runner_turn`). This is **not** a general contradiction engine for all facts. See `docs/architecture.md` (Scene Grounding — binding contradiction enforcement).
+**Narrow runtime enforcement (`sleeping_surface` only):** After promotion and projection, **`response_validation_binding_sleeping_surface`** may **reject** moves that **deny** or **incorrectly reassign** the settled sleeping surface (deterministic; Host `validate_move` + DSH character-phase retry). This is **not** a general contradiction engine for all facts. See `docs/architecture.md` (Scene Grounding — binding contradiction enforcement).
 
 ---
 
@@ -182,7 +182,7 @@ If continuity textually changes but **no structured signal** updates: **fact may
 |---------|----------|
 | **Where** | Extend **team / scene state** persisted in session JSON (alongside `team_state`, continuity snapshot). Exact key: `scene_grounding` parallel to scene-scoped data. |
 | **Create** | Scene start: empty or template seed. First promotion after turn 0. |
-| **Update** | Only inside `turn_runner_updates` (or single helper called from there) **after** continuity commit. |
+| **Update** | Only after continuity commit on the Host `commit_move` path (or a single helper called from there). |
 | **Remove** | Revocation rules + scene end + cap prune. |
 | **Read** | Prompt builders read snapshot; **immutable** for the duration of one LLM call. |
 
@@ -217,7 +217,7 @@ SETTLED SCENE FACTS (authoritative for this scene; do not contradict or re-open 
 
 ### 7.3 Character BINDING CONSTRAINTS + evidence discipline (downstream)
 
-**BINDING CONSTRAINTS (HIGH PRIORITY)** — **character prompts only:** a **filtered** bullet list of promoted facts whose `(category, key)` pairs are allowlisted as binding (e.g. sleeping surface assignment, location entry). Built from the **same** `SceneGroundingState` as SETTLED SCENE FACTS via `format_character_binding_constraints_section` in `scene_grounding.py` (see `_BINDING_FACT_KEYS` / preamble there). Passed through `app_turn_prompting.build_character_turn_prompt` as `scene_binding_constraints_section` and inserted in `prompt_builders.build_character_turn_prompt` **after** sections 1–7 (voice, evidence ladder, canon) and **before** the static **EVIDENCE & AUTHORITY DISCIPLINE** block and **OUTPUT RULES**. Purpose: high-salience “do not contradict these settled facts” without duplicating the full Director grounding block.
+**BINDING CONSTRAINTS (HIGH PRIORITY)** — **character prompts only:** a **filtered** bullet list of promoted facts whose `(category, key)` pairs are allowlisted as binding (e.g. sleeping surface assignment, location entry). Built from the **same** `SceneGroundingState` as SETTLED SCENE FACTS via `format_character_binding_constraints_section` in `scene_grounding.py` (see `_BINDING_FACT_KEYS` / preamble there). Host `continuity_context_projector.py` supplies that section into character context; `prompt_builders.build_character_turn_prompt` inserts it **after** sections 1–7 (voice, evidence ladder, canon) and **before** the static **EVIDENCE & AUTHORITY DISCIPLINE** block and **OUTPUT RULES**. Purpose: high-salience “do not contradict these settled facts” without duplicating the full Director grounding block.
 
 **EVIDENCE & AUTHORITY DISCIPLINE** — **not** part of scene grounding; a **fixed** instruction paragraph in `prompt_builders.py` placed **after** binding constraints and **before** **OUTPUT RULES**. It targets a distinct failure mode (unsupported specifics in authoritative / clinical / “noted” voice). See `RP_SETUP_TODO.md` Phase 0 section **H**.
 

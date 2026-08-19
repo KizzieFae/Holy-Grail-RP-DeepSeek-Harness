@@ -72,15 +72,17 @@ Production code lives under **`v2/`**:
 | Domain Host | `v2/domain_api/` |
 | Domain tests | `v2/domain/tests/` |
 | RP runtime (DSH) | `v2/rp_runtime/` |
+| Presentation UI | `v2/ui/` |
 | Integration tests | `v2/tests/` |
 | Canonical data | `data/` (`HG_DATA_DIR`) |
+
+Node calls the Domain Host over HTTP. Python does not call DSH. UI is a presentation client of the Node application API. Topology and run commands: [v2/README.md](./v2/README.md). Symptom → owner: [MODULE_INDEX.md](./MODULE_INDEX.md).
 
 When a task touches domain behavior, also read:
 
 - [MODULE_INDEX.md](./MODULE_INDEX.md) — symptom → module map
 - For **knowledge leaks, whispers, or per-character prompt differences:** `v2/domain/modules/perception_audibility.py`
-- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) — product intent (Progression Advisory §5.7, Scene Grounding §5.8)
-- **Progression advisory (MVP):** `v2/domain/modules/progression_advisory.py` with integration in beat-shift, director, prompting, and audit paths. Does not write continuity or `CharacterState`.
+- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) — product intent (Progression Advisory §5.7, Scene Grounding §5.8). Advisory-style prompt text must not write continuity or `CharacterState`.
 
 **Offline tooling:** `tools/investigation/`, `tools/maintenance/` — see each README.
 

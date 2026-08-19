@@ -97,16 +97,17 @@ Use the same layer order as `docs/architecture.md`:
 
 ## Relevant code areas for RP audits
 
-Start with these modules under `v2/domain/modules/`:
+Start with:
 
-- `continuity_manager.py`
-- `perception_audibility.py`
-- `turn_runner.py`, `turn_runner_turn.py`, `turn_runner_updates.py`, `turn_runner_audit.py`
-- `app_turn_director.py`
-- `orchestration_helpers.py`
-- `prompt_builders.py`
-- `response_validation.py`
-- `audit_logger.py`
+- `v2/domain/modules/continuity_manager.py`
+- `v2/domain/modules/perception_audibility.py`
+- `v2/domain_api/kernel.py` (`commit_move`, `prepare_*`)
+- `v2/domain_api/session_history.py`
+- `v2/rp_runtime/src/plugins/hg-round-orchestrator/`
+- `v2/rp_runtime/src/plugins/hg-phase-executors/`
+- `v2/rp_runtime/src/plugins/hg-trace-emitter/`
+- `v2/domain/modules/prompt_builders.py`
+- `v2/domain/modules/response_validation.py`
 
 ## Windsurf-only note
 

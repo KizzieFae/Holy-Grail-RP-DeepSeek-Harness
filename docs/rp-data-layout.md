@@ -31,7 +31,7 @@ Local investigation output: `data/investigation_runs/` (gitignored).
 
 **Role:** Persona definitions — system prompt, personality, identity anchors, relationships, lore facts.
 
-**Read by:** `character_loader.py`, `scene_opener.py`, UI modules.
+**Read by:** `v2/domain/character_cards.py`, `v2/domain/modules/scene_opener.py`, Host `session_setup.py`. The UI lists catalog entries via the Node application API; it does not load cards from disk.
 
 **Written by:** Content authors / tooling outside the runtime turn loop.
 
@@ -43,9 +43,9 @@ Local investigation output: `data/investigation_runs/` (gitignored).
 
 **Role:** Premise, `role_slots`, `anchor_role_name`, logistics anchors (`sleeping_surface_slots`, `location_entry_slots`), optional `opening_text`.
 
-**Read by:** `scene_template.py`, `scene_lifecycle_start.py`, `prompt_builders.py`, `progression_advisory.py`.
+**Read by:** `scene_template.py`, `scene_opener.py`, Host `session_setup.py`, `prompt_builders.py`.
 
-Harness paths with `scene_template_id` use the same bootstrap spine as the application UI (`prepare_headless_session` / `scene_start_bootstrap`).
+Host `session_setup.py` is the production scene-start spine (same templates/openers as the UI, which only posts setup through the Node application API).
 
 ---
 
@@ -70,9 +70,9 @@ Operational baseline: [data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md](../data/re
 | `*.json` | One file per session id — team state, chat history, `character_states`, `continuity_state`, metadata |
 | `_session_index.json` | Cached listing index (`SessionManager`) |
 
-**Read by:** `SessionManager`, `session_lifecycle_load.py`
+**Read by:** Host `SessionRepository` via domain `SessionManager`
 
-**Written by:** `SessionManager.save_session` via `session_lifecycle_save.py`
+**Written by:** `SessionManager.save_session` through Host `SessionRepository`
 
 New sessions use opaque UUIDv4 filenames. Exact JSON keys follow code-defined serialization — not a stable public API.
 
@@ -136,5 +136,5 @@ Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runt
 ## Related
 
 - [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md)
-- [MODULE_INDEX.md](../MODULE_INDEX.md) — `audit_logger_paths.py`, session modules
+- [MODULE_INDEX.md](../MODULE_INDEX.md) — session/Host persistence and symptom routing
 - [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation and artifact layout

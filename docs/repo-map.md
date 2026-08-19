@@ -11,9 +11,9 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 | `README.md` | Product overview, quick start, doc index |
 | `AGENTS.md` | Repo-level AI working rules and instruction priority |
 | `ARCHITECTURE_OVERVIEW.md` | Product architecture and layer boundaries |
-| `MODULE_INDEX.md` | Symptom → module map (`v2/domain/modules/`) |
+| `MODULE_INDEX.md` | Symptom → current implementation owner |
 | `docs/` | Shared technical documentation |
-| `v2/` | Production implementation (domain, Domain Host, RP runtime) |
+| `v2/` | Production implementation (domain, Domain Host, RP runtime, UI) |
 | `data/` | Canonical product data (`HG_DATA_DIR`) |
 | `tools/` | Offline investigation and maintenance utilities |
 | `governance/` | Issue workflow, policies, program records |
@@ -24,10 +24,11 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 
 | Path | Role |
 |------|------|
-| `v2/domain/modules/` | Domain library — continuity, orchestration, prompts, validation, memory, retrieval |
+| `v2/domain/modules/` | Domain library — continuity, prompts, validation, memory, retrieval |
 | `v2/domain_api/` | Domain Host — authoritative kernel and Domain API transport |
 | `v2/domain/tests/` | Framework-neutral domain contract tests |
-| `v2/rp_runtime/` | DSH/Cordis orchestration (HgRoundOrchestrator, inference wiring) |
+| `v2/rp_runtime/` | DSH/Cordis orchestration (`HgRoundOrchestrator`, phase executors, inference wiring) |
+| `v2/ui/` | Presentation client (`streamlit_app.py` — HTTP to the Node application API) |
 | `v2/tests/` | Integration and repository architecture tests |
 | `v2/README.md` | Implementation tree layout and local run commands |
 
@@ -64,14 +65,15 @@ Details: [rp-data-layout.md](./rp-data-layout.md).
 
 | Task | Start here |
 |------|------------|
-| Continuity / scene state bug | `v2/domain/modules/continuity_manager.py` |
-| Turn selection / orchestration | `v2/domain/modules/orchestration_helpers.py`, `app_turn_director.py` |
-| Character prompts | `v2/domain/modules/app_turn_prompting.py`, `prompt_builders.py` |
-| Validation failures | `v2/domain/modules/response_validation*.py` |
-| Session save/load | `v2/domain/modules/session_manager.py`, `session_lifecycle_*.py` |
+| Continuity / scene state bug | `v2/domain/modules/continuity_manager.py`; Host `v2/domain_api/kernel.py` (`commit_move`) |
+| Turn selection / who acts next | `v2/domain_api/participation_policy.py`, `v2/rp_runtime/src/plugins/hg-round-orchestrator/`, `v2/rp_runtime/src/plugins/hg-phase-executors/director-phase.mjs` |
+| Character / Director / Narrator prompts | `v2/domain_api/continuity_context_projector.py`, `v2/domain/modules/prompt_builders.py`; transport `v2/rp_runtime/src/plugins/hg-context-bridge/` |
+| Validation failures | `v2/domain/modules/response_validation*.py`; Host `validate_move` / `validate_director_decision` |
+| Session save/load | `v2/domain_api/session_repository.py`, `v2/domain/modules/session_manager.py` |
 | Domain API / Host | `v2/domain_api/` |
 | DSH round orchestration | `v2/rp_runtime/src/plugins/hg-round-orchestrator/` |
-| Audits | `v2/domain/modules/audit_logger*.py`, [audit-workflows.md](./audit-workflows.md) |
+| UI-only behavior | `v2/ui/streamlit_app.py` |
+| Audits / traces | `v2/rp_runtime/src/plugins/hg-trace-emitter/`, Host `session_history.py`, [audit-workflows.md](./audit-workflows.md) |
 
 Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 

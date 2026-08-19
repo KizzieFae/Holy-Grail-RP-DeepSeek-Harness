@@ -62,36 +62,39 @@ Vector retrieval is for similarity and suggestions, not authoritative truth (PRD
 | Domain library | `v2/domain/modules/` |
 | Domain Host | `v2/domain_api/` |
 | RP runtime (DSH) | `v2/rp_runtime/` |
+| Presentation UI | `v2/ui/streamlit_app.py` |
 | Domain tests | `v2/domain/tests/` |
 | Product data | `data/` (`HG_DATA_DIR`, `HG_SESSIONS_DIR`) |
 
 ### Runtime flow
 
 ```text
-Application client / UI
+Presentation (v2/ui/streamlit_app.py)
+        ↓ HTTP (Node application API)
+RP runtime / DSH (v2/rp_runtime/)
+        ↓ HTTP (domain-api-client → Domain Host)
+Domain Host (v2/domain_api/)
         ↓
-Domain API client
+domain modules + SessionManager (v2/domain/modules/)
         ↓
-RP runtime (DSH)  ↔  Domain Host
-        ↓
-domain services / repositories
-        ↓
-data/
+data/  (HG_DATA_DIR)
 ```
 
-### Major subsystems (domain library)
+Node calls the Domain Host. Python does not call DSH. The UI is presentation-only.
 
-- **Characters:** JSON cards in `data/characters/`; loaded by `character_loader.py`
-- **Scenes:** templates in `data/scene_templates/`; openers via `scene_opener.py` and bootstrap composition
-- **State:** `ContinuityManager`, `SceneState`, excursion pipeline via `continuity_mutation_pipeline` / `process_turn`
-- **Turn flow:** Director → character move → validation → Narrator → continuity updates (`app_turn_*.py`, `turn_runner_*.py` domain modules)
-- **Memory:** `memory_layer/` — commit-time writes, episodic read/format for prompts
-- **Retrieval:** `retrieved_context_select.py`, env `RP_RETRIEVED_CONTEXT_INDEX`; bounded merge with episodic lanes
+### Major subsystems
+
+- **Characters:** JSON cards in `data/characters/`; loaded by `v2/domain/character_cards.py` during Host session setup
+- **Scenes:** templates in `data/scene_templates/`; openers via `scene_opener.py` and Host `session_setup.py` / DSH opening phase
+- **State:** `ContinuityManager`, `SceneState`, excursion pipeline via `continuity_mutation_pipeline` / `process_turn`, committed through Host `commit_move`
+- **Turn flow:** DSH round orchestrator and phase plugins (Director → character → Narrator) around Host prepare / validate / commit
+- **Memory:** `memory_layer/` plus Host `memory_service.py` — commit-time writes, episodic read/format for prompts
+- **Retrieval:** Host `retrieval_selection.py` / `authored_knowledge.py`; env `RP_RETRIEVED_CONTEXT_INDEX`
 - **Scene Grounding:** read-only settled-facts projection after continuity commit ([spec](./docs/scene-grounding-layer.md))
-- **Packets:** `CharacterPromptInputAssembly` seam at character prompt boundary ([PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md))
-- **Validation:** `response_validation_*.py` — reject/annotate only
-- **Sessions:** `session_manager.py`, `data/sessions/`
-- **Audits:** optional trees under `data/rp_audits/`
+- **Packets:** runtime packet seam at the character prompt boundary ([PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)); production assembly is Host projection + `prompt_builders.py`
+- **Validation:** `response_validation_*.py` — reject/annotate only; Host `validate_move` / `validate_director_decision` are the call sites
+- **Sessions:** Host `SessionRepository` + `session_manager.py`, `data/sessions/`
+- **Audits / traces:** DSH `hg-trace-emitter`; optional trees under `data/rp_audits/`
 
 Details and diagnosis order: `docs/architecture.md`, [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md), [MODULE_INDEX.md](./MODULE_INDEX.md).
 

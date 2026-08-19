@@ -9,7 +9,8 @@ Production implementation for **Holy Grail RP**. The repository root is the prod
 | `domain/modules/` | Permanent domain semantics library |
 | `domain_api/` | Domain Host — transport-neutral Domain API + authoritative Python kernel |
 | `domain/tests/` | Framework-neutral domain behavioral contracts |
-| `rp_runtime/` | DSH/Cordis RP orchestration (`HgRoundOrchestrator`, inference client) |
+| `rp_runtime/` | DSH/Cordis RP orchestration (`HgRoundOrchestrator`, phase executors, inference) |
+| `ui/` | Presentation client (`streamlit_app.py` talks HTTP to the Node application API) |
 | `tests/` | Integration and repository architecture tests |
 
 ## Python environment (Domain Host)
@@ -53,17 +54,17 @@ npm test
 ## Architecture flow
 
 ```text
-Application client / UI
-        ↓
-HolyGrailApplicationClient
-        ↓
-RP runtime (DSH / Cordis)
-        ↔
+Presentation (v2/ui/streamlit_app.py)
+        ↓ HTTP
+HolyGrailApplicationClient + DSH runtime (this tree)
+        ↓ HTTP (domain-api-client)
 Domain Host (domain_api)
         ↓
-domain library + repositories
+domain library + SessionRepository / SessionManager
         ↓
 data/  (HG_DATA_DIR)
 ```
+
+Node calls the Domain Host. Python does not call DSH. The UI is presentation-only.
 
 **Principle:** Holy Grail determines what is true. DeepSeek Harness records what happened.
