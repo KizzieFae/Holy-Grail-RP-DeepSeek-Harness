@@ -6,7 +6,7 @@
 **M14.2 anchor:** `3bb79dd`  
 **M14.3 anchor:** `9b6fa4e`  
 **Pre-slice HEAD:** `9b6fa4e`  
-**M14.4 implementation HEAD:** _(set at commit)_
+**M14.4 implementation HEAD:** `289c466608715b3c4c74f3fd3c356ee82d759106`
 
 **Assigned workflow weight:** standard  
 **Effective workflow weight:** full
