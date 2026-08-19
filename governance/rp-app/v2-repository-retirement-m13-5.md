@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M13.4 anchor:** `1927b5c`  
-**M13.5 implementation HEAD:** *(set at commit)*
+**M13.5 implementation HEAD:** `a158227`
 
 **Objective:** Rehome historical validation evidence from `autogen_rp/python/validation_runs/` to `governance/archive/validation-runs/` without rewriting historical records or altering product behavior.
 
@@ -269,4 +269,8 @@ See §9. Console-capture guidance in `SCENARIO_VALIDATION_FRAMEWORK.md` now dire
 
 ## 22. Repository state
 
-*(Updated at commit.)*
+| Field | Value |
+|-------|-------|
+| Implementation commit | `a158227` — `feat(m13.5): archive validation evidence under governance` |
+| Branch | `main` |
+| Pre-slice HEAD | `1927b5c` |
