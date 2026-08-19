@@ -137,4 +137,5 @@ Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runt
 
 - [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md)
 - [MODULE_INDEX.md](../MODULE_INDEX.md) — session/Host persistence and symptom routing
-- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation and artifact layout
+- [governance/rp-app/audit-semantics.md](../governance/rp-app/audit-semantics.md) — program audit semantics
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure and artifact layout

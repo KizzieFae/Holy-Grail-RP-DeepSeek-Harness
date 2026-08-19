@@ -1,5 +1,7 @@
 # Round A Serialized Exemplar — Facilitator / Export Checklist v0
 
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/rp-app/audit-semantics.md`.
+
 <!--
   Operational checklist only (#186 / #187 adjacency).
   Ephemeral v0: retire or merge after Round A / S2 gate.

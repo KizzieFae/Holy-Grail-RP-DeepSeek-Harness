@@ -1,12 +1,10 @@
 # Audit Workflows
 
-This document turns important audit guidance into a shared repo procedure.
+RP **session-audit procedure** for Holy Grail RP: how to read `data/rp_audits/session_*` artifacts, diagnose layer ownership, and follow retention policy.
 
-For artifact details, see [`docs/audit-workflows.md`](./audit-workflows.md) and [`docs/rp-data-layout.md`](./rp-data-layout.md). For optional **offline** `fact_spec.v1` post-processing (companion JSON, headless **`--fact-spec`**), see [`SCENARIO_VALIDATION_FRAMEWORK.md`](../SCENARIO_VALIDATION_FRAMEWORK.md) (simulation execution).
+**Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/rp-app/audit-semantics.md`**. Remediation Issue filing — see **`governance/rp-app/issue-tracking-workflow.md`** (§A.1, §D–§I).
 
-For turning audit findings into GitHub Issues (classification **bug** / **behavior** / **limitation**, evidence, re-test loop, heuristic caveats), see the same file → **Audit interpretation and issue tracking**, and `governance/rp-app/issue-tracking-workflow.md` (§A.1, §D).
-
-**User callouts (GitHub #55 / #125 / #126):** In Streamlit, the surface is **minimal**—a callout **trigger** and an optional **operator** **note** only. Operators do **not** select artifact paths. **`artifact_refs`** and optional **`related_artifact_refs`** (same-turn sibling `*_full` links; **#126**) are **system-populated at save**. **Triage**, **review**, **promote**, and **dismiss** are **operator CLI** only, not Streamlit. Record operator findings during audited runs, then **triage in the operator CLI** and **promote to a tracked GitHub issue** (link recorded in `rp_audits` — not from Streamlit). Historical V1 operator CLI (`user_callout_review.py`) was removed M12.4; see **User callout artifacts** below and [`docs/rp-data-layout.md`](./rp-data-layout.md).
+For artifact layout, see [`docs/rp-data-layout.md`](./rp-data-layout.md). For optional **offline** `fact_spec.v1` post-processing, see [`SCENARIO_VALIDATION_FRAMEWORK.md`](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
 ## When to use this
 
@@ -63,7 +61,7 @@ For session audits, read in this order:
 - whether summary blocks preserve important context or hide it
 - **Authored retrieval (standard eval):** On audited runs, check `_audit_summary.json` → **`retrieval_session`** when present. See [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 - **Perception / audibility:** for whisper or directed beats, compare this character's assembled prompt to the parsed `move` (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private dialogue in transcript or structured history.
-- **`metadata.character_audit_v1`:** Derived dimensions are **advisory** and **non-authoritative**. Read **`_narrative.json`** and continuity first. See **Character Audit v1** below.
+- **`metadata.character_audit_v1`:** Derived dimensions are **advisory** and **non-authoritative**. Read **`_narrative.json`** and continuity first. Do not treat missing or noisy CA dimensions as continuity defects without corroboration.
 
 For issue updates, pay special attention to:
 
@@ -118,57 +116,6 @@ The repo also contains a Windsurf workflow at:
 That file can remain as Windsurf automation, but this document is the shared procedure both Windsurf
 and Cursor should follow.
 
-## Semantic proposal evaluation (#243) — operator read discipline
+## Historical offline eval baselines (#243)
 
-**Normative detail:** this section (*Semantic proposal evaluation — operator read discipline*, Issue #243-D).
-
-**What this is:** Offline, observational semantic-proposal alignment evaluation over frozen corpora and replay helpers. Outputs include `corrected_category`, nested `legacy_lane`, and `limitations[]`. **Not** runtime truth. **Not** continuity authority. **Not** written into `_audit_summary.json`. **Not** a runtime gate.
-
-**What this is not:** A substitute for reading `#233` `semantic_proposal_decision`, `scene_state_after`, or continuity commit evidence on live audit rows.
-
-### When to use
-
-- Interpreting #240 frozen corpus rows or #243 regression CLI output
-- Explaining why investigation-era F-codes (F0–F7) disagreed with profile-scoped corrected categories
-- Calibrating evaluator false-positive alignment — **not** filing runtime bugs from eval alone
-
-### Read order (per judgment)
-
-1. **`corrected_category`** — primary #243 output (`success`, `evaluator_defect`, `contract_limited`, `ambiguous_threshold`, `true_semantic_miss`)
-2. **`limitations[]`** — profile scope, mapping caveats, disclaimers
-3. **`legacy_lane`** — `legacy_f_code`, `legacy_f_code_label`, `legacy_taxonomy_status` (historical investigation context)
-4. **`legacy_classifier_misflag`** — legacy overfire signal; **does not mean runtime failure**
-5. **Runtime corroboration** — only if escalation still warranted
-
-### Operator rules
-
-| Rule | Detail |
-|------|--------|
-| Corrected category is primary | Use `corrected_category` for #243 evaluation; treat `legacy_lane` as secondary |
-| Legacy F-codes are historical | F0–F7 explain old tooling; they are **not** primary contract-alignment truth |
-| Misflag ≠ runtime bug | `legacy_classifier_misflag: true` means taxonomy/calibration — not automatic regression |
-| Eval alone ≠ bug | Do **not** open a runtime defect from evaluator output without committed-state proof |
-| Ambiguity is valid | `ambiguous_threshold` and `legacy_taxonomy_status: ambiguous` must not be forced to PASS/FAIL |
-| No audit-summary merge | Evaluator judgments stay offline; do not treat them as `_audit_summary.json` fields |
-
-### Runtime escalation checklist
-
-Before treating an eval result as a runtime continuity or semantic-proposal bug, confirm **at least one** committed evidence path:
-
-- [ ] `#233` **`semantic_proposal_decision`** on the relevant character `*_full.json` row
-- [ ] **`scene_state_after`** / continuity state shows a durable violation inconsistent with the decision
-- [ ] Accepted/rejected **`semantic_proposals`** records match the suspected miss
-- [ ] **`_narrative.json`** / turn metadata corroborates net-state or participation change
-- [ ] Issue/corpus context documented — calibration anchor, not runtime proof by itself
-
-If offline eval says `true_semantic_miss` but runtime committed `no_covered_change` with coherent continuity, investigate **evaluator/threshold** alignment (#243 scope) — not continuity enforcement — unless committed state proves otherwise.
-
-### CLI (from repository root)
-
-```bash
-python scripts/run_issue243_corpus_regression.py --eval
-python scripts/run_issue243_corpus_regression.py --eval --summary --corpus willow_v1
-python scripts/run_issue243_corpus_regression.py --legacy --corpus willow_v1
-```
-
-Baselines and field glossary: `python/data/evaluation/issue243_regression_baselines/README.md`.
+Frozen investigation corpora and baseline JSON under `data/fixtures/evaluation/` may include **historical** semantic-proposal evaluation artifacts. Those are **not** runtime gates and **not** current bootstrap paths. When interpreting such rows offline: treat `corrected_category` as the primary eval output; require committed-state corroboration before filing runtime defects. See `governance/rp-app/audit-semantics.md` for program-audit finding rules when promoting conclusions to tracked work.

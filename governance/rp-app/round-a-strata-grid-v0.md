@@ -1,5 +1,7 @@
 # Round A Strata Grid v0
 
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/rp-app/audit-semantics.md`.
+
 <!--
   Operational workshop steering only — NOT FT1/ACP normative semantics.
   Ephemeral v0: revise or retire after Round A / S1 gate (#186).

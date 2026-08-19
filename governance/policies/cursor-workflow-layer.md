@@ -74,7 +74,8 @@ as the authoritative guide.
 | Task class | Minimum extra reads |
 |------------|-------------------|
 | GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; product architecture in `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md` |
-| RP app behavior / continuity / Director / audits | `docs/architecture.md`, `ARCHITECTURE_OVERVIEW.md`, `v2/README.md`; if auditing: `docs/audit-workflows.md` (procedure only) |
+| RP app behavior / continuity / Director / session audits | `docs/architecture.md`, `ARCHITECTURE_OVERVIEW.md`, `v2/README.md`; session-audit procedure: `docs/audit-workflows.md` |
+| Program / system quality audits | `governance/rp-app/audit-semantics.md`; RP session procedure: `docs/audit-workflows.md` |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
 | Repo structure | `docs/repo-map.md` |
 

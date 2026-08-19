@@ -77,6 +77,23 @@ _LIVE_RESPONSIBILITY_ROOTS = (
     "v2/ui",
 )
 
+_AUDIT_SEMANTICS_PATH = _ROOT / "governance" / "rp-app" / "audit-semantics.md"
+_AUDIT_PROCEDURE_PATH = _ROOT / "docs" / "audit-workflows.md"
+_AUDIT_AUTHORITY_NAV_SURFACES = (
+    _ROOT / "AGENTS.md",
+    _ROOT / "docs" / "rp-data-layout.md",
+    _ROOT / "docs" / "core-operating-invariants.md",
+    _ROOT / "SCENARIO_VALIDATION_FRAMEWORK.md",
+    _AUDIT_PROCEDURE_PATH,
+)
+_GOVERNANCE_README_PATH = _ROOT / "governance" / "README.md"
+_HISTORICAL_WORKSHOP_PATHS = (
+    _ROOT / "governance" / "rp-app" / "audit-classification-protocol.md",
+    _ROOT / "governance" / "rp-app" / "failure-taxonomy-spec-v1.md",
+    _ROOT / "governance" / "rp-app" / "round-a-strata-grid-v0.md",
+    _ROOT / "governance" / "rp-app" / "round-a-serialized-exemplar-export-checklist-v0.md",
+)
+
 
 def _iter_python_files(*roots: Path) -> list[Path]:
     out: list[Path] = []
@@ -348,6 +365,44 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertEqual(leaked, [])
         for path in _CURRENT_NAVIGATION_DOCS:
             self.assertTrue(path.is_file(), path)
+
+    def test_program_audit_semantics_and_procedure_authorities_exist(self) -> None:
+        self.assertTrue(_AUDIT_SEMANTICS_PATH.is_file())
+        self.assertTrue(_AUDIT_PROCEDURE_PATH.is_file())
+
+    def test_audit_authority_nav_surfaces_point_to_live_semantics(self) -> None:
+        semantics_ref = "governance/rp-app/audit-semantics.md"
+        offenders: list[str] = []
+        for path in _AUDIT_AUTHORITY_NAV_SURFACES:
+            text = path.read_text(encoding="utf-8")
+            if semantics_ref not in text:
+                offenders.append(f"{path.relative_to(_ROOT)}: missing {semantics_ref}")
+            if "audit interpretation" in text.lower():
+                offenders.append(f"{path.relative_to(_ROOT)}: false audit interpretation label")
+            if "AUDIT_DOCUMENTATION.md" in text:
+                offenders.append(f"{path.relative_to(_ROOT)}: cites AUDIT_DOCUMENTATION.md")
+        self.assertEqual(offenders, [])
+
+    def test_audit_semantics_does_not_redefine_issue_workflow_tables(self) -> None:
+        text = _AUDIT_SEMANTICS_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("| `open` |", text)
+        self.assertNotIn("Project **Status**", text)
+        self.assertNotIn("| P0 |", text)
+
+    def test_governance_readme_distinguishes_current_semantics_from_historical_workshop(self) -> None:
+        text = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
+        current_idx = text.index("## Current authorities")
+        historical_idx = text.index("## Historical workshop")
+        current_section = text[current_idx:historical_idx]
+        self.assertIn("audit-semantics.md", current_section)
+        self.assertNotIn("audit-classification-protocol.md", current_section)
+        self.assertIn("Historical workshop", text)
+
+    def test_historical_workshop_materials_carry_historical_banner(self) -> None:
+        for path in _HISTORICAL_WORKSHOP_PATHS:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("HISTORICAL WORKSHOP", text, path.name)
+            self.assertIn("audit-semantics.md", text, path.name)
 
 
 if __name__ == "__main__":

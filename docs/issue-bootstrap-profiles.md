@@ -28,7 +28,8 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 
 **When auditing / continuity debugging**
 
-- `docs/audit-workflows.md`
+- `governance/rp-app/audit-semantics.md` (program audits)
+- `docs/audit-workflows.md` (RP session-audit procedure)
 - `docs/rp-data-layout.md`
 
 ---

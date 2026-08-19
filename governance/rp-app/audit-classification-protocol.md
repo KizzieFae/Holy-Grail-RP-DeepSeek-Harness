@@ -1,5 +1,7 @@
 # Audit Classification Protocol (ACP)
 
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/rp-app/audit-semantics.md`.
+
 <!--
   Skeleton: interchange and process envelope only (#187 lineage).
   Not runtime, detectors, CI gates, or audit/continuity authority.

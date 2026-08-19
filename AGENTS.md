@@ -55,7 +55,8 @@ Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include (or rou
 - [docs/rp-data-layout.md](./docs/rp-data-layout.md) — on-disk data
 - [docs/architecture.md](./docs/architecture.md) — integration guardrails
 - [docs/testing.md](./docs/testing.md) — pytest and validation commands
-- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation
+- [governance/rp-app/audit-semantics.md](./governance/rp-app/audit-semantics.md) — program audit semantics
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure
 - [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP
 
 **Implementation tree:**

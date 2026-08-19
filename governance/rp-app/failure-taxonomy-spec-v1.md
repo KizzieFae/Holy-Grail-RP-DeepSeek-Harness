@@ -1,5 +1,7 @@
 # Failure Taxonomy Spec v1 (FT1)
 
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/rp-app/audit-semantics.md`.
+
 <!--
   FT1 governance spec: structure + selectively normative early rows.
   Consensus UNKNOWN canonical FTC is normative (**unknown.insufficient_evidence** — §11, §9).

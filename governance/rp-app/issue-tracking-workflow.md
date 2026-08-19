@@ -25,7 +25,7 @@
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Audit **procedure** is in **`docs/audit-workflows.md`**. That file is **not** a signal-inventory / applicability / engineering-role taxonomy spec; restoration of those semantics is a separate cycle. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Program/system quality audit **semantics** (material findings, classification, disposition, closure) are in **`governance/rp-app/audit-semantics.md`**. RP session-audit **procedure** is in **`docs/audit-workflows.md`**. That procedure file is **not** a `#59` Signal-id inventory or RP JSON taxonomy spec; the V1 inventory is **not live**. **`§A.2`–`§A.3`** below govern depth-1 Evaluation Records **only when triggered**; they do **not** govern program audits 1–4. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### A.2 Incidental findings / adjacent discoveries (evaluation depth 1 completion records)
 
@@ -34,7 +34,7 @@ Use **`evaluation depth 1`** as the only scoped term. Optional single gloss: **�
 
 **Definitions**
 
-1. **Evaluation Record** — The **full** set of fields required for the evaluation being closed, including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory field listed in this subsection. A separate audit-signal inventory/taxonomy document is **not** currently in tree (deferred); `docs/audit-workflows.md` does **not** substitute for that spec.
+1. **Evaluation Record** — The **full** set of fields required for the evaluation being closed, including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory field listed in this subsection. The V1 **`#59` Signal-id inventory** is **not live** in this repository. Program-audit semantics are in **`governance/rp-app/audit-semantics.md`**; `docs/audit-workflows.md` does **not** substitute for either that semantics spec or a `#59` inventory.
 
 2. **Primary Evaluation Record block** — A **single** contiguous markdown region **on a Holy Grail RP GitHub Issue** (repository that hosts Issues for this work) that contains the **complete Evaluation Record** and appears **only** in:
    - the **Issue `body`**, or  
