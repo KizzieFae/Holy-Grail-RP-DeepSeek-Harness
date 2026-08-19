@@ -1,7 +1,7 @@
 [project]
-name = "holy-grail-domain-tests"
+name = "holy-grail-rp"
 version = "0.0.0"
-description = "Holy Grail neutral-domain test harness (v2/domain/tests; venv at repo root)"
+description = "Holy Grail RP V2 Domain Host, domain library, and contract tests"
 requires-python = ">=3.10"
 dependencies = []
 
@@ -12,7 +12,6 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

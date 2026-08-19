@@ -34,7 +34,11 @@ export function spawnDomainHostProcess(options = {}) {
   }
   const pythonExecutable = options.pythonExecutable ?? defaultPythonExecutable();
   if (path.isAbsolute(pythonExecutable) && !fs.existsSync(pythonExecutable)) {
-    throw new Error(`Python executable not found: ${pythonExecutable}`);
+    const provisionHint = pythonExecutable.includes(`${path.sep}.venv${path.sep}`)
+      || pythonExecutable.includes('/.venv/')
+      ? ' Provision the canonical environment at the repository root: python -m venv .venv (see v2/README.md).'
+      : '';
+    throw new Error(`Python executable not found: ${pythonExecutable}.${provisionHint}`);
   }
   const baseUrl = `http://${host}:${port}`;
   const proc = spawn(

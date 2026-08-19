@@ -18,6 +18,9 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 
+# Canonical Holy Grail Python virtual environment (M13.4)
+.venv/
+
 # One-off headless harness outputs under validation_runs/ root (keep plan_execution/*.json etc. tracked)
 autogen_rp/python/validation_runs/*.log
 autogen_rp/python/validation_runs/*metrics*.json

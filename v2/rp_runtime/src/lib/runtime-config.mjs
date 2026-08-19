@@ -7,15 +7,40 @@ export const repoRoot = path.resolve(__dirname, '..', '..', '..', '..');
 
 export const DOMAIN_HOST_SERVICE_ID = 'holy-grail-domain-host';
 
-export function defaultPythonExecutable() {
-  if (process.env.HG_PYTHON_EXECUTABLE) {
-    return process.env.HG_PYTHON_EXECUTABLE;
+export const CANONICAL_VENV_DIR_NAME = '.venv';
+
+/** Repo-local Holy Grail Python virtual environment root. */
+export function canonicalVenvRoot(root = repoRoot) {
+  return path.join(root, CANONICAL_VENV_DIR_NAME);
+}
+
+/**
+ * Resolve the interpreter inside a venv root for the given platform.
+ * @param {string} venvRoot
+ * @param {NodeJS.Platform} [platform]
+ */
+export function pythonExecutableForVenvRoot(venvRoot, platform = process.platform) {
+  if (platform === 'win32') {
+    return path.join(venvRoot, 'Scripts', 'python.exe');
   }
-  const winVenv = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'Scripts', 'python.exe');
-  const posixVenv = path.join(repoRoot, 'autogen_rp', 'python', '.venv', 'bin', 'python');
-  if (process.platform === 'win32' && fs.existsSync(winVenv)) return winVenv;
-  if (fs.existsSync(posixVenv)) return posixVenv;
-  return process.platform === 'win32' ? 'python' : 'python3';
+  return path.join(venvRoot, 'bin', 'python');
+}
+
+/** Canonical repo-local Domain Host interpreter path. */
+export function canonicalPythonExecutable(root = repoRoot) {
+  return pythonExecutableForVenvRoot(canonicalVenvRoot(root));
+}
+
+/**
+ * Production/test default Python interpreter.
+ * Precedence: HG_PYTHON_EXECUTABLE → canonical repo `.venv` (no legacy fallback).
+ */
+export function defaultPythonExecutable() {
+  const explicit = process.env.HG_PYTHON_EXECUTABLE?.trim();
+  if (explicit) {
+    return explicit;
+  }
+  return canonicalPythonExecutable();
 }
 
 export function defaultDataDir() {

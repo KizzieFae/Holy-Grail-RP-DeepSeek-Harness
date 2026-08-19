@@ -22,7 +22,17 @@ Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, 
 | Shared vocabulary | [GLOSSARY.md](./GLOSSARY.md) |
 | **Scene Grounding** (settled facts / prompt contract; implementation spec) | [autogen_rp/docs/scene-grounding-layer.md](./autogen_rp/docs/scene-grounding-layer.md) |
 
-## Repository layout
+## V2 production quick start
+
+| Step | Command |
+|------|---------|
+| Python environment | From repo root: `python -m venv .venv` then `pip install -e ".[dev]"` |
+| Launch V2 | `Launch-Holy-Grail-V2.bat` (Node supervisor → Domain Host → DSH) |
+| Domain tests | `python -m pytest v2/domain/tests/ -q` |
+
+Historical V1 Streamlit paths under `autogen_rp/python/rp_app/` were removed in M12.4. See `v2/README.md` for the current architecture.
+
+## Repository layout (historical note)
 
 - **`autogen_rp/`** — AutoGen monorepo fork. Active RP work lives under **`autogen_rp/python/rp_app/`** (Streamlit app, continuity, validation, audits).
 - **Headless simulation tee / redirect:** Save console capture files under **`autogen_rp/python/runs/`** or **`autogen_rp/python/validation_runs/`**, not next to the PRD at repo root — see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
