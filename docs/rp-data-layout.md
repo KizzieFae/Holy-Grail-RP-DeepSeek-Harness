@@ -137,4 +137,4 @@ Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runt
 
 - [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md)
 - [MODULE_INDEX.md](../MODULE_INDEX.md) — `audit_logger_paths.py`, session modules
-- `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md` — historical artifact reference
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation and artifact layout

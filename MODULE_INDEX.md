@@ -283,7 +283,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 - [README.md](./README.md) — product navigation
 - [docs/architecture.md](./docs/architecture.md) — integration guardrails
 - [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation
-- [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](./governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) — historical artifact reference
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation and artifact layout
 - [docs/rp-data-layout.md](./docs/rp-data-layout.md) — data directories
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet contracts
 - [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP

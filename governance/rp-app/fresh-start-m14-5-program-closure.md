@@ -111,7 +111,7 @@ Authority already captured in: `README.md`, `ARCHITECTURE_OVERVIEW.md`, `AGENTS.
 | `v2/` | Literal implementation root |
 | `turn_runner_*` | Current domain module names |
 | `legacy` | Legitimate domain semantics where applicable |
-| `governance/archive/` | Untracked local historical artifacts only (not in git) |
+| `governance/archive/` | Removed from tree (M14.1); recoverable from Git history only |
 
 ---
 

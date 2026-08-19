@@ -85,4 +85,4 @@ Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 | `governance/rp-app/` | Issue tracking workflow and program records |
 | `governance/README.md` | Governance layout; distinguishes current authorities from historical records |
 
-Historical execution records under `governance/rp-app/` and `governance/archive/` document past program slices; they are **not** required to operate the current application.
+Program closure record: `governance/rp-app/fresh-start-m14-5-program-closure.md`. Removed migration-era records live in Git history only.

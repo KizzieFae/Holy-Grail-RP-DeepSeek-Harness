@@ -20,9 +20,8 @@ Stable truths operators and agents rely on when working in **Holy Grail RP**. Th
 
 ## Audit
 
-- Audit interpretation and workflows: **`docs/audit-workflows.md`**
+- Audit interpretation and workflows: **`docs/audit-workflows.md`** (canonical artifact and workflow reference)
 - Scenario validation framing: **`SCENARIO_VALIDATION_FRAMEWORK.md`**
-- Historical audit artifact reference (read-only): **`governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md`**
 
 ---
 

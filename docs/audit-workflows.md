@@ -43,7 +43,7 @@ Session audits live under `data/rp_audits/session_*` and are **gitignored genera
 - **Exclusive claim:** New audited runs allocate `session_{###}` with an atomic folder claim under `rp_audits/` (parallel processes cannot share the same new folder).
 - **Identity agreement:** `_manifest.json`, `_narrative.json`, and `_round_index.json` must carry matching **`session_owner`** and **`session_number`** before writes append; mismatch raises **`AuditSessionIntegrityError`** (fail loud).
 - **No silent repair:** Corrupted or mismatched trees are **not** auto-healed—operators archive or delete bad folders and re-run.
-- **Continuation:** Existing Streamlit/session resume paths are unchanged; legacy `_round_index.json` files without top-level identity are accepted only when `_manifest.json` is present and aligned (see `AUDIT_DOCUMENTATION.md`).
+- **Continuation:** Existing Streamlit/session resume paths are unchanged; legacy `_round_index.json` files without top-level identity are accepted only when `_manifest.json` is present and aligned (see **Artifact reading order** below).
 
 ## Artifact reading order
 
@@ -61,9 +61,9 @@ For session audits, read in this order:
 - whether `issue_updates` reflect pressure movement rather than dialogue paraphrase
 - whether `presence_changes` match true entries, exits, and absences
 - whether summary blocks preserve important context or hide it
-- **Authored retrieval (standard eval):** On audited runs, check `_audit_summary.json` → **`retrieval_session`** when present. See [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) and [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
+- **Authored retrieval (standard eval):** On audited runs, check `_audit_summary.json` → **`retrieval_session`** when present. See [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 - **Perception / audibility:** for whisper or directed beats, compare this character's assembled prompt to the parsed `move` (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private dialogue in transcript or structured history.
-- **`metadata.character_audit_v1`:** Derived dimensions are **advisory** and **non-authoritative**. Read **`_narrative.json`** and continuity first. Details: [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) (*Character Audit v1*).
+- **`metadata.character_audit_v1`:** Derived dimensions are **advisory** and **non-authoritative**. Read **`_narrative.json`** and continuity first. See **Character Audit v1** below.
 
 For issue updates, pay special attention to:
 
@@ -93,7 +93,7 @@ Use the same layer order as `docs/architecture.md`:
 - **Baseline registry:** Pre- and post-cleanup inventories use a **baseline registry** artifact and slot verification so **delete-eligible** work does not remove sole remaining scenario coverage or referenced sessions (per **#86** consensus and **#88** execution records).
 - **Regenerate:** Produce new **`session_*`** trees by re-running supervised simulation with audit enabled when baselines are missing or stale.
 - **Delete-eligible:** Remove audit session directories only under explicit verification and policy. **Do not** delete **`data/sessions/*.json`** as part of audit corpus cleanup.
-- **Layout reference:** [rp-data-layout.md](./rp-data-layout.md). Full artifact semantics: [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md).
+- **Layout reference:** [rp-data-layout.md](./rp-data-layout.md). Per-turn file meanings: **Artifact reading order** and **Relevant code areas** in this document.
 
 ## Relevant code areas for RP audits
 
@@ -119,7 +119,7 @@ and Cursor should follow.
 
 ## Semantic proposal evaluation (#243) — operator read discipline
 
-**Normative detail:** [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) → *Semantic proposal evaluation — operator read discipline (Issue #243-D)*.
+**Normative detail:** this section (*Semantic proposal evaluation — operator read discipline*, Issue #243-D).
 
 **What this is:** Offline, observational semantic-proposal alignment evaluation over frozen corpora and replay helpers. Outputs include `corrected_category`, nested `legacy_lane`, and `limitations[]`. **Not** runtime truth. **Not** continuity authority. **Not** written into `_audit_summary.json`. **Not** a runtime gate.
 

@@ -190,6 +190,7 @@ class RepositoryArchitectureTests(unittest.TestCase):
             "scripts/run_scene_simulation_llm",
             "run_scene_simulation_llm.py",
             "LEGACY_RP_APP",
+            "governance/archive/v1-runtime",
         )
         offenders: list[str] = []
         for path in doc_paths:
