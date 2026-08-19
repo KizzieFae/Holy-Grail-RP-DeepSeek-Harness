@@ -1,8 +1,5 @@
 # Repo root — Holy Grail product and local-data ignore rules.
 
-# M13.7 — local legacy AutoGen-era tree (migration source only; not tracked architecture)
-autogen_rp/
-
 .env
 **/.streamlit/secrets.toml
 
@@ -25,7 +22,7 @@ __pycache__/
 # Canonical Holy Grail Python virtual environment (M13.4)
 .venv/
 
-# Root: local headless LLM simulation tee logs (run_scene_simulation_llm.py)
+# Root: local simulation tee logs (gitignored)
 /*_run*_audit.log
 
 # Local IDE / project exports (not canonical repo content)

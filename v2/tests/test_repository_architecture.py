@@ -79,9 +79,12 @@ class RepositoryArchitectureTests(unittest.TestCase):
         )
         self.assertEqual(proc.stdout.strip(), "")
 
-    def test_root_gitignore_covers_local_legacy_tree(self) -> None:
+    def test_local_autogen_rp_tree_absent(self) -> None:
+        self.assertFalse((_ROOT / "autogen_rp").exists())
+
+    def test_gitignore_does_not_hide_legacy_autogen_rp(self) -> None:
         text = (_ROOT / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("autogen_rp/", text)
+        self.assertNotIn("autogen_rp/", text)
 
     def test_canonical_data_paths_module(self) -> None:
         source = Path(domain_paths.__file__).read_text(encoding="utf-8")
@@ -195,6 +198,9 @@ class RepositoryArchitectureTests(unittest.TestCase):
                 if token in text:
                     offenders.append(f"{path.relative_to(_ROOT)}: {token}")
         self.assertEqual(offenders, [])
+
+    def test_no_legacy_migration_check_tool(self) -> None:
+        self.assertFalse((_TOOLS / "maintenance" / "hg_data_migration_check.py").exists())
 
 
 if __name__ == "__main__":

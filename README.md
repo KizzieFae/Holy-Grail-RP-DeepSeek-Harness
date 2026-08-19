@@ -22,7 +22,7 @@ Holy Grail RP combines:
 | Step | Command |
 |------|---------|
 | Python environment | From repo root: `python -m venv .venv` then `.\.venv\Scripts\python.exe -m pip install -e ".[dev]"` |
-| Launch | `Launch-Holy-Grail-V2.bat` (starts Node supervisor → Domain Host → DSH) |
+| Launch | `Launch-Holy-Grail-RP.bat` (starts Node supervisor → Domain Host → DSH) |
 | Domain tests | `python -m pytest v2/domain/tests/ -q` |
 | Integration tests | `python -m pytest v2/tests/ -q` |
 | RP runtime tests | `cd v2/rp_runtime && npm test` |

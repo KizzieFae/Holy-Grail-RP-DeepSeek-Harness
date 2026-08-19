@@ -31,7 +31,7 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 | `v2/tests/` | Integration and repository architecture tests |
 | `v2/README.md` | Implementation tree layout and local run commands |
 
-**Launch:** `Launch-Holy-Grail-V2.bat` → `v2/rp_runtime` supervisor.
+**Launch:** `Launch-Holy-Grail-RP.bat` → `v2/rp_runtime` supervisor.
 
 ---
 

@@ -34,7 +34,7 @@ Override explicitly when needed:
 $env:HG_PYTHON_EXECUTABLE = "C:\path\to\python.exe"
 ```
 
-The supervisor and `Launch-Holy-Grail-V2.bat` use this canonical `.venv`.
+The supervisor and `Launch-Holy-Grail-RP.bat` use this canonical `.venv`.
 
 ## Quick run
 
@@ -67,5 +67,3 @@ data/  (HG_DATA_DIR)
 ```
 
 **Principle:** Holy Grail determines what is true. DeepSeek Harness records what happened.
-
-Implementation reports and design history: `governance/rp-app/v2-*.md`.
