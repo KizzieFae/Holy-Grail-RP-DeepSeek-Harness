@@ -15,9 +15,9 @@ import re
 from pathlib import Path
 from typing import Any
 
-from domain.paths import autogen_python_data_dir
+from domain.paths import fixtures_data_dir
 
-_SCENARIOS_DIR = autogen_python_data_dir() / "progression_simulation_scenarios"
+_SCENARIOS_DIR = fixtures_data_dir() / "progression_simulation_scenarios"
 
 _EXPECTED_PRESSURE_PROFILES = frozenset({"low", "medium", "high"})
 _STARTUP_TRIGGER_MODES = frozenset({"parity", "overlay"})

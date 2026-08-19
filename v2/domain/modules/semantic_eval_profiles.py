@@ -28,10 +28,10 @@ OBSERVATIONAL_EVAL_DISCLAIMER: Final[dict[str, bool | str]] = {
     "purpose": "offline evaluation calibration — not canonical runtime truth",
 }
 
-from domain.paths import autogen_python_data_dir
+from domain.paths import fixtures_data_dir
 
 _DEFAULT_PROFILES_PATH = (
-    autogen_python_data_dir() / "evaluation" / "semantic_eval_profiles_v1.json"
+    fixtures_data_dir() / "evaluation" / "semantic_eval_profiles_v1.json"
 )
 
 

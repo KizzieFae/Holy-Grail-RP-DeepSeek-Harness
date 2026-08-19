@@ -6,6 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
+from domain.paths import scene_templates_data_dir
 from scene_opener import OpenerManager
 from scene_template import (
     SceneRoleSlot,
@@ -247,7 +248,7 @@ def test_scene_template_manager_ignores_template_owned_progression_support_files
 
 
 def test_arkham_templates_keep_new_arrival_optional() -> None:
-    templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
+    templates_dir = scene_templates_data_dir()
     manager = SceneTemplateManager(templates_dir)
 
     for template_id in [
@@ -262,7 +263,7 @@ def test_arkham_templates_keep_new_arrival_optional() -> None:
 
 
 def test_mess_hall_arena_uses_high_authority_staff_response_slot() -> None:
-    templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
+    templates_dir = scene_templates_data_dir()
     manager = SceneTemplateManager(templates_dir)
 
     template = manager.load_template("arkham_asylum_mess_hall_arena")
@@ -285,7 +286,7 @@ def test_mess_hall_arena_uses_high_authority_staff_response_slot() -> None:
 
 
 def test_celina_recovery_template_stays_grounded_and_slow_recovery() -> None:
-    templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
+    templates_dir = scene_templates_data_dir()
     manager = SceneTemplateManager(templates_dir)
 
     template = manager.load_template("celina_apartment_recovery_watch")

@@ -32,6 +32,16 @@ autogen_rp/python/validation_runs/*_stdout.txt
 # Local IDE / project exports (not canonical repo content)
 _proj_items.json
 
+# Holy Grail product data (M13.1) — user/runtime generated content stays local
+data/*
+!data/scene_templates/
+!data/scene_templates/**
+!data/retrieval/
+!data/retrieval/**
+!data/fixtures/
+!data/fixtures/**
+data/fixtures/progression_simulation_scenarios/
+
 # One-off validation/investigation harness scripts (e.g. AppTest drives); not production source
 autogen_rp/python/validation_runs/**/_run_*.py
 

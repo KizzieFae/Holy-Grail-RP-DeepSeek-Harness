@@ -6,6 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "rp_app"))
 
+from domain.paths import scene_templates_data_dir
 from scene_template import SceneTemplate, SceneTemplateManager
 from scene_template_cohesion import resolve_effective_presence_constraint
 
@@ -96,7 +97,7 @@ def test_resolver_anchor_only_defaults() -> None:
 
 
 def test_all_production_templates_load() -> None:
-    templates_dir = Path(__file__).resolve().parent.parent / "data" / "scene_templates"
+    templates_dir = scene_templates_data_dir()
     manager = SceneTemplateManager(templates_dir)
     templates = manager.list_templates()
     assert len(templates) == 9

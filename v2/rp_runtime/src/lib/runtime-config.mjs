@@ -18,9 +18,14 @@ export function defaultPythonExecutable() {
   return process.platform === 'win32' ? 'python' : 'python3';
 }
 
+export function defaultDataDir() {
+  return process.env.HG_DATA_DIR
+    ?? path.join(repoRoot, 'data');
+}
+
 export function defaultSessionsDir() {
   return process.env.HG_SESSIONS_DIR
-    ?? path.join(repoRoot, 'autogen_rp', 'python', 'data', 'sessions');
+    ?? path.join(defaultDataDir(), 'sessions');
 }
 
 export function resolveDomainHostUrl(options = {}) {
@@ -36,6 +41,9 @@ export function domainHostSpawnEnv(options = {}) {
     ...process.env,
     PYTHONPATH: path.join(repoRoot, 'v2'),
   };
+  if (!env.HG_DATA_DIR) {
+    env.HG_DATA_DIR = defaultDataDir();
+  }
   const sessionsDir = options.sessionsDir ?? defaultSessionsDir();
   if (sessionsDir) env.HG_SESSIONS_DIR = sessionsDir;
   return env;

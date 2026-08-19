@@ -17,6 +17,8 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
+from domain.paths import characters_data_dir  # noqa: E402
+
 from v2.domain_api.contract import ContextPrepareRequest, RoundStartRequest
 from v2.domain_api.kernel import DomainKernel
 from v2.domain_api.session_repository import SessionRepository
@@ -81,7 +83,7 @@ class SessionSetupTests(unittest.TestCase):
         self.assertEqual(roles.get("Willow Reeves"), "protector")
 
     def test_snapshot_survives_card_edit_after_create(self) -> None:
-        chars_dir = _ROOT / "autogen_rp" / "python" / "data" / "autogen_characters"
+        chars_dir = characters_data_dir()
         fixture_dir = Path(self._tmpdir) / "chars"
         fixture_dir.mkdir()
         fixture_path = fixture_dir / "kizzie.json"

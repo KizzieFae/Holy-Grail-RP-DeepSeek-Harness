@@ -15,6 +15,8 @@ _V2 = _ROOT / "v2"
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
 
+from domain.paths import characters_data_dir, holy_grail_data_dir  # noqa: E402
+
 from domain_api.authored_knowledge import AuthoredKnowledgeRecord
 from domain_api.compiled_index_provider import CompiledIndexRetrievalProvider
 from domain_api.contract import ContextPrepareRequest, RoundStartRequest
@@ -75,10 +77,7 @@ class RetrievalIndexM127Tests(unittest.TestCase):
 
     def test_compiled_index_supplements_without_duplicating_snapshot_lore(self) -> None:
         pilot_index = (
-            _ROOT
-            / "autogen_rp"
-            / "python"
-            / "data"
+            holy_grail_data_dir()
             / "retrieval"
             / "compiled"
             / "operational_pilot_v3.json"
@@ -111,10 +110,7 @@ class RetrievalIndexM127Tests(unittest.TestCase):
 
     def test_multi_character_isolation_with_compiled_index(self) -> None:
         pilot_index = (
-            _ROOT
-            / "autogen_rp"
-            / "python"
-            / "data"
+            holy_grail_data_dir()
             / "retrieval"
             / "compiled"
             / "operational_pilot_v3.json"
@@ -152,7 +148,7 @@ class RetrievalIndexM127Tests(unittest.TestCase):
         self.assertNotIn("willow reeves", kizzie_authored.content.lower())
 
     def test_snapshot_stability_after_source_edit(self) -> None:
-        chars_dir = _ROOT / "autogen_rp" / "python" / "data" / "autogen_characters"
+        chars_dir = characters_data_dir()
         fixture_dir = Path(self._tmpdir) / "chars"
         fixture_dir.mkdir()
         fixture_path = fixture_dir / "kizzie.json"

@@ -14,6 +14,7 @@ _V2 = _ROOT / "v2"
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
 
+from domain.paths import characters_data_dir  # noqa: E402
 from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     RoundStartRequest,
@@ -141,7 +142,7 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
         self.assertIn("authoritative", scene.content.lower())
 
     def test_snapshot_stability_after_card_edit(self) -> None:
-        chars_dir = _ROOT / "autogen_rp" / "python" / "data" / "autogen_characters"
+        chars_dir = characters_data_dir()
         fixture_dir = Path(self._tmpdir) / "chars"
         fixture_dir.mkdir()
         fixture_path = fixture_dir / "kizzie.json"
