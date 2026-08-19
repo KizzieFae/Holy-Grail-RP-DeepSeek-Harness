@@ -5,7 +5,7 @@
 **M14 investigation anchor:** `d32664a`  
 **M14.1 anchor:** `6f17286`  
 **Pre-slice HEAD:** `6f17286`  
-**M14.2 implementation HEAD:** *(set at commit)*
+**M14.2 implementation HEAD:** aa453a52a147042384a35f70a3682892d3626f15
 
 **Assigned workflow weight:** standard  
 **Effective workflow weight:** full
@@ -226,4 +226,5 @@ Operator action: delete local `autogen_rp/` when ready; then optionally remove `
 
 ## 25. Repository state
 
-*(Updated at commit.)*
+| Implementation commit | `aa453a52a147042384a35f70a3682892d3626f15` |
+| Branch | `main` |
