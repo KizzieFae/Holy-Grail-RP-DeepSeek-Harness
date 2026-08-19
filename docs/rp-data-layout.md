@@ -116,7 +116,9 @@ More: [DEBUGGING_GUIDE.md](../../DEBUGGING_GUIDE.md) § persistence.
 
 ## Persistence vs Audit Artifacts
 
-Paths below use the canonical **`data/`** root (`HG_DATA_DIR`) unless otherwise noted.
+Paths below use the canonical **`data/`** root (`HG_DATA_DIR`) unless otherwise noted. Override with environment variable `HG_DATA_DIR` (absolute path). Sessions may be redirected with `HG_SESSIONS_DIR`.
+
+One-time legacy layout verification (if upgrading from a pre-M14.2 local tree): `python tools/maintenance/hg_data_migration_check.py --check` (add `--migrate` only when the check reports missing canonical categories).
 
 This section states how **runtime/session persistence** relates to **audit artifacts** on disk. Authoritative narrative state and production gating are defined in **`ContinuityManager`** / **`SceneState`** and related runtime docs; audit applicability and observational signal rules are documented in [`docs/audit-workflows.md`](./audit-workflows.md).
 

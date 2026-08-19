@@ -24,14 +24,17 @@ class AutogenRpContainerRetirementM137Tests(unittest.TestCase):
         )
         self.assertEqual(proc.stdout.strip(), "")
 
-    def test_legacy_data_dir_computed_without_tracked_container(self) -> None:
+    def test_paths_module_has_no_legacy_migration_hooks(self) -> None:
         from domain.bootstrap import ensure_domain_paths
 
         ensure_domain_paths()
-        from domain.paths import legacy_data_dir, repo_root
+        from domain import paths as domain_paths
 
-        expected = repo_root() / "autogen_rp" / "python" / "data"
-        self.assertEqual(legacy_data_dir(), expected)
+        source = Path(domain_paths.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("legacy_data_dir", source)
+        self.assertNotIn("ensure_data_migrated", source)
+        self.assertNotIn("data_migration", source)
+        self.assertNotIn("autogen_rp", source)
 
     def test_root_gitignore_covers_local_legacy_tree(self) -> None:
         text = (_ROOT / ".gitignore").read_text(encoding="utf-8")
