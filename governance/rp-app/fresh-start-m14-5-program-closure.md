@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **Program:** M14 Fresh-Start Repository  
-**M14.5 implementation HEAD:** _(set at commit)_
+**M14.5 implementation HEAD:** `ac5c0a34784202f99f9581b1644a6facf47297cc`
 
 **Assigned workflow weight:** standard  
 **Effective workflow weight:** full
