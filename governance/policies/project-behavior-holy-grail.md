@@ -72,6 +72,10 @@ No work may progress beyond initial exploration unless it is:
 
 
 
+**Exception — read-only program audits:** A **Governance-authorized read-only program audit** (`governance/rp-app/audit-semantics.md` → **Read-only program audit**) may investigate, classify findings, and report **without** a GitHub Issue for the investigation itself. Repository mutation, GitHub mutation, and remediation still require normal Issue/workflow authority.
+
+
+
 Chat reasoning is not considered persistent state.
 
 

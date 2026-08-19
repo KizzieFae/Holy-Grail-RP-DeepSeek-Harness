@@ -6,7 +6,8 @@
 
 ### A. System of record
 
-- **GitHub Issues** are the system of record for bugs, quality/design work, simulation anomalies, investigations, refactors, and validation follow-up.
+- **GitHub Issues** are the system of record for **tracked work**: bugs, quality/design remediation, simulation anomalies, **authorized implementation**, refactors, validation follow-up, and durable remediation state.
+- **Read-only program audits** (Governance-authorized, non-mutating investigation) are governed by **`governance/rp-app/audit-semantics.md`** → **Read-only program audit**. They do **not** require a GitHub Issue or Project item merely to investigate and report. Remediation they identify still enters this workflow.
 - **Project files** (PRD, architecture overviews, program records) remain responsible for roadmap, phase structure, architecture notes, and milestones—not for live issue logs.
 - **Do not** duplicate detailed issue logs in project files.
 - **Reference markdown** in-repo may capture background and acceptance criteria but is **reference-only** for task tracking. **GitHub Issues** hold status, discussion, and closure.
@@ -25,7 +26,7 @@
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Program/system quality audit **semantics** (material findings, classification, disposition, closure) are in **`governance/rp-app/audit-semantics.md`**. RP session-audit **procedure** is in **`docs/audit-workflows.md`**. That procedure file is **not** a `#59` Signal-id inventory or RP JSON taxonomy spec; the V1 inventory is **not live**. **`§A.2`–`§A.3`** below govern depth-1 Evaluation Records **only when triggered**; they do **not** govern program audits 1–4. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** That pipeline governs **remediation and tracked work**, not the read-only investigation phase of a **read-only program audit** (`audit-semantics.md`). Program/system quality audit **semantics** (material findings, classification, disposition, closure, read-only pathway) are in **`governance/rp-app/audit-semantics.md`**. RP session-audit **procedure** is in **`docs/audit-workflows.md`**. That procedure file is **not** a `#59` Signal-id inventory or RP JSON taxonomy spec; the V1 inventory is **not live**. **`§A.2`–`§A.3`** below govern depth-1 Evaluation Records **only when triggered**; they do **not** govern program audits 1–4. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### A.2 Incidental findings / adjacent discoveries (evaluation depth 1 completion records)
 

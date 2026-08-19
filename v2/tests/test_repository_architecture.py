@@ -404,6 +404,26 @@ class RepositoryArchitectureTests(unittest.TestCase):
             self.assertIn("HISTORICAL WORKSHOP", text, path.name)
             self.assertIn("audit-semantics.md", text, path.name)
 
+    def test_read_only_program_audit_pathway_structural_guards(self) -> None:
+        text = _AUDIT_SEMANTICS_PATH.read_text(encoding="utf-8")
+        self.assertIn("## Read-only program audit", text)
+        self.assertIn("read-only program audit", text)
+        self.assertIn("**does not** require a GitHub Issue", text)
+        self.assertIn("must **not**", text)
+        self.assertIn("commit or push", text)
+        self.assertIn("issue-tracking-workflow.md", text)
+        self.assertIn("## Audit closure", text)
+        self.assertIn("audit parent Issue", text)
+        issue_tracking = (
+            _ROOT / "governance" / "rp-app" / "issue-tracking-workflow.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Read-only program audit", issue_tracking)
+        self.assertIn("audit-semantics.md", issue_tracking)
+        project_behavior = (
+            _ROOT / "governance" / "policies" / "project-behavior-holy-grail.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("read-only program audit", project_behavior.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,7 +12,7 @@
 
 | Concern | Owner |
 |---------|--------|
-| Program-audit semantics (this document) | Finding model, material findings, classification, disposition, closure, decomposition |
+| Program-audit semantics (this document) | Finding model, material findings, classification, disposition, closure, decomposition, **read-only program audit** pathway |
 | RP session-audit procedure | `docs/audit-workflows.md` |
 | Remediation Issues (Type, Layer, Pattern, §H, Priority, weights) | `issue-tracking-workflow.md`, `workflow-weights.md`, `project-behavior-holy-grail.md` — **cite only; do not redefine** |
 | Continuity vs audit observation | `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, `docs/core-operating-invariants.md` |
@@ -151,7 +151,109 @@ When filing remediation Issues, map program-audit class to Issue **Type** (§E) 
 
 ---
 
+## Read-only program audit
+
+A **read-only program audit** is a **Governance-authorized, non-mutating** investigation of repository or work-system state. It uses the finding semantics in this document but **does not** require a GitHub Issue or Project item merely to inspect, evaluate, measure, classify findings, and report conclusions.
+
+**Governing principle:** Issue/workflow rigor attaches to **repository mutation and durable remediation work**, not automatically to read-only investigation.
+
+### Activation (Governance)
+
+Before a read-only program audit begins, Governance must provide:
+
+- **named audit** (for example: Audit 2 — Repository / Filesystem Architecture);
+- **scope** (inclusions and exclusions);
+- **repository anchor** (commit SHA) or explicit HEAD-at-start instruction;
+- **assigned workflow weight** (`light` | `standard` | `full`);
+- **effective workflow weight** when escalated;
+- explicit designation: **read-only program audit**.
+
+Workflow weight controls investigation rigor and bootstrap depth. It does **not** by itself create an Issue requirement. A substantial read-only audit may be **`standard`** or **`full`** while remaining Issue-free.
+
+### Permitted actions
+
+When conducting an authorized read-only program audit, the actor may:
+
+- inspect and search repository files and history (read-only `git` operations);
+- inspect dependency, package, and configuration structure;
+- perform read-only GitHub inspection when relevant (`gh issue view`, `gh project item-list`, etc.);
+- run existing tests and read-only diagnostics, profiling, or benchmarks that do not modify **tracked** repository state;
+- reason about architecture and system behavior;
+- classify material findings under this document;
+- produce recommendations (non-authorizing);
+- create **temporary, untracked** diagnostic artifacts when necessary, provided they are **not committed** and are cleaned up before the audit completes.
+
+### Prohibited actions
+
+A read-only program audit must **not**:
+
+- edit **tracked** repository files;
+- create, delete, or move **tracked** repository content;
+- commit or push;
+- modify git remotes;
+- create, edit, or close GitHub Issues or pull requests;
+- modify GitHub Project state;
+- implement remediation because a finding was discovered;
+- leave diagnostic clutter in the repository;
+- continue under the read-only designation after mutation becomes necessary.
+
+Discovering a defect does **not** authorize fixing it.
+
+### Escalation boundary
+
+**Stop** the read-only audit and return to Governance before any mutation if:
+
+- a proposed change is discovered;
+- investigation cannot safely continue without changing repository or GitHub state;
+- evidence reveals a high-risk integrity or architecture problem requiring intervention;
+- workflow-weight escalation criteria materially change the work (`workflow-weights.md`);
+- the work has become **implementation** rather than investigation.
+
+Governance may then: **(1)** narrow scope and continue read-only; **(2)** authorize normal remediation through tracked Issue/workflow; or **(3)** stop the audit.
+
+Related findings may be grouped into **one coherent remediation Issue**. Do **not** impose one Issue per finding.
+
+### Reporting and durability
+
+A read-only program audit must deliver a **structured report** to Governance (and the user) containing at minimum:
+
+1. audit name, scope, and repository anchor;
+2. assigned and effective workflow weight;
+3. coverage and explicit gaps;
+4. material findings with IDs, evidence, and classifications;
+5. **recommended dispositions** for Governance review;
+6. overall assessment;
+7. recommended coherent remediation packages, if any;
+8. **no-mutation attestation**.
+
+**Durability rules:**
+
+- The read-only audit itself does **not** require persistent repository or GitHub state merely for having occurred.
+- **Ordinary chat output is not** an authoritative durable project record or system of record.
+- During a read-only audit, findings carry **recommended dispositions**; a recommendation is **not** authorization and **not** a final disposition.
+- Findings selected for remediation become durable when the corresponding **remediation Issue** is opened and tracked under normal workflow authority.
+- If Governance deliberately wants an audit report persisted for later reference, that requires **separate explicit authorization**; persistence is not mandatory to perform the audit.
+- Later audits may cite accepted read-only conclusions as **`Audit N report, finding ID`** (for example: “B3 per Audit 2 report”). Historical Audit 1 conclusions remain citeable as **`#1` + finding ID** (parent-Issue model).
+
+### Completion (read-only pathway)
+
+A read-only program audit **completes** when the scoped investigation and structured report are delivered and Governance accepts or otherwise resolves the report. It does **not** acquire a synthetic Issue lifecycle merely so it can be “closed.”
+
+### Relationship to parent-Issue audits
+
+Some program audits (for example Post-Migration Audit 1, DSH **#1**) were conducted using an **audit parent Issue**. That model remains valid when Governance chooses it.
+
+- **§Audit closure** below applies **only** when an audit is conducted using an audit parent Issue.
+- **Read-only program audits** use the activation, reporting, and completion rules in **this section** instead.
+- Audit 1 (**#1**) is **historical precedent** under the parent-Issue model; do not rewrite its record.
+
+Remediation discovered by either pathway still requires normal Issue/workflow authority before implementation.
+
+---
+
 ## Audit closure
+
+**Scope:** This section applies **only** when a program audit is conducted using an **audit parent Issue**. For read-only program audits, see **Read-only program audit** above.
 
 An audit parent Issue may reach terminal **`closed`** (per §H) when **all** hold:
 
@@ -171,9 +273,12 @@ This section defines **when substantive audit work is complete**. §H and §B.3 
 
 No separate accepted-design registry.
 
-The **audit parent Issue** is the durable record for `correct as-is`, accepted conclusions, and material finding classifications/dispositions.
+Accepted conclusions and final material-finding dispositions are durable on:
 
-Later audits cite prior conclusions as **`audit Issue # + finding ID`** (for example: “A10 per #1”).
+- the **audit parent Issue** (body and/or comments), when an audit uses that model; or
+- the **accepted read-only audit report**, when Governance closes a read-only program audit under **Read-only program audit** above.
+
+Later audits cite prior conclusions as **`audit Issue # + finding ID`** (for example: “A10 per #1”) or **`Audit N report, finding ID`** for read-only pathway audits.
 
 ---
 
