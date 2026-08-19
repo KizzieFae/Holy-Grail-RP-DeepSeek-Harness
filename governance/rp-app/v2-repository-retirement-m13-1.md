@@ -264,6 +264,6 @@ No permanent dual-read fallback was introduced. One-time copy migration only.
 | Field | Value |
 |-------|-------|
 | Implementation commit | `c83010f` |
-| Governance HEAD | `bc850c4` |
+| Governance HEAD | `af41caf` |
 | Branch | `main` |
 | Working tree | clean post-commit |
