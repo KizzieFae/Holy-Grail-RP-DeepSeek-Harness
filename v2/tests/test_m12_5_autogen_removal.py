@@ -55,7 +55,7 @@ class AutogenRemovalM125Tests(unittest.TestCase):
         self.assertEqual(_autogen_import_offenders(paths), [])
 
     def test_domain_tests_have_no_autogen_imports(self) -> None:
-        paths = _iter_python_files(_PY / "tests")
+        paths = _iter_python_files(_V2 / "domain" / "tests")
         self.assertEqual(_autogen_import_offenders(paths), [])
 
     def test_domain_imports_in_isolated_subprocess_without_packages(self) -> None:

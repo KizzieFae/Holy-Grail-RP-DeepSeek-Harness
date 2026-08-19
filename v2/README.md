@@ -16,9 +16,10 @@ Narrow vertical slice proving the agreed Python↔DSH architecture boundary.
 ## Quick run
 
 ```powershell
-# Python authority tests
-cd autogen_rp/python
-.\.venv\Scripts\python.exe -m pytest ..\..\v2\tests -q
+# Python authority + domain contract tests
+cd v2
+python -m pytest tests/ -q
+python -m pytest domain/tests/ -q
 
 # DSH runtime tests (starts Domain API subprocess)
 cd v2/rp_runtime

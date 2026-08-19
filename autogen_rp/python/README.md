@@ -1,10 +1,8 @@
-# Holy Grail domain tests (`autogen_rp/python`)
+# Holy Grail legacy tree (`autogen_rp/python`)
 
-This directory holds **neutral-domain pytest suites** and **Holy Grail data assets** (character cards, scene templates, sessions, audit fixtures).
+This directory retains **historical scripts, validation evidence, and local runtime artifacts** from the AutoGen-era fork. Production V2 no longer depends on this path for data or domain tests.
 
 ## Production architecture (V2)
-
-Holy Grail does **not** use AutoGen for production orchestration.
 
 ```text
 Launch-Holy-Grail-V2.bat
@@ -13,31 +11,39 @@ Launch-Holy-Grail-V2.bat
   → v2/domain (permanent domain semantics)
 ```
 
-## Running domain tests
+## Current locations (post-M13)
+
+| Former role | Current location |
+|-------------|------------------|
+| Product data (templates, retrieval, fixtures, sessions) | `data/` at repository root (`HG_DATA_DIR`) |
+| Neutral-domain pytest contracts | `v2/domain/tests/` |
+| Domain library | `v2/domain/modules/` |
+
+### Running domain tests
 
 From repository root:
 
 ```sh
-python -m pytest autogen_rp/python/tests/ -q
+python -m pytest v2/domain/tests/ -q
 ```
 
-Or from this directory:
+Or from `v2/domain/`:
 
 ```sh
 python -m pytest tests/ -q
 ```
 
-Tests bootstrap `v2/domain` via `domain.bootstrap.ensure_domain_paths()` (see `tests/conftest.py`).
+Tests bootstrap `v2/domain` via `domain.bootstrap.ensure_domain_paths()` (see `v2/domain/tests/conftest.py`).
 
-## Layout
+## Remaining layout here
 
 | Path | Purpose |
 |------|---------|
-| `data/` | Character cards, templates, sessions, audit JSON |
-| `tests/` | Neutral-domain behavioral contracts |
+| `data/` | Legacy local data (migration source for M13.1); may still exist on disk |
 | `scripts/` | Non-production investigation utilities |
 | `validation_runs/` | Historical validation evidence (markdown + neutral helpers) |
+| `.venv/` | Local Python venv (default for supervisor spawn) |
 
 ## History
 
-This tree was forked from Microsoft AutoGen and progressively retired during M12 (M12.4 removed V1 orchestration; M12.5 removed vendored AutoGen packages). See `governance/rp-app/v2-v1-orchestration-deletion-m12-4.md` and `governance/rp-app/v2-autogen-package-removal-m12-5.md`.
+Forked from Microsoft AutoGen; progressively retired during M12–M13. See `governance/rp-app/v2-repository-retirement-m13.md`.

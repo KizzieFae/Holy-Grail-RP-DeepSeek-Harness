@@ -1,0 +1,22 @@
+[project]
+name = "holy-grail-domain-tests"
+version = "0.0.0"
+description = "Holy Grail neutral-domain test harness (v2/domain/tests)"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "llm: live DeepSeek/API tests (skip with DEEPSEEK_API_KEY unset or -m \"not llm\")",
+    "progression_llm: progression-focused live LLM checks",
+    "supplemental_simulation: monkeypatched simulation paths (not primary scenario coverage)",
+]

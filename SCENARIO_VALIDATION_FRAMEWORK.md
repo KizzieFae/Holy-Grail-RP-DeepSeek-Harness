@@ -315,7 +315,7 @@ python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --met
 
 For progression-layer line items, scene-quality notes, and command shortcuts, use:
 
-`autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md`
+`v2/domain/tests/Testing TODOs/progression layer testing todo.md`
 
 ---
 
@@ -423,11 +423,11 @@ Before changing code, use **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simul
 
 ## Latest validation status (checkpoint)
 
-**Progression layer (v1):** declared **validated** — `autogen_rp/python/tests/Testing TODOs/progression layer validation status v1.md`.
+**Progression layer (v1):** declared **validated** — `v2/domain/tests/Testing TODOs/progression layer validation status v1.md`.
 
 Written assessment, limitations, and historical phase notes also live in:
 
-`autogen_rp/python/tests/Testing TODOs/progression layer testing todo.md` → sections **“Validation checkpoint — initial LLM runs”**, **Phase 2**, **Phase 2b**, etc.
+`v2/domain/tests/Testing TODOs/progression layer testing todo.md` → sections **“Validation checkpoint — initial LLM runs”**, **Phase 2**, **Phase 2b**, etc.
 
 ### Post–GitHub #24 prompt-integrity validation wave (closed **2026-04-07**)
 

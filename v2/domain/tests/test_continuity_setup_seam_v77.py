@@ -1,0 +1,163 @@
+"""Issue #77 — setup seam, interim anchor, D3."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+
+from continuity_manager import ContinuityManager
+from continuity_setup_seam_v77 import (
+    ContinuitySetupSeamError,
+    ContinuitySetupSeamIncompleteError,
+    finalize_continuity_setup_seam,
+    resolve_authored_anchor_character_id,
+    resolve_interim_anchor_character_id,
+)
+
+
+def test_resolve_single_protagonist_role() -> None:
+    aid = resolve_interim_anchor_character_id(
+        ["Alice", "Bob"],
+        {"Alice": "staff", "Bob": "guest"},
+    )
+    assert aid == "Bob"
+
+
+def test_resolve_singleton_cast_without_roles() -> None:
+    assert resolve_interim_anchor_character_id(["Zoe"], {}) == "Zoe"
+
+
+def test_a2_multiple_protagonists() -> None:
+    with pytest.raises(ContinuitySetupSeamError, match="A2"):
+        resolve_interim_anchor_character_id(
+            ["A", "B"],
+            {"A": "patient", "B": "guest"},
+        )
+
+
+def test_a1_multi_cast_no_protagonist_marker() -> None:
+    with pytest.raises(ContinuitySetupSeamError, match="A1"):
+        resolve_interim_anchor_character_id(
+            ["A", "B"],
+            {"A": "staff", "B": "staff"},
+        )
+
+
+def test_finalize_requires_anchor_in_present() -> None:
+    m = ContinuityManager()
+    m.initialize_scene(
+        location="X",
+        opening_description="o",
+        present_characters=["P1", "P2"],
+    )
+    assert m.scene_state is not None
+    m.scene_state.role_assignments = {"P1": "guest", "P2": "staff"}
+    m.scene_state.present_characters = ["P2"]
+    with pytest.raises(ContinuitySetupSeamError, match="not in present_characters"):
+        finalize_continuity_setup_seam(m, cast=["P1", "P2"])
+
+
+def test_d3_process_turn_blocked_before_finalize() -> None:
+    m = ContinuityManager()
+    m.initialize_scene(
+        location="X",
+        opening_description="o",
+        present_characters=["A", "B"],
+    )
+    assert m.scene_state is not None
+    m.scene_state.role_assignments = {"A": "guest", "B": "staff"}
+    m.setup_seam_complete = False
+    m.anchor_character_id = None
+    with pytest.raises(ContinuitySetupSeamIncompleteError, match="D3"):
+        m.process_turn(
+            acting_character="A",
+            move={"action": "x", "dialogue": "y", "motivation": {}},
+            director_decision={"next_actor": "B"},
+            other_characters=["B"],
+        )
+
+
+def test_finalize_marks_complete_and_allows_process_turn() -> None:
+    m = ContinuityManager()
+    m.initialize_scene(
+        location="X",
+        opening_description="o",
+        present_characters=["A", "B"],
+    )
+    assert m.scene_state is not None
+    m.scene_state.role_assignments = {"A": "guest", "B": "staff"}
+    m.setup_seam_complete = False
+    m.anchor_character_id = None
+    finalize_continuity_setup_seam(m, cast=["A", "B"])
+    assert m.setup_seam_complete
+    assert m.anchor_character_id == "A"
+    m.process_turn(
+        acting_character="A",
+        move={"action": "x", "dialogue": "y", "motivation": {}},
+        director_decision={"next_actor": "B"},
+        other_characters=["B"],
+    )
+
+
+def test_resolve_authored_anchor_character_id_single_match() -> None:
+    aid = resolve_authored_anchor_character_id(
+        ["A", "B"],
+        {"A": "new_arrival", "B": "instigator"},
+        "new_arrival",
+    )
+    assert aid == "A"
+
+
+def test_resolve_authored_anchor_character_id_zero_matches() -> None:
+    with pytest.raises(ContinuitySetupSeamError, match="No cast member"):
+        resolve_authored_anchor_character_id(
+            ["A", "B"],
+            {"A": "instigator", "B": "instigator"},
+            "new_arrival",
+        )
+
+
+def test_resolve_authored_anchor_cast_must_include_role_slot_holders() -> None:
+    """If cast omits a character that only appears in role_assignments (e.g. player
+    POV added in Issue #128), anchor role cannot be matched; scene_lifecycle must pass
+    template_cast_names, not bot-only char_names.
+    """
+    ra = {
+        "Harley_Quinn": "predator_secondary",
+        "Poison_Ivy": "predator_primary",
+        "Kizzie": "new_arrival",
+    }
+    with pytest.raises(ContinuitySetupSeamError, match="No cast member"):
+        resolve_authored_anchor_character_id(
+            ["Harley_Quinn", "Poison_Ivy"],
+            ra,
+            "new_arrival",
+        )
+    assert (
+        resolve_authored_anchor_character_id(
+            ["Harley_Quinn", "Poison_Ivy", "Kizzie"],
+            ra,
+            "new_arrival",
+        )
+        == "Kizzie"
+    )
+
+
+def test_finalize_template_driven_uses_anchor_role_name() -> None:
+    m = ContinuityManager()
+    m.initialize_scene(
+        location="X",
+        opening_description="o",
+        present_characters=["P1", "P2"],
+    )
+    assert m.scene_state is not None
+    m.scene_state.scene_template_id = "arkham_asylum_mess_hall_arena"
+    m.scene_state.anchor_role_name = "new_arrival"
+    m.scene_state.role_assignments = {"P1": "new_arrival", "P2": "instigator"}
+    m.scene_state.present_characters = ["P1", "P2"]
+    finalize_continuity_setup_seam(m, cast=["P1", "P2"])
+    assert m.anchor_character_id == "P1"
+    assert m.setup_seam_complete
