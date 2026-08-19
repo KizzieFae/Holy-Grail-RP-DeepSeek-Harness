@@ -3,7 +3,7 @@
 **Status:** Complete  
 **Date:** 2026-08-18  
 **M13.5 anchor:** `5cf9ec8`  
-**M13.6 implementation HEAD:** *(set at commit)*
+**M13.6 implementation HEAD:** `894ceac`
 
 **Objective:** Rehome active investigation tooling and current Holy Grail documentation from the historical `autogen_rp` container into neutral `tools/` and `docs/` locations without altering product behavior.
 
@@ -268,4 +268,8 @@ No additional active tooling/docs rehome required.
 
 ## 24. Repository state
 
-*(Updated at commit.)*
+| Field | Value |
+|-------|-------|
+| Implementation commit | `894ceac` — `feat(m13.6): rehome investigation tooling and active docs` |
+| Branch | `main` |
+| Pre-slice HEAD | `5cf9ec8` |
