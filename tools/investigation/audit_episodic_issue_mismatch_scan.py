@@ -6,11 +6,13 @@ Read-only investigation helper. Does not change runtime behavior.
 
 from __future__ import annotations
 
-from _repo_paths import DATA_DIR, INVESTIGATION_DIR, LEGACY_RP_APP, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
+import argparse
 import json
 import re
 import sys
 from pathlib import Path
+
+from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
 
 _PY_ROOT = REPO_ROOT
 _ROOT = resolve_rp_audits_dir()
@@ -121,9 +123,17 @@ def director_active_issues(path: Path) -> list[str] | None:
 
 
 def main() -> int:
-    root = _ROOT
-    if len(sys.argv) > 1:
-        root = Path(sys.argv[1])
+    parser = argparse.ArgumentParser(
+        description="Scan character *_full.json audits for episodic:issue vs ACTIVE ISSUES mismatches."
+    )
+    parser.add_argument(
+        "audits_dir",
+        nargs="?",
+        default=str(_ROOT),
+        help="rp_audits root (default: canonical data/rp_audits via resolve_rp_audits_dir)",
+    )
+    args = parser.parse_args()
+    root = Path(args.audits_dir)
     if not root.is_dir():
         print(f"No audits dir: {root}", file=sys.stderr)
         return 1

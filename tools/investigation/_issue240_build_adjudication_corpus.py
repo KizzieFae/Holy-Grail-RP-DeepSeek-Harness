@@ -1,7 +1,7 @@
 """Build Issue #240 frozen Willow adjudication corpus (evaluation-only, non-authoritative)."""
 from __future__ import annotations
 
-from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE
+from _repo_paths import DATA_DIR, FIXTURES_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
 import argparse
 import json
 import re
@@ -23,7 +23,7 @@ from _issue240_audit_classifier import (  # noqa: E402
 )
 from _issue240_failure_map import GRADUAL_CUES, bucket_applied_turn  # noqa: E402
 
-AUDITS = REPO_ROOT  # patched M13.6 / "rp_app" / "data" / "rp_audits"
+AUDITS = resolve_rp_audits_dir()
 WILLOW_SCENARIO = "audit_i225_willow_must_remain_v2_offstage_cycles"
 DEFAULT_SESSIONS = [
     "825",
@@ -203,7 +203,7 @@ def extract_case(fp: Path) -> dict[str, Any] | None:
             or REENTRY_CUES.search(beats_text)
             or GRADUAL_CUES.search(beats_text)
         ),
-        "audit_path": str(fp.relative_to(AUDITS.parent.parent.parent)).replace("\\", "/"),
+        "audit_path": str(fp.relative_to(AUDITS)).replace("\\", "/"),
     }
 
 
@@ -249,12 +249,7 @@ def main() -> None:
     ap.add_argument(
         "-o",
         "--out",
-        default=str(
-            REPO_ROOT  # patched M13.6
-            / "data"
-            / "issue240"
-            / "adjudication_corpus_willow_v1.json"
-        ),
+        default=str(FIXTURES_DIR / "issue240" / "adjudication_corpus_willow_v1.json"),
     )
     args = ap.parse_args()
     corpus = build_corpus(args.sessions)

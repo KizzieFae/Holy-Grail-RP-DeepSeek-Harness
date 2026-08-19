@@ -1,7 +1,7 @@
 """Build Issue #240 final viability adjudication corpus from corrected scorer output."""
 from __future__ import annotations
 
-from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE
+from _repo_paths import DATA_DIR, FIXTURES_DIR, resolve_rp_audits_dir
 import argparse
 import json
 import sys
@@ -43,12 +43,11 @@ def _load_audit_row(session_dir: Path, turn: int, bot: str) -> dict | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--manifest", default=str(DATA_DIR / "issue240/final_viability_matrix_v1.json"))
-    ap.add_argument("--out", default=str(DATA_DIR / "issue240/adjudication_corpus_final_viability_v1.json"))
+    ap.add_argument("--manifest", default=str(FIXTURES_DIR / "issue240" / "final_viability_matrix_v1.json"))
+    ap.add_argument("--out", default=str(FIXTURES_DIR / "issue240" / "adjudication_corpus_final_viability_v1.json"))
     args = ap.parse_args()
-    root = REPO_ROOT  # patched M13.6
-    manifest = json.loads((root / args.manifest).read_text(encoding="utf-8"))
-    audits = root / "rp_app" / "data" / "rp_audits"
+    manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
+    audits = resolve_rp_audits_dir()
     cases: list[dict] = []
     for run in manifest.get("runs", []):
         sid = run.get("session")

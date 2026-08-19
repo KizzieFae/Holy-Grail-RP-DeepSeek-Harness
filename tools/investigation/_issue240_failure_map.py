@@ -1,7 +1,7 @@
 """Issue #240 applied-overlay failure bucket mapper (investigation helper)."""
 from __future__ import annotations
 
-from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE
+from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
 import json
 import re
 import sys
@@ -67,7 +67,7 @@ def bucket_applied_turn(data: dict) -> str:
 
 
 def analyze_sessions(session_ids: list[str]) -> dict:
-    base = REPO_ROOT  # patched M13.6 / "rp_app" / "data" / "rp_audits"
+    base = resolve_rp_audits_dir()
     rows: list[dict] = []
     for sid in session_ids:
         sdir = base / (sid if sid.startswith("session_") else f"session_{sid}")

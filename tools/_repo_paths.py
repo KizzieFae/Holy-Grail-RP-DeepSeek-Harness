@@ -1,4 +1,4 @@
-"""Neutral repository path helpers for Holy Grail tooling (post-M13.6)."""
+"""Neutral repository path helpers for Holy Grail tooling."""
 
 from __future__ import annotations
 
@@ -13,24 +13,16 @@ _HG_DATA = os.environ.get("HG_DATA_DIR", "").strip()
 DATA_DIR = Path(_HG_DATA) if _HG_DATA else REPO_ROOT / "data"
 FIXTURES_DIR = DATA_DIR / "fixtures"
 
-# Local investigation output (gitignored under data/; M14.1 removed tracked validation archive).
+# Local investigation output (gitignored under data/).
 INVESTIGATION_RUNS_DIR = DATA_DIR / "investigation_runs"
 VALIDATION_RUNS_ARCHIVE = INVESTIGATION_RUNS_DIR
 
 # Local headless audit trees (gitignored; canonical under HG_DATA_DIR).
 RP_AUDITS_DIR = DATA_DIR / "rp_audits"
 
-# Historical V1 module root (deleted in M12; retained for transitional import attempts).
-LEGACY_RP_APP = REPO_ROOT / "autogen_rp" / "python" / "rp_app"
-
 
 def resolve_rp_audits_dir() -> Path:
-    """Return the best available rp_audits directory for offline investigation."""
-    if RP_AUDITS_DIR.is_dir():
-        return RP_AUDITS_DIR
-    legacy = LEGACY_RP_APP / "data" / "rp_audits"
-    if legacy.is_dir():
-        return legacy
+    """Return the canonical rp_audits directory for offline investigation."""
     return RP_AUDITS_DIR
 
 
@@ -40,7 +32,7 @@ def fixture_path(*parts: str) -> Path:
 
 
 def resolve_data_path(relative: str) -> Path:
-    """Resolve legacy repo-relative data paths to the canonical HG data root."""
+    """Resolve repo-relative data paths to the canonical HG data root."""
     rel = relative.replace("\\", "/").lstrip("/")
     if rel.startswith("data/fixtures/"):
         return REPO_ROOT / rel

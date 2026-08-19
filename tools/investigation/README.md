@@ -1,37 +1,31 @@
 # Holy Grail investigation tooling
 
-Active **non-production** scripts for offline validation, audit analysis, and issue investigation.
+Offline utilities that operate on **current** repository paths (`data/`, audit JSON under `data/rp_audits/`).
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `tools/investigation/*.py` | Investigation CLIs and helpers |
-| `tools/maintenance/*.py` | Read-only inventory / hygiene utilities |
-| `data/` | Canonical product data (`HG_DATA_DIR`) |
-| `data/investigation_runs/` | Local gitignored investigation output (default for comparators) |
+| `compare_*.py` | Aggregate baseline vs treatment JSON from investigation runs |
+| `aggregate_*.py` | Roll up architecture-quality experiment outputs |
+| `audit_episodic_issue_mismatch_scan.py` | Read-only scan of character audit `*_full.json` files |
+| `_issue240_*.py` | Offline Issue #240 audit analysis helpers (read audit trees only) |
+| `data/investigation_runs/` | Default local output for comparators (gitignored) |
 
 ## Path helper
-
-Import shared paths from `_repo_paths.py`:
 
 ```python
 from _repo_paths import DATA_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
 ```
 
-Run scripts from the repository root or from this directory:
+Run from repository root:
 
 ```sh
 python tools/investigation/compare_participation_calibration_ab.py --help
+python tools/investigation/audit_episodic_issue_mismatch_scan.py --help
 ```
 
-## V1 runtime dependency note
+## Notes
 
-Scripts that import deleted `rp_app` modules (headless LLM simulation, corpus regression extractors, etc.) are **broken until restored or rewritten** (M14.3). Archive-reading comparators (`compare_*`, `aggregate_*`) work without `rp_app`.
-
-## Outputs
-
-- **Do not** write investigation output to the repository root.
-- Prefer `data/investigation_runs/` or other local gitignored paths under `data/`.
-
-See `governance/rp-app/fresh-start-residue-investigation-m14.md`.
+- V1 headless LLM simulation scripts were removed in M14.3. Future scenario validation will use the V2 production path.
+- Do not write investigation output to the repository root. Use `data/investigation_runs/` or another gitignored path under `data/`.

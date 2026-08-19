@@ -1,7 +1,7 @@
 """Issue #240 V1 matrix classifier — investigation helper, not product code."""
 from __future__ import annotations
 
-from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE
+from _repo_paths import DATA_DIR, INVESTIGATION_DIR, REPO_ROOT, VALIDATION_RUNS_ARCHIVE, resolve_rp_audits_dir
 import argparse
 import json
 import re
@@ -305,7 +305,7 @@ def main() -> int:
     ap.add_argument("sessions", nargs="+")
     ap.add_argument("--json-out", default="")
     args = ap.parse_args()
-    base = REPO_ROOT  # patched M13.6 / "rp_app" / "data" / "rp_audits"
+    base = resolve_rp_audits_dir()
     results = [
         analyze_session(base / s if s.startswith("session_") else base / f"session_{s}")
         for s in args.sessions
