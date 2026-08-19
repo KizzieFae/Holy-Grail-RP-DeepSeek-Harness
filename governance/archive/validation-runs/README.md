@@ -32,11 +32,11 @@ The archive retains all other Issue #251 runners, reports, and JSON evidence.
 
 ## Investigation scripts
 
-Non-production scripts under `autogen_rp/python/scripts/` that read archived JSONL/JSON use:
+Non-production scripts under `tools/investigation/` that read archived JSONL/JSON use:
 
 `governance/archive/validation-runs/`
 
-via `autogen_rp/python/scripts/_archive_paths.py`.
+via `tools/_repo_paths.py` (`VALIDATION_RUNS_ARCHIVE`).
 
 ## Mutability policy
 

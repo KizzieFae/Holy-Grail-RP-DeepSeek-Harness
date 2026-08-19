@@ -12,7 +12,7 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 
 **Always**
 
-- `autogen_rp/AGENTS.md`
+- `AGENTS.md`
 - `governance/rp-app/issue-tracking-workflow.md` (**`§B`** Projects + **`§D`** body contract + **`§H`** stages)
 - `governance/policies/github-issues.md`
 - `governance/policies/project-behavior-holy-grail.md`
@@ -21,15 +21,15 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 **When task touches RP runtime / `python/rp_app/`**
 
 - `MODULE_INDEX.md`
-- `autogen_rp/docs/architecture.md`
-- `autogen_rp/python/rp_app/ARCHITECTURE.md`
-- `autogen_rp/docs/testing.md`
+- `docs/architecture.md`
+- `governance/archive/v1-runtime/ARCHITECTURE.md`
+- `docs/testing.md`
 - `Holy Grail PRD.md` (as applicable)
 
 **When auditing / continuity debugging**
 
-- `autogen_rp/docs/audit-workflows.md`
-- `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`
+- `docs/audit-workflows.md`
+- `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md`
 
 ---
 
@@ -39,7 +39,7 @@ Mid-depth bootstrap when **effective** weight is **`standard`** (routine **assig
 
 **Baseline**
 
-- `autogen_rp/AGENTS.md`
+- `AGENTS.md`
 - `governance/rp-app/issue-tracking-workflow.md` (**`§B`**, **`§D`**, **`§H`**)
 - `governance/policies/github-issues.md`
 
@@ -53,7 +53,7 @@ Minimal reads when **effective** weight is **`light`** (**assigned** unless esca
 
 **Minimum**
 
-- `autogen_rp/AGENTS.md` (including Instruction priority and Repo working rules)
+- `AGENTS.md` (including Instruction priority and Repo working rules)
 - `governance/rp-app/issue-tracking-workflow.md` — at minimum **`§B.1`–`§B.5`**, **`§D`**, **`§H`**, **`§F`** Layer appendix as needed
 - `governance/policies/github-issues.md`
 

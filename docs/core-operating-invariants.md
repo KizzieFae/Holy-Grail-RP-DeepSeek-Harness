@@ -8,7 +8,7 @@ Cross-issue reference for Issue **[#145](https://github.com/KizzieFae/Holy_Grail
 
 ## Scene startup
 
-- Scene lifecycle, Director-facing behavior, and RP workflow expectations live under **`autogen_rp/python/rp_app/ARCHITECTURE.md`** and **`autogen_rp/docs/architecture.md`**.
+- Scene lifecycle, Director-facing behavior, and RP workflow expectations live under **`governance/archive/v1-runtime/ARCHITECTURE.md`** and **`docs/architecture.md`**.
 - Product intent and MVP boundaries: **`Holy Grail PRD.md`** (repository root).
 
 ---
@@ -23,7 +23,7 @@ Cross-issue reference for Issue **[#145](https://github.com/KizzieFae/Holy_Grail
 ## Audit
 
 - Audit interpretation, signals, and issue-tracking ties: **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`**.
-- Operational audit workflows: **`autogen_rp/docs/audit-workflows.md`**.
+- Operational audit workflows: **`docs/audit-workflows.md`**.
 - Scenario validation framing (when applicable): **`SCENARIO_VALIDATION_FRAMEWORK.md`** (repository root).
 
 ---

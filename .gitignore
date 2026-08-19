@@ -36,7 +36,10 @@ governance/archive/validation-runs/**/_run_*.py
 # Local IDE / project exports (not canonical repo content)
 _proj_items.json
 
-# Holy Grail product data (M13.1) — user/runtime generated content stays local
+# Maintenance tooling regeneratable JSON (issue86/88 inventory)
+tools/maintenance/issue86_*.json
+tools/maintenance/issue88_*.json
+
 data/*
 !data/scene_templates/
 !data/scene_templates/**

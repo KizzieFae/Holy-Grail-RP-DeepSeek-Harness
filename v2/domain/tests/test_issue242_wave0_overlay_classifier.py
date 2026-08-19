@@ -9,7 +9,7 @@ import pytest
 
 from domain.paths import repo_root
 
-sys.path.insert(0, str(repo_root() / "autogen_rp" / "python" / "scripts"))
+sys.path.insert(0, str(repo_root() / "tools" / "investigation"))
 
 from _issue240_audit_classifier import _overlay_demands_semantic_engagement
 

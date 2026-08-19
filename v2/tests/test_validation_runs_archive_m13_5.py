@@ -46,7 +46,7 @@ class ValidationRunsArchiveM135Tests(unittest.TestCase):
         self.assertGreaterEqual(len(json_files), 5)
 
     def test_active_scripts_point_to_archive_helper(self) -> None:
-        helper = _ROOT / "autogen_rp" / "python" / "scripts" / "_archive_paths.py"
+        helper = _ROOT / "tools" / "_repo_paths.py"
         self.assertTrue(helper.is_file())
         text = helper.read_text(encoding="utf-8")
         self.assertIn("validation-runs", text)
