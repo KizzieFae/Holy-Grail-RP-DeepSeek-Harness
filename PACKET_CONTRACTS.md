@@ -1,14 +1,12 @@
 # Packet contracts (intent)
 
-These are **architectural contracts** for the **packaging layer** described in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §§3.2, 4.1–4.3. They describe the **integration seam** between knowledge/retrieval and the **RP runtime** (`autogen_rp/python/rp_app`).
+These are **architectural contracts** for the **packaging layer** described in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §§3.2, 4.1–4.3. They describe the **integration seam** between knowledge/retrieval and the **RP runtime** (`v2/domain/modules/`).
 
-**Authored sources vs runtime:** **Character / Template / Scenario (bootstrap) / Opener** JSON **authoring** rules — what belongs in **files on disk** vs session vs ingestion manifests — live in **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. **This document** describes **turn-time packets** and **retrieval bundles**, not the authored JSON layout.
+**Authored sources vs runtime:** **Character / Template / Scenario (bootstrap) / Opener** JSON authoring rules live in **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. **This document** describes **turn-time packets** and **retrieval bundles**.
 
-**Implementation status (Phase 0.5 — character prompt path):** The **mechanical seam** for **character** generation is implemented in **`runtime_packets.py`** + **`app_turn_prompting.py`**: **`CharacterPromptInputAssembly`** holds exactly the inputs required for **`prompt_builders.build_character_turn_prompt`** (this is the **seam boundary** for that path). **`RuntimeScenePacket`** and **`RuntimeCharacterPacket`** are built from that assembly; **`reconstruct_character_prompt_input_bundle`** rebuilds the same kwargs shape from packets + **`CharacterState`** and **must** receive the same **`get_character_display_name_fn`** as live assembly so **cast** / **OTHER PRESENT CHARACTERS** / **CAST ROLE MAP** inputs match: **id and display labels are treated as the same character** for actor exclusion and order-preserving dedupe (`prompt_builders.build_cast_and_scene_role_participants` / `prompt_identity_same`). **Shadow validation:** `RP_PACKET_SHADOW_COMPARE` — structural bundle equality (required); optional core prompt-text equality excluding beat-shift/progression suffixes. **Not yet:** Director or Narrator prompt paths do not consume this assembly; **`RuntimeScenePacket`** in code today supports the character path (stable scene slice + session fields), not the full shared-scene abstraction described below for every consumer. **Known gap:** shadow results log to **stderr** (`rp_app.packet_shadow`); they are **not** written into audit JSON yet.
+**Implementation status (Phase 0.5 — character prompt path):** The mechanical seam for **character** generation is in **`runtime_packets.py`** + **`app_turn_prompting.py`**: **`CharacterPromptInputAssembly`** holds inputs for **`prompt_builders.build_character_turn_prompt`**. Shadow validation: `RP_PACKET_SHADOW_COMPARE`.
 
-For runtime behavior today, see `autogen_rp/python/rp_app/ARCHITECTURE.md` and `prompt_builders.py`.
-
-**Post–#24 headless validation (2026-04-07):** Six scenario configurations with **`--audit`** confirmed sampled character prompts remained consistent with the cast/reconstruction contract (audits **`session_388`–`session_393`**). **No regression** of id/display roster assembly on that evidence set. See **`SCENARIO_VALIDATION_FRAMEWORK.md`**.
+For runtime behavior, see `docs/architecture.md` and `prompt_builders.py`.
 
 ---
 
@@ -16,7 +14,7 @@ For runtime behavior today, see `autogen_rp/python/rp_app/ARCHITECTURE.md` and `
 
 1. **Stable vs dynamic** — Identity and long-lived voice/world anchors change slowly; per-turn overlays and retrieved snippets change every turn.
 2. **Authoritative vs retrieved** — Scene truth, issues, presence, and knowledge boundaries come from **runtime continuity** (authoritative). Retrieval supplies **candidates**; packaging **selects and bounds** them. Neither vectors nor raw cards are “truth” for state.
-3. **Runtime receives packets, not raw stores** — AutoGen agents should consume **assembled** packets, not ad-hoc DB/graph calls mid-turn.
+3. **Runtime receives packets, not raw stores** — Agents consume **assembled** packets, not ad-hoc store calls mid-turn.
 
 ---
 

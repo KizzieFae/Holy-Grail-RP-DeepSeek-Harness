@@ -166,6 +166,36 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("baseline-summary", proc.stdout)
 
+    def test_current_bootstrap_docs_avoid_retired_runtime_paths(self) -> None:
+        """Current-facing docs must not instruct readers to use deleted V1 runtime trees."""
+        doc_paths = [
+            _ROOT / "README.md",
+            _ROOT / "AGENTS.md",
+            _ROOT / "ARCHITECTURE_OVERVIEW.md",
+            _ROOT / "MODULE_INDEX.md",
+            _ROOT / "SCENARIO_VALIDATION_FRAMEWORK.md",
+            _ROOT / "docs" / "architecture.md",
+            _ROOT / "docs" / "repo-map.md",
+            _ROOT / "docs" / "rp-data-layout.md",
+            _ROOT / "docs" / "testing.md",
+            _ROOT / "docs" / "core-operating-invariants.md",
+            _ROOT / "v2" / "README.md",
+        ]
+        banned_substrings = (
+            "autogen_rp/python/rp_app",
+            "python/rp_app/",
+            "scripts/run_scene_simulation_llm",
+            "run_scene_simulation_llm.py",
+            "LEGACY_RP_APP",
+        )
+        offenders: list[str] = []
+        for path in doc_paths:
+            text = path.read_text(encoding="utf-8")
+            for token in banned_substrings:
+                if token in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {token}")
+        self.assertEqual(offenders, [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,17 +1,16 @@
 # AGENTS.md
 
-This file is the repo-level source of truth for AI assistants working in this repository.
+Repo-level source of truth for AI assistants working in **Holy Grail RP**.
 
-Use this document together with the files in `docs/` before making multi-file, architectural,
-workflow, or audit-sensitive changes.
+Use this document together with `docs/` before multi-file, architectural, workflow, or audit-sensitive changes.
 
 ## Instruction priority
 
 1. Direct user request
 2. This file
 3. Shared repo docs in `docs/`
-4. Existing package- or app-specific docs such as `tools/investigation/README.md` and `docs/`
-5. Tool-specific features such as Windsurf workflows or Cursor rules
+4. Package-specific docs such as `tools/investigation/README.md`
+5. Tool-specific features (Windsurf workflows, Cursor rules)
 
 Do not rely on tool memory as the only source of important project behavior.
 
@@ -27,62 +26,81 @@ Do not rely on tool memory as the only source of important project behavior.
 - When the user asks to **file** a GitHub Issue (not draft-only), follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6** and **§C** (`gh issue create` from the repo git root; **mandatory** labels; **RP System Workflow** project; **Status** / **Workflow** fields per **§B.3**; **non-empty Priority** (typically **P3** until triaged) when the project defines it (**§B.5**); **§B.2** verification before reporting done). Issue body template remains **§D–§F**.
 - For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --json number,state,labels,projectItems`** **and** **§B.2** proof of **Priority** from **`gh project item-list`** / UI / GraphQL (not **`projectItems` JSON alone**), plus **§B.3** alignment and, when **§B.2** applies, the **one-line** material **Priority** acknowledgment — see **`governance/rp-app/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
 - Do not overwrite environment or secret files without explicit user confirmation.
-- **Workflow weights:** GPT **assigns** workflow weight before substantive Issue work; implementation AI (**Cursor**) inherits **assigned**/**effective** weight and must not reinterpret rigor independently (**`governance/policies/gpt-workflow-instruction-set.md`**). Canonical **`light` / `standard` / `full`** and escalation triggers — **`governance/rp-app/workflow-weights.md`** only. **Routine filing assigned default:** **`standard`** (post–Issue **#145** Stage **3**). Weight-aware bootstrap + anchor-first retrieval — **`governance/policies/cursor-workflow-layer.md`**; authoritative profile read lists — **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes — **`governance/rp-app/issue-tracking-workflow.md` §B.0.1**.
+- **Workflow weights:** GPT **assigns** workflow weight before substantive Issue work; implementation AI (**Cursor**) inherits **assigned**/**effective** weight and must not reinterpret rigor independently (**`governance/policies/gpt-workflow-instruction-set.md`**). Canonical **`light` / `standard` / `full`** and escalation triggers — **`governance/rp-app/workflow-weights.md`** only. **Routine filing assigned default:** **`standard`**. Weight-aware bootstrap + anchor-first retrieval — **`governance/policies/cursor-workflow-layer.md`**; authoritative profile read lists — **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes — **`governance/rp-app/issue-tracking-workflow.md` §B.0.1**.
 
-## Governance layout (Issue #45)
+## Governance layout
 
-- **Bindings** (late-bound project values only): `../bindings/bindings.toml`
-- **Template sync manifest** (no binding payloads): `../governance/project-sync.toml`
-- **Workflow and Cursor governance** (canonical policy text): `../governance/policies/` and `../governance/rp-app/`
+- **Bindings** (late-bound project values only): `bindings/bindings.toml`
+- **Template sync manifest** (no binding payloads): `governance/project-sync.toml`
+- **Workflow and Cursor governance:** `governance/policies/` and `governance/rp-app/`
 
-Repository-root `.cursor/rules/*.mdc` and `autogen_rp/.cursor/rules/*.mdc` are thin wrappers that `@`-include files under `governance/`.
+Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include files under `governance/`.
 
 ## Where to start
 
-- For **Holy Grail** product architecture and packet intent (workspace parent): `../MODULE_INDEX.md`, `../ARCHITECTURE_OVERVIEW.md`, `../AUTHORED_SOURCE_CONTRACT.md` (canonical **authored** Character / Template / Bootstrap / Opener boundaries), `../DEBUGGING_GUIDE.md`, `../PACKET_CONTRACTS.md`, `../GLOSSARY.md`, and `../Holy Grail PRD.md`.
-- For **behavioral / scenario validation** (headless simulation on the production path, structured metrics, audits, baseline vs enforcement, optional offline **`--fact-spec`** fact-track companion — GitHub **#62**): `../SCENARIO_VALIDATION_FRAMEWORK.md` at the Holy Grail RP repo root.
-- Read `docs/repo-map.md` for repo structure.
-- Read `docs/rp-data-layout.md` for RP on-disk data (characters, sessions, audits).
-- Read `docs/code-style.md` for change-scope and coding expectations.
-- Read `docs/testing.md` before changing Python code (includes Holy Grail default `pytest` scope and optional vendored-package test deps).
-- Read `docs/architecture.md` before touching `python/rp_app/` or other core workflow code.
-- Read `docs/audit-workflows.md` before auditing RP sessions or diagnosing continuity issues.
+**Product architecture and contracts (repository root):**
+
+- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+- [MODULE_INDEX.md](./MODULE_INDEX.md)
+- [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)
+- [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md)
+- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)
+- [GLOSSARY.md](./GLOSSARY.md)
+- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md)
+- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md)
+
+**Shared technical docs (`docs/`):**
+
+- [docs/repo-map.md](./docs/repo-map.md) — repository structure
+- [docs/rp-data-layout.md](./docs/rp-data-layout.md) — on-disk data
+- [docs/architecture.md](./docs/architecture.md) — integration guardrails
+- [docs/testing.md](./docs/testing.md) — pytest and validation commands
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation
+- [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP
+
+**Implementation tree:**
+
+- [v2/README.md](./v2/README.md) — domain, Domain Host, RP runtime layout
 
 ## Active project areas
 
-This repository is a large AutoGen monorepo. For local work in this fork, the most actively customized
-area is usually `python/rp_app/`.
+Production code lives under **`v2/`**:
 
-If a task touches the RP app, also read:
+| Area | Path |
+|------|------|
+| Domain library | `v2/domain/modules/` |
+| Domain Host | `v2/domain_api/` |
+| Domain tests | `v2/domain/tests/` |
+| RP runtime (DSH) | `v2/rp_runtime/` |
+| Integration tests | `v2/tests/` |
+| Canonical data | `data/` (`HG_DATA_DIR`) |
 
-- `../MODULE_INDEX.md` (file-level map; canonical at repo root)
-- For **knowledge leaks, whispers, or per-character prompt differences:** `python/rp_app/perception_audibility.py` (authoritative perception gate; structured `move` as source of truth)
-- `../Holy Grail PRD.md` (product intent, including **Progression Advisory MVP** in §5.7 and **Scene Grounding MVP** in §5.8)
-- `docs/scene-grounding-layer.md` (Scene Grounding: facts contract, lifecycle, prompt integration — under `autogen_rp/`)
-- `python/rp_app/README.md`
-- `python/rp_app/ARCHITECTURE.md`
-- `python/rp_app/AUDIT_DOCUMENTATION.md` (including **Character Audit v1** — CA3/CA7 vs continuity; not character-contract requirements; **Offline fact tracking** / #59 authority vs **`run_fact_track_postprocess`** / companion artifacts)
-- `python/RP_SETUP_TODO.md`
+When a task touches domain behavior, also read:
 
-**Progression advisory (MVP):** deterministic, template-grounded prompt hints and a unified **`stall_score`** hook for beat-shift. Implemented under `python/rp_app/progression_advisory.py` with integration in `beat_shift_state.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, and audits. Does not write continuity or `CharacterState`.
+- [MODULE_INDEX.md](./MODULE_INDEX.md) — symptom → module map
+- For **knowledge leaks, whispers, or per-character prompt differences:** `v2/domain/modules/perception_audibility.py`
+- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) — product intent (Progression Advisory §5.7, Scene Grounding §5.8)
+- **Progression advisory (MVP):** `v2/domain/modules/progression_advisory.py` with integration in beat-shift, director, prompting, and audit paths. Does not write continuity or `CharacterState`.
+
+**Offline tooling:** `tools/investigation/`, `tools/maintenance/` — see each README.
+
+**Historical program records** under `governance/rp-app/` document past slices; consult them for history, not as the primary description of current architecture.
 
 ## Tool-specific compatibility
 
 ### Windsurf
 
-Windsurf-specific automation may exist under `.windsurf/`, especially workflows. Keep those files if
-they still provide useful IDE automation, but do not let them become the only source of critical rules.
+Windsurf automation may exist under `.windsurf/`. Keep useful IDE automation; do not let it become the only source of critical rules.
 
 ### Cursor
 
-Cursor should use `.cursor/rules/` only as a routing layer into this file, the shared docs in `docs/`, and the canonical governance corpus under `../governance/` (included from `.mdc` stubs).
-Avoid duplicating large rule blocks in Cursor-only files when a shared repo doc or governance extract can hold the guidance.
+Cursor uses `.cursor/rules/` as a routing layer into this file, `docs/`, and `governance/`. Avoid duplicating large rule blocks in Cursor-only files.
 
 ## Safe switching rule
 
-When switching between Windsurf and Cursor:
+When switching between IDEs:
 
 - treat repo files as authoritative
-- re-read this file and the relevant docs for the task
-- do not assume tool memory contains the latest architecture or workflow decisions
-- keep tool-specific rules thin and aligned to the shared docs
+- re-read this file and relevant docs for the task
+- do not assume tool memory contains the latest architecture
+- keep tool-specific rules thin and aligned to shared docs

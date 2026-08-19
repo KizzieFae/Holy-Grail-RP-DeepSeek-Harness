@@ -1,49 +1,88 @@
-# Repo Map
+# Repository map
 
-This file is a quick orientation guide for humans and AI tools.
+Quick orientation for humans and AI tools working in **Holy Grail RP**.
+
+---
 
 ## Top level
 
-- `README.md` - upstream AutoGen overview
-- `CONTRIBUTING.md` - contribution process and repo-wide development expectations
-- `AGENTS.md` - repo-level AI working rules and source-of-truth entrypoint
-- `docs/` - shared AI-compatible project guidance for Windsurf and Cursor
-- `.windsurf/` - Windsurf-only automation and workflow files
-- `.cursor/rules/` - Cursor-only routing rules that should reference shared docs
-- `python/` - Python workspace and the main area for this fork's RP app work
-- `dotnet/` - .NET packages and docs
+| Path | Role |
+|------|------|
+| `README.md` | Product overview, quick start, doc index |
+| `AGENTS.md` | Repo-level AI working rules and instruction priority |
+| `ARCHITECTURE_OVERVIEW.md` | Product architecture and layer boundaries |
+| `MODULE_INDEX.md` | Symptom → module map (`v2/domain/modules/`) |
+| `docs/` | Shared technical documentation |
+| `v2/` | Production implementation (domain, Domain Host, RP runtime) |
+| `data/` | Canonical product data (`HG_DATA_DIR`) |
+| `tools/` | Offline investigation and maintenance utilities |
+| `governance/` | Issue workflow, policies, program records |
 
-## Python workspace
+---
 
-- `python/README.md` - Python development guide, setup, format/lint/test commands
-- `python/RP_SETUP_TODO.md` - RP app roadmap and phase tracking
-- `python/rp_app/` - Streamlit-based multi-character RP application and its tests/supporting code
-- `python/tests/` - Python test suite, including RP app regression tests
-- `python/data/` - character data, scene templates, sessions, and RP audit artifacts
-- `python/packages/` - upstream AutoGen package sources
+## Production code (`v2/`)
 
-## RP app docs and anchors
+| Path | Role |
+|------|------|
+| `v2/domain/modules/` | Domain library — continuity, orchestration, prompts, validation, memory, retrieval |
+| `v2/domain_api/` | Domain Host — authoritative kernel and Domain API transport |
+| `v2/domain/tests/` | Framework-neutral domain contract tests |
+| `v2/rp_runtime/` | DSH/Cordis orchestration (HgRoundOrchestrator, inference wiring) |
+| `v2/tests/` | Integration and repository architecture tests |
+| `v2/README.md` | Implementation tree layout and local run commands |
 
-- `../MODULE_INDEX.md` (repo root) - file-level responsibility map for `python/rp_app/`
-- `python/rp_app/README.md` - runtime overview and module layout
-- `python/rp_app/ARCHITECTURE.md` - authoritative RP architecture notes
-- `python/rp_app/AUDIT_DOCUMENTATION.md` - audit artifact meanings and review procedure
-- `python/rp_app/CHARACTER_MIGRATION_GUIDE.md` - character-card migration guidance
-- `docs/rp-data-layout.md` - character cards, templates, sessions, audit paths
+**Launch:** `Launch-Holy-Grail-V2.bat` → `v2/rp_runtime` supervisor.
 
-## Most likely files for RP runtime work
+---
 
-- `python/rp_app/app.py` - thin app entrypoint/composition layer
-- `python/rp_app/turn_runner.py` - round orchestration entrypoint
-- `python/rp_app/turn_runner_turn.py` - single-turn execution path
-- `python/rp_app/turn_runner_updates.py` - post-turn continuity/orchestration updates
-- `python/rp_app/continuity_manager.py` - durable narrative state updates
-- `python/rp_app/app_turn_director.py` - Director selection logic
-- `python/rp_app/prompt_builders.py` - prompt assembly
-- `python/rp_app/response_validation*.py` - validation boundaries
-- `python/rp_app/audit_logger*.py` - audit artifact generation
+## Data (`data/`)
 
-## Working assumption
+| Path | Role |
+|------|------|
+| `data/characters/` | Character cards |
+| `data/scene_templates/` | Scene template definitions and template-associated assets |
+| `data/retrieval/` | Authored retrieval manifests and compiled index examples |
+| `data/fixtures/` | Tracked investigation and evaluation fixtures (includes scenario manifests) |
+| `data/sessions/` | Persisted RP sessions |
+| `data/rp_audits/` | Optional per-turn audit trees (local, gitignored) |
 
-If the user asks about audits, continuity, Director behavior, Narrator behavior, scene templates, or RP
-runtime bugs, start in `python/rp_app/` and its docs before touching broader AutoGen packages.
+Details: [rp-data-layout.md](./rp-data-layout.md).
+
+---
+
+## Tools
+
+| Path | Role |
+|------|------|
+| `tools/investigation/` | Offline audit readers and experiment comparators — [README](../tools/investigation/README.md) |
+| `tools/maintenance/` | Local inventory and hygiene — [README](../tools/maintenance/README.md) |
+| `tools/_repo_paths.py` | Neutral path helpers for tooling |
+
+---
+
+## First files for common tasks
+
+| Task | Start here |
+|------|------------|
+| Continuity / scene state bug | `v2/domain/modules/continuity_manager.py` |
+| Turn selection / orchestration | `v2/domain/modules/orchestration_helpers.py`, `app_turn_director.py` |
+| Character prompts | `v2/domain/modules/app_turn_prompting.py`, `prompt_builders.py` |
+| Validation failures | `v2/domain/modules/response_validation*.py` |
+| Session save/load | `v2/domain/modules/session_manager.py`, `session_lifecycle_*.py` |
+| Domain API / Host | `v2/domain_api/` |
+| DSH round orchestration | `v2/rp_runtime/src/plugins/hg-round-orchestrator/` |
+| Audits | `v2/domain/modules/audit_logger*.py`, [audit-workflows.md](./audit-workflows.md) |
+
+Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
+
+---
+
+## Governance
+
+| Path | Role |
+|------|------|
+| `governance/policies/` | Canonical policy corpus (Cursor rules `@`-include these) |
+| `governance/rp-app/` | Issue tracking workflow and program records |
+| `governance/README.md` | Governance layout; distinguishes current authorities from historical records |
+
+Historical execution records under `governance/rp-app/` and `governance/archive/` document past program slices; they are **not** required to operate the current application.

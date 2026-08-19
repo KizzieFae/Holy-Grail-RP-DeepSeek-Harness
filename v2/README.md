@@ -1,19 +1,16 @@
-# V2 boundary prototype
+# Holy Grail RP — implementation tree
 
-Narrow vertical slice proving the agreed Python↔DSH architecture boundary.
+Production implementation for **Holy Grail RP**. The repository root is the product boundary; this directory is the **current implementation root** (literal path name `v2/`).
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `domain_api/` | Transport-neutral Domain API contract + authoritative Python kernel |
-| `domain_api/http_transport.py` | **Prototype-only** HTTP localhost transport |
 | `domain/modules/` | Permanent domain semantics library |
-| `domain/tests/` | Neutral-domain behavioral contracts (358 tests) |
-| `rp_runtime/src/plugins/hg-round-orchestrator/` | **HgRoundOrchestrator** Cordis service (round lifecycle) |
-| `rp_runtime/src/lib/` | Shared inference utilities and Domain API client |
-| `dsh-pins.toml` | Explicit pinned DSH/Cordis versions |
-| `tests/` | V2 integration/authority tests |
+| `domain_api/` | Domain Host — transport-neutral Domain API + authoritative Python kernel |
+| `domain/tests/` | Framework-neutral domain behavioral contracts |
+| `rp_runtime/` | DSH/Cordis RP orchestration (`HgRoundOrchestrator`, inference client) |
+| `tests/` | Integration and repository architecture tests |
 
 ## Python environment (Domain Host)
 
@@ -37,22 +34,38 @@ Override explicitly when needed:
 $env:HG_PYTHON_EXECUTABLE = "C:\path\to\python.exe"
 ```
 
-The supervisor and `Launch-Holy-Grail-V2.bat` do **not** use `autogen_rp/python/.venv`.
+The supervisor and `Launch-Holy-Grail-V2.bat` use this canonical `.venv`.
 
 ## Quick run
 
 ```powershell
-# Python authority + domain contract tests (use canonical .venv or active interpreter)
-python -m pytest v2/tests/ -q
+# Domain contract tests
 python -m pytest v2/domain/tests/ -q
 
-# DSH runtime tests (starts Domain Host subprocess via canonical .venv)
+# Integration / architecture tests
+python -m pytest v2/tests/ -q
+
+# DSH runtime tests (starts Domain Host subprocess)
 cd v2/rp_runtime
 npm test
 ```
 
-## Principle
+## Architecture flow
 
-> Holy Grail determines what is true. DeepSeek Harness records what happened.
+```text
+Application client / UI
+        ↓
+HolyGrailApplicationClient
+        ↓
+RP runtime (DSH / Cordis)
+        ↔
+Domain Host (domain_api)
+        ↓
+domain library + repositories
+        ↓
+data/  (HG_DATA_DIR)
+```
 
-See `governance/rp-app/v2-director-character-orchestration.md` for the implementation report.
+**Principle:** Holy Grail determines what is true. DeepSeek Harness records what happened.
+
+Implementation reports and design history: `governance/rp-app/v2-*.md`.

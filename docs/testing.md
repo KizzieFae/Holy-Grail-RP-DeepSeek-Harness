@@ -1,76 +1,68 @@
-# Testing Expectations
+# Testing
 
-Use this document together with `python/README.md` when changing Python code.
+Use this document when changing Python or RP runtime code in Holy Grail RP.
 
-## Source commands
+---
 
-The Python workspace uses `uv` and `poe`.
+## Default pytest scope
 
-Primary references:
+From the **repository root**:
 
-- setup and environment: `python/README.md`
-- common checks: `python/README.md`
+| Suite | Command | Scope |
+|-------|---------|-------|
+| Domain contracts | `python -m pytest v2/domain/tests/ -q` | `v2/domain/modules/` semantics |
+| Integration | `python -m pytest v2/tests/ -q` | Domain Host, architecture invariants |
+| RP runtime | `cd v2/rp_runtime && npm test` | DSH orchestration (starts Domain Host subprocess) |
 
-### Default `pytest` scope (Holy Grail fork)
+**Known xfail:** `v2/tests/test_presence_descriptive_exit_regression.py` — descriptive-exit presence regression (tracked separately).
 
-From `python/` (workspace root), **`[tool.pytest.ini_options]`** sets **`testpaths = ["tests"]`** and **`asyncio_mode = "auto"`** in `python/pyproject.toml`.
+---
 
-- **`python -m pytest`** or **`pytest`** with no paths runs **only** `python/tests/` (the Holy Grail RP app regression suite). It does **not** collect vendored `packages/*` tests, which avoids optional third-party import failures (e.g. `anthropic`, `mcp`, `ollama`) on a normal dev run.
-- To run **vendored AutoGen package** tests under `packages/`, install optional deps and pass explicit paths, for example:
-  - `uv sync --group dev --group autogen-vendored-tests`
-  - then `pytest packages/autogen-core/tests/...` (or the target package test dir).
-- Regression guard: `python/tests/test_pytest_root_collection.py` subprocess-collects with the default config and asserts only `tests/*` node IDs and no `ERROR collecting packages`.
+## Environment
 
-Common commands from the Python workspace:
+Provision the canonical interpreter once:
 
-- `poe format`
-- `poe lint`
-- `poe test`
-- `poe mypy`
-- `poe pyright`
-- `poe check`
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```
+
+Optional overrides: `HG_PYTHON_EXECUTABLE`, `HG_DATA_DIR`, `HG_SESSIONS_DIR`.
+
+Live inference tests require `DEEPSEEK_API_KEY` when exercising real provider paths.
+
+---
 
 ## Test strategy
 
-- Run the smallest relevant test set first.
-- Run broader checks when the change affects shared infrastructure or architecture-sensitive code.
-- Do not treat a manual app run or audit session as a substitute for regression tests.
-- If a public function or materially changed behavior lacks test coverage, add or update focused tests.
+- Run the **smallest relevant suite** first.
+- Expand to integration or runtime tests when touching Domain Host wiring, DSH orchestration, or cross-module contracts.
+- Do not treat a manual UI session as a substitute for regression tests.
+- Add focused tests when changing public behavior without coverage.
 
-## Python test rules
+---
 
-From `python/README.md` and current repo practice:
+## Domain library guidance
 
-- use `pytest`
-- prefer fixtures for setup
-- use mocks instead of real API or database calls where possible
-- use `autogen_ext.models.replay.ReplayChatCompletionClient` for model-client simulation when relevant
-- skip real external-service tests when required credentials or services are unavailable
+When changing `v2/domain/modules/`:
 
-## Live LLM tests (DeepSeek)
+- Prefer tests beside behavior in `v2/domain/tests/`.
+- For continuity, orchestration, or validation fixes, check downstream effects on turn selection, session persistence, and audit output shape.
+- For scenario manifest changes, extend manifest regression tests under `v2/domain/tests/test_*manifest*.py`.
 
-- Some tests call the real API when `DEEPSEEK_API_KEY` is set (e.g. `tests/test_progression_layer_llm.py`, `tests/test_integration.py`, `tests/test_director_validation.py`, `tests/conftest.py` fixtures `deepseek_api_key` / `deepseek_model_client`).
-- Markers: **`llm`**, **`progression_llm`** (see `pyproject.toml` `[tool.pytest.ini_options].markers`). Run only progression live checks:  
-  `pytest tests/test_progression_layer_llm.py -m progression_llm -v`  
-  Omit them from a fast run:  
-  `pytest -m "not llm"`
-- Without a key, those tests **skip**. Tests that require a configured key (including `test_deepseek_api_key_exists`) are marked **`llm`** — excluded with **`pytest -m "not llm"`**.
-- Hosted defaults use **DeepSeek V4** model IDs (`deepseek-v4-flash` / `deepseek-v4-pro`) via `rp_app/model_client.create_deepseek_client`. Legacy hosted IDs `deepseek-chat` and `deepseek-reasoner` are **rejected**.
+---
 
-## RP app-specific testing guidance
+## Scenario validation
 
-If a change touches `python/rp_app/`:
+Scenario manifest contracts and structured eval profiles are tested in the domain suite. See [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
-- prefer focused regression tests near the affected behavior
-- convert repeated audit findings into tests when feasible
-- use audited scene reruns as verification for continuity, pacing, and scene-behavior fixes
-- check for downstream effects in turn selection, continuity updates, validation, and audit output
-- for **progression enforcement**, combine deterministic tests (`tests/test_progression_enforcement.py`, `turn_runner` / `orchestration` tests) with optional **`progression_llm`** runs above
+---
 
 ## Done criteria
 
-A change is not ready to commit until:
+A change is ready when:
 
-- relevant targeted tests pass
-- any broader checks required by the risk level pass
-- the diff remains scoped to the intended task
+- relevant targeted tests pass;
+- broader suites pass when risk warrants it;
+- the diff stays scoped to the intended task;
+- current docs are updated when paths or commands change.

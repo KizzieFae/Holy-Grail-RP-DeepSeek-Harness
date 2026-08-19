@@ -27,5 +27,5 @@ python tools/investigation/audit_episodic_issue_mismatch_scan.py --help
 
 ## Notes
 
-- V1 headless LLM simulation scripts were removed in M14.3. Future scenario validation will use the V2 production path.
-- Do not write investigation output to the repository root. Use `data/investigation_runs/` or another gitignored path under `data/`.
+- Scenario validation uses domain manifest tests and integration tests; see [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md).
+- Write investigation output to `data/investigation_runs/` or another gitignored path under `data/`.

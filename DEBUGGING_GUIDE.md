@@ -1,6 +1,6 @@
 # RP debugging guide
 
-How to **approach problems** in the Holy Grail RP runtime without fixing the wrong layer. Product and layers: [Holy Grail PRD.md](./Holy%20Grail%20PRD.md), [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Where to open code first:** [MODULE_INDEX.md](./MODULE_INDEX.md) (symptom table; modules live under `autogen_rp/python/rp_app/`). **On-disk data:** [autogen_rp/docs/rp-data-layout.md](./autogen_rp/docs/rp-data-layout.md).
+How to **approach problems** in Holy Grail RP without fixing the wrong layer. Product and layers: [Holy Grail PRD.md](./Holy%20Grail%20PRD.md), [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Where to open code first:** [MODULE_INDEX.md](./MODULE_INDEX.md) (modules under `v2/domain/modules/`). **On-disk data:** [docs/rp-data-layout.md](./docs/rp-data-layout.md).
 
 ---
 
@@ -22,7 +22,7 @@ How to **approach problems** in the Holy Grail RP runtime without fixing the wro
 
 ## Suggested diagnosis order (runtime)
 
-Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workflows.md`:
+Aligned with `docs/architecture.md` and `docs/audit-workflows.md`:
 
 1. **Continuity extraction and state** — Are events, issues, and scene snapshot correct after the turn? (`continuity_manager.py`, `continuity_*_helpers.py`)
 2. **Perception / audibility** (when the bug is knowledge boundaries, whispers, or “who saw that line”) — `perception_audibility.py`, `app_turn_prompting.py`, `prompt_builders.py`; confirm with per-character audit `_full.json` prompts, not `_narrative.json` alone
@@ -31,7 +31,7 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 5. **Orchestration state** — Spotlight, forced speaker, continuation override (`orchestration_helpers.py`, `st.session_state` keys used in `app_turn_director.py`)
 6. **Summaries / retrieval windows** — What the prompt actually sees (`summary_audit_helpers.py`, `prompt_builders.py` only after earlier layers look sane)
 7. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`); turn-selection preemption checks respect `decision["source"] == "fallback"`
-8. **Memory layer (prompt read path)** — Episodic sections in character prompts: `memory_layer/retrieval.py` + `build_character_state_context_for_prompt`; production `state_context` is built only in `app_turn_prompting` (see `autogen_rp/docs/architecture.md`)
+8. **Memory layer (prompt read path)** — Episodic sections in character prompts: `memory_layer/retrieval.py` + `build_character_state_context_for_prompt`; production `state_context` is built only in `app_turn_prompting` (see `docs/architecture.md`)
 9. **Director** — Selection policy and prompts when evidence points here
 10. **Narrator** — Prose polish; dialogue must stay verbatim (`app_turn_rendering.py`)
 
@@ -39,7 +39,7 @@ Aligned with `autogen_rp/docs/architecture.md` and `autogen_rp/docs/audit-workfl
 
 ## Simulation failure triage (layer-aware deep-dive)
 
-Use this when a **headless scenario run** or **Streamlit session** “looks wrong” (FAIL/WARN, bad prose, collapsed cast, stuck loop) and you are deciding whether to **change code** and **which subsystem** owns the fix. It is the default path between **“simulation looked wrong”** and **“open the right file.”** Headless runs: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); audit layout: [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md).
+Use this when a supervised run or application session “looks wrong” and you are deciding which subsystem owns the fix. Scenario validation: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); audit layout: [docs/audit-workflows.md](./docs/audit-workflows.md) and [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](./governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md).
 
 End-to-end validation (GitHub **#85**) treated the system as **consistent when inputs match**; apparent **UI vs headless** differences are often **input-driven**, not separate core logic. Before you assign a **Layer** defect, align the two runs on **scenario / opener inputs**, **triggers**, **overlays** (e.g. `--user-trigger-schedule` where used), **retrieval** settings, and **deep vs shallow** simulation mode (`--no-deep-simulation-turns` vs default deep simulation). For opener **asset** choice: Streamlit uses sidebar selection (`ui_sidebar_opening`, GitHub **#101**); headless uses **scenario/CLI** composition—match **resolved** opening text and bootstrap intent, not Streamlit-only session fields.
 
@@ -109,13 +109,13 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. The **Layer** v
 
 ### Turn selection issues
 
-- **Who speaks next** — `orchestration_helpers.py` (address / continuation / caps), `app_turn_director.py` (Director call and overrides; **v1:** continuation C2 skip when last spotlight matches continuation actor — see `autogen_rp/python/RP_SETUP_TODO.md` §I), `response_validation_selection.py`, then `semantic_validation.py` for reconciliation. Audits / sim metrics: `selection_attribution`, `continuation_override_skipped_c2`.
+- **Who speaks next** — `orchestration_helpers.py`, `app_turn_director.py`, `response_validation_selection.py`, then `semantic_validation.py` for reconciliation.
 - **Director ignores context** — Check what **structured** inputs the prompt receives (`prompt_builders.py`, continuity snapshot helpers), not only the Director system text.
 
 ### Character drift (voice, tone, anchors)
 
 - **Post-move checks** — `response_validation_drift.py`
-- **Anchor source** — `character_state_model.py`, JSON cards under `python/data/autogen_characters/`
+- **Anchor source** — `character_state_model.py`, JSON cards under `data/characters/`
 - **Drift false positives** — Tune checks in `response_validation_drift.py`, not Narrator prose prompts first.
 
 ### Presence bugs (`must_remain`, exits, absence)
@@ -164,11 +164,11 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 
 ### Audit output / regression analysis
 
-- **Layout and file meanings** — `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`
+- **Layout and file meanings** — [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](./governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md)
 - **Continuity audit surfaces (Issue #79, not #59 runtime authority)** — Per-turn **`metadata.ctar`**, **`context_snapshot.scene_state_after`**, **`metadata.excursion_audit_digest_v1`**, and **`metadata.continuity_audit_origin`** are for inspection; bypass classification for non-pipeline commits rolls up under **`continuity_observability_summary_v1.session_audit_origin`** on **`_audit_summary.json`** when that summary block is present. For committed truth, use **`ContinuityManager`** / **`turn_metadata_by_index`** (including **`continuity_mutation_resolution`** on the pipeline path), not audit JSON alone.
 - **`_audit_summary.json` — continuity observability rollup (Issue #79):** **`continuity_observability_summary_v1`** is emitted only when **`write_summary_report`** receives a **`ContinuityManager`** (continuity-backed rollup available). When it does not, **`continuity_observability_status_v1`** is emitted instead (**`status`**: **`unavailable`**, **`reason`**: **`continuity_manager_not_provided`** — the current canonical reason). The two top-level keys are mutually exclusive. **`continuity_observability_status_v1`** explains unavailability of the rollup; it is **not** a failure verdict on the session or audit path.
 - **Narrator↔character audit pairing (manual / scripted — Issue #72)** — There is **no** shipped **`run_scene_eval_v2`**; pair rows using **`AUDIT_DOCUMENTATION.md`** (*Canonical structural join contract*). If linkage fails or looks wrong, check **`context_snapshot.continuity_turn_index`** on **both** rows first (primary structural join). **Missing `continuity_event.event_id` is not a failure** when indices match; `event_id` is **optional** and used only as **legacy** fallback when top-level **`continuity_turn_index`** is absent on one or both sides.
-- **Workflow** — `autogen_rp/docs/audit-workflows.md`
+- **Workflow** — [docs/audit-workflows.md](./docs/audit-workflows.md)
 - **Writers** — `audit_logger*.py`
 
 ---
@@ -179,7 +179,7 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 |-------|------|
 | **Ingestion** (future) | Source extraction, graph/vector stores — not live turn loop |
 | **Packaging** (future) | Merging packets + retrieved context — not replacing continuity truth |
-| **RP runtime (`rp_app`)** | Director, orchestration, agents, Narrator, **continuity**, validation, session/audit I/O |
+| **Domain runtime** (`v2/domain/modules/`) | Director, orchestration, Narrator, **continuity**, validation, session/audit I/O |
 
 ---
 
@@ -188,4 +188,4 @@ When **beat-shift is active** or **progression pressure is high**, a character t
 - [GLOSSARY.md](./GLOSSARY.md)
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future seam; do not implement retrieval as authoritative state
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — headless **authored retrieval OFF/ON** (`RP_RETRIEVED_CONTEXT_INDEX`, `--retrieved-context-index`) and **`structured_eval.retrieval_session`**; **per-turn user trigger schedule** (`--user-trigger-schedule`, JSON, precedence, orchestration turn index)
-- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — **`retrieval_summary`** (per turn), **`retrieval_session`** in `_audit_summary` (Streamlit + headless merge); **`effective_user_trigger`** (full audits only; schedule overrides are headless harness-only); **Issue #79** continuity surfaces (**`metadata.ctar`**, **`scene_state_after`**, **`continuity_observability_summary_v1`** or **`continuity_observability_status_v1`**)
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation and continuity observability

@@ -1,16 +1,12 @@
-# RP app module index
+# Holy Grail RP module index
 
-> **M12.5 (2026-08-18):** Vendored AutoGen packages removed. Holy Grail V2 has no runtime or test dependency on AutoGen. See `governance/rp-app/v2-autogen-package-removal-m12-5.md`.
-
-**Location (historical):** Modules below referred to **`autogen_rp/python/rp_app/`** before M12.4. Domain implementations are now under **`v2/domain/modules/`**.
-
-Quick map for **where to change what**. Architecture rules: [docs/architecture.md](./docs/architecture.md) and [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Authored files (Character / Template / Bootstrap / Opener):** [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md). **Canonical compiled knowledge (retrieval envelope):** [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md) — offline compile (`schema_version` 2 default, 3 additive canonical fields); **runtime** still reads only legacy projection fields on chunks; continuity authoritative.
+Quick map for **where to change what**. Modules live under **`v2/domain/modules/`** unless noted. Architecture: [docs/architecture.md](./docs/architecture.md), [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Authored files:** [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md). **Canonical knowledge:** [CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md).
 
 **Constraints (recurring):** Keep `app.py` thin. Do not fix continuity/orchestration bugs by bloating Director prompts. Preserve `must_remain` as **structural presence**, not “must speak every turn.” Production scene templates use **`cohesion_policy: anchor_only`** only (#245): anchor effective **`must_remain`** (interim until #247); non-anchor default **`flexible`**; non-anchor **`must_remain`** overrides require **`cohesion_rationale`**.
 
 For **diagnosis order** and layer rules, see [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md).
 
-**Scenario Validation Framework** is a **core system** alongside the turn pipeline and continuity stack—not an optional add-on. It is how we lock behavioral changes: scenario manifests via `v2/domain/modules/progression_simulation_scenarios.py` and the canonical doc [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md). V1 headless LLM runner scripts were removed in M14.3; a V2 headless harness is tracked separately.
+**Scenario Validation Framework** is a core system alongside the turn pipeline and continuity stack. Scenario manifests: `data/fixtures/progression_simulation_scenarios/` via `v2/domain/modules/progression_simulation_scenarios.py`. Canonical doc: [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md). Offline audit analysis: `tools/investigation/`.
 
 ---
 
@@ -27,9 +23,9 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | **Presence** / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `semantic_validation.py` (override paths) |
 | **`semantic_proposals`** vs beats mismatch / `[PROPOSAL_*]` coherence retry | `response_validation_proposal_coherence.py` (structural), `semantic_validation.py` (`assess_proposal_beat_contradiction`), `turn_runner_character_attempt.py` (pre-`process_turn` pipeline; façade `turn_runner_turn.py`) |
 | **`[PROPOSAL_LEGALITY]`** / illegal proposal batch / covered semantic commit | `continuity_semantic_proposals.py` (`evaluate_proposal_legality`), `response_validation_proposal_legality.py`, `turn_runner_character_attempt.py` (pre-`process_turn`; façade `turn_runner_turn.py`); commit path: `continuity_manager.py`, `continuity_scene_state_update.py` |
-| **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `autogen_rp/python/data/autogen_characters/` |
+| **Drift** / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `data/characters/` |
 | **Episodic prompt sections** / wrong “memories” block in character prompt | `memory_layer/retrieval.py`, `prompt_state_context.py` (`build_state_context_for_character_prompt`); façade: `app_turn_prompting.py`; identity text: `character_state_model.py` (`to_prompt_identity_context`) |
-| **Authored retrieval** / **bounded episodic** / `RetrievedContextBundle` / non-authoritative prompt block | `retrieved_context_select.py` (authored select + **merge** with episodic + log), `prompt_retrieval_assembly.py` (**sole** runtime bundle build; env index via `get_index_path_from_env`), `episodic_memory_compile.py`, `episodic_memory_cache.py`, `episodic_memory_select.py`, `episodic_memory_inputs.py`, `episodic_memory_prompt.py` (flag), `app_turn_prompting.py` (composition), `runtime_packets.py` (`RetrievedItem`, bundle, `format_retrieved_context_for_prompt`), `prompt_builders.py` (`retrieved_context_section`); env **`RP_RETRIEVED_CONTEXT_INDEX`** (sole ON/OFF switch). **Phase 4A observability:** `retrieval_audit_helpers.py` (`apply_retrieval_session_to_audit_summary`), `app_state_audit.py` (Streamlit `refresh_audit_summary_report`), `turn_runner_audit.py` (`retrieval_summary`), `headless_scene_simulation.py` (strict verify headless-only), `tests/test_retrieval_workflow_audit.py`. **Standard eval + pilot artifact map:** [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Authored retrieval*), `autogen_rp/python/data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`, manifest `operational_pilot.json`, matrix `scripts/run_operational_pilot_eval_matrix.py`. **Phase 1 retrieval-lock tests:** `tests/test_phase1_retrieval_seam.py`, `tests/test_retrieved_context_merge.py`, `tests/test_prompt_builders.py`; headless template id: `tests/test_prepare_headless_scene_template_id.py` |
+| **Authored retrieval** / **bounded episodic** / `RetrievedContextBundle` | `retrieved_context_select.py`, `prompt_retrieval_assembly.py`, `episodic_memory_*.py`, `app_turn_prompting.py`, `runtime_packets.py`, `prompt_builders.py`; env **`RP_RETRIEVED_CONTEXT_INDEX`**. Tests: `v2/domain/tests/test_phase1_retrieval_seam.py`, `test_retrieved_context_merge.py`. Pilot map: `data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md` |
 | **Plateau** / stalled high-tension verbal loop (advisory + beat-shift) | `progression_advisory.py`, `beat_shift_state.py`, `progression_enforcement.py`, `continuity_consequence_classifier.py`, `app_turn_director.py`, `app_turn_prompting.py`, `prompt_builders.py`, `turn_runner.py`, `turn_runner_character_attempt.py`, `turn_runner_turn.py` |
 | Stale issues / bad event memory / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
 | **Whisper / private line** known to wrong character; per-character prompt mismatch | `perception_audibility.py`, then `app_turn_prompting.py`, `continuity_manager.py`, `continuity_knowledge_helpers.py`, `app_turn_director.py`; **ambiguous non‑verbatim scaffolding (design_gap):** GitHub **#215** + `AUDIT_DOCUMENTATION.md` → *Audit read safety — scaffolding vs literal* |
@@ -40,7 +36,7 @@ Use this for a fast landing spot; the tables below add detail. Full workflow: [D
 | Scene start/end / template roles | **`bootstrap_composition.py`** (**façade**, Issue #94 `BootstrapInterpretation`; **#165** leaves: `bootstrap_interpretation.py`, `bootstrap_streamlit_opening_modes.py`, `bootstrap_context_inputs.py`, `bootstrap_strategy_shared.py`, `bootstrap_strategy_streamlit.py`, `bootstrap_compose_streamlit.py`, `bootstrap_compose_headless.py`), `scene_start_bootstrap.py`, `app_state_continuity.py` (`restore_or_initialize_continuity_manager`), `scene_lifecycle_start.py`, `scene_lifecycle_actions.py`, `scene_template.py` |
 | **Session** not saving / reload wrong state | `session_manager.py`, `session_lifecycle_save.py`, `session_lifecycle_load.py`, `app_bootstrap.py` |
 | **Audit** missing or wrong paths | `audit_logger_paths.py`, `audit_logger.py`, `turn_runner_audit.py`; **#79 continuity observability:** `audit_ctar.py`, `audit_runtime_mirrors.py`, `continuity_audit_origin.py`, `continuity_observability_summary.py` |
-| **Scenario validation** (fixed manifests, headless LLM runs, `--audit`, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); `v2/domain/modules/progression_simulation_scenarios.py` (**`startup_trigger_mode`**, **`effective_round1_trigger_text_headless`**); domain tests under `v2/domain/tests/test_*manifest*.py`; offline audit analysis in `tools/investigation/` (V1 headless runner removed M14.3) |
+| **Scenario validation** | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); `progression_simulation_scenarios.py`; `v2/domain/tests/test_*manifest*.py`; `tools/investigation/` |
 | **OTHER PRESENT CHARACTERS** lists the acting character, or **CAST ROLE MAP** repeats the same person under id vs display | `prompt_builders.py` (`prompt_identity_same`, `build_cast_and_scene_role_participants`), `app_turn_prompting.py`, `runtime_packets.py` (`reconstruct_character_prompt_input_bundle` — pass the same **`get_character_display_name_fn`** as live assembly) |
 | Prompt wording only (after ruling out state) | `prompt_builders.py` |
 
@@ -200,7 +196,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 | `scene_lifecycle_actions.py` | End scene, skip, close, recreate team | `session_lifecycle`, continuity | |
 | `scene_template.py` | Load/validate templates, role assignments, **`anchor_role_name`** (Issue #80), **`cohesion_policy`** (#245) | `data/scene_templates`, `scene_template_cohesion` | `list_templates` skips `*_initial_message` / `*_progression` (see **Template-associated support files** in `AUTHORED_SOURCE_CONTRACT.md` §1) |
 | `scene_template_cohesion.py` | **#245** `anchor_only` effective `presence_constraint` resolver + load validation | `scene_template.py`, `app_state_scene.py` | Missing `cohesion_policy` fails load; non-anchor `must_remain` requires `cohesion_rationale` |
-| `scene_opener.py` | Opening text / initial message resolution | `autogen_characters` | |
+| `scene_opener.py` | Opening text / initial message resolution | `data/characters/` | |
 | `scene_exit_detection.py` | Hard departure **heuristic** signals (observational / classifier) | text / moves | **Not** covered-semantic commit authority; commit path removed **#235** |
 | `session_lifecycle_save.py` | Persist session + continuity + audit ids | `SessionManager` | |
 | `session_lifecycle_load.py` | Restore session into Streamlit state | `SessionManager` | |
@@ -212,7 +208,7 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `character_loader.py` | Load JSON cards, build agents | `data/autogen_characters`, `model_client` | Current “ingestion” is files |
+| `character_loader.py` | Load JSON cards, build agents | `data/characters/`, `model_client.py` | |
 | `character_state_model.py` | Per-character state schema | cards | Identity anchors |
 | `character_state_manager.py` | Update goals, emotions, relationships | continuity, turns | |
 | `orchestration_helpers.py` | **Façade:** orchestration cache + selection policy (state init, continuity sync, continuation override, spotlight / fairness / fallback, progression override, bounded histories, `build_recent_scene_context`) — implementations in leaf modules (**#164**) | `orchestration_state_init`, `orchestration_continuity_mirror`, `orchestration_continuation`, `orchestration_spotlight`, `orchestration_progression`, `orchestration_scene_context`, `orchestration_turn_append`, `st.session_state` | Persists `audibility`/`audience` on structured move entries; narrator scene context uses perception-filtered transcript. **#152** in-file normalization (historical “domains A–G”) preceded **#164** mechanical split — prefer editing **leaf** files for behavior changes. |
@@ -224,10 +220,10 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 | Module | Responsibility | Interacts with | Notes |
 |--------|----------------|----------------|-------|
-| `model_client.py` | DeepSeek / agent construction | AutoGen stack | Env: API keys |
-| `audit_fact_tracking.py` | Offline `fact_spec.v1` post-processor: `failure_classification` over character `*_full.json` (**#58**); shared **`run_fact_track_postprocess`** + companion JSON (**#62**) | `issue29_investigation`, `audit_support_manifest` | **Not** runtime / not on #59 allowlist; CLIs `run_audit_fact_track.py` (stdout) and `run_scene_simulation_llm.py` **`--fact-spec`** (audited runs) |
+| `model_client.py` | DeepSeek inference client construction | DSH / provider config | Env: API keys |
+| `audit_fact_tracking.py` | Offline `fact_spec.v1` post-processor over character `*_full.json` | audit artifacts | **Not** runtime; offline analysis only |
 | `audit_logger.py` | Audit session/round/turn lifecycle | `audit_logger_paths`, writers | |
-| `audit_logger_paths.py` | Paths: `rp_app/data/rp_audits` | — | |
+| `audit_logger_paths.py` | Paths: `data/rp_audits/` | — | |
 | `audit_logger_writers.py` | Write JSON artifacts; **`update_manifest_turn_counter`** (read-merge-write session manifest) | — | |
 | `audit_logger_serialization.py` | Serialize payloads | — | |
 | `audit_logger_summary_issue_taxonomy.py` | Issue category keys + `_audit_summary` issue bucketing helpers | `audit_logger` | **#154** Slice A |
@@ -283,13 +279,11 @@ These aggregate focused modules; prefer editing **leaf** files unless the facade
 
 ## Related docs
 
-- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — behavioral validation layer (scenarios, headless runner, audits, structured metrics, baseline comparison)
-- [README.md](./README.md) — project navigation
-- [autogen_rp/python/rp_app/README.md](./autogen_rp/python/rp_app/README.md) — operator rules, formats
-- [autogen_rp/python/rp_app/ARCHITECTURE.md](./autogen_rp/python/rp_app/ARCHITECTURE.md) — Director/Narrator/continuity deep dive
-- [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) — audit file meanings
+- [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) — behavioral validation
+- [README.md](./README.md) — product navigation
+- [docs/architecture.md](./docs/architecture.md) — integration guardrails
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation
+- [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](./governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) — historical artifact reference
 - [docs/rp-data-layout.md](./docs/rp-data-layout.md) — data directories
-- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet contracts; Phase 0.5 **character-path** seam: `CharacterPromptInputAssembly`, `runtime_packets.py`, shadow compare (`RP_PACKET_SHADOW_COMPARE`)
-- [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP (facts contract, lifecycle)
-
-*A short pointer file remains at `autogen_rp/python/rp_app/MODULE_INDEX.md` so existing links into `rp_app/` still resolve.*
+- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — packet contracts
+- [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP

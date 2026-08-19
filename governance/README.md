@@ -1,45 +1,40 @@
-# Governance (Issue #45)
+# Governance
 
-This directory holds **project-owned governance**: template sync rules, canonical workflow policy extracts, and the GitHub Issues / Projects specification.
+Project-owned governance: template sync rules, workflow policy extracts, and GitHub Issues / Projects specification.
+
+**Current authorities** for day-to-day work: `AGENTS.md`, `docs/`, and policies in `governance/policies/`.
+
+**Historical program records** in `governance/rp-app/` (including `v2-*` implementation reports and `fresh-start-m14-*` slices) document past execution; they are not required to understand current architecture.
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `project-sync.toml` | Template sync manifest, allowlists, and safety policies. **No binding values** (repository URLs, pins, etc. stay out of binding keys—use `../bindings/bindings.toml` for late-bound project data). |
-| `policies/` | Markdown policy corpus **included** by Cursor `.mdc` stubs under `.cursor/rules/` and `autogen_rp/.cursor/rules/` via `@governance/policies/...`. |
-| `rp-app/` | RP-adjacent governance specs split from runtime architecture docs (e.g. issue tracking **§A–§K**, **V2 DSH re-platforming** authority and mapping). |
-| `github/` | Notes on GitHub-facing assets (issue templates); forms remain under `.github/ISSUE_TEMPLATE/` because GitHub requires that path. |
+| `project-sync.toml` | Template sync manifest and safety policies. Binding values live in `bindings/bindings.toml`. |
+| `policies/` | Markdown policy corpus included by Cursor `.mdc` stubs via `@governance/policies/...` |
+| `rp-app/` | Issue tracking workflow, workflow weights, program execution records |
+| `github/` | GitHub-facing asset notes |
+| `archive/` | Historical investigation and validation artifacts |
 
 ## Separation rules
 
-- **Bindings** → `bindings/bindings.toml` only.
-- **Governance** → this tree; edit canonical policy here, not inside template-managed Cursor stubs.
-- **Template-managed stubs** → keep only YAML frontmatter plus `@`-includes; no resolved binding placeholders in stubs.
+- **Bindings** → `bindings/bindings.toml` only
+- **Governance** → this tree; edit canonical policy here, not inside Cursor stubs
+- **Current product docs** → repository root and `docs/` (see `README.md`)
 
-## V2 DeepSeek Harness re-platforming (harness repo)
+## Holy Grail RP implementation references
 
 | Document | Role |
 |----------|------|
-| `rp-app/v2-dsh-replatforming-authority.md` | Governing principles for behavioral-preservation re-platform onto DSH |
-| `rp-app/v2-behavioral-evidence-inventory.md` | Existing audits, tests, and artifacts by capability |
-| `rp-app/v2-capability-dsh-mapping.md` | Capability → DSH mapping and proposed target architecture |
-| `rp-app/v2-runtime-boundary-decision.md` | **V2 runtime boundary & session topology decision** (full-weight architecture proposal) |
-| `rp-app/v2-boundary-prototype.md` | **V2 boundary prototype implementation report** (narrow vertical slice) |
-| `rp-app/v2-director-character-orchestration.md` | **V2 Director + Character orchestration slice** (multi-role proof) |
-| `rp-app/v2-narrator-orchestration.md` | **V2 Narrator orchestration slice** (three-role basic round) |
-| `rp-app/v2-two-character-cast-loop.md` | **V2 two-character cast loop slice** (multi-character orchestration proof) |
-| `rp-app/v2-generic-cast-round.md` | **V2 generic cast round semantics** (semantic completion) |
-| `rp-app/v2-presence-eligibility-parity.md` | **V2 presence/eligibility parity** (authoritative domain projection) |
-| `rp-app/v2-participation-control-investigation.md` | **V2 continuation/forced-speaker investigation** (design only) |
-| `rp-app/v2-participation-decision.md` | **V2 ParticipationDecision implementation** (participation policy seam) |
-| `rp-app/v2-real-deepseek-provider.md` | **V2 real DeepSeek provider integration** (DSH production inference substrate) |
-| `rp-app/v2-real-full-round.md` | **V2 real full-round validation** (Director → Character → commit → Narrator on live DSH) |
-| `rp-app/v2-mature-plugin-architecture.md` | **V2 mature plugin/service architecture investigation** (design only) |
-| `../CHECKPOINT_BASELINE_DSH.md` | Baseline checkpoint report (environment, smoke checks, next slice) |
-| `../v2/README.md` | V2 implementation tree (Domain API + RP runtime prototype) |
+| `../README.md` | Product overview and quick start |
+| `../ARCHITECTURE_OVERVIEW.md` | Current architecture |
+| `../v2/README.md` | Implementation tree (`v2/domain`, `v2/domain_api`, `v2/rp_runtime`) |
+| `rp-app/issue-tracking-workflow.md` | GitHub Issues workflow |
+| `rp-app/workflow-weights.md` | Workflow weight definitions |
+
+Design and slice implementation history: `rp-app/v2-*.md`, `fresh-start-m14-*.md`.
 
 ## Related
 
-- `../bindings/bindings.toml` — canonical entrypoints and paths for agents/tools.
-- `../AGENTS.md` — instruction priority and links into this tree.
+- `../bindings/bindings.toml` — canonical entrypoints for agents/tools
+- `../AGENTS.md` — instruction priority

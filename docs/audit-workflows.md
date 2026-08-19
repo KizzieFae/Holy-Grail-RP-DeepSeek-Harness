@@ -28,13 +28,13 @@ Use this workflow for:
 
 ### Audit artifacts vs runtime (operational note)
 
-- **Audit artifacts are optional for runtime:** The live turn loop and **session save/resume** do not require `python/rp_app/data/rp_audits/` to exist. Treat **`python/data/sessions/*.json`** as the persistence bundle for continuity-backed resume (`continuity_state`, etc.); see [`docs/rp-data-layout.md`](./rp-data-layout.md) → **Persistence vs Audit Artifacts**.
+- Audit artifacts are optional for runtime. Session persistence: `data/sessions/*.json` — see [rp-data-layout.md](./rp-data-layout.md).
 - **Cleanup of `rp_audits/`** is permitted under agreed policy (see **Archival & retention policy** below and GitHub **[#86](https://github.com/KizzieFae/Holy_Grail_RP/issues/86)**). Deleting audit sessions does not corrupt saved UI sessions.
 - **When diagnosing:** Confirm what **`ContinuityManager`** / persisted **`continuity_state`** actually committed (or what session JSON contains) **before** treating audit-only signals as proof of a runtime bug. Interpret audit files **after** that truth layer is clear.
 
 ### Audit paths and search tools (false-negative guard)
 
-Session audits live under `python/rp_app/data/rp_audits/session_*` and are **gitignored generated artifacts**. **Do not use Cursor Glob / default codebase search alone** to decide whether `session_{NNN}` exists: those tools often **omit gitignored trees**, which produces **false negatives**.
+Session audits live under `data/rp_audits/session_*` and are **gitignored generated artifacts**. **Do not use Cursor Glob / default codebase search alone** to decide whether `session_{NNN}` exists: those tools often **omit gitignored trees**, which produces **false negatives**.
 
 **Required habit:** confirm existence with a **filesystem listing** or a **direct read** of a known file path (e.g. from callout `artifact_refs` or an investigation brief). Only after that should investigations report that an audit tree is missing.
 
@@ -49,9 +49,9 @@ Session audits live under `python/rp_app/data/rp_audits/session_*` and are **git
 
 For session audits, read in this order:
 
-1. `python/rp_app/data/rp_audits/session_{###}/_audit_summary.json`
-2. `python/rp_app/data/rp_audits/session_{###}/_narrative.json`
-3. `python/rp_app/data/rp_audits/session_{###}/_round_index.json`
+1. `data/rp_audits/session_{###}/_audit_summary.json`
+2. `data/rp_audits/session_{###}/_narrative.json`
+3. `data/rp_audits/session_{###}/_round_index.json`
 4. relevant per-turn `_full.json` artifacts
 
 ## What to inspect first
@@ -61,9 +61,9 @@ For session audits, read in this order:
 - whether `issue_updates` reflect pressure movement rather than dialogue paraphrase
 - whether `presence_changes` match true entries, exits, and absences
 - whether summary blocks preserve important context or hide it
-- **Authored retrieval (standard eval):** On **audited** runs (Streamlit with audit enabled **or** headless `--audit`), check `_audit_summary.json` → **`retrieval_session`** (`retrieval_mode`, `retrieval_verified_active`, index path/fingerprint) when present; it is merged after **`write_summary_report`** via **`apply_retrieval_session_to_audit_summary`** (same helper for UI `refresh_audit_summary_report` and headless `run_headless_llm_scene`). On **any** audited character turn, `metadata` may include **`retrieval_summary`** (counts/refs only). See `python/rp_app/AUDIT_DOCUMENTATION.md` (*Authored index retrieval*) and repo-root `SCENARIO_VALIDATION_FRAMEWORK.md`.
-- **Perception / audibility:** for whisper or directed beats, compare **this character’s** assembled prompt (or audit snapshot) to the **parsed `move`** (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private **`dialogue`** in transcript, structured moves, `PublicEvent.summary`, or interpretations; Director payload must use the same redaction rules.
-- **`metadata.character_audit_v1`:** All **`derived`** dimensions (including **CA3** `issue_engagement` and **CA7** `pressure_move`) are **advisory** and **non-authoritative**. They measure **move-level expression / observability**, not story-truth: optional move fields drive the heuristics, so weak CA3 / CA7 readings are **expected** when structure is implicit on the move. Read **`_narrative.json`** and continuity **first**, then compare CA signals for **explicit vs implicit** encoding; mismatches **require cross-layer verification** (see `python/rp_app/AUDIT_DOCUMENTATION.md` → *Character Audit v1* → **Interpretation and Intended Use**).
+- **Authored retrieval (standard eval):** On audited runs, check `_audit_summary.json` → **`retrieval_session`** when present. See [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) and [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
+- **Perception / audibility:** for whisper or directed beats, compare this character's assembled prompt to the parsed `move` (`audibility`, `audience`, `dialogue`). Non-recipients must not see verbatim private dialogue in transcript or structured history.
+- **`metadata.character_audit_v1`:** Derived dimensions are **advisory** and **non-authoritative**. Read **`_narrative.json`** and continuity first. Details: [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) (*Character Audit v1*).
 
 For issue updates, pay special attention to:
 
@@ -91,25 +91,22 @@ Use the same layer order as `docs/architecture.md`:
 
 - **Baseline matrix:** Scenario coverage and **OFF** / **ON** (where applicable) / **post-contract** audit-summary expectations for validation live in **[`SCENARIO_VALIDATION_FRAMEWORK.md`](../../SCENARIO_VALIDATION_FRAMEWORK.md)** (repo root). Post-contract rows should include **`continuity_observability_summary_v1`** in **`_audit_summary.json`** when continuity-backed rollup is emitted (Issue **#79**), not **`continuity_observability_status_v1`** alone.
 - **Baseline registry:** Pre- and post-cleanup inventories use a **baseline registry** artifact and slot verification so **delete-eligible** work does not remove sole remaining scenario coverage or referenced sessions (per **#86** consensus and **#88** execution records).
-- **Regenerate:** Produce new **`session_*`** trees by re-running headless simulation with **`--audit`** when baselines are missing or stale—do not edit existing audit JSON in place for that purpose (**#89**).
-- **Delete-eligible:** Remove audit session directories only under explicit verification, backups, and policy (e.g. duplicate resolution with a retained canonical row, per **#86** / **#88**). **Do not** delete **`python/data/sessions/*.json`** as part of audit corpus cleanup.
-- **Layout reference:** On-disk prefixes: [`docs/rp-data-layout.md`](./rp-data-layout.md) — **Persistence vs Audit Artifacts** and **Audit outputs**. Full semantics: [`python/rp_app/AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md).
+- **Regenerate:** Produce new **`session_*`** trees by re-running supervised simulation with audit enabled when baselines are missing or stale.
+- **Delete-eligible:** Remove audit session directories only under explicit verification and policy. **Do not** delete **`data/sessions/*.json`** as part of audit corpus cleanup.
+- **Layout reference:** [rp-data-layout.md](./rp-data-layout.md). Full artifact semantics: [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md).
 
 ## Relevant code areas for RP audits
 
-Start with these files when the audit points to runtime behavior:
+Start with these modules under `v2/domain/modules/`:
 
-- `python/rp_app/continuity_manager.py`
-- `python/rp_app/perception_audibility.py`
-- `python/rp_app/turn_runner.py`
-- `python/rp_app/turn_runner_turn.py`
-- `python/rp_app/turn_runner_updates.py`
-- `python/rp_app/turn_runner_audit.py`
-- `python/rp_app/app_turn_director.py`
-- `python/rp_app/orchestration_helpers.py`
-- `python/rp_app/prompt_builders.py`
-- `python/rp_app/response_validation.py`
-- `python/rp_app/audit_logger.py`
+- `continuity_manager.py`
+- `perception_audibility.py`
+- `turn_runner.py`, `turn_runner_turn.py`, `turn_runner_updates.py`, `turn_runner_audit.py`
+- `app_turn_director.py`
+- `orchestration_helpers.py`
+- `prompt_builders.py`
+- `response_validation.py`
+- `audit_logger.py`
 
 ## Windsurf-only note
 
@@ -122,7 +119,7 @@ and Cursor should follow.
 
 ## Semantic proposal evaluation (#243) — operator read discipline
 
-**Normative detail:** `python/rp_app/AUDIT_DOCUMENTATION.md` → *Semantic proposal evaluation — operator read discipline (Issue #243-D)*.
+**Normative detail:** [governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md](../governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md) → *Semantic proposal evaluation — operator read discipline (Issue #243-D)*.
 
 **What this is:** Offline, observational semantic-proposal alignment evaluation over frozen corpora and replay helpers. Outputs include `corrected_category`, nested `legacy_lane`, and `limitations[]`. **Not** runtime truth. **Not** continuity authority. **Not** written into `_audit_summary.json`. **Not** a runtime gate.
 

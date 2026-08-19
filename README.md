@@ -1,50 +1,88 @@
-# Holy Grail RP DeepSeek Harness
+# Holy Grail RP
 
-**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Production runtime, domain library, and tests live under **`v2/`**.
-
-**Start here for harness work:** [CHECKPOINT_BASELINE_DSH.md](./CHECKPOINT_BASELINE_DSH.md) · [V2 authority](./governance/rp-app/v2-dsh-replatforming-authority.md)
+**Holy Grail RP** is a multi-agent roleplay system with **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**. Production code lives under **`v2/`**; canonical product data under **`data/`**.
 
 ---
 
-Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**. Holy Grail V2 runs on the DeepSeek Harness substrate with a framework-neutral domain library (`v2/domain/`).
+## What it is
 
-## Start here
+Holy Grail RP combines:
 
-| If you need… | Read |
-|--------------|------|
-| Product goals, layers, non-goals (incl. **Progression Advisory** §5.7, **Scene Grounding** §5.8) | [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) |
-| Three-layer model (ingestion → packaging → runtime) and boundaries | [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) |
-| **Where to change code** (symptom → module) | [MODULE_INDEX.md](./MODULE_INDEX.md) |
-| **Behavioral validation** (scenarios, headless LLM runs, audits, baseline vs treatment) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) |
-| **Persistence, files on disk, audits** | [docs/rp-data-layout.md](./docs/rp-data-layout.md) |
-| Debugging order / avoid wrong-layer fixes | [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) |
-| Future runtime input shapes (packets) | [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) |
-| Shared vocabulary | [GLOSSARY.md](./GLOSSARY.md) |
-| **Scene Grounding** (settled facts / prompt contract; implementation spec) | [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) |
+- a **domain library** (`v2/domain/modules/`) — continuity, orchestration, prompts, validation, memory, retrieval
+- a **Domain Host** (`v2/domain_api/`) — authoritative Python kernel and transport-neutral Domain API
+- an **RP runtime** (`v2/rp_runtime/`) — DSH/Cordis orchestration for inference rounds
+- an **application client** — UI and session wiring (see `v2/ui/` when present)
 
-## V2 production quick start
+**Principle:** Holy Grail determines what is true. The runtime records what happened.
+
+---
+
+## Quick start
 
 | Step | Command |
 |------|---------|
-| Python environment | From repo root: `python -m venv .venv` then `pip install -e ".[dev]"` |
-| Launch V2 | `Launch-Holy-Grail-V2.bat` (Node supervisor → Domain Host → DSH) |
+| Python environment | From repo root: `python -m venv .venv` then `.\.venv\Scripts\python.exe -m pip install -e ".[dev]"` |
+| Launch | `Launch-Holy-Grail-V2.bat` (starts Node supervisor → Domain Host → DSH) |
 | Domain tests | `python -m pytest v2/domain/tests/ -q` |
+| Integration tests | `python -m pytest v2/tests/ -q` |
+| RP runtime tests | `cd v2/rp_runtime && npm test` |
+
+**Environment overrides (optional):**
+
+| Variable | Purpose |
+|----------|---------|
+| `HG_PYTHON_EXECUTABLE` | Domain Host Python (default: repo-root `.venv`) |
+| `HG_DATA_DIR` | Product data root (default: `data/`) |
+| `HG_SESSIONS_DIR` | Session persistence root (default: `data/sessions/`) |
+| `DEEPSEEK_API_KEY` | Live inference when using real provider paths |
+
+---
+
+## Start here (documentation)
+
+| If you need… | Read |
+|--------------|------|
+| Product goals and MVP boundaries | [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) |
+| Three-layer model and runtime boundaries | [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) |
+| **Where to change code** (symptom → module) | [MODULE_INDEX.md](./MODULE_INDEX.md) |
+| Behavioral validation (scenarios, audits, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) |
+| **Persistence and on-disk layout** | [docs/rp-data-layout.md](./docs/rp-data-layout.md) |
+| Debugging order | [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) |
+| Runtime packet contracts | [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) |
+| Shared vocabulary | [GLOSSARY.md](./GLOSSARY.md) |
+| Scene Grounding (settled facts / prompt contract) | [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) |
+| AI / contributor working rules | [AGENTS.md](./AGENTS.md) |
+
+---
 
 ## Repository layout
 
-- **`v2/`** — Production runtime, domain API, domain library, and tests.
-- **`data/`** — Canonical product data (`HG_DATA_DIR`).
-- **`tools/investigation/`** — Offline investigation and validation utilities.
-- **`docs/`** — Shared technical docs (architecture, audits, data layout, testing).
+```text
+v2/
+  domain/           # Framework-neutral domain library
+  domain_api/       # Domain Host (authoritative kernel)
+  rp_runtime/       # DSH/Cordis RP orchestration
+  tests/            # Integration / architecture tests
+data/               # Canonical product data (HG_DATA_DIR)
+tools/
+  investigation/    # Offline audit analysis and experiment comparators
+  maintenance/      # Local hygiene utilities
+docs/               # Shared technical documentation
+governance/         # Issue workflow, policies, program history
+```
 
-- **Headless simulation tee / redirect:** Do not write ad-hoc console captures to the repository root. See [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
+**Investigation output:** write under `data/investigation_runs/` (gitignored), not the repository root.
 
-## Quick pointers
-
-- **Launch V2:** `Launch-Holy-Grail-V2.bat`
-- **Investigation tooling:** [`tools/investigation/`](./tools/investigation/README.md)
-- **Tests:** `python -m pytest v2/domain/tests/ -q` and `python -m pytest v2/tests/ -q`; see [docs/testing.md](./docs/testing.md)
+---
 
 ## Dependency direction (summary)
 
-**Ingestion** (future) → **packaging** (bridge; packets + retrieval) → **RP runtime** (`v2/rp_runtime` + `v2/domain`). Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain domain responsibilities. Details: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).
+**Ingestion** (offline compile of authored sources) → **packaging** (bounded turn context / packets) → **RP runtime** (turn execution, continuity commits, audits).
+
+Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain domain responsibilities. Details: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).
+
+---
+
+## Governance
+
+Tracked work, workflow weights, and bootstrap profiles: [governance/README.md](./governance/README.md), [docs/issue-bootstrap-profiles.md](./docs/issue-bootstrap-profiles.md).

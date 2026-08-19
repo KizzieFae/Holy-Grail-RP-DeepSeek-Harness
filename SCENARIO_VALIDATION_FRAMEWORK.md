@@ -1,455 +1,142 @@
 # Scenario Validation Framework
 
-This file lives at the **repository root** with the other foundational documents (e.g. `ARCHITECTURE_OVERVIEW.md`, `MODULE_INDEX.md`). Paths below such as `autogen_rp/python/...` are relative to that root.
+**Canonical document** for behavioral validation in Holy Grail RP. Lives at the repository root alongside `ARCHITECTURE_OVERVIEW.md` and `MODULE_INDEX.md`.
 
-**Canonical document:** This specification is **stable**. Treat it as the authoritative description of behavioral validation in this repo. **Do not expand or rewrite it** unless real usage surfaces a gap; prefer executing the framework over editing it.
+---
 
 ## Purpose
 
-This framework defines how the RP system is validated at the behavioral level.
+Holy Grail RP validates behavior at two complementary levels:
 
-It provides a structured, repeatable way to test system layers using:
+1. **Deterministic tests** — domain contracts, manifest shape, validation rules, continuity invariants (`v2/domain/tests/`, `v2/tests/`).
+2. **Scenario-based evaluation** — fixed JSON manifests describing casts, openings, triggers, and intended behavioral focus; used for manifest regression, structured eval profiles, and (when a live harness is available) LLM-driven runs with audit artifacts.
 
-- live LLM-driven scene simulations
-- deterministic audit artifacts
-- scenario-based evaluation
-
-This is not a debugging tool.  
-This is a **core validation layer** used throughout development.
+Unit tests verify correctness of modules. Scenario validation verifies **emergent behavior** against designed situations.
 
 ---
 
-## Core Principle
+## Core principle
 
-All major system behaviors must be validated through **controlled scenario runs**, not just unit tests.
-
-Unit tests verify correctness.  
-Scenario validation verifies **emergent behavior**.
+Major behavioral changes should be evidenced against **controlled scenario definitions** and/or audited runs—not only isolated unit tests.
 
 ---
 
-## Architecture Overview
+## Scenario definitions
 
-The framework consists of four parts:
+### Storage
 
-### 1. Scenario Definitions
+Scenario manifests live under:
 
-Structured JSON files describing test situations.
+```text
+data/fixtures/progression_simulation_scenarios/<scenario_id>.json
+```
+
+Loaded by `v2/domain/modules/progression_simulation_scenarios.py` via `fixtures_data_dir()`.
+
+The `id` field inside each file must match `<scenario_id>` (filename without `.json`).
+
+### Required and common fields
 
 Each scenario defines:
 
-- characters (`character_card_ids`, resolved to character cards under `rp_app`)
-- opening context (`opening_description`)
-- location
-- initial tension / phase (`initial_tension`, `initial_phase`)
-- seeded issues (optional; `seed_escalating_issue` + optional `seed_issue` block)
-- beat-shift state (optional; `beat_shift_active`)
-- turn limit (`max_turns`)
-- intended test purpose (`title`, `intent`)
-- user trigger (`trigger_text`)
-- **`startup_trigger_mode`** (required): `"parity"` \| `"overlay"` — **`parity`:** `opening_description` and `trigger_text` are the same string (strip-normalized); headless round-1 trigger follows the **finalized opening** (`simulation_opening_final`). **`overlay`:** `trigger_text` is an explicit first-round **simulation overlay** and must differ from `opening_description`. Validated in `progression_simulation_scenarios.py` at load time; resolution helper: `effective_round1_trigger_text_headless` (CLI `--trigger` always wins when provided).
-- **optional** `expected_pressure_profile`: `"low"` | `"medium"` | `"high"` — design-time hint for whether advisory/gate pressure should tend low or high (for future checks against missed gate activation or misclassified pressure; does not change runtime today). Omitted on older manifests is fine.
+| Field | Role |
+|-------|------|
+| `character_card_ids` | Cast — resolved to cards under `data/characters/` |
+| `opening_description` | Opening context text |
+| `trigger_text` | First-round user trigger (see `startup_trigger_mode`) |
+| `startup_trigger_mode` | `"parity"` \| `"overlay"` — see module docstring for resolution |
+| `max_turns` | Turn limit |
+| `title`, `intent` | Human-readable purpose |
+| `location`, `initial_tension`, `initial_phase` | Scene setup |
+| `seed_escalating_issue`, `seed_issue` | Optional seeded issues |
+| `beat_shift_active` | Optional beat-shift flag |
+| `expected_pressure_profile` | Optional design hint (`low` \| `medium` \| `high`) |
 
-**Streamlit UI vs scenario manifests:** The Streamlit app does not expose `startup_trigger_mode`. After **Start Scene**, the first-round user trigger passed into the turn loop is always the **finalized opening** from `scene_lifecycle_start.start_scene`—**parity-style** (same string as the resolved opening). The **`overlay`** mode applies to **scenario JSON and headless** first-round resolution via `effective_round1_trigger_text_headless` (CLI `--trigger` still wins when provided). It is not a separate control on the current Streamlit surface.
+**Optional:**
 
-**Opener asset selection:** In Streamlit, **Start Scene** uses **template-owned** Opener JSON assets (when a scene template is selected and opening mode is template) or **custom** text; **`ui_sidebar_opening`** and session `selected_opener_id` apply when multiple template openers exist (see GitHub **#101**; GitHub **#108**; operator UI no longer offers **generated**—GitHub **#113**). Bootstrap may still resolve a **generated** strategy from non-UI composition paths. **Character-asset** opener mode is **not** part of the main Streamlit scene-start UI path. Headless runs have **no** sidebar: opener choice is carried by **scenario / bootstrap / harness** composition (e.g. `prepare_headless_session`, manifest fields), not by copying Streamlit session state. Align comparisons on the **same** resolved opening text and manifest trigger semantics, not on UI controls that exist only in Streamlit.
+- `scene_template_id` — loads template from `data/scene_templates/` through the same bootstrap spine as the application UI
+- `scene_template_role_assignments` — required when `scene_template_id` is set; maps each cast member to a template role
+- `cohesion_policy` — production templates use `anchor_only` (see `scene_template_cohesion.py`)
 
-**Storage path** (repository root = Holy Grail RP):
+**Trigger semantics:** `effective_round1_trigger_text_headless` in `progression_simulation_scenarios.py` resolves first-round triggers for harness paths. Application UI uses parity-style opening triggers after scene start.
 
-`autogen_rp/python/rp_app/data/progression_simulation_scenarios/<scenario_id>.json`
-
-The `id` field inside the file must match `<scenario_id>` (filename without `.json`).
-
-**Current scenario set**
-
-| `scenario_id` | Focus |
-|---------------|--------|
-| `arrival_setup` | Low pressure / opening; progression should not over-trigger |
-| `emotional_loop_2char` | Two-character loop; enforcement should shorten talk-only stalls |
-| `conflict_3char` | Three-character conflict; coherence and progression |
-| `strong_user_steer` | Beat-shift on; user steer should produce real change |
-| `passive_observer` | Third character witness; avoid forcing unnatural center-stage action |
-| `long_session` | 22-turn default; accumulation / continuity drift |
-| `recovery_derail` | Off-topic user steer; recovery of progression and grounding |
-| `memory_public_propagation` | Public dialogue; observer episodic memory (simulation-primary checks) |
-| `memory_private_directed` | Whisper / directed line; boundary vs non-addressee memory |
-| `memory_duplicate_retry` | Longer run; bounded memory (duplicate retry exercised in supplemental tests) |
-| `memory_fallback_director` | Normal Director JSON path (parse fallback in supplemental tests) |
-| `memory_long_session` | Deep multi-turn run; episodic list bounds |
-| `memory_forced_speaker` | `pending_forced_speaker` session preseed before Director pick |
-| `willow_dorm_binding_stress` | Dorm logistics + binding-fact stress (Willow / sleeping surface enforcement) |
-| `arkham_multi_character_stress` | Nine-character clinical/security/patient corridor stress (perimeter-alarm rumor) |
-| `arkham_multi_character_stress_long` | Same cast as `arkham_multi_character_stress`; higher `max_turns` / extended premise for staff–patient cycling |
-| `headless_template_retrieval_smoke` | Minimal Harley/Magpie run; `scene_template_id` for template-linked authored retrieval checks |
-| `parity_opening_trigger_smoke` | Minimal manifest with `startup_trigger_mode: parity` (Issue #83 contract / regression) |
-| `operational_baseline_3char_cafeteria` | **Accepted retrieval baseline** cast (Harley, Ivy, Magpie) + cafeteria template for standard OFF vs ON comparisons |
-| `cert_i234_proposal_accept_off_focal` | **#234** bounded L2 accept-path certification overlay (2-char, template-free; not a permanent cert matrix) |
-| `investigate_i240_participation_emission_map` | **#240 Phase A** participation emission mapping harness (2-char; external probe schedule; deterministic `extract_emission_map.py`) |
-
-**Optional scenario fields**
-
-- **`scene_template_id`**: When set, the harness loads the matching JSON under `python/data/scene_templates/` and applies **template-derived** fields onto `ContinuityManager.scene_state` via the **same** fresh-scene bootstrap spine as Streamlit (GitHub **#83** — `prepare_headless_session` → `scene_start_bootstrap` / continuity restore), at minimum `sleeping_surface_slots` / `location_entry_slots` / `premise` / `scene_template_id`. Use for scenarios where template contract fields must match UI template setup. Omit for character-only expectations or casts outside the indexed templates.
-- **`scene_template_role_assignments`**: **Required** when **`scene_template_id`** is set (Issue #80). Object mapping every **`character_card_ids`** entry → template **`role_name`** (same vocabulary as the template’s `role_slots`), validated at scenario load. Exactly one character must map to the template’s **`anchor_role_name`**. Optional **`anchor_role_name`** may mirror the template (must match exactly) or be omitted (inherit). Headless prep uses the same **`resolve_scene_template_setup`** path as the UI.
-- **`cohesion_policy` (Issue #245):** Canonical production templates require **`anchor_only`** at load. Runtime applies effective **`presence_constraint`** via `scene_template_cohesion.py`: anchor **`must_remain`** (interim until **#247** validates); non-anchor default **`flexible`**; non-anchor authored **`must_remain`** requires **`cohesion_rationale`**. Experimental `*_anchor_*_flex*` template variants are retired — use canonical template IDs in `investigate_i227_*` scenarios.
-
-**Manifest regression (no API):**
+### Manifest regression (no live LLM)
 
 ```bash
-cd tools/investigation
-pytest tests/test_progression_simulation_scenarios.py -q
+python -m pytest v2/domain/tests/test_audit_i191_tier_a_manifest.py -q
+python -m pytest v2/domain/tests/test_issue_234_cert_manifest.py -q
+python -m pytest v2/domain/tests/test_response_validation_investigation_recall.py -q
 ```
 
+Add or extend domain tests when introducing new manifest contracts.
+
 ---
 
-### 2. Simulation Execution (live LLM)
+## Current validation mechanisms
 
-The **headless runner** drives the same **turn** code path as Streamlit: Director selection, character generation, validation, progression enforcement (when enabled), narrator render, continuity / orchestration updates. **Scene-start** likewise shares one canonical continuity bootstrap (GitHub **#83**); headless differs only by **inputs** (scenario JSON / CLI) vs UI opener flow. Character prompts are assembled through **`app_turn_prompting.build_character_turn_prompt`**, including **`build_character_state_context_for_prompt`** for **`state_context`** (same spine as Streamlit; see **`docs/architecture.md`**). **Continuity scope:** scenario runs validate the **current** pipeline and scenarios in this matrix; they do **not** by themselves prove **full** Runtime Continuity Contract delivery (**GitHub #77**). **Slice A**-scoped foundation is validated separately. **#81**’s approved slices are exercised on the **`process_turn` → `continuity_mutation_pipeline`** path (the **authoritative** runtime mutation surface); deterministic **`pytest`** lives in **`tests/test_continuity_mutation_pipeline.py`** (including reintegration **late merge**, rollback, and idempotency). **Direct** excursion / location / out-of-band reintegration calls are **out of scope** for that harness—they **bypass** pipeline validation per **`autogen_rp/python/rp_app/ARCHITECTURE.md`**. Broader **#33 / #34** product paths and scenario-matrix proof remain incremental.
+| Mechanism | What it proves |
+|-----------|----------------|
+| `v2/domain/tests/` | Domain semantics, manifest loading, validation, continuity, retrieval assembly |
+| `v2/tests/` | Integration, Domain Host wiring, repository architecture invariants |
+| `v2/rp_runtime` (`npm test`) | DSH round orchestration against Domain Host |
+| `tools/investigation/` | Offline analysis of existing `*_full.json` audit trees |
 
-**Requirements**
+### Live LLM scenario runs
 
-- `DEEPSEEK_API_KEY` in the environment **of the Python process** that runs `scripts/run_scene_simulation_llm.py` (set it in that shell before invoking Python, or inject it via your IDE/CI/automation config). Variables that exist only in a different interactive session or parent profile are **not** inherited—this is normal OS process isolation, not something the scenario JSON or user-trigger schedule changes.
-- Shell working directory: `autogen_rp/python`
+A shipped **headless LLM scenario CLI** is **not** part of the current repository. Live multi-turn scenario execution with `--audit` and `structured_eval` metrics is planned as a **Domain Host + RP runtime harness** on the production path.
 
-**Common commands**
+Until that harness ships:
 
-```bash
-cd tools/investigation
+- Use **domain manifest tests** for scenario contract regression.
+- Use **integration and runtime tests** for orchestration proof.
+- Use **offline investigation tools** to analyze audit JSON produced by supervised runs or historical evidence.
 
-# List scenario ids
-python scripts/run_scene_simulation_llm.py --list-scenarios
+Do not point operators at deleted runner scripts or non-canonical data trees.
 
-# Run one scenario (prints markdown + structured JSON block)
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --turns 6
+---
 
-# Write structured_eval only to a file (UTF-8 JSON)
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --metrics-out ./runs/treatment.json
+## Authored retrieval (OFF / ON)
 
-# Full audit trail (same JSON audit layout as Streamlit with auditing on)
-python scripts/run_scene_simulation_llm.py --scenario strong_user_steer --audit --turns 5
+Activation is **only** via environment variable:
 
-# Baseline comparison: progression enforcement OFF (no gate/retry, no MED→HIGH override)
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-progression-enforcement --metrics-out ./runs/baseline.json
+```text
+RP_RETRIEVED_CONTEXT_INDEX=<path-to-compiled-index.json>
 ```
 
-### Optional offline fact-track (post-processing, GitHub #62)
+Domain modules: `retrieved_context_select.py`, `prompt_retrieval_assembly.py`, `runtime_packets.py`.
 
-After a run that used **`--audit`**, you may attach an explicit **`fact_spec.v1`** probe in the **same** `run_scene_simulation_llm.py` invocation (default **off** — omit both flags):
+**Accepted baseline content** (Phase 4A): character `lore_facts` + template `role_slots` + refined `premise`. Selector uses fixed per-`source_kind` subcaps.
 
-| Flag | Required | Role |
-|------|----------|------|
-| **`--fact-spec PATH`** | Requires **`--audit`** | Load JSON (`fact_spec.v1`); no implicit default spec. |
-| **`--fact-track-out PATH`** | Optional; requires **`--fact-spec`** | Write the companion JSON to this path instead of the default under the session directory. |
-
-**Output:** A **companion** UTF-8 JSON file (`fact_track__<probe_id>__<sha-prefix>.json` by default) next to other session artifacts. It is **not** merged into **`_audit_summary.json`** in v1 and is **not** part of the base audit logger contract.
-
-**Semantics:** **Observational / offline only** — same **#59** authority boundary as `AUDIT_DOCUMENTATION.md` → **Offline fact tracking** (not runtime; not on the runtime use allowlist). Deterministic; no LLM in the fact-track path.
-
-**Non-CLI orchestration:** Call **`run_fact_track_postprocess`** from `rp_app/audit_fact_tracking.py` with a resolved session directory and loaded spec dict (same behavior as the CLI adapter).
-
-**Example:**
-
-```bash
-cd tools/investigation
-python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec ./path/to/probe.json
-```
-
-**Console captures (stdout / tee)** — When saving ad-hoc printed markdown audit streams to a file (`>`, `Tee-Object`, etc.), **do not** redirect output to the **Holy Grail repository root** (the folder that contains `Holy Grail PRD.md` and `README.md`); that mixes ad-hoc run transcripts with foundational documents. The repo root [`.gitignore`](./.gitignore) ignores patterns such as `/*_run*_audit.log`, but ignored files still clutter the working tree if created there. Write investigation output under `data/investigation_runs/` (gitignored) or another local path.
-
-### Authored retrieval (standard evaluation mode)
-
-Retrieval activation is **only** via environment variable `RP_RETRIEVED_CONTEXT_INDEX` (compiled JSON path). The headless runner can set it for a single process:
-
-| Goal | Command pattern |
-|------|-----------------|
-| **Retrieval OFF** | Unset the variable, or pass `--retrieved-context-index` with no value (empty index). |
-| **Retrieval ON (accepted baseline)** | `--retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json` (from `autogen_rp/python` cwd). |
-| **Leave parent shell unchanged** | Omit `--retrieved-context-index` entirely. |
-
-Example A/B pair (same scenario, different retrieval):
-
-```bash
-cd tools/investigation
-python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char_cafeteria --audit --turns 4 --metrics-out ./runs/caf_OFF.json --retrieved-context-index
-python scripts/run_scene_simulation_llm.py --scenario operational_baseline_3char_cafeteria --audit --turns 4 --metrics-out ./runs/caf_ON.json --retrieved-context-index data/retrieval/compiled/operational_pilot_v3.json
-```
-
-**Verification**
-
-- **Structured output:** `structured_eval.retrieval_session` includes `retrieval_mode` (`"off"` \| `"on"`), `retrieval_index_path`, `retrieval_verified_active`, and optional `retrieval_index_fingerprint`.
-- **Strict check (headless):** If retrieval is ON **and** the scene has `scene_template_id`, the run **fails** if no character turn produced a non-empty retrieved bundle (avoids silent misconfiguration).
-- **Per-turn audits:** Character `*_full.json` metadata may include **`metadata.retrieval_summary`** (`retrieved_block_present`, counts, capped `retrieved_source_refs`) when authored retrieval produces a bundled summary—**no full retrieved text** in audits.
-- **Per-turn audits (alternate telemetry — same observational class):** Character **`*_full.json`** rows may instead or additionally expose typed retrieval fingerprints under **`metadata.support_manifest`** (`support_manifest.v1`), including units such as **`retrieval_aggregate`** and **`retrieval_source_ref`** (schema and applicability: **Support Manifest** in [`AUDIT_DOCUMENTATION.md`](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md)). These are **complementary** summaries of “what retrieval-shaped material reached assembly,” **not** a duplicate contract of **`metadata.retrieval_summary`** and **not mandatory every turn**. **Absence** of either field is **not** by itself proof that retrieval was OFF or broken—evaluate against **`structured_eval.retrieval_session`**, **`retrieval_session`** on **`_audit_summary.json`**, and scenario controls (**#192** docs precision only; **#59** unchanged).
-- **`_audit_summary.json`:** After **`write_summary_report`**, a top-level **`retrieval_session`** object is **merged** via **`apply_retrieval_session_to_audit_summary`** (Issue #36 parity) — **both** Streamlit audit refresh and headless **`run_headless_llm_scene`**. Per-turn **`metadata.retrieval_summary`** on character entries applies when authored retrieval produced a bundle. **`structured_eval.retrieval_session`** in CLI metrics output duplicates the same shape for suite comparison; **`verify_retrieval_strict_or_raise`** remains **headless-only**.
-- **Continuity observability (Issue #79, closed):** With **`--audit`**, character/narrator **`*_full.json`** may include **`metadata.ctar`** (CTAR), **`context_snapshot.scene_state_after`**, optional **`metadata.excursion_audit_digest_v1`**, and optional **`metadata.continuity_audit_origin`** (**`pipeline_turn`** when applicable). **`_audit_summary.json`:** top-level **`continuity_observability_summary_v1`** (including **`session_audit_origin`** for bypass beats) when **`audit_logger.write_summary_report`** runs with a non-**`None`** **`ContinuityManager`**; if the writer is called **without** a manager, **`continuity_observability_status_v1`** records **`unavailable`** / **`continuity_manager_not_provided`** instead of omitting both keys silently. Headless simulation and Streamlit audit refresh pass **`get_continuity_manager_fn`** when continuity is active. These fields are **observational** (**#59**); committed fiction state remains in **`ContinuityManager`**. Normative layout: [autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md](./autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md) (*Continuity observability (Issue #79)*).
-
-**Default scenario set for OFF/ON comparisons** (operational index): `headless_template_retrieval_smoke`, `operational_baseline_3char_cafeteria`, and optionally `arkham_multi_character_stress` / `_long` (large cast; template id set for cafeteria template). Scenarios such as `emotional_loop_2char` remain valid for non-indexed casts (retrieval ON may still be neutral/empty for those cards).
-
-**Ad-hoc runs** (no scenario file): use `--chars`, `--opening`, `--location`, `--trigger`, `--beat-shift`, `--no-seed-issue`, and optionally `--user-trigger-schedule` as documented in `scripts/run_scene_simulation_llm.py`.
-
-### Per-turn user trigger schedule (headless simulation harness only)
-
-Optional **`--user-trigger-schedule PATH`** on `scripts/run_scene_simulation_llm.py` loads a JSON file so **validation / simulation runs** can use **different simulated user lines on different orchestration turns**—for one-off establishment, probes, or scripted inputs—**without** repeating the same `--trigger` every turn or editing scenario JSON between runs. This path is **headless CLI only**; it is **not** a Streamlit or live product/runtime feature, and it does **not** extend scenario schema or continuity persistence.
-
-**Schedule binding:** Investigation-style per-turn schedules (e.g. Issue #29 harness runs) are supplied via **`--user-trigger-schedule`**, default harness commands (e.g. `scripts/run_issue29_suite.py`), or equivalent **explicit CLI / script wiring**—**not** via a scenario-manifest field. A **`schedule_file`** key is **not** part of the active progression scenario contract (removed under **Issue #91**).
-
-**JSON shape** (single object):
-
-- Optional **`default_trigger`**: non-empty string.
-- Optional **`by_orchestration_turn`**: object mapping **orchestration turn index** → non-empty string. Keys must be JSON integers or stringified integers **≥ 1**, **≤** the run’s effective turn cap (the same value as `--turns` when set, otherwise scenario `max_turns` or ad-hoc default). Duplicate keys are rejected. Any other top-level key is rejected.
-
-**Example:**
-
-```json
-{
-  "default_trigger": "Neutral line for turns not listed in by_orchestration_turn.",
-  "by_orchestration_turn": {
-    "1": "A sudden magical surge transforms Ayame into an anthro fox—ears, tail, and posture shift visibly.",
-    "12": "Celina, you notice her tail flick—ask her directly about still being in fox form."
-  }
-}
-```
-
-**Precedence** for orchestration turn *n*: entry in **`by_orchestration_turn`** for *n* (if present) → else **`--trigger`** if the CLI user **passed** `--trigger` → else **`default_trigger`** if present → else built-in text. For **turn 1** on scenario runs when none of the above apply, built-in text is **`effective_round1_trigger_text_headless`** (`progression_simulation_scenarios.py`): **`startup_trigger_mode: parity`** → finalized opening string; **`overlay`** → manifest **`trigger_text`**; ad-hoc runs default to the finalized opening.
-
-**Validation:** The file is read and validated **before** `prepare_headless_session` and **before any LLM calls**. Invalid JSON, unknown keys, empty strings, out-of-range turn indices, or duplicate keys produce a clear error and the process exits without starting the run.
-
-**Orchestration turn index:** The **1-based** accepted character-turn counter used in the production turn loop and recorded as audit **`turn_number`** for that beat (aligned with per-turn audit artifacts for that turn). Initial round prep (e.g. beat-shift activation and first application of the user line to offstage context) uses the resolver at turn **1** only.
-
-**Audits:** Per-turn **full** audit JSON includes top-level **`effective_user_trigger`** for the string actually used that turn. **Light** audit summaries do **not** include this field—use **`*_full.json`** when correlating probe lines to behavior. See **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`**.
+Operational notes and pilot artifact map: `data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`.
 
 ---
 
-### 3. Deterministic validation lane
+## Structured evaluation
 
-Scenario simulation does **not** replace fast regression. Use in parallel:
+`structured_eval` profiles and investigation recall hooks live in the domain library (`semantic_eval_profiles.py`, `response_validation_investigation_recall.py`). Domain tests cover profile shape and manifest-linked expectations.
 
-- **Pytest** (progression contract, gate, retry wiring, orchestration override, turn runner updates, etc.):
-
-  ```bash
-  cd tools/investigation
-  pytest tests/test_progression_enforcement.py tests/test_progression_run_metrics.py tests/test_turn_runner_updates.py tests/test_orchestration_helpers.py -q
-  pytest -m "not llm"   # full suite excluding live LLM tests
-  ```
-
-- **Headless deterministic scripts** (no LLM; markdown audit to stdout):
-
-  - `python scripts/run_progression_layer_simulation.py` — progression contract / gate / override helpers
-  - `python scripts/run_presence_scene_audit.py` — presence harness
-
-These confirm **code-level** behavior; scenarios confirm **model + pipeline** behavior together.
+When a live harness returns, metrics JSON should be written under `data/investigation_runs/` or another gitignored path—not the repository root.
 
 ---
 
-### 4. Artifacts, metrics, and evaluation
+## Audits and offline analysis
 
-**What is produced automatically**
+When audit mode is enabled on a supervised run, per-turn artifacts land under `data/rp_audits/` (gitignored). Interpretation workflow: [docs/audit-workflows.md](./docs/audit-workflows.md).
 
-- **Markdown report** (stdout): scenario metadata, selector notes, structured moves, chat snippets, progression metrics bullets, and a final **Structured run result (JSON)** block.
-- **`structured_eval` JSON** (optional file via `--metrics-out`): stable fields for diffing across runs:
-
-  - `scenario_id`
-  - `verdict` / `failure_classification` (when you pass CLI flags; otherwise `null`)
-  - `expected_pressure_profile` (from scenario manifest when present; else `null`)
-  - `metrics`: first qualifying continuity turn index, progression retry count, failed progression attempts, qualifying vs non-qualifying accepted turns, whether enforcement was on; when the sim records selection events, **`selection_attribution_summary`** (hard routes, progression-override applications, fairness rotations, attribution-chain counts)
-  - `audit_session_number` / `audit_summary_report_path` when `--audit` was used
-  - **`retrieval_session`** (headless simulation): `retrieval_mode` (`off` / `on`), `retrieval_index_path`, `retrieval_verified_active`, optional `retrieval_index_fingerprint` — see *Authored retrieval* above
-
-**Selection attribution (baseline v1):** Director audit metadata may include **`selection_attribution`** with **`continuation_override_skipped_c2: true`** when the continuation override was eligible but skipped because the last spotlight speaker already matched the continuation actor (see `autogen_rp/python/RP_SETUP_TODO.md` Phase 0 §I). On normal quality runs, optionally note how often C2 fires and whether continuation / override behavior feels improved — no separate C2-only validation phase required.
-
-**Audit JSON** (with `--audit`): written under `autogen_rp/python/rp_app/data/rp_audits/` (session folders + summary), same mechanism as the Streamlit app with auditing enabled.
-
-**Semantic proposal evaluation (Issue #243, offline):** Frozen #240 adjudication corpora plus committed baselines under `data/fixtures/evaluation/issue243_regression_baselines/` support **observational** profile-scoped evaluation and regression diff (`tools/investigation/run_issue243_corpus_regression.py --eval`). **Operator read discipline (#243-D):** `corrected_category` is the **primary** eval output; `legacy_lane` / F0–F7 are **historical investigation labels**; `legacy_classifier_misflag` does **not** mean runtime failure; **`ambiguous_threshold` is first-class** — do not collapse into PASS/FAIL. Eval results are **not** scenario PASS/FAIL, **not** runtime authority, **not** continuity authority, and **not** a substitute for `#233` / `scene_state_after` read discipline. See `docs/audit-workflows.md` (*Semantic proposal evaluation*) and `AUDIT_DOCUMENTATION.md` (*#243-D*).
-
-**Participation suspicion adjudication (Issue #246, offline):** C3 rows from cohesion/emission extracts become `participation_suspicion.v1`; offline adjudication (`scripts/run_participation_adjudication.py`) produces `participation_adjudication.v1`. Validation failure metric = **`adjudicated_failure_count`** only (not raw C3). Frozen corpus regression: `scripts/run_issue246_corpus_regression.py --eval`; prior-suite calibration replay vs #227 25-case manual reference: `scripts/run_issue246_prior_suite_validation.py`. **Operator read discipline (#246):** observational report-survival filter only — **not** runtime authority, **not** continuity authority, **not** merged into `_audit_summary.json`; no live LLM CI dependency. See `AUDIT_DOCUMENTATION.md` (*Participation suspicion adjudication*) and `MODULE_INDEX.md` (#246 modules).
-
-**Participation emission mapping (Issue #240 Phase A, investigation harness):** Scenario **`investigate_i240_participation_emission_map`** plus schedule **`data/issue240/i240_emission_probe_schedule_v1.json`** and probe manifest **`data/issue240/i240_emission_probe_manifest_v1.json`**. Schedule text is in-fiction only (no semantic_evaluation / proposal instructions). After an audited run, extract a deterministic matrix:
-
-```bash
-cd tools/investigation
-python scripts/run_scene_simulation_llm.py --scenario investigate_i240_participation_emission_map --audit --turns 14 --ignore-end-round --user-trigger-schedule data/issue240/i240_emission_probe_schedule_v1.json
-python tools/investigation/extract_emission_map.py --audit-session-number NNN --summary-out data/investigation_runs/emission_map_v1_summary.json
-```
-
-Use **deep simulation** (default — do **not** pass `--no-deep-simulation-turns`): `--turns` is the per-round character-turn cap; shallow mode limits replies to cast size (2) and will not reach probe turns 2–11.
-
-Output: **`data/investigation_runs/emission_map_v1.jsonl`** (and optional CSV). Rubric classes (`C1`–`C8`) and flags (`F_suspect_miss`, etc.) are **investigation labels** — not runtime gates. Relationship: **#225** validation evidence, **#240** topology observation, **#243** optional follow-on corpus freeze for suspect rows. Phase B (4-char dorm) is deferred.
-
-**Proposal-schema teaching validation (Issue #249, canonical in default `v1_next7`):** Rerun evidence and doctrine fixtures live under `v2/domain/tests/fixtures/issue251/` and git history. Default unset `RP_ISSUE240_PROMPT_TOPOLOGY` uses canonical teaching. **Issue #251** investigation topology `v1_next7_issue251_physical_severance_guarded_v1` is **not** production default. Implementation: `prompt_topology_issue240.py`, `prompt_topology_manifest.py`.
-
-#### PASS criteria
-
-**PASS** requires **both**:
-
-1. **Correct structured / system behavior** — contracts (e.g. Q1–Q4 progression delta when enforcement applies), gates, continuity integrity, selection and retry rules behave as intended.
-2. **Acceptable scene quality** — nothing **mechanical, forced, or immersion-breaking** in the visible beat (voice, pacing, plausibility). A run that is technically valid but feels like a broken scene is **not** a PASS.
-
-Use **WARN** when mechanics are mostly right but quality is borderline; **FAIL** when either pillar clearly fails.
-
-#### LLM non-determinism
-
-- Identical scenarios can differ run-to-run; compare **structured fields** and audit logs, not prose alone.
-- **Do not rely on a single run** for borderline PASS decisions. If behavior looks inconsistent or ambiguous, run the **same scenario 2–3 times** and compare `structured_eval.metrics` and audit outputs before concluding.
-- **Versioning:** note model and app revision when archiving benchmark runs (e.g. in commit message or run folder README).
-
-**Manual evaluation (required for release-style sign-off)**
-
-After each run, assign:
-
-- **PASS / FAIL / WARN** (`--verdict` when re-running or edit the saved JSON)
-- On **FAIL** or **WARN**, a **failure classification** (`--failure-class`):
-
-  - `contract` — Q1–Q4 / progression delta contract
-  - `gate` — gate or threshold (when enforcement triggers or should trigger)
-  - `selection` — Director / next-actor selection
-  - `retry` — retry behavior (duplicate or progression retry)
-  - `continuity` — continuity corruption or unexpected side effects
-  - `other`
-
-Example:
-
-```bash
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --metrics-out ./runs/r1.json --verdict WARN --failure-class retry
-```
-
-**Checklist and deeper items**
-
-For progression-layer line items, scene-quality notes, and command shortcuts, use:
-
-`v2/domain/tests/Testing TODOs/progression layer testing todo.md`
+Offline tools (`tools/investigation/`) read audit trees only; they do not change runtime behavior.
 
 ---
 
-## Progression validation runbook (baseline vs treatment)
+## Console captures
 
-Use this loop to validate that **progression enforcement** improves measurable outcomes vs **baseline** (enforcement off), without redesigning the system.
-
-**Scenarios:** `emotional_loop_2char`, `conflict_3char`, `strong_user_steer`
-
-For **each** scenario:
-
-1. Run **baseline** (save metrics + optional audit):
-
-   ```bash
-   cd tools/investigation
-   mkdir -p runs/progression_val
-   python scripts/run_scene_simulation_llm.py --scenario <ID> --no-progression-enforcement --audit --metrics-out runs/progression_val/<ID>_baseline.json
-   ```
-
-2. Run **treatment** (default enforcement on):
-
-   ```bash
-   python scripts/run_scene_simulation_llm.py --scenario <ID> --audit --metrics-out runs/progression_val/<ID>_treatment.json
-   ```
-
-   (Adjust `--turns` only if you need parity with the scenario default `max_turns`.)
-
-3. Compare `structured_eval.metrics` (and audits) between the two files; then assign **PASS / FAIL / WARN** and **failure_classification** when not PASS.
-
-**Goal:** Treatment should show **consistent, measurable improvement** (e.g. earlier qualifying deltas, fewer stalled non-qualifying turns, appropriate retries) without systematic quality regressions. Stochasticity: repeat 2–3 times if results disagree.
+Do not write ad-hoc simulation captures to the repository root. Use `data/investigation_runs/` or another gitignored directory under `data/`.
 
 ---
 
-## Usage discipline (from here forward)
+## Related docs
 
-- **No major layer change is “done”** without scenario validation relevant to that layer.
-- **Scenario runs come before** threshold tuning or new enforcement logic — use evidence from structured outputs and audits, not ad hoc manual runs alone.
-- **Manual Streamlit scenes** are for tone, rare edges, and sanity checks **after** scenario validation passes for the change in question.
-- **Do not add new metrics or expand this framework** until a **real gap** shows up in practice; avoid premature instrumentation.
-
----
-
-## Workflow summary
-
-1. Merge or implement features; keep **pytest green** (`-m "not llm"` minimum in CI).
-2. Run **relevant scenario(s)** with `--audit` and `--metrics-out` when validating behavior changes.
-3. For progression tuning, run **baseline** (`--no-progression-enforcement`) vs **treatment** on the same scenario and compare `structured_eval.metrics`; repeat 2–3 times if borderline.
-4. Record **PASS / FAIL / WARN** and **failure class** when the outcome is not a clear PASS.
-5. Use **manual scenes** sparingly for tone and edge cases scenarios do not cover.
-
----
-
-## Constraints
-
-- **Validation phase, not redesign:** failures should drive **targeted** changes only when reproducible and tied to a specific subsystem (contract, gate, selection, retry, continuity) — and **only after** human-approved remediation, not inside the validation pass itself.
-- **Answer the question:** *“Did this change actually improve system behavior?”* — use structured_eval + audits; do not expand scope or redesign the framework preemptively.
-- **Scenario validation does not modify runtime behavior** — runs **observe** outcomes; they do not change code, scenarios, prompts, or thresholds as part of the run.
-- **Triage before any fix:** an unexpected result is classified first ([DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) triage); **no** fix attempts in the same breath as analysis.
-- **Comparable runs:** baseline vs treatment and reruns stay apples-to-apples — **no hidden adjustments** between executions unless explicitly documented and intentional.
-
-### Enforced workflow (validation only; hard rule)
-
-1. Run scenario with **`--audit`** and optional **`--metrics-out`**.
-2. If the result is unexpected: run **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simulation failure triage (layer-aware deep-dive)**.
-3. Record **suspected layer**, **verdict** (**legitimate** / **legitimate but undesirable** / **bug** / **ambiguous**), and **minimal repro**.
-4. **Stop.** Do not proceed to fixes, reruns with altered conditions, or tuning unless **explicitly instructed** (separate remediation phase).
-
-Full boundary between validation and remediation: **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Validation vs Remediation Boundary** (under triage).
-
-### Long-session evaluation (`long_session`, natural rerun)
-
-1. **`--scenario long_session`**, **deep simulation** (default), **`--turns 12`**, **`--audit`**, **`--metrics-out`** — let the scene run **naturally** (no artificial exit constraints, no scenario wording edits, no detection tweaks for that run).
-2. If a walkout occurs: **triage** the event; classify with the four verdicts; then decide whether the run is **usable** for long-session validation — **do not** auto-rerun to “fix” the outcome.
-3. **Usable for long-session evaluation** only if: depth is **~10–12** successful character turns **and** no **critical layer bug** invalidates the run. Otherwise: **classify** the failure; start a **new** run only when directed — **no** automated remediation to salvage the run.
-
-### Validation retry policy (invalid runs)
-
-This is **not** remediation. It only defines **recovery for validation attempts** when a run cannot support the current goal — **no** code, prompt, threshold, or hidden flag changes between attempts unless a human **explicitly** changes the validation plan.
-
-1. **When a run is invalid for the current validation target**
-   - **Insufficient depth** — e.g. fewer successful character turns than required for that goal (long-session arc, retry stress, etc.).
-   - **Confirmed bug** — triage **bug**; the run must **not** be used as clean evidence for production-readiness until addressed in a **separate** remediation phase.
-   - **Critical ambiguity** — triage **ambiguous**; outcome cannot be interpreted vs baseline/treatment or vs the question under test.
-
-2. **Retry rule**
-   - **Triage first**; record **suspected layer**, **verdict**, and **why** the run is invalid.
-   - Only then may a human **manually** start a **new** run with the **same** scenario and flags (comparable) unless the plan is deliberately updated.
-
-3. **Retry limit**
-   - **At most 2–3 retries per scenario** for the **same validation goal** (same question / comparison), **in addition to** the first attempt. Further attempts require **rescoping** or a **different** scenario (see below).
-
-4. **Stop condition**
-   - If repeated runs fail for the **same substantive, repeating reason** (documented in triage), **stop** retrying that scenario for that goal until something changes (scenario design, validation target, or post-remediation code).
-
-5. **Next action after stop**
-   - Use a **different scenario** that still targets the layer or hypothesis.
-   - **Manually redesign** the scenario (human-authored manifest change — test-artifact work, distinct from runtime remediation).
-   - **Re-scope** the validation target (narrow what counts as success for this phase).
-
-### When a run “looks wrong” (triage pointer)
-
-Before changing code, use **[DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) → Simulation failure triage (layer-aware deep-dive)**. Evidence order, layer labels, and verdicts are defined there; **remediation** is separate and human-directed.
-
----
-
-## Latest validation status (checkpoint)
-
-**Progression layer (v1):** declared **validated** — `v2/domain/tests/Testing TODOs/progression layer validation status v1.md`.
-
-Written assessment, limitations, and historical phase notes also live in:
-
-`v2/domain/tests/Testing TODOs/progression layer testing todo.md` → sections **“Validation checkpoint — initial LLM runs”**, **Phase 2**, **Phase 2b**, etc.
-
-### Post–GitHub #24 prompt-integrity validation wave (closed **2026-04-07**)
-
-Headless runs via `tools/investigation/run_scene_simulation_llm.py` with **`--audit`** and **`--metrics-out`** (write metrics under `data/investigation_runs/`). Audit sessions **`session_388`**–**`session_393`** (historical evidence in git history).
-
-| Scenario | Turns (capped) | Audit session |
-|----------|----------------|---------------|
-| `willow_dorm_binding_stress` | 7 | 388 |
-| `conflict_3char` | 7 | 389 |
-| `emotional_loop_2char` (×2) | 6 each | 390, 391 |
-| `arkham_multi_character_stress_long` | 11 | 392 |
-| `long_session` | 12 | 393 |
-
-**Outcomes (phase close):**
-
-- **#24 (prompt integrity):** Sampled character `*_full.json` prompts — **no regression** (actor exclusion from **OTHER PRESENT CHARACTERS**; **CAST ROLE MAP** id/display dedupe). See **`AUDIT_DOCUMENTATION.md`** (cast roster verification) and GitHub **#24**.
-- **Classifier gate:** `pytest tests/test_continuity_consequence_classifier.py tests/test_progression_enforcement.py` — **51 passed** (run at close of wave).
-- **Exit vs presence:** **`long_session`** provided **exit/expulsion language** stimulus; `present_characters_after` in narrative remained consistent with both characters on-stage for checked turns — **pass** for this wave (not inconclusive).
-- **Progression:** **No** `progression_retries` in structured metrics for these runs; **watch** — one **non_qualifying** accepted turn on **`emotional_loop_2char` run 2** (run 1 all qualifying). Lack of retries does **not** prove enforcement-boundary completeness.
-- **#1 (identity bleed):** **Not reproduced** in this wave; issue **stays open** — absence of reproduction is not verification.
-- **Director/orchestration:** Advisory noise (semantic turn_selection, addressee mismatch notes, fairness rotation) observed in some runs — **not** filed as separate issues for this phase; treat as **watch** in issue comments / future triage if recurring. **Post-wave code:** progression-gated **addressee alignment** (`semantic_validation` + `app_turn_director`) and mixed-transition **`required_next_step` plateau refresh** (`continuity_issue_helpers`) are documented in **`autogen_rp/python/rp_app/ARCHITECTURE.md`**; validated-vs-final pick divergence remains **GitHub #25**.
-
-### Deep simulation (headless)
-
-By default, **`--scenario`** runs use **deep simulation**: the runner honors scenario **`max_turns`** (or `--turns`) for how many **successful character turns** to allow in **one** simulated user message, and the **same cast may speak multiple times** (unlike Streamlit’s one-reply-per-bot cap for a single user round). Use **`--no-deep-simulation-turns`** to match that short UI-style cap. Ad-hoc mode (`--chars`, no `--scenario`) stays short-cap unless you pass **`--deep-simulation-turns`**.
+- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) — behavioral validation as a core layer
+- [MODULE_INDEX.md](./MODULE_INDEX.md) — scenario and audit module routing
+- [docs/audit-workflows.md](./docs/audit-workflows.md) — audit interpretation
+- [docs/rp-data-layout.md](./docs/rp-data-layout.md) — sessions, audits, fixtures
+- [docs/testing.md](./docs/testing.md) — pytest commands and scope
