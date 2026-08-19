@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "holy-grail-rp"
 version = "0.0.0"
@@ -5,11 +9,23 @@ description = "Holy Grail RP V2 Domain Host, domain library, and contract tests"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+app = [
+    "streamlit>=1.32,<2",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
 ]
+
+[tool.setuptools]
+packages = []
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

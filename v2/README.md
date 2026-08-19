@@ -13,6 +13,10 @@ Production implementation for **Holy Grail RP**. The repository root is the prod
 | `ui/` | Presentation client (`streamlit_app.py` talks HTTP to the Node application API) |
 | `tests/` | Integration and repository architecture tests |
 
+## Operator first run
+
+**Normal operators:** use the repository root [README.md](../README.md) **Operator quick start** (Python venv, `pip install -e ".[app]"`, `npm ci`, inference, launch). This file covers the implementation tree and contributor commands only.
+
 ## Python environment (Domain Host)
 
 Production startup resolves Python from the **repository-root** virtual environment:
@@ -22,11 +26,16 @@ Production startup resolves Python from the **repository-root** virtual environm
 <repo>/.venv/bin/python             (POSIX)
 ```
 
-Provision once from the repository root:
+Provision once from the repository root (after creating `.venv`):
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```bash
+pip install -e ".[app]"
+```
+
+Contributors running pytest also need dev dependencies:
+
+```bash
+pip install -e ".[app,dev]"
 ```
 
 Override explicitly when needed:
@@ -37,9 +46,16 @@ $env:HG_PYTHON_EXECUTABLE = "C:\path\to\python.exe"
 
 The supervisor and `Launch-Holy-Grail-RP.bat` use this canonical `.venv`.
 
-## Quick run
+Node dependencies for the RP runtime (required before `npm test` or `npm run app`):
 
-```powershell
+```bash
+cd v2/rp_runtime
+npm ci
+```
+
+## Contributor commands
+
+```bash
 # Domain contract tests
 python -m pytest v2/domain/tests/ -q
 

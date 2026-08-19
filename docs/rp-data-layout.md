@@ -33,7 +33,9 @@ Local investigation output: `data/investigation_runs/` (gitignored).
 
 **Read by:** `v2/domain/character_cards.py`, `v2/domain/modules/scene_opener.py`, Host `session_setup.py`. The UI lists catalog entries via the Node application API; it does not load cards from disk.
 
-**Written by:** Content authors / tooling outside the runtime turn loop.
+**Written by:** Content authors / tooling outside the runtime turn loop. Cards are **operator-local** (gitignored); the repository does not ship private character data.
+
+**Clean clone:** `data/characters/` is empty. The Streamlit UI warns that the catalog is unavailable and falls back to **prototype cast** mode (default cast name `Alice`) so you can create a session without adding cards. Add `*.json` files here when you want catalog-driven cast selection.
 
 ---
 
