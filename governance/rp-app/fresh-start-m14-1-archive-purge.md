@@ -4,7 +4,7 @@
 **Date:** 2026-08-18  
 **M14 investigation anchor:** `d32664a`  
 **Pre-slice HEAD:** `d32664a`  
-**M14.1 implementation HEAD:** *(set at commit)*
+**M14.1 implementation HEAD:** 797f8bfabcbeb2524bf161252eab1cf35ebda2e9
 
 **Assigned workflow weight:** standard  
 **Effective workflow weight:** full
@@ -139,4 +139,5 @@ Structural proofs:
 
 ## 11. Repository state
 
-*(Updated at commit.)*
+| Implementation commit | `797f8bfabcbeb2524bf161252eab1cf35ebda2e9` |
+| Branch | `main` |
