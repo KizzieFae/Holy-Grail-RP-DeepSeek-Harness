@@ -1,6 +1,6 @@
 # RP data layout
 
-On-disk and in-repo **data** for Holy Grail RP. Canonical root: **`data/`** at repository root (`HG_DATA_DIR`). For artifact semantics (especially audits), see `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md`. Product-level data strategy: [Holy Grail PRD.md](../Holy%20Grail%20PRD.md) §6.
+On-disk and in-repo **data** for Holy Grail RP. Canonical root: **`data/`** at repository root (`HG_DATA_DIR`). For artifact semantics (especially audits), see [`docs/audit-workflows.md`](./audit-workflows.md). Product-level data strategy: [Holy Grail PRD.md](../Holy%20Grail%20PRD.md) §6.
 
 ---
 
@@ -118,7 +118,7 @@ More: [DEBUGGING_GUIDE.md](../../DEBUGGING_GUIDE.md) § persistence.
 
 Paths below use the canonical **`data/`** root (`HG_DATA_DIR`) unless otherwise noted.
 
-This section states how **runtime/session persistence** relates to **audit artifacts** on disk. Authoritative narrative state and production gating are defined in **`ContinuityManager`** / **`SceneState`** and related runtime docs; audit applicability and “non-authoritative” rules for observational signals are in **GitHub #59** ([`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)).
+This section states how **runtime/session persistence** relates to **audit artifacts** on disk. Authoritative narrative state and production gating are defined in **`ContinuityManager`** / **`SceneState`** and related runtime docs; audit applicability and observational signal rules are documented in [`docs/audit-workflows.md`](./audit-workflows.md).
 
 ### Runtime / session persistence
 
@@ -130,7 +130,7 @@ This section states how **runtime/session persistence** relates to **audit artif
 
 - **Location:** `data/rp_audits/session_*` (local, gitignored)
 - **Role:** **Observational, debugging, and validation** output: per-turn logs, summaries (`_audit_summary.json`, `_narrative.json`, per-character `*_full.json`, etc.). **Issue #79** observability blocks (for example **`continuity_observability_summary_v1`**) appear **in audit summaries** as mirrors or rollups when emitted—they are **not** a substitute for **`ContinuityManager`** as system-of-record.
-- **User callout files (GitHub #55 / #125 / #126):** Under each **`session_*/`**, per-session **`user_callouts_v1.json`** stores callouts: an optional **operator** **note** plus **system-authored** **`artifact_refs`** (including optional **`related_artifact_refs`**, **#126** at save; operators do not pick paths in the app). At the **`rp_audits/`** root, **`_user_callout_review_index_v1.json`** is the **keyed review queue only** and **does not** contain **`artifact_refs`** (those live on the per-session file). **`_user_callout_issue_links_v1.json`** maps **`callout_id` → GitHub issue** (sole “promoted” link record). New callouts from Streamlit **append** to the per-session file and **upsert** the review index. **List / show / dismiss / promote / rebuild / links** were **operator CLI** only (V1 `user_callout_review.py`, removed M12.4 — see `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md` §6–§8). **Default** `promote` rejects a duplicate `callout_id` already in the link map; **`promote --replace`** rewrites the **one** link row when reconciliation requires a different issue target (updates `linked_at_utc`; does not track GitHub lifecycle; raw callouts unchanged). Authoritative details: **[`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)** **§6–§8** (not restated here).
+- **User callout files (GitHub #55 / #125 / #126):** Under each **`session_*/`**, per-session **`user_callouts_v1.json`** stores callouts: an optional **operator** **note** plus **system-authored** **`artifact_refs`** (including optional **`related_artifact_refs`**, **#126** at save; operators do not pick paths in the app). At the **`rp_audits/`** root, **`_user_callout_review_index_v1.json`** is the **keyed review queue only** and **does not** contain **`artifact_refs`** (those live on the per-session file). **`_user_callout_issue_links_v1.json`** maps **`callout_id` → GitHub issue** (sole “promoted” link record). New callouts from Streamlit **append** to the per-session file and **upsert** the review index. **List / show / dismiss / promote / rebuild / links** were **operator CLI** only (V1 `user_callout_review.py`, removed M12.4 — see [`docs/audit-workflows.md`](./audit-workflows.md)). **Default** `promote` rejects a duplicate `callout_id` already in the link map; **`promote --replace`** rewrites the **one** link row when reconciliation requires a different issue target (updates `linked_at_utc`; does not track GitHub lifecycle; raw callouts unchanged). Authoritative details: **[`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)** **§6–§8** (not restated here).
 
 #### Audit artifact discovery (tooling)
 
@@ -166,7 +166,7 @@ This section states how **runtime/session persistence** relates to **audit artif
 
 **Written by:** `audit_logger*.py` when audit enabled in UI.
 
-**Details:** `python/rp_app/AUDIT_DOCUMENTATION.md`, `docs/audit-workflows.md`.
+**Details:** `docs/audit-workflows.md`.
 
 ---
 

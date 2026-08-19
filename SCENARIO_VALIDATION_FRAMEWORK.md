@@ -153,7 +153,7 @@ cd tools/investigation
 python scripts/run_scene_simulation_llm.py --scenario arrival_setup --audit --turns 1 --fact-spec ./path/to/probe.json
 ```
 
-**Console captures (stdout / tee)** — When saving ad-hoc printed markdown audit streams to a file (`>`, `Tee-Object`, etc.), **do not** redirect output to the **Holy Grail repository root** (the folder that contains `Holy Grail PRD.md` and `README.md`); that mixes ad-hoc run transcripts with foundational documents. The repo root [`.gitignore`](./.gitignore) ignores patterns such as `/*_run*_audit.log`, but ignored files still clutter the working tree if created there. **Historical** validation evidence lives under [`governance/archive/validation-runs/`](./governance/archive/validation-runs/README.md) (immutable archive; do not add new runs there).
+**Console captures (stdout / tee)** — When saving ad-hoc printed markdown audit streams to a file (`>`, `Tee-Object`, etc.), **do not** redirect output to the **Holy Grail repository root** (the folder that contains `Holy Grail PRD.md` and `README.md`); that mixes ad-hoc run transcripts with foundational documents. The repo root [`.gitignore`](./.gitignore) ignores patterns such as `/*_run*_audit.log`, but ignored files still clutter the working tree if created there. Write investigation output under `data/investigation_runs/` (gitignored) or another local path.
 
 ### Authored retrieval (standard evaluation mode)
 
@@ -267,14 +267,14 @@ These confirm **code-level** behavior; scenarios confirm **model + pipeline** be
 ```bash
 cd tools/investigation
 python scripts/run_scene_simulation_llm.py --scenario investigate_i240_participation_emission_map --audit --turns 14 --ignore-end-round --user-trigger-schedule data/issue240/i240_emission_probe_schedule_v1.json
-python scripts/extract_emission_map.py --audit-session-number NNN --summary-out governance/archive/validation-runs/emission_map_v1_summary.json
+python tools/investigation/extract_emission_map.py --audit-session-number NNN --summary-out data/investigation_runs/emission_map_v1_summary.json
 ```
 
 Use **deep simulation** (default — do **not** pass `--no-deep-simulation-turns`): `--turns` is the per-round character-turn cap; shallow mode limits replies to cast size (2) and will not reach probe turns 2–11.
 
-Output: **`governance/archive/validation-runs/emission_map_v1.jsonl`** (historical path; and optional CSV). Rubric classes (`C1`–`C8`) and flags (`F_suspect_miss`, etc.) are **investigation labels** — not runtime gates. Relationship: **#225** validation evidence, **#240** topology observation, **#243** optional follow-on corpus freeze for suspect rows. Phase B (4-char dorm) is deferred.
+Output: **`data/investigation_runs/emission_map_v1.jsonl`** (and optional CSV). Rubric classes (`C1`–`C8`) and flags (`F_suspect_miss`, etc.) are **investigation labels** — not runtime gates. Relationship: **#225** validation evidence, **#240** topology observation, **#243** optional follow-on corpus freeze for suspect rows. Phase B (4-char dorm) is deferred.
 
-**Proposal-schema teaching validation (Issue #249, canonical in default `v1_next7`):** Historical rerun evidence under [`governance/archive/validation-runs/issue249/`](./governance/archive/validation-runs/issue249/) documents concise explicit **`semantic_evaluation.proposals`** teaching (allowed keys `kind` / `character` / optional `operation`; forbidden `reason`, `description`, `rationale`, `strategy`, `subject`, `character_id`). Default unset `RP_ISSUE240_PROMPT_TOPOLOGY` uses canonical teaching; `v1_next7_proposal_schema_a` is a replay alias. **Out of scope here:** Phase B/B.2 ontology experiments, retry flattening (**#250**). **Issue #251** (genuine missed-emission / exit ontology): **canonical severance reference** on landed investigation topology `v1_next7_issue251_physical_severance_guarded_v1` (`simplified_structural_v1`; **not** production default — unset env remains `v1_next7`). Index: [`governance/archive/validation-runs/issue251/CANONICAL_DOCTRINE.md`](./governance/archive/validation-runs/issue251/CANONICAL_DOCTRINE.md). Replay matrices under `governance/archive/validation-runs/issue251/` should include **deterministic + adjudicated** readouts (`i251_replay_adjudication.py`). Historical hybrid `v1_next7_issue251_awareness_clean` is superseded. Key artifacts: `i249_proposal_schema_experiment_results.json`, `i249_proposal_schema_generalization_results.json`. Implementation: `prompt_topology_issue240.py`, `prompt_topology_manifest.py`.
+**Proposal-schema teaching validation (Issue #249, canonical in default `v1_next7`):** Rerun evidence and doctrine fixtures live under `v2/domain/tests/fixtures/issue251/` and git history. Default unset `RP_ISSUE240_PROMPT_TOPOLOGY` uses canonical teaching. **Issue #251** investigation topology `v1_next7_issue251_physical_severance_guarded_v1` is **not** production default. Implementation: `prompt_topology_issue240.py`, `prompt_topology_manifest.py`.
 
 #### PASS criteria
 
@@ -431,7 +431,7 @@ Written assessment, limitations, and historical phase notes also live in:
 
 ### Post–GitHub #24 prompt-integrity validation wave (closed **2026-04-07**)
 
-Headless runs from `autogen_rp/python` with **`--audit`** and **`--metrics-out`** (historical metrics: `governance/archive/validation-runs/plan_execution/*.json`). Audit sessions **`session_388`**–**`session_393`**.
+Headless runs via `tools/investigation/run_scene_simulation_llm.py` with **`--audit`** and **`--metrics-out`** (write metrics under `data/investigation_runs/`). Audit sessions **`session_388`**–**`session_393`** (historical evidence in git history).
 
 | Scenario | Turns (capped) | Audit session |
 |----------|----------------|---------------|

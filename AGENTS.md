@@ -10,7 +10,7 @@ workflow, or audit-sensitive changes.
 1. Direct user request
 2. This file
 3. Shared repo docs in `docs/`
-4. Existing package- or app-specific docs such as `tools/investigation/README.md` and `governance/archive/v1-runtime/`
+4. Existing package- or app-specific docs such as `tools/investigation/README.md` and `docs/`
 5. Tool-specific features such as Windsurf workflows or Cursor rules
 
 Do not rely on tool memory as the only source of important project behavior.

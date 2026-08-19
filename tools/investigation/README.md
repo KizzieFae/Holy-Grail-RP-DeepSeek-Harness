@@ -9,7 +9,7 @@ Active **non-production** scripts for offline validation, audit analysis, and is
 | `tools/investigation/*.py` | Investigation CLIs and helpers |
 | `tools/maintenance/*.py` | Read-only inventory / hygiene utilities |
 | `data/` | Canonical product data (`HG_DATA_DIR`) |
-| `governance/archive/validation-runs/` | Immutable historical validation evidence |
+| `data/investigation_runs/` | Local gitignored investigation output (default for comparators) |
 
 ## Path helper
 
@@ -27,11 +27,11 @@ python tools/investigation/compare_participation_calibration_ab.py --help
 
 ## V1 runtime dependency note
 
-Scripts that import deleted `rp_app` modules (headless LLM simulation, corpus regression extractors, etc.) remain **archived investigation source**. They require the V1 Python runtime removed in M12.4 unless those modules are restored from `governance/archive/v1-runtime/`. Archive-reading comparators (`compare_*`, `aggregate_*`) work without `rp_app`.
+Scripts that import deleted `rp_app` modules (headless LLM simulation, corpus regression extractors, etc.) are **broken until restored or rewritten** (M14.3). Archive-reading comparators (`compare_*`, `aggregate_*`) work without `rp_app`.
 
 ## Outputs
 
-- **Do not** write new mutable validation output into `governance/archive/validation-runs/`.
-- Prefer `data/` subtrees or local gitignored paths for new investigation artifacts.
+- **Do not** write investigation output to the repository root.
+- Prefer `data/investigation_runs/` or other local gitignored paths under `data/`.
 
-See `governance/rp-app/v2-repository-retirement-m13-6.md`.
+See `governance/rp-app/fresh-start-residue-investigation-m14.md`.

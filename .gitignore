@@ -25,15 +25,6 @@ __pycache__/
 # Canonical Holy Grail Python virtual environment (M13.4)
 .venv/
 
-# Historical validation evidence archive (tracked; M13.5) — ignore ad-hoc generated noise only
-governance/archive/validation-runs/*.log
-governance/archive/validation-runs/*metrics*.json
-governance/archive/validation-runs/*repro*.json
-governance/archive/validation-runs/*survival*.json
-governance/archive/validation-runs/*_schedule.json
-governance/archive/validation-runs/*_stdout.txt
-governance/archive/validation-runs/**/_run_*.py
-
 # Root: local headless LLM simulation tee logs (run_scene_simulation_llm.py)
 /*_run*_audit.log
 

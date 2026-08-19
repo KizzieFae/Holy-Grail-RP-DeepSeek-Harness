@@ -18,18 +18,18 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 - `governance/policies/project-behavior-holy-grail.md`
 - `governance/policies/cursor-workflow-layer.md`
 
-**When task touches RP runtime / `python/rp_app/`**
+**When task touches RP runtime / domain modules**
 
 - `MODULE_INDEX.md`
 - `docs/architecture.md`
-- `governance/archive/v1-runtime/ARCHITECTURE.md`
+- `ARCHITECTURE_OVERVIEW.md`
 - `docs/testing.md`
 - `Holy Grail PRD.md` (as applicable)
 
 **When auditing / continuity debugging**
 
 - `docs/audit-workflows.md`
-- `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md`
+- `docs/rp-data-layout.md`
 
 ---
 

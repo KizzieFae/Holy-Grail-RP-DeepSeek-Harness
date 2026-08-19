@@ -42,4 +42,4 @@ This directory holds **project-owned governance**: template sync rules, canonica
 ## Related
 
 - `../bindings/bindings.toml` — canonical entrypoints and paths for agents/tools.
-- `../autogen_rp/AGENTS.md` — instruction priority and links into this tree.
+- `../AGENTS.md` — instruction priority and links into this tree.

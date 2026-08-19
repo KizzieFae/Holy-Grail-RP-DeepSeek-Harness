@@ -1,6 +1,6 @@
 # Holy Grail RP DeepSeek Harness
 
-**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Production runtime, domain library, and tests live under **`v2/`**; historical V1 material is archived under **`governance/archive/`**.
+**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Production runtime, domain library, and tests live under **`v2/`**.
 
 **Start here for harness work:** [CHECKPOINT_BASELINE_DSH.md](./CHECKPOINT_BASELINE_DSH.md) · [V2 authority](./governance/rp-app/v2-dsh-replatforming-authority.md)
 
@@ -36,15 +36,13 @@ Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, 
 - **`data/`** — Canonical product data (`HG_DATA_DIR`).
 - **`tools/investigation/`** — Offline investigation and validation utilities.
 - **`docs/`** — Shared technical docs (architecture, audits, data layout, testing).
-- **`governance/archive/`** — Historical evidence and V1 runtime documentation.
 
-- **Headless simulation tee / redirect:** Do not write ad-hoc console captures to the repository root. Historical validation evidence: [`governance/archive/validation-runs/`](./governance/archive/validation-runs/README.md) — see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
+- **Headless simulation tee / redirect:** Do not write ad-hoc console captures to the repository root. See [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
 
 ## Quick pointers
 
 - **Launch V2:** `Launch-Holy-Grail-V2.bat`
 - **Investigation tooling:** [`tools/investigation/`](./tools/investigation/README.md)
-- **V1 runtime archive:** [`governance/archive/v1-runtime/`](./governance/archive/v1-runtime/README.md)
 - **Tests:** `python -m pytest v2/domain/tests/ -q` and `python -m pytest v2/tests/ -q`; see [docs/testing.md](./docs/testing.md)
 
 ## Dependency direction (summary)

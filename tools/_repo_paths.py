@@ -13,8 +13,9 @@ _HG_DATA = os.environ.get("HG_DATA_DIR", "").strip()
 DATA_DIR = Path(_HG_DATA) if _HG_DATA else REPO_ROOT / "data"
 FIXTURES_DIR = DATA_DIR / "fixtures"
 
-# Immutable historical validation evidence (M13.5 archive; read-only).
-VALIDATION_RUNS_ARCHIVE = REPO_ROOT / "governance" / "archive" / "validation-runs"
+# Local investigation output (gitignored under data/; M14.1 removed tracked validation archive).
+INVESTIGATION_RUNS_DIR = DATA_DIR / "investigation_runs"
+VALIDATION_RUNS_ARCHIVE = INVESTIGATION_RUNS_DIR
 
 # Local headless audit trees (gitignored; canonical under HG_DATA_DIR).
 RP_AUDITS_DIR = DATA_DIR / "rp_audits"

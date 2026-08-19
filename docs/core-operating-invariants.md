@@ -8,7 +8,7 @@ Cross-issue reference for Issue **[#145](https://github.com/KizzieFae/Holy_Grail
 
 ## Scene startup
 
-- Scene lifecycle, Director-facing behavior, and RP workflow expectations live under **`governance/archive/v1-runtime/ARCHITECTURE.md`** and **`docs/architecture.md`**.
+- Scene lifecycle, Director-facing behavior, and RP workflow expectations live under **`ARCHITECTURE_OVERVIEW.md`** and **`docs/architecture.md`**.
 - Product intent and MVP boundaries: **`Holy Grail PRD.md`** (repository root).
 
 ---

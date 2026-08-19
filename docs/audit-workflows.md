@@ -2,11 +2,11 @@
 
 This document turns important audit guidance into a shared repo procedure.
 
-For artifact details, see `python/rp_app/AUDIT_DOCUMENTATION.md`. For optional **offline** `fact_spec.v1` post-processing (companion JSON, headless **`--fact-spec`**, **`run_fact_track_postprocess`**), see that file → **Offline fact tracking** and the repo-root **`SCENARIO_VALIDATION_FRAMEWORK.md`** (simulation execution).
+For artifact details, see [`docs/audit-workflows.md`](./audit-workflows.md) and [`docs/rp-data-layout.md`](./rp-data-layout.md). For optional **offline** `fact_spec.v1` post-processing (companion JSON, headless **`--fact-spec`**), see [`SCENARIO_VALIDATION_FRAMEWORK.md`](../SCENARIO_VALIDATION_FRAMEWORK.md) (simulation execution).
 
 For turning audit findings into GitHub Issues (classification **bug** / **behavior** / **limitation**, evidence, re-test loop, heuristic caveats), see the same file → **Audit interpretation and issue tracking**, and `governance/rp-app/issue-tracking-workflow.md` (§A.1, §D).
 
-**User callouts (GitHub #55 / #125 / #126):** In Streamlit, the surface is **minimal**—a callout **trigger** and an optional **operator** **note** only. Operators do **not** select artifact paths. **`artifact_refs`** and optional **`related_artifact_refs`** (same-turn sibling `*_full` links; **#126**) are **system-populated at save**. **Triage**, **review**, **promote**, and **dismiss** are **operator CLI** only, not Streamlit. Record operator findings during audited runs, then **triage in the operator CLI** and **promote to a tracked GitHub issue** (link recorded in `rp_audits` — not from Streamlit). From repository root, historical V1 operator CLI was `user_callout_review.py` (removed M12.4). Authoritative contract: `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md` **§6–§8**.
+**User callouts (GitHub #55 / #125 / #126):** In Streamlit, the surface is **minimal**—a callout **trigger** and an optional **operator** **note** only. Operators do **not** select artifact paths. **`artifact_refs`** and optional **`related_artifact_refs`** (same-turn sibling `*_full` links; **#126**) are **system-populated at save**. **Triage**, **review**, **promote**, and **dismiss** are **operator CLI** only, not Streamlit. Record operator findings during audited runs, then **triage in the operator CLI** and **promote to a tracked GitHub issue** (link recorded in `rp_audits` — not from Streamlit). Historical V1 operator CLI (`user_callout_review.py`) was removed M12.4; see **User callout artifacts** below and [`docs/rp-data-layout.md`](./rp-data-layout.md).
 
 ## When to use this
 
