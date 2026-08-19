@@ -3,7 +3,7 @@
 **Status:** Complete — **M13 repository retirement/hygiene program complete**  
 **Date:** 2026-08-18  
 **M13.6 anchor:** `efb1393`  
-**M13.7 implementation HEAD:** *(set at commit)*
+**M13.7 implementation HEAD:** `eb7199c`
 
 **Objective:** Delete the final tracked `autogen_rp/` shell while preserving local privacy/data ignore protections and M13.1 migration compatibility.
 
@@ -281,7 +281,11 @@ All active production, tests, data, tools, docs, and evidence live in permanent 
 
 ## 22. Repository state
 
-*(Updated at commit.)*
+| Field | Value |
+|-------|-------|
+| Implementation commit | `eb7199c` — `feat(m13.7): delete final autogen_rp tracked container` |
+| Branch | `main` |
+| Pre-slice HEAD | `efb1393` |
 
 ---
 
