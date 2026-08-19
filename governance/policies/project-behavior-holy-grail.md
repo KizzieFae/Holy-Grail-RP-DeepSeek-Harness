@@ -14,7 +14,7 @@ Start with:
 
 - `docs/repo-map.md`
 
-- `docs/code-style.md`
+For **implementation** edits (code or tests), also read `docs/code-style.md`. Do **not** treat code-style as a mandatory Issue-bootstrap or always-on startup read.
 
 
 
@@ -80,11 +80,11 @@ Chat reasoning is not considered persistent state.
 
 
 
-For Holy Grail RP issues, **labels**, **RP System Workflow** membership, and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain a **non-empty** value (P0–P3) per **§B.5**; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** or proof that relies only on **`gh issue view --json projectItems`** for Priority fails **§B.2**. Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**.
+For Holy Grail RP issues, **labels**, **bound GitHub Project** membership (`bindings/bindings.toml` `[github]`), and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain a **non-empty** value (P0–P3) per **§B.5**; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** or proof that relies only on **`gh issue view --json projectItems`** for Priority fails **§B.2**. Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**. Repository-sensitive `gh` commands MUST pass **`--repo`** set to `[github].repository`.
 
 
 
-- **Verification:** Run `gh issue view <N> --json number,state,labels,projectItems` **and** prove **Priority** with **`gh project item-list`**, the **Projects** UI, or **GraphQL** (see **§B.2**). Tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented. When **Priority** is **material** to the task, include the **§B.2** **one-line** acknowledgment or update in the completion record.
+- **Verification:** Run `gh issue view <N> --repo <bindings.github.repository> --json number,state,labels,projectItems` **and** prove **Priority** with **`gh project item-list`**, the **Projects** UI, or **GraphQL** (see **§B.2**). Tracked issues must show **non-empty** `labels` and `projectItems` unless a **§B.1** exception is documented. When **Priority** is **material** to the task, include the **§B.2** **one-line** acknowledgment or update in the completion record.
 
 
 
@@ -174,7 +174,7 @@ Vague descriptions are not acceptable.
 
 
 
-- Investigations default to **multiple scenarios**: include at least **one baseline**, **one stress**, and **one variant** (pick from existing scenario definitions; orientation: `SCENARIO_VALIDATION_FRAMEWORK.md` at repository root, also linked from `autogen_rp/AGENTS.md`).
+- Investigations default to **multiple scenarios**: include at least **one baseline**, **one stress**, and **one variant** (pick from existing scenario definitions; orientation: `SCENARIO_VALIDATION_FRAMEWORK.md` at repository root).
 
 - **Single-scenario** evidence is **not** enough to **confirm** a pattern; it may support observations only (see `governance/policies/github-issues.md` for Issue-level wording).
 
@@ -352,7 +352,7 @@ Resolve drift before continuing new work.
 
 
 
-**Authoritative record:** The GitHub **Issue body**, **Issue comments**, and **RP System Workflow** project fields (**Project Status**, **Workflow**, **Priority** when present) are the source of truth for execution state and decisions.
+**Authoritative record:** The GitHub **Issue body**, **Issue comments**, and **bound GitHub Project** fields (**Project Status**, **Workflow**, **Priority** when present) are the source of truth for execution state and decisions.
 
 
 

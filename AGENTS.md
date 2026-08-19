@@ -23,8 +23,8 @@ Do not rely on tool memory as the only source of important project behavior.
 - Prefer extending existing modules and workflows before inventing new ones.
 - Keep important guidance in repo files, not only in tool-specific settings.
 - If code behavior, architecture constraints, or test expectations change, update the relevant docs.
-- When the user asks to **file** a GitHub Issue (not draft-only), follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6** and **§C** (`gh issue create` from the repo git root; **mandatory** labels; **RP System Workflow** project; **Status** / **Workflow** fields per **§B.3**; **non-empty Priority** (typically **P3** until triaged) when the project defines it (**§B.5**); **§B.2** verification before reporting done). Issue body template remains **§D–§F**.
-- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --json number,state,labels,projectItems`** **and** **§B.2** proof of **Priority** from **`gh project item-list`** / UI / GraphQL (not **`projectItems` JSON alone**), plus **§B.3** alignment and, when **§B.2** applies, the **one-line** material **Priority** acknowledgment — see **`governance/rp-app/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
+- When the user asks to **file** a GitHub Issue (not draft-only), follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6** and **§C** (`gh issue create` from the repo git root with **`--repo`** set to `bindings/bindings.toml` `[github].repository`; **mandatory** labels; add to the **bound GitHub Project** in that same `[github]` table; **Status** / **Workflow** fields per **§B.3**; **non-empty Priority** (typically **P3** until triaged) when the project defines it (**§B.5**); **§B.2** verification before reporting done). Issue body template remains **§D–§F**. Do **not** use `gh repo set-default` as durable authority.
+- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --repo <bindings.github.repository> --json number,state,labels,projectItems`** **and** **§B.2** proof of **Priority** from **`gh project item-list`** / UI / GraphQL (not **`projectItems` JSON alone**), plus **§B.3** alignment and, when **§B.2** applies, the **one-line** material **Priority** acknowledgment — see **`governance/rp-app/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
 - Do not overwrite environment or secret files without explicit user confirmation.
 - **Workflow weights:** GPT **assigns** workflow weight before substantive Issue work; implementation AI (**Cursor**) inherits **assigned**/**effective** weight and must not reinterpret rigor independently (**`governance/policies/gpt-workflow-instruction-set.md`**). Canonical **`light` / `standard` / `full`** and escalation triggers — **`governance/rp-app/workflow-weights.md`** only. **Routine filing assigned default:** **`standard`**. Weight-aware bootstrap + anchor-first retrieval — **`governance/policies/cursor-workflow-layer.md`**; authoritative profile read lists — **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes — **`governance/rp-app/issue-tracking-workflow.md` §B.0.1**.
 
@@ -34,7 +34,7 @@ Do not rely on tool memory as the only source of important project behavior.
 - **Template sync manifest** (no binding payloads): `governance/project-sync.toml`
 - **Workflow and Cursor governance:** `governance/policies/` and `governance/rp-app/`
 
-Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include files under `governance/`.
+Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include (or route to) files under `governance/`. The portable four-file adapter set is `2-ai-system-start.mdc`, `project-behavior.mdc`, `github-issues.mdc`, and `github-project-usage.mdc`.
 
 ## Where to start
 

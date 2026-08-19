@@ -8,13 +8,9 @@ pinned_revision = ""
 # Optional: last revision successfully reconciled (maintainer-maintained).
 last_reconciled_revision = ""
 
-[safety]
-# Entire subtree is excluded from any template sync write path.
-autogen_rp_cursor_rules_glob = "autogen_rp/.cursor/rules/**"
-autogen_rp_cursor_rules_policy = "no_template_writes"
-
 # Root .cursor/rules/: only listed basenames may be overwritten by template sync.
 # Any other file in that directory is project-owned and must not be overwritten.
+# Portable 2-AI adapter contract: these four wrappers must exist at repo root.
 [[root_cursor_rule_files]]
 basename = "2-ai-system-start.mdc"
 classification = "template_managed"
@@ -55,14 +51,9 @@ template_prefix = "docs/"
 destination_prefix = "docs/"
 classification = "template_managed"
 
-# Fork / RP subtree docs are never default template copy targets.
-[docs_policy]
-project_owned_docs_root = "autogen_rp/docs/"
-policy = "never_template_sync_target"
-
 # ---------------------------------------------------------------------------
 # Governance policy corpus (Issue #45 Stage 3). Canonical markdown included
-# by Cursor stubs under `.cursor/rules/` and `autogen_rp/.cursor/rules/`.
+# by Cursor stubs under `.cursor/rules/`.
 # No binding values or template pins belong in these paths.
 # ---------------------------------------------------------------------------
 

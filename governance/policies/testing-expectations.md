@@ -3,7 +3,7 @@
 Before changing Python code, read:
 
 - `docs/testing.md`
-- `python/README.md`
+- `v2/README.md`
 
 Follow these expectations:
 

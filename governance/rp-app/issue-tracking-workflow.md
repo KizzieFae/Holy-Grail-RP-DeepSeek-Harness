@@ -1,13 +1,13 @@
 ﻿# Issue tracking and investigation workflow
 
-**Authority:** Canonical governance copy for GitHub Issues, Projects metadata, and body contract (**§A–§K**), relocated from `autogen_rp/python/rp_app/ARCHITECTURE.md` per Issue #45 Stage 3. **Runtime Director / RP architecture** remains in `autogen_rp/python/rp_app/ARCHITECTURE.md` above the stub section there.
+**Authority:** Canonical governance copy for GitHub Issues, Projects metadata, and body contract (**§A–§K**). Product architecture is distributed: `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md`. Work-system identity is late-bound in `bindings/bindings.toml` `[github]`.
 
-**Maintenance:** Edit this file when changing workflow rules; keep the stub in `ARCHITECTURE.md` aligned.
+**Maintenance:** Edit this file when changing workflow rules. There is no separate `ARCHITECTURE.md` stub to keep aligned.
 
 ### A. System of record
 
 - **GitHub Issues** are the system of record for bugs, quality/design work, simulation anomalies, investigations, refactors, and validation follow-up.
-- **Project files** (for example `RP_SETUP_TODO.md` at `autogen_rp/python/RP_SETUP_TODO.md`) remain responsible for roadmap, phase structure, architecture notes, and milestones—not for live issue logs.
+- **Project files** (PRD, architecture overviews, program records) remain responsible for roadmap, phase structure, architecture notes, and milestones—not for live issue logs.
 - **Do not** duplicate detailed issue logs in project files.
 - **Reference markdown** in-repo may capture background and acceptance criteria but is **reference-only** for task tracking. **GitHub Issues** hold status, discussion, and closure.
 
@@ -21,11 +21,11 @@
 6. **Quality** and **design_gap** items are **not** silently filed as **bug**; **Type** follows **§E** (PRD authority).
 7. **Pattern status** is always explicit (**§I**).
 8. **Documentation reviewed and updated** where contracts or behavior changed **before** terminal closure (**§D** checklist).
-9. **GitHub Project metadata** (**§B.1**–**§B.6**, **§C**) — Every **tracked** issue on the Holy Grail RP GitHub repo must have **labels**, **RP System Workflow** project membership, and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**). When **Priority** exists on the project (**§B.5**), set and maintain a **non-empty** value (P0–P3) for triage; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** fails **§B.2** the same way as other required project metadata when the field is defined.
+9. **GitHub Project metadata** (**§B.1**–**§B.6**, **§C**) — Every **tracked** issue on the bound GitHub repository (`bindings/bindings.toml` `[github].repository`) must have **labels**, **bound GitHub Project** membership (`[github].project_name` / `project_number` / `project_owner`), and **Project Status** / **Workflow** fields kept in sync with **`Current status:`** (**§H**), except **duplicate** / **withdrawn** intake documented in a comment (**§B.1**). When **Priority** exists on the project (**§B.5**), set and maintain a **non-empty** value (P0–P3) for triage; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** fails **§B.2** the same way as other required project metadata when the field is defined.
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `autogen_rp/python/rp_app/data/rp_audits/`. That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Roles, **Type** / **Layer** / **Pattern status**, evidence standards, and heuristic caveats are in **`autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md`** → **Audit interpretation and issue tracking**. The same file holds the **Issue #70** Tier 1 engineering-role taxonomy (**orthogonal** to **Issue #59** applicability); do not duplicate that registry here. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** Audit **procedure** is in **`docs/audit-workflows.md`**. That file is **not** a signal-inventory / applicability / engineering-role taxonomy spec; restoration of those semantics is a separate cycle. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### A.2 Incidental findings / adjacent discoveries (evaluation depth 1 completion records)
 
@@ -34,7 +34,7 @@ Use **`evaluation depth 1`** as the only scoped term. Optional single gloss: **�
 
 **Definitions**
 
-1. **Evaluation Record** — The **full** set of fields required by **`Audit Signal Evaluation Methodology` → `Evaluation Record Requirements`** in `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` (including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory row/column in that table for the evaluation being closed).
+1. **Evaluation Record** — The **full** set of fields required for the evaluation being closed, including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory field listed in this subsection. A separate audit-signal inventory/taxonomy document is **not** currently in tree (deferred); `docs/audit-workflows.md` does **not** substitute for that spec.
 
 2. **Primary Evaluation Record block** — A **single** contiguous markdown region **on a Holy Grail RP GitHub Issue** (repository that hosts Issues for this work) that contains the **complete Evaluation Record** and appears **only** in:
    - the **Issue `body`**, or  
@@ -133,7 +133,7 @@ Record progress in the Issue (description updates, comments, checklists). **Stat
 
 > The term "phase" in "phase-first selection" refers to external batching of work and must not be confused with execution stages represented by `Current status` and the Workflow field.
 
-- **Execution stage** — The lifecycle position in **§H** (`open`, `investigating`, …), reflected in the issue body as **`Current status:`** and on **RP System Workflow** as **Project Status** and **Workflow** per **§B.3**. Use **execution stage** (not “selection phase”) when referring to **§H** or that mapping.
+- **Execution stage** — The lifecycle position in **§H** (`open`, `investigating`, …), reflected in the issue body as **`Current status:`** and on **bound GitHub Project** as **Project Status** and **Workflow** per **§B.3**. Use **execution stage** (not “selection phase”) when referring to **§H** or that mapping.
 - **Phase-first selection** — External operator/AI behavior only: choose a work batch → filter issues → order by **Priority** within that batch (**§B.5**). It is **not** stored as a separate “phase” field on the issue or project and does **not** redefine **Workflow** or **`Current status:`**.
 
 ### B.0.1 Workflow-weight-aware consensus discipline (instruction layer)
@@ -219,13 +219,13 @@ Use when creating the Issue on GitHub from a terminal (e.g. agent asked to *file
 
 **Exception — draft-only or duplicate/withdrawn intake:** If the user asked **draft only**, skip `gh` and provide markdown per **§D–§F**. For **duplicate** or **withdrawn** filings closed per **§H** exception, metadata requirements may be abbreviated if documented in a **comment** (still prefer full metadata when practical).
 
-1. Run commands from the **git root** (directory with `.git` whose `origin` hosts Issues).
+1. Run commands from the **git root** (directory with `.git` whose `origin` hosts Issues). Repository-sensitive `gh` commands **MUST** pass **`--repo`** set to `bindings/bindings.toml` `[github].repository`. Do **not** use `gh repo set-default` as durable project state. A remote named `upstream` makes GitHub CLI inference unsafe. Project add uses `[github].project_number` and `[github].project_owner`.
 2. Run `gh auth status`. **`gh project`** subcommands need a token with **`project`** scope; if Projects commands fail, use the GitHub web UI for project steps and still run verification (**§B.2**). If `gh` is missing entirely, provide full body per **§D** for paste into the web UI.
 3. Create the issue with **mandatory labels** (**§C**), not optional:  
-   `gh issue create --title "..." --body-file path/to/body.md` with one or more `--label "<name>"` flags (repeat per label).
-4. Add the issue to the **RP System Workflow** project (owner/org that hosts the repo; discover number via `gh project list`):  
+   `gh issue create --repo <bindings.github.repository> --title "..." --body-file path/to/body.md` with one or more `--label "<name>"` flags (repeat per label).
+4. Add the issue to the **bound GitHub Project** (`bindings/bindings.toml` `[github]`; discover number via `gh project list --owner <project_owner>` if needed):  
    `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>`  
-   Use the URL returned from step 3.
+   Use `[github].project_number` / `[github].project_owner` and the URL returned from step 3.
 5. Set **initial Project fields** to match **`Current status:`** in **body.md** (**§B.3** default row for new issues — typically **Status** = **Todo**, **Workflow** = **Ready** when **`Current status: open`**). When the project defines **Priority** (**§B.5**), set an initial value (typically **P3** until triaged). Use `gh project field-list` / `gh project item-edit` (single-select field and option IDs), or set fields in the **Projects** UI, then verify (**§B.2**).
 6. **Verify** before reporting completion (**§B.2**). **Do not** treat filing as complete without a passing verification.
 
@@ -236,26 +236,26 @@ Unless the user asked **draft only**, **completion** means: the Issue **exists**
 After **create** or any **metadata-affecting** update (labels, project membership, **§H** transition, closure), the actor **must** run a **deterministic check** and retain the output (paste into the Issue comment or session log as appropriate):
 
 ```bash
-gh issue view <N> --json number,state,labels,projectItems
+gh issue view <N> --repo <bindings.github.repository> --json number,state,labels,projectItems
 ```
 
-**`gh issue view --json projectItems` is not sufficient to verify Priority** (the JSON often omits it). Confirm **Priority** on the **RP System Workflow** item using **at least one** of: **`gh project item-list`** (locate the row for issue **`<N>`** and read the `priority` field), the **Projects** UI, or a **GraphQL** query on the project item. Retain that evidence in the same place as the issue-view output.
+**`gh issue view --json projectItems` is not sufficient to verify Priority** (the JSON often omits it). Confirm **Priority** on the **bound GitHub Project** item using **at least one** of: **`gh project item-list`** (locate the row for issue **`<N>`** and read the `priority` field), the **Projects** UI, or a **GraphQL** query on the project item. Retain that evidence in the same place as the issue-view output.
 
 **Pass criteria (minimum):**
 
 - **`labels`**: JSON array **non-empty** (unless **§B.1** exception applies and is documented).
-- **`projectItems`**: JSON array **non-empty**, with an item for **RP System Workflow** (title/name as shown by `gh`).
+- **`projectItems`**: JSON array **non-empty**, with an item for the **bound GitHub Project** (title/name as shown by `gh`, matching `[github].project_name`).
 - **Project Status** and **Workflow**: Values must **not contradict** **`Current status:`** per **§B.3** (if JSON does not expose a field, confirm via **`gh project item-list`** / project board / `gh project item-edit` dry documentation and state the two field values explicitly in the completion note).
 - **Priority** (when the project defines **Priority**, **§B.5**): The project item **must** have a **set** value (**P0**–**P3**). Missing or empty **Priority** → **§B.2 fails** (same enforcement tier as empty **`labels`** / **`projectItems`** or **§B.3** contradiction). Proof must come from **`gh project item-list`** / UI / GraphQL—not from **`projectItems`** JSON alone.
 - **Priority when material to the task:** If **Priority** matters to the outcome (examples: triage, backlog ordering, competing work, urgency, or any decision where P0–P3 is part of the rationale), the **completion record** (Issue comment or session log used as completion proof) **must** include **one line** that either states the current **Priority** and that it still applies, or states that **Priority** was **changed** and to which value with a brief reason. If **Priority** is **not** material to the task, no extra line is required beyond proving the field is set.
 
-**One-time backfill (operational prerequisite):** Before **§B.2** is treated as **fully effective** for **legacy** project items, maintainers run a **single operational pass** so every **active** **RP System Workflow** item in scope has **Priority** set (use **P3** when unknown). **No automation required** (Projects UI or repeated **`gh project item-edit`**). Record completion (**date**, **counts**, **method**) on the tracking issue or maintainer log. Until backfill is done, reviewers still **reject** missing **Priority** on any item that should already have been touched.
+**One-time backfill (operational prerequisite):** Before **§B.2** is treated as **fully effective** for **legacy** project items, maintainers run a **single operational pass** so every **active** **bound GitHub Project** item in scope has **Priority** set (use **P3** when unknown). **No automation required** (Projects UI or repeated **`gh project item-edit`**). Record completion (**date**, **counts**, **method**) on the tracking issue or maintainer log. Until backfill is done, reviewers still **reject** missing **Priority** on any item that should already have been touched.
 
 **Completion is invalid** without this verification for tracked issues. Narrative-only confirmation (“issue filed”) is **not** sufficient.
 
 ### B.3 Synchronization — `Current status:` (**§H**) vs GitHub Project fields (execution stages)
 
-**Two surfaces:** **`Current status:`** in the **issue body** (**§H**) is authoritative for **issue text** and **execution-stage** transitions. **Project Status** and **Workflow** on **RP System Workflow** are authoritative for **board execution state** for those stages. They **must not contradict**.
+**Two surfaces:** **`Current status:`** in the **issue body** (**§H**) is authoritative for **issue text** and **execution-stage** transitions. **Project Status** and **Workflow** on **bound GitHub Project** are authoritative for **board execution state** for those stages. They **must not contradict**.
 
 **On create:** Align initial Project fields with the body’s **`Current status:`** (usually **`open`** → **Status** = **Todo**, **Workflow** = **Ready**).
 
@@ -279,7 +279,7 @@ If the board uses different option labels, **map by intent** (investigation vs c
 ### B.4 Rejection rule (metadata)
 
 - **Missing** required **labels**, **project membership**, or **Project** **Status** / **Workflow** alignment with **§B.3** → the **task is incomplete**.
-- **Missing** **Priority** on the **RP System Workflow** item when the project defines **Priority**, or **§B.2** proof that uses **`gh issue view --json projectItems` alone** for Priority → the **task is incomplete**.
+- **Missing** **Priority** on the **bound GitHub Project** item when the project defines **Priority**, or **§B.2** proof that uses **`gh issue view --json projectItems` alone** for Priority → the **task is incomplete**.
 - **Missing** the **one-line Priority acknowledgment** when **§B.2** treats **Priority** as **material** to the task → the **task is incomplete** (same rejection tier as other **§B.2** failures).
 - **No agent** (implementation or review) may report **completion** of filing, transition, or closure **without** passing **§B.2** and explicit confirmation that **§B.3** holds.
 - The **review** role **must reject** any completion report that omits verification output or shows empty **`labels`** / **`projectItems`** for a tracked issue.
@@ -289,7 +289,7 @@ If the board uses different option labels, **map by intent** (investigation vs c
 
 1. **Phase-first selection (process rule)** — External to GitHub fields: the operator/AI chooses a work batch, filters issues, then orders by **Priority** **inside that batch only**. **Priority** must **not** override or replace this batching step (no “priority-first” shortcut around selection). This rule does **not** change **§B.3**: **Workflow** and **`Current status:`** still represent **execution stages** only.
 
-2. **Priority project field** — On **RP System Workflow**, **Priority** is a single-select when enabled: **P0** (do now), **P1** (next), **P2** (later), **P3** (backlog). It applies **only** within the current **phase-first selection** batch for ordering; it does **not** encode an execution stage and must **not** be treated as a substitute for **`Current status:`** or **Workflow**.
+2. **Priority project field** — On **bound GitHub Project**, **Priority** is a single-select when enabled: **P0** (do now), **P1** (next), **P2** (later), **P3** (backlog). It applies **only** within the current **phase-first selection** batch for ordering; it does **not** encode an execution stage and must **not** be treated as a substitute for **`Current status:`** or **Workflow**.
 
 3. **Execution-stage transition discipline** — On every **`Current status:`** (**§H**) change: (a) update **Project Status** and **Workflow** to the **§B.3** row **before** calling the transition done; (b) add an **Issue comment** recording: what completed in the prior execution stage, the resulting determination, and the **next execution stage** intended. **When §A.2’s trigger applies to this Issue**, the comment posted **before** setting **`Current status: validated`** **must** also satisfy **§A.3** (checklist in the comment with explicit **pass** / **fail** / **n/A** per row). If **§A.3** is not yet satisfied, **do not** transition to **`validated`** (**§H**, **§A.3** failure rule).
 
@@ -309,7 +309,7 @@ If the board uses different option labels, **map by intent** (investigation vs c
 
 **Actor obligation:** In the Holy Grail PR **description** (or a linked comment), either (a) link a **template-repo PR** that applies the parallel change, or (b) state **`no template change`** with **one line** why (e.g. Holy-Grail–only).
 
-**Out of scope:** Application code under `autogen_rp/python/`, scenarios, audits, and RP-specific architecture—do **not** use this rule to broaden template work.
+**Out of scope:** Application/runtime code under `v2/`, scenarios, audits, and RP-specific architecture—do **not** use this rule to broaden template work.
 
 ### C. Standard GitHub labels (mandatory adjunct)
 
@@ -335,7 +335,7 @@ Use these sections **in order** (copy into `body.md` or the root issue form).
 - **Deterministic reasoning** — Why observed violates expected (rules, fields, code path—no hand-waving).
 - **System impact** — Operator/user-visible effect.
 - **Constraints** — e.g. no LLM-only fix; no prompt workaround; no weakening enforcement; continuity authoritative—or `none`.
-- **Affected modules** — Concrete paths (e.g. `autogen_rp/python/rp_app/continuity_consequence_classifier.py`).
+- **Affected modules** — Concrete paths (e.g. `v2/domain/modules/continuity_consequence_classifier.py`).
 - **Validation criteria** — Tests / scenario ids / audit checks required to reach **`validated`**. When validation evidence is intended for reuse under §B.0.2, include commands, outcomes, and commit SHA.
 - **Documentation** — Before terminal closure: `[ ]` Documentation reviewed and updated where behavior or contracts changed (list files in a closing comment).
 
@@ -345,7 +345,7 @@ Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / actio
 
 ### E. Type (classification; PRD authority)
 
-**Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) (repository root) and [ARCHITECTURE_OVERVIEW.md](../../ARCHITECTURE_OVERVIEW.md) / `autogen_rp/python/rp_app/ARCHITECTURE.md` for runtime architecture expectations. If PRD/architecture are silent, prefer **`quality`** or **`design_gap`** until the spec is updated—not **`bug`**.
+**Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) (repository root) and [ARCHITECTURE_OVERVIEW.md](../../ARCHITECTURE_OVERVIEW.md) / [docs/architecture.md](../../docs/architecture.md) / [v2/README.md](../../v2/README.md) for runtime architecture expectations. If PRD/architecture are silent, prefer **`quality`** or **`design_gap`** until the spec is updated—not **`bug`**.
 
 | Type | Definition |
 |------|------------|

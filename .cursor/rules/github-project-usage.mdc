@@ -1,0 +1,10 @@
+---
+description: Routes GitHub Project board usage to the canonical workflow spec
+alwaysApply: true
+---
+
+# GitHub Project (routing)
+
+Normative rules for the **primary GitHub Project**, **Status** / **Workflow** / **Priority**, activation, verification, and downstream parity live in **`governance/rp-app/issue-tracking-workflow.md`** (**§B**, especially **§B.1**–**§B.6**).
+
+Project identity (name, number, owner) is late-bound in **`bindings/bindings.toml`** `[github]`. Do not restate those rules here; read the canonical document when using the project board.

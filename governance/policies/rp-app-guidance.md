@@ -1,14 +1,12 @@
 # RP App Guidance
 
-When a task touches the RP app, read:
+When a task touches the RP runtime / domain, read:
 
-- `../MODULE_INDEX.md` (repo root: symptom → module map)
+- `MODULE_INDEX.md` (repo root: symptom → module map)
 - `docs/architecture.md`
-- `docs/audit-workflows.md`
-- `python/rp_app/README.md`
-- `python/rp_app/ARCHITECTURE.md`
-- `python/rp_app/AUDIT_DOCUMENTATION.md`
-- `python/RP_SETUP_TODO.md`
+- `ARCHITECTURE_OVERVIEW.md`
+- `v2/README.md`
+- `docs/audit-workflows.md` (audit **procedure** only; not a signal-inventory spec)
 
 Important RP app rules:
 

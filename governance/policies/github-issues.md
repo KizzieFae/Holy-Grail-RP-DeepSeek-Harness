@@ -2,7 +2,7 @@
 
 When the user asks to **create**, **file**, **open**, or **track** a GitHub Issue (or supplies title/body for that purpose):
 
-- Follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**, **§D–§G** for: `gh issue create` with **mandatory** `--label` (§C), **RP System Workflow** project add, **Project Status** / **Workflow** (§B.3), **non-empty Priority** when the project defines it (§B.5), and full **§B.2** verification (`gh issue view --json …` **plus** **Priority** proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**) **before** reporting completion.
+- Follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**, **§D–§G** for: `gh issue create` with **mandatory** `--label` (§C) and **`--repo`** set to `bindings/bindings.toml` `[github].repository`, add to the **bound GitHub Project** in that same `[github]` table, **Project Status** / **Workflow** (§B.3), **non-empty Priority** when the project defines it (§B.5), and full **§B.2** verification (`gh issue view --repo <bindings.github.repository> --json …` **plus** **Priority** proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**) **before** reporting completion. Do **not** use `gh repo set-default` as durable authority.
 - **Do not** report filing complete without **non-empty** `labels` and `projectItems` in the issue-view JSON, without **set Priority** when the field exists, or without **§B.2**-compliant Priority proof (unless §B.1 duplicate/withdrawn exception is documented).
 - On **`Current status:`** (**§H**) changes or closure: update Project fields per **§B.3**, add the **execution-stage transition** comment required by **§B.5**, re-run **§B.2**, and reject any report that skips verification.
 - **Priority** / **phase-first selection** / **session boundaries** / **handoff invalidity** / **Active Context** rules: **§B.0** and **§B.5** in the same canonical file.
@@ -46,7 +46,7 @@ Example clauses operators may concatenate (human language, **no opaque codes**):
 
 ## Redundant disclaimer compression (Issue #218; workflow narration compression)
 
-**Declarative spine depends on Issue #217:** Use the **`Inherited posture (unchanged): …; scoped to #<N>.`** line (**Governance posture inheritance** above). That line **carries** overlapping constraints (investigation-only, **no implementation** / **no product code edits**, **no GitHub mutation** when binding, etc.). **Stable issue/project state** (“unchanged”) is ordinarily visible from **`Current status:`** and **RP System Workflow** fields—restating it verbatim adds no information **when posture already encodes those limits**.
+**Declarative spine depends on Issue #217:** Use the **`Inherited posture (unchanged): …; scoped to #<N>.`** line (**Governance posture inheritance** above). That line **carries** overlapping constraints (investigation-only, **no implementation** / **no product code edits**, **no GitHub mutation** when binding, etc.). **Stable issue/project state** (“unchanged”) is ordinarily visible from **`Current status:`** and **bound GitHub Project** fields—restating it verbatim adds no information **when posture already encodes those limits**.
 
 **Trim only:** Extra sentences whose **only** informational content duplicates the posture line or already-visible Issue/Projects truth (examples: repeating “no code changes,” “no GitHub mutation,” “issue unchanged,” “project fields unchanged,” “posture unchanged” in separate sentences). **Never** silently omit material facts or imply work that did **not** happen.
 
@@ -78,11 +78,11 @@ Issue retrieval is infrastructure work, not exploratory reasoning.
 
 When retrieving an issue:
 
-1. Run the intended retrieval command once (for example: `gh issue view <N> --json ...`).
+1. Run the intended retrieval command once (for example: `gh issue view <N> --repo <bindings.github.repository> --json ...`).
 2. If retrieval fails:
 
    * run `gh auth status`
-   * verify repository context with gh repo view or git remote -v
+   * verify repository context with `gh repo view --repo <bindings.github.repository>` or `git remote -v` (do not rely on bare `gh repo view` when an `upstream` remote exists)
 3. Retry retrieval once.
 
 If retrieval still fails:

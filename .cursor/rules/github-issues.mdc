@@ -1,0 +1,6 @@
+---
+description: File GitHub issues via CLI when the user requests it
+alwaysApply: true
+---
+
+@governance/policies/github-issues.md

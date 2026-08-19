@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -202,6 +203,85 @@ class RepositoryArchitectureTests(unittest.TestCase):
 
     def test_no_legacy_migration_check_tool(self) -> None:
         self.assertFalse((_TOOLS / "maintenance" / "hg_data_migration_check.py").exists())
+
+    def test_current_authority_surfaces_avoid_retired_instructional_paths(self) -> None:
+        """Bootstrap/work-system authorities must not route to retired Autogen trees."""
+        surfaces = [
+            _ROOT / "AGENTS.md",
+            _ROOT / "docs" / "issue-bootstrap-profiles.md",
+            _ROOT / "bindings" / "bindings.toml",
+            _ROOT / "governance" / "project-sync.toml",
+            _ROOT / "governance" / "rp-app" / "issue-tracking-workflow.md",
+            _ROOT / "governance" / "policies" / "cursor-workflow-layer.md",
+            _ROOT / "governance" / "policies" / "github-issues.md",
+            _ROOT / "governance" / "policies" / "project-behavior-holy-grail.md",
+            _ROOT / "governance" / "policies" / "rp-app-guidance.md",
+            _ROOT / "governance" / "policies" / "architecture-protection.md",
+            _ROOT / "governance" / "policies" / "testing-expectations.md",
+            _ROOT / ".github" / "ISSUE_TEMPLATE" / "holy_grail_rp.yml",
+        ]
+        surfaces.extend(sorted((_ROOT / ".cursor" / "rules").glob("*.mdc")))
+        banned = ("autogen_rp/", "python/rp_app/", "AUDIT_DOCUMENTATION.md")
+        offenders: list[str] = []
+        for path in surfaces:
+            text = path.read_text(encoding="utf-8")
+            for token in banned:
+                if token in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {token}")
+        self.assertEqual(offenders, [])
+
+    def test_four_root_cursor_wrappers_exist_and_route_to_live_authorities(self) -> None:
+        rules_dir = _ROOT / ".cursor" / "rules"
+        expected = {
+            "2-ai-system-start.mdc",
+            "github-issues.mdc",
+            "github-project-usage.mdc",
+            "project-behavior.mdc",
+        }
+        actual = {p.name for p in rules_dir.glob("*.mdc")}
+        self.assertEqual(actual, expected)
+        routes = {
+            "2-ai-system-start.mdc": "governance/policies/cursor-workflow-layer.md",
+            "project-behavior.mdc": "governance/policies/project-behavior-holy-grail.md",
+            "github-issues.mdc": "governance/policies/github-issues.md",
+            "github-project-usage.mdc": "governance/rp-app/issue-tracking-workflow.md",
+        }
+        for name, target in routes.items():
+            text = (rules_dir / name).read_text(encoding="utf-8")
+            self.assertIn(target, text, name)
+            self.assertNotIn("autogen_rp/", text, name)
+            self.assertTrue((_ROOT / target).is_file(), target)
+        project_wrapper = (rules_dir / "github-project-usage.mdc").read_text(encoding="utf-8")
+        self.assertIn("§B", project_wrapper)
+
+    def test_project_sync_root_cursor_wrappers_match_disk(self) -> None:
+        manifest = tomllib.loads((_ROOT / "governance" / "project-sync.toml").read_text(encoding="utf-8"))
+        listed = {row["basename"] for row in manifest.get("root_cursor_rule_files", [])}
+        on_disk = {p.name for p in (_ROOT / ".cursor" / "rules").glob("*.mdc")}
+        self.assertEqual(listed, on_disk)
+
+    def test_bindings_work_system_identity_and_live_paths(self) -> None:
+        bindings = tomllib.loads((_ROOT / "bindings" / "bindings.toml").read_text(encoding="utf-8"))
+        github = bindings["github"]
+        self.assertEqual(github["repository"], "KizzieFae/Holy-Grail-RP-DeepSeek-Harness")
+        self.assertEqual(github["upstream_repository"], "KizzieFae/Holy_Grail_RP")
+        self.assertEqual(github["project_owner"], "KizzieFae")
+        self.assertEqual(github["project_number"], 10)
+        self.assertEqual(github["project_name"], "Holy Grail RP — DSH")
+        self.assertNotIn("project_url", github)
+        self.assertEqual(bindings["agents"]["canonical_entrypoint"], "AGENTS.md")
+        self.assertNotIn("python_workspace", bindings)
+        self.assertNotIn("architecture_doc", bindings.get("issue_tracking", {}))
+        raw = (_ROOT / "bindings" / "bindings.toml").read_text(encoding="utf-8")
+        self.assertNotIn("autogen_rp", raw)
+        for rel in (
+            bindings["agents"]["canonical_entrypoint"],
+            bindings["issue_tracking"]["issue_workflow_doc"],
+            bindings["issue_templates"]["config_path"],
+            bindings["issue_templates"]["primary_form"],
+            bindings["cursor_rules"]["workspace_root_rules"],
+        ):
+            self.assertTrue((_ROOT / rel).exists(), rel)
 
 
 if __name__ == "__main__":

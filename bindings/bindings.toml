@@ -5,26 +5,21 @@
 [github]
 repository = "KizzieFae/Holy-Grail-RP-DeepSeek-Harness"
 upstream_repository = "KizzieFae/Holy_Grail_RP"
+project_owner = "KizzieFae"
+project_number = 10
+project_name = "Holy Grail RP — DSH"
 
 [agents]
-canonical_entrypoint = "autogen_rp/AGENTS.md"
+canonical_entrypoint = "AGENTS.md"
 
 [docs]
-# Fork / RP subtree guidance (authoritative for Python workspace and rp_app).
-autogen_rp_docs_root = "autogen_rp/docs/"
 # Destination for template workflow docs when synced from development-system-template.
 template_workflow_docs_destination = "docs/"
 
 [cursor_rules]
 workspace_root_rules = ".cursor/rules/"
-autogen_rp_rules = "autogen_rp/.cursor/rules/"
-
-[python_workspace]
-root = "autogen_rp/python/"
 
 [issue_tracking]
-# Runtime RP architecture (Director, continuity, etc.)
-architecture_doc = "autogen_rp/python/rp_app/ARCHITECTURE.md"
 # GitHub Issues / Projects workflow body (§A–§K) — canonical under governance/
 issue_workflow_doc = "governance/rp-app/issue-tracking-workflow.md"
 

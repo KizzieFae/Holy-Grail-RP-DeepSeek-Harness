@@ -19,8 +19,9 @@ Program closure: `rp-app/fresh-start-m14-5-program-closure.md` (M14 fresh-start 
 
 ## Separation rules
 
-- **Bindings** → `bindings/bindings.toml`
+- **Bindings** → `bindings/bindings.toml` (late-bound repository, upstream, and GitHub Project identity)
 - **Governance** → this tree; edit canonical policy here, not inside Cursor stubs
+- **Cursor adapters** → repository-root `.cursor/rules/*.mdc` (four-file portable set)
 - **Product docs** → repository root and `docs/`
 
 ## Related

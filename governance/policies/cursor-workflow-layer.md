@@ -52,9 +52,8 @@ After the report, task-specific tools are allowed (including parallel use).
 Use **bootstrap-safe** tools as needed. Then read **`AGENTS.md`** in this order:
 
 1. **Git root** of the active workspace: `AGENTS.md`
-2. If missing: `autogen_rp/AGENTS.md`
-3. If still missing: glob `**/AGENTS.md` and prefer a match consistent with the AutoGen RP structure (`docs/`, `python/`)
-4. If none found:
+2. If missing: glob `**/AGENTS.md` and prefer the repository-root file (not a nested vendor/historical tree)
+3. If none found:
    - explicitly state this under **Constraints / Risks**
    - do NOT silently proceed as if it was read
 
@@ -74,10 +73,10 @@ as the authoritative guide.
 
 | Task class | Minimum extra reads |
 |------------|-------------------|
-| GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; runtime app architecture in `autogen_rp/python/rp_app/ARCHITECTURE.md` |
-| RP app behavior / continuity / Director / audits | `autogen_rp/docs/architecture.md`, `autogen_rp/python/rp_app/ARCHITECTURE.md`; if auditing: `autogen_rp/docs/audit-workflows.md` |
+| GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; product architecture in `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md` |
+| RP app behavior / continuity / Director / audits | `docs/architecture.md`, `ARCHITECTURE_OVERVIEW.md`, `v2/README.md`; if auditing: `docs/audit-workflows.md` (procedure only) |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
-| Repo structure | `autogen_rp/docs/repo-map.md` |
+| Repo structure | `docs/repo-map.md` |
 
 Do **NOT** treat “relevant docs” as optional when a row applies.
 
@@ -133,7 +132,7 @@ Bootstrap is REQUIRED if any of the following apply:
 - Multi-step investigation, planning, or architecture reasoning
 - Any use of task-specific tools will be required
 - GitHub issues, backlog, debugging, validation, or prioritization
-- Work involving `python/rp_app/` or scenario/audit systems
+- Work involving `v2/` domain / Domain Host / RP runtime, or scenario/audit systems
 
 Trivial (bootstrap optional):
 - single-definition questions
@@ -338,7 +337,7 @@ All work between agents must reference:
 
 - a GitHub Issue
 - the current Issue state (issue body **`Current status:`** per **§H** in `governance/rp-app/issue-tracking-workflow.md`)
-- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on **RP System Workflow** — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.6**
+- for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on the **bound GitHub Project** (`bindings/bindings.toml` `[github]`) — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.6**
 
 No free-floating work is allowed.
 
@@ -350,7 +349,7 @@ No free-floating work is allowed.
 
 **Report structure (Issue #219):** Checkpoint/report scaffolding may omit repeated headers, framing intros, and ritual metadata narration when deltas are clearer—see **`github-issues.md` → Report structure compression**. Still obey **#217/#218**, §B.2 envelopes, §H + §B.5 transitions, and expansion triggers (**ambiguity/risk/etc.**).
 
-**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and `projectItems`, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, **also** retain proof from **`gh project item-list`**, the **Projects** UI, or **GraphQL** that **Priority** is **set** (P0–P3)—**`projectItems` JSON alone is insufficient** (**§B.2**). When **Priority** is **material** to the task, the completion record **must** include the **one-line** acknowledgment or update described in **§B.2**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
+**Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --repo <bindings.github.repository> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and **`projectItems`**, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, **also** retain proof from **`gh project item-list`**, the **Projects** UI, or **GraphQL** that **Priority** is **set** (P0–P3)—**`projectItems` JSON alone is insufficient** (**§B.2**). When **Priority** is **material** to the task, the completion record **must** include the **one-line** acknowledgment or update described in **§B.2**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
 **Workflow weights:** Canonical definitions and escalation triggers live **only** in **`governance/rp-app/workflow-weights.md`**. **Orchestration-only** GPT instruction set (**versioned**, not mandatory Cursor bootstrap reading): **`governance/policies/gpt-workflow-instruction-set.md`**. **Issue #145** Stage **3** activation applies: routine **assigned** default **`standard`**, authoritative **`docs/issue-bootstrap-profiles.md`**, and operational **`standard`**/**`light`** paths when **effective** weight matches (**assigned** unless escalation forces **`full`**). Operational procedures: **Weight-aware bootstrap** and **Anchor-first Issue context retrieval** above; compressed Issue-facing reporting: **`governance/policies/github-issues.md`**; suspected-trigger surfacing: **Delegation** above.
 
@@ -358,7 +357,7 @@ No free-floating work is allowed.
 
 ## Activation synchronization (GitHub Projects)
 
-When an issue becomes the **active subject of work** on **RP System Workflow**, align **Project** fields with **`Current status: investigating`** per `governance/rp-app/issue-tracking-workflow.md` **§B.3**:
+When an issue becomes the **active subject of work** on the **bound GitHub Project**, align **Project** fields with **`Current status: investigating`** per `governance/rp-app/issue-tracking-workflow.md` **§B.3**:
 
 - **Project Status** → **In Progress**
 - **Workflow** → **Investigating**
