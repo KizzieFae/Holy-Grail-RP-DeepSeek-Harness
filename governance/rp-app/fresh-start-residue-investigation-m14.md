@@ -434,7 +434,7 @@ No unrelated failures observed.
 
 | Field | Value |
 |-------|-------|
-| Investigation record commit | *(set at commit)* |
+| Investigation record commit | d5bb1a4942ee40e04088d02a4874d5d842fa6bf4 |
 | Pre-investigation HEAD | `9e2592c` |
 | Branch | `main` |
 | Working tree at investigation | clean |
