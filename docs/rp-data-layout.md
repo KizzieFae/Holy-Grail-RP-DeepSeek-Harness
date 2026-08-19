@@ -116,19 +116,19 @@ More: [DEBUGGING_GUIDE.md](../../DEBUGGING_GUIDE.md) § persistence.
 
 ## Persistence vs Audit Artifacts
 
-Paths below are relative to the repository root (`autogen_rp/`) unless otherwise noted.
+Paths below use the canonical **`data/`** root (`HG_DATA_DIR`) unless otherwise noted.
 
 This section states how **runtime/session persistence** relates to **audit artifacts** on disk. Authoritative narrative state and production gating are defined in **`ContinuityManager`** / **`SceneState`** and related runtime docs; audit applicability and “non-authoritative” rules for observational signals are in **GitHub #59** ([`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)).
 
 ### Runtime / session persistence
 
-- **Location:** `autogen_rp/python/data/sessions/*.json`
+- **Location:** `data/sessions/*.json`
 - **Contents:** Each file includes serialized **`continuity_state`** (continuity snapshot), **`character_states`**, **`chat_history`**, team/session plumbing, and other fields written by **`SessionManager.save_session`**—see **Sessions** above and `session_lifecycle_save.py` under `python/rp_app/`.
-- **Save / resume:** The Streamlit app **loads resumed play from these session JSON files** for continuity and UI state restoration. **`autogen_rp/python/data/sessions/_session_index.json`** supports listing; session truth for resume is the per-session `*.json` files.
+- **Save / resume:** Session JSON files hold continuity and UI state restoration. **`data/sessions/_session_index.json`** supports listing; session truth for resume is the per-session `*.json` files.
 
 ### Audit artifacts
 
-- **Location:** `autogen_rp/python/rp_app/data/rp_audits/session_*`
+- **Location:** `data/rp_audits/session_*` (local, gitignored)
 - **Role:** **Observational, debugging, and validation** output: per-turn logs, summaries (`_audit_summary.json`, `_narrative.json`, per-character `*_full.json`, etc.). **Issue #79** observability blocks (for example **`continuity_observability_summary_v1`**) appear **in audit summaries** as mirrors or rollups when emitted—they are **not** a substitute for **`ContinuityManager`** as system-of-record.
 - **User callout files (GitHub #55 / #125 / #126):** Under each **`session_*/`**, per-session **`user_callouts_v1.json`** stores callouts: an optional **operator** **note** plus **system-authored** **`artifact_refs`** (including optional **`related_artifact_refs`**, **#126** at save; operators do not pick paths in the app). At the **`rp_audits/`** root, **`_user_callout_review_index_v1.json`** is the **keyed review queue only** and **does not** contain **`artifact_refs`** (those live on the per-session file). **`_user_callout_issue_links_v1.json`** maps **`callout_id` → GitHub issue** (sole “promoted” link record). New callouts from Streamlit **append** to the per-session file and **upsert** the review index. **List / show / dismiss / promote / rebuild / links** were **operator CLI** only (V1 `user_callout_review.py`, removed M12.4 — see `governance/archive/v1-runtime/AUDIT_DOCUMENTATION.md` §6–§8). **Default** `promote` rejects a duplicate `callout_id` already in the link map; **`promote --replace`** rewrites the **one** link row when reconciliation requires a different issue target (updates `linked_at_utc`; does not track GitHub lifecycle; raw callouts unchanged). Authoritative details: **[`AUDIT_DOCUMENTATION.md`](../python/rp_app/AUDIT_DOCUMENTATION.md)** **§6–§8** (not restated here).
 
@@ -136,13 +136,13 @@ This section states how **runtime/session persistence** relates to **audit artif
 
 `rp_app/data/rp_audits/` is governed by a restrictive `.gitignore` (session trees and nearly all JSON are **not** tracked). **Default IDE and Cursor workspace search (including Glob-style repo search) typically skip gitignored paths**, so a **zero-result search does not prove** that `session_*` is missing on disk.
 
-**Before concluding an audit session is absent**, verify on the real filesystem: list `autogen_rp/python/rp_app/data/rp_audits/session_{NNN}/` (audit ordinal, 3-digit folder name) or **read** a concrete path from `user_callouts_v1.json` → `artifact_refs` (or the user-provided path). **Absence from Git / from workspace search ≠ absence from the runtime environment.**
+**Before concluding an audit session is absent**, verify on the real filesystem: list `data/rp_audits/session_{NNN}/` (audit ordinal, 3-digit folder name) or **read** a concrete path from `user_callouts_v1.json` → `artifact_refs` (or the user-provided path). **Absence from Git / from workspace search ≠ absence from the runtime environment.**
 
 ### Guarantees
 
-- **UI resume** hydrates from **`autogen_rp/python/data/sessions/`** session files; it does **not** read **`rp_audits/`** to restore gameplay state.
+- **UI resume** hydrates from **`data/sessions/`** session files; it does **not** read **`rp_audits/`** to restore gameplay state.
 - Audit files are **non-authoritative** for committed continuity truth; do not treat audit JSON as a second persistence store (**#59**).
-- **Deleting** `autogen_rp/python/rp_app/data/rp_audits/session_*` trees does **not** invalidate or alter saved **`autogen_rp/python/data/sessions/*.json`** files.
+- **Deleting** `data/rp_audits/session_*` trees does **not** invalidate or alter saved **`data/sessions/*.json`** files.
 - The runtime operates correctly with **auditing disabled** or with **audit directories removed**; absence of `rp_audits` does not block save/load of sessions.
 
 ### Relationship

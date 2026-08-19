@@ -1,6 +1,6 @@
 # V2 Repository Retirement & Hygiene — M13 Investigation
 
-**Status:** Investigation complete (design only — no moves/deletions)  
+**Status:** **Complete** (M13.7 final container retirement — see `v2-repository-retirement-m13-7.md`)  
 **Date:** 2026-08-18  
 **M12.8 functional-completion anchor:** `37c563e`  
 **M13 investigation HEAD:** `489852c`

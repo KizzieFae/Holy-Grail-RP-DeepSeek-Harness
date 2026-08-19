@@ -1,4 +1,8 @@
-# Repo root — autogen_rp/.gitignore does not apply above that directory.
+# Repo root — Holy Grail product and local-data ignore rules.
+
+# M13.7 — local legacy AutoGen-era tree (migration source only; not tracked architecture)
+autogen_rp/
+
 .env
 **/.streamlit/secrets.toml
 
@@ -40,6 +44,7 @@ _proj_items.json
 tools/maintenance/issue86_*.json
 tools/maintenance/issue88_*.json
 
+# Holy Grail product data (M13.1) — user/runtime generated content stays local
 data/*
 !data/scene_templates/
 !data/scene_templates/**
@@ -48,6 +53,9 @@ data/*
 !data/fixtures/
 !data/fixtures/**
 data/fixtures/progression_simulation_scenarios/
+
+# Local investigation scratch (headless harness / overlay experiments)
+*_val*.txt
 
 # One-off validation/investigation harness scripts (e.g. AppTest drives); not production source
 governance/archive/validation-runs/**/_run_*.py

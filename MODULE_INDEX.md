@@ -18,7 +18,7 @@ For **diagnosis order** and layer rules, see [DEBUGGING_GUIDE.md](./DEBUGGING_GU
 
 Use this for a fast landing spot; the tables below add detail. Full workflow: [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md).
 
-| Symptom or task | Start here (under `autogen_rp/python/rp_app/`) |
+| Symptom or task | Start here (under `v2/domain/modules/` or `v2/rp_runtime/`) |
 |-----------------|-----------------------------------------------|
 | Wrong actor / rotation / “ignored” address | `orchestration_helpers.py` (**façade**; **#164** leaf modules listed under **Characters & orchestration**), then `app_turn_director.py`, `response_validation_selection.py`, `semantic_validation.py` |
 | Director JSON parse / invalid `next_actor` | `response_validation_parsing.py`, `response_validation_selection.py`, `app_turn_director.py` |

@@ -1,12 +1,12 @@
 # Holy Grail RP DeepSeek Harness
 
-**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). This repository contains the **V1 AutoGen implementation** (known-good baseline) and **V2 governance** for the upcoming DSH migration.
+**Behavioral-preservation re-platforming** of [Holy Grail RP](https://github.com/KizzieFae/Holy_Grail_RP) onto [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). Production runtime, domain library, and tests live under **`v2/`**; historical V1 material is archived under **`governance/archive/`**.
 
 **Start here for harness work:** [CHECKPOINT_BASELINE_DSH.md](./CHECKPOINT_BASELINE_DSH.md) · [V2 authority](./governance/rp-app/v2-dsh-replatforming-authority.md)
 
 ---
 
-Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**, implemented on an AutoGen-based runtime (V1). The product evolves from **card-based, scene-forward** operation toward a **knowledge-driven, packet-based** architecture (see PRD), with V2 targeting DSH as the runtime substrate.
+Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, and **Director-mediated turn flow**. Holy Grail V2 runs on the DeepSeek Harness substrate with a framework-neutral domain library (`v2/domain/`).
 
 ## Start here
 
@@ -37,7 +37,6 @@ Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, 
 - **`tools/investigation/`** — Offline investigation and validation utilities.
 - **`docs/`** — Shared technical docs (architecture, audits, data layout, testing).
 - **`governance/archive/`** — Historical evidence and V1 runtime documentation.
-- **`autogen_rp/`** — Transitional container shell (retirement in progress); see [`autogen_rp/README.md`](./autogen_rp/README.md).
 
 - **Headless simulation tee / redirect:** Do not write ad-hoc console captures to the repository root. Historical validation evidence: [`governance/archive/validation-runs/`](./governance/archive/validation-runs/README.md) — see [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) (*Console captures*).
 
@@ -50,4 +49,4 @@ Multi-agent roleplay system: **persistent scenes**, **continuity-aware state**, 
 
 ## Dependency direction (summary)
 
-**Ingestion** (future) → **packaging** (bridge; packets + retrieval) → **RP runtime** (current `rp_app`; AutoGen execution). Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain runtime responsibilities. Details: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).
+**Ingestion** (future) → **packaging** (bridge; packets + retrieval) → **RP runtime** (`v2/rp_runtime` + `v2/domain`). Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain domain responsibilities. Details: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).

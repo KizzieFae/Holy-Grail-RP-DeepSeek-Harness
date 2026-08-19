@@ -165,7 +165,7 @@ Before treating an eval result as a runtime continuity or semantic-proposal bug,
 
 If offline eval says `true_semantic_miss` but runtime committed `no_covered_change` with coherent continuity, investigate **evaluator/threshold** alignment (#243 scope) — not continuity enforcement — unless committed state proves otherwise.
 
-### CLI (from `autogen_rp/python/`)
+### CLI (from repository root)
 
 ```bash
 python scripts/run_issue243_corpus_regression.py --eval
