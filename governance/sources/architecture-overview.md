@@ -135,7 +135,7 @@ Implementation detail and diagnosis order: [docs/architecture.md](../docs/archit
 - Cards remain practical source until ingestion + packaging mature.
 - Packaging becomes the single merge point for identity, dynamic state, relationships, and retrieved snippets.
 
-Provisional sequencing references (not current authority): `roadmap.md`, GitHub Issues.
+Provisional sequencing references (not current authority): [governance/records/narrative-memory-evolution-roadmap.md](../governance/records/narrative-memory-evolution-roadmap.md), GitHub Issues.
 
 ---
 

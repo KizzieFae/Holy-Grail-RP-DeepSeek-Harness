@@ -6,7 +6,7 @@ This document is the **single in-repo authority** for **what authored files are*
 
 - **[CANONICAL_KNOWLEDGE_MODEL.md](./CANONICAL_KNOWLEDGE_MODEL.md)** — Defines the **compiled runtime knowledge entry** (canonical envelope) produced by **offline** ingestion from sources. That is the **retrieval/inject** contract, not the **authored file** layout.
 - **[PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)** — Describes **runtime** packet intent (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle`). Packets are **assembled at turn time**; they are **not** authored JSON file types.
-- **Scene-start code paths** — `scene_start_bootstrap`, `scene_lifecycle_start`, headless `prepare_headless_session` consume **bootstrap + templates + characters**; see [autogen_rp/docs/architecture.md](./autogen_rp/docs/architecture.md) and [MODULE_INDEX.md](./MODULE_INDEX.md).
+- **Scene-start code paths** — Domain Host `session_setup.py` and `SessionRepository` consume **bootstrap + templates + characters** for scene open; DSH runs the opening Cordis phase sequence. See [docs/architecture.md](./docs/architecture.md) and [MODULE_INDEX.md](./MODULE_INDEX.md).
 - **Streamlit opener selection (product UI)** — **[Issue #101](https://github.com/KizzieFae/Holy_Grail_RP/issues/101)** (closed) / **[Issue #108](https://github.com/KizzieFae/Holy_Grail_RP/issues/108)**: the **template** (when selected) defines the **available** template-scoped Opener set; **bootstrap** / session composition **selects** the opener to apply. **Custom** and **generated** are alternative Start Scene sources. The Streamlit path does **not** use `character_asset` or character-driven opener **availability** (see **§2 Boundaries**). Opener file **`label`** and **`description`** are shown in the UI when present (file `description` only for the long summary—see **6.2**). Headless runs do **not** use this control; they supply opening through scenario / CLI composition into the same bootstrap spine. **[Issue #100](https://github.com/KizzieFae/Holy_Grail_RP/issues/100)** (closed) removed the Streamlit **generic template opening** path that treated template **`opening_text`** as the primary Start Scene source.
 
 **Legacy state (explicit)**
@@ -36,7 +36,7 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 
 #### Template-associated support files (co-located; not canonical Template body)
 
-**Definition:** Optional files **in the same directory** as `python/data/scene_templates/{template_id}.json` that are **keyed to** a `template_id` but are **not** the canonical **Template** JSON document (they do **not** carry **Template Include** content).
+**Definition:** Optional files **in the same directory** as `data/scene_templates/{template_id}.json` that are **keyed to** a `template_id` but are **not** the canonical **Template** JSON document (they do **not** carry **Template Include** content).
 
 **Requirements (normative for any such file the contract recognizes):**
 
@@ -114,7 +114,7 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 **Exclude**:
 
 - `initial_messages`
-- `progression_profile` (authored **payload** for this key appears **only** in **Template-associated support file** `python/data/scene_templates/{template_id}_progression.json`, per **§1** *Template-associated support files* — **not** in the canonical `template_id.json` body)
+- `progression_profile` (authored **payload** for this key appears **only** in **Template-associated support file** `data/scene_templates/{template_id}_progression.json`, per **§1** *Template-associated support files* — **not** in the canonical `template_id.json` body)
 - Bootstrap, session, run-control, ingestion-manifest fields
 
 ---

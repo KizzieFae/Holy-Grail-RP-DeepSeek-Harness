@@ -1,40 +1,28 @@
 Progression Layer — Test Sheet (Pass / Fail)
 
-**v1 checkpoint (validated):** [progression layer validation status v1.md](./progression%20layer%20validation%20status%20v1.md) — official progression layer validation status and behavioral summary.
+**v1 checkpoint (historical):** [governance/records/progression-layer-validation-status-v1.md](../../../governance/records/progression-layer-validation-status-v1.md) — completed progression layer validation status.
 
 ## 0. Automated baseline (before manual checklist)
 
-From `autogen_rp/python`:
+From repository root:
 
 ```bash
 # Deterministic regression (no API calls for progression contract)
-pytest tests/test_progression_enforcement.py tests/test_turn_runner_updates.py tests/test_orchestration_helpers.py -q
+python -m pytest v2/domain/tests/test_progression_enforcement.py v2/domain/tests/test_turn_runner_updates.py v2/domain/tests/test_orchestration_helpers.py -q
 
 # Optional: live DeepSeek checks (requires DEEPSEEK_API_KEY)
-pytest tests/test_progression_layer_llm.py -m progression_llm -v
+python -m pytest v2/domain/tests/test_progression_layer_llm.py -m progression_llm -v
 
 # Fast local run excluding any test marked llm
-pytest -m "not llm"
-
-# Simulation pipeline (scripted moves through production continuity, then read the printed audit)
-python scripts/run_progression_layer_simulation.py
-python scripts/run_presence_scene_audit.py
-
-# Full production turn runner, headless (Director + character + Narrator LLMs; same path as Streamlit)
-python scripts/run_scene_simulation_llm.py --list-scenarios
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --turns 6 --audit
-# Baseline (enforcement off) vs treatment — compare JSON metrics / audits
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --no-progression-enforcement --metrics-out ./out/baseline.json
-python scripts/run_scene_simulation_llm.py --scenario emotional_loop_2char --metrics-out ./out/treatment.json --verdict WARN --failure-class retry
-# failure-class when FAIL/WARN: contract | gate | selection | retry | continuity | other
+python -m pytest v2/domain/tests -m "not llm" -q
 
 # Manifest-only regression (no API)
-pytest tests/test_progression_simulation_scenarios.py -q
+python -m pytest v2/domain/tests/test_progression_simulation_scenarios.py -q
 ```
 
-The first two are **deterministic** (no LLM). `run_scene_simulation_llm.py` uses **`turn_runner.run_character_turns`** with DeepSeek (`DEEPSEEK_API_KEY`). Fixed setups live in `rp_app/data/progression_simulation_scenarios/*.json`. Use **`--audit`** to write **`rp_app/data/rp_audits/`** JSON (same logger as Streamlit). Stdout markdown is the quick human summary; audit files support checklist **H** and failure triage.
+Live multi-turn LLM scenario harness with `--audit` is **not** shipped in this repository today. Use domain manifest tests, DSH/runtime integration tests, and offline investigation tools per **`SCENARIO_VALIDATION_FRAMEWORK.md`** until a Domain Host + DSH harness returns.
 
-Overarching workflow and scenario catalog: **`SCENARIO_VALIDATION_FRAMEWORK.md`** at the **repository root** (next to `ARCHITECTURE_OVERVIEW.md`).
+Overarching workflow and scenario catalog: **`SCENARIO_VALIDATION_FRAMEWORK.md`** at the repository root.
 
 **Hard rule:** validation **observes / classifies / reports** and **stops**; **no** automatic code, scenario, prompt, or threshold changes after a run. Triage → record layer + verdict + repro → **stop** unless a human explicitly directs remediation. See framework **Constraints** + **`DEBUGGING_GUIDE.md` → Validation vs Remediation Boundary**. **Invalid runs:** framework **Validation retry policy (invalid runs)** — triage first, manual rerun only, **≤2–3 retries** per scenario per goal, then different scenario / redesign / rescope (not remediation).
 

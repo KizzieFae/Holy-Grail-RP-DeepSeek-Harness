@@ -1,3 +1,5 @@
+> **HISTORICAL RECORD** — Not current operational authority. Preserves completed validation snapshot evidence. For current validation procedure see `SCENARIO_VALIDATION_FRAMEWORK.md`.
+
 # Registry Validation Report
 
 ## Scope

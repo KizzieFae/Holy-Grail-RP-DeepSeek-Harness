@@ -1,3 +1,5 @@
+> **HISTORICAL RECORD** — Completed v1 validation checkpoint (not active test instructions). For current progression backlog see `v2/domain/tests/Testing TODOs/progression layer testing todo.md`.
+
 # Progression Layer — Validation Status (v1 Checkpoint)
 
 ## Status

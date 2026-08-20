@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -47,6 +48,24 @@ _GOVERNANCE_CORPUS_FILES = (
     "project-behavior-holy-grail.md",
     "holy-grail-prd.md",
     "architecture-overview.md",
+)
+
+_CONTRACT_AUTHORITY_DOCS = (
+    _ROOT / "GLOSSARY.md",
+    _ROOT / "PACKET_CONTRACTS.md",
+    _ROOT / "CANONICAL_KNOWLEDGE_MODEL.md",
+    _ROOT / "AUTHORED_SOURCE_CONTRACT.md",
+)
+
+_DELETED_ROOT_DOC_PATHS = (
+    "failure_taxomony_spec_v1.md",
+    "memory_packet_contract_v1.md",
+    "Token efficiency plan.md",
+    "runtime_narrative_memory_prd1.md",
+    "narrative_knowledge_ingestion_prd2.md",
+    "roadmap.md",
+    "REGISTRY_VALIDATION_REPORT.md",
+    "data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md",
 )
 
 _CURRENT_NAVIGATION_DOCS = (
@@ -100,6 +119,14 @@ _GOVERNANCE_README_PATH = _ROOT / "governance" / "README.md"
 _GOVERNANCE_SOURCES_DIR = _ROOT / "governance" / "sources"
 _GOVERNANCE_EXECUTION_DIR = _ROOT / "governance" / "execution"
 _GOVERNANCE_RECORDS_DIR = _ROOT / "governance" / "records"
+_ISSUE9_RELOCATED_RECORDS = (
+    _GOVERNANCE_RECORDS_DIR / "runtime-narrative-memory-prd1.md",
+    _GOVERNANCE_RECORDS_DIR / "narrative-knowledge-ingestion-prd2.md",
+    _GOVERNANCE_RECORDS_DIR / "registry-validation-report.md",
+    _GOVERNANCE_RECORDS_DIR / "token-efficiency-plan-issue-145.md",
+    _GOVERNANCE_RECORDS_DIR / "operational-retrieval-pilot.md",
+    _GOVERNANCE_RECORDS_DIR / "progression-layer-validation-status-v1.md",
+)
 _RETIRED_GOVERNANCE_PATH_PREFIXES = (
     "governance/policies/",
     "governance/rp-app/",
@@ -552,6 +579,48 @@ class RepositoryArchitectureTests(unittest.TestCase):
     def test_retired_governance_directories_are_absent(self) -> None:
         for rel in ("governance/policies", "governance/rp-app", "governance/github"):
             self.assertFalse((_ROOT / rel).exists(), rel)
+
+    def test_contract_authority_docs_avoid_instructional_v1_paths(self) -> None:
+        banned = ("autogen_rp/", "python/rp_app/", "app_turn_")
+        offenders: list[str] = []
+        for path in _CONTRACT_AUTHORITY_DOCS:
+            text = path.read_text(encoding="utf-8")
+            for token in banned:
+                if token in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {token}")
+        self.assertEqual(offenders, [])
+
+    def test_deleted_root_duplicate_docs_absent(self) -> None:
+        missing = [rel for rel in _DELETED_ROOT_DOC_PATHS if (_ROOT / rel).exists()]
+        self.assertEqual(missing, [])
+
+    def test_issue9_relocated_records_carry_historical_banner(self) -> None:
+        for path in _ISSUE9_RELOCATED_RECORDS:
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("HISTORICAL RECORD", text, path.name)
+
+    def test_live_navigation_avoids_deleted_root_doc_paths(self) -> None:
+        nav_paths = [
+            _ROOT / "README.md",
+            _ROOT / "AGENTS.md",
+            _ROOT / "MODULE_INDEX.md",
+            _ROOT / "docs" / "repo-map.md",
+            _ROOT / "docs" / "rp-data-layout.md",
+            _GOVERNANCE_SOURCES_DIR / "architecture-overview.md",
+            _GOVERNANCE_SOURCES_DIR / "workflow-weights.md",
+        ]
+        offenders: list[str] = []
+        root_roadmap = re.compile(r"(?<![/-])roadmap\.md")
+        for path in nav_paths:
+            text = path.read_text(encoding="utf-8")
+            for token in _DELETED_ROOT_DOC_PATHS:
+                if token == "roadmap.md":
+                    continue
+                if token in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {token}")
+            if root_roadmap.search(text):
+                offenders.append(f"{path.relative_to(_ROOT)}: roadmap.md")
+        self.assertEqual(offenders, [])
 
 
 if __name__ == "__main__":

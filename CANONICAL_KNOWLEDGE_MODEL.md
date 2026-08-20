@@ -6,16 +6,17 @@ Architectural specification for **Phase 3.4 — Canonical Knowledge Shape & Stat
 
 **Phase 3.4 scope (documentation contract):** Finalize and maintain this **canonical contract** and the rules for **static ingestion** (offline compile from authored sources into canonical-shaped artifacts consumable by the existing pipeline). Phase 3.4 **does not**, by itself, require **runtime** or **retrieval-behavior** changes (selector logic, merge order, caps, env-gated paths, or packet APIs remain as implemented for Phases 2–3.2 unless a later phase explicitly schedules code work).
 
-### Current implementation snapshot (compile layer only)
+### Current implementation snapshot (DSH / Domain Host)
 
 What exists in-repo today (no future design here):
 
-- **Offline compiler:** `autogen_rp/python/rp_app/authored_index_compile.py` — `compile_authored_index(manifest, output, schema_version=2|3)`. Default output remains **`schema_version` 2** (legacy chunk shape only). **`schema_version` 3** adds canonical primary fields (`knowledge_id`, `knowledge_type`, `authority_class`, `visibility`, `subject_scope`, optional `structured_payload` / `temporal_scope`) **alongside** the same legacy projection fields the runtime already reads; **runtime behavior is unchanged** whether the file is v2 or v3.
+- **Runtime consumption:** Domain Host **`KnowledgeService`** (`v2/domain_api/knowledge_service.py`) projects authored records from the live setup snapshot via **`authored_knowledge.py`**, merges optional **compiled index** rows through **`CompiledIndexRetrievalProvider`** (`compiled_index_provider.py`), and selects bounded output via **`retrieval_selection.py`**. Formatted retrieval enters character prompts only through **`prompt_builders.build_character_turn_prompt`**.
+- **Compile adapter registry (offline contract):** `v2/domain/modules/canonical_compile_adapters.py` — table-driven `(manifest entry type, key_path)` → `knowledge_type`, `authority_class`, `visibility`, **decomposition strategy**. **Strict fallback:** unmapped keys → `lore_reference` + `reference_only`. Runtime retrieval does **not** import this module; it defines the mapping contract for compile tooling.
 - **`knowledge_id`:** Deterministic hash over `source_ref` + normalized chunk text + `knowledge_type` only — **excludes** `authority_class` and policy-volatile fields so the id stays stable if authority policy shifts.
-- **Adapter registry:** `autogen_rp/python/rp_app/canonical_compile_adapters.py` — table-driven `(manifest entry type, key_path)` → `knowledge_type`, `authority_class`, `visibility`, **decomposition strategy**. **Strict fallback:** unmapped keys → `lore_reference` + `reference_only` (with compile metadata warnings in v3).
-- **Decomposition strategies (fixed set):** `whole_value_single_row`, `one_row_per_string_list_item`, `nested_object_leaf_strings`, `role_slots_array_rows`, `emit_zero_chunks` — each manifest key path declares **exactly one** strategy.
-- **CLI:** `autogen_rp/python/scripts/compile_authored_retrieval_index.py` — `--schema-version 2` (default) or `3`. **Example manifest:** `autogen_rp/python/data/retrieval/authored_manifest.example.json`.
-- **Continuity** remains the only authoritative in-scene truth; compiled knowledge is **non-authoritative** assistive material at retrieval/prompt boundaries (unchanged from Phase 2–3.2 semantics).
+- **Decomposition strategies (fixed set):** `whole_value_single_row`, `one_row_per_string_list_item`, `nested_object_leaf_strings`, `role_slots_array_rows`, `emit_zero_chunks` — each manifest key path declares **exactly one** strategy (see adapter module).
+- **On-disk artifacts:** Example manifest `data/retrieval/authored_manifest.example.json`; reference operational manifest `data/retrieval/manifests/operational_pilot.json`; checked-in compiled index `data/retrieval/compiled/operational_pilot_v3.json` (**schema_version** 3 with canonical envelope fields alongside legacy projection fields the selector reads).
+- **Compile CLI:** There is **no** in-repository compile CLI at this time. Operators may use external tooling or checked-in compiled artifacts; activate at runtime with `RP_RETRIEVED_CONTEXT_INDEX` or `HG_RETRIEVAL_INDEX_PATH`. See [docs/rp-data-layout.md](./docs/rp-data-layout.md).
+- **Continuity** remains the only authoritative in-scene truth; compiled knowledge is **non-authoritative** assistive material at retrieval/prompt boundaries.
 
 ---
 
@@ -51,7 +52,7 @@ All **future** knowledge sources—including **dense prose ingestion** (e.g. ful
 
 The following are **out of scope** for Phase 3.4. They do not appear in this specification as design targets.
 
-- **Mandatory runtime or retrieval code changes** — updating `retrieved_context_select`, `app_turn_prompting` merge/caps, or packet shadow behavior is **not** required to close Phase 3.4 contract work; such changes belong to explicitly scoped implementation phases.
+- **Mandatory runtime or retrieval code changes** — updating `KnowledgeService` merge/caps or prompt assembly is **not** required to close Phase 3.4 contract work; such changes belong to explicitly scoped implementation phases.
 - **Vector / embedding** design, index layout, or similarity semantics.
 - **Graph schema** design, query languages, or graph-specific optimization.
 - **Transcript-wide** or session-log ingestion as a knowledge source.

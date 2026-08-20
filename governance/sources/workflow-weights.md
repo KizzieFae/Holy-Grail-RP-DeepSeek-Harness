@@ -1,6 +1,6 @@
 # Workflow weights (Holy Grail RP)
 
-Canonical vocabulary for **workflow weight** as used by Issue **[#145](https://github.com/KizzieFae/Holy_Grail_RP/issues/145)** (Governance + Activation Bundle), `Token efficiency plan.md`, and `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`.
+Canonical vocabulary for **workflow weight** as used by Issue **[#145](https://github.com/KizzieFae/Holy_Grail_RP/issues/145)** (Governance + Activation Bundle), historical programme provenance in [governance/records/token-efficiency-plan-issue-145.md](../records/token-efficiency-plan-issue-145.md), and `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`.
 
 Authority for Issues and Projects metadata remains **`governance/sources/issue-tracking-workflow.md`**. This document defines weights **only**—not **`Current status:`**, filing gates, or validation substitutes.
 

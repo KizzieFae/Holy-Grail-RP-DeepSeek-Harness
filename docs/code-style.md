@@ -12,7 +12,7 @@ This file defines practical coding expectations for AI-assisted edits in this re
 
 ## Python expectations
 
-Follow `python/README.md` for the primary Python workflow.
+Follow [v2/README.md](../v2/README.md) and [docs/testing.md](./testing.md) for the primary Python workflow and test commands.
 
 Additional project expectations:
 

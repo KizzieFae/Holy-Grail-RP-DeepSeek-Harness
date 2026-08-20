@@ -26,11 +26,11 @@
 
 | Item | Notes | Likely owner |
 |------|--------|--------------|
-| **Addressee vs next-speaker** | Valid run (session 097, turn 10): Director chose **Ayame**; semantic turn-selection flagged **Celina** as addressee and `supports_selected_actor: false`. Pipeline did **not** override the Director. **Backlog:** decide whether this is acceptable advisory-only behavior or whether prompts/schemas should align “who is addressed” with “who acts next” to reduce false disagreement. | `semantic_validation.py` (turn-selection assessment), `app_turn_director.py` |
+| **Addressee vs next-speaker** | Valid run (session 097, turn 10): Director chose **Ayame**; semantic turn-selection flagged **Celina** as addressee and `supports_selected_actor: false`. Pipeline did **not** override the Director. **Backlog:** decide whether this is acceptable advisory-only behavior or whether prompts/schemas should align “who is addressed” with “who acts next” to reduce false disagreement. | `semantic_validation.py` (turn-selection assessment), DSH Director phase + Domain Host decision validation |
 
 ---
 
 ## References
 
-- Progression v1 checkpoint: [progression layer validation status v1.md](./progression%20layer%20validation%20status%20v1.md)
+- Progression v1 checkpoint (historical): [governance/records/progression-layer-validation-status-v1.md](../../../governance/records/progression-layer-validation-status-v1.md)
 - Long-session treatment / solo-cast endgame notes: [progression layer testing todo.md](./progression%20layer%20testing%20todo.md) (Phase 2b)

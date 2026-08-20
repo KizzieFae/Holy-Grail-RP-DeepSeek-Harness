@@ -103,11 +103,11 @@ Activation is **only** via environment variable:
 RP_RETRIEVED_CONTEXT_INDEX=<path-to-compiled-index.json>
 ```
 
-Domain modules: `retrieved_context_select.py`, `prompt_retrieval_assembly.py`, `runtime_packets.py`.
+Domain Host: `v2/domain_api/knowledge_service.py`, `retrieval_selection.py`, `compiled_index_provider.py`; prompt formatting in `v2/domain/modules/prompt_builders.py`.
 
-**Accepted baseline content** (Phase 4A): character `lore_facts` + template `role_slots` + refined `premise`. Selector uses fixed per-`source_kind` subcaps.
+**Accepted baseline content:** character `lore_facts` + template `role_slots` + refined `premise`. Reference index: `data/retrieval/compiled/operational_pilot_v3.json`.
 
-Operational notes and pilot artifact map: `data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md`.
+Historical pilot artifact map (closed runbook): [governance/records/operational-retrieval-pilot.md](./governance/records/operational-retrieval-pilot.md).
 
 ---
 

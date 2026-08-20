@@ -1,3 +1,5 @@
+> **HISTORICAL RECORD** — Closed operational retrieval pilot runbook. **Not** live operating procedure. Commands and paths below reflect the pre-DSH pilot era unless noted. Current validation: `SCENARIO_VALIDATION_FRAMEWORK.md`; current retrieval wiring: `PACKET_CONTRACTS.md`, `docs/rp-data-layout.md`.
+
 # Operational retrieval pilot — real manifest → v3 index
 
 **Status:** **Closed (pilot).** This file remains the **artifact map** (manifest paths, compile command, cast/template locks, A/B protocol) for the **accepted operational index**. **Day-to-day validation** treats retrieval OFF/ON as **standard** — see repository-root **`SCENARIO_VALIDATION_FRAMEWORK.md`** (*Authored retrieval*), **`rp_app/AUDIT_DOCUMENTATION.md`**, and **`RP_SETUP_TODO.md`** Phase **4A** (operationalization complete).

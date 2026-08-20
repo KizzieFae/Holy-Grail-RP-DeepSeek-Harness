@@ -1,3 +1,5 @@
+> **HISTORICAL RECORD** — Not current operational authority. Preserves program/planning evidence from an earlier phase. For current product architecture see `governance/sources/holy-grail-prd.md` and `governance/sources/architecture-overview.md`.
+
 # Runtime Narrative Memory Product Requirements Document
 
 ## Adaptive Narrative Memory Runtime (ANMR)

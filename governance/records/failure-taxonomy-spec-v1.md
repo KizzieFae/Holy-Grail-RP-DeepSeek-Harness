@@ -356,9 +356,9 @@ Until Population-gate PRs explicitly open ontology work:
 
 **(Informative pointers — do not supersede **`Issues`**)**
 
-- `runtime_narrative_memory_prd1.md` — Goal / FR context (**`FR4`** anchor)
-- `narrative_knowledge_ingestion_prd2.md` — downstream packet intent only
-- `roadmap.md` — sequencing reference (`Phase -1`/observation posture)
+- `governance/records/runtime-narrative-memory-prd1.md` — Goal / FR context (**`FR4`** anchor)
+- `governance/records/narrative-knowledge-ingestion-prd2.md` — downstream packet intent only
+- `governance/records/narrative-memory-evolution-roadmap.md` — sequencing reference (`Phase -1`/observation posture)
 - `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` — audit applicability / causal advisory / inventories
 - `governance/sources/issue-tracking-workflow.md` — **`§`**`D`/****`**`§`**`**`F`**`/****`**`§`**`**`I` **discipline**
 - `governance/records/audit-classification-protocol.md` — **`#`**`187`** **/** **`ACP`** **interchange (**process bundles** **)** **`—`** **‖I‖ linkage **`to`** **`Issues`**

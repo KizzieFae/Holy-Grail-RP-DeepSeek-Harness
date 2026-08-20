@@ -76,6 +76,13 @@ Cursor rules `@`-include execution policies and route project behavior to `sourc
 | `failure-taxonomy-spec-v1.md` | FT1 partial registry (#186) |
 | `round-a-*.md` | Round-A workshop facilitation artifacts |
 | `github/issue-templates.md` | Issue template ownership meta notes |
+| `runtime-narrative-memory-prd1.md` | Historical PRD1 (narrative memory programme) |
+| `narrative-knowledge-ingestion-prd2.md` | Historical PRD2 (ingestion programme) |
+| `narrative-memory-evolution-roadmap.md` | Historical evolution roadmap (RTF body preserved) |
+| `registry-validation-report.md` | Completed registry validation snapshot |
+| `token-efficiency-plan-issue-145.md` | Issue #145 programme provenance (not live workflow authority) |
+| `operational-retrieval-pilot.md` | Closed retrieval pilot runbook |
+| `progression-layer-validation-status-v1.md` | Completed progression v1 checkpoint |
 
 ## Separation rules
 

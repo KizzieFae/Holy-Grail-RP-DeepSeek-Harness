@@ -55,11 +55,11 @@ Host `session_setup.py` is the production scene-start spine (same templates/open
 
 **Manifest example:** `data/retrieval/authored_manifest.example.json`
 
-**Compiled index:** produced offline; activate at runtime with `RP_RETRIEVED_CONTEXT_INDEX`. Not stored in-repo by default.
+**Compiled index:** Checked-in reference artifact `data/retrieval/compiled/operational_pilot_v3.json` (from `data/retrieval/manifests/operational_pilot.json`). Activate at runtime with `RP_RETRIEVED_CONTEXT_INDEX` or `HG_RETRIEVAL_INDEX_PATH`. There is **no** in-repository compile CLI today; regenerate indexes with external tooling if needed.
 
 **Scope:** Pre-packaging ingestion only. Does not change continuity authority.
 
-Operational baseline: [data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md](../data/retrieval/OPERATIONAL_RETRIEVAL_PILOT.md).
+Historical pilot runbook (closed): [governance/records/operational-retrieval-pilot.md](../governance/records/operational-retrieval-pilot.md). Current validation procedure: [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
 ---
 

@@ -1,3 +1,5 @@
+> **HISTORICAL RECORD** — Not current normative authority. Issue #145 programme provenance; current workflow-weight semantics live in `governance/sources/workflow-weights.md`, bootstrap profiles, and `governance/execution/cursor-workflow-layer.md`.
+
 # Workflow Efficiency Optimization Roadmap (Final)
 
 ## Objective
