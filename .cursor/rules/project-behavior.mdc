@@ -4,4 +4,4 @@ globs:
 alwaysApply: true
 ---
 
-@governance/policies/project-behavior-holy-grail.md
+@governance/sources/project-behavior-holy-grail.md

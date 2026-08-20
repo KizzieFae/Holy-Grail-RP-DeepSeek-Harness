@@ -2,7 +2,7 @@
 
 **Authority:** Canonical semantics for **program / system quality audits** in Holy Grail RP (for example: Documentation & Governance Integrity; Repository / Filesystem Architecture; Runtime & Execution Efficiency; End-to-End Operational Flow).
 
-**Not in scope:** RP session-audit **procedure** (`docs/audit-workflows.md`); Issue/Project workflow mechanics (`governance/rp-app/issue-tracking-workflow.md` §D–§H, §B); workflow weights; V1 `#59` Signal-id inventory (not live).
+**Not in scope:** RP session-audit **procedure** (`docs/audit-workflows.md`); Issue/Project workflow mechanics (`governance/sources/issue-tracking-workflow.md` §D–§H, §B); workflow weights; V1 `#59` Signal-id inventory (not live).
 
 **Portability:** Reusable 2-AI governance. Holy Grail implements this authority locally; template synchronization may follow separately.
 
@@ -294,6 +294,6 @@ Later audits cite prior conclusions as **`audit Issue # + finding ID`** (for exa
 ## Related documents
 
 - `docs/audit-workflows.md` — RP session-audit procedure
-- `governance/rp-app/issue-tracking-workflow.md` — Issue tracking, §A.1 pipeline, §A.2–A.3 when triggered
-- `governance/rp-app/workflow-weights.md` — workflow weight only
+- `governance/sources/issue-tracking-workflow.md` — Issue tracking, §A.1 pipeline, §A.2–A.3 when triggered
+- `governance/sources/workflow-weights.md` — workflow weight only
 - `governance/README.md` — current vs historical governance index

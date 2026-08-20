@@ -58,29 +58,29 @@ classification = "template_managed"
 # ---------------------------------------------------------------------------
 
 [[governance_policy_documents]]
-path = "governance/policies/cursor-workflow-layer.md"
+path = "governance/execution/cursor-workflow-layer.md"
 role = "cursor_bootstrap_dual_ai_workflow"
 
 [[governance_policy_documents]]
-path = "governance/policies/project-behavior-holy-grail.md"
+path = "governance/sources/project-behavior-holy-grail.md"
 role = "repo_wide_tracking_and_docs_routing"
 
 [[governance_policy_documents]]
-path = "governance/policies/github-issues.md"
+path = "governance/execution/github-issues.md"
 role = "github_cli_issue_filing"
 
 [[governance_policy_documents]]
-path = "governance/policies/rp-app-guidance.md"
+path = "governance/execution/rp-app-guidance.md"
 role = "rp_app_subtree_guidance"
 
 [[governance_policy_documents]]
-path = "governance/policies/architecture-protection.md"
+path = "governance/execution/architecture-protection.md"
 role = "python_architecture_guardrails"
 
 [[governance_policy_documents]]
-path = "governance/policies/testing-expectations.md"
+path = "governance/execution/testing-expectations.md"
 role = "python_testing_expectations"
 
 [[governance_policy_documents]]
-path = "governance/rp-app/issue-tracking-workflow.md"
+path = "governance/sources/issue-tracking-workflow.md"
 role = "github_issues_projects_workflow_spec"

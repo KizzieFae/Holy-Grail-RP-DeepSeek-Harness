@@ -1,11 +1,11 @@
 # Audit Classification Protocol (ACP)
 
-> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/rp-app/audit-semantics.md`.
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/sources/audit-semantics.md`.
 
 <!--
   Skeleton: interchange and process envelope only (#187 lineage).
   Not runtime, detectors, CI gates, or audit/continuity authority.
-  FTC semantics authoritative in governance/rp-app/failure-taxonomy-spec-v1.md (FT1 / #186).
+  FTC semantics authoritative in governance/records/failure-taxonomy-spec-v1.md (FT1 / #186).
 -->
 
 ## §0 Document control ‖N‖
@@ -14,7 +14,7 @@
 |-------|-------|
 | **Protocol ID** | **ACP** (audit classification protocol) |
 | **Lineage** | GitHub `#187` |
-| **Canonical path** | `governance/rp-app/audit-classification-protocol.md` |
+| **Canonical path** | `governance/records/audit-classification-protocol.md` |
 | **Document state** | **SKELETON** — operational interchange structure only |
 | **Authority posture** | **Human‑governed process completeness for classification *bundles*.** Does **not** adjudicate continuity truth (`FR4`), audit applicability predicates (`AUDIT_DOCUMENTATION` / `#59` lane), `outcome_record` meaning, `detector` judgments, **or** runtime outcomes. |
 
@@ -102,7 +102,7 @@ sources:                                  # REQUIRED — ≥1 anchor
 
 exemplar_package_version: 1               # REQUIRED int; bump on source/unit change
 
-scenario_tags: []   # Round A v0 tags: governance/rp-app/round-a-strata-grid-v0.md
+scenario_tags: []   # Round A v0 tags: governance/records/round-a-strata-grid-v0.md
 instruments_flag: "none|TBD|routed_to_192"    # OPTIONAL — see §13
 
 constraints:
@@ -122,7 +122,7 @@ notes_facilitator: ""                     # OPTIONAL ‖I‖
 protocol_id: acp
 protocol_doc_revision: acp-doc-0.2-governance-freeze-v0-crossref
 
-ft1_doc_pointer: governance/rp-app/failure-taxonomy-spec-v1.md
+ft1_doc_pointer: governance/records/failure-taxonomy-spec-v1.md
 ft1_doc_revision_hint: FT1-doc-0.4-governance-freeze-v0  # UPDATE when FT1 changelog bumps
 
 failure_taxonomy_ft1:
@@ -283,10 +283,10 @@ notes: ""
 
 ## §14 Informative bibliography ‖I‖
 
-- `governance/rp-app/failure-taxonomy-spec-v1.md` — FT1 semantics (**#186**).
+- `governance/records/failure-taxonomy-spec-v1.md` — FT1 semantics (**#186**).
 - `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` — signal inventory/applicability.
-- `governance/rp-app/issue-tracking-workflow.md` — §§D/F discipline.
-- `governance/rp-app/round-a-strata-grid-v0.md` — Round A facilitator strata / `scenario_tags` v0 (**process only**).
+- `governance/sources/issue-tracking-workflow.md` — §§D/F discipline.
+- `governance/records/round-a-strata-grid-v0.md` — Round A facilitator strata / `scenario_tags` v0 (**process only**).
 - `runtime_narrative_memory_prd1.md` — `FR4` context only.
 
 ---
@@ -295,7 +295,7 @@ notes: ""
 
 | ID | Content |
 |----|---------|
-| **TODO‑ACP‑01** | Extend or merge `scenario_tags` post–Round A; **Round A v0** grid: `governance/rp-app/round-a-strata-grid-v0.md`. |
+| **TODO‑ACP‑01** | Extend or merge `scenario_tags` post–Round A; **Round A v0** grid: `governance/records/round-a-strata-grid-v0.md`. |
 | **TODO‑ACP‑02** | Safe extension of `evidence_references` kinds **without duplicating AUDIT_DOCUMENTATION.** |
 | **TODO‑ACP‑03** | `per_rater_digests`: hash-vs-embed convention. |
 | **TODO‑ACP‑04** | Canonical Issue paste surface (**comment template vs appendix vs gist**). |

@@ -3,4 +3,4 @@ description: Holy Grail RP workflow wrapper for Cursor (bootstrap, reports, plan
 alwaysApply: true
 ---
 
-@governance/policies/cursor-workflow-layer.md
+@governance/execution/cursor-workflow-layer.md

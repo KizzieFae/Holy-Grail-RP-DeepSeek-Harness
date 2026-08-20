@@ -7,7 +7,7 @@
 ### A. System of record
 
 - **GitHub Issues** are the system of record for **tracked work**: bugs, quality/design remediation, simulation anomalies, **authorized implementation**, refactors, validation follow-up, and durable remediation state.
-- **Read-only program audits** (Governance-authorized, non-mutating investigation) are governed by **`governance/rp-app/audit-semantics.md`** → **Read-only program audit**. They do **not** require a GitHub Issue or Project item merely to investigate and report. Remediation they identify still enters this workflow.
+- **Read-only program audits** (Governance-authorized, non-mutating investigation) are governed by **`governance/sources/audit-semantics.md`** → **Read-only program audit**. They do **not** require a GitHub Issue or Project item merely to investigate and report. Remediation they identify still enters this workflow.
 - **Project files** (PRD, architecture overviews, program records) remain responsible for roadmap, phase structure, architecture notes, and milestones—not for live issue logs.
 - **Do not** duplicate detailed issue logs in project files.
 - **Reference markdown** in-repo may capture background and acceptance criteria but is **reference-only** for task tracking. **GitHub Issues** hold status, discussion, and closure.
@@ -26,7 +26,7 @@
 
 ### A.1 Audit-driven workflow (reference)
 
-Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** That pipeline governs **remediation and tracked work**, not the read-only investigation phase of a **read-only program audit** (`audit-semantics.md`). Program/system quality audit **semantics** (material findings, classification, disposition, closure, read-only pathway) are in **`governance/rp-app/audit-semantics.md`**. RP session-audit **procedure** is in **`docs/audit-workflows.md`**. That procedure file is **not** a `#59` Signal-id inventory or RP JSON taxonomy spec; the V1 inventory is **not live**. **`§A.2`–`§A.3`** below govern depth-1 Evaluation Records **only when triggered**; they do **not** govern program audits 1–4. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
+Simulation and audit logging produce JSON under `data/rp_audits/` (`docs/rp-data-layout.md`). That output **requires interpretation** before work is scheduled; artifacts are **not** a substitute for filed issues. Pipeline: **Simulation → Audit → Interpretation → Issue detection → Classification → Tracking → Fix → Re-test.** That pipeline governs **remediation and tracked work**, not the read-only investigation phase of a **read-only program audit** (`audit-semantics.md`). Program/system quality audit **semantics** (material findings, classification, disposition, closure, read-only pathway) are in **`governance/sources/audit-semantics.md`**. RP session-audit **procedure** is in **`docs/audit-workflows.md`**. That procedure file is **not** a `#59` Signal-id inventory or RP JSON taxonomy spec; the V1 inventory is **not live**. **`§A.2`–`§A.3`** below govern depth-1 Evaluation Records **only when triggered**; they do **not** govern program audits 1–4. Deterministic audit layers (v1/v2) and LLM validation logs are **advisory** unless explicitly documented as runtime gates.
 
 ### A.2 Incidental findings / adjacent discoveries (evaluation depth 1 completion records)
 
@@ -35,7 +35,7 @@ Use **`evaluation depth 1`** as the only scoped term. Optional single gloss: **�
 
 **Definitions**
 
-1. **Evaluation Record** — The **full** set of fields required for the evaluation being closed, including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory field listed in this subsection. The V1 **`#59` Signal-id inventory** is **not live** in this repository. Program-audit semantics are in **`governance/rp-app/audit-semantics.md`**; `docs/audit-workflows.md` does **not** substitute for either that semantics spec or a `#59` inventory.
+1. **Evaluation Record** — The **full** set of fields required for the evaluation being closed, including **Signal id under evaluation**, **Stages satisfied**, **Evaluation depth**, **Disposition**, and every other mandatory field listed in this subsection. The V1 **`#59` Signal-id inventory** is **not live** in this repository. Program-audit semantics are in **`governance/sources/audit-semantics.md`**; `docs/audit-workflows.md` does **not** substitute for either that semantics spec or a `#59` inventory.
 
 2. **Primary Evaluation Record block** — A **single** contiguous markdown region **on a Holy Grail RP GitHub Issue** (repository that hosts Issues for this work) that contains the **complete Evaluation Record** and appears **only** in:
    - the **Issue `body`**, or  
@@ -56,7 +56,7 @@ Use **`evaluation depth 1`** as the only scoped term. Optional single gloss: **�
 The **Incidental findings / adjacent discoveries** obligation **activates** when **both**:
 
 - **T1 — Methodology closure:** A **Completed evaluation publication** exists for one **Signal id** at **evaluation depth 1** (definitions above).  
-- **T2 — GitHub system-of-record:** That **Completed evaluation publication** is **materialized** as a **Primary Evaluation Record block** in **`issue.body`** or **one** **`comment.body`** on the **tracking GitHub Issue** (the Issue used as the **system of record** for that evaluation work per `governance/rp-app/issue-tracking-workflow.md` **§A**).
+- **T2 — GitHub system-of-record:** That **Completed evaluation publication** is **materialized** as a **Primary Evaluation Record block** in **`issue.body`** or **one** **`comment.body`** on the **tracking GitHub Issue** (the Issue used as the **system of record** for that evaluation work per `governance/sources/issue-tracking-workflow.md` **§A**).
 
 If **T1** is true but the record exists only outside GitHub Issue `body`/comments, **the trigger does not activate** (no requirement to add the section until the completion is **published** on the Issue as above).
 
@@ -139,9 +139,9 @@ Record progress in the Issue (description updates, comments, checklists). **Stat
 
 ### B.0.1 Workflow-weight-aware consensus discipline (instruction layer)
 
-Canonical **`light`**, **`standard`**, and **`full`** meanings and **escalation triggers** live **only** in **`governance/rp-app/workflow-weights.md`**. Other governance cites that file; it does **not** replace **`§H`**, **`§D`**, **`Consensus Gate`** substance in **`governance/policies/project-behavior-holy-grail.md`**, or **`§B.2`** verification.
+Canonical **`light`**, **`standard`**, and **`full`** meanings and **escalation triggers** live **only** in **`governance/sources/workflow-weights.md`**. Other governance cites that file; it does **not** replace **`§H`**, **`§D`**, **`Consensus Gate`** substance in **`governance/sources/project-behavior-holy-grail.md`**, or **`§B.2`** verification.
 
-Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** follows **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`** per **`workflow-weights.md`** / **`governance/policies/gpt-workflow-instruction-set.md`**):
+Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** follows **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`** per **`workflow-weights.md`** / **`governance/sources/gpt-workflow-instruction-set.md`**):
 
 | Effective workflow weight | Consensus recording shape |
 |---------------------------|---------------------------|
@@ -294,7 +294,7 @@ If the board uses different option labels, **map by intent** (investigation vs c
 
 3. **Execution-stage transition discipline** — On every **`Current status:`** (**§H**) change: (a) update **Project Status** and **Workflow** to the **§B.3** row **before** calling the transition done; (b) add an **Issue comment** recording: what completed in the prior execution stage, the resulting determination, and the **next execution stage** intended. **When §A.2’s trigger applies to this Issue**, the comment posted **before** setting **`Current status: validated`** **must** also satisfy **§A.3** (checklist in the comment with explicit **pass** / **fail** / **n/A** per row). If **§A.3** is not yet satisfied, **do not** transition to **`validated`** (**§H**, **§A.3** failure rule).
 
-4. **Session / chat boundary** — Before ending a work session, switching chats, or handing off to another AI: add an **Issue comment** with: current **execution stage** (and current **`Current status:`**), work completed this session, what remains, and the **next concrete step**. Chat-local **Active Context** (see `governance/policies/project-behavior-holy-grail.md`) must be a **derived summary** of the Issue + comments + Project fields, written **after** this comment when starting a new chat—not a replacement for it. Optional narration-compression norms (**Issues #217–#219**) are centralized in **`governance/policies/github-issues.md`** (**Governance posture inheritance**, **Redundant disclaimer compression**, **Report structure compression**); they never replace substantive boundary content, **`Current status:`** advance narration (**§H**), or **§B.2 / §B.5** obligations.
+4. **Session / chat boundary** — Before ending a work session, switching chats, or handing off to another AI: add an **Issue comment** with: current **execution stage** (and current **`Current status:`**), work completed this session, what remains, and the **next concrete step**. Chat-local **Active Context** (see `governance/sources/project-behavior-holy-grail.md`) must be a **derived summary** of the Issue + comments + Project fields, written **after** this comment when starting a new chat—not a replacement for it. Optional narration-compression norms (**Issues #217–#219**) are centralized in **`governance/execution/github-issues.md`** (**Governance posture inheritance**, **Redundant disclaimer compression**, **Report structure compression**); they never replace substantive boundary content, **`Current status:`** advance narration (**§H**), or **§B.2 / §B.5** obligations.
 
 5. **Handoff prompts (non-authoritative)** — Delegation may still use handoff prompts, but they are **transport only**. **Hard rule:** If information exists in a handoff prompt but not in the issue body or comments, the workflow is invalid until reconciled (copy authoritative facts into the Issue thread first).
 
@@ -304,8 +304,8 @@ If the board uses different option labels, **map by intent** (investigation vs c
 
 **When it applies:** A PR or direct edit to **this repo** that changes **reusable workflow-governing** text in any of:
 
-- `governance/rp-app/issue-tracking-workflow.md` (template counterpart: `docs/issue-tracking-workflow.md` or the documented equivalent),
-- `governance/policies/cursor-workflow-layer.md` or `governance/policies/project-behavior-holy-grail.md` **when** the change alters **GitHub / Cursor workflow** requirements that the template is expected to copy,
+- `governance/sources/issue-tracking-workflow.md` (template counterpart: `docs/issue-tracking-workflow.md` or the documented equivalent),
+- `governance/execution/cursor-workflow-layer.md` or `governance/sources/project-behavior-holy-grail.md` **when** the change alters **GitHub / Cursor workflow** requirements that the template is expected to copy,
 - `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` **when** the change alters **filing or verification** instructions that should stay aligned with template consumers.
 
 **Actor obligation:** In the Holy Grail PR **description** (or a linked comment), either (a) link a **template-repo PR** that applies the parallel change, or (b) state **`no template change`** with **one line** why (e.g. Holy-Grail–only).
@@ -342,7 +342,7 @@ Use these sections **in order** (copy into `body.md` or the root issue form).
 
 Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / action).
 
-**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`** — orchestration-assigned per **`governance/policies/gpt-workflow-instruction-set.md`**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/rp-app/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval / persistence expectations: **`governance/policies/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
+**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`** — orchestration-assigned per **`governance/sources/gpt-workflow-instruction-set.md`**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/sources/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval / persistence expectations: **`governance/execution/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
 
 ### E. Type (classification; PRD authority)
 

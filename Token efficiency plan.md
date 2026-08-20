@@ -90,7 +90,7 @@ Behavior remains unchanged.
 
 Update:
 
-`governance/rp-app/issue-tracking-workflow.md`
+`governance/sources/issue-tracking-workflow.md`
 
 Add:
 
@@ -301,7 +301,7 @@ Reduce semantic reconstruction.
 
 Update:
 
-`governance/policies/github-issues.md`
+`governance/execution/github-issues.md`
 
 Standardize implementation reports.
 

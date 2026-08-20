@@ -1,6 +1,6 @@
 # Failure Taxonomy Spec v1 (FT1)
 
-> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/rp-app/audit-semantics.md`.
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit or RP `#59` signal-inventory authority. For program/system quality audits, see `governance/sources/audit-semantics.md`.
 
 <!--
   FT1 governance spec: structure + selectively normative early rows.
@@ -16,7 +16,7 @@
 |-------|--------|
 | **Spec ID** | FT1 |
 | **Spec state** | **PARTIAL‑REGISTRY** — **UNKNOWN canon only** (**§9**, **§11**); **other** FTC rows gated until exemplar stabilization (**§13**). **Not** a finalized full codebook release. |
-| **Canonical path** | `governance/rp-app/failure-taxonomy-spec-v1.md` |
+| **Canonical path** | `governance/records/failure-taxonomy-spec-v1.md` |
 | **Authority posture** | **Interpretive / observational labeling only.** This document does **not** define continuity truth, runtime enforcement, causal certainty, orchestration policy, or detector judgments. **`FR4` continuity remains authoritative per `runtime_narrative_memory_prd1.md` (reference only)** — see §6. |
 
 **Explicit non‑authority**
@@ -360,8 +360,8 @@ Until Population-gate PRs explicitly open ontology work:
 - `narrative_knowledge_ingestion_prd2.md` — downstream packet intent only
 - `roadmap.md` — sequencing reference (`Phase -1`/observation posture)
 - `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` — audit applicability / causal advisory / inventories
-- `governance/rp-app/issue-tracking-workflow.md` — **`§`**`D`/****`**`§`**`**`F`**`/****`**`§`**`**`I` **discipline**
-- `governance/rp-app/audit-classification-protocol.md` — **`#`**`187`** **/** **`ACP`** **interchange (**process bundles** **)** **`—`** **‖I‖ linkage **`to`** **`Issues`**
+- `governance/sources/issue-tracking-workflow.md` — **`§`**`D`/****`**`§`**`**`F`**`/****`**`§`**`**`I` **discipline**
+- `governance/records/audit-classification-protocol.md` — **`#`**`187`** **/** **`ACP`** **interchange (**process bundles** **)** **`—`** **‖I‖ linkage **`to`** **`Issues`**
 
 **Planned reciprocal pointer (**`AUDIT_DOCUMENTATION`**` **maintainers):** **`TBD`** add short **stub link** **`to`** **`this`** **`file`** (**separate **`PR`** **outside skeleton scope if not yet present **`—`** **_do not preempt maintainers _`here`_ **_without approval`).
 
@@ -378,7 +378,7 @@ Until Population-gate PRs explicitly open ontology work:
 
 ## Annex B ‖I‖ Operational interchange pointer (#187 / ACP)
 
-**Process interchange** (exemplar package, FT1 label bundle, collision record, workshop exports) is specified in `governance/rp-app/audit-classification-protocol.md` (**ACP**, **ACP‑doc‑0.2‑governance‑freeze‑v0‑crossref**), coordinated **with** **`this`** **`FT1`** **`document`** **`revision`** **`FT1-doc-0.4-governance-freeze-v0`**.
+**Process interchange** (exemplar package, FT1 label bundle, collision record, workshop exports) is specified in `governance/records/audit-classification-protocol.md` (**ACP**, **ACP‑doc‑0.2‑governance‑freeze‑v0‑crossref**), coordinated **with** **`this`** **`FT1`** **`document`** **`revision`** **`FT1-doc-0.4-governance-freeze-v0`**.
 
 **Non‑authority schema reminder** (**full **`keys`** **`in`** **`ACP`** **§§5–10**):**
 ```yaml

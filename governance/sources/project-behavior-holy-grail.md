@@ -72,7 +72,7 @@ No work may progress beyond initial exploration unless it is:
 
 
 
-**Exception — read-only program audits:** A **Governance-authorized read-only program audit** (`governance/rp-app/audit-semantics.md` → **Read-only program audit**) may investigate, classify findings, and report **without** a GitHub Issue for the investigation itself. Repository mutation, GitHub mutation, and remediation still require normal Issue/workflow authority.
+**Exception — read-only program audits:** A **Governance-authorized read-only program audit** (`governance/sources/audit-semantics.md` → **Read-only program audit**) may investigate, classify findings, and report **without** a GitHub Issue for the investigation itself. Repository mutation, GitHub mutation, and remediation still require normal Issue/workflow authority.
 
 
 
@@ -84,7 +84,7 @@ Chat reasoning is not considered persistent state.
 
 
 
-For Holy Grail RP issues, **labels**, **bound GitHub Project** membership (`bindings/bindings.toml` `[github]`), and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain a **non-empty** value (P0–P3) per **§B.5**; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** or proof that relies only on **`gh issue view --json projectItems`** for Priority fails **§B.2**. Source of truth: `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**. Repository-sensitive `gh` commands MUST pass **`--repo`** set to `[github].repository`.
+For Holy Grail RP issues, **labels**, **bound GitHub Project** membership (`bindings/bindings.toml` `[github]`), and **Project Status** / **Workflow** are **required** and must stay aligned with issue-body **`Current status:`** (**§H**). When **Priority** exists on the project, maintain a **non-empty** value (P0–P3) per **§B.5**; it does **not** replace **`Current status:`** or **Workflow**. Missing **Priority** or proof that relies only on **`gh issue view --json projectItems`** for Priority fails **§B.2**. Source of truth: `governance/sources/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**. Repository-sensitive `gh` commands MUST pass **`--repo`** set to `[github].repository`.
 
 
 
@@ -180,7 +180,7 @@ Vague descriptions are not acceptable.
 
 - Investigations default to **multiple scenarios**: include at least **one baseline**, **one stress**, and **one variant** (pick from existing scenario definitions; orientation: `SCENARIO_VALIDATION_FRAMEWORK.md` at repository root).
 
-- **Single-scenario** evidence is **not** enough to **confirm** a pattern; it may support observations only (see `governance/policies/github-issues.md` for Issue-level wording).
+- **Single-scenario** evidence is **not** enough to **confirm** a pattern; it may support observations only (see `governance/execution/github-issues.md` for Issue-level wording).
 
 
 
@@ -236,7 +236,7 @@ No implementation may begin unless the Issue contains:
 
 This must be written before any implementation begins.
 
-Weight-aware **recording shape** (not a substitute for these bullets): **`issue-tracking-workflow.md` §B.0.1** and canonical weights **`governance/rp-app/workflow-weights.md`**.
+Weight-aware **recording shape** (not a substitute for these bullets): **`issue-tracking-workflow.md` §B.0.1** and canonical weights **`governance/sources/workflow-weights.md`**.
 
 
 
@@ -360,7 +360,7 @@ Resolve drift before continuing new work.
 
 
 
-**Active Context** in chat is a **derived summary** of that record—helpful for orientation, **not** a substitute for it. Before starting a **new** chat or handoff, add a **session boundary** comment on the Issue (per `governance/rp-app/issue-tracking-workflow.md` **§B.5**); the new chat’s Active Context should **reflect** that comment and the latest Issue state, **not replace** them.
+**Active Context** in chat is a **derived summary** of that record—helpful for orientation, **not** a substitute for it. Before starting a **new** chat or handoff, add a **session boundary** comment on the Issue (per `governance/sources/issue-tracking-workflow.md` **§B.5**); the new chat’s Active Context should **reflect** that comment and the latest Issue state, **not replace** them.
 
 
 

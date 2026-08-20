@@ -1,16 +1,16 @@
 name: Holy Grail RP issue
-description: Canonical Type, Layer, Pattern status, and evidence (matches governance/rp-app/issue-tracking-workflow.md §D–§I).
+description: Canonical Type, Layer, Pattern status, and evidence (matches governance/sources/issue-tracking-workflow.md §D–§I).
 title: "[BUG] "
 labels: []
 body:
   - type: markdown
     attributes:
       value: |
-        **Contract:** `governance/rp-app/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Product architecture: `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, `v2/README.md`. Work-system identity: `bindings/bindings.toml` `[github]`.
+        **Contract:** `governance/sources/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Product architecture: `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, `v2/README.md`. Work-system identity: `bindings/bindings.toml` `[github]`.
 
-        **Audit wording:** Program audit semantics: `governance/rp-app/audit-semantics.md`. RP session-audit procedure: `docs/audit-workflows.md`. The V1 `#59` Signal-id inventory is **not live**. Historical workshop specs (ACP/FT1) are not current program-audit authority.
+        **Audit wording:** Program audit semantics: `governance/sources/audit-semantics.md`. RP session-audit procedure: `docs/audit-workflows.md`. The V1 `#59` Signal-id inventory is **not live**. Historical workshop specs (ACP/FT1) are not current program-audit authority.
 
-        **Cursor workflow bootstrap (system instructions; canonical policy in `governance/policies/cursor-workflow-layer.md`, always applied via `.cursor/rules/2-ai-system-start.mdc`):**
+        **Cursor workflow bootstrap (system instructions; canonical policy in `governance/execution/cursor-workflow-layer.md`, always applied via `.cursor/rules/2-ai-system-start.mdc`):**
 
         1. **Activation synchronization** — When **evidence extraction** or **analysis** on an issue **begins**, set the **bound GitHub Project** **Project Status** to **In Progress** and **Workflow** to **Investigating** (aligned with **`Current status: investigating`** per **§B.3**). **Do not** require this update when only **browsing** issues or **selecting** the next task without starting extraction or analysis.
 
@@ -20,9 +20,9 @@ body:
 
         **Execution stages vs selection:** **`Current status:`** and **Workflow** are **execution stages** (**§B.3**). **Phase-first selection** (choose batch → filter → order by **Priority**) is an external **process rule** only (**§B.0**, **§B.5**). **Priority** (P0–P3) lives on the **bound GitHub Project** when enabled—not a **Type**. **`maintenance`** is an optional **label** on **quality** items, not a type.
 
-        **Session boundary:** Before ending a session or switching chats, add an **Issue comment** with progress and next step; **Active Context** in chat must **derive** from GitHub, not replace it (**§B.5**, `governance/policies/project-behavior-holy-grail.md`).
+        **Session boundary:** Before ending a session or switching chats, add an **Issue comment** with progress and next step; **Active Context** in chat must **derive** from GitHub, not replace it (**§B.5**, `governance/sources/project-behavior-holy-grail.md`).
 
-        **Workflow weight / execution anchor fields:** **Workflow weight** records orchestration-assigned weight (**`governance/policies/gpt-workflow-instruction-set.md`**); **assigned**/**effective** weight must persist in prompts to implementation AI, **Execution snapshot**, and new-chat bootstrap (**`governance/policies/cursor-workflow-layer.md`**). **Default `standard`** per **`governance/rp-app/workflow-weights.md`**. **Execution anchor** and **Execution snapshot** remain optional handoff aids. Leave optional fields blank when unused.
+        **Workflow weight / execution anchor fields:** **Workflow weight** records orchestration-assigned weight (**`governance/sources/gpt-workflow-instruction-set.md`**); **assigned**/**effective** weight must persist in prompts to implementation AI, **Execution snapshot**, and new-chat bootstrap (**`governance/execution/cursor-workflow-layer.md`**). **Default `standard`** per **`governance/sources/workflow-weights.md`**. **Execution anchor** and **Execution snapshot** remain optional handoff aids. Leave optional fields blank when unused.
 
         Set the **title** prefix to `[QUALITY]` or `[DESIGN_GAP]` when **Type** is not **bug**.
 
@@ -40,7 +40,7 @@ body:
     id: type
     attributes:
       label: Type
-      description: PRD/architecture authority — see governance/rp-app/issue-tracking-workflow.md §E.
+      description: PRD/architecture authority — see governance/sources/issue-tracking-workflow.md §E.
       options:
         - bug
         - quality
@@ -52,7 +52,7 @@ body:
     id: layer
     attributes:
       label: Layer (primary)
-      description: One value only. If other, fill Justification + Intended final layer below. See governance/rp-app/issue-tracking-workflow.md §F.
+      description: One value only. If other, fill Justification + Intended final layer below. See governance/sources/issue-tracking-workflow.md §F.
       options:
         - consequence_classification
         - continuity_state
@@ -81,7 +81,7 @@ body:
     id: pattern_status
     attributes:
       label: Pattern status
-      description: See governance/rp-app/issue-tracking-workflow.md §I.
+      description: See governance/sources/issue-tracking-workflow.md §I.
       options:
         - single_instance
         - potential_pattern
@@ -95,7 +95,7 @@ body:
       label: Workflow weight
       description: >
         Orchestration-assigned routine default is standard (Issue #145 Stage 3; gpt-workflow-instruction-set.md).
-        Canonical meanings and escalation-only triggers: governance/rp-app/workflow-weights.md only.
+        Canonical meanings and escalation-only triggers: governance/sources/workflow-weights.md only.
         Assigned/effective weight should appear in prompts, Execution snapshot, and bootstrap context (cursor-workflow-layer.md).
         Authoritative read sets: docs/issue-bootstrap-profiles.md.
       options:
@@ -109,7 +109,7 @@ body:
     id: current_status
     attributes:
       label: Current status
-      description: Single active value; transitions in governance/rp-app/issue-tracking-workflow.md §H.
+      description: Single active value; transitions in governance/sources/issue-tracking-workflow.md §H.
       options:
         - open
         - investigating
@@ -134,7 +134,7 @@ body:
     id: execution_snapshot
     attributes:
       label: Execution snapshot (optional)
-      description: Short live summary — read before deep thread replay per governance/policies/cursor-workflow-layer.md (Anchor-first Issue context retrieval). Include assigned/effective workflow weight when known; workflow-weight semantics only in governance/rp-app/workflow-weights.md. Handoffs transport-only until copied on-issue (issue-tracking-workflow.md §B.5).
+      description: Short live summary — read before deep thread replay per governance/execution/cursor-workflow-layer.md (Anchor-first Issue context retrieval). Include assigned/effective workflow weight when known; workflow-weight semantics only in governance/sources/workflow-weights.md. Handoffs transport-only until copied on-issue (issue-tracking-workflow.md §B.5).
     validations:
       required: false
 

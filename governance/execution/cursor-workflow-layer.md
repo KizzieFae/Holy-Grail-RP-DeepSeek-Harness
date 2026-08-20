@@ -73,9 +73,9 @@ as the authoritative guide.
 
 | Task class | Minimum extra reads |
 |------------|-------------------|
-| GitHub Issues / backlog / issue workflow | **`governance/rp-app/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/rp-app/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; product architecture in `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md` |
+| GitHub Issues / backlog / issue workflow | **`governance/sources/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/sources/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; product architecture in `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md` |
 | RP app behavior / continuity / Director / session audits | `docs/architecture.md`, `ARCHITECTURE_OVERVIEW.md`, `v2/README.md`; session-audit procedure: `docs/audit-workflows.md` |
-| Program / system quality audits | `governance/rp-app/audit-semantics.md`; RP session procedure: `docs/audit-workflows.md` |
+| Program / system quality audits | `governance/sources/audit-semantics.md`; RP session procedure: `docs/audit-workflows.md` |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
 | Repo structure | `docs/repo-map.md` |
 
@@ -157,7 +157,7 @@ For non-trivial work:
 
 ## Weight-aware bootstrap (Issue #145 — activated)
 
-Canonical **`light`**, **`standard`**, **`full`**, and **escalation triggers:** **`governance/rp-app/workflow-weights.md`** only. **Orchestration** (GPT) assignment/escalation procedure is recorded in **`governance/policies/gpt-workflow-instruction-set.md`** for humans and the orchestration AI—**not** a mandatory implementation-AI bootstrap read. Implementation AI applies **this** file and **`workflow-weights.md`** for **assigned**/**effective** inheritance and enforcement. Profile read lists: **`docs/issue-bootstrap-profiles.md`** (**authoritative**). Implementation AI MUST NOT independently reinterpret bootstrap depth or consensus rigor. Do **not** use weight tier to skip **`§D`**, **`§H`**, **`§B`**, or **`§B.2`** requirements.
+Canonical **`light`**, **`standard`**, **`full`**, and **escalation triggers:** **`governance/sources/workflow-weights.md`** only. **Orchestration** (GPT) assignment/escalation procedure is recorded in **`governance/sources/gpt-workflow-instruction-set.md`** for humans and the orchestration AI—**not** a mandatory implementation-AI bootstrap read. Implementation AI applies **this** file and **`workflow-weights.md`** for **assigned**/**effective** inheritance and enforcement. Profile read lists: **`docs/issue-bootstrap-profiles.md`** (**authoritative**). Implementation AI MUST NOT independently reinterpret bootstrap depth or consensus rigor. Do **not** use weight tier to skip **`§D`**, **`§H`**, **`§B`**, or **`§B.2`** requirements.
 
 **Procedure** (after **`SYSTEM UNDERSTANDING REPORT`** when work is tied to a tracked Issue, or when starting substantive Issue execution):
 
@@ -180,7 +180,7 @@ When assembling **execution context** from a tracked Issue **after** the **`SYST
 3. **`Current status:`**, mandatory **Evidence**, remaining **`§D`** sections.
 4. **Comments** — prioritize recent **execution-stage transition** and **session boundary** comments; avoid dumping the full thread before snapshot/anchor unless history itself is the task.
 
-Initial **`gh issue view`** / JSON retrieval remains bounded per **`governance/policies/github-issues.md`**; this ordering governs **how** to read results, not unlimited extra API calls.
+Initial **`gh issue view`** / JSON retrieval remains bounded per **`governance/execution/github-issues.md`**; this ordering governs **how** to read results, not unlimited extra API calls.
 
 ---
 
@@ -326,9 +326,9 @@ You **MUST**:
 
 All **evidence extraction** and **analysis** must be **externalized** (analysis AI or human), not executed silently by Cursor.
 
-**Handoff prompts are non-authoritative (hard rule):** If information exists in a **handoff prompt** but **not** in the issue body **or** issue comments, the workflow is **invalid** until reconciled—copy authoritative facts into the Issue thread first (`governance/rp-app/issue-tracking-workflow.md` **§B.5**).
+**Handoff prompts are non-authoritative (hard rule):** If information exists in a **handoff prompt** but **not** in the issue body **or** issue comments, the workflow is **invalid** until reconciled—copy authoritative facts into the Issue thread first (`governance/sources/issue-tracking-workflow.md` **§B.5**).
 
-**Escalation / effective weight:** When **`governance/rp-app/workflow-weights.md`** escalation triggers apply, **GPT** escalates **effective** workflow weight to **`full`** (orchestration). Implementation AI inherits **`full`**, MUST NOT narrow bootstrap reads or consensus recording **below** **`full`**, and MUST post an Issue **comment** when surfacing a suspected trigger (category only—do **not** copy definitions out of **`workflow-weights.md`**). **User** resolves material disagreement—still on-record on the Issue (**§B.5**).
+**Escalation / effective weight:** When **`governance/sources/workflow-weights.md`** escalation triggers apply, **GPT** escalates **effective** workflow weight to **`full`** (orchestration). Implementation AI inherits **`full`**, MUST NOT narrow bootstrap reads or consensus recording **below** **`full`**, and MUST post an Issue **comment** when surfacing a suspected trigger (category only—do **not** copy definitions out of **`workflow-weights.md`**). **User** resolves material disagreement—still on-record on the Issue (**§B.5**).
 
 ---
 
@@ -337,28 +337,28 @@ All **evidence extraction** and **analysis** must be **externalized** (analysis 
 All work between agents must reference:
 
 - a GitHub Issue
-- the current Issue state (issue body **`Current status:`** per **§H** in `governance/rp-app/issue-tracking-workflow.md`)
+- the current Issue state (issue body **`Current status:`** per **§H** in `governance/sources/issue-tracking-workflow.md`)
 - for **issue-management** tasks (create, **§H** transition, close): **GitHub Projects** state on the **bound GitHub Project** (`bindings/bindings.toml` `[github]`) — **labels**, **projectItems**, **Project Status**, **Workflow**, and **Priority** (when defined) per **§B.1**–**§B.6**
 
 No free-floating work is allowed.
 
-**Active Context (chat)** is a **derived summary** of the Issue + comments + Project fields (`governance/policies/project-behavior-holy-grail.md`); it must **not** replace them. A **session boundary** comment on the Issue precedes relying on a new chat’s context alone (**§B.5**).
+**Active Context (chat)** is a **derived summary** of the Issue + comments + Project fields (`governance/sources/project-behavior-holy-grail.md`); it must **not** replace them. A **session boundary** comment on the Issue precedes relying on a new chat’s context alone (**§B.5**).
 
-**Inherited declarative posture (Issue #217):** When Governance Compression posture is **stable**, sessions may reaffirm aloud what is permitted using the compact line defined in **`governance/policies/github-issues.md` → Governance posture inheritance** (`#217`). This is **workflow narration compression only**: it never replaces reasoning, uncertainty, **`Current status:`** transition reporting (when advancing §H), **§B.2** proof blocks when required, or **§D** substance.
+**Inherited declarative posture (Issue #217):** When Governance Compression posture is **stable**, sessions may reaffirm aloud what is permitted using the compact line defined in **`governance/execution/github-issues.md` → Governance posture inheritance** (`#217`). This is **workflow narration compression only**: it never replaces reasoning, uncertainty, **`Current status:`** transition reporting (when advancing §H), **§B.2** proof blocks when required, or **§D** substance.
 
-**Redundant disclaimers (Issue #218):** After that posture line (or equivalent explicit posture) is established for the scoped Issue, omit **only** extra sentences that duplicate the same low-information constraints—**`governance/policies/github-issues.md` → Redundant disclaimer compression**. Does not permit dropping §B.2, §H narration, evidence, consensus, uncertainty, architecture, workflow-weight rationale, or material Priority lines.
+**Redundant disclaimers (Issue #218):** After that posture line (or equivalent explicit posture) is established for the scoped Issue, omit **only** extra sentences that duplicate the same low-information constraints—**`governance/execution/github-issues.md` → Redundant disclaimer compression**. Does not permit dropping §B.2, §H narration, evidence, consensus, uncertainty, architecture, workflow-weight rationale, or material Priority lines.
 
 **Report structure (Issue #219):** Checkpoint/report scaffolding may omit repeated headers, framing intros, and ritual metadata narration when deltas are clearer—see **`github-issues.md` → Report structure compression**. Still obey **#217/#218**, §B.2 envelopes, §H + §B.5 transitions, and expansion triggers (**ambiguity/risk/etc.**).
 
 **Issue-management completion proof:** Before accepting or signing off, require **`gh issue view <N> --repo <bindings.github.repository> --json number,state,labels,projectItems`** (or equivalent) showing **non-empty** `labels` and **`projectItems`**, and explicit **Project Status** + **Workflow** values that **match §B.3** for the issue’s **`Current status:`**. When **Priority** exists on the project, **also** retain proof from **`gh project item-list`**, the **Projects** UI, or **GraphQL** that **Priority** is **set** (P0–P3)—**`projectItems` JSON alone is insufficient** (**§B.2**). When **Priority** is **material** to the task, the completion record **must** include the **one-line** acknowledgment or update described in **§B.2**. If any required field is missing → **reject**; task remains **incomplete** (**§B.4**).
 
-**Workflow weights:** Canonical definitions and escalation triggers live **only** in **`governance/rp-app/workflow-weights.md`**. **Orchestration-only** GPT instruction set (**versioned**, not mandatory Cursor bootstrap reading): **`governance/policies/gpt-workflow-instruction-set.md`**. **Issue #145** Stage **3** activation applies: routine **assigned** default **`standard`**, authoritative **`docs/issue-bootstrap-profiles.md`**, and operational **`standard`**/**`light`** paths when **effective** weight matches (**assigned** unless escalation forces **`full`**). Operational procedures: **Weight-aware bootstrap** and **Anchor-first Issue context retrieval** above; compressed Issue-facing reporting: **`governance/policies/github-issues.md`**; suspected-trigger surfacing: **Delegation** above.
+**Workflow weights:** Canonical definitions and escalation triggers live **only** in **`governance/sources/workflow-weights.md`**. **Orchestration-only** GPT instruction set (**versioned**, not mandatory Cursor bootstrap reading): **`governance/sources/gpt-workflow-instruction-set.md`**. **Issue #145** Stage **3** activation applies: routine **assigned** default **`standard`**, authoritative **`docs/issue-bootstrap-profiles.md`**, and operational **`standard`**/**`light`** paths when **effective** weight matches (**assigned** unless escalation forces **`full`**). Operational procedures: **Weight-aware bootstrap** and **Anchor-first Issue context retrieval** above; compressed Issue-facing reporting: **`governance/execution/github-issues.md`**; suspected-trigger surfacing: **Delegation** above.
 
 ---
 
 ## Activation synchronization (GitHub Projects)
 
-When an issue becomes the **active subject of work** on the **bound GitHub Project**, align **Project** fields with **`Current status: investigating`** per `governance/rp-app/issue-tracking-workflow.md` **§B.3**:
+When an issue becomes the **active subject of work** on the **bound GitHub Project**, align **Project** fields with **`Current status: investigating`** per `governance/sources/issue-tracking-workflow.md` **§B.3**:
 
 - **Project Status** → **In Progress**
 - **Workflow** → **Investigating**
@@ -373,7 +373,7 @@ When an issue becomes the **active subject of work** on the **bound GitHub Proje
 - **Browsing** issues or the backlog, or
 - **Selecting** the next issue / task **without** yet beginning extraction or analysis on it.
 
-**Phase-first selection** (choose batch → filter → order by **Priority**) is an external **process rule** only; it does **not** change **Workflow** or **`Current status:`** meanings (**§B.0**, **§B.5** in `governance/rp-app/issue-tracking-workflow.md`).
+**Phase-first selection** (choose batch → filter → order by **Priority**) is an external **process rule** only; it does **not** change **Workflow** or **`Current status:`** meanings (**§B.0**, **§B.5** in `governance/sources/issue-tracking-workflow.md`).
 
 ---
 
@@ -440,7 +440,7 @@ If the work included **creating, updating, or closing** a GitHub Issue, also rec
 - **Priority** (when defined on the project): proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**—and material-task **one line** when **§B.2** requires it:
 - **Pass / fail** against **§B.2** (if fail, work is **not** complete):
 
-**Compressed Issue-facing narrative:** Default to **`governance/policies/github-issues.md` → Compressed implementation and reporting defaults** for completion notes and checkpoints unless an expansion trigger listed there applies.
+**Compressed Issue-facing narrative:** Default to **`governance/execution/github-issues.md` → Compressed implementation and reporting defaults** for completion notes and checkpoints unless an expansion trigger listed there applies.
 
 === END REPORT ===
 

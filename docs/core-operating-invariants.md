@@ -21,7 +21,7 @@ Stable truths operators and agents rely on when working in **Holy Grail RP**. Th
 
 ## Audit
 
-- Program audit semantics: **`governance/rp-app/audit-semantics.md`**
+- Program audit semantics: **`governance/sources/audit-semantics.md`**
 - RP session-audit procedure: **`docs/audit-workflows.md`**
 - Scenario validation framing: **`SCENARIO_VALIDATION_FRAMEWORK.md`**
 
@@ -46,9 +46,9 @@ Implementation: `v2/domain/modules/continuity_*.py`, `continuity_manager.py`.
 
 ## Governance
 
-- **GitHub Issues** are the system of record for tracked work: **`governance/rp-app/issue-tracking-workflow.md`**
-- Filing and verification: **`governance/policies/github-issues.md`**
-- Cursor bootstrap: **`governance/policies/cursor-workflow-layer.md`**
-- Workflow weights and bootstrap profiles: **`governance/rp-app/workflow-weights.md`**, **`docs/issue-bootstrap-profiles.md`**
+- **GitHub Issues** are the system of record for tracked work: **`governance/sources/issue-tracking-workflow.md`**
+- Filing and verification: **`governance/execution/github-issues.md`**
+- Cursor bootstrap: **`governance/execution/cursor-workflow-layer.md`**
+- Workflow weights and bootstrap profiles: **`governance/sources/workflow-weights.md`**, **`docs/issue-bootstrap-profiles.md`**
 
-Historical execution records under `governance/rp-app/` are program history, not current architecture authorities.
+Historical execution records under `governance/records/` are program history, not current architecture authorities.

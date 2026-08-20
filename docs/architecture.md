@@ -6,7 +6,7 @@ Shared guardrails for Holy Grail RP. Product orientation: [ARCHITECTURE_OVERVIEW
 
 **Scenario validation:** [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md) (canonical; do not duplicate here).
 
-**Issue workflow:** [governance/rp-app/issue-tracking-workflow.md](../governance/rp-app/issue-tracking-workflow.md).
+**Issue workflow:** [governance/sources/issue-tracking-workflow.md](../governance/sources/issue-tracking-workflow.md).
 
 ---
 

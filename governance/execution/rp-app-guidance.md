@@ -6,7 +6,7 @@ When a task touches the RP runtime / domain, read:
 - `docs/architecture.md`
 - `ARCHITECTURE_OVERVIEW.md`
 - `v2/README.md`
-- `governance/rp-app/audit-semantics.md` (program audit semantics, when conducting program audits)
+- `governance/sources/audit-semantics.md` (program audit semantics, when conducting program audits)
 - `docs/audit-workflows.md` (RP session-audit **procedure** only; not `#59` signal inventory)
 
 Important RP app rules:

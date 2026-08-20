@@ -137,7 +137,7 @@ Do not write ad-hoc simulation captures to the repository root. Use `data/invest
 
 - [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) — behavioral validation as a core layer
 - [MODULE_INDEX.md](./MODULE_INDEX.md) — scenario and audit module routing
-- [governance/rp-app/audit-semantics.md](./governance/rp-app/audit-semantics.md) — program audit semantics
+- [governance/sources/audit-semantics.md](./governance/sources/audit-semantics.md) — program audit semantics
 - [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure
 - [docs/rp-data-layout.md](./docs/rp-data-layout.md) — sessions, audits, fixtures
 - [docs/testing.md](./docs/testing.md) — pytest commands and scope

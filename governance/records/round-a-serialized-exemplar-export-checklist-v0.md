@@ -1,6 +1,6 @@
 # Round A Serialized Exemplar — Facilitator / Export Checklist v0
 
-> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/rp-app/audit-semantics.md`.
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/sources/audit-semantics.md`.
 
 <!--
   Operational checklist only (#186 / #187 adjacency).
@@ -29,10 +29,10 @@
 
 | Document | Role |
 |----------|------|
-| `governance/rp-app/failure-taxonomy-spec-v1.md` | **FT1** semantic authority (**‖N‖** there). Checklist ≠ taxonomy. |
-| `governance/rp-app/audit-classification-protocol.md` | **ACP** §§5–8 (**packages**, pointers, UNKNOWN pairing). Bundles cite evidence; they do **not** absorb raw archives. |
+| `governance/records/failure-taxonomy-spec-v1.md` | **FT1** semantic authority (**‖N‖** there). Checklist ≠ taxonomy. |
+| `governance/records/audit-classification-protocol.md` | **ACP** §§5–8 (**packages**, pointers, UNKNOWN pairing). Bundles cite evidence; they do **not** absorb raw archives. |
 | `autogen_rp/python/rp_app/AUDIT_DOCUMENTATION.md` | **Applicability and Signal inventory authority** (**read-order pressure** stays here — checklist does **not** replace it). |
-| `governance/rp-app/round-a-strata-grid-v0.md` | **Strata quotas / flags / anti-overfitting** — selection guardrails (**not FTC law**). |
+| `governance/records/round-a-strata-grid-v0.md` | **Strata quotas / flags / anti-overfitting** — selection guardrails (**not FTC law**). |
 | `runtime_narrative_memory_prd1.md` (**FR4**) | Continuity truth **upstream** of workshop labels — excerpts are pointers only (**ACP §3** posture). |
 
 ---

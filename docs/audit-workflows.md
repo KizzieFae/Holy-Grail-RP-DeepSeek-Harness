@@ -2,7 +2,7 @@
 
 RP **session-audit procedure** for Holy Grail RP: how to read `data/rp_audits/session_*` artifacts, diagnose layer ownership, and follow retention policy.
 
-**Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/rp-app/audit-semantics.md`**. Remediation Issue filing — see **`governance/rp-app/issue-tracking-workflow.md`** (§A.1, §D–§I).
+**Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/sources/audit-semantics.md`**. Remediation Issue filing — see **`governance/sources/issue-tracking-workflow.md`** (§A.1, §D–§I).
 
 For artifact layout, see [`docs/rp-data-layout.md`](./rp-data-layout.md). For optional **offline** `fact_spec.v1` post-processing, see [`SCENARIO_VALIDATION_FRAMEWORK.md`](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
@@ -118,4 +118,4 @@ and Cursor should follow.
 
 ## Historical offline eval baselines (#243)
 
-Frozen investigation corpora and baseline JSON under `data/fixtures/evaluation/` may include **historical** semantic-proposal evaluation artifacts. Those are **not** runtime gates and **not** current bootstrap paths. When interpreting such rows offline: treat `corrected_category` as the primary eval output; require committed-state corroboration before filing runtime defects. See `governance/rp-app/audit-semantics.md` for program-audit finding rules when promoting conclusions to tracked work.
+Frozen investigation corpora and baseline JSON under `data/fixtures/evaluation/` may include **historical** semantic-proposal evaluation artifacts. Those are **not** runtime gates and **not** current bootstrap paths. When interpreting such rows offline: treat `corrected_category` as the primary eval output; require committed-state corroboration before filing runtime defects. See `governance/sources/audit-semantics.md` for program-audit finding rules when promoting conclusions to tracked work.

@@ -21,7 +21,7 @@ workspace_root_rules = ".cursor/rules/"
 
 [issue_tracking]
 # GitHub Issues / Projects workflow body (§A–§K) — canonical under governance/
-issue_workflow_doc = "governance/rp-app/issue-tracking-workflow.md"
+issue_workflow_doc = "governance/sources/issue-tracking-workflow.md"
 
 [issue_templates]
 active_pack = "holy_grail_rp"

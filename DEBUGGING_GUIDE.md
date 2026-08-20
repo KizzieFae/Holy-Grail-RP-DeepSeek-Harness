@@ -39,7 +39,7 @@ Apparent **UI vs API/runtime** differences are often **input-driven** (setup pay
 ### Workflow
 
 1. Reproduce with audit/trace enabled. Note scenario id, baseline vs treatment, and whether the run used live or mock inference.
-2. Pick **one primary Layer** first (canonical list below; full definitions in [governance/rp-app/issue-tracking-workflow.md](./governance/rp-app/issue-tracking-workflow.md) **§F**).
+2. Pick **one primary Layer** first (canonical list below; full definitions in [governance/sources/issue-tracking-workflow.md](./governance/sources/issue-tracking-workflow.md) **§F**).
 3. Walk **evidence order** once, top to bottom; stop when you can name what **committed** the bad state.
 4. Produce **Layer**, **verdict**, and **minimal repro** (scenario id, audit/trace locator, turn index if known).
 5. **Stop** — validation and triage end here. Do not implement fixes in the same pass unless a human **explicitly** directs remediation.
@@ -76,7 +76,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 | `rendering` | Prose garble, dialogue not verbatim in presented output | DSH `narrator-phase.mjs`, `prompt_builders.py` |
 | `audit_simulation` | Wrong or missing traces, harness, metrics | DSH `hg-trace-emitter`; Host `session_history.py`; `v2/rp_runtime/tests/`; [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | `application_infrastructure` | Encoding, UI shell, session I/O, loader/path mechanics | `v2/ui/streamlit_app.py`, Host `session_repository.py` / `session_setup.py`, `session_manager.py`, env/paths |
-| `other` | Only per **§F** | [governance/rp-app/issue-tracking-workflow.md](./governance/rp-app/issue-tracking-workflow.md) **§F** |
+| `other` | Only per **§F** | [governance/sources/issue-tracking-workflow.md](./governance/sources/issue-tracking-workflow.md) **§F** |
 
 ### Verdict (record one)
 

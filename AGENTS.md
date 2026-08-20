@@ -23,16 +23,20 @@ Do not rely on tool memory as the only source of important project behavior.
 - Prefer extending existing modules and workflows before inventing new ones.
 - Keep important guidance in repo files, not only in tool-specific settings.
 - If code behavior, architecture constraints, or test expectations change, update the relevant docs.
-- When the user asks to **file** a GitHub Issue (not draft-only), follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6** and **§C** (`gh issue create` from the repo git root with **`--repo`** set to `bindings/bindings.toml` `[github].repository`; **mandatory** labels; add to the **bound GitHub Project** in that same `[github]` table; **Status** / **Workflow** fields per **§B.3**; **non-empty Priority** (typically **P3** until triaged) when the project defines it (**§B.5**); **§B.2** verification before reporting done). Issue body template remains **§D–§F**. Do **not** use `gh repo set-default` as durable authority.
-- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --repo <bindings.github.repository> --json number,state,labels,projectItems`** **and** **§B.2** proof of **Priority** from **`gh project item-list`** / UI / GraphQL (not **`projectItems` JSON alone**), plus **§B.3** alignment and, when **§B.2** applies, the **one-line** material **Priority** acknowledgment — see **`governance/rp-app/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
+- When the user asks to **file** a GitHub Issue (not draft-only), follow `governance/sources/issue-tracking-workflow.md` **§B.1**–**§B.6** and **§C** (`gh issue create` from the repo git root with **`--repo`** set to `bindings/bindings.toml` `[github].repository`; **mandatory** labels; add to the **bound GitHub Project** in that same `[github]` table; **Status** / **Workflow** fields per **§B.3**; **non-empty Priority** (typically **P3** until triaged) when the project defines it (**§B.5**); **§B.2** verification before reporting done). Issue body template remains **§D–§F**. Do **not** use `gh repo set-default` as durable authority.
+- For **issue-management** tasks (create, transition **§H**, close): completion reports must include **`gh issue view --repo <bindings.github.repository> --json number,state,labels,projectItems`** **and** **§B.2** proof of **Priority** from **`gh project item-list`** / UI / GraphQL (not **`projectItems` JSON alone**), plus **§B.3** alignment and, when **§B.2** applies, the **one-line** material **Priority** acknowledgment — see **`governance/sources/issue-tracking-workflow.md` §B.2**. Missing metadata ⇒ incomplete; do not report completion.
 - Do not overwrite environment or secret files without explicit user confirmation.
-- **Workflow weights:** GPT **assigns** workflow weight before substantive Issue work; implementation AI (**Cursor**) inherits **assigned**/**effective** weight and must not reinterpret rigor independently (**`governance/policies/gpt-workflow-instruction-set.md`**). Canonical **`light` / `standard` / `full`** and escalation triggers — **`governance/rp-app/workflow-weights.md`** only. **Routine filing assigned default:** **`standard`**. Weight-aware bootstrap + anchor-first retrieval — **`governance/policies/cursor-workflow-layer.md`**; authoritative profile read lists — **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes — **`governance/rp-app/issue-tracking-workflow.md` §B.0.1**.
+- **Workflow weights:** GPT **assigns** workflow weight before substantive Issue work; implementation AI (**Cursor**) inherits **assigned**/**effective** weight and must not reinterpret rigor independently (**`governance/sources/gpt-workflow-instruction-set.md`**). Canonical **`light` / `standard` / `full`** and escalation triggers — **`governance/sources/workflow-weights.md`** only. **Routine filing assigned default:** **`standard`**. Weight-aware bootstrap + anchor-first retrieval — **`governance/execution/cursor-workflow-layer.md`**; authoritative profile read lists — **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes — **`governance/sources/issue-tracking-workflow.md` §B.0.1**.
 
 ## Governance layout
 
 - **Bindings** (late-bound project values only): `bindings/bindings.toml`
 - **Template sync manifest** (no binding payloads): `governance/project-sync.toml`
-- **Workflow and Cursor governance:** `governance/policies/` and `governance/rp-app/`
+- **Governance-AI source authorities:** `governance/sources/` — canonical governance/workflow authorities (see `governance/README.md`)
+- **Implementation execution policies:** `governance/execution/` — Cursor `@`-included execution policies
+- **Historical / supporting records:** `governance/records/` — not current Governance-AI authority
+
+**New governance documents:** classify by authority function per `governance/README.md` → **Creating governance documents** (sources vs execution vs records vs system/bootstrap). Do not place new canon under retired `governance/policies/` or `governance/rp-app/` paths.
 
 Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include (or route to) files under `governance/`. The portable four-file adapter set is `2-ai-system-start.mdc`, `project-behavior.mdc`, `github-issues.mdc`, and `github-project-usage.mdc`.
 
@@ -55,7 +59,7 @@ Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include (or rou
 - [docs/rp-data-layout.md](./docs/rp-data-layout.md) — on-disk data
 - [docs/architecture.md](./docs/architecture.md) — integration guardrails
 - [docs/testing.md](./docs/testing.md) — pytest and validation commands
-- [governance/rp-app/audit-semantics.md](./governance/rp-app/audit-semantics.md) — program audit semantics
+- [governance/sources/audit-semantics.md](./governance/sources/audit-semantics.md) — program audit semantics
 - [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure
 - [docs/scene-grounding-layer.md](./docs/scene-grounding-layer.md) — Scene Grounding MVP
 
@@ -87,7 +91,7 @@ When a task touches domain behavior, also read:
 
 **Offline tooling:** `tools/investigation/`, `tools/maintenance/` — see each README.
 
-**Historical program records** under `governance/rp-app/` document past slices; consult them for history, not as the primary description of current architecture.
+**Historical program records** under `governance/records/` document past slices; consult them for history, not as the primary description of current architecture.
 
 ## Tool-specific compatibility
 

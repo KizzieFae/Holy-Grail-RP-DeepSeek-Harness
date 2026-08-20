@@ -1,6 +1,6 @@
 # Round A Strata Grid v0
 
-> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/rp-app/audit-semantics.md`.
+> **Status: HISTORICAL WORKSHOP** — Not current program-audit authority. See `governance/sources/audit-semantics.md`.
 
 <!--
   Operational workshop steering only — NOT FT1/ACP normative semantics.

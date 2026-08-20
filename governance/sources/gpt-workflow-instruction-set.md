@@ -87,7 +87,7 @@ Default:
 
 GPT MUST evaluate canonical escalation criteria from:
 
-`governance/rp-app/workflow-weights.md`
+`governance/sources/workflow-weights.md`
 
 If escalation criteria apply:
 
@@ -332,11 +332,11 @@ Meaningful progress includes:
 
 Primary authority:
 
-`governance/rp-app/issue-tracking-workflow.md`
+`governance/sources/issue-tracking-workflow.md`
 
 Weight authority:
 
-`governance/rp-app/workflow-weights.md`
+`governance/sources/workflow-weights.md`
 
 Bootstrap authority:
 

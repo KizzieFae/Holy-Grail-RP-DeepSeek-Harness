@@ -2,7 +2,7 @@
 
 When the user asks to **create**, **file**, **open**, or **track** a GitHub Issue (or supplies title/body for that purpose):
 
-- Follow `governance/rp-app/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**, **§D–§G** for: `gh issue create` with **mandatory** `--label` (§C) and **`--repo`** set to `bindings/bindings.toml` `[github].repository`, add to the **bound GitHub Project** in that same `[github]` table, **Project Status** / **Workflow** (§B.3), **non-empty Priority** when the project defines it (§B.5), and full **§B.2** verification (`gh issue view --repo <bindings.github.repository> --json …` **plus** **Priority** proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**) **before** reporting completion. Do **not** use `gh repo set-default` as durable authority.
+- Follow `governance/sources/issue-tracking-workflow.md` **§B.1**–**§B.6**, **§C**, **§D–§G** for: `gh issue create` with **mandatory** `--label` (§C) and **`--repo`** set to `bindings/bindings.toml` `[github].repository`, add to the **bound GitHub Project** in that same `[github]` table, **Project Status** / **Workflow** (§B.3), **non-empty Priority** when the project defines it (§B.5), and full **§B.2** verification (`gh issue view --repo <bindings.github.repository> --json …` **plus** **Priority** proof from **`gh project item-list`** / UI / GraphQL—not **`projectItems` JSON alone**) **before** reporting completion. Do **not** use `gh repo set-default` as durable authority.
 - **Do not** report filing complete without **non-empty** `labels` and `projectItems` in the issue-view JSON, without **set Priority** when the field exists, or without **§B.2**-compliant Priority proof (unless §B.1 duplicate/withdrawn exception is documented).
 - On **`Current status:`** (**§H**) changes or closure: update Project fields per **§B.3**, add the **execution-stage transition** comment required by **§B.5**, re-run **§B.2**, and reject any report that skips verification.
 - **Priority** / **phase-first selection** / **session boundaries** / **handoff invalidity** / **Active Context** rules: **§B.0** and **§B.5** in the same canonical file.
@@ -28,7 +28,7 @@ When posting implementation notes, completion records, session summaries, or **c
 
 This section **does not** relax: Issue body mandatory sections, safe body mutation rules below, **§B.2** verification gates, **Priority** proof requirements, or governance authority.
 
-**Cursor / agent alignment:** When reporting implementation outcomes **to Issues** (comments, checkpoint blocks), default to the same compressed-vs-expand judgment unless **`governance/policies/cursor-workflow-layer.md`** mandates a structured report shape that already embeds proof blocks.
+**Cursor / agent alignment:** When reporting implementation outcomes **to Issues** (comments, checkpoint blocks), default to the same compressed-vs-expand judgment unless **`governance/execution/cursor-workflow-layer.md`** mandates a structured report shape that already embeds proof blocks.
 
 ## Governance posture inheritance (Issue #217; workflow narration compression)
 
@@ -104,14 +104,14 @@ Issue retrieval must remain bounded and deterministic.
 
 After a successful retrieval, when **using** Issue content for ongoing execution (human or agent), read **stable execution cues** before deep thread replay:
 
-When workflow bootstrap rules in `governance/policies/cursor-workflow-layer.md` govern the session, this anchor-first **usage** ordering applies **after** required bootstrap completion (including **SYSTEM UNDERSTANDING REPORT** where applicable).
+When workflow bootstrap rules in `governance/execution/cursor-workflow-layer.md` govern the session, this anchor-first **usage** ordering applies **after** required bootstrap completion (including **SYSTEM UNDERSTANDING REPORT** where applicable).
 
 1. **Execution snapshot** (body / template), if present.
 2. **Execution anchor** (permalink, commit hash, scenario id, etc.), if present.
 3. Then **`Current status:`**, mandatory **Evidence**, and remaining **`issue-tracking-workflow.md` §D** sections.
 4. Then **comments**, prioritizing recent **§B.5** transition and session-boundary comments.
 
-Ordering aligns with **`governance/policies/cursor-workflow-layer.md` → Anchor-first Issue context retrieval**. It does **not** authorize extra retrieval attempts beyond **Retrieval discipline** above.
+Ordering aligns with **`governance/execution/cursor-workflow-layer.md` → Anchor-first Issue context retrieval**. It does **not** authorize extra retrieval attempts beyond **Retrieval discipline** above.
 
 ### Safe issue body mutation
 

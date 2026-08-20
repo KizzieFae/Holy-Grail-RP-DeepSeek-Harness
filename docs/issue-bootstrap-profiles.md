@@ -2,7 +2,7 @@
 
 Defines **required reads** for starting Issue-driven work at three depths. Paths are **repo-relative from the Holy Grail RP repository root** unless noted.
 
-**Authority:** This document is **authoritative** for bootstrap read sets mapped from **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`**) after Issue **#145** Stage **3** activation. Canonical weight meanings and escalation triggers: **`governance/rp-app/workflow-weights.md`** only. Selection procedure: **`governance/policies/cursor-workflow-layer.md`** → **Weight-aware bootstrap**.
+**Authority:** This document is **authoritative** for bootstrap read sets mapped from **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`**) after Issue **#145** Stage **3** activation. Canonical weight meanings and escalation triggers: **`governance/sources/workflow-weights.md`** only. Selection procedure: **`governance/execution/cursor-workflow-layer.md`** → **Weight-aware bootstrap**.
 
 ---
 
@@ -13,10 +13,10 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 **Always**
 
 - `AGENTS.md`
-- `governance/rp-app/issue-tracking-workflow.md` (**`§B`** Projects + **`§D`** body contract + **`§H`** stages)
-- `governance/policies/github-issues.md`
-- `governance/policies/project-behavior-holy-grail.md`
-- `governance/policies/cursor-workflow-layer.md`
+- `governance/sources/issue-tracking-workflow.md` (**`§B`** Projects + **`§D`** body contract + **`§H`** stages)
+- `governance/execution/github-issues.md`
+- `governance/sources/project-behavior-holy-grail.md`
+- `governance/execution/cursor-workflow-layer.md`
 
 **When task touches RP runtime / domain modules**
 
@@ -28,7 +28,7 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 
 **When auditing / continuity debugging**
 
-- `governance/rp-app/audit-semantics.md` (program audits)
+- `governance/sources/audit-semantics.md` (program audits)
 - `docs/audit-workflows.md` (RP session-audit procedure)
 - `docs/rp-data-layout.md`
 
@@ -41,8 +41,8 @@ Mid-depth bootstrap when **effective** weight is **`standard`** (routine **assig
 **Baseline**
 
 - `AGENTS.md`
-- `governance/rp-app/issue-tracking-workflow.md` (**`§B`**, **`§D`**, **`§H`**)
-- `governance/policies/github-issues.md`
+- `governance/sources/issue-tracking-workflow.md` (**`§B`**, **`§D`**, **`§H`**)
+- `governance/execution/github-issues.md`
 
 **Add per task class from `AGENTS.md` → Minimum guidance reads** (architecture, scenario validation, repo map, etc.) without replaying the entire Full list unless escalation triggers apply.
 
@@ -55,8 +55,8 @@ Minimal reads when **effective** weight is **`light`** (**assigned** unless esca
 **Minimum**
 
 - `AGENTS.md` (including Instruction priority and Repo working rules)
-- `governance/rp-app/issue-tracking-workflow.md` — at minimum **`§B.1`–`§B.5`**, **`§D`**, **`§H`**, **`§F`** Layer appendix as needed
-- `governance/policies/github-issues.md`
+- `governance/sources/issue-tracking-workflow.md` — at minimum **`§B.1`–`§B.5`**, **`§D`**, **`§H`**, **`§F`** Layer appendix as needed
+- `governance/execution/github-issues.md`
 
-Expand immediately if ambiguity, architecture risk, or audit/evidence work appears (**`governance/rp-app/workflow-weights.md`** escalation).
+Expand immediately if ambiguity, architecture risk, or audit/evidence work appears (**`governance/sources/workflow-weights.md`** escalation).
 

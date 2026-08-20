@@ -77,7 +77,7 @@ _LIVE_RESPONSIBILITY_ROOTS = (
     "v2/ui",
 )
 
-_AUDIT_SEMANTICS_PATH = _ROOT / "governance" / "rp-app" / "audit-semantics.md"
+_AUDIT_SEMANTICS_PATH = _ROOT / "governance" / "sources" / "audit-semantics.md"
 _AUDIT_PROCEDURE_PATH = _ROOT / "docs" / "audit-workflows.md"
 _AUDIT_AUTHORITY_NAV_SURFACES = (
     _ROOT / "AGENTS.md",
@@ -87,11 +87,28 @@ _AUDIT_AUTHORITY_NAV_SURFACES = (
     _AUDIT_PROCEDURE_PATH,
 )
 _GOVERNANCE_README_PATH = _ROOT / "governance" / "README.md"
+_GOVERNANCE_SOURCES_DIR = _ROOT / "governance" / "sources"
+_GOVERNANCE_EXECUTION_DIR = _ROOT / "governance" / "execution"
+_GOVERNANCE_RECORDS_DIR = _ROOT / "governance" / "records"
+_RETIRED_GOVERNANCE_PATH_PREFIXES = (
+    "governance/policies/",
+    "governance/rp-app/",
+    "governance/github/",
+)
+_CURRENT_AUTHORITY_SURFACES = (
+    _ROOT / "AGENTS.md",
+    _ROOT / "docs" / "issue-bootstrap-profiles.md",
+    _ROOT / "bindings" / "bindings.toml",
+    _ROOT / "governance" / "project-sync.toml",
+    _ROOT / "governance" / "README.md",
+    _ROOT / "docs" / "repo-map.md",
+    _ROOT / ".github" / "ISSUE_TEMPLATE" / "holy_grail_rp.yml",
+)
 _HISTORICAL_WORKSHOP_PATHS = (
-    _ROOT / "governance" / "rp-app" / "audit-classification-protocol.md",
-    _ROOT / "governance" / "rp-app" / "failure-taxonomy-spec-v1.md",
-    _ROOT / "governance" / "rp-app" / "round-a-strata-grid-v0.md",
-    _ROOT / "governance" / "rp-app" / "round-a-serialized-exemplar-export-checklist-v0.md",
+    _ROOT / "governance" / "records" / "audit-classification-protocol.md",
+    _ROOT / "governance" / "records" / "failure-taxonomy-spec-v1.md",
+    _ROOT / "governance" / "records" / "round-a-strata-grid-v0.md",
+    _ROOT / "governance" / "records" / "round-a-serialized-exemplar-export-checklist-v0.md",
 )
 
 
@@ -261,20 +278,18 @@ class RepositoryArchitectureTests(unittest.TestCase):
 
     def test_current_authority_surfaces_avoid_retired_instructional_paths(self) -> None:
         """Bootstrap/work-system authorities must not route to retired Autogen trees."""
-        surfaces = [
-            _ROOT / "AGENTS.md",
-            _ROOT / "docs" / "issue-bootstrap-profiles.md",
-            _ROOT / "bindings" / "bindings.toml",
-            _ROOT / "governance" / "project-sync.toml",
-            _ROOT / "governance" / "rp-app" / "issue-tracking-workflow.md",
-            _ROOT / "governance" / "policies" / "cursor-workflow-layer.md",
-            _ROOT / "governance" / "policies" / "github-issues.md",
-            _ROOT / "governance" / "policies" / "project-behavior-holy-grail.md",
-            _ROOT / "governance" / "policies" / "rp-app-guidance.md",
-            _ROOT / "governance" / "policies" / "architecture-protection.md",
-            _ROOT / "governance" / "policies" / "testing-expectations.md",
-            _ROOT / ".github" / "ISSUE_TEMPLATE" / "holy_grail_rp.yml",
-        ]
+        surfaces = list(_CURRENT_AUTHORITY_SURFACES)
+        surfaces.extend(
+            (
+                _ROOT / "governance" / "sources" / "issue-tracking-workflow.md",
+                _ROOT / "governance" / "execution" / "cursor-workflow-layer.md",
+                _ROOT / "governance" / "execution" / "github-issues.md",
+                _ROOT / "governance" / "sources" / "project-behavior-holy-grail.md",
+                _ROOT / "governance" / "execution" / "rp-app-guidance.md",
+                _ROOT / "governance" / "execution" / "architecture-protection.md",
+                _ROOT / "governance" / "execution" / "testing-expectations.md",
+            )
+        )
         surfaces.extend(sorted((_ROOT / ".cursor" / "rules").glob("*.mdc")))
         banned = ("autogen_rp/", "python/rp_app/", "AUDIT_DOCUMENTATION.md")
         offenders: list[str] = []
@@ -296,10 +311,10 @@ class RepositoryArchitectureTests(unittest.TestCase):
         actual = {p.name for p in rules_dir.glob("*.mdc")}
         self.assertEqual(actual, expected)
         routes = {
-            "2-ai-system-start.mdc": "governance/policies/cursor-workflow-layer.md",
-            "project-behavior.mdc": "governance/policies/project-behavior-holy-grail.md",
-            "github-issues.mdc": "governance/policies/github-issues.md",
-            "github-project-usage.mdc": "governance/rp-app/issue-tracking-workflow.md",
+            "2-ai-system-start.mdc": "governance/execution/cursor-workflow-layer.md",
+            "project-behavior.mdc": "governance/sources/project-behavior-holy-grail.md",
+            "github-issues.mdc": "governance/execution/github-issues.md",
+            "github-project-usage.mdc": "governance/sources/issue-tracking-workflow.md",
         }
         for name, target in routes.items():
             text = (rules_dir / name).read_text(encoding="utf-8")
@@ -329,9 +344,14 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertNotIn("architecture_doc", bindings.get("issue_tracking", {}))
         raw = (_ROOT / "bindings" / "bindings.toml").read_text(encoding="utf-8")
         self.assertNotIn("autogen_rp", raw)
+        issue_workflow_doc = bindings["issue_tracking"]["issue_workflow_doc"]
+        self.assertTrue(
+            issue_workflow_doc.startswith("governance/sources/"),
+            issue_workflow_doc,
+        )
         for rel in (
             bindings["agents"]["canonical_entrypoint"],
-            bindings["issue_tracking"]["issue_workflow_doc"],
+            issue_workflow_doc,
             bindings["issue_templates"]["config_path"],
             bindings["issue_templates"]["primary_form"],
             bindings["cursor_rules"]["workspace_root_rules"],
@@ -355,12 +375,18 @@ class RepositoryArchitectureTests(unittest.TestCase):
 
     def test_current_navigation_surface_excludes_historical_governance_records(self) -> None:
         nav_rel = {path.relative_to(_ROOT).as_posix() for path in _CURRENT_NAVIGATION_DOCS}
-        self.assertTrue((_ROOT / "governance" / "rp-app").is_dir())
+        self.assertTrue(_GOVERNANCE_RECORDS_DIR.is_dir())
         leaked = [
             rel
             for rel in nav_rel
-            if rel.startswith("governance/rp-app/v2-")
-            or "/fresh-start-" in rel
+            if rel.startswith("governance/records/")
+            and (
+                rel.startswith("governance/records/v2-")
+                or "/fresh-start-" in rel
+                or "/round-a-" in rel
+                or "/audit-classification-" in rel
+                or "/failure-taxonomy-" in rel
+            )
         ]
         self.assertEqual(leaked, [])
         for path in _CURRENT_NAVIGATION_DOCS:
@@ -371,7 +397,7 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertTrue(_AUDIT_PROCEDURE_PATH.is_file())
 
     def test_audit_authority_nav_surfaces_point_to_live_semantics(self) -> None:
-        semantics_ref = "governance/rp-app/audit-semantics.md"
+        semantics_ref = "governance/sources/audit-semantics.md"
         offenders: list[str] = []
         for path in _AUDIT_AUTHORITY_NAV_SURFACES:
             text = path.read_text(encoding="utf-8")
@@ -389,14 +415,20 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertNotIn("Project **Status**", text)
         self.assertNotIn("| P0 |", text)
 
-    def test_governance_readme_distinguishes_current_semantics_from_historical_workshop(self) -> None:
+    def test_governance_readme_defines_abcd_placement_convention(self) -> None:
         text = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
-        current_idx = text.index("## Current authorities")
-        historical_idx = text.index("## Historical workshop")
-        current_section = text[current_idx:historical_idx]
-        self.assertIn("audit-semantics.md", current_section)
-        self.assertNotIn("audit-classification-protocol.md", current_section)
-        self.assertIn("Historical workshop", text)
+        self.assertIn("## Physical layout (A/B/C/D)", text)
+        self.assertIn("## Creating governance documents", text)
+        self.assertIn("governance/sources/", text)
+        self.assertIn("governance/execution/", text)
+        self.assertIn("governance/records/", text)
+        sources_idx = text.index("## `sources/`")
+        execution_idx = text.index("## `execution/`")
+        records_idx = text.index("## `records/`")
+        sources_section = text[sources_idx:execution_idx]
+        self.assertIn("audit-semantics.md", sources_section)
+        self.assertNotIn("audit-classification-protocol.md", sources_section)
+        self.assertIn("HISTORICAL WORKSHOP", text)
 
     def test_historical_workshop_materials_carry_historical_banner(self) -> None:
         for path in _HISTORICAL_WORKSHOP_PATHS:
@@ -415,14 +447,58 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertIn("## Audit closure", text)
         self.assertIn("audit parent Issue", text)
         issue_tracking = (
-            _ROOT / "governance" / "rp-app" / "issue-tracking-workflow.md"
+            _ROOT / "governance" / "sources" / "issue-tracking-workflow.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Read-only program audit", issue_tracking)
         self.assertIn("audit-semantics.md", issue_tracking)
         project_behavior = (
-            _ROOT / "governance" / "policies" / "project-behavior-holy-grail.md"
+            _ROOT / "governance" / "sources" / "project-behavior-holy-grail.md"
         ).read_text(encoding="utf-8")
         self.assertIn("read-only program audit", project_behavior.lower())
+
+
+    def test_governance_sources_directory_is_canonical_authority_root(self) -> None:
+        self.assertTrue(_GOVERNANCE_SOURCES_DIR.is_dir())
+        readme = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
+        self.assertIn("Governance-AI source authorities", readme)
+        for name in (
+            "gpt-workflow-instruction-set.md",
+            "workflow-weights.md",
+            "issue-tracking-workflow.md",
+            "audit-semantics.md",
+            "project-behavior-holy-grail.md",
+        ):
+            path = _GOVERNANCE_SOURCES_DIR / name
+            self.assertTrue(path.is_file(), name)
+            self.assertIn(name, readme)
+
+    def test_project_sync_governance_documents_resolve(self) -> None:
+        manifest = tomllib.loads((_ROOT / "governance" / "project-sync.toml").read_text(encoding="utf-8"))
+        missing = [
+            row["path"]
+            for row in manifest.get("governance_policy_documents", [])
+            if not (_ROOT / row["path"]).is_file()
+        ]
+        self.assertEqual(missing, [])
+
+    def test_current_authority_surfaces_avoid_retired_governance_paths(self) -> None:
+        surfaces = [
+            path
+            for path in _CURRENT_AUTHORITY_SURFACES
+            if path not in {_ROOT / "AGENTS.md", _GOVERNANCE_README_PATH}
+        ]
+        surfaces.extend(sorted((_ROOT / ".cursor" / "rules").glob("*.mdc")))
+        offenders: list[str] = []
+        for path in surfaces:
+            text = path.read_text(encoding="utf-8")
+            for prefix in _RETIRED_GOVERNANCE_PATH_PREFIXES:
+                if prefix in text:
+                    offenders.append(f"{path.relative_to(_ROOT)}: {prefix}")
+        self.assertEqual(offenders, [])
+
+    def test_retired_governance_directories_are_absent(self) -> None:
+        for rel in ("governance/policies", "governance/rp-app", "governance/github"):
+            self.assertFalse((_ROOT / rel).exists(), rel)
 
 
 if __name__ == "__main__":

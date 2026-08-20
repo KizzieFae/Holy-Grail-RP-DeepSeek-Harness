@@ -16,7 +16,7 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 | `v2/` | Production implementation (domain, Domain Host, RP runtime, UI) |
 | `data/` | Canonical product data (`HG_DATA_DIR`) |
 | `tools/` | Offline investigation and maintenance utilities |
-| `governance/` | Issue workflow, policies, program records |
+| `governance/` | Governance sources, execution policies, and records (`governance/README.md`) |
 
 ---
 
@@ -83,8 +83,9 @@ Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 
 | Path | Role |
 |------|------|
-| `governance/policies/` | Canonical policy corpus (Cursor rules `@`-include these) |
-| `governance/rp-app/` | Issue tracking workflow and program records |
-| `governance/README.md` | Governance layout; distinguishes current authorities from historical records |
+| `governance/sources/` | Governance-AI source authorities (workflow, weights, Issue/Project, audit semantics) |
+| `governance/execution/` | Implementation-AI execution policies (Cursor `@`-included) |
+| `governance/records/` | Historical, workshop, and program records (not current authority) |
+| `governance/README.md` | A/B/C/D layout and **Creating governance documents** placement rules |
 
-Program closure record: `governance/rp-app/fresh-start-m14-5-program-closure.md`. Removed migration-era records live in Git history only.
+Program closure record: `governance/records/fresh-start-m14-5-program-closure.md`. Removed migration-era records live in Git history only.

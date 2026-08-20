@@ -13,9 +13,9 @@ GitHub requires issue forms under **`.github/ISSUE_TEMPLATE/`**; those files are
 
 ## Contract pointers
 
-- **Issue body / workflow §A–§K:** `governance/rp-app/issue-tracking-workflow.md` (canonical).
+- **Issue body / workflow §A–§K:** `governance/sources/issue-tracking-workflow.md` (canonical).
 - **Holy Grail form copy:** `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` references that governance path for §D–§I and related instructions.
 
-When updating workflow text, change **`governance/rp-app/issue-tracking-workflow.md`** first, then align the YAML helper text if field descriptions need to stay consistent.
+When updating workflow text, change **`governance/sources/issue-tracking-workflow.md`** first, then align the YAML helper text if field descriptions need to stay consistent.
 
 Process rules (**§B.0**, **§B.5**—phase-first selection, **Priority**, session comments, handoff invalidity) live in that canonical file; the root **`.github/ISSUE_TEMPLATE/holy_grail_rp.yml`** intro block summarizes them for submitters.
