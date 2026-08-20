@@ -4,7 +4,7 @@ Canonical vocabulary for **workflow weight** as used by Issue **[#145](https://g
 
 Authority for Issues and Projects metadata remains **`governance/sources/issue-tracking-workflow.md`**. This document defines weights **only**—not **`Current status:`**, filing gates, or validation substitutes.
 
-**Orchestration vs execution (parity — `governance/sources/gpt-workflow-instruction-set.md`):** Orchestration AI (**GPT**) **assigns** workflow weight before substantive Issue work begins. Implementation AI (**Cursor**) inherits **assigned** / **effective** weight and MUST NOT independently reinterpret bootstrap depth or consensus rigor. **Assigned** and **effective** weights MUST persist where orchestration directs—in prompts to implementation AI; Issue **Execution snapshot** (and related Issue body fields); new-chat bootstrap context (**including `SYSTEM UNDERSTANDING REPORT`** discipline under **`governance/execution/cursor-workflow-layer.md`**).
+**Orchestration vs execution (parity — authoritative Governance AI instruction set, supplied separately):** Orchestration AI (**GPT**) **assigns** workflow weight before substantive Issue work begins. Implementation AI (**Cursor**) inherits **assigned** / **effective** weight and MUST NOT independently reinterpret bootstrap depth or consensus rigor. **Assigned** and **effective** weights MUST persist where orchestration directs—in prompts to implementation AI; Issue **Execution snapshot** (and related Issue body fields); new-chat bootstrap context (**including `SYSTEM UNDERSTANDING REPORT`** discipline under **`governance/execution/cursor-workflow-layer.md`**).
 
 ---
 
@@ -43,7 +43,7 @@ These situations **require full-weight rigor** even when **`standard`** or **`li
 - Governance, template, or policy edits that affect **`§B`** filing, verification, or Cursor routing.
 - Validation or **`§B.2`** proof requires expanded determinism (cannot honestly compress).
 
-**Escalation authority:** When any criterion above applies, **GPT escalates effective workflow weight to `full`** per **`governance/sources/gpt-workflow-instruction-set.md`** evaluated against this section. Implementation AI inherits **`full`** and MUST NOT independently narrow bootstrap reads or consensus rigor; it MAY surface the suspected trigger category on the Issue (**§B.5**) without copying definitions out of this file. **User** resolves material disagreement—still reconciled on the Issue thread, never chat-only.
+**Escalation authority:** When any criterion above applies, **GPT escalates effective workflow weight to `full`** per the **authoritative Governance AI instruction set** evaluated against this section. Implementation AI inherits **`full`** and MUST NOT independently narrow bootstrap reads or consensus rigor; it MAY surface the suspected trigger category on the Issue (**§B.5**) without copying definitions out of this file. **User** resolves material disagreement—still reconciled on the Issue thread, never chat-only.
 
 ---
 
@@ -52,6 +52,6 @@ These situations **require full-weight rigor** even when **`standard`** or **`li
 - `governance/sources/issue-tracking-workflow.md` — **`§D`** body contract, **`§H`** execution stages, **`§B`** Projects synchronization, **§B.0.1** consensus shapes.
 - `docs/issue-bootstrap-profiles.md` — Light / Standard / Full required reads (**authoritative**).
 - `governance/execution/github-issues.md` — retrieval discipline; compressed reporting defaults (does not relax Issue bodies).
-- `governance/sources/gpt-workflow-instruction-set.md` — orchestration AI obligations (weight assignment, escalation, prompts).
+- Authoritative Governance AI instruction set (supplied separately; orchestration obligations — weight assignment, escalation, prompts)
 - `.github/ISSUE_TEMPLATE/holy_grail_rp.yml` — workflow weight + execution anchor fields.
 

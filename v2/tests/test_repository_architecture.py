@@ -41,7 +41,6 @@ _PRODUCTION_FORBIDDEN_TOKENS = (
 )
 
 _GOVERNANCE_CORPUS_FILES = (
-    "gpt-workflow-instruction-set.md",
     "workflow-weights.md",
     "issue-tracking-workflow.md",
     "audit-semantics.md",
@@ -49,6 +48,8 @@ _GOVERNANCE_CORPUS_FILES = (
     "holy-grail-prd.md",
     "architecture-overview.md",
 )
+
+_REMOVED_GPT_WORKFLOW_REPO_PATH = "governance/sources/gpt-workflow-instruction-set.md"
 
 _CONTRACT_AUTHORITY_DOCS = (
     _ROOT / "GLOSSARY.md",
@@ -320,7 +321,6 @@ class RepositoryArchitectureTests(unittest.TestCase):
         surfaces.extend(
             (
                 _ROOT / "governance" / "sources" / "issue-tracking-workflow.md",
-                _ROOT / "governance" / "sources" / "gpt-workflow-instruction-set.md",
                 _ROOT / "governance" / "sources" / "architecture-overview.md",
                 _ROOT / "governance" / "sources" / "holy-grail-prd.md",
                 _ROOT / "governance" / "execution" / "cursor-workflow-layer.md",
@@ -499,9 +499,11 @@ class RepositoryArchitectureTests(unittest.TestCase):
 
 
     def test_governance_sources_directory_is_minimum_upload_corpus(self) -> None:
+        """Six files = current agreed project corpus (#10); not a permanent maximum."""
         self.assertTrue(_GOVERNANCE_SOURCES_DIR.is_dir())
         readme = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
         self.assertIn("minimum sufficient standing", readme.lower())
+        self.assertIn("authoritative universal governance ai instruction set", readme.lower())
         on_disk = sorted(p.name for p in _GOVERNANCE_SOURCES_DIR.glob("*.md"))
         self.assertEqual(on_disk, sorted(_GOVERNANCE_CORPUS_FILES))
         for name in _GOVERNANCE_CORPUS_FILES:
@@ -535,12 +537,47 @@ class RepositoryArchitectureTests(unittest.TestCase):
         ):
             self.assertIn(phrase, text, phrase)
 
-    def test_gpt_workflow_instruction_set_discovers_audit_semantics(self) -> None:
-        text = (_GOVERNANCE_SOURCES_DIR / "gpt-workflow-instruction-set.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("governance/sources/audit-semantics.md", text)
-        self.assertIn("read-only", text.lower())
+    def test_gpt_workflow_instruction_set_not_in_project_corpus(self) -> None:
+        self.assertFalse((_GOVERNANCE_SOURCES_DIR / "gpt-workflow-instruction-set.md").exists())
+
+    def test_project_sources_discover_read_only_audit_authority(self) -> None:
+        readme = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
+        project_behavior = (
+            _GOVERNANCE_SOURCES_DIR / "project-behavior-holy-grail.md"
+        ).read_text(encoding="utf-8")
+        issue_tracking = (
+            _ROOT / "governance" / "sources" / "issue-tracking-workflow.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("audit-semantics.md", readme)
+        self.assertIn("read-only program audit", project_behavior.lower())
+        self.assertIn("Read-only program audit", issue_tracking)
+        self.assertIn("audit-semantics.md", issue_tracking)
+
+    def test_live_navigation_avoids_removed_gpt_workflow_repo_path(self) -> None:
+        nav_paths = [
+            _ROOT / "README.md",
+            _ROOT / "AGENTS.md",
+            _GOVERNANCE_README_PATH,
+            _GOVERNANCE_SOURCES_DIR / "workflow-weights.md",
+            _GOVERNANCE_SOURCES_DIR / "issue-tracking-workflow.md",
+            _ROOT / "governance" / "execution" / "cursor-workflow-layer.md",
+            _ROOT / ".github" / "ISSUE_TEMPLATE" / "holy_grail_rp.yml",
+        ]
+        offenders: list[str] = []
+        for path in nav_paths:
+            if _REMOVED_GPT_WORKFLOW_REPO_PATH in path.read_text(encoding="utf-8"):
+                offenders.append(str(path.relative_to(_ROOT)))
+        self.assertEqual(offenders, [])
+
+    def test_governance_source_corpus_avoids_autogen_as_current_architecture(self) -> None:
+        banned = ("AutoGen / runtime", "autogen_rp/", "python/rp_app/", "app_turn_")
+        offenders: list[str] = []
+        for name in _GOVERNANCE_CORPUS_FILES:
+            text = (_GOVERNANCE_SOURCES_DIR / name).read_text(encoding="utf-8")
+            for token in banned:
+                if token in text:
+                    offenders.append(f"governance/sources/{name}: {token}")
+        self.assertEqual(offenders, [])
 
     def test_root_agents_is_bootstrap_not_governance_corpus_duplicate(self) -> None:
         self.assertTrue((_ROOT / "AGENTS.md").is_file())

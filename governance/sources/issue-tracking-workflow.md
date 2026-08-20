@@ -141,7 +141,7 @@ Record progress in the Issue (description updates, comments, checklists). **Stat
 
 Canonical **`light`**, **`standard`**, and **`full`** meanings and **escalation triggers** live **only** in **`governance/sources/workflow-weights.md`**. Other governance cites that file; it does **not** replace **`§H`**, **`§D`**, **`Consensus Gate`** substance in **`governance/sources/project-behavior-holy-grail.md`**, or **`§B.2`** verification.
 
-Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** follows **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`** per **`workflow-weights.md`** / **`governance/sources/gpt-workflow-instruction-set.md`**):
+Consensus MUST still reach **`consensus_reached`** (**§H**) before implementation with **root cause**, correct **`§F` Layer** + justification, **what will change**, and **what will NOT change** recorded on the Issue (see **`project-behavior-holy-grail.md`**). **Recording shape** follows **effective** workflow weight (**assigned** on the Issue unless escalation forces **`full`** per **`workflow-weights.md`** and the **authoritative Governance AI instruction set**):
 
 | Effective workflow weight | Consensus recording shape |
 |---------------------------|---------------------------|
@@ -151,7 +151,7 @@ Consensus MUST still reach **`consensus_reached`** (**§H**) before implementati
 
 Apply the row matching **effective** workflow weight (**`standard`** is the routine **assigned** default per **`workflow-weights.md`** when orchestration uses template defaults).
 
-**Escalation:** When **`workflow-weights.md`** triggers apply, **GPT escalates effective workflow weight to `full`** per **`gpt-workflow-instruction-set.md`**. Implementation AI inherits **`full`** and MUST NOT narrow Issue-facing consensus recording below **`full`** while **effective** weight is **`full`**; reconcile on the Issue (**§B.5**).
+**Escalation:** When **`workflow-weights.md`** triggers apply, **GPT escalates effective workflow weight to `full`** per the **authoritative Governance AI instruction set**. Implementation AI inherits **`full`** and MUST NOT narrow Issue-facing consensus recording below **`full`** while **effective** weight is **`full`**; reconcile on the Issue (**§B.5**).
 
 1. **Observation** — Unexpected behavior in runs, tests, or review. Open or update an Issue when work may outlive the session. Create on GitHub via **§B.1** (CLI) or the web UI using **`.github/ISSUE_TEMPLATE/holy_grail_rp.yml`** (repository root).
 2. **Investigation** — Gather evidence; set **`Current status: investigating`**. Document ruled-out **Layers** in comments.
@@ -342,7 +342,7 @@ Use these sections **in order** (copy into `body.md` or the root issue form).
 
 Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / action).
 
-**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`** — orchestration-assigned per **`governance/sources/gpt-workflow-instruction-set.md`**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/sources/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval / persistence expectations: **`governance/execution/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
+**Workflow-efficiency template fields (Issue #145):** When using `.github/ISSUE_TEMPLATE/holy_grail_rp.yml`, filings include **Workflow weight** (required; default **`standard`** — orchestration-assigned per the **authoritative Governance AI instruction set**), and MAY include **Execution anchor** and **Execution snapshot**, alongside the **§D** sections above. Canonical weights, default, escalation, and authoritative profiles: **`governance/sources/workflow-weights.md`** + **`docs/issue-bootstrap-profiles.md`**. Consensus recording shapes (**§B.0.1**); Cursor bootstrap / anchor-first retrieval / persistence expectations: **`governance/execution/cursor-workflow-layer.md`**. Template fields **must not** replace or shorten mandatory **§D** sections.
 
 ### E. Type (classification; PRD authority)
 

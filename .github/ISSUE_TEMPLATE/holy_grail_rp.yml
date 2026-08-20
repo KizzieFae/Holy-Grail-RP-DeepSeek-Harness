@@ -22,7 +22,7 @@ body:
 
         **Session boundary:** Before ending a session or switching chats, add an **Issue comment** with progress and next step; **Active Context** in chat must **derive** from GitHub, not replace it (**§B.5**, `governance/sources/project-behavior-holy-grail.md`).
 
-        **Workflow weight / execution anchor fields:** **Workflow weight** records orchestration-assigned weight (**`governance/sources/gpt-workflow-instruction-set.md`**); **assigned**/**effective** weight must persist in prompts to implementation AI, **Execution snapshot**, and new-chat bootstrap (**`governance/execution/cursor-workflow-layer.md`**). **Default `standard`** per **`governance/sources/workflow-weights.md`**. **Execution anchor** and **Execution snapshot** remain optional handoff aids. Leave optional fields blank when unused.
+        **Workflow weight / execution anchor fields:** **Workflow weight** records orchestration-assigned weight (per the **authoritative Governance AI instruction set**); **assigned**/**effective** weight must persist in prompts to implementation AI, **Execution snapshot**, and new-chat bootstrap (**`governance/execution/cursor-workflow-layer.md`**). **Default `standard`** per **`governance/sources/workflow-weights.md`**. **Execution anchor** and **Execution snapshot** remain optional handoff aids. Leave optional fields blank when unused.
 
         Set the **title** prefix to `[QUALITY]` or `[DESIGN_GAP]` when **Type** is not **bug**.
 
@@ -94,7 +94,7 @@ body:
     attributes:
       label: Workflow weight
       description: >
-        Orchestration-assigned routine default is standard (Issue #145 Stage 3; gpt-workflow-instruction-set.md).
+        Orchestration-assigned routine default is standard (Issue #145 Stage 3; authoritative Governance AI instruction set).
         Canonical meanings and escalation-only triggers: governance/sources/workflow-weights.md only.
         Assigned/effective weight should appear in prompts, Execution snapshot, and bootstrap context (cursor-workflow-layer.md).
         Authoritative read sets: docs/issue-bootstrap-profiles.md.

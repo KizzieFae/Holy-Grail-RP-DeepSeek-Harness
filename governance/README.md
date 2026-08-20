@@ -21,13 +21,14 @@ Product operation and Implementation navigation: repository root `README.md`, `A
 >
 > Do **not** add files to `sources/` merely because they are important or authoritative elsewhere in the repository.
 
-**Human upload invariant:** supply the universal Governance instruction set, then upload **all** files in `governance/sources/` (currently **7** files). Governance selects task-relevant sources; Implementation retrieves additional repository evidence on demand.
+**Human upload invariant:** Supply the **authoritative universal Governance AI instruction set** maintained **outside this repository** (versioned in the reusable development-system template; supplied separately at Governance session start). Then upload **all** files in `governance/sources/` — currently **six** Holy-Grail **project-specific standing sources**. This repository **intentionally does not** store a duplicate universal instruction-set copy. Project sources specialize Holy Grail workflow; they do **not** redefine universal Governance/Implementation role separation.
 
-## `sources/` — Governance upload corpus (7 files)
+**Template sync note:** Reusable template sync must **not** reintroduce the universal instruction set into `governance/sources/` merely because the template versions it.
+
+## `sources/` — Governance upload corpus (six project-specific files)
 
 | File | Role |
 |------|------|
-| `gpt-workflow-instruction-set.md` | Orchestration AI obligations (weight assignment, escalation, prompts) |
 | `workflow-weights.md` | Canonical `light` / `standard` / `full` definitions and escalation triggers |
 | `issue-tracking-workflow.md` | GitHub Issues / Projects workflow (§A–§K); bound in `bindings.toml` |
 | `audit-semantics.md` | Program / system quality audit semantics; read-only investigation authority |

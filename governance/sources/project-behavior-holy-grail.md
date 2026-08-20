@@ -430,7 +430,7 @@ Examples:
 
 
 
-- RP (AutoGen / runtime / scene system) rules belong under the RP subtree
+- RP runtime (DSH / Cordis / Domain Host under `v2/`) rules belong under the RP subtree
 
 - Knowledge ingestion (future pipeline, graph/vector systems) rules will belong under their own subtree
 
