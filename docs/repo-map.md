@@ -10,7 +10,8 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 |------|------|
 | `README.md` | Product overview, quick start, doc index |
 | `AGENTS.md` | Repo-level AI working rules and instruction priority |
-| `ARCHITECTURE_OVERVIEW.md` | Product architecture and layer boundaries |
+| `governance/sources/architecture-overview.md` | Product architecture and layer boundaries |
+| `governance/sources/holy-grail-prd.md` | Product requirements and intent |
 | `MODULE_INDEX.md` | Symptom → current implementation owner |
 | `docs/` | Shared technical documentation |
 | `v2/` | Production implementation (domain, Domain Host, RP runtime, UI) |

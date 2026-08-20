@@ -1,5 +1,7 @@
 # Holy Grail System Product Requirements Document (Master PRD)
 
+**Canonical path:** `governance/sources/holy-grail-prd.md` — minimum-sufficient Governance source corpus (Issue #8).
+
 ## Multi-Agent Narrative Simulation System
 
 ---
@@ -105,6 +107,8 @@ MemorySelectionEngine
 Purpose:
 
 Execute live narrative simulation.
+
+**Current implementation:** Domain Host (`v2/domain_api/`) plus DSH/Cordis RP runtime (`v2/rp_runtime/`) with presentation UI as client. Engineering boundaries: [architecture-overview.md](./architecture-overview.md).
 
 Responsibilities:
 

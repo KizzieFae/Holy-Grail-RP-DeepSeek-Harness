@@ -6,42 +6,54 @@ Project-owned governance for **Holy Grail RP**: workflow authority, issue tracki
 
 | Class | Location | Role |
 |-------|----------|------|
-| **A — System/bootstrap** | Repository root, `bindings/`, `docs/issue-bootstrap-profiles.md`, `.cursor/rules/`, `.github/ISSUE_TEMPLATE/`, `governance/project-sync.toml` | Structurally required adapters, late-bound identity, bootstrap read profiles, template sync manifest — **not** the governance-source corpus |
-| **B — Governance-AI source authorities** | `governance/sources/` | Canonical project authorities Governance AI relies on for **governance/workflow decisions** (authority function, not mere readership) |
+| **A — System/bootstrap** | Repository root (`AGENTS.md`), `bindings/`, `docs/issue-bootstrap-profiles.md`, `.cursor/rules/`, `.github/ISSUE_TEMPLATE/`, `governance/project-sync.toml` | Structurally required adapters, late-bound identity, Implementation bootstrap read profiles, template sync manifest — **not** the Governance upload corpus |
+| **B — Governance-AI source corpus** | `governance/sources/` | **Minimum sufficient standing** project sources Governance AI uploads after the universal instruction set |
 | **C — Implementation execution policies** | `governance/execution/` | Canonical policies primarily governing Implementation-AI / repository execution |
-| **D — Records / supporting** | `governance/records/` | Historical, workshop, program-record, or governance-meta material that is **not** current Governance-AI source authority |
+| **D — Records / supporting** | `governance/records/` | Historical, workshop, program-record, or governance-meta material that is **not** current Governance-AI authority |
 
-Product architecture and operation: repository root `README.md`, `ARCHITECTURE_OVERVIEW.md`, `AGENTS.md`, and `docs/`.
+Product operation and Implementation navigation: repository root `README.md`, `AGENTS.md`, `docs/`, and subsystem docs under `v2/`.
 
-## Creating governance documents
+## Governance source corpus rule
 
-Before adding a new governance file, classify it:
+> `governance/sources/` contains the **minimum sufficient standing** project source corpus for Governance AI. A document belongs there only when its **persistent contents** provide a Governance capability that cannot reasonably be supplied through on-demand Implementation evidence retrieval.
+>
+> **Placement does not imply exclusive readership.** Shared authorities retain **one canonical copy** and may be routed to Implementation through bootstrap profiles, `AGENTS.md`, bindings, and adapters.
+>
+> Do **not** add files to `sources/` merely because they are important or authoritative elsewhere in the repository.
 
-1. **Governance/workflow source authority** → `governance/sources/`  
-   Use when the document is canonical project authority Governance AI relies on for governance/workflow decisions (Issue/Project mechanics, workflow weights, audit semantics, orchestration rules, work-tracking/consensus rules).
+**Human upload invariant:** supply the universal Governance instruction set, then upload **all** files in `governance/sources/` (currently **7** files). Governance selects task-relevant sources; Implementation retrieves additional repository evidence on demand.
 
-2. **Implementation/repository execution policy** → `governance/execution/`  
-   Use when the document primarily governs Implementation-AI behavior (Cursor bootstrap layer, GitHub CLI discipline, architecture/testing guardrails for implementers).
-
-3. **Historical/workshop/program/meta record** → `governance/records/`  
-   Use for non-authoritative history, workshop artifacts, program closure records, or governance meta notes. Add or preserve a **HISTORICAL WORKSHOP** (or equivalent) banner when not current authority.
-
-4. **System/bootstrap surface** → keep in designated root/docs/bindings/Cursor/template/sync locations  
-   Do **not** place new policy canon in bootstrap adapters or move bootstrap files into `governance/` merely because they participate in governance.
-
-Do **not** create authorities under retired paths (`governance/policies/`, `governance/rp-app/`, `governance/github/`).
-
-## `sources/` — Governance-AI source authorities
+## `sources/` — Governance upload corpus (7 files)
 
 | File | Role |
 |------|------|
 | `gpt-workflow-instruction-set.md` | Orchestration AI obligations (weight assignment, escalation, prompts) |
 | `workflow-weights.md` | Canonical `light` / `standard` / `full` definitions and escalation triggers |
 | `issue-tracking-workflow.md` | GitHub Issues / Projects workflow (§A–§K); bound in `bindings.toml` |
-| `audit-semantics.md` | Program / system quality audit semantics |
+| `audit-semantics.md` | Program / system quality audit semantics; read-only investigation authority |
 | `project-behavior-holy-grail.md` | Work tracking authority, consensus gate, Active Context rules |
+| `holy-grail-prd.md` | Product purpose, requirements, and intent |
+| `architecture-overview.md` | Current system topology and standing architectural invariants |
 
-For program/system quality audits, use **`sources/audit-semantics.md`**. For RP session-audit procedure, use **`docs/audit-workflows.md`**.
+For RP session-audit **procedure** (Implementation retrieval): `docs/audit-workflows.md`.
+
+## Creating governance documents
+
+Before adding a new governance file, classify it:
+
+1. **Governance standing source** → `governance/sources/`  
+   Only when persistent Governance capability requires it and on-demand Implementation evidence is insufficient.
+
+2. **Implementation/repository execution policy** → `governance/execution/`  
+   Cursor bootstrap layer, GitHub CLI discipline, architecture/testing guardrails for implementers.
+
+3. **Historical/workshop/program/meta record** → `governance/records/`  
+   Non-authoritative history. Add or preserve a **HISTORICAL WORKSHOP** banner when not current authority.
+
+4. **System/bootstrap surface** → designated root/docs/bindings/Cursor/template/sync locations  
+   Do **not** move bootstrap machinery into `sources/` for folder purity.
+
+Do **not** create authorities under retired paths (`governance/policies/`, `governance/rp-app/`, `governance/github/`).
 
 ## `execution/` — Implementation execution policies
 
@@ -68,11 +80,11 @@ Cursor rules `@`-include execution policies and route project behavior to `sourc
 ## Separation rules
 
 - **Bindings** → `bindings/bindings.toml` (late-bound repository, upstream, and GitHub Project identity)
-- **Governance sources** → `governance/sources/`; edit canonical governance authority here, not inside Cursor stubs
+- **Governance sources** → `governance/sources/`; edit canonical Governance standing authorities here
 - **Cursor adapters** → repository-root `.cursor/rules/*.mdc` (four-file portable set)
-- **Product docs** → repository root and `docs/`
+- **Implementation docs** → `docs/`, contracts at repository root, `v2/`
 
 ## Related
 
 - `../bindings/bindings.toml` — canonical entrypoints for agents/tools
-- `../AGENTS.md` — instruction priority and bootstrap pointers
+- `../AGENTS.md` — Implementation bootstrap and navigation (not Governance upload corpus)

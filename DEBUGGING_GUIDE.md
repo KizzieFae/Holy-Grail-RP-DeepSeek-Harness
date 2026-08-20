@@ -1,6 +1,6 @@
 # RP debugging guide
 
-How to **approach problems** in Holy Grail RP without fixing the wrong layer. Product and layers: [Holy Grail PRD.md](./Holy%20Grail%20PRD.md), [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md). **Where to open code first:** [MODULE_INDEX.md](./MODULE_INDEX.md). **On-disk data:** [docs/rp-data-layout.md](./docs/rp-data-layout.md). Implementation tree: [v2/README.md](./v2/README.md).
+How to **approach problems** in Holy Grail RP without fixing the wrong layer. Product and layers: [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md), [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md). **Where to open code first:** [MODULE_INDEX.md](./MODULE_INDEX.md). **On-disk data:** [docs/rp-data-layout.md](./docs/rp-data-layout.md). Implementation tree: [v2/README.md](./v2/README.md).
 
 ---
 

@@ -4,7 +4,7 @@ When a task touches the RP runtime / domain, read:
 
 - `MODULE_INDEX.md` (repo root: symptom → module map)
 - `docs/architecture.md`
-- `ARCHITECTURE_OVERVIEW.md`
+- `governance/sources/architecture-overview.md`
 - `v2/README.md`
 - `governance/sources/audit-semantics.md` (program audit semantics, when conducting program audits)
 - `docs/audit-workflows.md` (RP session-audit **procedure** only; not `#59` signal inventory)

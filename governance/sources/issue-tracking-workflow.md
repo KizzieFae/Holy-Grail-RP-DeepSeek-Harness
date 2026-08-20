@@ -1,6 +1,6 @@
 ﻿# Issue tracking and investigation workflow
 
-**Authority:** Canonical governance copy for GitHub Issues, Projects metadata, and body contract (**§A–§K**). Product architecture is distributed: `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md`. Work-system identity is late-bound in `bindings/bindings.toml` `[github]`.
+**Authority:** Canonical governance copy for GitHub Issues, Projects metadata, and body contract (**§A–§K**). Product architecture standing sources: `governance/sources/architecture-overview.md`, `governance/sources/holy-grail-prd.md`; Implementation guardrails: `docs/architecture.md`, `v2/README.md`. Work-system identity is late-bound in `bindings/bindings.toml` `[github]`.
 
 **Maintenance:** Edit this file when changing workflow rules. There is no separate `ARCHITECTURE.md` stub to keep aligned.
 
@@ -346,7 +346,7 @@ Optional: **Severity** (`high` / `medium` / `low`); **Next step** (owner / actio
 
 ### E. Type (classification; PRD authority)
 
-**Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) (repository root) and [ARCHITECTURE_OVERVIEW.md](../../ARCHITECTURE_OVERVIEW.md) / [docs/architecture.md](../../docs/architecture.md) / [v2/README.md](../../v2/README.md) for runtime architecture expectations. If PRD/architecture are silent, prefer **`quality`** or **`design_gap`** until the spec is updated—not **`bug`**.
+**Authority:** [governance/sources/holy-grail-prd.md](./holy-grail-prd.md) and [governance/sources/architecture-overview.md](./architecture-overview.md) / [docs/architecture.md](../../docs/architecture.md) / [v2/README.md](../../v2/README.md) for runtime architecture expectations. If PRD/architecture are silent, prefer **`quality`** or **`design_gap`** until the spec is updated—not **`bug`**.
 
 | Type | Definition |
 |------|------------|
@@ -397,7 +397,7 @@ Deterministic **stall / advisory / enforcement** reading continuity-emitted sign
 
 Turn flow: **who may act next**—address, continuation, spotlight, forced speaker, Director merge, **selection-path** validation whose purpose is **choosing or allowing the next actor** (including `response_validation_selection.py` when the defect is **selection outcome or eligibility**).
 
-**Belongs:** Wrong `next_actor` / pool / continuation; `orchestration_helpers.py`, `app_turn_director.py`, `semantic_validation.py` for selection reconciliation.
+**Belongs:** Wrong `next_actor` / pool / continuation; DSH director phase (`v2/rp_runtime/`), Domain Host `validate_director_decision`, `response_validation_selection.py` for selection reconciliation.
 
 **Does not belong:** Character/narrator **payload** validity (parse, presence, duplicate dialogue) → **`response_validation`**.
 
@@ -447,7 +447,7 @@ Episodic compile/select/cache and **retrieved context** merge into bundles and p
 
 Narrator / UI **presentation** path; dialogue verbatim contract in rendered output.
 
-**Belongs:** `app_turn_rendering.py`, narrator presentation bugs.
+**Belongs:** DSH narrator phase (`v2/rp_runtime/`), narrator presentation bugs.
 
 **Does not belong:** Move validation → **`response_validation`**. Committed state wrong → **`continuity_state`**. Audit file shape → **`audit_simulation`**.
 

@@ -2,7 +2,7 @@
 
 On-disk **data** for Holy Grail RP. Canonical root: **`data/`** at repository root (`HG_DATA_DIR`). Override with `HG_DATA_DIR`; sessions may use `HG_SESSIONS_DIR`.
 
-Artifact semantics (especially audits): [audit-workflows.md](./audit-workflows.md). Product strategy: [Holy Grail PRD.md](../Holy%20Grail%20PRD.md) §6.
+Artifact semantics (especially audits): [audit-workflows.md](./audit-workflows.md). Product strategy: [governance/sources/holy-grail-prd.md](../governance/sources/holy-grail-prd.md).
 
 ---
 

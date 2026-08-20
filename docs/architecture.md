@@ -1,6 +1,6 @@
 # Architecture guidance
 
-Shared guardrails for Holy Grail RP. Product orientation: [ARCHITECTURE_OVERVIEW.md](../ARCHITECTURE_OVERVIEW.md). File routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
+Shared guardrails for Holy Grail RP. Product orientation: [governance/sources/architecture-overview.md](../governance/sources/architecture-overview.md). File routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 
 **Authored JSON boundaries:** [AUTHORED_SOURCE_CONTRACT.md](../AUTHORED_SOURCE_CONTRACT.md).
 

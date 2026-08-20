@@ -22,9 +22,10 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 
 - `MODULE_INDEX.md`
 - `docs/architecture.md`
-- `ARCHITECTURE_OVERVIEW.md`
+- `governance/sources/architecture-overview.md`
+- `docs/architecture.md`
 - `docs/testing.md`
-- `Holy Grail PRD.md` (as applicable)
+- `governance/sources/holy-grail-prd.md` (as applicable)
 
 **When auditing / continuity debugging**
 

@@ -84,3 +84,11 @@ role = "python_testing_expectations"
 [[governance_policy_documents]]
 path = "governance/sources/issue-tracking-workflow.md"
 role = "github_issues_projects_workflow_spec"
+
+[[governance_policy_documents]]
+path = "governance/sources/holy-grail-prd.md"
+role = "governance_product_requirements"
+
+[[governance_policy_documents]]
+path = "governance/sources/architecture-overview.md"
+role = "governance_architecture_overview"

@@ -338,11 +338,19 @@ Weight authority:
 
 `governance/sources/workflow-weights.md`
 
-Bootstrap authority:
+Program audit authority (authorized issue-free read-only investigation):
+
+`governance/sources/audit-semantics.md`
+
+Read-only program audit exception and mutation prohibition:
+
+`governance/sources/project-behavior-holy-grail.md` → read-only program audit
+
+Bootstrap authority (Implementation read sets — not Governance upload corpus):
 
 `docs/issue-bootstrap-profiles.md`
 
-GPT must defer to canonical authority.
+GPT must defer to canonical authority. Repository mutation and durable remediation require normal Issue workflow even after read-only audits.
 
 ---
 

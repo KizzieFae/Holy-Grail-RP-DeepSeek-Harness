@@ -6,8 +6,8 @@ Stable truths operators and agents rely on when working in **Holy Grail RP**. Th
 
 ## Scene startup
 
-- Scene lifecycle, Director-facing behavior, and RP workflow: **`ARCHITECTURE_OVERVIEW.md`**, **`docs/architecture.md`**
-- Product intent and MVP boundaries: **`Holy Grail PRD.md`**
+- Scene lifecycle, Director-facing behavior, and RP workflow: **`governance/sources/architecture-overview.md`**, **`docs/architecture.md`**
+- Product intent and MVP boundaries: **`governance/sources/holy-grail-prd.md`**
 - **Current location:** committed scene/continuity truth is Python domain (`continuity_manager.py`) applied through Domain Host `commit_move`. Director **execution** is DSH phase plugins under `v2/rp_runtime/`. Director **context prepare / decision validate** is Domain Host (`v2/domain_api/`).
 
 ---

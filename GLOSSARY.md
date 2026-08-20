@@ -1,6 +1,6 @@
 # Glossary
 
-Terms are aligned with [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) and the current `autogen_rp/python/rp_app` codebase. For file locations, see [MODULE_INDEX.md](./MODULE_INDEX.md). For diagnosis order, see [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md).
+Terms are aligned with [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md) and the current `autogen_rp/python/rp_app` codebase. For file locations, see [MODULE_INDEX.md](./MODULE_INDEX.md). For diagnosis order, see [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md).
 
 ---
 

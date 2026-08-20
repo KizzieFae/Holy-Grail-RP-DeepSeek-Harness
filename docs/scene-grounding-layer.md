@@ -1,7 +1,7 @@
 # Scene Grounding Layer (MVP) — Technical Specification
 
 **Status:** MVP implemented in `v2/domain/modules/scene_grounding.py` (prompt injection + persistence). Current continuity-owned resolved outcome projection covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and `transaction:scene_commitment` (transactional scene commitments, GitHub #127).  
-**Authority:** [Holy Grail PRD.md](../../Holy%20Grail%20PRD.md) §5.8.  
+**Authority:** [governance/sources/holy-grail-prd.md](../governance/sources/holy-grail-prd.md) (Scene Grounding product intent).  
 **Placement:** Derived **after** continuity updates per turn, consumed **before** LLM calls in the packaging/prompt path.
 
 ---

@@ -32,7 +32,7 @@ Do not rely on tool memory as the only source of important project behavior.
 
 - **Bindings** (late-bound project values only): `bindings/bindings.toml`
 - **Template sync manifest** (no binding payloads): `governance/project-sync.toml`
-- **Governance-AI source authorities:** `governance/sources/` — canonical governance/workflow authorities (see `governance/README.md`)
+- **Governance-AI upload corpus:** `governance/sources/` — minimum sufficient standing sources for Governance AI (7 files; see `governance/README.md`). **Not** uploaded by humans for normal Governance operation: this file (`AGENTS.md`).
 - **Implementation execution policies:** `governance/execution/` — Cursor `@`-included execution policies
 - **Historical / supporting records:** `governance/records/` — not current Governance-AI authority
 
@@ -42,15 +42,18 @@ Repository-root `.cursor/rules/*.mdc` are thin wrappers that `@`-include (or rou
 
 ## Where to start
 
-**Product architecture and contracts (repository root):**
+**Governance standing sources (`governance/sources/` — upload corpus):**
 
-- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)
+- [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md)
+- [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md)
+
+**Implementation contracts and navigation (repository root):**
+
 - [MODULE_INDEX.md](./MODULE_INDEX.md)
 - [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)
 - [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md)
 - [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)
 - [GLOSSARY.md](./GLOSSARY.md)
-- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md)
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md)
 
 **Shared technical docs (`docs/`):**
@@ -87,7 +90,8 @@ When a task touches domain behavior, also read:
 
 - [MODULE_INDEX.md](./MODULE_INDEX.md) — symptom → module map
 - For **knowledge leaks, whispers, or per-character prompt differences:** `v2/domain/modules/perception_audibility.py`
-- [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) — product intent (Progression Advisory §5.7, Scene Grounding §5.8). Advisory-style prompt text must not write continuity or `CharacterState`.
+- [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md) — product intent
+- [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md) — standing architectural invariants (progression advisory, Scene Grounding, continuity authority). Advisory-style prompt text must not write continuity or `CharacterState`.
 
 **Offline tooling:** `tools/investigation/`, `tools/maintenance/` — see each README.
 

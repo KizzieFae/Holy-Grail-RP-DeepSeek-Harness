@@ -1,6 +1,6 @@
 # Scenario Validation Framework
 
-**Canonical document** for behavioral validation in Holy Grail RP. Lives at the repository root alongside `ARCHITECTURE_OVERVIEW.md` and `MODULE_INDEX.md`.
+**Canonical document** for behavioral validation in Holy Grail RP. Governance standing summary: [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md). Lives at the repository root alongside [MODULE_INDEX.md](./MODULE_INDEX.md).
 
 ---
 
@@ -135,7 +135,7 @@ Do not write ad-hoc simulation captures to the repository root. Use `data/invest
 
 ## Related docs
 
-- [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) — behavioral validation as a core layer
+- [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md) — behavioral validation as a core layer
 - [MODULE_INDEX.md](./MODULE_INDEX.md) — scenario and audit module routing
 - [governance/sources/audit-semantics.md](./governance/sources/audit-semantics.md) — program audit semantics
 - [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure

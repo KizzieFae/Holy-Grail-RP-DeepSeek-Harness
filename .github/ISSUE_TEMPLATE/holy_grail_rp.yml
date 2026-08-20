@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Contract:** `governance/sources/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Product architecture: `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, `v2/README.md`. Work-system identity: `bindings/bindings.toml` `[github]`.
+        **Contract:** `governance/sources/issue-tracking-workflow.md` (**§D** template, **§E** Type, **§F** Layer, **§G** titles, **§H** status, **§I** pattern). Product architecture: `governance/sources/architecture-overview.md`, `governance/sources/holy-grail-prd.md`, `docs/architecture.md`, `v2/README.md`. Work-system identity: `bindings/bindings.toml` `[github]`.
 
         **Audit wording:** Program audit semantics: `governance/sources/audit-semantics.md`. RP session-audit procedure: `docs/audit-workflows.md`. The V1 `#59` Signal-id inventory is **not live**. Historical workshop specs (ACP/FT1) are not current program-audit authority.
 

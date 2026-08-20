@@ -73,8 +73,8 @@ as the authoritative guide.
 
 | Task class | Minimum extra reads |
 |------------|-------------------|
-| GitHub Issues / backlog / issue workflow | **`governance/sources/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/sources/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; product architecture in `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, and `v2/README.md` |
-| RP app behavior / continuity / Director / session audits | `docs/architecture.md`, `ARCHITECTURE_OVERVIEW.md`, `v2/README.md`; session-audit procedure: `docs/audit-workflows.md` |
+| GitHub Issues / backlog / issue workflow | **`governance/sources/workflow-weights.md`** (canonical **`light`/`standard`/`full`**, escalation triggers, implementation inheritance); `governance/sources/issue-tracking-workflow.md` — Issue Tracking & Investigation Workflow (**§B.0**–**§B.5**, **§B.0.1**); optional `.github/ISSUE_TEMPLATE/`; standing architecture: `governance/sources/architecture-overview.md`, `governance/sources/holy-grail-prd.md`; Implementation guardrails: `docs/architecture.md`, `v2/README.md` |
+| RP app behavior / continuity / Director / session audits | `governance/sources/architecture-overview.md`, `docs/architecture.md`, `v2/README.md`; session-audit procedure: `docs/audit-workflows.md` |
 | Program / system quality audits | `governance/sources/audit-semantics.md`; RP session procedure: `docs/audit-workflows.md` |
 | Scenario validation / simulation / metrics | Holy Grail root `SCENARIO_VALIDATION_FRAMEWORK.md` (if present) |
 | Repo structure | `docs/repo-map.md` |

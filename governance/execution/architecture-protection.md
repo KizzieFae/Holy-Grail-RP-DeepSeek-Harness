@@ -2,7 +2,7 @@
 
 Before making architecture-sensitive changes, read:
 
-- `ARCHITECTURE_OVERVIEW.md`
+- `governance/sources/architecture-overview.md`
 - `docs/architecture.md`
 - `v2/README.md` when the task touches Domain Host or RP runtime layout
 

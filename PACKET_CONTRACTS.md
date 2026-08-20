@@ -1,6 +1,6 @@
 # Packet contracts (intent)
 
-These are **architectural contracts** for the **packaging layer** described in [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) §§3.2, 4.1–4.3. They describe the **integration seam** between knowledge/retrieval and the **RP runtime** (`v2/domain/modules/`).
+These are **architectural contracts** for the **packaging layer** described in [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md). They describe the **integration seam** between knowledge/retrieval and the **RP runtime** (`v2/domain/modules/`).
 
 **Authored sources vs runtime:** **Character / Template / Scenario (bootstrap) / Opener** JSON authoring rules live in **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. **This document** describes **turn-time packets** and **retrieval bundles**.
 

@@ -39,9 +39,19 @@ _PRODUCTION_FORBIDDEN_TOKENS = (
     "rp_app",
 )
 
+_GOVERNANCE_CORPUS_FILES = (
+    "gpt-workflow-instruction-set.md",
+    "workflow-weights.md",
+    "issue-tracking-workflow.md",
+    "audit-semantics.md",
+    "project-behavior-holy-grail.md",
+    "holy-grail-prd.md",
+    "architecture-overview.md",
+)
+
 _CURRENT_NAVIGATION_DOCS = (
     _ROOT / "AGENTS.md",
-    _ROOT / "ARCHITECTURE_OVERVIEW.md",
+    _ROOT / "governance" / "sources" / "architecture-overview.md",
     _ROOT / "MODULE_INDEX.md",
     _ROOT / "DEBUGGING_GUIDE.md",
     _ROOT / "docs" / "architecture.md",
@@ -247,7 +257,8 @@ class RepositoryArchitectureTests(unittest.TestCase):
         doc_paths = [
             _ROOT / "README.md",
             _ROOT / "AGENTS.md",
-            _ROOT / "ARCHITECTURE_OVERVIEW.md",
+            _ROOT / "governance" / "sources" / "architecture-overview.md",
+            _ROOT / "governance" / "sources" / "holy-grail-prd.md",
             _ROOT / "MODULE_INDEX.md",
             _ROOT / "SCENARIO_VALIDATION_FRAMEWORK.md",
             _ROOT / "docs" / "architecture.md",
@@ -282,6 +293,9 @@ class RepositoryArchitectureTests(unittest.TestCase):
         surfaces.extend(
             (
                 _ROOT / "governance" / "sources" / "issue-tracking-workflow.md",
+                _ROOT / "governance" / "sources" / "gpt-workflow-instruction-set.md",
+                _ROOT / "governance" / "sources" / "architecture-overview.md",
+                _ROOT / "governance" / "sources" / "holy-grail-prd.md",
                 _ROOT / "governance" / "execution" / "cursor-workflow-layer.md",
                 _ROOT / "governance" / "execution" / "github-issues.md",
                 _ROOT / "governance" / "sources" / "project-behavior-holy-grail.md",
@@ -457,20 +471,59 @@ class RepositoryArchitectureTests(unittest.TestCase):
         self.assertIn("read-only program audit", project_behavior.lower())
 
 
-    def test_governance_sources_directory_is_canonical_authority_root(self) -> None:
+    def test_governance_sources_directory_is_minimum_upload_corpus(self) -> None:
         self.assertTrue(_GOVERNANCE_SOURCES_DIR.is_dir())
         readme = _GOVERNANCE_README_PATH.read_text(encoding="utf-8")
-        self.assertIn("Governance-AI source authorities", readme)
-        for name in (
-            "gpt-workflow-instruction-set.md",
-            "workflow-weights.md",
-            "issue-tracking-workflow.md",
-            "audit-semantics.md",
-            "project-behavior-holy-grail.md",
-        ):
+        self.assertIn("minimum sufficient standing", readme.lower())
+        on_disk = sorted(p.name for p in _GOVERNANCE_SOURCES_DIR.glob("*.md"))
+        self.assertEqual(on_disk, sorted(_GOVERNANCE_CORPUS_FILES))
+        for name in _GOVERNANCE_CORPUS_FILES:
             path = _GOVERNANCE_SOURCES_DIR / name
             self.assertTrue(path.is_file(), name)
             self.assertIn(name, readme)
+
+    def test_retired_root_prd_and_architecture_paths_are_absent(self) -> None:
+        self.assertFalse((_ROOT / "Holy Grail PRD.md").exists())
+        self.assertFalse((_ROOT / "ARCHITECTURE_OVERVIEW.md").exists())
+
+    def test_governance_corpus_avoids_instructional_v1_paths(self) -> None:
+        banned = ("autogen_rp/", "python/rp_app/", "app_turn_")
+        offenders: list[str] = []
+        for name in _GOVERNANCE_CORPUS_FILES:
+            text = (_GOVERNANCE_SOURCES_DIR / name).read_text(encoding="utf-8")
+            for token in banned:
+                if token in text:
+                    offenders.append(f"governance/sources/{name}: {token}")
+        self.assertEqual(offenders, [])
+
+    def test_architecture_overview_contains_standing_invariants(self) -> None:
+        text = (_GOVERNANCE_SOURCES_DIR / "architecture-overview.md").read_text(encoding="utf-8")
+        self.assertIn("Standing architectural invariants", text)
+        for phrase in (
+            "Python domain code does not call DSH",
+            "read-only projection",
+            "non-authoritative",
+            "Progression advisory",
+            "scenario-grade validation",
+        ):
+            self.assertIn(phrase, text, phrase)
+
+    def test_gpt_workflow_instruction_set_discovers_audit_semantics(self) -> None:
+        text = (_GOVERNANCE_SOURCES_DIR / "gpt-workflow-instruction-set.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("governance/sources/audit-semantics.md", text)
+        self.assertIn("read-only", text.lower())
+
+    def test_root_agents_is_bootstrap_not_governance_corpus_duplicate(self) -> None:
+        self.assertTrue((_ROOT / "AGENTS.md").is_file())
+        self.assertFalse((_GOVERNANCE_SOURCES_DIR / "agents.md").exists())
+        agents = (_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("governance/sources/", agents)
+        self.assertIn("upload corpus", agents.lower())
+
+    def test_governance_sources_directory_is_canonical_authority_root(self) -> None:
+        self.test_governance_sources_directory_is_minimum_upload_corpus()
 
     def test_project_sync_governance_documents_resolve(self) -> None:
         manifest = tomllib.loads((_ROOT / "governance" / "project-sync.toml").read_text(encoding="utf-8"))

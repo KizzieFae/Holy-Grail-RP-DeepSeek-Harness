@@ -1,6 +1,6 @@
 # Holy Grail RP module index
 
-Quick map for **where to change what** in the **current** system. Symptom routing only; architecture and invariants: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md), [docs/architecture.md](./docs/architecture.md). Implementation entry: [v2/README.md](./v2/README.md). Authored files: [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md).
+Quick map for **where to change what** in the **current** system. Symptom routing only; architecture and invariants: [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md), [docs/architecture.md](./docs/architecture.md). Implementation entry: [v2/README.md](./v2/README.md). Authored files: [AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md).
 
 **Constraints:** Keep the Domain Host as the composition boundary for domain truth. Keep `v2/ui/` presentation-only. Do not fix continuity or speaker-selection bugs by bloating Director prompts. Preserve `must_remain` as **structural presence**, not “must speak every turn.” Production scene templates use **`cohesion_policy: anchor_only`** only (#245): anchor effective **`must_remain`** (interim until #247); non-anchor default **`flexible`**; non-anchor **`must_remain`** overrides require **`cohesion_rationale`**.
 

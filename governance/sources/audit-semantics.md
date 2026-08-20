@@ -15,7 +15,7 @@
 | Program-audit semantics (this document) | Finding model, material findings, classification, disposition, closure, decomposition, **read-only program audit** pathway |
 | RP session-audit procedure | `docs/audit-workflows.md` |
 | Remediation Issues (Type, Layer, Pattern, §H, Priority, weights) | `issue-tracking-workflow.md`, `workflow-weights.md`, `project-behavior-holy-grail.md` — **cite only; do not redefine** |
-| Continuity vs audit observation | `ARCHITECTURE_OVERVIEW.md`, `docs/architecture.md`, `docs/core-operating-invariants.md` |
+| Continuity vs audit observation | `governance/sources/architecture-overview.md`, `docs/architecture.md`, `docs/core-operating-invariants.md` |
 | Depth-1 Evaluation Records / incidental findings | `issue-tracking-workflow.md` **§A.2–A.3** only when triggered |
 | V1 `#59` RP JSON signal inventory | **Not live** — separate future cycle if needed |
 | ACP / FT1 / Round-A workshop specs | **Historical workshop** — not current program-audit authority |

@@ -142,8 +142,8 @@ Implementation-tree detail: [v2/README.md](./v2/README.md).
 
 | If you need… | Read |
 |--------------|------|
-| Product goals and MVP boundaries | [Holy Grail PRD.md](./Holy%20Grail%20PRD.md) |
-| Three-layer model and runtime boundaries | [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md) |
+| Product goals and MVP boundaries | [governance/sources/holy-grail-prd.md](./governance/sources/holy-grail-prd.md) |
+| Three-layer model and runtime boundaries | [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md) |
 | **Where to change code** (symptom → module) | [MODULE_INDEX.md](./MODULE_INDEX.md) |
 | Behavioral validation (scenarios, audits, metrics) | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md) |
 | **Persistence and on-disk layout** | [docs/rp-data-layout.md](./docs/rp-data-layout.md) |
@@ -168,7 +168,7 @@ tools/
   investigation/    # Offline audit analysis and experiment comparators
   maintenance/      # Local hygiene utilities
 docs/               # Shared technical documentation
-governance/         # Issue workflow, policies, program history
+governance/         # Governance upload corpus, execution policies, program records
 ```
 
 **Investigation output:** write under `data/investigation_runs/` (gitignored), not the repository root.
@@ -179,7 +179,7 @@ governance/         # Issue workflow, policies, program history
 
 **Ingestion** (offline compile of authored sources) → **packaging** (bounded turn context / packets) → **RP runtime** (turn execution, continuity commits, audits).
 
-Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain domain responsibilities. Details: [ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md).
+Retrieval and vectors are **not** authoritative truth; continuity and orchestration remain domain responsibilities. Details: [governance/sources/architecture-overview.md](./governance/sources/architecture-overview.md).
 
 ---
 
