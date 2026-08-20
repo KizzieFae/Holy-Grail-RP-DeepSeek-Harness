@@ -19,6 +19,15 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 
+# Setuptools editable-install metadata (pyproject.toml meta package; pip install -e .)
+*.egg-info/
+
+# Pytest cache (reproducible local test runs)
+.pytest_cache/
+
+# Alternate local virtualenvs beside canonical .venv/
+.venv-*/
+
 # Canonical Holy Grail Python virtual environment (M13.4)
 .venv/
 
