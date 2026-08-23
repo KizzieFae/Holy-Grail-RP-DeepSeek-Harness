@@ -273,6 +273,12 @@ class UserTurnRecordRequest:
 
 
 @dataclass(frozen=True)
+class PlayerSkipRecordRequest:
+    hg_session_id: str
+    speaker: str = "Player"
+
+
+@dataclass(frozen=True)
 class UserProfileSetRequest:
     hg_session_id: str
     profile_key: str

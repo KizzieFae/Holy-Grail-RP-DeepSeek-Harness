@@ -23,6 +23,7 @@ from perception_audibility_history import (  # noqa: E402
 from perception_audibility_player import player_text_for_character_viewer  # noqa: E402
 
 from .session_history import (  # noqa: E402
+    substantive_user_entry_for_trigger,
     project_history_to_character_context_chat,
 )
 from .session_state import LiveSession  # noqa: E402
@@ -33,10 +34,7 @@ def _character_display_name(character_id: str) -> str:
 
 
 def _latest_user_history_entry(history: list[dict[str, Any]]) -> dict[str, Any] | None:
-    for item in reversed(history):
-        if item.get("kind") == "user":
-            return item
-    return None
+    return substantive_user_entry_for_trigger(history)
 
 
 def _format_transcript_content(recent_dialogue: list[dict[str, str]]) -> str:

@@ -75,6 +75,38 @@ test('app server: health, session create, turn submit', async (t) => {
   assert.ok(turn.transcript.length >= 2);
 });
 
+test('app server: skip turn endpoint advances without user message', async (t) => {
+  const sessionsDir = makeTempSessionsDir();
+  t.after(() => {
+    fs.rmSync(sessionsDir, { recursive: true, force: true });
+  });
+
+  const client = new HolyGrailApplicationClient({
+    inferenceMode: 'mock',
+    domainHost: { sessionsDir },
+  });
+  await client.start();
+  t.after(() => client.stop());
+
+  const server = createHolyGrailAppServer(client);
+  const { baseUrl } = await server.listen(0);
+  t.after(() => server.close());
+
+  await fetch(`${baseUrl}/api/sessions/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cast: ['Alice'] }),
+  });
+
+  const skip = await fetch(`${baseUrl}/api/turns/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...MOCK_ROUND }),
+  }).then((r) => r.json());
+  assert.equal(skip.round.committed, true);
+  assert.ok(skip.transcript.some((entry) => entry.player_skip));
+});
+
 test('app server: reports unavailable when runtime not started', async (t) => {
   const client = new HolyGrailApplicationClient({ inferenceMode: 'mock' });
   const server = createHolyGrailAppServer(client);

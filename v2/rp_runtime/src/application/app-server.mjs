@@ -122,6 +122,17 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
         }
       }
 
+      if (req.method === 'POST' && path === '/api/turns/skip') {
+        const body = await readJson(req);
+        try {
+          const result = await applicationClient.submitSkipTurn(body);
+          return sendJson(res, 200, result);
+        } catch (err) {
+          const failure = err.failure ?? { category: 'round_failure', message: String(err) };
+          return sendJson(res, 502, { error: failure, transcript: applicationClient.getTranscript() });
+        }
+      }
+
       return sendJson(res, 404, { error: 'not found' });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

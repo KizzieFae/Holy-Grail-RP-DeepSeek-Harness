@@ -7,7 +7,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-HistoryKind = Literal["user", "committed_turn", "presentation", "opening"]
+HistoryKind = Literal["user", "committed_turn", "presentation", "opening", "player_skip"]
+
+PLAYER_SKIP_KIND = "player_skip"
+PLAYER_SKIP_CONTENT = "Turn skipped"
 
 PRESENTATION_SOURCE_NARRATOR = "narrator"
 PRESENTATION_SOURCE_COMMITTED_FALLBACK = "committed_fallback"
@@ -59,6 +62,23 @@ class RpHistoryEntry:
             metadata=dict(data.get("metadata") or {}),
             recorded_at=data.get("recorded_at"),
         )
+
+
+def substantive_user_entry_for_trigger(history: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Latest substantive user entry eligible for user_turn_trigger (skip-aware)."""
+    entries = history_entries(history)
+    latest_user: RpHistoryEntry | None = None
+    latest_skip: RpHistoryEntry | None = None
+    for entry in entries:
+        if entry.kind == "user":
+            latest_user = entry
+        elif entry.kind == PLAYER_SKIP_KIND:
+            latest_skip = entry
+    if latest_user is None:
+        return None
+    if latest_skip is not None and latest_skip.sequence_index > latest_user.sequence_index:
+        return None
+    return latest_user.to_dict()
 
 
 def summarize_committed_move(move: dict[str, Any]) -> str:
@@ -215,6 +235,9 @@ def project_history_to_character_context_chat(
             )
             continue
 
+        if entry.kind == PLAYER_SKIP_KIND:
+            continue
+
         if entry.kind == "presentation":
             commit_id = entry.domain_commit_id
             committed = committed_by_commit.get(commit_id) if commit_id else None
@@ -307,6 +330,19 @@ def project_history_to_transcript(history: list[dict[str, Any]]) -> list[dict[st
                     "speaker": entry.actor_id or entry.metadata.get("speaker", "Player"),
                     "entry_id": entry.entry_id,
                     "sequence_index": entry.sequence_index,
+                }
+            )
+            continue
+
+        if entry.kind == PLAYER_SKIP_KIND:
+            transcript.append(
+                {
+                    "role": "assistant",
+                    "content": entry.content,
+                    "speaker": entry.actor_id or entry.metadata.get("speaker", "Player"),
+                    "entry_id": entry.entry_id,
+                    "sequence_index": entry.sequence_index,
+                    "player_skip": True,
                 }
             )
             continue

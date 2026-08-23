@@ -247,6 +247,30 @@ export class HolyGrailApplicationClient {
       forced_designation: forcedDesignation,
     });
 
+    return this._runActiveRound({
+      forcedDesignation,
+      inferenceInput: input,
+    });
+  }
+
+  async submitSkipTurn(input = {}) {
+    this._requireReady();
+    this._requireActiveSession();
+
+    const api = this.orchestrator._domainClient();
+    await api.recordPlayerSkip({
+      hg_session_id: this.activeSessionId,
+      speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
+    });
+
+    return this._runActiveRound({
+      forcedDesignation: null,
+      inferenceInput: input,
+    });
+  }
+
+  async _runActiveRound({ forcedDesignation, inferenceInput = {} }) {
+    const api = this.orchestrator._domainClient();
     this.roundInProgress = true;
     this.lastError = null;
     this.status = 'round_in_progress';
@@ -255,7 +279,7 @@ export class HolyGrailApplicationClient {
       const roundOptions = {
         session: { mode: 'open', hg_session_id: this.activeSessionId },
         forcedDesignation,
-        ...this._resolveInferenceOptions(input),
+        ...this._resolveInferenceOptions(inferenceInput),
       };
       const roundResult = await this.orchestrator.runRound(roundOptions);
       await this._recordRoundPresentations(api, roundResult);

@@ -18,6 +18,17 @@ export function projectHistoryToTranscript(entries = []) {
       });
       continue;
     }
+    if (entry.kind === 'player_skip') {
+      transcript.push({
+        role: 'assistant',
+        content: entry.content,
+        speaker: entry.actor_id || entry.metadata?.speaker || 'Player',
+        entry_id: entry.entry_id,
+        sequence_index: entry.sequence_index,
+        player_skip: true,
+      });
+      continue;
+    }
     if (entry.kind === 'presentation') {
       transcript.push({
         role: 'assistant',

@@ -341,6 +341,10 @@ def render_chat() -> None:
 
     for entry in st.session_state.transcript:
         speaker = entry.get("speaker") or entry.get("role", "unknown")
+        if entry.get("player_skip"):
+            with st.chat_message("assistant"):
+                st.caption(f"**{speaker}** — {entry.get('content', 'Turn skipped')}")
+            continue
         with st.chat_message("user" if entry.get("role") == "user" else "assistant"):
             st.markdown(f"**{speaker}:** {entry.get('content', '')}")
 
@@ -348,7 +352,20 @@ def render_chat() -> None:
         st.info("Create or open a durable HG session to begin.")
         return
 
-    prompt = st.chat_input("Your message")
+    round_busy = st.session_state.runtime_status == "round_in_progress"
+    if st.button("Skip turn", disabled=round_busy, type="secondary"):
+        try:
+            result = api_request(
+                "POST",
+                "/api/turns/skip",
+                {"userName": st.session_state.user_persona_id},
+            )
+            st.session_state.transcript = result.get("transcript", st.session_state.transcript)
+            st.rerun()
+        except Exception as exc:  # noqa: BLE001
+            st.error(f"Skip turn failed: {exc}")
+
+    prompt = st.chat_input("Your message", disabled=round_busy)
     if not prompt:
         return
 

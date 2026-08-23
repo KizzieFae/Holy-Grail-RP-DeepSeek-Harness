@@ -90,6 +90,27 @@ test('application client: create session, submit turn, persist across restart', 
   assert.equal(secondTurn.round.continuity_turn_index, 2);
 });
 
+test('application client: submit skip turn advances one round without user message', async (t) => {
+  const sessionsDir = makeTempSessionsDir();
+  t.after(() => {
+    fs.rmSync(sessionsDir, { recursive: true, force: true });
+  });
+
+  const client = new HolyGrailApplicationClient({
+    inferenceMode: 'mock',
+    domainHost: { sessionsDir },
+  });
+  await client.start();
+  t.after(() => client.stop());
+
+  await client.createSession({ cast: ['Alice'] });
+  const skip = await client.submitSkipTurn({ ...MOCK_ROUND });
+  assert.equal(skip.round.committed, true);
+  assert.equal(skip.round.continuity_turn_index, 1);
+  assert.ok(skip.transcript.some((entry) => entry.player_skip));
+  assert.ok(!skip.transcript.some((entry) => entry.role === 'user'));
+});
+
 test('application client: surfaces runtime-not-ready error', async () => {
   const client = new HolyGrailApplicationClient({ inferenceMode: 'mock' });
   await assert.rejects(

@@ -57,6 +57,7 @@ from .contract import (  # noqa: E402
     SessionHistoryResponse,
     PresentationRecordRequest,
     UserTurnRecordRequest,
+    PlayerSkipRecordRequest,
     UserProfileSetRequest,
     ValidationRequest,
     ValidationResponse,
@@ -74,6 +75,8 @@ from .session_history import (  # noqa: E402
     INFERENCE_OUTCOME_EMPTY_OUTPUT,
     INFERENCE_OUTCOME_INFERENCE_ERROR,
     INFERENCE_OUTCOME_SUCCEEDED,
+    PLAYER_SKIP_CONTENT,
+    PLAYER_SKIP_KIND,
     PRESENTATION_SOURCE_COMMITTED_FALLBACK,
     PRESENTATION_SOURCE_NARRATOR,
     append_history_entry,
@@ -268,6 +271,22 @@ class DomainKernel:
                 raise
             if memory_service is not None:
                 memory_service.project_cross_scope_after_persist(fixture, projection_records)
+        return entry
+
+    def record_player_skip(self, req: PlayerSkipRecordRequest) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        entry = append_history_entry(
+            fixture.rp_history,
+            kind=PLAYER_SKIP_KIND,
+            content=PLAYER_SKIP_CONTENT,
+            actor_id=req.speaker,
+            metadata={
+                "intent": "player_skip",
+                "speaker": req.speaker,
+            },
+        )
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
         return entry
 
     def record_presentation(self, req: PresentationRecordRequest) -> dict[str, Any]:

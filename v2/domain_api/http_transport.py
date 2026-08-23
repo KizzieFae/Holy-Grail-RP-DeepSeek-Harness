@@ -22,6 +22,7 @@ from .contract import (
     SessionCreateRequest,
     SessionOpenRequest,
     UserTurnRecordRequest,
+    PlayerSkipRecordRequest,
     UserProfileSetRequest,
     PresentationRecordRequest,
     ValidationRequest,
@@ -204,6 +205,13 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     hg_round_id=data.get("hg_round_id"),
                 )
                 self._send_json(201, self.kernel.record_user_turn(req))
+                return
+            if path == "/v1/sessions/history/player-skip":
+                req = PlayerSkipRecordRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    speaker=str(data.get("speaker", "Player")),
+                )
+                self._send_json(201, self.kernel.record_player_skip(req))
                 return
             if path == "/v1/sessions/user-profile":
                 req = UserProfileSetRequest(

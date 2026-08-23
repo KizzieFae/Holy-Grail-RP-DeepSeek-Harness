@@ -8,6 +8,8 @@ These are **architectural contracts** for the **packaging layer** described in [
 
 **Durable `rp_history` presentation semantics (#12):** Each `presentation` entry records `presentation_status` (`rendered` | `failed`), `metadata.presentation_source` (`narrator` | `committed_fallback`), and provider-neutral `metadata.inference_outcome` (`succeeded` | `empty_output` | `inference_error` | optional `output_limit`). UI/history transcript projection (`project_history_to_transcript`) may show narrator prose or committed-move fallback display text. Character manifest transcript projection (`project_history_to_character_context_chat` → `recent_scene_transcript`) uses narrator prose only when provenance/outcome indicate a successful narrator presentation; failed, committed-fallback, or `output_limit` rows pair with the durable `committed_turn.metadata.structured_move` snapshot and reuse perception/audibility formatting. Narrator presentation is non-authoritative relative to committed continuity; provider finish objects stay in runtime only.
 
+**Explicit Skip Turn (#13):** `kind: player_skip` records non-dialogue player advance intent (`POST /api/turns/skip` → `record_player_skip` → `runRound`). Skip does not create user conversational memory or `kind: user` history. `user_turn_trigger` is suppressed when a `player_skip` entry follows the latest substantive user entry; prior user text may remain in `recent_scene_transcript` as historical context only.
+
 For runtime behavior and guardrails, see [docs/architecture.md](./docs/architecture.md) and [MODULE_INDEX.md](./MODULE_INDEX.md).
 
 ---

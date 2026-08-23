@@ -52,6 +52,9 @@ export function createDomainApiClient(baseUrl) {
     recordUserTurn(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/history/user-turn', body, 'recordUserTurn');
     },
+    recordPlayerSkip(body) {
+      return postJson(metrics, baseUrl, '/v1/sessions/history/player-skip', body, 'recordPlayerSkip');
+    },
     recordPresentation(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/history/presentation', body, 'recordPresentation');
     },
