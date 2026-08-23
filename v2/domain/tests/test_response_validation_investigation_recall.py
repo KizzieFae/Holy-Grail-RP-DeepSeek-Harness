@@ -9,7 +9,7 @@ import pytest
 
 
 from progression_simulation_scenarios import load_scenario
-from response_validation_content import validate_bot_response
+from response_validation_content import validate_bot_response_for_scenario
 from response_validation_investigation_recall import (
     validate_investigation_recall_contract,
 )
@@ -53,8 +53,8 @@ def test_negotiation_recall_fail_and_pass() -> None:
     assert ok3 is True
 
 
-def test_validate_bot_response_skips_without_scenario_id() -> None:
-    ok, msg = validate_bot_response(
+def test_validate_bot_response_for_scenario_skips_without_scenario_id() -> None:
+    ok, msg = validate_bot_response_for_scenario(
         "ISSUE29_NEGOT_TERMS_V1 ISSUE29_ROLE_ANCHOR_AY",
         "Kizzie",
         "Player",
@@ -74,8 +74,8 @@ def test_validate_bot_response_skips_without_scenario_id() -> None:
     assert ok is True
 
 
-def test_validate_bot_response_enforces_with_scenario_id() -> None:
-    ok, msg = validate_bot_response(
+def test_validate_bot_response_for_scenario_enforces_with_scenario_id() -> None:
+    ok, msg = validate_bot_response_for_scenario(
         "no tokens",
         "Kizzie",
         "Player",

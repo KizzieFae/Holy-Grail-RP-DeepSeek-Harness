@@ -69,7 +69,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 | `continuity_state` | Wrong issues/events/scene fields **after** a turn | `continuity_manager.py`, `continuity_*` helpers; Host `kernel.py` `commit_move` |
 | `progression` | Retry / gate / Q1–Q4 delta behavior | Continuity `turn_metadata` / Host commit path; domain progression helpers if present in-tree |
 | `orchestration` | Wrong next actor, pool, address, continuation | `participation_policy.py`, DSH `director-phase.mjs`, `hg-round-orchestrator/service.mjs`, `response_validation_selection.py` |
-| `response_validation` | Invalid/rejected character or narrator **payload** | `response_validation_parsing.py`, `response_validation_content.py`, `response_validation_presence.py`, `response_validation_drift.py`; Host `validate_move` |
+| `response_validation` | Invalid/rejected character or narrator **payload** | `response_validation_parsing.py`, `response_validation_content.py` (`validate_bot_response_for_runtime`), `response_validation_presence.py`; Host `validate_move` |
 | `grounding` | SETTLED SCENE FACTS / BINDING CONSTRAINTS wrong vs continuity | `scene_grounding.py`, `continuity_context_projector.py`, `prompt_builders.py` |
 | `perception` | Wrong knowledge boundary in prompts | `perception_audibility.py`, Host projector, `prompt_builders.py` |
 | `memory` | Episodic or retrieved bundle wrong given continuity | `memory_layer/`, Host `memory_service.py` / `retrieval_selection.py` |
@@ -102,9 +102,9 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 
 ### Character drift (voice, tone, anchors)
 
-- **Post-move checks** — `response_validation_drift.py`
+- **Post-move checks** — `response_validation_content.py` (`validate_bot_response_for_runtime` for objective gates); semantic prose quality deferred to #19
 - **Anchor source** — `character_state_model.py`, JSON cards under `data/characters/`
-- **Drift false positives** — Tune checks in `response_validation_drift.py`, not Narrator prose prompts first.
+- **Semantic prose false positives** — bounded Character semantic evaluation (#19), not runtime regex heuristics in `validate_move`
 
 ### Presence bugs (`must_remain`, exits, absence)
 

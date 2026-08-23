@@ -19,7 +19,7 @@ ensure_domain_paths()
 from character_move_adapters import legacy_move_text_for_validation  # noqa: E402
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 from prompt_builders import build_narrator_render_prompt  # noqa: E402
-from response_validation import validate_bot_response  # noqa: E402
+from response_validation import validate_bot_response_for_runtime  # noqa: E402
 from response_validation_selection import (  # noqa: E402
     eligible_agent_keys_for_present_characters,
     get_available_actors,
@@ -930,11 +930,9 @@ class DomainKernel:
 
         move_dict = dict(parsed)
         content = legacy_move_text_for_validation(move_dict)
-        is_valid, reason = validate_bot_response(
+        is_valid, reason = validate_bot_response_for_runtime(
             content=content,
             speaker=req.character_id,
-            user_name="Player",
-            chat_history=[],
             move=move_dict,
             scene_state=mgr.scene_state.to_dict(),
             continuity_manager=mgr,

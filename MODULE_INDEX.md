@@ -32,9 +32,9 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Scene start / opener / roles | `v2/domain_api/session_setup.py`, `opening_prompt.py`; DSH `src/plugins/hg-phase-executors/opening-phase.mjs`; domain `scene_template.py`, `scene_opener.py`, `app_state_scene.py` |
 | Failed round / who acts next | DSH `src/plugins/hg-round-orchestrator/service.mjs`; Host `participation_policy.py`, `kernel.py` (`eligible-actors`, `participation-decision`); domain `response_validation_selection.py` |
 | Director decision / invalid `next_actor` | DSH `src/plugins/hg-phase-executors/director-phase.mjs`; Host `kernel.py` (`prepare_director_context`, `validate_director_decision`); domain `response_validation_parsing.py`, `response_validation_selection.py` |
-| Character move parse / speaks for others / duplicate line | domain `response_validation_parsing.py`, `response_validation_content.py`; Host `kernel.py` (`validate_move`); DSH `character-phase.mjs` |
-| Presence / exit / `must_remain` | `response_validation_presence.py`, `scene_template.py`, `scene_template_cohesion.py` |
-| Drift / voice / anchors | `response_validation_drift.py`, `character_state_model.py`, cards in `data/characters/` |
+| Character move parse / unresolved placeholders / move-shape | domain `response_validation_parsing.py`, `response_validation_content.py` (`validate_bot_response_for_runtime`); Host `kernel.py` (`validate_move`); DSH `character-phase.mjs` |
+| Presence / exit / `must_remain` | `response_validation_presence.py` (`get_must_remain_characters`), `scene_template.py`, `scene_template_cohesion.py` |
+| Voice / drift / semantic prose quality (pre-publication) | deferred to #19 bounded semantic evaluation; anchors in `character_state_model.py`, cards in `data/characters/` |
 | Wrong prompt / missing context | Host `continuity_context_projector.py`, `kernel.py` (`prepare_context`, `prepare_director_context`, `prepare_narrator_context`); domain `prompt_builders.py`; DSH `src/plugins/hg-context-bridge/` (transport only) |
 | Model / provider routing | DSH `src/lib/inference-profile.mjs`, `src/lib/mount-deepseek-provider.mjs`; settings surface `src/application/application-settings.mjs` |
 | Stale issues / events / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
@@ -100,11 +100,9 @@ Validators **reject or annotate**. They do not replace Director selection or con
 |--------|----------------|
 | `response_validation.py` | Façade |
 | `response_validation_parsing.py` | Character move and Director JSON parse |
-| `response_validation_content.py` | Self-narration / structural checks / duplicate dialogue |
-| `response_validation_presence.py` | `must_remain` / exit contradictions |
-| `response_validation_drift.py` | Voice / profile drift vs anchors |
-| `response_validation_selection.py` | Turn-selection checks (non-authoritative vs Host/DSH selection) |
-| `response_validation_binding_sleeping_surface.py` | Narrow sleeping-surface binding reject |
+| `response_validation_content.py` | Production runtime (`validate_bot_response_for_runtime`: R02a placeholders, R03 move-shape); offline scenario hook (`validate_bot_response_for_scenario`) |
+| `response_validation_presence.py` | `must_remain` constraint helpers (`get_must_remain_characters`) |
+| `response_validation_selection.py` | Eligibility helpers (`get_available_actors`, `eligible_agent_keys_for_present_characters`); non-authoritative vs Host/DSH Director selection |
 
 ---
 

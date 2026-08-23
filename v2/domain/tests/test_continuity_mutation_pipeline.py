@@ -25,7 +25,7 @@ from continuity_mutation_pipeline import (
 )
 from continuity_setup_seam_v77 import finalize_continuity_setup_seam
 from continuity_state import ExcursionStatus
-from response_validation import validate_bot_response
+from response_validation import validate_bot_response_for_runtime
 
 
 def _minimal_move_for_spatial_validation(**spatial: object) -> dict:
@@ -201,11 +201,9 @@ def test_apply_resolved_mutations_only_location_atom() -> None:
 def test_validate_bot_response_rejects_spatial_missing_location() -> None:
     mgr = _fresh_manager_dorm()
     move = _minimal_move_for_spatial_validation(spatial_transition={})
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False
@@ -220,11 +218,9 @@ def test_validate_bot_response_rejects_spatial_empty_location() -> None:
     move = _minimal_move_for_spatial_validation(
         spatial_transition={"location": "   "},
     )
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False
@@ -238,11 +234,9 @@ def test_validate_bot_response_rejects_spatial_overlong_location() -> None:
     move = _minimal_move_for_spatial_validation(
         spatial_transition={"location": "x" * 501},
     )
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False
@@ -256,11 +250,9 @@ def test_validate_bot_response_rejects_spatial_non_string_location() -> None:
     move = _minimal_move_for_spatial_validation(
         spatial_transition={"location": 42},
     )
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False
@@ -532,11 +524,9 @@ def test_validate_bot_response_rejects_excursion_bad_operation() -> None:
     mgr = _fresh_manager_dorm()
     move = _minimal_move_for_spatial_validation()
     move["excursion_lifecycle"] = {"operation": "reintegrate", "excursion_id": "x"}
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False
@@ -809,11 +799,9 @@ def test_slice_c_reintegration_only_on_close_operation() -> None:
         "participant_character_ids": ["B"],
         "reintegration": _reint_block(),
     }
-    is_valid, reason = validate_bot_response(
+    is_valid, reason = validate_bot_response_for_runtime(
         content=f"{move['action']} {move['dialogue']}",
         speaker="A",
-        user_name="U",
-        chat_history=[],
         move=move,
     )
     assert is_valid is False

@@ -108,10 +108,11 @@ Runtime validation is split under `v2/domain/modules/`:
 
 - `response_validation.py` — facade
 - `response_validation_parsing.py` — JSON / move parsing
-- `response_validation_content.py` — structural checks
-- `response_validation_drift.py` — identity anchors
-- `response_validation_presence.py` — presence / `must_remain`
-- `response_validation_selection.py` — turn-selection checks (non-authoritative)
+- `response_validation_content.py` — **production runtime** (`validate_bot_response_for_runtime`: objective R02a placeholders + R03 move-shape/registry); **offline scenario** (`validate_bot_response_for_scenario` for investigation recall)
+- `response_validation_presence.py` — `must_remain` helpers (`get_must_remain_characters`)
+- `response_validation_selection.py` — eligibility helpers (non-authoritative vs Host/DSH Director selection)
+
+Host `validate_move` calls `validate_bot_response_for_runtime` only. Deterministic textual/semantic quality heuristics (R02b, R11–R15) are **not** production hard gates; bounded Character semantic evaluation is owned by sibling work (#19).
 
 Validators **reject or annotate**; they do not replace Director selection or continuity commits.
 

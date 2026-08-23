@@ -18,7 +18,6 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 ensure_domain_paths()
 
 from continuity_manager import ContinuityManager  # noqa: E402
-from response_validation import validate_bot_response  # noqa: E402
 from scene_grounding import rebuild_scene_grounding_from_continuity  # noqa: E402
 from memory_layer.retrieval import build_episodic_prompt_snapshot  # noqa: E402
 from canonical_compile_adapters import resolve_adapter_row  # noqa: E402
