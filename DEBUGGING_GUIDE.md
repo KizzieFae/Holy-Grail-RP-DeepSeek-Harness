@@ -111,11 +111,12 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 - **Deterministic rules** — `response_validation_presence.py`, `scene_exit_detection.py`, `scene_template.py` / `scene_template_cohesion.py`
 - **Selection vs presence** — If the actor should not have been eligible, inspect Host eligibility / DSH director phase after the deterministic validator.
 
-### Duplicate dialogue / repeated outputs
+### Duplicate dialogue / repeated outputs (R11 repetition/stagnation)
 
-- **Detection** — `response_validation_content.py`
-- **Retry behavior** — DSH character phase attempt loop + Host `validate_move`
-- **Do not** “fix” with Narrator instructions until duplicate rejection logic is understood.
+- **Production authority** — bounded Character semantic evaluation (#19): `character-semantic-evaluation.mjs`, DSH `character-phase.mjs` (soft finding, max one challenge; residual soft does not block)
+- **Not a deterministic hard gate** — `response_validation_content.py` / `validate_bot_response_for_runtime` enforces objective contracts only (#18)
+- **Retry behavior** — DSH character phase attempt loop (unified candidate budget) + Host `validate_move` for objective failures
+- **Evidence** — execution evidence semantic index; `tools/investigation/list_execution_evidence.py --dimension R11`
 
 ### Knowledge leaks / wrong “who knows what”
 

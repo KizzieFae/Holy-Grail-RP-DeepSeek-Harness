@@ -407,7 +407,7 @@ Turn flow: **who may act next**—address, continuation, spotlight, forced speak
 
 Validation of **character** and **narrator** **structured outputs**—whether a **produced move or narrator payload** is **valid** under rules—**excluding** the Director **selection** pipeline (**`orchestration`** owns that).
 
-**Belongs:** `response_validation_parsing.py`, `response_validation_content.py`, `response_validation_presence.py`, `response_validation_drift.py` (and peers) for character/narrator validation.
+**Belongs:** `response_validation_parsing.py`, `response_validation_content.py`, `response_validation_presence.py`, `response_validation_selection.py` (and peers) for character/narrator validation.
 
 **Does not belong:** Which actor Director picked → **`orchestration`**. Classifier tags → **`consequence_classification`**. Grounding text wrong with valid move → **`grounding`**.
 

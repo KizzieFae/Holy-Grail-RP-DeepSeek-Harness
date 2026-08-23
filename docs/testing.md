@@ -60,7 +60,7 @@ When changing Character phase or semantic evaluation:
 
 - Run `node --test tests/semantic-evaluation*.test.mjs` from `v2/rp_runtime/`.
 - Run integration round tests (`two-character-round.test.mjs`, `execution-evidence.test.mjs`) when trace or evidence indexing changes.
-- Bounded real-provider semantic validation: `real-inference.test.mjs` (requires `DEEPSEEK_API_KEY`; uses mocked semantic evaluator responses by default in round tests).
+- Bounded real-provider semantic validation: `semantic-evaluation-live-pass.test.mjs` (requires `DEEPSEEK_API_KEY`; run from `v2/rp_runtime/` with `node --test tests/semantic-evaluation-live-pass.test.mjs`).
 
 ---
 
