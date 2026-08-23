@@ -102,7 +102,7 @@ For **symptom → owner** routing and current module names, use [MODULE_INDEX.md
 
 **Session** — Persisted RP state under `data/sessions/` (or `HG_SESSIONS_DIR`): chat, character states, continuity snapshot, metadata. See [docs/rp-data-layout.md](./docs/rp-data-layout.md).
 
-**Packet** — Bounded runtime input projection (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle` — [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)). Character prompts are assembled at the **`build_character_turn_prompt`** seam with continuity-backed state, grounding, cross-session buckets (when enabled), and formatted retrieval.
+**Packet** — Bounded runtime input projection (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle` — [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)). Character inference context is assembled as Domain Host **`PromptContributionManifest`** contributions (including **`recent_scene_transcript`** and **`user_turn_trigger`** from durable `rp_history`), transported by DSH **`HgContextBridge`**, with continuity-backed state, grounding, cross-session buckets (when enabled), and formatted retrieval.
 
 **Retrieved context** — **Non-authoritative** snippets from compiled indexes or scope knowledge, selected per turn under caps. Never replaces continuity truth (PRD §7).
 

@@ -25,6 +25,8 @@ SourceKind = Literal[
     "user_profile",
     "director_scratch",
     "continuity_summary",
+    "recent_scene_transcript",
+    "user_turn_trigger",
     "director_decision",
     "committed_move",
     "inference_instruction",

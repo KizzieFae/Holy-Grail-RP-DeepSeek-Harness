@@ -4,7 +4,7 @@ These are **architectural contracts** for the **packaging layer** described in [
 
 **Authored sources vs runtime:** **Character / Template / Scenario (bootstrap) / Opener** JSON authoring rules live in **[AUTHORED_SOURCE_CONTRACT.md](./AUTHORED_SOURCE_CONTRACT.md)**. **This document** describes **turn-time packets** and **retrieval bundles**.
 
-**Implementation status (DSH / Domain Host):** Character turn prompts are assembled in **`prompt_builders.build_character_turn_prompt`**. Knowledge projection and retrieval selection run in Domain Host **`KnowledgeService.project_context`** (`v2/domain_api/knowledge_service.py`), using **`retrieval_selection.py`**, **`authored_knowledge.py`**, and optional **`CompiledIndexRetrievalProvider`** (`compiled_index_provider.py`). DSH Cordis phases consume Host-prepared prompt inputs; continuity commit remains in Domain Host.
+**Implementation status (DSH / Domain Host):** Character turn context is assembled as **`PromptContributionManifest`** contributions in Domain Host **`kernel.prepare_context`** (`v2/domain_api/kernel.py`), including bounded **`recent_scene_transcript`** and **`user_turn_trigger`** projections from durable `rp_history` (perception-filtered). DSH **`HgContextBridge`** transports manifests to inference without reinterpreting domain semantics. Knowledge projection and retrieval selection run in **`KnowledgeService.project_context`** (`v2/domain_api/knowledge_service.py`), using **`retrieval_selection.py`**, **`authored_knowledge.py`**, and optional **`CompiledIndexRetrievalProvider`** (`compiled_index_provider.py`). Legacy **`prompt_builders.build_character_turn_prompt`** retains formatting reference semantics but is not the live V2 composition path. Continuity commit remains in Domain Host.
 
 For runtime behavior and guardrails, see [docs/architecture.md](./docs/architecture.md) and [MODULE_INDEX.md](./MODULE_INDEX.md).
 
@@ -62,7 +62,7 @@ This packet **does not** replace the continuity manager’s full internal state;
 - **Authored knowledge** — Compiled from setup snapshot via `authored_knowledge.compile_authored_records_from_snapshot` and merged in `KnowledgeService.project_context`.
 - **Compiled retrieval index (optional)** — When `RP_RETRIEVED_CONTEXT_INDEX` or `HG_RETRIEVAL_INDEX_PATH` points at a JSON index under `data/retrieval/compiled/`, `CompiledIndexRetrievalProvider` supplies additional rows; `retrieval_selection.select_retrieval_records` applies deterministic caps and dedupe.
 - **Scope knowledge lanes** — User profile / learned-world records via `ScopeKnowledgeRepository` when enabled by product policy.
-- **Formatting** — Selected records become the **`retrieved_context_section`** (or equivalent formatted block) passed into **`build_character_turn_prompt`**, with explicit **non-authoritative** labeling.
+- **Formatting** — Selected records become formatted retrieval blocks in Host manifest contributions (or equivalent non-authoritative sections), with explicit **non-authoritative** labeling. Live character path: **`KnowledgeService`** → manifest contributions consumed via **`HgContextBridge`**.
 
 **Activation:**
 

@@ -61,6 +61,9 @@ from .contract import (  # noqa: E402
     ValidationRequest,
     ValidationResponse,
 )
+from .character_conversation_projection import (  # noqa: E402
+    project_character_conversation_for_manifest,
+)
 from .continuity_context_projector import (  # noqa: E402
     AuthoritativeContextContribution,
     project_authoritative_context,
@@ -635,6 +638,52 @@ class DomainKernel:
                     provenance={
                         "hg_round_id": req.hg_round_id,
                         "visibility": "orchestration_projection",
+                    },
+                )
+            )
+        transcript_content, trigger_content, conv_prov = (
+            project_character_conversation_for_manifest(
+                fixture,
+                character_id=req.character_id,
+            )
+        )
+        if transcript_content:
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-recent-scene-transcript",
+                    source_kind="recent_scene_transcript",
+                    authority_class="derived",
+                    knowledge_ids=(
+                        f"rp_history:transcript:{req.character_id}:{req.hg_round_id}",
+                    ),
+                    priority=16,
+                    content=transcript_content,
+                    provenance={
+                        "hg_round_id": req.hg_round_id,
+                        "visibility": "character_viewer_projection",
+                        **conv_prov,
+                    },
+                )
+            )
+        if trigger_content:
+            trigger_entry_id = conv_prov.get("trigger_entry_id")
+            knowledge_ids: tuple[str, ...] = (
+                (f"rp_history:trigger:{trigger_entry_id}",)
+                if trigger_entry_id
+                else (f"rp_history:trigger:{req.character_id}:{req.hg_round_id}",)
+            )
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-user-turn-trigger",
+                    source_kind="user_turn_trigger",
+                    authority_class="derived",
+                    knowledge_ids=knowledge_ids,
+                    priority=17,
+                    content=trigger_content,
+                    provenance={
+                        "hg_round_id": req.hg_round_id,
+                        "visibility": "character_viewer_projection",
+                        **conv_prov,
                     },
                 )
             )

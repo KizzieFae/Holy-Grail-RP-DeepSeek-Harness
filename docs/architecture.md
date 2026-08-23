@@ -33,7 +33,7 @@ domain library (v2/domain/modules/)
 data/  (HG_DATA_DIR)
 ```
 
-**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host projection plus domain `prompt_builders.py`; `HgContextBridge` only transports manifests. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
+**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host **`PromptContributionManifest`** projection (`kernel.prepare_context`, including **`recent_scene_transcript`** / **`user_turn_trigger`** from `rp_history`); `HgContextBridge` only transports manifests. Domain `prompt_builders.py` retains legacy formatting helpers but is not the live V2 composition path. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
 
 ---
 

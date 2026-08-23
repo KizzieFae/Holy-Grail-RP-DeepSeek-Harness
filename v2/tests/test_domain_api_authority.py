@@ -22,6 +22,7 @@ from domain_api.contract import (  # noqa: E402
     EligibleActorsRequest,
     NarratorContextPrepareRequest,
     RoundStartRequest,
+    UserTurnRecordRequest,
     ValidationRequest,
 )
 from domain_api.http_transport import DomainApiHandler  # noqa: E402
@@ -35,6 +36,8 @@ from domain_api.kernel import (  # noqa: E402
     PROTOTYPE_VALID_MOVE,
     DomainKernel,
 )
+from domain_api.session_history import append_history_entry  # noqa: E402
+from perception_audibility_constants import REDACTED_PLAYER_TEXT_CONTENT  # noqa: E402
 
 
 def _invalid_move() -> dict:
@@ -437,6 +440,180 @@ def test_bob_context_includes_alice_committed_projection(kernel: DomainKernel) -
     assert any(bob_private in c.content for c in bob_manifest.contributions)
 
 
+def _character_manifest(
+    kernel: DomainKernel,
+    *,
+    hg_scene_id: str,
+    hg_round_id: str,
+    character_id: str,
+    turn_index: int = 0,
+) -> object:
+    return kernel.prepare_context(
+        ContextPrepareRequest(
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            inference_id=f"inf-{character_id}-ctx",
+            character_id=character_id,
+            role="guest",
+            turn_index=turn_index,
+            attempt_index=0,
+        )
+    )
+
+
+def test_prepare_context_includes_transcript_and_trigger_after_user_turn(kernel: DomainKernel) -> None:
+    info = kernel.create_session(cast=["Alice", "Bob"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
+    question = "Why is the baseball bat on your shoulder?"
+    kernel.record_user_turn(
+        UserTurnRecordRequest(
+            hg_session_id=hg_scene_id,
+            content=question,
+            speaker="Traveler",
+            hg_round_id=hg_round_id,
+        )
+    )
+    manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Alice",
+    )
+    transcript = next(
+        c for c in manifest.contributions if c.source_kind == "recent_scene_transcript"
+    )
+    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_trigger")
+    assert transcript.authority_class == "derived"
+    assert trigger.authority_class == "derived"
+    assert question in transcript.content
+    assert question in trigger.content
+    assert "TRIGGER FOR THIS BEAT" in trigger.content
+    assert "RECENT SCENE TRANSCRIPT" in transcript.content
+
+
+def test_prepare_context_omits_transcript_without_rp_history(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Alice",
+    )
+    kinds = {c.source_kind for c in manifest.contributions}
+    assert "recent_scene_transcript" not in kinds
+    assert "user_turn_trigger" not in kinds
+
+
+def test_prepare_context_transcript_perception_negative(kernel: DomainKernel) -> None:
+    info = kernel.create_session(cast=["Alice", "Bob", "Carol"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
+    secret = "NEVER_LEAK_THIS_USER_SECRET"
+    kernel.record_user_turn(
+        UserTurnRecordRequest(
+            hg_session_id=hg_scene_id,
+            content=f"Whisper to Bob only: {secret}",
+            speaker="Traveler",
+            hg_round_id=hg_round_id,
+        )
+    )
+    bob_manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Bob",
+    )
+    carol_manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Carol",
+    )
+    bob_trigger = next(
+        c for c in bob_manifest.contributions if c.source_kind == "user_turn_trigger"
+    )
+    carol_trigger = next(
+        c for c in carol_manifest.contributions if c.source_kind == "user_turn_trigger"
+    )
+    assert secret in bob_trigger.content
+    assert secret not in carol_trigger.content
+    assert REDACTED_PLAYER_TEXT_CONTENT in carol_trigger.content
+
+
+def test_prepare_context_transcript_bounded_at_sixteen(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    fixture = kernel.store.require(hg_scene_id)
+    for index in range(20):
+        append_history_entry(
+            fixture.rp_history,
+            kind="user",
+            content=f"User line {index}",
+            actor_id="Traveler",
+        )
+    manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Alice",
+    )
+    transcript = next(
+        c for c in manifest.contributions if c.source_kind == "recent_scene_transcript"
+    )
+    assert transcript.provenance["transcript_message_count"] == 16
+    assert "User line 4" in transcript.content
+    assert "User line 0" not in transcript.content
+
+
+def test_prepare_context_continuity_summary_unaffected(kernel: DomainKernel) -> None:
+    hg_scene_id, hg_round_id = _scene_and_round(kernel)
+    alice_validation = kernel.validate_move(
+        ValidationRequest(
+            inference_id="inf-alice-continuity",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            role="guest",
+            turn_index=0,
+            attempt_index=0,
+            proposed_move=PROTOTYPE_ALICE_BLUEPRINT_MOVE,
+            raw_model_output=json.dumps(PROTOTYPE_ALICE_BLUEPRINT_MOVE),
+        )
+    )
+    assert alice_validation.accepted is True
+    commit = kernel.commit_move(
+        CommitRequest(
+            inference_id="inf-alice-continuity",
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            validated_move=alice_validation.normalized_move,
+            director_decision=PROTOTYPE_DIRECTOR_DECISION,
+            expected_turn_index=0,
+        )
+    )
+    kernel.record_user_turn(
+        UserTurnRecordRequest(
+            hg_session_id=hg_scene_id,
+            content="Follow-up question about the blueprint.",
+            speaker="Traveler",
+            hg_round_id=hg_round_id,
+        )
+    )
+    manifest = _character_manifest(
+        kernel,
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        character_id="Bob",
+        turn_index=commit.continuity_turn_index or 1,
+    )
+    summary = next(c for c in manifest.contributions if c.source_kind == "continuity_summary")
+    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_trigger")
+    assert "places the blueprint on the table" in summary.content
+    assert "Follow-up question" in trigger.content
+    assert trigger.source_kind != "continuity_summary"
+
+
 def test_http_transport_round_trip(kernel: DomainKernel) -> None:
     hg_scene_id, hg_round_id = _scene_and_round(kernel)
     handler = type("H", (DomainApiHandler,), {"kernel": kernel})
@@ -465,6 +642,56 @@ def test_http_transport_round_trip(kernel: DomainKernel) -> None:
             payload = json.loads(resp.read().decode("utf-8"))
         kinds = {c["source_kind"] for c in payload["contributions"]}
         assert "character_private" not in kinds
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_http_character_context_serializes_transcript_contributions(kernel: DomainKernel) -> None:
+    info = kernel.create_session(cast=["Alice", "Bob"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
+    kernel.record_user_turn(
+        UserTurnRecordRequest(
+            hg_session_id=hg_scene_id,
+            content="Can you hear me?",
+            speaker="Traveler",
+            hg_round_id=hg_round_id,
+        )
+    )
+    handler = type("H", (DomainApiHandler,), {"kernel": kernel})
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    port = server.server_address[1]
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        import urllib.request
+
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}/v1/context/prepare",
+            data=json.dumps(
+                {
+                    "hg_scene_id": hg_scene_id,
+                    "hg_round_id": hg_round_id,
+                    "inference_id": "inf-http-char",
+                    "character_id": "Alice",
+                    "role": "guest",
+                    "turn_index": 0,
+                    "attempt_index": 0,
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        kinds = {c["source_kind"] for c in payload["contributions"]}
+        assert "recent_scene_transcript" in kinds
+        assert "user_turn_trigger" in kinds
+        transcript = next(
+            c for c in payload["contributions"] if c["source_kind"] == "recent_scene_transcript"
+        )
+        assert transcript["authority_class"] == "derived"
     finally:
         server.shutdown()
         server.server_close()

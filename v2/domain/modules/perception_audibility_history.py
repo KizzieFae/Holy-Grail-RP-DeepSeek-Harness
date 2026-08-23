@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+# Bounded recent conversation window for character manifest transcript projection.
+# Numerically aligned with perception validation tail windows; not imported from
+# response-validation modules (Host packaging must not depend on validation code).
+RECENT_SCENE_TRANSCRIPT_WINDOW = 16
+
 from character_move_adapters import is_canonical_v2_move
 
 from perception_audibility_formatting import (

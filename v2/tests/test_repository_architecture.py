@@ -627,6 +627,16 @@ class RepositoryArchitectureTests(unittest.TestCase):
                     offenders.append(f"{path.relative_to(_ROOT)}: {token}")
         self.assertEqual(offenders, [])
 
+    def test_character_context_manifest_projects_rp_history(self) -> None:
+        projection = _V2 / "domain_api" / "character_conversation_projection.py"
+        self.assertTrue(projection.is_file())
+        kernel_text = (_V2 / "domain_api" / "kernel.py").read_text(encoding="utf-8")
+        self.assertIn("project_character_conversation_for_manifest", kernel_text)
+        self.assertIn("recent_scene_transcript", kernel_text)
+        contract_text = (_V2 / "domain_api" / "contract.py").read_text(encoding="utf-8")
+        self.assertIn("recent_scene_transcript", contract_text)
+        self.assertIn("user_turn_trigger", contract_text)
+
     def test_deleted_root_duplicate_docs_absent(self) -> None:
         missing = [rel for rel in _DELETED_ROOT_DOC_PATHS if (_ROOT / rel).exists()]
         self.assertEqual(missing, [])
