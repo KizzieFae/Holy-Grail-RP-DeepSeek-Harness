@@ -347,6 +347,7 @@ export class HolyGrailApplicationClient {
           character_id: turn.character_id,
           presentation_text: turn.presentation_text,
           presentation_failed: Boolean(turn.presentation_failed),
+          inference_outcome: turn.inference_outcome,
         });
       }
       return;
@@ -359,6 +360,7 @@ export class HolyGrailApplicationClient {
         character_id: roundResult.selected_character_id ?? 'Character',
         presentation_text: roundResult.presentation_text,
         presentation_failed: Boolean(roundResult.presentation_failed),
+        inference_outcome: roundResult.inference_outcome,
       });
     }
   }

@@ -1,3 +1,8 @@
+import {
+  classifyNarratorFailureOutcome,
+  classifyNarratorInferenceOutcome,
+} from '../../lib/narrator-inference-outcome.mjs';
+
 export async function runNarratorPhase({
   runEphemeralInference,
   trace,
@@ -73,10 +78,16 @@ export async function runNarratorPhase({
       inference_trace: narratorRun.trace,
     });
 
+    const inferenceOutcome = classifyNarratorInferenceOutcome(
+      narratorRun.trace,
+      presentationText,
+    );
+
     return {
       presentation_rendered: true,
       presentation_text: presentationText,
       presentation_failed: false,
+      inference_outcome: inferenceOutcome,
       narrator_inference_session_id: narratorRun.inferenceSessionId,
       narrator_manifest_id: manifestId,
       narrator_inference_trace: narratorRun.trace,
@@ -94,10 +105,12 @@ export async function runNarratorPhase({
       presentation_failure_class: 'runtime_render',
       canon_preserved: true,
     });
+    const inferenceOutcome = classifyNarratorFailureOutcome(error?.message);
     return {
       presentation_rendered: false,
       presentation_text: null,
       presentation_failed: true,
+      inference_outcome: inferenceOutcome,
       presentation_failure_reason: String(error?.message ?? error),
       narrator_manifest_id: manifestId,
     };

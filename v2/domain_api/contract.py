@@ -288,6 +288,7 @@ class PresentationRecordRequest:
     character_id: str
     presentation_text: str | None = None
     presentation_failed: bool = False
+    inference_outcome: str | None = None
 
 
 @dataclass(frozen=True)

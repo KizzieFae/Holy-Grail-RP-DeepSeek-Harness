@@ -277,6 +277,7 @@ export default class HgRoundOrchestrator extends Service {
         presentation_rendered: narratorResult.presentation_rendered,
         presentation_text: narratorResult.presentation_text,
         presentation_failed: narratorResult.presentation_failed,
+        inference_outcome: narratorResult.inference_outcome,
       });
     }
 
@@ -322,6 +323,7 @@ export default class HgRoundOrchestrator extends Service {
       presentation_rendered: lastTurn?.presentation_rendered ?? false,
       presentation_text: lastTurn?.presentation_text ?? null,
       presentation_failed: lastTurn?.presentation_failed ?? false,
+      inference_outcome: lastTurn?.inference_outcome ?? null,
       defensive_turn_ceiling: defensiveTurnCeiling,
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,

@@ -22,7 +22,9 @@ from perception_audibility_history import (  # noqa: E402
 )
 from perception_audibility_player import player_text_for_character_viewer  # noqa: E402
 
-from .session_history import project_history_to_transcript  # noqa: E402
+from .session_history import (  # noqa: E402
+    project_history_to_character_context_chat,
+)
 from .session_state import LiveSession  # noqa: E402
 
 
@@ -69,7 +71,13 @@ def project_character_conversation_for_manifest(
         continuity_manager=fixture.manager,
         char_names=cast,
     )
-    transcript_chat = project_history_to_transcript(history)
+    transcript_chat = project_history_to_character_context_chat(
+        history,
+        character_id=character_id,
+        character_names=cast,
+        present_characters=present,
+        get_character_display_name_fn=_character_display_name,
+    )
     recent_dialogue = build_recent_dialogue_history_for_viewer(
         chat_history=transcript_chat,
         viewer_character_name=character_id,

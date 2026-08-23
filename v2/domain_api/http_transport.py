@@ -222,6 +222,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     character_id=str(data["character_id"]),
                     presentation_text=data.get("presentation_text"),
                     presentation_failed=bool(data.get("presentation_failed", False)),
+                    inference_outcome=data.get("inference_outcome"),
                 )
                 self._send_json(201, self.kernel.record_presentation(req))
                 return

@@ -19,13 +19,28 @@ from domain_api.contract import (  # noqa: E402
     UserTurnRecordRequest,
     ValidationRequest,
 )
+from domain_api.character_conversation_projection import (  # noqa: E402
+    project_character_conversation_for_manifest,
+)
 from domain_api.kernel import (  # noqa: E402
     PROTOTYPE_DIRECTOR_DECISION,
     PROTOTYPE_VALID_MOVE,
     DomainKernel,
 )
-from domain_api.session_history import project_history_to_transcript  # noqa: E402
+from domain_api.session_history import (  # noqa: E402
+    INFERENCE_OUTCOME_EMPTY_OUTPUT,
+    INFERENCE_OUTCOME_INFERENCE_ERROR,
+    INFERENCE_OUTCOME_OUTPUT_LIMIT,
+    INFERENCE_OUTCOME_SUCCEEDED,
+    PRESENTATION_SOURCE_COMMITTED_FALLBACK,
+    PRESENTATION_SOURCE_NARRATOR,
+    append_history_entry,
+    presentation_uses_narrator_prose_for_character,
+    project_history_to_character_context_chat,
+    project_history_to_transcript,
+)
 from domain_api.session_repository import SessionRepository  # noqa: E402
+from perception_audibility_constants import REDACTED_SPEECH_STUB  # noqa: E402
 
 
 @pytest.fixture
@@ -43,7 +58,37 @@ def kernel(repository: SessionRepository) -> DomainKernel:
     return DomainKernel(repository=repository)
 
 
-def _commit_round(kernel: DomainKernel, hg_scene_id: str, hg_round_id: str) -> str:
+def _speech_move() -> dict:
+    return {
+        "move_schema_version": 2,
+        "beats": [
+            {"type": "action", "action": "nods"},
+            {"type": "speech", "dialogue": "for everyone"},
+            {
+                "type": "speech",
+                "dialogue": "for Bob only",
+                "audibility": "directed",
+                "audience": ["Bob"],
+            },
+        ],
+        "motivation": {
+            "goal": "share",
+            "tactic": "mixed speech",
+            "emotional_driver": "calm",
+            "risk_level": "low",
+        },
+        "semantic_evaluation": {"decision": "no_covered_change"},
+    }
+
+
+def _commit_round(
+    kernel: DomainKernel,
+    hg_scene_id: str,
+    hg_round_id: str,
+    *,
+    move: dict | None = None,
+) -> str:
+    proposed = move or PROTOTYPE_VALID_MOVE
     validation = kernel.validate_move(
         ValidationRequest(
             inference_id="inf-history",
@@ -53,8 +98,8 @@ def _commit_round(kernel: DomainKernel, hg_scene_id: str, hg_round_id: str) -> s
             role="guest",
             turn_index=0,
             attempt_index=0,
-            proposed_move=PROTOTYPE_VALID_MOVE,
-            raw_model_output=json.dumps(PROTOTYPE_VALID_MOVE),
+            proposed_move=proposed,
+            raw_model_output=json.dumps(proposed),
         )
     )
     assert validation.accepted
@@ -95,6 +140,7 @@ def test_user_turn_and_presentation_survive_restart(kernel: DomainKernel, reposi
             character_id="Alice",
             presentation_text="Alice nodded thoughtfully.",
             presentation_failed=False,
+            inference_outcome=INFERENCE_OUTCOME_SUCCEEDED,
         )
     )
 
@@ -105,6 +151,12 @@ def test_user_turn_and_presentation_survive_restart(kernel: DomainKernel, reposi
     assert history.entries[0]["kind"] == "user"
     assert history.entries[1]["kind"] == "committed_turn"
     assert history.entries[2]["kind"] == "presentation"
+    presentation = history.entries[2]
+    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_NARRATOR
+    assert presentation["metadata"]["inference_outcome"] == INFERENCE_OUTCOME_SUCCEEDED
+    committed = history.entries[1]
+    assert "structured_move" in committed["metadata"]
+    assert committed["metadata"]["structured_move"]["beats"]
     transcript = project_history_to_transcript(reopened.rp_history)
     assert len(transcript) == 2
     assert transcript[0]["role"] == "user"
@@ -125,9 +177,151 @@ def test_presentation_failure_uses_committed_turn_fallback(kernel: DomainKernel)
             character_id="Alice",
             presentation_text=None,
             presentation_failed=True,
+            inference_outcome=INFERENCE_OUTCOME_EMPTY_OUTPUT,
         )
     )
-    transcript = project_history_to_transcript(kernel.get_session_history(session_id).entries)
+    entries = kernel.get_session_history(session_id).entries
+    presentation = entries[-1]
+    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_COMMITTED_FALLBACK
+    assert presentation["metadata"]["inference_outcome"] == INFERENCE_OUTCOME_EMPTY_OUTPUT
+    transcript = project_history_to_transcript(entries)
     assert len(transcript) == 1
     assert transcript[0]["presentation_failed"] is True
     assert transcript[0]["content"]
+
+
+def test_failed_presentation_character_context_uses_structured_move_not_fallback_summary(
+    kernel: DomainKernel,
+) -> None:
+    created = kernel.create_session(cast=["Alice", "Bob", "Carol"])
+    session_id = created.hg_scene_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
+    commit_id = _commit_round(kernel, session_id, hg_round_id, move=_speech_move())
+    kernel.record_presentation(
+        PresentationRecordRequest(
+            hg_session_id=session_id,
+            domain_commit_id=commit_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            presentation_text=None,
+            presentation_failed=True,
+            inference_outcome=INFERENCE_OUTCOME_EMPTY_OUTPUT,
+        )
+    )
+    fixture = kernel.store.require(session_id)
+    transcript_ui = project_history_to_transcript(fixture.rp_history)
+    assert transcript_ui[0]["content"] == "nods"
+    assert transcript_ui[0]["presentation_failed"] is True
+    carol_transcript, _, prov = project_character_conversation_for_manifest(
+        fixture,
+        character_id="Carol",
+    )
+    assert prov["transcript_message_count"] == 1
+    assert "for everyone" in carol_transcript
+    assert "for Bob only" not in carol_transcript
+    assert REDACTED_SPEECH_STUB in carol_transcript
+
+
+def test_output_limit_presentation_keeps_ui_text_but_character_context_uses_structured_move(
+    kernel: DomainKernel,
+) -> None:
+    created = kernel.create_session(cast=["Alice", "Bob"])
+    session_id = created.hg_session_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
+    commit_id = _commit_round(kernel, session_id, hg_round_id, move=_speech_move())
+    partial = "Alice began to speak but the narration cut"
+    kernel.record_presentation(
+        PresentationRecordRequest(
+            hg_session_id=session_id,
+            domain_commit_id=commit_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            presentation_text=partial,
+            presentation_failed=False,
+            inference_outcome=INFERENCE_OUTCOME_OUTPUT_LIMIT,
+        )
+    )
+    fixture = kernel.store.require(session_id)
+    ui = project_history_to_transcript(fixture.rp_history)
+    assert ui[0]["content"] == partial
+    from domain_api.session_history import history_entries
+
+    presentation_entry = history_entries(fixture.rp_history)[-1]
+    assert not presentation_uses_narrator_prose_for_character(presentation_entry)
+    bob_transcript, _, _ = project_character_conversation_for_manifest(
+        fixture,
+        character_id="Bob",
+    )
+    assert partial not in bob_transcript
+    assert "for Bob only" in bob_transcript
+
+
+def test_legacy_rendered_without_metadata_uses_narrator_prose(kernel: DomainKernel) -> None:
+    created = kernel.create_session(cast=["Alice"])
+    session_id = created.hg_session_id
+    fixture = kernel.store.require(session_id)
+    append_history_entry(
+        fixture.rp_history,
+        kind="presentation",
+        content="Legacy narrator line.",
+        presentation_status="rendered",
+        metadata={"renderer": "narrator"},
+    )
+    chat = project_history_to_character_context_chat(
+        fixture.rp_history,
+        character_id="Alice",
+        character_names=["Alice"],
+        present_characters=["Alice"],
+        get_character_display_name_fn=lambda x: x,
+    )
+    assert chat[0]["content"] == "Legacy narrator line."
+
+
+def test_legacy_failed_without_structured_move_uses_committed_content(kernel: DomainKernel) -> None:
+    created = kernel.create_session(cast=["Alice"])
+    session_id = created.hg_session_id
+    fixture = kernel.store.require(session_id)
+    append_history_entry(
+        fixture.rp_history,
+        kind="committed_turn",
+        content="nods thoughtfully",
+        domain_commit_id="commit-legacy",
+        actor_id="Alice",
+    )
+    append_history_entry(
+        fixture.rp_history,
+        kind="presentation",
+        content="nods thoughtfully",
+        domain_commit_id="commit-legacy",
+        actor_id="Alice",
+        presentation_status="failed",
+        metadata={"renderer": "narrator"},
+    )
+    chat = project_history_to_character_context_chat(
+        fixture.rp_history,
+        character_id="Alice",
+        character_names=["Alice"],
+        present_characters=["Alice"],
+        get_character_display_name_fn=lambda x: x,
+    )
+    assert chat[0]["content"] == "Alice: nods thoughtfully"
+
+
+def test_inference_error_outcome_on_failed_presentation(kernel: DomainKernel) -> None:
+    created = kernel.create_session(cast=["Alice"])
+    session_id = created.hg_session_id
+    hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
+    commit_id = _commit_round(kernel, session_id, hg_round_id)
+    kernel.record_presentation(
+        PresentationRecordRequest(
+            hg_session_id=session_id,
+            domain_commit_id=commit_id,
+            hg_round_id=hg_round_id,
+            character_id="Alice",
+            presentation_text="partial junk",
+            presentation_failed=True,
+            inference_outcome=INFERENCE_OUTCOME_INFERENCE_ERROR,
+        )
+    )
+    presentation = kernel.get_session_history(session_id).entries[-1]
+    assert presentation["metadata"]["inference_outcome"] == INFERENCE_OUTCOME_INFERENCE_ERROR

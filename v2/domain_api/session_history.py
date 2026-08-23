@@ -9,6 +9,14 @@ from typing import Any, Literal
 
 HistoryKind = Literal["user", "committed_turn", "presentation", "opening"]
 
+PRESENTATION_SOURCE_NARRATOR = "narrator"
+PRESENTATION_SOURCE_COMMITTED_FALLBACK = "committed_fallback"
+
+INFERENCE_OUTCOME_SUCCEEDED = "succeeded"
+INFERENCE_OUTCOME_EMPTY_OUTPUT = "empty_output"
+INFERENCE_OUTCOME_INFERENCE_ERROR = "inference_error"
+INFERENCE_OUTCOME_OUTPUT_LIMIT = "output_limit"
+
 
 @dataclass(frozen=True)
 class RpHistoryEntry:
@@ -109,6 +117,162 @@ def append_history_entry(
 
 def history_entries(history: list[dict[str, Any]]) -> list[RpHistoryEntry]:
     return [RpHistoryEntry.from_dict(item) for item in history]
+
+
+def _presentation_metadata(entry: RpHistoryEntry) -> dict[str, Any]:
+    return dict(entry.metadata or {})
+
+
+def presentation_uses_narrator_prose_for_character(entry: RpHistoryEntry) -> bool:
+    """Whether character-context projection should treat presentation content as narrator prose."""
+    if entry.kind != "presentation":
+        return False
+    if entry.presentation_status == "failed":
+        return False
+    meta = _presentation_metadata(entry)
+    source = meta.get("presentation_source")
+    if source == PRESENTATION_SOURCE_COMMITTED_FALLBACK:
+        return False
+    outcome = meta.get("inference_outcome")
+    if outcome in (
+        INFERENCE_OUTCOME_EMPTY_OUTPUT,
+        INFERENCE_OUTCOME_INFERENCE_ERROR,
+        INFERENCE_OUTCOME_OUTPUT_LIMIT,
+    ):
+        return False
+    return True
+
+
+def committed_observable_content_for_character(
+    committed_entry: RpHistoryEntry,
+    *,
+    character_id: str,
+    character_names: list[str],
+    present_characters: list[str],
+    get_character_display_name_fn: Any,
+) -> str:
+    """Perception-filtered observable line from durable committed-turn metadata."""
+    meta = _presentation_metadata(committed_entry)
+    speaker = str(committed_entry.actor_id or "Character")
+    move = meta.get("structured_move")
+    if isinstance(move, dict) and move.get("beats"):
+        from character_move_adapters import is_canonical_v2_move
+        from perception_audibility_formatting import format_observable_v2_turn_for_viewer
+        from perception_audibility_normalize import normalize_move_audibility
+
+        move_norm = normalize_move_audibility(dict(move), speaker, present_characters)
+        if is_canonical_v2_move(move_norm):
+            return format_observable_v2_turn_for_viewer(
+                speaker_label=speaker,
+                move_norm=move_norm,
+                acting_character=speaker,
+                viewer_character_name=character_id,
+                present_characters=present_characters,
+                get_character_display_name_fn=get_character_display_name_fn,
+            )
+    content = str(committed_entry.content or "").strip()
+    if content:
+        prefix = f"{speaker}: "
+        return content if content.startswith(prefix) else f"{prefix}{content}"
+    return f"{speaker}: [beat]"
+
+
+def project_history_to_character_context_chat(
+    history: list[dict[str, Any]],
+    *,
+    character_id: str,
+    character_names: list[str],
+    present_characters: list[str],
+    get_character_display_name_fn: Any,
+) -> list[dict[str, Any]]:
+    """Build perception-oriented chat history for character manifest transcript projection."""
+    entries = history_entries(history)
+    committed_by_commit = {
+        entry.domain_commit_id: entry
+        for entry in entries
+        if entry.kind == "committed_turn" and entry.domain_commit_id
+    }
+    chat: list[dict[str, Any]] = []
+
+    for entry in entries:
+        if entry.kind == "opening":
+            chat.append(
+                {
+                    "role": "assistant",
+                    "content": entry.content,
+                    "speaker": "Narrator",
+                }
+            )
+            continue
+
+        if entry.kind == "user":
+            chat.append(
+                {
+                    "role": "user",
+                    "content": entry.content,
+                    "speaker": entry.actor_id or entry.metadata.get("speaker", "Player"),
+                }
+            )
+            continue
+
+        if entry.kind == "presentation":
+            commit_id = entry.domain_commit_id
+            committed = committed_by_commit.get(commit_id) if commit_id else None
+            if presentation_uses_narrator_prose_for_character(entry):
+                chat.append(
+                    {
+                        "role": "assistant",
+                        "content": entry.content,
+                        "speaker": entry.actor_id or "Narrator",
+                    }
+                )
+            elif committed is not None:
+                chat.append(
+                    {
+                        "role": "assistant",
+                        "content": committed_observable_content_for_character(
+                            committed,
+                            character_id=character_id,
+                            character_names=character_names,
+                            present_characters=present_characters,
+                            get_character_display_name_fn=get_character_display_name_fn,
+                        ),
+                        "speaker": committed.actor_id or "Character",
+                    }
+                )
+            else:
+                chat.append(
+                    {
+                        "role": "assistant",
+                        "content": entry.content,
+                        "speaker": entry.actor_id or "Narrator",
+                    }
+                )
+            continue
+
+        if entry.kind == "committed_turn":
+            if entry.domain_commit_id:
+                has_presentation = any(
+                    e.kind == "presentation" and e.domain_commit_id == entry.domain_commit_id
+                    for e in entries
+                )
+                if has_presentation:
+                    continue
+            chat.append(
+                {
+                    "role": "assistant",
+                    "content": committed_observable_content_for_character(
+                        entry,
+                        character_id=character_id,
+                        character_names=character_names,
+                        present_characters=present_characters,
+                        get_character_display_name_fn=get_character_display_name_fn,
+                    ),
+                    "speaker": entry.actor_id or "Character",
+                }
+            )
+
+    return chat
 
 
 def project_history_to_transcript(history: list[dict[str, Any]]) -> list[dict[str, Any]]:

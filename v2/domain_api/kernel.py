@@ -71,6 +71,11 @@ from .continuity_context_projector import (  # noqa: E402
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
 from .session_history import (  # noqa: E402
+    INFERENCE_OUTCOME_EMPTY_OUTPUT,
+    INFERENCE_OUTCOME_INFERENCE_ERROR,
+    INFERENCE_OUTCOME_SUCCEEDED,
+    PRESENTATION_SOURCE_COMMITTED_FALLBACK,
+    PRESENTATION_SOURCE_NARRATOR,
     append_history_entry,
     project_history_to_transcript,
     summarize_committed_move,
@@ -280,6 +285,16 @@ class DomainKernel:
                 None,
             )
             content = str(committed.get("content") if committed else "[presentation unavailable]")
+        if req.presentation_failed:
+            presentation_source = PRESENTATION_SOURCE_COMMITTED_FALLBACK
+            inference_outcome = req.inference_outcome or (
+                INFERENCE_OUTCOME_EMPTY_OUTPUT
+                if not (req.presentation_text or "").strip()
+                else INFERENCE_OUTCOME_INFERENCE_ERROR
+            )
+        else:
+            presentation_source = PRESENTATION_SOURCE_NARRATOR
+            inference_outcome = req.inference_outcome or INFERENCE_OUTCOME_SUCCEEDED
         entry = append_history_entry(
             fixture.rp_history,
             kind="presentation",
@@ -288,7 +303,11 @@ class DomainKernel:
             domain_commit_id=req.domain_commit_id,
             actor_id=req.character_id,
             presentation_status=status,
-            metadata={"renderer": "narrator"},
+            metadata={
+                "renderer": "narrator",
+                "presentation_source": presentation_source,
+                "inference_outcome": inference_outcome,
+            },
         )
         if isinstance(self.store, SessionRepository):
             self.store.persist(fixture)
@@ -1036,7 +1055,10 @@ class DomainKernel:
                 hg_round_id=req.hg_round_id,
                 domain_commit_id=commit_id,
                 actor_id=req.character_id,
-                metadata={"continuity_turn_index": after_turn},
+                metadata={
+                    "continuity_turn_index": after_turn,
+                    "structured_move": dict(req.validated_move),
+                },
             )
 
         response = CommitResponse(
