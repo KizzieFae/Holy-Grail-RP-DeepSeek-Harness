@@ -44,6 +44,8 @@ For post-hoc model/orchestration reconstruction:
 
 CLI helper: `python tools/investigation/list_execution_evidence.py <hg_session_id>`
 
+**Retention:** Local forensic store only. Default-on capture; opt out with `HG_EXECUTION_EVIDENCE=off`. No streaming-chunk or mandatory reasoning capture. Reasoning is optional when the provider supplies it. Manual evidence deletion is supported; there is no automatic pruning and no production session-delete hook that removes evidence trees.
+
 ### Audit artifacts vs runtime (operational note)
 
 - Audit artifacts are optional for runtime. Session persistence: `data/sessions/*.json` — see [rp-data-layout.md](./rp-data-layout.md).

@@ -114,7 +114,7 @@ Session JSON may include a lightweight pointer under `metadata.execution_evidenc
 
 **Interpretation:** [audit-workflows.md](./audit-workflows.md)
 
-**Cleanup:** session-associated; deleting a session's evidence tree does not corrupt canonical session JSON. Pre-#15 sessions have no evidence (non-fatal).
+**Cleanup / retention:** Evidence trees are keyed by `hg_session_id` under `execution_evidence/`. Operators may delete a session's evidence tree manually (`ExecutionEvidenceStore.deleteSession()` exists; **not** wired to production session-delete). Deleting evidence does not corrupt canonical session JSON. No automatic pruning or session-delete-triggered cleanup. Pre-#15 sessions have no evidence (non-fatal).
 
 ---
 
