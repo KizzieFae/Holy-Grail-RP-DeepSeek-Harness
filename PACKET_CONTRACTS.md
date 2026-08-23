@@ -95,7 +95,7 @@ Typical contents (all subject to token budget and relevance gates):
 
 ## Evolution path (documentation commitment)
 
-1. Map card + continuity + prompt sections → packet fields above **without behavior change**. **(Character path:** Host knowledge projection + `build_character_turn_prompt` seam.)
+1. Map card + continuity + prompt sections → packet fields above **without behavior change**. **(Character path:** live V2 composition is Domain Host **`PromptContributionManifest`** → **`HgContextBridge`** (`kernel.prepare_context`, including **`recent_scene_transcript`** / **`user_turn_trigger`** from `rp_history`); legacy monolithic `build_character_turn_prompt` remains reference-only, not production.)
 2. Extend the same packet discipline so **Director / Narrator** consumers share explicit bundle boundaries where not already structured.
 3. Wire additional retrieval outputs only into the retrieved lane (character path: **done** via `KnowledgeService` + selection caps).
 
