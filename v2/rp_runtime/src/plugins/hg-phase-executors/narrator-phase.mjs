@@ -2,9 +2,11 @@ import {
   classifyNarratorFailureOutcome,
   classifyNarratorInferenceOutcome,
 } from '../../lib/narrator-inference-outcome.mjs';
+import { narratorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 
 export async function runNarratorPhase({
   runEphemeralInference,
+  recorder,
   trace,
   api,
   sceneAgent,
@@ -42,11 +44,12 @@ export async function runNarratorPhase({
     continuity_turn_index: continuityTurnIndex,
   });
 
+  let narratorRun = null;
   try {
     const narratorMockFallback = modelProfile?.kind === 'mock'
       ? ['She nodded thoughtfully, taking in the workshop around her.']
       : [];
-    const narratorRun = await runEphemeralInference({
+    narratorRun = await runEphemeralInference({
       inferenceId: narratorInferenceId,
       prompt: prompt ?? 'Render the committed character move as scene narration only.',
       manifest,
@@ -54,6 +57,17 @@ export async function runNarratorPhase({
         ? mockNarratorResponses
         : narratorMockFallback,
       modelProfile,
+      evidenceContext: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        role: 'narrator',
+        characterId,
+        inferenceId: narratorInferenceId,
+        attemptIndex: 0,
+        domainCommitId,
+        continuityTurnIndex,
+      },
     });
 
     if (narratorRun.failed) {
@@ -82,6 +96,17 @@ export async function runNarratorPhase({
       narratorRun.trace,
       presentationText,
     );
+    recorder?.patchDecision(
+      narratorRun.evidenceId,
+      hgSessionId,
+      narratorDecisionPatch({
+        inferenceOutcome,
+        presentationText,
+        presentationFailed: false,
+        domainCommitId,
+        continuityTurnIndex,
+      }),
+    );
 
     return {
       presentation_rendered: true,
@@ -106,6 +131,18 @@ export async function runNarratorPhase({
       canon_preserved: true,
     });
     const inferenceOutcome = classifyNarratorFailureOutcome(error?.message);
+    recorder?.patchDecision(
+      narratorRun?.evidenceId ?? null,
+      hgSessionId,
+      narratorDecisionPatch({
+        inferenceOutcome,
+        presentationText: null,
+        presentationFailed: true,
+        failureReason: String(error?.message ?? error),
+        domainCommitId,
+        continuityTurnIndex,
+      }),
+    );
     return {
       presentation_rendered: false,
       presentation_text: null,

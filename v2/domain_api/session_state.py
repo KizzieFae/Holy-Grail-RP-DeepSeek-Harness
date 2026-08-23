@@ -22,6 +22,7 @@ from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E4
 from .memory_scope import resolve_memory_scope_id  # noqa: E402
 
 V2_HOST_METADATA_KEY = "v2_host_state"
+EXECUTION_EVIDENCE_METADATA_KEY = "execution_evidence"
 
 
 @dataclass

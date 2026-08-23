@@ -1,8 +1,11 @@
+import { openingDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
+
 const OPENING_PROMPT =
   'Write the scene opening prose following the authoritative context and instructions.';
 
 export async function runOpeningPhase({
   runEphemeralInference,
+  recorder,
   trace,
   api,
   sceneAgent,
@@ -28,10 +31,12 @@ export async function runOpeningPhase({
 
   let lastError = null;
   let manifestId = null;
+  let priorEvidenceId = null;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const inferenceId =
       attempt === 0 ? openingInferenceId : `${openingInferenceId}-retry-${attempt}`;
+    let openingRun = null;
     try {
       const manifest = await api.prepareOpeningContext({
         hg_session_id: hgSessionId,
@@ -42,7 +47,7 @@ export async function runOpeningPhase({
         modelProfile?.kind === 'mock'
           ? ['Rain drums against the windows as the scene begins.']
           : [];
-      const openingRun = await runEphemeralInference({
+      openingRun = await runEphemeralInference({
         inferenceId,
         prompt: OPENING_PROMPT,
         manifest,
@@ -50,6 +55,15 @@ export async function runOpeningPhase({
           ? mockOpeningResponses
           : mockFallback,
         modelProfile,
+        evidenceContext: {
+          hgSessionId,
+          hgSceneId,
+          hgRoundId: 'opening-bootstrap',
+          role: 'opening',
+          inferenceId,
+          attemptIndex: attempt,
+          priorAttemptId: priorEvidenceId,
+        },
       });
 
       if (openingRun.failed) {
@@ -60,6 +74,18 @@ export async function runOpeningPhase({
       if (!presentationText) {
         throw new Error('opening produced empty presentation output');
       }
+
+      recorder?.patchDecision(
+        openingRun.evidenceId,
+        hgSessionId,
+        openingDecisionPatch({
+          inferenceOutcome: 'succeeded',
+          presentationText,
+          presentationFailed: false,
+          attemptIndex: attempt,
+        }),
+      );
+      priorEvidenceId = openingRun.evidenceId ?? priorEvidenceId;
 
       trace.emit(sceneAgent.session, 'hg/opening-completed', scope, {
         inference_id: inferenceId,
@@ -82,6 +108,18 @@ export async function runOpeningPhase({
       };
     } catch (error) {
       lastError = error;
+      recorder?.patchDecision(
+        openingRun?.evidenceId ?? null,
+        hgSessionId,
+        openingDecisionPatch({
+          inferenceOutcome: openingRun?.failed ? 'inference_error' : 'empty_output',
+          presentationText: null,
+          presentationFailed: true,
+          failureReason: String(error?.message ?? error),
+          attemptIndex: attempt,
+        }),
+      );
+      priorEvidenceId = openingRun?.evidenceId ?? priorEvidenceId;
     }
   }
 

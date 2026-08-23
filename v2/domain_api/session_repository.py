@@ -18,6 +18,7 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
+from domain.paths import execution_evidence_data_dir  # noqa: E402
 from character_state_model import CharacterState  # noqa: E402
 from continuity_manager import ContinuityManager  # noqa: E402
 from session_manager import SessionManager  # noqa: E402
@@ -30,6 +31,7 @@ from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
 from .player_identity import resolve_player_display_name  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
+    EXECUTION_EVIDENCE_METADATA_KEY,
     V2_HOST_METADATA_KEY,
     LiveSession,
     initialize_live_session,
@@ -244,6 +246,12 @@ class SessionRepository:
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
             ),
         }
+        evidence_session_dir = execution_evidence_data_dir() / session.hg_session_id
+        if evidence_session_dir.is_dir():
+            metadata[EXECUTION_EVIDENCE_METADATA_KEY] = {
+                "schema": "hg_execution_evidence_index_v1",
+                "session_root": f"execution_evidence/{session.hg_session_id}",
+            }
         player_file = None
         player_display = None
         if session.setup_snapshot:

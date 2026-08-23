@@ -22,11 +22,13 @@ export default class HgPhaseExecutors extends Service {
     this.config = config;
     const substrate = createInferenceSubstrate(ctx, config.inference);
     this.runEphemeralInference = substrate.runEphemeralInference;
+    this.executionEvidenceRecorder = substrate.recorder;
   }
 
   _phaseDeps() {
     return {
       runEphemeralInference: this.runEphemeralInference.bind(this),
+      recorder: this.executionEvidenceRecorder,
       trace: this.ctx.hgTraceEmitter,
     };
   }
@@ -67,6 +69,7 @@ export default class HgPhaseExecutors extends Service {
       ctx: this.ctx,
       trace: this.ctx.hgTraceEmitter,
       runEphemeralInference: this.runEphemeralInference.bind(this),
+      recorder: this.executionEvidenceRecorder,
       api,
       options,
     });

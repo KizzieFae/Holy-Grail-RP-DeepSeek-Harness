@@ -1,6 +1,7 @@
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
+import { createExecutionEvidenceRecorder } from '../../lib/execution-evidence/recorder.mjs';
 import {
   agentOptionsFromProfile,
   resolveInferenceProfile,
@@ -13,12 +14,19 @@ import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
  * Shared ephemeral inference substrate for all RP phase executors.
  */
 export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
+  const recorder = createExecutionEvidenceRecorder({
+    enabled: inferenceConfig.executionEvidence?.enabled,
+    root: inferenceConfig.executionEvidence?.root,
+    systemPersona: inferenceConfig.systemPersona ?? 'Holy Grail RP runtime.',
+  });
+
   async function runEphemeralInference({
     inferenceId,
     prompt,
     manifest,
     mockResponses,
     modelProfile,
+    evidenceContext = null,
   }) {
     const profile = resolveInferenceProfile(inferenceConfig, modelProfile);
     let disposeAdapter = () => {};
@@ -54,6 +62,16 @@ export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
       contributionIds: contextRegistration.contributionIds,
     });
     const raw = trace.assistant_text;
+    const evidenceId = recorder.recordInferenceAttempt({
+      evidenceContext,
+      manifest,
+      contextRegistration,
+      prompt,
+      profile,
+      trace,
+      assistantText: raw,
+      inferenceSessionId: String(agent.id),
+    });
     contextRegistration.dispose();
     disposeAdapter();
 
@@ -64,8 +82,9 @@ export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
       failed: trace.failed,
       failure: trace.failure,
       inferenceSessionEvents: [...agent.session.events],
+      evidenceId,
     };
   }
 
-  return { runEphemeralInference };
+  return { runEphemeralInference, recorder };
 }

@@ -1,6 +1,7 @@
 import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { agentOptionsFromProfile, mockInferenceProfile } from '../../lib/inference-profile.mjs';
+import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 
@@ -18,6 +19,7 @@ export async function runCharacterInferenceSlice({
   ctx,
   trace,
   runEphemeralInference,
+  recorder,
   api,
   options,
 }) {
@@ -69,6 +71,7 @@ export async function runCharacterInferenceSlice({
   const mockResponses = options.mockResponses ?? [];
   const modelProfile = options.modelProfile ?? options.model_profile ?? null;
   const maxAttempts = mockResponses.length > 0 ? mockResponses.length : 1;
+  let priorEvidenceId = null;
 
   while (attemptIndex < maxAttempts && !committed) {
     const manifest = await api.prepareCharacterContext({
@@ -88,11 +91,27 @@ export async function runCharacterInferenceSlice({
       manifest,
       mockResponses: mockResponses.length ? [mockResponses[attemptIndex]] : [],
       modelProfile,
+      evidenceContext: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        role: 'character',
+        characterId,
+        inferenceId,
+        attemptIndex,
+        priorAttemptId: priorEvidenceId,
+      },
     });
     inferenceTrace = inferenceRun.trace;
 
     if (inferenceRun.failed) {
       providerFailure = inferenceRun.failure;
+      recorder?.patchDecision(
+        inferenceRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({ proposed: null, outcome: 'inference_failed' }),
+      );
+      priorEvidenceId = inferenceRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
         inference_id: inferenceId,
         role: 'character',
@@ -108,10 +127,12 @@ export async function runCharacterInferenceSlice({
     }
 
     let proposed;
+    let parseError = null;
     try {
       proposed = parseJsonObject(inferenceRun.raw);
     } catch (error) {
-      proposed = { parse_error: String(error) };
+      parseError = String(error);
+      proposed = { parse_error: parseError };
     }
 
     trace.emit(sceneAgent.session, 'hg/move-proposed', scope, {
@@ -137,6 +158,17 @@ export async function runCharacterInferenceSlice({
     });
 
     if (!validation.accepted) {
+      recorder?.patchDecision(
+        inferenceRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({
+          proposed,
+          parseError,
+          validation,
+          outcome: 'rejected',
+        }),
+      );
+      priorEvidenceId = inferenceRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: inferenceId,
         role: 'character',
@@ -161,6 +193,18 @@ export async function runCharacterInferenceSlice({
     });
 
     if (!commit.committed) {
+      recorder?.patchDecision(
+        inferenceRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({
+          proposed,
+          parseError,
+          validation,
+          outcome: 'commit_rejected',
+          commit,
+        }),
+      );
+      priorEvidenceId = inferenceRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: inferenceId,
         role: 'character',
@@ -177,6 +221,18 @@ export async function runCharacterInferenceSlice({
     committed = true;
     continuityTurnIndex = Number(commit.continuity_turn_index);
     domainCommitId = String(commit.domain_commit_id ?? '');
+    recorder?.patchDecision(
+      inferenceRun.evidenceId,
+      hgSessionId,
+      characterDecisionPatch({
+        proposed,
+        parseError,
+        validation,
+        outcome: 'accepted',
+        commit,
+      }),
+    );
+    priorEvidenceId = inferenceRun.evidenceId ?? priorEvidenceId;
     trace.emit(sceneAgent.session, 'hg/move-committed', scope, {
       inference_id: inferenceId,
       role: 'character',

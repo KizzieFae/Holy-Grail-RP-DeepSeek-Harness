@@ -1,6 +1,6 @@
 # Audit Workflows
 
-RP **session-audit procedure** for Holy Grail RP: how to read `data/rp_audits/session_*` artifacts, diagnose layer ownership, and follow retention policy.
+RP **session-audit procedure** for Holy Grail RP: how to read canonical session state, V2 `data/execution_evidence/` artifacts, and legacy `data/rp_audits/session_*` trees; diagnose layer ownership; and follow retention policy.
 
 **Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/sources/audit-semantics.md`**. Remediation Issue filing — see **`governance/sources/issue-tracking-workflow.md`** (§A.1, §D–§I).
 
@@ -23,6 +23,26 @@ Use this workflow for:
 - Do not default to Director prompt edits.
 - Prefer the smallest correct fix at the correct layer.
 - Do not propose new subsystems unless the user explicitly asks for them.
+
+### Canonical truth vs forensic evidence
+
+1. Read `data/sessions/<hg_session_id>.json` — continuity and `rp_history` define **what is true**.
+2. Read `data/execution_evidence/<hg_session_id>/index.json`, then relevant `attempts/<evidence_id>.json` files — define **how inference/decisions produced that truth**.
+3. Legacy V1 trees under `data/rp_audits/session_*` are historical only; they are **not** the live V2 forensic mechanism.
+
+### V2 execution evidence reading order
+
+For post-hoc model/orchestration reconstruction:
+
+1. `data/execution_evidence/<hg_session_id>/index.json`
+2. Round-filtered attempt ids from `rounds[<hg_round_id>]`
+3. Each `attempts/<evidence_id>.json`:
+   - `request` (`hg_assembled_request_v1`) — exact Holy-Grail-assembled model request
+   - `response` (`hg_model_response_v1`) — final assembled model output
+   - `decision` — parse/validation/accept/reject/retry outcome
+   - `correlation` / `associations` — join to commits and presentation
+
+CLI helper: `python tools/investigation/list_execution_evidence.py <hg_session_id>`
 
 ### Audit artifacts vs runtime (operational note)
 

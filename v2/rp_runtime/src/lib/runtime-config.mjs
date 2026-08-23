@@ -53,6 +53,11 @@ export function defaultSessionsDir() {
     ?? path.join(defaultDataDir(), 'sessions');
 }
 
+export function defaultExecutionEvidenceDir() {
+  return process.env.HG_EXECUTION_EVIDENCE_DIR
+    ?? path.join(defaultDataDir(), 'execution_evidence');
+}
+
 export function resolveDomainHostUrl(options = {}) {
   const explicit = options.domainApi?.baseUrl ?? options.domainHostUrl;
   if (explicit) return String(explicit).replace(/\/$/, '');

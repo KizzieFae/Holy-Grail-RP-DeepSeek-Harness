@@ -16,7 +16,8 @@ data/                           # HG_DATA_DIR
 ├── fixtures/                   # tracked investigation / eval fixtures
 │   └── progression_simulation_scenarios/   # scenario validation manifests
 ├── sessions/                   # persisted RP sessions (+ _session_index.json)
-└── rp_audits/                  # optional per-turn audit trees (local, gitignored)
+├── execution_evidence/         # V2 durable inference/decision evidence (local, gitignored)
+└── rp_audits/                  # optional legacy/V1 per-turn audit trees (local, gitignored)
 ```
 
 Local investigation output: `data/investigation_runs/` (gitignored).
@@ -91,6 +92,32 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 ---
 
+## Execution evidence (`execution_evidence`)
+
+**Path:** `data/execution_evidence/<hg_session_id>/` (gitignored generated trees)
+
+**Role:** V2 durable forensic store for inference attempts. Each attempt records the **exact Holy-Grail-assembled model request** (`hg_assembled_request_v1`), final model response (`hg_model_response_v1`), decision/validation outcomes, retry chains, and correlation identifiers.
+
+**Authority:** Observational only. Canonical RP truth remains `data/sessions/*.json` (`rp_history`, continuity). Execution evidence explains **how** execution produced committed/presented state; it must not be treated as continuity authority.
+
+**Layout:**
+
+```text
+data/execution_evidence/<hg_session_id>/
+  index.json
+  attempts/<evidence_id>.json
+```
+
+Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
+
+**Default:** enabled for normal RP operation. Opt out with `HG_EXECUTION_EVIDENCE=off` (diagnostic loss). Override root with `HG_EXECUTION_EVIDENCE_DIR`.
+
+**Interpretation:** [audit-workflows.md](./audit-workflows.md)
+
+**Cleanup:** session-associated; deleting a session's evidence tree does not corrupt canonical session JSON. Pre-#15 sessions have no evidence (non-fatal).
+
+---
+
 ## Audit artifacts (`rp_audits`)
 
 **Path:** `data/rp_audits/session_*` (gitignored generated trees)
@@ -119,6 +146,8 @@ Tracked JSON for investigation, evaluation, and scenario manifests. Scenario val
 |----------|---------|------|
 | `HG_DATA_DIR` | `<repo>/data` | Product data root |
 | `HG_SESSIONS_DIR` | `<HG_DATA_DIR>/sessions` | Session persistence |
+| `HG_EXECUTION_EVIDENCE` | `on` | Durable execution evidence (`off` disables writes) |
+| `HG_EXECUTION_EVIDENCE_DIR` | `<HG_DATA_DIR>/execution_evidence` | Execution evidence root |
 | `RP_RETRIEVED_CONTEXT_INDEX` | unset | Compiled retrieval index path |
 | `RP_EPISODIC_MEMORY` | product default | Episodic memory feature flag |
 
@@ -129,6 +158,7 @@ Tracked JSON for investigation, evaluation, and scenario manifests. Scenario val
 | Store | Required for resume | Gitignored |
 |-------|---------------------|------------|
 | `data/sessions/*.json` | Yes | No (tracked or local per operator) |
+| `data/execution_evidence/` | No | Yes |
 | `data/rp_audits/` | No | Yes |
 
 Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runtime before treating audit-only signals as proof of bugs.

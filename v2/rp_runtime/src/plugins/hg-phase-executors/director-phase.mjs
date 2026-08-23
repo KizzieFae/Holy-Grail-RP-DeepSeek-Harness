@@ -1,8 +1,10 @@
 import { inferenceAttemptLimit } from '../../lib/inference-profile.mjs';
+import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 
 export async function runDirectorPhase({
   runEphemeralInference,
+  recorder,
   trace,
   api,
   sceneAgent,
@@ -33,6 +35,7 @@ export async function runDirectorPhase({
   const attemptLimit = inferenceAttemptLimit(mockDirectorResponses, liveMaxAttempts);
   let attemptsUsed = 0;
   let responseIndex = directorResponseIndex;
+  let priorEvidenceId = null;
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   while (!directorAccepted && attemptsUsed < attemptLimit) {
@@ -54,11 +57,32 @@ export async function runDirectorPhase({
         ? [mockDirectorResponses[responseIndex]]
         : [],
       modelProfile,
+      evidenceContext: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        role: 'director',
+        inferenceId: directorInferenceId,
+        attemptIndex: directorAttempt,
+        priorAttemptId: priorEvidenceId,
+      },
     });
     directorInferenceSessionId = directorRun.inferenceSessionId;
     directorInferenceTrace = directorRun.trace;
 
     if (directorRun.failed) {
+      recorder?.patchDecision(
+        directorRun.evidenceId,
+        hgSessionId,
+        directorDecisionPatch({
+          proposed: null,
+          outcome: 'inference_failed',
+          eligibilitySnapshot,
+          participationContext,
+          actorsUsedThisRound,
+        }),
+      );
+      priorEvidenceId = directorRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
         inference_id: directorInferenceId,
         director_inference_session_id: directorInferenceSessionId,
@@ -75,10 +99,12 @@ export async function runDirectorPhase({
     }
 
     let proposed;
+    let parseError = null;
     try {
       proposed = parseJsonObject(directorRun.raw);
     } catch (error) {
-      proposed = { parse_error: String(error) };
+      parseError = String(error);
+      proposed = { parse_error: parseError };
     }
 
     trace.emit(sceneAgent.session, 'hg/director-proposed', scope, {
@@ -108,6 +134,20 @@ export async function runDirectorPhase({
     });
 
     if (!validation.accepted) {
+      recorder?.patchDecision(
+        directorRun.evidenceId,
+        hgSessionId,
+        directorDecisionPatch({
+          proposed,
+          parseError,
+          validation,
+          outcome: 'rejected',
+          eligibilitySnapshot,
+          participationContext,
+          actorsUsedThisRound,
+        }),
+      );
+      priorEvidenceId = directorRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/director-rejected', scope, {
         inference_id: directorInferenceId,
         director_inference_session_id: directorInferenceSessionId,
@@ -131,6 +171,20 @@ export async function runDirectorPhase({
     selectedCharacterId = endRound
       ? null
       : String(validation.selected_character_id ?? directorDecision.next_actor ?? '');
+    recorder?.patchDecision(
+      directorRun.evidenceId,
+      hgSessionId,
+      directorDecisionPatch({
+        proposed,
+        parseError,
+        validation,
+        outcome: 'accepted',
+        eligibilitySnapshot,
+        participationContext,
+        actorsUsedThisRound,
+      }),
+    );
+    priorEvidenceId = directorRun.evidenceId ?? priorEvidenceId;
     trace.emit(sceneAgent.session, 'hg/director-accepted', scope, {
       inference_id: directorInferenceId,
       director_inference_session_id: directorInferenceSessionId,

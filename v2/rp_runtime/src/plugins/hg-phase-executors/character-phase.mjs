@@ -1,9 +1,11 @@
 import { inferenceAttemptLimit } from '../../lib/inference-profile.mjs';
+import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
 export async function runCharacterPhase({
   runEphemeralInference,
+  recorder,
   trace,
   api,
   sceneAgent,
@@ -30,6 +32,7 @@ export async function runCharacterPhase({
   let characterInferenceSessionId = null;
   let characterInferenceTrace = null;
   const attemptLimit = inferenceAttemptLimit(mockResponses, liveMaxAttempts);
+  let priorEvidenceId = null;
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
 
   while (!committed && attemptIndex < attemptLimit) {
@@ -52,11 +55,27 @@ export async function runCharacterPhase({
       manifest,
       mockResponses: mockResponses.length ? [mockResponses[attemptIndex]] : [],
       modelProfile,
+      evidenceContext: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        role: 'character',
+        characterId,
+        inferenceId: characterInferenceId,
+        attemptIndex,
+        priorAttemptId: priorEvidenceId,
+      },
     });
     characterInferenceSessionId = characterRun.inferenceSessionId;
     characterInferenceTrace = characterRun.trace;
 
     if (characterRun.failed) {
+      recorder?.patchDecision(
+        characterRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({ proposed: null, outcome: 'inference_failed' }),
+      );
+      priorEvidenceId = characterRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/inference-failed', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
@@ -73,10 +92,12 @@ export async function runCharacterPhase({
     }
 
     let proposed;
+    let parseError = null;
     try {
       proposed = parseJsonObject(characterRun.raw);
     } catch (error) {
-      proposed = { parse_error: String(error) };
+      parseError = String(error);
+      proposed = { parse_error: parseError };
     }
 
     trace.emit(sceneAgent.session, 'hg/move-proposed', scope, {
@@ -105,6 +126,17 @@ export async function runCharacterPhase({
     });
 
     if (!validation.accepted) {
+      recorder?.patchDecision(
+        characterRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({
+          proposed,
+          parseError,
+          validation,
+          outcome: 'rejected',
+        }),
+      );
+      priorEvidenceId = characterRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
@@ -131,6 +163,18 @@ export async function runCharacterPhase({
     });
 
     if (!commit.committed) {
+      recorder?.patchDecision(
+        characterRun.evidenceId,
+        hgSessionId,
+        characterDecisionPatch({
+          proposed,
+          parseError,
+          validation,
+          outcome: 'commit_rejected',
+          commit,
+        }),
+      );
+      priorEvidenceId = characterRun.evidenceId ?? priorEvidenceId;
       trace.emit(sceneAgent.session, 'hg/move-rejected', scope, {
         inference_id: characterInferenceId,
         character_inference_session_id: characterInferenceSessionId,
@@ -149,6 +193,18 @@ export async function runCharacterPhase({
     committed = true;
     continuityTurnIndex = Number(commit.continuity_turn_index);
     domainCommitId = String(commit.domain_commit_id ?? '');
+    recorder?.patchDecision(
+      characterRun.evidenceId,
+      hgSessionId,
+      characterDecisionPatch({
+        proposed,
+        parseError,
+        validation,
+        outcome: 'accepted',
+        commit,
+      }),
+    );
+    priorEvidenceId = characterRun.evidenceId ?? priorEvidenceId;
     trace.emit(sceneAgent.session, 'hg/move-committed', scope, {
       inference_id: characterInferenceId,
       character_inference_session_id: characterInferenceSessionId,

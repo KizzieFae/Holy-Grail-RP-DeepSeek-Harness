@@ -22,6 +22,7 @@ VALIDATION_RUNS_ARCHIVE = _mod.VALIDATION_RUNS_ARCHIVE
 fixture_path = _mod.fixture_path
 resolve_data_path = _mod.resolve_data_path
 resolve_rp_audits_dir = _mod.resolve_rp_audits_dir
+EXECUTION_EVIDENCE_DIR = _mod.EXECUTION_EVIDENCE_DIR
 
 __all__ = [
     "DATA_DIR",

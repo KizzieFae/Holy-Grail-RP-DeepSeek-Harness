@@ -36,3 +36,10 @@ def sessions_data_dir() -> Path:
     if explicit:
         return Path(explicit)
     return holy_grail_data_dir() / "sessions"
+
+
+def execution_evidence_data_dir() -> Path:
+    explicit = os.environ.get("HG_EXECUTION_EVIDENCE_DIR", "").strip()
+    if explicit:
+        return Path(explicit)
+    return holy_grail_data_dir() / "execution_evidence"
