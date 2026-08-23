@@ -11,6 +11,19 @@ import { defaultPythonExecutable, repoRoot } from '../src/lib/runtime-config.mjs
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uiDir = path.join(repoRoot, 'v2', 'ui');
 
+/** Holy Grail UI port — avoids colliding with other Streamlit apps on 8501. */
+const DEFAULT_STREAMLIT_PORT = 8510;
+
+function resolveStreamlitPort() {
+  const raw = process.env.HG_STREAMLIT_PORT?.trim();
+  if (!raw) return DEFAULT_STREAMLIT_PORT;
+  const port = Number(raw);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(`invalid HG_STREAMLIT_PORT: ${raw}`);
+  }
+  return port;
+}
+
 function resolveStreamlitExecutable() {
   const venvPython = defaultPythonExecutable();
   return { python: venvPython, module: 'streamlit' };
@@ -29,6 +42,7 @@ async function maybeSpawnStreamlit(apiBaseUrl) {
   }
 
   const { python } = resolveStreamlitExecutable();
+  const streamlitPort = resolveStreamlitPort();
   const env = {
     ...process.env,
     HG_APP_API_URL: apiBaseUrl,
@@ -37,6 +51,7 @@ async function maybeSpawnStreamlit(apiBaseUrl) {
   const args = [
     '-m', 'streamlit', 'run', streamlitScript,
     '--server.headless', 'true',
+    '--server.port', String(streamlitPort),
     '--browser.gatherUsageStats', 'false',
   ];
   const proc = spawn(python, args, {
@@ -50,7 +65,7 @@ async function maybeSpawnStreamlit(apiBaseUrl) {
       console.error(`[hg-app] Streamlit exited with code ${code}`);
     }
   });
-  return proc;
+  return { proc, port: streamlitPort };
 }
 
 const client = new HolyGrailApplicationClient({
@@ -64,8 +79,8 @@ let streamlitProc = null;
 
 async function shutdown(signal) {
   console.log(`[hg-app] received ${signal}, shutting down...`);
-  if (streamlitProc && !streamlitProc.killed) {
-    streamlitProc.kill('SIGTERM');
+  if (streamlitProc?.proc && !streamlitProc.proc.killed) {
+    streamlitProc.proc.kill('SIGTERM');
   }
   await appServer.close().catch(() => {});
   await client.stop().catch(() => {});
@@ -84,6 +99,7 @@ try {
     ...ready,
     application_api_url: listen.baseUrl,
     streamlit: streamlitProc ? 'started' : 'skipped',
+    streamlit_url: streamlitProc ? `http://localhost:${streamlitProc.port}` : null,
   }, null, 2));
   console.log('[hg-app] press Ctrl+C to stop');
 } catch (err) {

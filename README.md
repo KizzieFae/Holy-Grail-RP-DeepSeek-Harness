@@ -97,7 +97,7 @@ You should also see `[hg-app] press Ctrl+C to stop`.
 
 ### 8. UI access
 
-Open **http://localhost:8501** in a browser (Streamlit default). Use the sidebar to create a session (prototype cast works on a clean clone) or resume an existing session id.
+Open the **`streamlit_url`** printed in the startup JSON (default **http://localhost:8510** — Holy Grail uses its own port so it does not collide with other Streamlit apps on 8501). Use the sidebar to create a session (prototype cast works on a clean clone) or resume an existing session id.
 
 ### 9. Shutdown
 
@@ -134,6 +134,7 @@ Implementation-tree detail: [v2/README.md](./v2/README.md).
 | `DEEPSEEK_API_KEY` | Live DeepSeek inference (required unless `HG_INFERENCE_MODE=mock`) |
 | `HG_INFERENCE_MODE` | Set to `mock` for mock inference (no API key) |
 | `HG_SKIP_STREAMLIT` | Set to `1` to skip spawning Streamlit |
+| `HG_STREAMLIT_PORT` | Streamlit UI port (default: `8510`) |
 | `HG_APP_PORT` | Application API listen port (default: ephemeral) |
 
 ---
