@@ -105,9 +105,11 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 ```text
 data/execution_evidence/<hg_session_id>/
-  index.json
+  index.json                    # includes semantic query buckets (#19)
   attempts/<evidence_id>.json
 ```
+
+`index.json` may include a `semantic` section for discoverability: findings by dimension, hard/soft finding evidence ids, residual soft concerns, multi-candidate inference ids, exhausted hard loops, evaluator failures, and per-inference `evaluation_chains`. Query via `python tools/investigation/list_execution_evidence.py <hg_session_id> --semantic-hard` (and related flags).
 
 Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
 

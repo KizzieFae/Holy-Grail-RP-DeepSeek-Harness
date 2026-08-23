@@ -25,6 +25,7 @@ from .contract import (
     PlayerSkipRecordRequest,
     UserProfileSetRequest,
     PresentationRecordRequest,
+    SemanticEvaluationContextPrepareRequest,
     ValidationRequest,
 )
 from .kernel import DomainKernel
@@ -156,8 +157,27 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     role=str(data.get("role", "guest")),
                     turn_index=int(data.get("turn_index", 0)),
                     attempt_index=int(data.get("attempt_index", 0)),
+                    correction_context=(
+                        dict(data["correction_context"])
+                        if isinstance(data.get("correction_context"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_context(req))
+                return
+            if path == "/v1/context/prepare-semantic-evaluation":
+                req = SemanticEvaluationContextPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    role=str(data.get("role", "guest")),
+                    turn_index=int(data.get("turn_index", 0)),
+                    evaluation_pass_id=str(data["evaluation_pass_id"]),
+                    candidate_move=dict(data.get("candidate_move") or {}),
+                    raw_model_output=data.get("raw_model_output"),
+                )
+                self._send_json(200, self.kernel.prepare_semantic_evaluation_context(req))
                 return
             if path == "/v1/moves/validate":
                 req = ValidationRequest(

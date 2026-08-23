@@ -25,6 +25,7 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
     rp_history_entry_id: context.rpHistoryEntryId ?? null,
     continuity_turn_index: context.continuityTurnIndex ?? null,
     prior_attempt_id: context.priorAttemptId ?? null,
+    evaluation_pass_id: context.evaluationPassId ?? null,
   };
 }
 

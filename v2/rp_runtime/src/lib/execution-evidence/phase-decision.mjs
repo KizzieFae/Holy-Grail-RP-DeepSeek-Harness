@@ -58,6 +58,9 @@ export function characterDecisionPatch({
   validation,
   outcome,
   commit,
+  semanticEvaluation = null,
+  residualSoftConcerns = null,
+  terminalDisposition = null,
 }) {
   const patch = {
     decision: {
@@ -90,6 +93,21 @@ export function characterDecisionPatch({
       domain_commit_id: commit.domain_commit_id ?? null,
       continuity_turn_index: commit.continuity_turn_index ?? null,
     };
+  } else if (commit) {
+    patch.decision.commit = {
+      committed: false,
+      reason: commit.reason ?? '',
+    };
+  }
+
+  if (semanticEvaluation) {
+    patch.decision.semantic_evaluation = semanticEvaluation;
+  }
+  if (residualSoftConcerns) {
+    patch.decision.residual_soft_concerns = residualSoftConcerns;
+  }
+  if (terminalDisposition) {
+    patch.decision.terminal_disposition = terminalDisposition;
   }
 
   return patch;

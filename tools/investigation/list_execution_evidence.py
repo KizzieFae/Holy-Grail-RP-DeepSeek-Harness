@@ -49,6 +49,40 @@ def main() -> int:
         action="store_true",
         help="Emit JSON instead of a human summary",
     )
+    parser.add_argument(
+        "--semantic-hard",
+        action="store_true",
+        help="List evidence_ids indexed with hard semantic findings",
+    )
+    parser.add_argument(
+        "--semantic-soft",
+        action="store_true",
+        help="List evidence_ids indexed with soft semantic findings",
+    )
+    parser.add_argument(
+        "--dimension",
+        help="Filter semantic index by dimension (e.g. R02b, R11)",
+    )
+    parser.add_argument(
+        "--multi-candidate",
+        action="store_true",
+        help="List inference_ids with multiple character candidates",
+    )
+    parser.add_argument(
+        "--evaluator-failure",
+        action="store_true",
+        help="List evidence_ids where semantic evaluator infrastructure failed",
+    )
+    parser.add_argument(
+        "--residual-soft",
+        action="store_true",
+        help="List evidence_ids with recorded residual soft concerns",
+    )
+    parser.add_argument(
+        "--exhausted-hard",
+        action="store_true",
+        help="List inference_ids where hard correction budget was exhausted",
+    )
     args = parser.parse_args()
 
     root = session_evidence_dir(args.hg_session_id)
@@ -68,6 +102,36 @@ def main() -> int:
     if index is None:
         print(f"Missing index.json under {root}", file=sys.stderr)
         return 1
+
+    semantic = index.get("semantic") or {}
+    if args.semantic_hard:
+        for evidence_id in semantic.get("hard_findings") or []:
+            print(evidence_id)
+        return 0
+    if args.semantic_soft:
+        for evidence_id in semantic.get("soft_findings") or []:
+            print(evidence_id)
+        return 0
+    if args.dimension:
+        for evidence_id in (semantic.get("by_dimension") or {}).get(args.dimension) or []:
+            print(evidence_id)
+        return 0
+    if args.multi_candidate:
+        for inference_id in semantic.get("multi_candidate_inferences") or []:
+            print(inference_id)
+        return 0
+    if args.evaluator_failure:
+        for evidence_id in semantic.get("evaluator_failures") or []:
+            print(evidence_id)
+        return 0
+    if args.residual_soft:
+        for evidence_id in semantic.get("residual_soft") or []:
+            print(evidence_id)
+        return 0
+    if args.exhausted_hard:
+        for inference_id in semantic.get("exhausted_hard_loops") or []:
+            print(inference_id)
+        return 0
 
     if args.json:
         print(json.dumps(index, indent=2, ensure_ascii=False))

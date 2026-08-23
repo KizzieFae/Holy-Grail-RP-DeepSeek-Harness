@@ -61,6 +61,8 @@ from .contract import (  # noqa: E402
     UserProfileSetRequest,
     ValidationRequest,
     ValidationResponse,
+    SemanticEvaluationContextPrepareRequest,
+    SemanticEvaluationContextResponse,
 )
 from .character_conversation_projection import (  # noqa: E402
     project_character_conversation_for_manifest,
@@ -71,6 +73,9 @@ from .continuity_context_projector import (  # noqa: E402
 )
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
+from .semantic_evaluation_context import (  # noqa: E402
+    prepare_semantic_evaluation_context as build_semantic_evaluation_context,
+)
 from .session_history import (  # noqa: E402
     INFERENCE_OUTCOME_EMPTY_OUTPUT,
     INFERENCE_OUTCOME_INFERENCE_ERROR,
@@ -803,6 +808,26 @@ class DomainKernel:
                 provenance={"inference_id": req.inference_id},
             ),
         )
+        correction = req.correction_context
+        if isinstance(correction, dict) and correction:
+            contributions.insert(
+                -1,
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-semantic-correction",
+                    source_kind="semantic_correction",
+                    authority_class="suggestive",
+                    knowledge_ids=(
+                        str(correction.get("evaluation_pass_id") or req.inference_id),
+                    ),
+                    priority=29,
+                    content=json.dumps(correction, ensure_ascii=False, indent=2),
+                    provenance={
+                        "inference_id": req.inference_id,
+                        "visibility": "orchestration_only",
+                        "attempt_index": req.attempt_index,
+                    },
+                ),
+            )
         return PromptContributionManifest(
             manifest_id=manifest_id,
             inference_id=req.inference_id,
@@ -813,6 +838,29 @@ class DomainKernel:
             turn_index=req.turn_index,
             attempt_index=req.attempt_index,
             contributions=contributions,
+        )
+
+    def prepare_semantic_evaluation_context(
+        self, req: SemanticEvaluationContextPrepareRequest
+    ) -> SemanticEvaluationContextResponse:
+        fixture = self.store.require(req.hg_scene_id)
+        manifest_id = f"manifest-semantic-eval-{req.evaluation_pass_id}"
+        contributions, authority_refs, candidate_package = build_semantic_evaluation_context(
+            fixture,
+            req,
+            auth_contributions_to_prompt=self._auth_contributions_to_prompt,
+        )
+        return SemanticEvaluationContextResponse(
+            manifest_id=manifest_id,
+            evaluation_pass_id=req.evaluation_pass_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            character_id=req.character_id,
+            turn_index=req.turn_index,
+            contributions=tuple(contributions),
+            authority_references=tuple(authority_refs),
+            candidate_package=candidate_package,
         )
 
     def validate_director_decision(

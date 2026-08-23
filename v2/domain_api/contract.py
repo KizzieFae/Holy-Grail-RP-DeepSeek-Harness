@@ -30,6 +30,7 @@ SourceKind = Literal[
     "director_decision",
     "committed_move",
     "inference_instruction",
+    "semantic_correction",
 ]
 ValidationClass = Literal[
     "accepted",
@@ -49,6 +50,7 @@ class ContextPrepareRequest:
     role: str
     turn_index: int
     attempt_index: int
+    correction_context: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -196,6 +198,33 @@ class ValidationResponse:
     reason: str
     retryable: bool
     normalized_move: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class SemanticEvaluationContextPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    character_id: str
+    role: str
+    turn_index: int
+    evaluation_pass_id: str
+    candidate_move: dict[str, Any]
+    raw_model_output: str | None = None
+
+
+@dataclass(frozen=True)
+class SemanticEvaluationContextResponse:
+    manifest_id: str
+    evaluation_pass_id: str
+    inference_id: str
+    hg_scene_id: str
+    hg_round_id: str
+    character_id: str
+    turn_index: int
+    contributions: tuple[PromptContribution, ...]
+    authority_references: tuple[dict[str, Any], ...]
+    candidate_package: dict[str, Any]
 
 
 @dataclass(frozen=True)

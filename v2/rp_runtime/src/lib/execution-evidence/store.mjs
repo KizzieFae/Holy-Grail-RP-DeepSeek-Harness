@@ -85,6 +85,7 @@ export class ExecutionEvidenceStore {
       updated_at: new Date().toISOString(),
     };
     writeJsonAtomic(filePath, next);
+    this._indexSemanticDecision(hgSessionId, evidenceId, next);
   }
 
   readAttempt(hgSessionId, evidenceId) {
@@ -117,7 +118,31 @@ export class ExecutionEvidenceStore {
       hg_session_id: hgSessionId,
       attempt_ids: [],
       rounds: {},
+      semantic: {
+        by_dimension: {},
+        hard_findings: [],
+        soft_findings: [],
+        residual_soft: [],
+        multi_candidate_inferences: [],
+        exhausted_hard_loops: [],
+        successful_correction_chains: [],
+        evaluator_failures: [],
+        evaluation_chains: {},
+      },
     };
+    if (!current.semantic) {
+      current.semantic = {
+        by_dimension: {},
+        hard_findings: [],
+        soft_findings: [],
+        residual_soft: [],
+        multi_candidate_inferences: [],
+        exhausted_hard_loops: [],
+        successful_correction_chains: [],
+        evaluator_failures: [],
+        evaluation_chains: {},
+      };
+    }
     if (!current.attempt_ids.includes(evidenceId)) {
       current.attempt_ids.push(evidenceId);
     }
@@ -128,6 +153,78 @@ export class ExecutionEvidenceStore {
       roundAttempts.add(evidenceId);
       current.rounds[key] = [...roundAttempts];
     }
+    current.updated_at = new Date().toISOString();
+    writeJsonAtomic(indexPath, current);
+  }
+
+  _pushUnique(list, value) {
+    if (!value || list.includes(value)) return;
+    list.push(value);
+  }
+
+  _indexSemanticDecision(hgSessionId, evidenceId, attempt) {
+    const decision = attempt?.decision ?? {};
+    const correlation = attempt?.correlation ?? {};
+    const inferenceId = correlation.inference_id;
+    const semantic = decision.semantic_evaluation;
+    const outcome = String(decision.outcome ?? '');
+    const indexPath = this.indexPath(hgSessionId);
+    const current = readJsonIfExists(indexPath);
+    if (!current) return;
+    if (!current.semantic) {
+      current.semantic = {
+        by_dimension: {},
+        hard_findings: [],
+        soft_findings: [],
+        residual_soft: [],
+        multi_candidate_inferences: [],
+        exhausted_hard_loops: [],
+        successful_correction_chains: [],
+        evaluator_failures: [],
+        evaluation_chains: {},
+      };
+    }
+    const sem = current.semantic;
+
+    if (inferenceId) {
+      const chainKey = String(inferenceId);
+      const chain = new Set(sem.evaluation_chains[chainKey] ?? []);
+      chain.add(evidenceId);
+      sem.evaluation_chains[chainKey] = [...chain];
+    }
+
+    if (outcome === 'semantic_evaluator_failed') {
+      this._pushUnique(sem.evaluator_failures, evidenceId);
+    }
+    if (decision.terminal_disposition === 'hard_exhausted') {
+      if (inferenceId) this._pushUnique(sem.exhausted_hard_loops, inferenceId);
+    }
+    if (outcome === 'accepted' && semantic?.result) {
+      if (inferenceId) this._pushUnique(sem.successful_correction_chains, inferenceId);
+    }
+    if (Array.isArray(decision.residual_soft_concerns) && decision.residual_soft_concerns.length) {
+      this._pushUnique(sem.residual_soft, evidenceId);
+    }
+
+    const evalResult = semantic?.result ?? semantic;
+    const findings = Array.isArray(evalResult?.findings) ? evalResult.findings : [];
+    for (const finding of findings) {
+      const dimension = String(finding?.dimension ?? '').trim();
+      if (!dimension) continue;
+      const bucket = sem.by_dimension[dimension] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      sem.by_dimension[dimension] = bucket;
+      if (finding.severity === 'hard') {
+        this._pushUnique(sem.hard_findings, evidenceId);
+      } else if (finding.severity === 'soft') {
+        this._pushUnique(sem.soft_findings, evidenceId);
+      }
+    }
+
+    if (inferenceId && sem.evaluation_chains[inferenceId]?.length > 2) {
+      this._pushUnique(sem.multi_candidate_inferences, inferenceId);
+    }
+
     current.updated_at = new Date().toISOString();
     writeJsonAtomic(indexPath, current);
   }

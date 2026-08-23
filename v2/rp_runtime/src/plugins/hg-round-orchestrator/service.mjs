@@ -46,6 +46,12 @@ export default class HgRoundOrchestrator extends Service {
       ?? (options.mockCharacterResponses ? [options.mockCharacterResponses] : []);
     const mockNarratorTurnResponses = options.mockNarratorTurnResponses
       ?? (options.mockNarratorResponses ? [options.mockNarratorResponses] : []);
+    const mockSemanticEvaluatorTurnResponses = options.mockSemanticEvaluatorTurnResponses ?? [];
+    const DEFAULT_SEMANTIC_PASS = JSON.stringify({
+      schema: 'hg_semantic_evaluation_result_v1',
+      overall_result: 'pass',
+      findings: [],
+    });
     const roleProfiles = resolveRoleProfiles(options, this.config.inference);
     const liveMaxAttempts = Number(options.liveMaxAttempts ?? 3);
     const livePrompts = options.livePrompts ?? {};
@@ -216,6 +222,8 @@ export default class HgRoundOrchestrator extends Service {
       const characterTurnIndex = characterTurns.length;
       const characterInferenceId = `inf-character-${characterTurnIndex}-${crypto.randomUUID()}`;
       const characterResponses = mockCharacterTurnResponses[characterTurnIndex] ?? [];
+      const semanticMocks = mockSemanticEvaluatorTurnResponses[characterTurnIndex]
+        ?? characterResponses.map(() => DEFAULT_SEMANTIC_PASS);
       const characterStartedAt = Date.now();
       const characterTurn = await phaseExecutors.runCharacter({
         api,
@@ -228,9 +236,11 @@ export default class HgRoundOrchestrator extends Service {
         directorDecision: directorPhase.directorDecision,
         characterInferenceId,
         mockResponses: characterResponses,
+        mockSemanticEvaluatorResponses: semanticMocks,
         characterTurnIndex,
         characterRole: roleForCharacter(directorPhase.selectedCharacterId, characterRoles),
         modelProfile: roleProfiles.character,
+        semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
         liveMaxAttempts,
         prompt: livePrompts.character ?? LIVE_CHARACTER_PROMPT,
       });

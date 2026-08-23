@@ -109,7 +109,7 @@ Authoritative state lives in **`ContinuityManager.resolved_outcomes`** for aspec
 
 **MVP scope note:** Initial implementation may **ship with a subset** of keys (e.g. `sleeping_surface`, `omega_suppressants`, `phone`, `housing_call`) and **no-op** for the rest until extraction catches up. The current registry-backed resolved outcome seam covers `assignment:sleeping_surface`, `communication_state:housing_call`, `medical:suppressant_formulation`, `access:location_entry`, and **`transaction:scene_commitment`**; do not treat it as a general second state system.
 
-**Runtime vs semantic enforcement:** Host `validate_move` applies **objective** Character validation via `validate_bot_response_for_runtime` (R02a unresolved placeholders, R03 move-shape/registry). Prose-level sleeping-surface contradiction and other semantic quality checks are **not** production hard gates in this layer; bounded Character semantic evaluation is deferred to #19. See `docs/architecture.md` (Validation modules).
+**Runtime vs semantic enforcement:** Host `validate_move` applies **objective** Character validation via `validate_bot_response_for_runtime` (R02a unresolved placeholders, R03 move-shape/registry). Prose-level semantic dimensions (R02b, R11–R15) are evaluated in DSH bounded semantic evaluation (#19) after objective validation succeeds. See `docs/architecture.md` (Validation modules).
 
 ---
 

@@ -82,6 +82,15 @@ export function createDomainApiClient(baseUrl) {
     prepareCharacterContext(body) {
       return postJson(metrics, baseUrl, '/v1/context/prepare', body, 'prepareCharacterContext');
     },
+    prepareSemanticEvaluationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/context/prepare-semantic-evaluation',
+        body,
+        'prepareSemanticEvaluationContext',
+      );
+    },
     validateMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/validate', body, 'validateMove');
     },

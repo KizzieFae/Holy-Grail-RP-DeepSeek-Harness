@@ -52,7 +52,17 @@ When changing `v2/domain/modules/`:
 
 ---
 
-## Scenario validation
+## RP runtime guidance
+
+Semantic evaluation orchestration tests: `v2/rp_runtime/tests/semantic-evaluation.test.mjs`, `semantic-evaluation-orchestration.test.mjs`. Run with `node --test` on those files for fast deterministic coverage without starting the full npm suite.
+
+When changing Character phase or semantic evaluation:
+
+- Run `node --test tests/semantic-evaluation*.test.mjs` from `v2/rp_runtime/`.
+- Run integration round tests (`two-character-round.test.mjs`, `execution-evidence.test.mjs`) when trace or evidence indexing changes.
+- Bounded real-provider semantic validation: `real-inference.test.mjs` (requires `DEEPSEEK_API_KEY`; uses mocked semantic evaluator responses by default in round tests).
+
+---
 
 Scenario manifest contracts and structured eval profiles are tested in the domain suite. See [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 

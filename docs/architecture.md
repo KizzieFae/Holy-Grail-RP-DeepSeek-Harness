@@ -112,7 +112,9 @@ Runtime validation is split under `v2/domain/modules/`:
 - `response_validation_presence.py` — `must_remain` helpers (`get_must_remain_characters`)
 - `response_validation_selection.py` — eligibility helpers (non-authoritative vs Host/DSH Director selection)
 
-Host `validate_move` calls `validate_bot_response_for_runtime` only. Deterministic textual/semantic quality heuristics (R02b, R11–R15) are **not** production hard gates; bounded Character semantic evaluation is owned by sibling work (#19).
+Host `validate_move` calls `validate_bot_response_for_runtime` only. Deterministic textual/semantic quality heuristics (R02b, R11–R15) are **not** objective hard gates in Domain validation.
+
+**Bounded Character semantic evaluation (#19):** DSH Character orchestration runs `generate → objective validate → bounded semantic evaluate → commit`. Semantic judgment lives in DSH (`character-semantic-evaluation.mjs`), not `kernel.validate_move`. The Host exposes read-only evaluation context via `prepare_semantic_evaluation_context` and delivers orchestration-only correction via `semantic_correction` manifest contributions on `prepare_context`. The evaluator does not mutate continuity, write RP, or enter canonical history. Hard findings require a valid authority reference from the evaluation context; soft findings allow one challenge then residual recording. Maximum three generated Character candidates per turn (`min(configured limit, 3)`). Full forensic chains are preserved in execution evidence (#15).
 
 Validators **reject or annotate**; they do not replace Director selection or continuity commits.
 

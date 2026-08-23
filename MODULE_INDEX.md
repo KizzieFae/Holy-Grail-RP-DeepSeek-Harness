@@ -34,7 +34,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Director decision / invalid `next_actor` | DSH `src/plugins/hg-phase-executors/director-phase.mjs`; Host `kernel.py` (`prepare_director_context`, `validate_director_decision`); domain `response_validation_parsing.py`, `response_validation_selection.py` |
 | Character move parse / unresolved placeholders / move-shape | domain `response_validation_parsing.py`, `response_validation_content.py` (`validate_bot_response_for_runtime`); Host `kernel.py` (`validate_move`); DSH `character-phase.mjs` |
 | Presence / exit / `must_remain` | `response_validation_presence.py` (`get_must_remain_characters`), `scene_template.py`, `scene_template_cohesion.py` |
-| Voice / drift / semantic prose quality (pre-publication) | deferred to #19 bounded semantic evaluation; anchors in `character_state_model.py`, cards in `data/characters/` |
+| Voice / drift / semantic prose quality (pre-publication) | DSH `character-phase.mjs`, `character-semantic-evaluation.mjs`; Host `semantic_evaluation_context.py`, `kernel.prepare_semantic_evaluation_context`; domain anchors in `character_state_model.py`, cards in `data/characters/` |
 | Wrong prompt / missing context | Host `continuity_context_projector.py`, `kernel.py` (`prepare_context`, `prepare_director_context`, `prepare_narrator_context`); domain `prompt_builders.py`; DSH `src/plugins/hg-context-bridge/` (transport only) |
 | Model / provider routing | DSH `src/lib/inference-profile.mjs`, `src/lib/mount-deepseek-provider.mjs`; settings surface `src/application/application-settings.mjs` |
 | Stale issues / events / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
@@ -64,6 +64,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | `v2/domain_api/session_repository.py` | Live session cache + durable save via `SessionManager` | Persistence owner with Host |
 | `v2/domain_api/session_state.py` | `LiveSession` (continuity + character states + round fixture) | Not Streamlit session state |
 | `v2/domain_api/continuity_context_projector.py` | Authoritative context projection into prompt contributions | Domain interpretation for prompts |
+| `v2/domain_api/semantic_evaluation_context.py` | Read-only semantic evaluation context + authority references | Host prepares evidence; DSH owns judgment |
 | `v2/domain_api/participation_policy.py` | Deterministic participation / forced-speaker policy | Complements Director phase |
 
 ---

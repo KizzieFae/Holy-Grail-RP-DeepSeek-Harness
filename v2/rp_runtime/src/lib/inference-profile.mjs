@@ -92,6 +92,14 @@ export function resolveRoleProfiles(options = {}, runtimeConfig = {}) {
     director: grouped.director ?? grouped.directorProfile ?? options.directorProfile ?? fallback,
     character: grouped.character ?? grouped.characterProfile ?? options.characterProfile ?? fallback,
     narrator: grouped.narrator ?? grouped.narratorProfile ?? options.narratorProfile ?? fallback,
+    semantic_evaluator:
+      grouped.semantic_evaluator
+      ?? grouped.semanticEvaluator
+      ?? options.semanticEvaluatorProfile
+      ?? grouped.character
+      ?? grouped.characterProfile
+      ?? options.characterProfile
+      ?? fallback,
   };
 }
 
