@@ -17,6 +17,7 @@ data/                           # HG_DATA_DIR
 │   └── progression_simulation_scenarios/   # scenario validation manifests
 ├── sessions/                   # persisted RP sessions (+ _session_index.json)
 ├── execution_evidence/         # V2 durable inference/decision evidence (local, gitignored)
+├── audit_tags/                 # V2 human observational audit tags (local, gitignored)
 └── rp_audits/                  # optional legacy/V1 per-turn audit trees (local, gitignored)
 ```
 
@@ -118,6 +119,32 @@ Session JSON may include a lightweight pointer under `metadata.execution_evidenc
 
 ---
 
+## Human audit tags (`audit_tags`)
+
+**Path:** `data/audit_tags/<hg_session_id>/` (gitignored generated trees)
+
+**Role:** V2 durable **human observational** markers for suspicious or interesting RP moments during play. Each tag (`hg_audit_tag_v1`) anchors to a visible transcript entry (`anchor.entry_id`) enriched with stable history correlation (`sequence_index`, `hg_round_id`, `domain_commit_id`, role/speaker flags). Optional forensic comments are stored separately from tag creation (tag-first, note-second).
+
+**Authority:** Observational only. Tags must never enter `rp_history`, continuity, memory, perception, or model request assembly. Canonical RP truth remains `data/sessions/*.json`.
+
+**Layout:**
+
+```text
+data/audit_tags/<hg_session_id>/
+  index.json                    # hg_audit_tags_index_v1; tags_by_entry_id for idempotency
+  tags/<tag_id>.json
+```
+
+**Idempotency:** At most one active tag per `(hg_session_id, entry_id)` through normal UI/API create. Repeated create returns the existing tag.
+
+**Interpretation:** [audit-workflows.md](./audit-workflows.md)
+
+**Cleanup / retention:** Tags persist until manually removed (`DELETE /api/audit-tags/{tag_id}` or delete tag files). No automatic pruning. Deleting execution evidence does not invalidate tags as pointers to canonical history. Tags remain meaningful when `HG_EXECUTION_EVIDENCE=off`.
+
+**Historical note:** V1 **User Callouts** lived under `data/rp_audits/`; V2 audit tags use this separate store and join to #15 execution evidence instead of V1 `*_full.json` artifacts.
+
+---
+
 ## Audit artifacts (`rp_audits`)
 
 **Path:** `data/rp_audits/session_*` (gitignored generated trees)
@@ -148,6 +175,7 @@ Tracked JSON for investigation, evaluation, and scenario manifests. Scenario val
 | `HG_SESSIONS_DIR` | `<HG_DATA_DIR>/sessions` | Session persistence |
 | `HG_EXECUTION_EVIDENCE` | `on` | Durable execution evidence (`off` disables writes) |
 | `HG_EXECUTION_EVIDENCE_DIR` | `<HG_DATA_DIR>/execution_evidence` | Execution evidence root |
+| `HG_AUDIT_TAGS_DIR` | `<HG_DATA_DIR>/audit_tags` | Human audit-tag store root |
 | `RP_RETRIEVED_CONTEXT_INDEX` | unset | Compiled retrieval index path |
 | `RP_EPISODIC_MEMORY` | product default | Episodic memory feature flag |
 
@@ -159,6 +187,7 @@ Tracked JSON for investigation, evaluation, and scenario manifests. Scenario val
 |-------|---------------------|------------|
 | `data/sessions/*.json` | Yes | No (tracked or local per operator) |
 | `data/execution_evidence/` | No | Yes |
+| `data/audit_tags/` | No | Yes |
 | `data/rp_audits/` | No | Yes |
 
 Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runtime before treating audit-only signals as proof of bugs.

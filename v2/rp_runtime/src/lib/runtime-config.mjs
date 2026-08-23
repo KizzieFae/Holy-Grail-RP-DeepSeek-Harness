@@ -58,6 +58,11 @@ export function defaultExecutionEvidenceDir() {
     ?? path.join(defaultDataDir(), 'execution_evidence');
 }
 
+export function defaultAuditTagsDir() {
+  return process.env.HG_AUDIT_TAGS_DIR
+    ?? path.join(defaultDataDir(), 'audit_tags');
+}
+
 export function resolveDomainHostUrl(options = {}) {
   const explicit = options.domainApi?.baseUrl ?? options.domainHostUrl;
   if (explicit) return String(explicit).replace(/\/$/, '');

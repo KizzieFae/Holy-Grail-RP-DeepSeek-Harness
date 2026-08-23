@@ -133,6 +133,63 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
         }
       }
 
+      if (req.method === 'POST' && path === '/api/audit-tags') {
+        const body = await readJson(req);
+        try {
+          const result = await applicationClient.createAuditTag({
+            hgSessionId: body.hg_session_id ?? body.hgSessionId,
+            entryId: body.entry_id ?? body.entryId,
+            createdBy: body.created_by ?? body.createdBy,
+          });
+          return sendJson(res, result.created ? 201 : 200, result);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
+        }
+      }
+
+      if (req.method === 'GET' && path.startsWith('/api/sessions/') && path.endsWith('/audit-tags')) {
+        const hgSessionId = path.slice('/api/sessions/'.length, -'/audit-tags'.length);
+        try {
+          const tags = applicationClient.listAuditTags(hgSessionId);
+          return sendJson(res, 200, { hg_session_id: hgSessionId, tags });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
+        }
+      }
+
+      if (req.method === 'PATCH' && path.startsWith('/api/audit-tags/')) {
+        const tagId = path.slice('/api/audit-tags/'.length);
+        const body = await readJson(req);
+        try {
+          const tag = await applicationClient.updateAuditTagComment({
+            hgSessionId: body.hg_session_id ?? body.hgSessionId,
+            tagId,
+            comment: body.comment ?? null,
+          });
+          return sendJson(res, 200, { tag });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
+        }
+      }
+
+      if (req.method === 'DELETE' && path.startsWith('/api/audit-tags/')) {
+        const tagId = path.slice('/api/audit-tags/'.length);
+        const body = await readJson(req).catch(() => ({}));
+        try {
+          const result = await applicationClient.deleteAuditTag({
+            hgSessionId: body.hg_session_id ?? body.hgSessionId,
+            tagId,
+          });
+          return sendJson(res, 200, result);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
+        }
+      }
+
       return sendJson(res, 404, { error: 'not found' });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

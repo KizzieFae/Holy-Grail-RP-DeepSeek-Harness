@@ -6,6 +6,7 @@ import {
   validateRuntimeSettings,
   validateSessionSetup,
 } from './application-settings.mjs';
+import { AuditTagService } from '../lib/audit-tags/service.mjs';
 import { agentOptionsFromProfile, mockInferenceProfile } from '../lib/inference-profile.mjs';
 import { HolyGrailRuntimeSupervisor } from '../runtime-supervisor/supervisor.mjs';
 import { SessionId } from '@deepseek-ai/dsh-session';
@@ -60,6 +61,7 @@ export class HolyGrailApplicationClient {
     this.status = 'idle';
     this.lastError = null;
     this.roundInProgress = false;
+    this.auditTags = new AuditTagService({ env: options.env });
   }
 
   get orchestrator() {
@@ -509,6 +511,56 @@ export class HolyGrailApplicationClient {
     const controlModes = this.setupProvenance?.control_modes ?? {};
     const aiActor = this.activeCast.find((name) => controlModes[name] !== 'player');
     return aiActor ?? this.activeCast[0] ?? 'Alice';
+  }
+
+  _resolveAuditSessionId(hgSessionId) {
+    const resolved = hgSessionId ?? this.activeSessionId;
+    if (!resolved) {
+      throw new Error('hg_session_id required');
+    }
+    return resolved;
+  }
+
+  async createAuditTag({ hgSessionId, entryId, createdBy } = {}) {
+    this._requireReady();
+    const sessionId = this._resolveAuditSessionId(hgSessionId);
+    if (!entryId) {
+      throw new Error('entry_id required');
+    }
+    if (sessionId !== this.activeSessionId) {
+      await this.openSession(sessionId);
+    }
+    const api = this.orchestrator._domainClient();
+    return this.auditTags.createTag({
+      hgSessionId: sessionId,
+      entryId,
+      createdBy,
+      getHistory: () => api.getSessionHistory(sessionId),
+    });
+  }
+
+  listAuditTags(hgSessionId) {
+    const sessionId = this._resolveAuditSessionId(hgSessionId);
+    return this.auditTags.listTags(sessionId);
+  }
+
+  getAuditTag({ hgSessionId, tagId }) {
+    const sessionId = this._resolveAuditSessionId(hgSessionId);
+    const tag = this.auditTags.getTag(sessionId, tagId);
+    if (!tag) {
+      throw new Error(`unknown audit tag: ${tagId}`);
+    }
+    return tag;
+  }
+
+  updateAuditTagComment({ hgSessionId, tagId, comment }) {
+    const sessionId = this._resolveAuditSessionId(hgSessionId);
+    return this.auditTags.updateComment(sessionId, tagId, comment);
+  }
+
+  deleteAuditTag({ hgSessionId, tagId }) {
+    const sessionId = this._resolveAuditSessionId(hgSessionId);
+    return this.auditTags.deleteTag(sessionId, tagId);
   }
 }
 

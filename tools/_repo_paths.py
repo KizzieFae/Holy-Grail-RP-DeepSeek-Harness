@@ -20,6 +20,7 @@ VALIDATION_RUNS_ARCHIVE = INVESTIGATION_RUNS_DIR
 # Local headless audit trees (gitignored; canonical under HG_DATA_DIR).
 RP_AUDITS_DIR = DATA_DIR / "rp_audits"
 EXECUTION_EVIDENCE_DIR = DATA_DIR / "execution_evidence"
+AUDIT_TAGS_DIR = DATA_DIR / "audit_tags"
 
 
 def resolve_rp_audits_dir() -> Path:

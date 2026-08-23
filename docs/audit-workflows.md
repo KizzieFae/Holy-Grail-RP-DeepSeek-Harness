@@ -27,8 +27,26 @@ Use this workflow for:
 ### Canonical truth vs forensic evidence
 
 1. Read `data/sessions/<hg_session_id>.json` — continuity and `rp_history` define **what is true**.
-2. Read `data/execution_evidence/<hg_session_id>/index.json`, then relevant `attempts/<evidence_id>.json` files — define **how inference/decisions produced that truth**.
-3. Legacy V1 trees under `data/rp_audits/session_*` are historical only; they are **not** the live V2 forensic mechanism.
+2. Read `data/audit_tags/<hg_session_id>/` when the operator flagged moments during play — defines **which visible outputs warrant investigation** (`hg_audit_tag_v1`, optional human comment).
+3. Read `data/execution_evidence/<hg_session_id>/index.json`, then relevant `attempts/<evidence_id>.json` files — define **how inference/decisions produced that truth**.
+4. Legacy V1 trees under `data/rp_audits/session_*` are historical only; they are **not** the live V2 forensic mechanism.
+
+### V2 human audit-tag workflow
+
+During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.
+
+**Reading order for a flagged moment:**
+
+1. `data/audit_tags/<hg_session_id>/index.json` → locate `tag_id` / `tags_by_entry_id`
+2. `tags/<tag_id>.json` → read `anchor.entry_id`, optional `comment`
+3. Resolve `anchor.entry_id` in session JSON `rp_history`
+4. Use `anchor.hg_round_id` / `anchor.domain_commit_id` to join #15 execution evidence (when present)
+
+CLI helper: `python tools/investigation/list_audit_tags.py <hg_session_id>`
+
+**Idempotency:** Normal create is one tag per transcript entry per session. Repeated Tag clicks return the existing tag.
+
+**Evidence-disabled:** Tags remain valid pointers to canonical history when execution evidence is off or manually deleted; `list_execution_evidence.py` reports absence without invalidating the tag.
 
 ### V2 execution evidence reading order
 

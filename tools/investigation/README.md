@@ -9,6 +9,8 @@ Offline utilities that operate on **current** repository paths (`data/`, audit J
 | `compare_*.py` | Aggregate baseline vs treatment JSON from investigation runs |
 | `aggregate_*.py` | Roll up architecture-quality experiment outputs |
 | `audit_episodic_issue_mismatch_scan.py` | Read-only scan of character audit `*_full.json` files |
+| `list_execution_evidence.py` | List V2 execution evidence for a session (`data/execution_evidence/`) |
+| `list_audit_tags.py` | List V2 human audit tags for a session (`data/audit_tags/`) |
 | `_issue240_*.py` | Offline Issue #240 audit analysis helpers (read audit trees only) |
 | `data/investigation_runs/` | Default local output for comparators (gitignored) |
 
@@ -23,6 +25,8 @@ Run from repository root:
 ```sh
 python tools/investigation/compare_participation_calibration_ab.py --help
 python tools/investigation/audit_episodic_issue_mismatch_scan.py --help
+python tools/investigation/list_execution_evidence.py <hg_session_id>
+python tools/investigation/list_audit_tags.py <hg_session_id>
 ```
 
 ## Notes

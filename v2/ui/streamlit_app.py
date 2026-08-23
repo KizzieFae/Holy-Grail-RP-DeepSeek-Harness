@@ -56,6 +56,25 @@ def init_state() -> None:
         st.session_state.reasoning_effort = "low"
     if "role_routing" not in st.session_state:
         st.session_state.role_routing = "simple"
+    if "audit_tags_by_entry" not in st.session_state:
+        st.session_state.audit_tags_by_entry = {}
+
+
+def load_audit_tags() -> None:
+    if not st.session_state.hg_session_id:
+        st.session_state.audit_tags_by_entry = {}
+        return
+    try:
+        payload = api_request(
+            "GET",
+            f"/api/sessions/{st.session_state.hg_session_id}/audit-tags",
+        )
+        tags = payload.get("tags", [])
+        st.session_state.audit_tags_by_entry = {
+            tag["anchor"]["entry_id"]: tag for tag in tags if tag.get("anchor", {}).get("entry_id")
+        }
+    except Exception:  # noqa: BLE001
+        st.session_state.audit_tags_by_entry = {}
 
 
 def refresh_status() -> None:
@@ -300,6 +319,7 @@ def render_sidebar() -> None:
                 st.session_state.setup_provenance.get("player_character_file_id")
             )
         st.session_state.transcript = result.get("transcript", [])
+        load_audit_tags()
         st.sidebar.success(f"Created {st.session_state.hg_session_id}")
 
     resume_id = st.sidebar.text_input("Resume session id", st.session_state.hg_session_id or "")
@@ -312,6 +332,7 @@ def render_sidebar() -> None:
             "GET", f"/api/sessions/{st.session_state.hg_session_id}/transcript"
         )
         st.session_state.transcript = transcript.get("transcript", [])
+        load_audit_tags()
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
 
     if st.session_state.setup_provenance or st.session_state.memory_scope_id:
@@ -328,6 +349,20 @@ def render_sidebar() -> None:
                 st.sidebar.caption(f"User persona: {provenance['user_persona_id']}")
 
     if st.session_state.hg_session_id:
+        load_audit_tags()
+        tags = list(st.session_state.audit_tags_by_entry.values())
+        if tags:
+            st.sidebar.subheader("Session tags")
+            for tag in sorted(tags, key=lambda item: item.get("tag_index", 0)):
+                anchor = tag.get("anchor", {})
+                speaker = anchor.get("speaker", "unknown")
+                entry_id = anchor.get("entry_id", "")
+                comment = tag.get("comment")
+                label = f"#{tag.get('tag_index', '?')} {speaker}"
+                st.sidebar.caption(label)
+                st.sidebar.caption(f"`{entry_id}`")
+                if comment:
+                    st.sidebar.write(comment)
         try:
             state = api_request("GET", f"/api/sessions/{st.session_state.hg_session_id}/state")
             st.sidebar.json(state.get("state", state))
@@ -335,18 +370,89 @@ def render_sidebar() -> None:
             st.sidebar.warning(str(exc))
 
 
+def render_entry_tag_controls(entry: dict) -> None:
+    entry_id = entry.get("entry_id")
+    if not entry_id or not st.session_state.hg_session_id:
+        return
+
+    tag = st.session_state.audit_tags_by_entry.get(entry_id)
+    control_col, _ = st.columns([1, 5])
+    with control_col:
+        if tag:
+            st.caption("Tagged")
+            if st.button("Untag", key=f"untag-{entry_id}", type="secondary"):
+                try:
+                    api_request(
+                        "DELETE",
+                        f"/api/audit-tags/{tag['tag_id']}",
+                        {"hg_session_id": st.session_state.hg_session_id},
+                    )
+                    load_audit_tags()
+                    st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Untag failed: {exc}")
+        elif st.button("Tag", key=f"tag-{entry_id}", type="secondary"):
+            try:
+                api_request(
+                    "POST",
+                    "/api/audit-tags",
+                    {
+                        "hg_session_id": st.session_state.hg_session_id,
+                        "entry_id": entry_id,
+                        "created_by": {
+                            "surface": "streamlit",
+                            "persona": st.session_state.user_persona_id,
+                        },
+                    },
+                )
+                load_audit_tags()
+                st.rerun()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Tag failed: {exc}")
+
+    if tag:
+        note_key = f"note-{entry_id}"
+        current_comment = tag.get("comment") or ""
+        with st.expander("Add note", expanded=False):
+            note_text = st.text_area(
+                "Forensic note (optional)",
+                value=current_comment,
+                key=note_key,
+                height=80,
+            )
+            if st.button("Save note", key=f"save-note-{entry_id}"):
+                try:
+                    api_request(
+                        "PATCH",
+                        f"/api/audit-tags/{tag['tag_id']}",
+                        {
+                            "hg_session_id": st.session_state.hg_session_id,
+                            "comment": note_text.strip() or None,
+                        },
+                    )
+                    load_audit_tags()
+                    st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Note save failed: {exc}")
+
+
 def render_chat() -> None:
     st.title("Holy Grail V2")
     st.caption(f"Runtime: {st.session_state.runtime_status}")
+
+    if st.session_state.hg_session_id:
+        load_audit_tags()
 
     for entry in st.session_state.transcript:
         speaker = entry.get("speaker") or entry.get("role", "unknown")
         if entry.get("player_skip"):
             with st.chat_message("assistant"):
                 st.caption(f"**{speaker}** — {entry.get('content', 'Turn skipped')}")
+                render_entry_tag_controls(entry)
             continue
         with st.chat_message("user" if entry.get("role") == "user" else "assistant"):
             st.markdown(f"**{speaker}:** {entry.get('content', '')}")
+            render_entry_tag_controls(entry)
 
     if not st.session_state.hg_session_id:
         st.info("Create or open a durable HG session to begin.")
