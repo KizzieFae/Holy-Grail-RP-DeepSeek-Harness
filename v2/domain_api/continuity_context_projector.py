@@ -97,7 +97,6 @@ def project_scene_state(
     assert mgr.scene_state is not None
     present, offstage, absent = _presence_labels(fixture)
     location = str(mgr.scene_state.location or "unknown")
-    opening = str(getattr(mgr.scene_state, "opening_description", "") or "").strip()
     turn_counter = (
         continuity_turn_index if continuity_turn_index is not None else mgr.turn_counter
     )
@@ -110,8 +109,6 @@ def project_scene_state(
         parts.append(f"Offstage characters: {', '.join(offstage)}.")
     if absent:
         parts.append(f"Absent but relevant: {', '.join(absent)}.")
-    if opening:
-        parts.append(f"Scene premise: {opening}")
     parts.append(f"Continuity turn counter: {turn_counter}.")
     if role == "director":
         used = actors_used_this_round or []
@@ -140,6 +137,118 @@ def project_scene_state(
             "absent_but_relevant": absent,
         },
         priority=10,
+    )
+
+
+def project_scene_setup(
+    fixture: LiveSession,
+    *,
+    hg_scene_id: str,
+    hg_round_id: str,
+    turn_index: int = 0,
+    continuity_turn_index: int | None = None,
+) -> AuthoritativeContextContribution | None:
+    mgr = fixture.manager
+    assert mgr.scene_state is not None
+    opening = str(getattr(mgr.scene_state, "opening_description", "") or "").strip()
+    if not opening:
+        return None
+    turn_counter = (
+        continuity_turn_index if continuity_turn_index is not None else mgr.turn_counter
+    )
+    return AuthoritativeContextContribution(
+        source_kind="scene_setup",
+        content=(
+            "Scene setup (authored at scene start — historical background and premise; "
+            "not the current scene position after committed progression):\n"
+            f"{opening}"
+        ),
+        authority_class="authoritative",
+        knowledge_ids=(f"scene_setup:{hg_scene_id}",),
+        provenance={
+            "hg_scene_id": hg_scene_id,
+            "hg_round_id": hg_round_id,
+            "turn_index": turn_index,
+            "continuity_turn_index": turn_counter,
+            "continuity_version": fixture.continuity_version,
+            "projection_kind": "authored_scene_setup",
+        },
+        priority=9,
+    )
+
+
+def project_scene_progression(
+    fixture: LiveSession,
+    *,
+    hg_scene_id: str,
+    hg_round_id: str,
+    turn_index: int = 0,
+    continuity_turn_index: int | None = None,
+) -> AuthoritativeContextContribution:
+    mgr = fixture.manager
+    assert mgr.scene_state is not None
+    turn_counter = (
+        continuity_turn_index if continuity_turn_index is not None else mgr.turn_counter
+    )
+    event_limit = max(1, int(getattr(mgr, "recent_event_window", 8)))
+    events = mgr.retrieve_public_events(limit=event_limit)
+
+    parts: list[str] = [
+        "Scene progression (authoritative committed continuity; current scene position):"
+    ]
+    if events:
+        for event in events:
+            summary = str(getattr(event, "summary", "") or "").strip()
+            if not summary:
+                continue
+            event_turn = getattr(event, "turn_index", None)
+            turn_label = (
+                f"turn {event_turn}" if event_turn is not None else "turn unknown"
+            )
+            parts.append(f"- [{turn_label}] {summary}")
+    else:
+        parts.append("- No committed public events yet.")
+
+    recent_delta = str(getattr(mgr.scene_state, "recent_delta", "") or "").strip()
+    if recent_delta:
+        parts.append(f"Recent delta: {recent_delta}")
+
+    phase = getattr(mgr.scene_state, "phase", None)
+    phase_value = (
+        phase.value if hasattr(phase, "value") else str(phase or "unknown")
+    )
+    parts.append(f"Scene phase: {phase_value}")
+
+    tension = str(
+        getattr(mgr.scene_state, "current_tension_level", "") or "unknown"
+    ).strip()
+    parts.append(f"Current tension level: {tension}")
+
+    return AuthoritativeContextContribution(
+        source_kind="scene_progression",
+        content="\n".join(parts),
+        authority_class="authoritative",
+        knowledge_ids=tuple(
+            f"public_event:{getattr(event, 'event_id', '')}"
+            for event in events
+            if getattr(event, "event_id", "")
+        ),
+        provenance={
+            "hg_scene_id": hg_scene_id,
+            "hg_round_id": hg_round_id,
+            "turn_index": turn_index,
+            "continuity_turn_index": turn_counter,
+            "continuity_version": fixture.continuity_version,
+            "projection_kind": "bounded_scene_progression",
+            "recent_event_window": event_limit,
+            "public_event_count": len(events),
+            "public_event_ids": [
+                str(getattr(event, "event_id", ""))
+                for event in events
+                if getattr(event, "event_id", "")
+            ],
+        },
+        priority=11,
     )
 
 
@@ -276,6 +385,16 @@ def project_authoritative_context(
 ) -> list[AuthoritativeContextContribution]:
     """Project live authoritative continuity context (no persistence)."""
     contributions: list[AuthoritativeContextContribution] = []
+    if role in ("director", "narrator"):
+        setup = project_scene_setup(
+            fixture,
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+            turn_index=turn_index,
+            continuity_turn_index=continuity_turn_index,
+        )
+        if setup is not None:
+            contributions.append(setup)
     scene = project_scene_state(
         fixture,
         role=role,
@@ -288,6 +407,16 @@ def project_authoritative_context(
     )
     if scene is not None:
         contributions.append(scene)
+    if role in ("director", "narrator"):
+        contributions.append(
+            project_scene_progression(
+                fixture,
+                hg_scene_id=hg_scene_id,
+                hg_round_id=hg_round_id,
+                turn_index=turn_index,
+                continuity_turn_index=continuity_turn_index,
+            )
+        )
     canon = project_continuity_canon(
         fixture,
         role=role,

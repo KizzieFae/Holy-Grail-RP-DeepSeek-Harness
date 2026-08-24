@@ -204,6 +204,8 @@ class ContinuityContextM113Tests(unittest.TestCase):
         manifest = self._prepare_director(session_id)
         kinds = {c.source_kind for c in manifest.contributions}
         self.assertIn("scene_state", kinds)
+        self.assertIn("scene_setup", kinds)
+        self.assertIn("scene_progression", kinds)
         self.assertIn("continuity_canon", kinds)
 
     def test_authoritative_projection_survives_repository_restart(self) -> None:

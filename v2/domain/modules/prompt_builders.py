@@ -478,7 +478,7 @@ RULES:
 2. For each ``type: speech`` beat, the ``dialogue`` string must appear in your output as a contiguous **verbatim** substring, in the same order as in ``beats`` (you may add connective narrator prose between beats; adjacent speech may be merged in prose only if every speech line still appears as an exact, ordered substring).
 3. For ``type: action`` beats, you may paraphrase the action text in third person; do not treat action text as a verbatim substring requirement.
 4. Do not add new spoken lines or quoted speech that are not substrings of the provided speech lines (narrator connective prose without quotes is allowed between beats).
-5. If you include optional environment event material, work it in naturally; do not contradict the structured move.
+5. If you include optional environment event material, work it in naturally; do not contradict authoritative scene progression or the structured move — omit environment material when it conflicts.
 6. Only describe this character for action/speech; no other character dialogue.
 7. Be concise (roughly 2-6 short sentences or one tight paragraph).
 8. Write in third person past tense.
@@ -502,7 +502,7 @@ RULES:
 3. NEVER paraphrase or alter the quoted dialogue.
 4. Attribute the dialogue naturally.
 5. Describe the action leading up to the dialogue.
-6. You may include the optional environment event if it helps pacing.
+6. You may include the optional environment event if it helps pacing; do not contradict authoritative scene progression or the committed action and dialogue — omit environment material when it conflicts.
 7. Only describe what this character does - no other characters.
 8. Preserve the established meaning of ambiguous or figurative language already present in the scene context and provided dialogue; do not literalize rumor, metaphor, hearsay, or uncertainty unless the supplied action or dialogue explicitly does so.
 9. Be evocative but concise (2-4 sentences).
@@ -525,7 +525,7 @@ SCENE CONTEXT:
 RULES:
 1. Write in third person past tense.
 2. Attribute actions to the character naturally.
-3. You may include the optional environment event if it helps pacing.
+3. You may include the optional environment event if it helps pacing; do not contradict authoritative scene progression or the committed action — omit environment material when it conflicts.
 4. Only describe what this character does.
 5. Preserve the established meaning of ambiguous or figurative language already present in the scene context; do not literalize rumor, metaphor, hearsay, or uncertainty unless the supplied action explicitly does so.
 6. Be evocative but concise (2-4 sentences).
