@@ -121,6 +121,7 @@ Validators **reject or annotate**. They do not replace Director selection or con
 | `character_state_manager.py` | Update goals, emotions, relationships | |
 | `session_manager.py` | Save/load JSON sessions, `_session_index.json` | Used by Host `SessionRepository`; not a Streamlit lifecycle module |
 | `prompt_builders.py` | Structured prompt **text** for Director / character / Narrator | Inputs assembled by Host projector |
+| `narrator_presentation_validation.py` | Deterministic Narrator F1/F2 speech fidelity | Host `validate_narrator_presentation`; runtime acceptance gate (#24) |
 
 ---
 

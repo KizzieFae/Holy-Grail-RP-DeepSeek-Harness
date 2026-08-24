@@ -2,7 +2,7 @@
  * Map DSH inference trace to provider-neutral narrator execution outcomes for Host persistence.
  */
 
-const OUTPUT_LIMIT_FINISH_KINDS = new Set(['length', 'max_tokens', 'max_output']);
+import { normalizeFinishKind } from './completion-finish-kind.mjs';
 
 /**
  * @param {object | null | undefined} trace
@@ -17,12 +17,12 @@ export function classifyNarratorInferenceOutcome(trace, rawText) {
   if (!text) {
     return 'empty_output';
   }
-  const finish = trace?.finish;
-  if (finish && typeof finish === 'object') {
-    const kind = String(finish.kind ?? '').toLowerCase();
-    if (OUTPUT_LIMIT_FINISH_KINDS.has(kind)) {
-      return 'output_limit';
-    }
+  const normalized = normalizeFinishKind(trace?.finish?.kind, { failed: false });
+  if (normalized === 'output_limit') {
+    return 'output_limit';
+  }
+  if (normalized === 'provider_error' || normalized === 'unknown') {
+    return 'inference_error';
   }
   return 'succeeded';
 }
@@ -38,3 +38,23 @@ export function classifyNarratorFailureOutcome(failureMessage) {
   }
   return 'inference_error';
 }
+
+/**
+ * @param {'complete' | 'output_limit' | 'provider_error' | 'unknown'} normalizedKind
+ * @param {boolean} [emptyOutput]
+ * @returns {'succeeded' | 'empty_output' | 'inference_error' | 'output_limit'}
+ */
+export function inferenceOutcomeFromNormalizedKind(normalizedKind, emptyOutput = false) {
+  if (emptyOutput) {
+    return 'empty_output';
+  }
+  if (normalizedKind === 'output_limit') {
+    return 'output_limit';
+  }
+  if (normalizedKind === 'complete') {
+    return 'succeeded';
+  }
+  return 'inference_error';
+}
+
+export { normalizeFinishKind } from './completion-finish-kind.mjs';

@@ -222,37 +222,37 @@ def test_failed_presentation_character_context_uses_structured_move_not_fallback
     assert REDACTED_SPEECH_STUB in carol_transcript
 
 
-def test_output_limit_presentation_keeps_ui_text_but_character_context_uses_structured_move(
+def test_output_limit_terminal_failure_uses_committed_fallback_for_ui(
     kernel: DomainKernel,
 ) -> None:
     created = kernel.create_session(cast=["Alice", "Bob"])
     session_id = created.hg_session_id
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
     commit_id = _commit_round(kernel, session_id, hg_round_id, move=_speech_move())
-    partial = "Alice began to speak but the narration cut"
     kernel.record_presentation(
         PresentationRecordRequest(
             hg_session_id=session_id,
             domain_commit_id=commit_id,
             hg_round_id=hg_round_id,
             character_id="Alice",
-            presentation_text=partial,
-            presentation_failed=False,
+            presentation_text=None,
+            presentation_failed=True,
             inference_outcome=INFERENCE_OUTCOME_OUTPUT_LIMIT,
         )
     )
     fixture = kernel.store.require(session_id)
     ui = project_history_to_transcript(fixture.rp_history)
-    assert ui[0]["content"] == partial
+    assert ui[0]["content"] == "nods"
+    assert ui[0]["presentation_failed"] is True
     from domain_api.session_history import history_entries
 
     presentation_entry = history_entries(fixture.rp_history)[-1]
+    assert presentation_entry.presentation_status == "failed"
     assert not presentation_uses_narrator_prose_for_character(presentation_entry)
     bob_transcript, _, _ = project_character_conversation_for_manifest(
         fixture,
         character_id="Bob",
     )
-    assert partial not in bob_transcript
     assert "for Bob only" in bob_transcript
 
 

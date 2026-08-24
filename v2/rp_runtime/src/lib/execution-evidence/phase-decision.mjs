@@ -120,20 +120,41 @@ export function narratorDecisionPatch({
   failureReason,
   domainCommitId,
   continuityTurnIndex,
+  attemptIndex = null,
+  finishKindRaw = null,
+  finishKindNormalized = null,
+  validationAccepted = null,
+  validationClass = null,
+  validationReason = null,
+  retryable = null,
+  retryDecision = null,
+  rejectedPresentationText = null,
+  terminalDisposition = null,
 }) {
-  return {
+  const patch = {
     decision: {
       role: 'narrator',
       outcome: presentationFailed ? 'presentation_failed' : 'succeeded',
       inference_outcome: inferenceOutcome ?? null,
       presentation_text: presentationText ?? null,
       failure_reason: failureReason ?? null,
+      attempt_index: attemptIndex,
+      finish_kind_raw: finishKindRaw,
+      finish_kind_normalized: finishKindNormalized,
+      validation_accepted: validationAccepted,
+      validation_class: validationClass,
+      validation_reason: validationReason,
+      retryable,
+      retry_decision: retryDecision,
+      rejected_presentation_text: rejectedPresentationText,
+      terminal_disposition: terminalDisposition,
     },
     associations: {
       domain_commit_id: domainCommitId ?? null,
       continuity_turn_index: continuityTurnIndex ?? null,
     },
   };
+  return patch;
 }
 
 export function openingDecisionPatch({

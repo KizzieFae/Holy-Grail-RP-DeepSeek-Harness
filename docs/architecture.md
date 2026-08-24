@@ -60,7 +60,7 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 - Character agents produce self-only structured moves.
 - Optional move fields are **not** the authority boundary for issues, tension, or consequences.
 - Director selects who acts next.
-- Narrator renders prose and preserves character dialogue verbatim.
+- Narrator renders prose after commit via deterministic acceptance: normalized `complete` completion, non-empty output, and Host F1/F2 speech fidelity (`narrator_presentation_validation.py`). Bounded two-attempt retry; terminal failure uses committed fallback without rolling back canon (#24).
 - Continuity manager updates durable scene and issue state.
 - Validation and enforcement remain separate from prompt styling.
 - **`perception_audibility.py`** gates who may see dialogue and narrator render for others' beats.

@@ -17,6 +17,7 @@ from .contract import (
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
     NarratorContextPrepareRequest,
+    NarratorPresentationValidationRequest,
     ParticipationDecisionRequest,
     RoundStartRequest,
     SessionCreateRequest,
@@ -215,6 +216,14 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     continuity_turn_index=int(data["continuity_turn_index"]),
                 )
                 self._send_json(200, self.kernel.prepare_narrator_context(req))
+                return
+            if path == "/v1/narrator/presentation/validate":
+                req = NarratorPresentationValidationRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    presentation_text=str(data.get("presentation_text") or ""),
+                )
+                self._send_json(200, self.kernel.validate_narrator_presentation(req))
                 return
             if path == "/v1/sessions/history/user-turn":
                 req = UserTurnRecordRequest(

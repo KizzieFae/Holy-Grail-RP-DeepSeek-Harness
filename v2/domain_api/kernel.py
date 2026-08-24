@@ -21,6 +21,9 @@ from director_decision_contract import (  # noqa: E402
     normalize_environment_event,
     normalize_tension_shift,
 )
+from narrator_presentation_validation import (  # noqa: E402
+    validate_narrator_presentation as validate_narrator_presentation_rules,
+)
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response_for_runtime  # noqa: E402
@@ -50,6 +53,8 @@ from .contract import (  # noqa: E402
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
     NarratorContextPrepareRequest,
+    NarratorPresentationValidationRequest,
+    NarratorPresentationValidationResponse,
     ParticipationDecision,
     ParticipationDecisionRequest,
     PromptContribution,
@@ -1529,4 +1534,57 @@ class DomainKernel:
             turn_index=rnd.turn_index,
             attempt_index=0,
             contributions=contributions,
+        )
+
+    def validate_narrator_presentation(
+        self, req: NarratorPresentationValidationRequest
+    ) -> NarratorPresentationValidationResponse:
+        fixture = self.store.require(req.hg_scene_id)
+        structured_move: dict[str, Any] | None = None
+        committed = next(
+            (
+                item
+                for item in reversed(fixture.rp_history)
+                if item.get("kind") == "committed_turn"
+                and item.get("domain_commit_id") == req.domain_commit_id
+            ),
+            None,
+        )
+        if committed is not None:
+            meta = dict(committed.get("metadata") or {})
+            move = meta.get("structured_move")
+            if isinstance(move, dict):
+                structured_move = move
+        if structured_move is None:
+            for rnd in fixture.rounds:
+                turn_record = next(
+                    (
+                        turn
+                        for turn in rnd.character_turns
+                        if turn.domain_commit_id == req.domain_commit_id
+                    ),
+                    None,
+                )
+                if turn_record is not None:
+                    structured_move = dict(turn_record.committed_move)
+                    break
+        if structured_move is None:
+            return NarratorPresentationValidationResponse(
+                accepted=False,
+                validation_class="structural",
+                reason=(
+                    f"missing committed move for domain_commit_id "
+                    f"{req.domain_commit_id}"
+                ),
+                retryable=False,
+            )
+        result = validate_narrator_presentation_rules(
+            structured_move=structured_move,
+            presentation_text=req.presentation_text,
+        )
+        return NarratorPresentationValidationResponse(
+            accepted=result.accepted,
+            validation_class=result.validation_class,
+            reason=result.reason,
+            retryable=result.retryable,
         )

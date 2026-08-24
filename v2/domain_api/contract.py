@@ -277,6 +277,21 @@ class NarratorContextPrepareRequest:
 
 
 @dataclass(frozen=True)
+class NarratorPresentationValidationRequest:
+    hg_scene_id: str
+    domain_commit_id: str
+    presentation_text: str
+
+
+@dataclass(frozen=True)
+class NarratorPresentationValidationResponse:
+    accepted: bool
+    validation_class: str
+    reason: str
+    retryable: bool
+
+
+@dataclass(frozen=True)
 class SessionCreateRequest:
     cast: tuple[str, ...] | None = None
     characters: tuple[str, ...] | None = None

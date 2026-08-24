@@ -100,6 +100,15 @@ export function createDomainApiClient(baseUrl) {
     prepareNarratorContext(body) {
       return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
     },
+    validateNarratorPresentation(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrator/presentation/validate',
+        body,
+        'validateNarratorPresentation',
+      );
+    },
     prepareOpeningContext(body) {
       return postJson(metrics, baseUrl, '/v1/opening/context/prepare', body, 'prepareOpeningContext');
     },
