@@ -109,6 +109,15 @@ export function createDomainApiClient(baseUrl) {
     prepareNarratorContext(body) {
       return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
     },
+    prepareNarratorSemanticQaContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrator/semantic-qa/context/prepare',
+        body,
+        'prepareNarratorSemanticQaContext',
+      );
+    },
     validateNarratorPresentation(body) {
       return postJson(
         metrics,

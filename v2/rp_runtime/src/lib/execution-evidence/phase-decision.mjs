@@ -149,6 +149,8 @@ export function narratorDecisionPatch({
   retryDecision = null,
   rejectedPresentationText = null,
   terminalDisposition = null,
+  semanticQa = null,
+  residualSoftConcerns = null,
 }) {
   const patch = {
     decision: {
@@ -173,6 +175,12 @@ export function narratorDecisionPatch({
       continuity_turn_index: continuityTurnIndex ?? null,
     },
   };
+  if (semanticQa) {
+    Object.assign(patch, semanticQaDecisionPatch(semanticQa));
+  }
+  if (residualSoftConcerns) {
+    patch.decision.residual_soft_concerns = residualSoftConcerns;
+  }
   return patch;
 }
 

@@ -8,8 +8,14 @@ import {
   narratorRetryDecision,
 } from '../../lib/completion-finish-kind.mjs';
 import { narratorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
+import {
+  applyNarratorSemanticPolicy,
+  buildCorrectionContextFromNarratorQa,
+  runNarratorSemanticEvaluation,
+} from './narrator-semantic-qa.mjs';
 
 const MAX_NARRATOR_ATTEMPTS = 2;
+const EVAL_INFRA_RETRIES = 1;
 
 function attemptInferenceId(baseId, attemptIndex) {
   return attemptIndex === 0 ? baseId : `${baseId}-retry-${attemptIndex}`;
@@ -22,6 +28,80 @@ function recordAttemptEvidence({
   patch,
 }) {
   recorder?.patchDecision(evidenceId ?? null, hgSessionId, patch);
+}
+
+function acceptNarratorPresentation({
+  presentationText,
+  attemptIndex,
+  finishKindRaw,
+  finishKindNormalized,
+  validation,
+  narratorRun,
+  domainCommitId,
+  continuityTurnIndex,
+  recorder,
+  hgSessionId,
+  trace,
+  sceneAgent,
+  scope,
+  inferenceId,
+  characterId,
+  characterTurnIndex,
+  manifestId,
+  semanticQa = null,
+  residualSoftConcerns = null,
+  terminalDisposition = 'narrator_presented',
+}) {
+  trace.emit(sceneAgent.session, 'hg/narrator-completed', scope, {
+    inference_id: inferenceId,
+    narrator_inference_session_id: narratorRun.inferenceSessionId,
+    role: 'narrator',
+    character_id: characterId,
+    character_turn_index: characterTurnIndex,
+    manifest_id: manifestId,
+    domain_commit_id: domainCommitId,
+    continuity_turn_index: continuityTurnIndex,
+    presentation_text: presentationText,
+    attempt_index: attemptIndex,
+    inference_trace: narratorRun.trace,
+    terminal_disposition: terminalDisposition,
+  });
+
+  const inferenceOutcome = inferenceOutcomeFromNormalizedKind('complete', false);
+  recordAttemptEvidence({
+    recorder,
+    evidenceId: narratorRun.evidenceId,
+    hgSessionId,
+    patch: narratorDecisionPatch({
+      inferenceOutcome,
+      presentationText,
+      presentationFailed: false,
+      domainCommitId,
+      continuityTurnIndex,
+      attemptIndex,
+      finishKindRaw,
+      finishKindNormalized,
+      validationAccepted: true,
+      validationClass: validation.validation_class ?? 'accepted',
+      validationReason: validation.reason ?? '',
+      retryable: false,
+      retryDecision: 'accept',
+      terminalDisposition,
+      semanticQa,
+      residualSoftConcerns,
+    }),
+  });
+
+  return {
+    presentation_rendered: true,
+    presentation_text: presentationText,
+    presentation_failed: false,
+    inference_outcome: inferenceOutcome,
+    narrator_inference_session_id: narratorRun.inferenceSessionId,
+    narrator_manifest_id: manifestId,
+    narrator_inference_trace: narratorRun.trace,
+    terminal_disposition: terminalDisposition,
+  };
 }
 
 export async function runNarratorPhase({
@@ -39,81 +119,89 @@ export async function runNarratorPhase({
   continuityTurnIndex,
   narratorInferenceId,
   mockNarratorResponses,
+  mockNarratorSemanticQaResponses = [],
   characterTurnIndex,
   modelProfile,
+  semanticEvaluatorProfile,
+  narratorSemanticQaEnabled = true,
   prompt,
 }) {
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
-  let manifestId = null;
   let lastFailureReason = 'narrator presentation failed';
   let lastInferenceOutcome = 'inference_error';
   let lastEvidenceId = null;
-
-  let manifest;
-  try {
-    manifest = await api.prepareNarratorContext({
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      inference_id: narratorInferenceId,
-      character_id: characterId,
-      domain_commit_id: domainCommitId,
-      continuity_turn_index: continuityTurnIndex,
-    });
-    manifestId = String(manifest.manifest_id);
-  } catch (error) {
-    lastFailureReason = String(error?.message ?? error);
-    lastInferenceOutcome = classifyNarratorFailureOutcome(lastFailureReason);
-    trace.emit(sceneAgent.session, 'hg/narrator-failed', scope, {
-      inference_id: narratorInferenceId,
-      role: 'narrator',
-      character_id: characterId,
-      character_turn_index: characterTurnIndex,
-      manifest_id: manifestId,
-      domain_commit_id: domainCommitId,
-      continuity_turn_index: continuityTurnIndex,
-      reason: lastFailureReason,
-      presentation_failure_class: 'runtime_render',
-      canon_preserved: true,
-    });
-    recordAttemptEvidence({
-      recorder,
-      evidenceId: null,
-      hgSessionId,
-      patch: narratorDecisionPatch({
-        inferenceOutcome: lastInferenceOutcome,
-        presentationText: null,
-        presentationFailed: true,
-        failureReason: lastFailureReason,
-        domainCommitId,
-        continuityTurnIndex,
-        attemptIndex: 0,
-        retryable: false,
-        retryDecision: 'terminal_fallback',
-        terminalDisposition: 'committed_fallback',
-      }),
-    });
-    return {
-      presentation_rendered: false,
-      presentation_text: null,
-      presentation_failed: true,
-      inference_outcome: lastInferenceOutcome,
-      presentation_failure_reason: lastFailureReason,
-      narrator_manifest_id: manifestId,
-    };
-  }
+  let correctionContext = null;
+  let semanticEvalPassIndex = 0;
+  let responseIndex = 0;
 
   trace.emit(sceneAgent.session, 'hg/narrator-started', scope, {
     inference_id: narratorInferenceId,
     role: 'narrator',
     character_id: characterId,
     character_turn_index: characterTurnIndex,
-    manifest_id: manifestId,
     domain_commit_id: domainCommitId,
     continuity_turn_index: continuityTurnIndex,
   });
 
   for (let attemptIndex = 0; attemptIndex < MAX_NARRATOR_ATTEMPTS; attemptIndex += 1) {
     const inferenceId = attemptInferenceId(narratorInferenceId, attemptIndex);
+    let manifestId = null;
+    let manifest;
+    try {
+      manifest = await api.prepareNarratorContext({
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+        inference_id: narratorInferenceId,
+        character_id: characterId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+        attempt_index: attemptIndex,
+        correction_context: correctionContext ?? undefined,
+      });
+      manifestId = String(manifest.manifest_id);
+    } catch (error) {
+      lastFailureReason = String(error?.message ?? error);
+      lastInferenceOutcome = classifyNarratorFailureOutcome(lastFailureReason);
+      trace.emit(sceneAgent.session, 'hg/narrator-failed', scope, {
+        inference_id: narratorInferenceId,
+        role: 'narrator',
+        character_id: characterId,
+        character_turn_index: characterTurnIndex,
+        manifest_id: manifestId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+        reason: lastFailureReason,
+        presentation_failure_class: 'runtime_render',
+        canon_preserved: true,
+      });
+      recordAttemptEvidence({
+        recorder,
+        evidenceId: null,
+        hgSessionId,
+        patch: narratorDecisionPatch({
+          inferenceOutcome: lastInferenceOutcome,
+          presentationText: null,
+          presentationFailed: true,
+          failureReason: lastFailureReason,
+          domainCommitId,
+          continuityTurnIndex,
+          attemptIndex,
+          retryable: false,
+          retryDecision: 'terminal_fallback',
+          terminalDisposition: 'committed_fallback',
+        }),
+      });
+      return {
+        presentation_rendered: false,
+        presentation_text: null,
+        presentation_failed: true,
+        inference_outcome: lastInferenceOutcome,
+        presentation_failure_reason: lastFailureReason,
+        narrator_manifest_id: manifestId,
+        terminal_disposition: 'committed_fallback',
+      };
+    }
+
     let narratorRun = null;
     let finishKindRaw = null;
     let finishKindNormalized = 'unknown';
@@ -181,6 +269,7 @@ export async function runNarratorPhase({
           }),
         });
         if (retry.retryDecision === 'retry') {
+          responseIndex += 1;
           continue;
         }
         break;
@@ -229,6 +318,7 @@ export async function runNarratorPhase({
           }),
         });
         if (retry.retryDecision === 'retry') {
+          responseIndex += 1;
           continue;
         }
         break;
@@ -274,34 +364,130 @@ export async function runNarratorPhase({
           }),
         });
         if (retry.retryDecision === 'retry') {
+          responseIndex += 1;
           continue;
         }
         break;
       }
 
-      trace.emit(sceneAgent.session, 'hg/narrator-completed', scope, {
-        inference_id: inferenceId,
-        narrator_inference_session_id: narratorRun.inferenceSessionId,
-        role: 'narrator',
-        character_id: characterId,
-        character_turn_index: characterTurnIndex,
-        manifest_id: manifestId,
-        domain_commit_id: domainCommitId,
-        continuity_turn_index: continuityTurnIndex,
-        presentation_text: presentationText,
-        attempt_index: attemptIndex,
-        inference_trace: narratorRun.trace,
+      if (!narratorSemanticQaEnabled) {
+        return acceptNarratorPresentation({
+          presentationText,
+          attemptIndex,
+          finishKindRaw,
+          finishKindNormalized,
+          validation,
+          narratorRun,
+          domainCommitId,
+          continuityTurnIndex,
+          recorder,
+          hgSessionId,
+          trace,
+          sceneAgent,
+          scope,
+          inferenceId,
+          characterId,
+          characterTurnIndex,
+          manifestId,
+        });
+      }
+
+      const evaluationPassId = `${narratorInferenceId}-qa-${semanticEvalPassIndex}`;
+      semanticEvalPassIndex += 1;
+      let evalOutcome = null;
+      for (let evalInfra = 0; evalInfra <= EVAL_INFRA_RETRIES; evalInfra += 1) {
+        evalOutcome = await runNarratorSemanticEvaluation({
+          api,
+          runEphemeralInference,
+          narratorInferenceId,
+          hgSceneId,
+          hgRoundId,
+          hgSessionId,
+          characterId,
+          domainCommitId,
+          continuityTurnIndex,
+          evaluationPassId,
+          candidatePresentation: presentationText,
+          rawModelOutput: narratorRun.raw,
+          semanticEvaluatorProfile: semanticEvaluatorProfile ?? modelProfile,
+          mockSemanticResponse: mockNarratorSemanticQaResponses[responseIndex]
+            ?? mockNarratorSemanticQaResponses[attemptIndex]
+            ?? mockNarratorSemanticQaResponses[semanticEvalPassIndex - 1]
+            ?? null,
+          parentNarratorEvidenceId: narratorRun.evidenceId,
+          infrastructureAttempt: evalInfra,
+        });
+        if (!evalOutcome.infrastructureFailure) break;
+      }
+
+      if (!evalOutcome || evalOutcome.infrastructureFailure) {
+        recordAttemptEvidence({
+          recorder,
+          evidenceId: narratorRun.evidenceId,
+          hgSessionId,
+          patch: narratorDecisionPatch({
+            inferenceOutcome: 'inference_error',
+            presentationText: null,
+            presentationFailed: true,
+            failureReason: evalOutcome?.evaluatorError ?? 'semantic evaluator failed',
+            domainCommitId,
+            continuityTurnIndex,
+            attemptIndex,
+            finishKindRaw,
+            finishKindNormalized,
+            validationAccepted: true,
+            validationClass: validation.validation_class ?? 'accepted',
+            validationReason: validation.reason ?? '',
+            retryable: false,
+            retryDecision: 'terminal_fallback',
+            rejectedPresentationText: presentationText,
+            terminalDisposition: 'semantic_evaluator_failed',
+            semanticQa: {
+              evaluationPassId,
+              evaluationTargetRole: 'narrator',
+              evaluatorEvidenceId: evalOutcome?.evidenceId ?? null,
+              infrastructureFailure: true,
+              rawEvaluatorOutput: evalOutcome?.raw ?? null,
+            },
+          }),
+        });
+        lastFailureReason = evalOutcome?.evaluatorError ?? 'semantic evaluator failed';
+        lastInferenceOutcome = 'inference_error';
+        break;
+      }
+
+      const policy = applyNarratorSemanticPolicy(evalOutcome, {
+        attemptIndex,
+        maxAttempts: MAX_NARRATOR_ATTEMPTS,
       });
 
-      const inferenceOutcome = inferenceOutcomeFromNormalizedKind('complete', false);
+      const semanticOutcome = policy.action === 'pass'
+        ? 'semantic_passed'
+        : policy.action === 'accept_with_residuals'
+          ? 'semantic_accepted_with_residuals'
+          : policy.action === 'soft_regen'
+            ? 'semantic_rejected_soft'
+            : policy.action === 'hard_regen'
+              ? 'semantic_rejected_hard'
+              : policy.action === 'exhausted_fallback'
+                ? 'semantic_hard_exhausted'
+                : 'semantic_evaluator_failed';
+
       recordAttemptEvidence({
         recorder,
         evidenceId: narratorRun.evidenceId,
         hgSessionId,
         patch: narratorDecisionPatch({
-          inferenceOutcome,
-          presentationText,
-          presentationFailed: false,
+          inferenceOutcome: inferenceOutcomeFromNormalizedKind('complete', false),
+          presentationText: policy.action === 'accept_with_residuals'
+            || policy.action === 'pass'
+            ? presentationText
+            : null,
+          presentationFailed: policy.action !== 'pass'
+            && policy.action !== 'accept_with_residuals',
+          failureReason: policy.action === 'pass' || policy.action === 'accept_with_residuals'
+            ? null
+            : lastFailureReason,
           domainCommitId,
           continuityTurnIndex,
           attemptIndex,
@@ -310,21 +496,126 @@ export async function runNarratorPhase({
           validationAccepted: true,
           validationClass: validation.validation_class ?? 'accepted',
           validationReason: validation.reason ?? '',
-          retryable: false,
-          retryDecision: 'accept',
-          terminalDisposition: 'narrator_presented',
+          retryable: policy.action === 'soft_regen' || policy.action === 'hard_regen',
+          retryDecision: policy.action === 'soft_regen' || policy.action === 'hard_regen'
+            ? 'retry'
+            : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
+              ? 'terminal_fallback'
+              : 'accept',
+          rejectedPresentationText: policy.action === 'pass'
+            || policy.action === 'accept_with_residuals'
+            ? null
+            : presentationText,
+          terminalDisposition: policy.action === 'accept_with_residuals'
+            ? 'accepted_with_residual_soft_concerns'
+            : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
+              ? 'committed_fallback'
+              : policy.action === 'pass'
+                ? 'narrator_presented'
+                : null,
+          semanticQa: {
+            evaluationPassId,
+            evaluationTargetRole: 'narrator',
+            evaluatorEvidenceId: evalOutcome.evidenceId,
+            result: evalOutcome.result,
+            rawEvaluatorOutput: evalOutcome.raw,
+            citationValidations: evalOutcome.citationValidations,
+            parseWarnings: evalOutcome.parseWarnings,
+            policyAction: policy.action,
+          },
+          residualSoftConcerns: policy.residualSoftConcerns ?? null,
         }),
       });
 
-      return {
-        presentation_rendered: true,
-        presentation_text: presentationText,
-        presentation_failed: false,
-        inference_outcome: inferenceOutcome,
-        narrator_inference_session_id: narratorRun.inferenceSessionId,
-        narrator_manifest_id: manifestId,
-        narrator_inference_trace: narratorRun.trace,
-      };
+      trace.emit(sceneAgent.session, 'hg/narrator-semantic-qa', scope, {
+        inference_id: inferenceId,
+        evaluation_pass_id: evaluationPassId,
+        attempt_index: attemptIndex,
+        policy_action: policy.action,
+        overall_result: evalOutcome.result?.overall_result,
+        findings: evalOutcome.result?.findings,
+      });
+
+      if (policy.action === 'infra_fail') {
+        lastFailureReason = policy.evaluatorError ?? 'semantic evaluator failed';
+        lastInferenceOutcome = 'inference_error';
+        break;
+      }
+
+      if (policy.action === 'pass') {
+        return acceptNarratorPresentation({
+          presentationText,
+          attemptIndex,
+          finishKindRaw,
+          finishKindNormalized,
+          validation,
+          narratorRun,
+          domainCommitId,
+          continuityTurnIndex,
+          recorder,
+          hgSessionId,
+          trace,
+          sceneAgent,
+          scope,
+          inferenceId,
+          characterId,
+          characterTurnIndex,
+          manifestId,
+          semanticQa: {
+            evaluationPassId,
+            evaluationTargetRole: 'narrator',
+            evaluatorEvidenceId: evalOutcome.evidenceId,
+            result: evalOutcome.result,
+            policyAction: policy.action,
+          },
+          residualSoftConcerns: policy.residualSoftConcerns ?? null,
+        });
+      }
+
+      if (policy.action === 'accept_with_residuals') {
+        return acceptNarratorPresentation({
+          presentationText,
+          attemptIndex,
+          finishKindRaw,
+          finishKindNormalized,
+          validation,
+          narratorRun,
+          domainCommitId,
+          continuityTurnIndex,
+          recorder,
+          hgSessionId,
+          trace,
+          sceneAgent,
+          scope,
+          inferenceId,
+          characterId,
+          characterTurnIndex,
+          manifestId,
+          semanticQa: {
+            evaluationPassId,
+            evaluationTargetRole: 'narrator',
+            evaluatorEvidenceId: evalOutcome.evidenceId,
+            result: evalOutcome.result,
+            policyAction: policy.action,
+          },
+          residualSoftConcerns: policy.residualSoftConcerns ?? [],
+          terminalDisposition: 'accepted_with_residual_soft_concerns',
+        });
+      }
+
+      if (policy.action === 'soft_regen' || policy.action === 'hard_regen') {
+        correctionContext = buildCorrectionContextFromNarratorQa(evalOutcome.result, {
+          evaluationPassId,
+        });
+        responseIndex += 1;
+        continue;
+      }
+
+      if (policy.action === 'exhausted_fallback') {
+        lastFailureReason = 'narrator semantic hard rejection exhausted generation budget';
+        lastInferenceOutcome = 'inference_error';
+        break;
+      }
     } catch (error) {
       const failureMessage = String(error?.message ?? error);
       const permanent = isPermanentProviderFailure(failureMessage, narratorRun?.trace);
@@ -359,6 +650,7 @@ export async function runNarratorPhase({
         }),
       });
       if (retry.retryDecision === 'retry') {
+        responseIndex += 1;
         continue;
       }
       break;
@@ -370,7 +662,6 @@ export async function runNarratorPhase({
     role: 'narrator',
     character_id: characterId,
     character_turn_index: characterTurnIndex,
-    manifest_id: manifestId,
     domain_commit_id: domainCommitId,
     continuity_turn_index: continuityTurnIndex,
     reason: lastFailureReason,
@@ -384,6 +675,6 @@ export async function runNarratorPhase({
     presentation_failed: true,
     inference_outcome: lastInferenceOutcome,
     presentation_failure_reason: lastFailureReason,
-    narrator_manifest_id: manifestId,
+    terminal_disposition: 'committed_fallback',
   };
 }

@@ -58,6 +58,7 @@ from .contract import (  # noqa: E402
     NarratorContextPrepareRequest,
     NarratorPresentationValidationRequest,
     NarratorPresentationValidationResponse,
+    NarratorSemanticQaContextPrepareRequest,
     ParticipationDecision,
     ParticipationDecisionRequest,
     PromptContribution,
@@ -93,6 +94,10 @@ from .director_context_digests import (  # noqa: E402
 from .director_semantic_qa_context import (  # noqa: E402
     build_director_semantic_qa_context_response,
     prepare_director_semantic_qa_context,
+)
+from .narrator_semantic_qa_context import (  # noqa: E402
+    build_narrator_semantic_qa_context_response,
+    prepare_narrator_semantic_qa_context,
 )
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
@@ -1510,7 +1515,7 @@ class DomainKernel:
 
         mgr = fixture.manager
         assert mgr.scene_state is not None
-        manifest_id = f"manifest-narrator-{req.inference_id}"
+        manifest_id = f"manifest-narrator-{req.inference_id}-{req.attempt_index}"
         present_labels = list(
             getattr(mgr.scene_state, "present_characters", None) or fixture.cast
         )
@@ -1592,6 +1597,26 @@ class DomainKernel:
             ),
             )
         )
+        correction = req.correction_context
+        if isinstance(correction, dict) and correction:
+            contributions.insert(
+                -1,
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-semantic-correction",
+                    source_kind="semantic_correction",
+                    authority_class="suggestive",
+                    knowledge_ids=(
+                        str(correction.get("evaluation_pass_id") or req.inference_id),
+                    ),
+                    priority=29,
+                    content=json.dumps(correction, ensure_ascii=False, indent=2),
+                    provenance={
+                        "inference_id": req.inference_id,
+                        "visibility": "orchestration_only",
+                        "attempt_index": req.attempt_index,
+                    },
+                ),
+            )
         return PromptContributionManifest(
             manifest_id=manifest_id,
             inference_id=req.inference_id,
@@ -1600,8 +1625,55 @@ class DomainKernel:
             role="narrator",
             character_id=req.character_id,
             turn_index=rnd.turn_index,
-            attempt_index=0,
+            attempt_index=req.attempt_index,
             contributions=contributions,
+        )
+
+    def prepare_narrator_semantic_qa_context(
+        self, req: NarratorSemanticQaContextPrepareRequest
+    ) -> SemanticQaContextPrepareResponse:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        turn_record = next(
+            (turn for turn in rnd.character_turns if turn.domain_commit_id == req.domain_commit_id),
+            None,
+        )
+        if turn_record is None:
+            raise ValueError(
+                f"narrator semantic QA requires committed move for domain_commit_id "
+                f"{req.domain_commit_id}"
+            )
+        if turn_record.continuity_turn_index != req.continuity_turn_index:
+            raise ValueError(
+                f"continuity_turn_index mismatch: expected {turn_record.continuity_turn_index}, "
+                f"got {req.continuity_turn_index}"
+            )
+        if turn_record.character_id != req.character_id:
+            raise ValueError(
+                f"character_id mismatch: expected {turn_record.character_id}, "
+                f"got {req.character_id}"
+            )
+
+        manifest_id = f"manifest-narrator-semantic-qa-{req.evaluation_pass_id}"
+        role_contributions, authority_refs, candidate_package = (
+            prepare_narrator_semantic_qa_context(
+                fixture,
+                rnd,
+                req,
+                auth_contributions_fn=self._auth_contributions_to_prompt,
+            )
+        )
+        return build_narrator_semantic_qa_context_response(
+            manifest_id=manifest_id,
+            evaluation_pass_id=req.evaluation_pass_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            turn_index=rnd.turn_index,
+            character_id=req.character_id,
+            role_contributions=role_contributions,
+            authority_references=authority_refs,
+            candidate_package=candidate_package,
         )
 
     def validate_narrator_presentation(

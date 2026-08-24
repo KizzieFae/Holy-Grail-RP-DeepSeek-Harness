@@ -19,6 +19,7 @@ from .contract import (
     OpeningPersistRequest,
     NarratorContextPrepareRequest,
     NarratorPresentationValidationRequest,
+    NarratorSemanticQaContextPrepareRequest,
     ParticipationDecisionRequest,
     RoundStartRequest,
     SessionCreateRequest,
@@ -233,8 +234,28 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     character_id=str(data["character_id"]),
                     domain_commit_id=str(data["domain_commit_id"]),
                     continuity_turn_index=int(data["continuity_turn_index"]),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                    correction_context=(
+                        dict(data["correction_context"])
+                        if isinstance(data.get("correction_context"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_narrator_context(req))
+                return
+            if path == "/v1/narrator/semantic-qa/context/prepare":
+                req = NarratorSemanticQaContextPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    continuity_turn_index=int(data["continuity_turn_index"]),
+                    evaluation_pass_id=str(data["evaluation_pass_id"]),
+                    candidate_presentation=str(data.get("candidate_presentation") or ""),
+                    raw_model_output=data.get("raw_model_output"),
+                )
+                self._send_json(200, self.kernel.prepare_narrator_semantic_qa_context(req))
                 return
             if path == "/v1/narrator/presentation/validate":
                 req = NarratorPresentationValidationRequest(

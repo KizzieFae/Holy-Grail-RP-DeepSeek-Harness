@@ -100,6 +100,19 @@ class DirectorSemanticQaContextPrepareRequest:
 
 
 @dataclass(frozen=True)
+class NarratorSemanticQaContextPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    character_id: str
+    domain_commit_id: str
+    continuity_turn_index: int
+    evaluation_pass_id: str
+    candidate_presentation: str
+    raw_model_output: str | None = None
+
+
+@dataclass(frozen=True)
 class RoundStartRequest:
     hg_scene_id: str
 
@@ -325,6 +338,8 @@ class NarratorContextPrepareRequest:
     character_id: str
     domain_commit_id: str
     continuity_turn_index: int
+    attempt_index: int = 0
+    correction_context: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

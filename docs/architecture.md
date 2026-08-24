@@ -60,7 +60,7 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 - Character agents produce self-only structured moves.
 - Optional move fields are **not** the authority boundary for issues, tension, or consequences.
 - Director selects who acts next.
-- Narrator renders prose after commit via deterministic acceptance: normalized `complete` completion, non-empty output, and Host F1/F2 speech fidelity (`narrator_presentation_validation.py`). Bounded two-attempt retry; terminal failure uses committed fallback without rolling back canon (#24).
+- Narrator renders prose after commit via deterministic acceptance: normalized `complete` completion, non-empty output, and Host F1/F2 speech fidelity (`narrator_presentation_validation.py`). After F1/F2 acceptance, bounded semantic fidelity QA (#27) reviews presentation against the same legitimate committed source surface via Narrator-local authority references; the evaluator is subordinate QA and does not emit replacement authoritative prose. Single two-generation Narrator budget (`MAX_NARRATOR_ATTEMPTS = 2`); soft exhaustion accepts with residual concerns; hard exhaustion or evaluator infrastructure failure uses committed fallback (#24). Bounded two-attempt retry for provider/deterministic failures; terminal failure uses committed fallback without rolling back canon (#24).
 - Continuity manager updates durable scene and issue state.
 - Validation and enforcement remain separate from prompt styling.
 - **`perception_audibility.py`** gates who may see dialogue and narrator render for others' beats.

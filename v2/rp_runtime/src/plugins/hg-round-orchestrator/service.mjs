@@ -48,6 +48,7 @@ export default class HgRoundOrchestrator extends Service {
       ?? (options.mockNarratorResponses ? [options.mockNarratorResponses] : []);
     const mockSemanticEvaluatorTurnResponses = options.mockSemanticEvaluatorTurnResponses ?? [];
     const mockDirectorSemanticQaResponses = options.mockDirectorSemanticQaResponses ?? [];
+    const mockNarratorSemanticQaResponses = options.mockNarratorSemanticQaResponses ?? [];
     const DEFAULT_SEMANTIC_PASS = JSON.stringify({
       schema: 'hg_semantic_evaluation_result_v1',
       overall_result: 'pass',
@@ -57,6 +58,13 @@ export default class HgRoundOrchestrator extends Service {
       schema: 'hg_semantic_qa_result_v1',
       evaluation_target_role: 'director',
       evaluation_pass_id: 'director-qa-pass',
+      overall_result: 'pass',
+      findings: [],
+    });
+    const DEFAULT_NARRATOR_SEMANTIC_PASS = JSON.stringify({
+      schema: 'hg_semantic_qa_result_v1',
+      evaluation_target_role: 'narrator',
+      evaluation_pass_id: 'narrator-qa-pass',
       overall_result: 'pass',
       findings: [],
     });
@@ -270,6 +278,11 @@ export default class HgRoundOrchestrator extends Service {
 
       const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
       const narratorResponses = mockNarratorTurnResponses[characterTurnIndex] ?? [];
+      const narratorSemanticMocks = mockNarratorSemanticQaResponses.length
+        ? mockNarratorSemanticQaResponses
+        : (narratorResponses.length
+          ? narratorResponses.map(() => DEFAULT_NARRATOR_SEMANTIC_PASS)
+          : [DEFAULT_NARRATOR_SEMANTIC_PASS, DEFAULT_NARRATOR_SEMANTIC_PASS]);
       const narratorStartedAt = Date.now();
       const narratorResult = await phaseExecutors.runNarrator({
         api,
@@ -283,8 +296,11 @@ export default class HgRoundOrchestrator extends Service {
         continuityTurnIndex: characterTurn.continuityTurnIndex,
         narratorInferenceId,
         mockNarratorResponses: narratorResponses,
+        mockNarratorSemanticQaResponses: narratorSemanticMocks,
         characterTurnIndex,
         modelProfile: roleProfiles.narrator,
+        semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
+        narratorSemanticQaEnabled: options.narratorSemanticQaEnabled !== false,
         prompt: livePrompts.narrator ?? LIVE_NARRATOR_PROMPT,
       });
       roleTimings.narrator_ms.push(Date.now() - narratorStartedAt);
