@@ -102,6 +102,7 @@ class Issue21SceneProgressionTests(unittest.TestCase):
                 "scene_setup",
                 "scene_state",
                 "scene_progression",
+                "actor_suitability",
                 "director_scratch",
                 "inference_instruction",
             },

@@ -53,7 +53,8 @@ test('HgTraceEmitter: rejects unknown event types', async (t) => {
     }),
     /unknown Holy Grail event type/,
   );
-  assert.equal(HG_EVENT_TYPES.length, 19);
+  assert.equal(HG_EVENT_TYPES.length, 20);
+  assert.ok(HG_EVENT_TYPES.includes('hg/director-semantic-qa'));
   assert.ok(HG_EVENT_TYPES.includes('hg/semantic-evaluation'));
   assert.ok(HG_EVENT_TYPES.includes('hg/opening-started'));
 });

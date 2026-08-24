@@ -1,3 +1,5 @@
+import { semanticQaDecisionPatch } from './semantic-qa-patch.mjs';
+
 /**
  * Map phase validation outcomes into durable decision evidence.
  */
@@ -10,6 +12,10 @@ export function directorDecisionPatch({
   eligibilitySnapshot,
   participationContext,
   actorsUsedThisRound,
+  semanticQa = null,
+  residualSoftConcerns = null,
+  terminalDisposition = null,
+  retention = null,
 }) {
   const patch = {
     decision: {
@@ -47,6 +53,19 @@ export function directorDecisionPatch({
         actors_used_this_round: [...(actorsUsedThisRound ?? [])],
       },
     };
+  }
+
+  if (semanticQa) {
+    Object.assign(patch, semanticQaDecisionPatch(semanticQa));
+  }
+  if (residualSoftConcerns) {
+    patch.decision.residual_soft_concerns = residualSoftConcerns;
+  }
+  if (terminalDisposition) {
+    patch.decision.terminal_disposition = terminalDisposition;
+  }
+  if (retention) {
+    patch.decision.retention = retention;
   }
 
   return patch;

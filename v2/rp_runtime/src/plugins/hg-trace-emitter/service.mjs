@@ -9,6 +9,7 @@ export const HG_EVENT_TYPES = [
   'hg/director-proposed',
   'hg/director-rejected',
   'hg/director-accepted',
+  'hg/director-semantic-qa',
   'hg/move-proposed',
   'hg/move-rejected',
   'hg/semantic-evaluation',

@@ -79,6 +79,15 @@ export function createDomainApiClient(baseUrl) {
     validateDirectorDecision(body) {
       return postJson(metrics, baseUrl, '/v1/director/decisions/validate', body, 'validateDirectorDecision');
     },
+    prepareDirectorSemanticQaContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/director/semantic-qa/context/prepare',
+        body,
+        'prepareDirectorSemanticQaContext',
+      );
+    },
     prepareCharacterContext(body) {
       return postJson(metrics, baseUrl, '/v1/context/prepare', body, 'prepareCharacterContext');
     },

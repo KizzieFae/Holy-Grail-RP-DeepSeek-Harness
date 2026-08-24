@@ -47,8 +47,16 @@ export default class HgRoundOrchestrator extends Service {
     const mockNarratorTurnResponses = options.mockNarratorTurnResponses
       ?? (options.mockNarratorResponses ? [options.mockNarratorResponses] : []);
     const mockSemanticEvaluatorTurnResponses = options.mockSemanticEvaluatorTurnResponses ?? [];
+    const mockDirectorSemanticQaResponses = options.mockDirectorSemanticQaResponses ?? [];
     const DEFAULT_SEMANTIC_PASS = JSON.stringify({
       schema: 'hg_semantic_evaluation_result_v1',
+      overall_result: 'pass',
+      findings: [],
+    });
+    const DEFAULT_DIRECTOR_SEMANTIC_PASS = JSON.stringify({
+      schema: 'hg_semantic_qa_result_v1',
+      evaluation_target_role: 'director',
+      evaluation_pass_id: 'director-qa-pass',
       overall_result: 'pass',
       findings: [],
     });
@@ -173,6 +181,9 @@ export default class HgRoundOrchestrator extends Service {
       } else {
         const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
         const directorStartedAt = Date.now();
+        const directorSemanticMocks = mockDirectorSemanticQaResponses.length
+          ? mockDirectorSemanticQaResponses
+          : mockDirectorResponses.map(() => DEFAULT_DIRECTOR_SEMANTIC_PASS);
         directorPhase = await phaseExecutors.runDirector({
           api,
           sceneAgent,
@@ -183,6 +194,7 @@ export default class HgRoundOrchestrator extends Service {
           directorInferenceId,
           directorAttemptSeed,
           mockDirectorResponses,
+          mockDirectorSemanticQaResponses: directorSemanticMocks,
           directorResponseIndex,
           actorsUsedThisRound,
           turnIndex: initialTurnIndex,
@@ -193,8 +205,10 @@ export default class HgRoundOrchestrator extends Service {
             continuationC2Skip: participation.continuation_c2_skip,
           },
           modelProfile: roleProfiles.director,
+          semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
           liveMaxAttempts,
           prompt: livePrompts.director ?? LIVE_DIRECTOR_PROMPT,
+          directorSemanticQaEnabled: options.directorSemanticQaEnabled !== false,
         });
         roleTimings.director_ms.push(Date.now() - directorStartedAt);
         roleTraces.director = directorPhase.directorInferenceTrace ?? null;

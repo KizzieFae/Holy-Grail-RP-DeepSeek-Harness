@@ -13,6 +13,7 @@ from .contract import (
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     DirectorDecisionValidationRequest,
+    DirectorSemanticQaContextPrepareRequest,
     EligibleActorsRequest,
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
@@ -131,8 +132,26 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     turn_index=int(data.get("turn_index", 0)),
                     attempt_index=int(data.get("attempt_index", 0)),
                     actors_used_this_round=tuple(data.get("actors_used_this_round") or ()),
+                    correction_context=(
+                        dict(data["correction_context"])
+                        if isinstance(data.get("correction_context"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_director_context(req))
+                return
+            if path == "/v1/director/semantic-qa/context/prepare":
+                req = DirectorSemanticQaContextPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    turn_index=int(data.get("turn_index", 0)),
+                    evaluation_pass_id=str(data["evaluation_pass_id"]),
+                    candidate_decision=dict(data.get("candidate_decision") or {}),
+                    actors_used_this_round=tuple(data.get("actors_used_this_round") or ()),
+                    raw_model_output=data.get("raw_model_output"),
+                )
+                self._send_json(200, self.kernel.prepare_director_semantic_qa_context(req))
                 return
             if path == "/v1/director/decisions/validate":
                 req = DirectorDecisionValidationRequest(

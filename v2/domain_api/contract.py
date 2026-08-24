@@ -30,6 +30,11 @@ SourceKind = Literal[
     "continuity_summary",
     "recent_scene_transcript",
     "user_turn_trigger",
+    "user_turn_source",
+    "user_steering_hints",
+    "recent_orchestration",
+    "actor_suitability",
+    "scene_pressures",
     "director_decision",
     "committed_move",
     "inference_instruction",
@@ -64,6 +69,34 @@ class DirectorContextPrepareRequest:
     turn_index: int
     attempt_index: int
     actors_used_this_round: tuple[str, ...] = ()
+    correction_context: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class DirectorContextPrepareResponse:
+    manifest_id: str
+    inference_id: str
+    hg_scene_id: str
+    hg_round_id: str
+    role: str
+    character_id: str | None
+    turn_index: int
+    attempt_index: int
+    contributions: tuple[PromptContribution, ...]
+    authority_references: tuple[dict[str, Any], ...]
+    context_completeness: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class DirectorSemanticQaContextPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    turn_index: int
+    evaluation_pass_id: str
+    candidate_decision: dict[str, Any]
+    actors_used_this_round: tuple[str, ...] = ()
+    raw_model_output: str | None = None
 
 
 @dataclass(frozen=True)

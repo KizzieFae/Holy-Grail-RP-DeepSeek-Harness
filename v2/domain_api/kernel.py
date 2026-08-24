@@ -39,14 +39,17 @@ from issue240_semantic_evaluation import (  # noqa: E402
     issue240_semantic_evaluation_enabled,
     normalize_issue240_semantic_evaluation_for_continuity,
 )
+from domain.modules.authority_reference import validate_authority_references  # noqa: E402
 
 from .contract import (  # noqa: E402
     CommitRequest,
     CommitResponse,
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
+    DirectorContextPrepareResponse,
     DirectorDecisionResult,
     DirectorDecisionValidationRequest,
+    DirectorSemanticQaContextPrepareRequest,
     EligibleActorsRequest,
     EligibleActorsResponse,
     EligibleActorEntry,
@@ -72,15 +75,24 @@ from .contract import (  # noqa: E402
     ValidationResponse,
     SemanticEvaluationContextPrepareRequest,
     SemanticEvaluationContextResponse,
+    SemanticQaContextPrepareResponse,
 )
 from .character_conversation_projection import (  # noqa: E402
     project_character_conversation_for_manifest,
-    project_director_trigger_for_manifest,
 )
 from .continuity_context_projector import (  # noqa: E402
     AuthoritativeContextContribution,
     collect_recent_environment_evidence,
     project_authoritative_context,
+)
+from .director_context_digests import (  # noqa: E402
+    build_director_scene_evidence_contributions,
+    director_scene_condition_flags,
+    validate_director_context_completeness,
+)
+from .director_semantic_qa_context import (  # noqa: E402
+    build_director_semantic_qa_context_response,
+    prepare_director_semantic_qa_context,
 )
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
@@ -593,11 +605,9 @@ class DomainKernel:
 
     def prepare_director_context(
         self, req: DirectorContextPrepareRequest
-    ) -> PromptContributionManifest:
+    ) -> DirectorContextPrepareResponse:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        mgr = fixture.manager
-        assert mgr.scene_state is not None
         manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
         used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
         available = self._available_actors(fixture, rnd)
@@ -610,63 +620,80 @@ class DomainKernel:
             actors_used_this_round=used,
             eligible_actors=available,
         )
-        contributions: list[PromptContribution] = list(
-            self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        scene_contributions, authority_refs = build_director_scene_evidence_contributions(
+            fixture,
+            rnd,
+            manifest_id,
+            available,
+            auth_contributions=list(
+                self._auth_contributions_to_prompt(manifest_id, auth_projections)
+            ),
         )
-        trigger_content, trigger_provenance = project_director_trigger_for_manifest(
-            fixture
-        )
-        if trigger_content:
-            trigger_entry_id = trigger_provenance.get("trigger_entry_id")
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-user-turn-trigger",
-                    source_kind="user_turn_trigger",
-                    authority_class="derived",
-                    knowledge_ids=(
-                        (f"rp_history:trigger:{trigger_entry_id}",)
-                        if trigger_entry_id
-                        else (f"rp_history:trigger:{req.hg_round_id}",)
-                    ),
-                    priority=15,
-                    content=trigger_content,
-                    provenance={
-                        "hg_round_id": req.hg_round_id,
-                        **trigger_provenance,
-                    },
-                )
-            )
+        contributions: list[PromptContribution] = list(scene_contributions)
         contributions.extend(
             (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-director-scratch",
-                source_kind="director_scratch",
-                authority_class="derived",
-                knowledge_ids=(f"director:{req.inference_id}",),
-                priority=20,
-                content=(
-                    "Director scratch: weigh participation balance and select the next actor. "
-                    "Do not assume character-private knowledge."
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-director-scratch",
+                    source_kind="director_scratch",
+                    authority_class="derived",
+                    knowledge_ids=(f"director:{req.inference_id}",),
+                    priority=20,
+                    content=(
+                        "Director scratch: weigh participation balance and select the next actor. "
+                        "Do not assume character-private knowledge."
+                    ),
+                    provenance={"inference_id": req.inference_id, "role": "director"},
                 ),
-                provenance={"inference_id": req.inference_id, "role": "director"},
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-instruction",
-                source_kind="inference_instruction",
-                authority_class="derived",
-                knowledge_ids=(f"inference:{req.inference_id}",),
-                priority=30,
-                content=(
-                    "Output only JSON with next_actor, end_round, reason, environment_event, "
-                    "tension_shift. tension_shift must be escalate, soften, or steady. "
-                    "environment_event is optional; use an empty string rather than repeating "
-                    "a recent accepted environment development."
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-instruction",
+                    source_kind="inference_instruction",
+                    authority_class="derived",
+                    knowledge_ids=(f"inference:{req.inference_id}",),
+                    priority=30,
+                    content=(
+                        "Output only JSON with next_actor, end_round, reason, environment_event, "
+                        "tension_shift. tension_shift must be escalate, soften, or steady. "
+                        "environment_event is optional; use an empty string rather than repeating "
+                        "a recent accepted environment development."
+                    ),
+                    provenance={"inference_id": req.inference_id},
                 ),
-                provenance={"inference_id": req.inference_id},
-            ),
             )
         )
-        return PromptContributionManifest(
+        correction = req.correction_context
+        if isinstance(correction, dict) and correction:
+            contributions.insert(
+                -1,
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-semantic-correction",
+                    source_kind="semantic_correction",
+                    authority_class="suggestive",
+                    knowledge_ids=(
+                        str(correction.get("evaluation_pass_id") or req.inference_id),
+                    ),
+                    priority=29,
+                    content=json.dumps(correction, ensure_ascii=False, indent=2),
+                    provenance={
+                        "inference_id": req.inference_id,
+                        "visibility": "orchestration_only",
+                        "attempt_index": req.attempt_index,
+                    },
+                ),
+            )
+        flags = director_scene_condition_flags(fixture, rnd, available)
+        context_completeness = validate_director_context_completeness(
+            contributions,
+            has_round_turns=flags["has_round_turns"],
+            multiple_eligible=flags["multiple_eligible"],
+            has_active_issues=flags["has_active_issues"],
+            has_user_turn=flags["has_user_turn"],
+        )
+        normalized_refs, ref_errors = validate_authority_references(authority_refs)
+        if ref_errors:
+            raise ValueError(
+                "Director context preparation failed: " + "; ".join(ref_errors)
+            )
+        return DirectorContextPrepareResponse(
             manifest_id=manifest_id,
             inference_id=req.inference_id,
             hg_scene_id=req.hg_scene_id,
@@ -675,7 +702,48 @@ class DomainKernel:
             character_id=None,
             turn_index=rnd.turn_index,
             attempt_index=req.attempt_index,
-            contributions=contributions,
+            contributions=tuple(contributions),
+            authority_references=tuple(normalized_refs),
+            context_completeness=context_completeness,
+        )
+
+    def prepare_director_semantic_qa_context(
+        self, req: DirectorSemanticQaContextPrepareRequest
+    ) -> SemanticQaContextPrepareResponse:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
+        available = self._available_actors(fixture, rnd)
+        auth_projections = project_authoritative_context(
+            fixture,
+            role="director",
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            turn_index=req.turn_index,
+            actors_used_this_round=used,
+            eligible_actors=available,
+        )
+        manifest_id = f"manifest-director-semantic-qa-{req.evaluation_pass_id}"
+        role_contributions, authority_refs, candidate_package = (
+            prepare_director_semantic_qa_context(
+                fixture,
+                rnd,
+                req,
+                available=available,
+                auth_contributions_fn=self._auth_contributions_to_prompt,
+                auth_projections=auth_projections,
+            )
+        )
+        return build_director_semantic_qa_context_response(
+            manifest_id=manifest_id,
+            evaluation_pass_id=req.evaluation_pass_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            turn_index=rnd.turn_index,
+            role_contributions=role_contributions,
+            authority_references=authority_refs,
+            candidate_package=candidate_package,
         )
 
     def prepare_context(self, req: ContextPrepareRequest) -> PromptContributionManifest:

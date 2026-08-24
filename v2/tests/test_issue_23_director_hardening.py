@@ -188,11 +188,11 @@ def test_director_gets_unredacted_trigger_and_committed_environment() -> None:
             attempt_index=0,
         )
     )
-    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_trigger")
+    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_source")
     environment = next(
         c for c in manifest.contributions if c.source_kind == "recent_environment"
     )
-    assert trigger.authority_class == "derived"
+    assert trigger.authority_class == "authoritative"
     assert trigger.provenance["visibility"] == "orchestration_projection"
     assert trigger.provenance["trigger_redacted"] is False
     assert secret in trigger.content
@@ -219,7 +219,7 @@ def test_director_trigger_is_skip_aware() -> None:
             attempt_index=0,
         )
     )
-    assert "user_turn_trigger" not in {
+    assert "user_turn_source" not in {
         contribution.source_kind for contribution in manifest.contributions
     }
 
@@ -349,7 +349,7 @@ def test_scenario_grade_director_hardening(
             attempt_index=0,
         )
     )
-    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_trigger")
+    trigger = next(c for c in manifest.contributions if c.source_kind == "user_turn_source")
     assert str(scenario["trigger_text"]) in trigger.content
     assert any(c.source_kind == "recent_environment" for c in manifest.contributions)
 
