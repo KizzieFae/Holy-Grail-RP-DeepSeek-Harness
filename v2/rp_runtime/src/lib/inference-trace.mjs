@@ -1,4 +1,5 @@
 import { finalAssistantText } from './inference-utils.mjs';
+import { mapReasoningEffortToProviderOptions } from './reasoning-provider-options.mjs';
 
 function eventData(event) {
   return event?.data ?? {};
@@ -64,7 +65,9 @@ export function extractInferenceTrace(events, extras = {}) {
   const turnEnd = latestEvent(list, 'turn/end');
   const stream = collectStreamChunks(list);
 
-  const headerConfig = eventData(requestHeader).config ?? {};
+  const requestHeaderPayload = eventData(requestHeader);
+  const header = requestHeaderPayload.header ?? requestHeaderPayload;
+  const headerConfig = header.config ?? {};
   const message = eventData(assistantMessage).message ?? null;
   const source = message?.source ?? {};
 
@@ -75,12 +78,20 @@ export function extractInferenceTrace(events, extras = {}) {
     && (finish.kind === 'error' || finish.kind === 'aborted'),
   );
 
+  const reasoningEffort = headerConfig.reasoningEffort ?? extras.reasoningEffort ?? null;
+  const mappedThinking = mapReasoningEffortToProviderOptions(reasoningEffort).thinking;
+  const effectiveThinking = headerConfig.thinking
+    ?? header.adapterDefaults?.thinking
+    ?? mappedThinking
+    ?? null;
+
   return {
     provider: headerConfig.provider ?? source.provider ?? extras.provider ?? null,
     model: headerConfig.model ?? source.model ?? extras.model ?? null,
-    reasoning_effort: headerConfig.reasoningEffort ?? extras.reasoningEffort ?? null,
-    adapter_defaults: eventData(requestHeader).adapterDefaults ?? null,
-    request_header_reason: eventData(requestHeader).reason ?? null,
+    reasoning_effort: reasoningEffort,
+    effective_thinking: effectiveThinking,
+    adapter_defaults: header.adapterDefaults ?? null,
+    request_header_reason: requestHeaderPayload.reason ?? null,
     manifest_id: extras.manifestId ?? null,
     contribution_ids: extras.contributionIds ?? [],
     stream,

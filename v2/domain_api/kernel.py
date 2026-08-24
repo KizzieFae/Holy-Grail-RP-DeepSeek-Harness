@@ -111,6 +111,7 @@ from .session_history import (  # noqa: E402
     PLAYER_SKIP_CONTENT,
     PLAYER_SKIP_KIND,
     PRESENTATION_SOURCE_COMMITTED_FALLBACK,
+    PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC,
     PRESENTATION_SOURCE_NARRATOR,
     append_history_entry,
     project_history_to_transcript,
@@ -323,10 +324,14 @@ class DomainKernel:
         return entry
 
     def record_presentation(self, req: PresentationRecordRequest) -> dict[str, Any]:
+        from narrator_presentation_fallback import render_degraded_player_presentation
+
         fixture = self.store.require(req.hg_session_id)
         status = "failed" if req.presentation_failed else "rendered"
         content = (req.presentation_text or "").strip()
-        if not content:
+        committed = None
+        structured_move: dict[str, Any] | None = None
+        if req.domain_commit_id:
             committed = next(
                 (
                     item
@@ -336,16 +341,52 @@ class DomainKernel:
                 ),
                 None,
             )
-            content = str(committed.get("content") if committed else "[presentation unavailable]")
+            if committed is not None:
+                move = (committed.get("metadata") or {}).get("structured_move")
+                if isinstance(move, dict):
+                    structured_move = move
+            if structured_move is None:
+                for rnd in fixture.rounds:
+                    turn_record = next(
+                        (
+                            turn
+                            for turn in rnd.character_turns
+                            if turn.domain_commit_id == req.domain_commit_id
+                        ),
+                        None,
+                    )
+                    if turn_record is not None:
+                        structured_move = dict(turn_record.committed_move)
+                        break
+        character_name = str(
+            req.character_id
+            or (committed or {}).get("actor_id")
+            or "Character"
+        )
+        if not content:
+            if isinstance(structured_move, dict):
+                content = render_degraded_player_presentation(
+                    structured_move,
+                    character_name=character_name,
+                )
+            elif committed is not None:
+                content = str(committed.get("content") or "[presentation unavailable]")
+            else:
+                content = "[presentation unavailable]"
+        presentation_source = PRESENTATION_SOURCE_NARRATOR
+        presentation_degraded = False
         if req.presentation_failed:
-            presentation_source = PRESENTATION_SOURCE_COMMITTED_FALLBACK
+            if isinstance(structured_move, dict):
+                presentation_source = PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC
+                presentation_degraded = True
+            else:
+                presentation_source = PRESENTATION_SOURCE_COMMITTED_FALLBACK
             inference_outcome = req.inference_outcome or (
                 INFERENCE_OUTCOME_EMPTY_OUTPUT
                 if not (req.presentation_text or "").strip()
                 else INFERENCE_OUTCOME_INFERENCE_ERROR
             )
         else:
-            presentation_source = PRESENTATION_SOURCE_NARRATOR
             inference_outcome = req.inference_outcome or INFERENCE_OUTCOME_SUCCEEDED
         entry = append_history_entry(
             fixture.rp_history,
@@ -358,6 +399,7 @@ class DomainKernel:
             metadata={
                 "renderer": "narrator",
                 "presentation_source": presentation_source,
+                "presentation_degraded": presentation_degraded,
                 "inference_outcome": inference_outcome,
             },
         )

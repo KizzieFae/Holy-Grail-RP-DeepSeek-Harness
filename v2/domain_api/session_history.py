@@ -14,6 +14,7 @@ PLAYER_SKIP_CONTENT = "Turn skipped"
 
 PRESENTATION_SOURCE_NARRATOR = "narrator"
 PRESENTATION_SOURCE_COMMITTED_FALLBACK = "committed_fallback"
+PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC = "degraded_deterministic_fallback"
 
 INFERENCE_OUTCOME_SUCCEEDED = "succeeded"
 INFERENCE_OUTCOME_EMPTY_OUTPUT = "empty_output"
@@ -151,7 +152,7 @@ def presentation_uses_narrator_prose_for_character(entry: RpHistoryEntry) -> boo
         return False
     meta = _presentation_metadata(entry)
     source = meta.get("presentation_source")
-    if source == PRESENTATION_SOURCE_COMMITTED_FALLBACK:
+    if source in (PRESENTATION_SOURCE_COMMITTED_FALLBACK, PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC):
         return False
     outcome = meta.get("inference_outcome")
     if outcome in (

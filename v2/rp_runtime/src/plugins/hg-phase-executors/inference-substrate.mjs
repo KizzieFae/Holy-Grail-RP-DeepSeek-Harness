@@ -29,7 +29,9 @@ export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
     evidenceContext = null,
   }) {
     const profile = resolveInferenceProfile(inferenceConfig, modelProfile);
+    const agentOpts = agentOptionsFromProfile(profile);
     let disposeAdapter = () => {};
+    let disposeRequestHook = () => {};
 
     if (profile.kind === 'mock') {
       const adapter = new HgMockLlmAdapter(
@@ -40,8 +42,21 @@ export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
 
     const agent = ctx.agentLoop.create(
       SessionId(`hg-inf-${inferenceId}`),
-      agentOptionsFromProfile(profile),
+      {
+        provider: agentOpts.provider,
+        model: agentOpts.model,
+        maxTokens: agentOpts.maxTokens,
+      },
     );
+    if (agentOpts.reasoningEffort !== undefined) {
+      disposeRequestHook = agent.ctx.on('agent/request', async (_payload, next) => {
+        const resolved = await next();
+        return {
+          ...resolved,
+          reasoningEffort: agentOpts.reasoningEffort,
+        };
+      });
+    }
     const contextRegistration = ctx.hgContextBridge.registerManifest({
       agent,
       manifest,
@@ -73,6 +88,7 @@ export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
       inferenceSessionId: String(agent.id),
     });
     contextRegistration.dispose();
+    disposeRequestHook();
     disposeAdapter();
 
     return {

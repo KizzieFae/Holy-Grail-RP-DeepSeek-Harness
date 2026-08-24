@@ -25,7 +25,7 @@ from domain_api.fixture_store import FixtureStore  # noqa: E402
 from domain_api.kernel import DomainKernel, PROTOTYPE_VALID_MOVE  # noqa: E402
 from domain_api.session_history import (  # noqa: E402
     INFERENCE_OUTCOME_OUTPUT_LIMIT,
-    PRESENTATION_SOURCE_COMMITTED_FALLBACK,
+    PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC,
     project_history_to_transcript,
 )
 
@@ -52,7 +52,7 @@ def _validate_director(kernel: DomainKernel, scene_id: str, round_id: str, actor
     return dict(result.normalized_decision)
 
 
-def test_terminal_output_limit_uses_committed_fallback_for_ui() -> None:
+def test_terminal_output_limit_uses_degraded_deterministic_fallback_for_ui() -> None:
     kernel = DomainKernel(store=FixtureStore())
     created = kernel.create_session(cast=["Alice", "Bob"])
     session_id = created.hg_session_id
@@ -85,9 +85,10 @@ def test_terminal_output_limit_uses_committed_fallback_for_ui() -> None:
     transcript = project_history_to_transcript(fixture.rp_history)
     presentation = next(entry for entry in fixture.rp_history if entry["kind"] == "presentation")
     assert presentation["presentation_status"] == "failed"
-    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_COMMITTED_FALLBACK
+    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC
+    assert presentation["metadata"]["presentation_degraded"] is True
     assert transcript[-1]["presentation_failed"] is True
-    assert "partial" not in transcript[-1]["content"].lower()
+    assert "nods thoughtfully" in transcript[-1]["content"]
 
 
 def test_kernel_validate_narrator_presentation_uses_committed_move() -> None:

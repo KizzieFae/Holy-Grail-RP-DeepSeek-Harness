@@ -183,5 +183,5 @@ test('player settings: app server runtime settings and reopen restore session id
   const reopened = await reopenedClient.openSession(sessionId);
   assert.equal(reopened.setup_provenance.player_character_file_id, 'kizzie');
   assert.equal(reopened.setup_provenance.user_persona_id, 'Operator');
-  assert.equal(reopenedClient.getRuntimeSettings().reasoningEffort, 'low');
+  assert.equal(reopenedClient.getRuntimeSettings().reasoningEffort, undefined);
 });

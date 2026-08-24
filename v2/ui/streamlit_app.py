@@ -52,8 +52,6 @@ def init_state() -> None:
         st.session_state.user_persona_id = "Player"
     if "player_character_file_id" not in st.session_state:
         st.session_state.player_character_file_id = None
-    if "reasoning_effort" not in st.session_state:
-        st.session_state.reasoning_effort = "low"
     if "role_routing" not in st.session_state:
         st.session_state.role_routing = "simple"
     if "audit_tags_by_entry" not in st.session_state:
@@ -107,8 +105,6 @@ def load_runtime_settings() -> None:
     try:
         payload = api_request("GET", "/api/settings/runtime")
         runtime = payload.get("runtime", {})
-        if runtime.get("reasoningEffort"):
-            st.session_state.reasoning_effort = runtime["reasoningEffort"]
         if runtime.get("roleRouting"):
             st.session_state.role_routing = runtime["roleRouting"]
     except Exception:  # noqa: BLE001
@@ -120,7 +116,6 @@ def save_runtime_settings() -> None:
         "PUT",
         "/api/settings/runtime",
         {
-            "reasoningEffort": st.session_state.reasoning_effort,
             "roleRouting": st.session_state.role_routing,
         },
     )
@@ -250,11 +245,9 @@ def render_sidebar() -> None:
     )
 
     st.sidebar.subheader("Model settings")
-    st.session_state.reasoning_effort = st.sidebar.selectbox(
-        "Reasoning level",
-        options=["off", "low", "high", "max"],
-        index=["off", "low", "high", "max"].index(st.session_state.reasoning_effort),
-        help="Applies to Director and Character inference. Narrator stays off for latency.",
+    st.sidebar.caption(
+        "Per-role reasoning and token profiles are configured internally. "
+        "Use advanced API routing for experimentation."
     )
     with st.sidebar.expander("Advanced model routing"):
         st.session_state.role_routing = st.radio(

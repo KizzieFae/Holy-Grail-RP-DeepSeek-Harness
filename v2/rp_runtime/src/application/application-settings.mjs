@@ -2,20 +2,102 @@ import {
   deepseekInferenceProfile,
   HG_DEEPSEEK_DEFAULT_MODEL,
   mockInferenceProfile,
-  resolveRoleProfiles,
 } from '../lib/inference-profile.mjs';
+import { REASONING_LEVELS } from '../lib/reasoning-provider-options.mjs';
 
-export const REASONING_LEVELS = ['off', 'low', 'high', 'max'];
+/** Internal per-role reasoning defaults (#29 calibration). */
+export const ROLE_REASONING_DEFAULTS = {
+  director: 'low',
+  character: 'low',
+  narrator: 'low',
+  opening: 'low',
+  semantic_evaluator: 'off',
+};
+
+/**
+ * Production token ceilings per role (#29).
+ * Generous runaway-safety bounds — not optimized output budgets.
+ * Tunable via advanced roleProfiles or PRODUCTION_TOKEN_CEILINGS edits.
+ * Holy Grail API validation caps explicit overrides at 8192.
+ */
+export const PRODUCTION_TOKEN_CEILINGS = {
+  director: 4096,
+  character: 4096,
+  narrator: 8192,
+  opening: 4096,
+  semantic_evaluator: 2048,
+};
+
+/** Bounded diagnostic ceiling for calibration runs (not production). */
+export const DIAGNOSTIC_TOKEN_CEILING = 4096;
 
 export const DEFAULT_RUNTIME_SETTINGS = {
   inferenceMode: 'live',
-  reasoningEffort: 'low',
   roleRouting: 'simple',
   model: HG_DEEPSEEK_DEFAULT_MODEL,
-  maxTokens: 768,
-  narratorMaxTokens: 384,
   liveMaxAttempts: 5,
 };
+
+function calibrationModeEnabled(settings = {}, options = {}) {
+  const flag = settings.inferenceCalibration ?? settings.inference_calibration
+    ?? options.inferenceCalibration;
+  if (flag === true || flag === '1') return true;
+  return process.env.HG_INFERENCE_CALIBRATION === '1';
+}
+
+/** Per-role reasoning: internal defaults; optional API global override for director/character only. */
+function resolveReasoningEffortForRole(role, settings = {}) {
+  const advanced = settings.roleRouting === 'advanced' && settings.roleProfiles?.[role];
+  if (advanced?.reasoningEffort != null && String(advanced.reasoningEffort).trim() !== '') {
+    return advanced.reasoningEffort;
+  }
+  const global = settings.reasoningEffort ?? settings.reasoning_effort;
+  if (
+    global
+    && settings.roleRouting !== 'advanced'
+    && (role === 'director' || role === 'character')
+  ) {
+    return global;
+  }
+  return ROLE_REASONING_DEFAULTS[role] ?? 'low';
+}
+
+export function tokenCeilingForRole(role, settings = {}, options = {}) {
+  if (calibrationModeEnabled(settings, options)) {
+    return DIAGNOSTIC_TOKEN_CEILING;
+  }
+  const advanced = settings.roleRouting === 'advanced' && settings.roleProfiles?.[role];
+  if (advanced?.maxTokens !== undefined) {
+    return advanced.maxTokens;
+  }
+  const legacyKey = role === 'narrator' || role === 'opening'
+    ? settings.narratorMaxTokens ?? settings.narrator_max_tokens
+    : settings.maxTokens ?? settings.max_tokens;
+  if (legacyKey !== undefined && Number.isFinite(Number(legacyKey))) {
+    return Number(legacyKey);
+  }
+  return PRODUCTION_TOKEN_CEILINGS[role] ?? PRODUCTION_TOKEN_CEILINGS.character;
+}
+
+function liveProfileForRole(role, settings = {}, options = {}) {
+  const advanced = settings.roleRouting === 'advanced' && settings.roleProfiles?.[role];
+  if (advanced) {
+    return {
+      ...deepseekInferenceProfile({
+        model: advanced.model ?? settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
+        reasoningEffort: resolveReasoningEffortForRole(role, settings),
+        maxTokens: advanced.maxTokens ?? tokenCeilingForRole(role, settings, options),
+      }),
+      ...advanced,
+      kind: advanced.kind ?? 'dsh',
+    };
+  }
+  return deepseekInferenceProfile({
+    model: settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
+    reasoningEffort: resolveReasoningEffortForRole(role, settings),
+    maxTokens: tokenCeilingForRole(role, settings, options),
+  });
+}
 
 export function defaultRuntimeSettings(options = {}) {
   const inferenceMode = options.inferenceMode ?? DEFAULT_RUNTIME_SETTINGS.inferenceMode;
@@ -53,27 +135,25 @@ export function validateSessionSetup(input = {}) {
 
 export function validateRuntimeSettings(input = {}) {
   const errors = [];
-  const reasoning = String(input.reasoningEffort ?? input.reasoning_effort ?? 'low');
-  if (!REASONING_LEVELS.includes(reasoning)) {
-    errors.push(`reasoningEffort must be one of: ${REASONING_LEVELS.join(', ')}`);
+  const reasoning = input.reasoningEffort ?? input.reasoning_effort;
+  if (reasoning !== undefined && reasoning !== null && String(reasoning).trim() !== '') {
+    const level = String(reasoning);
+    if (!REASONING_LEVELS.includes(level)) {
+      errors.push(`reasoningEffort must be one of: ${REASONING_LEVELS.join(', ')}`);
+    }
   }
   const roleRouting = String(input.roleRouting ?? input.role_routing ?? 'simple');
   if (!['simple', 'advanced'].includes(roleRouting)) {
     errors.push('roleRouting must be simple or advanced');
   }
-  const maxTokens = Number(input.maxTokens ?? input.max_tokens ?? DEFAULT_RUNTIME_SETTINGS.maxTokens);
-  if (!Number.isFinite(maxTokens) || maxTokens < 64 || maxTokens > 8192) {
-    errors.push('maxTokens must be between 64 and 8192');
+  const maxTokens = input.maxTokens ?? input.max_tokens;
+  if (maxTokens !== undefined && maxTokens !== null && maxTokens !== '') {
+    const n = Number(maxTokens);
+    if (!Number.isFinite(n) || n < 64 || n > 8192) {
+      errors.push('maxTokens must be between 64 and 8192');
+    }
   }
   return { valid: errors.length === 0, errors };
-}
-
-function baseLiveProfile(settings) {
-  return deepseekInferenceProfile({
-    model: settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
-    reasoningEffort: settings.reasoningEffort ?? 'low',
-    maxTokens: settings.maxTokens ?? DEFAULT_RUNTIME_SETTINGS.maxTokens,
-  });
 }
 
 export function resolveApplicationRoleProfiles(settings = {}, options = {}) {
@@ -84,42 +164,16 @@ export function resolveApplicationRoleProfiles(settings = {}, options = {}) {
       character: mock,
       narrator: mock,
       opening: mock,
+      semantic_evaluator: mock,
     };
   }
 
-  const roleRouting = settings.roleRouting ?? 'simple';
-  if (roleRouting === 'advanced' && settings.roleProfiles) {
-    const grouped = settings.roleProfiles;
-    const fallback = baseLiveProfile(settings);
-    return {
-      director: grouped.director ?? fallback,
-      character: grouped.character ?? fallback,
-      narrator: grouped.narrator
-        ?? deepseekInferenceProfile({
-          model: grouped.narrator?.model ?? settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
-          reasoningEffort: 'off',
-          maxTokens: settings.narratorMaxTokens ?? DEFAULT_RUNTIME_SETTINGS.narratorMaxTokens,
-        }),
-      opening: grouped.opening
-        ?? deepseekInferenceProfile({
-          model: settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
-          reasoningEffort: 'off',
-          maxTokens: settings.narratorMaxTokens ?? DEFAULT_RUNTIME_SETTINGS.narratorMaxTokens,
-        }),
-    };
-  }
-
-  const shared = baseLiveProfile(settings);
-  const narrator = deepseekInferenceProfile({
-    model: settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
-    reasoningEffort: 'off',
-    maxTokens: settings.narratorMaxTokens ?? DEFAULT_RUNTIME_SETTINGS.narratorMaxTokens,
-  });
   return {
-    director: shared,
-    character: shared,
-    narrator,
-    opening: narrator,
+    director: liveProfileForRole('director', settings, options),
+    character: liveProfileForRole('character', settings, options),
+    narrator: liveProfileForRole('narrator', settings, options),
+    opening: liveProfileForRole('opening', settings, options),
+    semantic_evaluator: liveProfileForRole('semantic_evaluator', settings, options),
   };
 }
 
@@ -132,9 +186,9 @@ export function buildInferenceOptions(settings = {}, options = {}) {
     inferenceMode: runtime.inferenceMode,
     roleProfiles,
     liveMaxAttempts: runtime.liveMaxAttempts,
-    reasoningEffort: runtime.reasoningEffort,
     model: runtime.model,
     roleRouting: runtime.roleRouting,
+    inferenceCalibration: calibrationModeEnabled(runtime, options),
   };
 }
 
@@ -142,5 +196,7 @@ export function settingsView(runtimeSettings = {}) {
   return {
     runtime: { ...defaultRuntimeSettings(), ...runtimeSettings },
     role_profiles: resolveApplicationRoleProfiles(runtimeSettings),
+    role_reasoning_defaults: { ...ROLE_REASONING_DEFAULTS },
+    production_token_ceilings: { ...PRODUCTION_TOKEN_CEILINGS },
   };
 }

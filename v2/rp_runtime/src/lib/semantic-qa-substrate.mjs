@@ -66,11 +66,21 @@ export async function runSemanticQaEvaluation({
   const infraSuffix = infrastructureAttempt > 0 ? `-infra-retry-${infrastructureAttempt}` : '';
   const evalInferenceId = `${inferenceId}-semantic-qa-${evaluationPassId}${infraSuffix}`;
 
-  const prompt = buildEvaluatorPrompt({
+  let prompt = buildEvaluatorPrompt({
     schema: SEMANTIC_QA_RESULT_SCHEMA,
     evaluationTargetRole,
     evaluationPassId,
   });
+
+  if (infrastructureAttempt > 0) {
+    prompt = [
+      prompt,
+      '',
+      'INFRASTRUCTURE RETRY: Your prior evaluator response was empty or malformed.',
+      'Return ONLY one JSON object matching the required schema. No markdown, no prose.',
+      `evaluation_pass_id must be "${evaluationPassId}".`,
+    ].join('\n');
+  }
 
   const evalRun = await runEphemeralInference({
     inferenceId: evalInferenceId,
@@ -96,6 +106,24 @@ export async function runSemanticQaEvaluation({
       evidenceId: evalRun.evidenceId ?? null,
       contextResponse,
       raw: null,
+      result: null,
+      citationValidations: [],
+      parseWarnings: [],
+      inferenceSessionId: evalRun.inferenceSessionId ?? null,
+      trace: evalRun.trace ?? null,
+    };
+  }
+
+  const rawText = String(evalRun.raw ?? '').trim();
+  if (!rawText) {
+    return {
+      ok: false,
+      infrastructureFailure: true,
+      stage: 'empty_output',
+      evaluatorError: 'evaluator produced empty structured output',
+      evidenceId: evalRun.evidenceId ?? null,
+      contextResponse,
+      raw: evalRun.raw,
       result: null,
       citationValidations: [],
       parseWarnings: [],

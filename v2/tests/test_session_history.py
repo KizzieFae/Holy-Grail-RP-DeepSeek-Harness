@@ -33,6 +33,7 @@ from domain_api.session_history import (  # noqa: E402
     INFERENCE_OUTCOME_OUTPUT_LIMIT,
     INFERENCE_OUTCOME_SUCCEEDED,
     PRESENTATION_SOURCE_COMMITTED_FALLBACK,
+    PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC,
     PRESENTATION_SOURCE_NARRATOR,
     append_history_entry,
     presentation_uses_narrator_prose_for_character,
@@ -182,12 +183,13 @@ def test_presentation_failure_uses_committed_turn_fallback(kernel: DomainKernel)
     )
     entries = kernel.get_session_history(session_id).entries
     presentation = entries[-1]
-    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_COMMITTED_FALLBACK
+    assert presentation["metadata"]["presentation_source"] == PRESENTATION_SOURCE_DEGRADED_DETERMINISTIC
+    assert presentation["metadata"]["presentation_degraded"] is True
     assert presentation["metadata"]["inference_outcome"] == INFERENCE_OUTCOME_EMPTY_OUTPUT
     transcript = project_history_to_transcript(entries)
     assert len(transcript) == 1
     assert transcript[0]["presentation_failed"] is True
-    assert transcript[0]["content"]
+    assert "nods thoughtfully" in transcript[0]["content"]
 
 
 def test_failed_presentation_character_context_uses_structured_move_not_fallback_summary(
@@ -210,7 +212,7 @@ def test_failed_presentation_character_context_uses_structured_move_not_fallback
     )
     fixture = kernel.store.require(session_id)
     transcript_ui = project_history_to_transcript(fixture.rp_history)
-    assert transcript_ui[0]["content"] == "nods"
+    assert "for everyone" in transcript_ui[0]["content"]
     assert transcript_ui[0]["presentation_failed"] is True
     carol_transcript, _, prov = project_character_conversation_for_manifest(
         fixture,
@@ -242,7 +244,8 @@ def test_output_limit_terminal_failure_uses_committed_fallback_for_ui(
     )
     fixture = kernel.store.require(session_id)
     ui = project_history_to_transcript(fixture.rp_history)
-    assert ui[0]["content"] == "nods"
+    assert "for everyone" in ui[0]["content"]
+    assert "nods" in ui[0]["content"]
     assert ui[0]["presentation_failed"] is True
     from domain_api.session_history import history_entries
 

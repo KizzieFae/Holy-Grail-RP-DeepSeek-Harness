@@ -1,4 +1,5 @@
 import { ASSEMBLED_REQUEST_SCHEMA } from './config.mjs';
+import { mapReasoningEffortToProviderOptions } from '../reasoning-provider-options.mjs';
 
 /**
  * Build the exact Holy-Grail-assembled model request at the inference boundary.
@@ -34,11 +35,17 @@ export function buildAssembledRequest({
     system_persona: String(systemPersona ?? ''),
     contributions,
     user_instruction: { text: String(userInstruction ?? '') },
-    inference_profile: {
-      provider: profile?.provider ?? null,
-      model: profile?.model ?? null,
-      reasoning_effort: profile?.reasoningEffort ?? profile?.reasoning_effort ?? null,
-    },
+    inference_profile: (() => {
+      const requested = profile?.reasoningEffort ?? profile?.reasoning_effort ?? null;
+      const effective = mapReasoningEffortToProviderOptions(requested);
+      return {
+        provider: profile?.provider ?? null,
+        model: profile?.model ?? null,
+        reasoning_effort: requested,
+        effective_thinking: effective.thinking,
+        effective_reasoning_effort: effective.reasoningEffort,
+      };
+    })(),
     manifest_id: manifestId ?? manifest?.manifest_id ?? null,
     contribution_ids: [...(contributionIds ?? [])],
   };

@@ -395,3 +395,63 @@ test('runNarratorPhase infra failure uses committed fallback without extra narra
   assert.equal(result.presentation_failed, true);
   assert.equal(result.terminal_disposition, 'committed_fallback');
 });
+
+test('runNarratorPhase evaluator infra retry succeeds without extra narrator generation', async () => {
+  const api = createMockApi();
+  const trace = createTrace();
+  let evaluatorCalls = 0;
+  let narratorGenerations = 0;
+  const passId = 'inf-narrator-1-qa-0';
+  const result = await runNarratorPhase({
+    api,
+    trace,
+    sceneAgent: { session: { append: () => {} } },
+    sceneSessionId: 'sess-1',
+    hgSessionId: 'scene-1',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    domainCommitId: 'commit-abc',
+    continuityTurnIndex: 1,
+    narratorInferenceId: 'inf-narrator-1',
+    mockNarratorResponses: [VALID_PRESENTATION],
+    mockNarratorSemanticQaResponses: [makeSemanticPass(passId)],
+    characterTurnIndex: 0,
+    modelProfile: { kind: 'mock' },
+    narratorSemanticQaEnabled: true,
+    runEphemeralInference: async ({ inferenceId, mockResponses, evidenceContext }) => {
+      if (evidenceContext?.role === 'semantic_evaluator') {
+        evaluatorCalls += 1;
+        if (evaluatorCalls === 1) {
+          return {
+            evidenceId: 'ev-eval-1',
+            inferenceSessionId: 'is-eval-1',
+            raw: '',
+            failed: false,
+            trace: { finish: { kind: 'stop' } },
+          };
+        }
+        return {
+          evidenceId: 'ev-eval-2',
+          inferenceSessionId: 'is-eval-2',
+          raw: mockResponses?.[0] ?? makeSemanticPass(passId),
+          failed: false,
+          trace: { finish: { kind: 'stop' } },
+        };
+      }
+      narratorGenerations += 1;
+      assert.match(inferenceId, /^inf-narrator-1/);
+      return {
+        evidenceId: 'ev-narrator-1',
+        inferenceSessionId: 'is-1',
+        raw: VALID_PRESENTATION,
+        failed: false,
+        trace: { finish: { kind: 'stop' } },
+      };
+    },
+  });
+
+  assert.equal(result.presentation_rendered, true);
+  assert.equal(narratorGenerations, 1);
+  assert.equal(evaluatorCalls, 2);
+});

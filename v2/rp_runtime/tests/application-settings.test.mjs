@@ -27,7 +27,8 @@ test('application settings: simple role routing shares director and character pr
   });
   assert.equal(profiles.director.reasoningEffort, 'high');
   assert.equal(profiles.character.reasoningEffort, 'high');
-  assert.equal(profiles.narrator.reasoningEffort, 'off');
+  assert.equal(profiles.narrator.reasoningEffort, 'low');
+  assert.equal(profiles.semantic_evaluator.reasoningEffort, 'off');
   assert.notEqual(profiles.director.maxTokens, profiles.narrator.maxTokens);
 });
 

@@ -1,4 +1,5 @@
 import { HG_MOCK_MODEL, HG_MOCK_PROVIDER } from '../mock-llm-adapter.mjs';
+import { mapReasoningEffortToProviderOptions } from './reasoning-provider-options.mjs';
 
 /** DSH provider route registered by @deepseek-ai/dsh-llm-deepseek. */
 export const HG_DEEPSEEK_PROVIDER = 'deepseek-official';
@@ -62,8 +63,10 @@ export function agentOptionsFromProfile(profile) {
     provider: profile.provider,
     model: profile.model,
   };
-  if (profile.reasoningEffort) {
-    options.reasoningEffort = profile.reasoningEffort;
+  if (profile.kind === 'dsh' || profile.reasoningEffort !== undefined) {
+    const mapped = mapReasoningEffortToProviderOptions(profile.reasoningEffort ?? 'low');
+    options.reasoningEffort = mapped.reasoningEffort;
+    options.thinking = mapped.thinking;
   }
   if (profile.temperature !== undefined) {
     options.temperature = profile.temperature;
@@ -96,9 +99,7 @@ export function resolveRoleProfiles(options = {}, runtimeConfig = {}) {
       grouped.semantic_evaluator
       ?? grouped.semanticEvaluator
       ?? options.semanticEvaluatorProfile
-      ?? grouped.character
-      ?? grouped.characterProfile
-      ?? options.characterProfile
+      ?? grouped.semantic_evaluator_profile
       ?? fallback,
   };
 }
