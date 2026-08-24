@@ -44,6 +44,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py` |
 | Commit / continuity not updating | Host `kernel.py` (`commit_move`); `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
+| Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
 | Scenario validation | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); `progression_simulation_scenarios.py`; `v2/domain/tests/`; `v2/rp_runtime/tests/` |
 | Prompt wording only (after ruling out state) | `prompt_builders.py` |
 

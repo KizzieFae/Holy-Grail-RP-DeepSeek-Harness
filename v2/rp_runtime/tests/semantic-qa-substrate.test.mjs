@@ -69,8 +69,9 @@ test('semanticQaDecisionPatch captures target role and citation sidecar', () => 
     result: { overall_result: 'reject_soft', findings: [] },
     citationValidations: [{ finding_index: 0, status: 'valid' }],
   });
-  assert.equal(patch.semantic_qa.evaluation_target_role, 'narrator');
-  assert.equal(patch.semantic_qa.citation_validations[0].status, 'valid');
+  assert.equal(patch.decision.semantic_qa.evaluation_target_role, 'narrator');
+  assert.equal(patch.decision.semantic_qa.citation_validations[0].status, 'valid');
+  assert.equal(Object.hasOwn(patch, 'semantic_qa'), false);
 });
 
 test('runSemanticQaEvaluation records mocked success with citation sidecar', async () => {

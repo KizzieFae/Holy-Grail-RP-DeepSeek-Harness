@@ -99,7 +99,7 @@ Typical contents (all subject to token budget and relevance gates):
 
 ## Shared semantic QA result envelope (#25)
 
-**Intent:** Common **evaluator output** and **authority-reference** transport for future Director/Narrator bounded semantic QA children. **Not** wired into production phase orchestration in #25; Character continues using `hg_semantic_evaluation_result_v1` on its existing path.
+**Intent:** Common **evaluator output** and **authority-reference** transport for Director/Narrator bounded semantic QA (#25 substrate; wired in production via #26/#27). Character continues using `hg_semantic_evaluation_result_v1` on its existing path.
 
 **Schema:** `hg_semantic_qa_result_v1` — parsed by `v2/domain/modules/semantic_qa_envelope.py` and `v2/rp_runtime/src/lib/semantic-qa-envelope.mjs`.
 
@@ -113,7 +113,7 @@ Typical contents (all subject to token budget and relevance gates):
 
 **Authority references (semantic QA lane):** records with `authority_class` `authoritative` \| `derived` \| `advisory`. Shared citation validation reports membership/class **without** mutating finding severity or promoting advisory material to continuity truth.
 
-**Runtime substrate:** `semantic-qa-substrate.mjs` invokes evaluator inference (`role: semantic_evaluator` in execution evidence) and returns parse/citation sidecars to role integration. Role children own rubrics, context enrichment, acceptance/retry/fallback.
+**Runtime substrate:** `semantic-qa-substrate.mjs` invokes evaluator inference (`role: semantic_evaluator` in execution evidence) and returns parse/citation sidecars to role integration. Durable candidate patches use **`decision.semantic_qa`** including **`policy_action`** (#28). Role children own rubrics, context enrichment, acceptance/retry/fallback.
 
 **Host assembly:** `semantic_qa_context.py` provides role-neutral manifest assembly helpers. Director semantic QA prepare is implemented at **`POST /v1/director/semantic-qa/context/prepare`** (#26). Narrator semantic QA prepare is implemented at **`POST /v1/narrator/semantic-qa/context/prepare`** (#27): bounded authority references from the same legitimate Narrator source surface (committed move slices, authoritative scene lanes, derived director decision, public events) plus candidate presentation package; no Narrator context enrichment program.
 

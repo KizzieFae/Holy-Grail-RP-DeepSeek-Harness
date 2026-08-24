@@ -105,11 +105,30 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 ```text
 data/execution_evidence/<hg_session_id>/
-  index.json                    # includes semantic query buckets (#19)
+  index.json                    # semantic + participation navigation indexes
   attempts/<evidence_id>.json
 ```
 
-`index.json` may include a `semantic` section for discoverability: findings by dimension, hard/soft finding evidence ids, residual soft concerns, multi-candidate inference ids, exhausted hard loops, evaluator failures, and per-inference `evaluation_chains`. Query via `python tools/investigation/list_execution_evidence.py <hg_session_id> --semantic-hard` (and related flags).
+**Forensic completeness contract (#28):** Sessions produced **after #28 lands** are expected to satisfy the post-#28 forensic contract below. Older pre-#28 session trees may remain on disk in historical form and are **not** required to satisfy this contract. There is no schema version gate and no historical migration/backfill.
+
+**Canonical Director/Narrator semantic QA placement:** `decision.semantic_qa` on candidate attempts (not root-level `semantic_qa`). Includes `policy_action`, `evaluator_evidence_id`, findings, citation sidecars, and evaluation pass correlation.
+
+**Character semantic evaluation:** unchanged — `decision.semantic_evaluation` (no `policy_action` symmetry).
+
+**Participation-direct:** non-inference attempts with `correlation.role = participation`, bounded `decision.participation`, and bidirectional links to Character attempts (`associations.participation_evidence_id` / `associations.character_evidence_id`).
+
+**Director eligibility:** bounded `decision.director.eligibility` on all Director candidate attempts; `decision.director.constraints` remains separate participation-policy input on accepted paths.
+
+**Index navigation (derived, non-authoritative where noted):**
+
+| Index key | Role |
+|-----------|------|
+| `semantic.evaluation_chains[inference_id]` | Candidate attempt ids per inference (all roles) |
+| `semantic.qa_pass_chains[inference_id]` | Derived QA pass tuples `{candidate_evidence_id, evaluator_evidence_id, evaluation_pass_id, policy_action}` |
+| `semantic.qa_by_target_role[role]` | Flat discovery of Director/Narrator QA candidate ids |
+| `participation_by_round[hg_round_id]` | Participation-direct decision record ids |
+
+Query via `python tools/investigation/list_execution_evidence.py <hg_session_id>` with `--chain`, `--role`, `--qa-target-role`, `--participation`, `--summary`, and `--cite` (see [audit-workflows.md](./audit-workflows.md)).
 
 Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
 

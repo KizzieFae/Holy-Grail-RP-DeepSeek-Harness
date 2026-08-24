@@ -19,6 +19,50 @@ function readJsonIfExists(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+function emptySemanticIndex() {
+  return {
+    by_dimension: {},
+    hard_findings: [],
+    soft_findings: [],
+    residual_soft: [],
+    multi_candidate_inferences: [],
+    exhausted_hard_loops: [],
+    successful_correction_chains: [],
+    evaluator_failures: [],
+    evaluation_chains: {},
+    qa_by_target_role: {},
+    qa_pass_chains: {},
+  };
+}
+
+function emptyIndex(hgSessionId) {
+  return {
+    schema: INDEX_SCHEMA,
+    hg_session_id: hgSessionId,
+    attempt_ids: [],
+    rounds: {},
+    participation_by_round: {},
+    semantic: emptySemanticIndex(),
+  };
+}
+
+function mergeDecision(currentDecision, patchDecision) {
+  const next = {
+    ...(currentDecision ?? {}),
+    ...(patchDecision ?? {}),
+  };
+  if (patchDecision?.director || currentDecision?.director) {
+    next.director = {
+      ...(currentDecision?.director ?? {}),
+      ...(patchDecision?.director ?? {}),
+    };
+  }
+  if (patchDecision?.semantic_qa !== undefined) {
+    next.semantic_qa = patchDecision.semantic_qa;
+  }
+  return next;
+}
+
 /**
  * Low-level HG-native execution evidence persistence.
  */
@@ -57,8 +101,12 @@ export class ExecutionEvidenceStore {
       ...attempt,
       recorded_at: attempt.recorded_at ?? new Date().toISOString(),
     };
+    delete payload.semantic_qa;
     writeJsonAtomic(this.attemptPath(hgSessionId, evidenceId), payload);
     this._indexAttempt(hgSessionId, evidenceId, attempt.correlation);
+    if (attempt.correlation?.role === 'participation') {
+      this._indexParticipation(hgSessionId, evidenceId, attempt.correlation);
+    }
     return evidenceId;
   }
 
@@ -74,16 +122,14 @@ export class ExecutionEvidenceStore {
     const next = {
       ...current,
       ...patch,
-      decision: {
-        ...(current.decision ?? {}),
-        ...(patch.decision ?? {}),
-      },
+      decision: mergeDecision(current.decision, patch.decision),
       associations: {
         ...(current.associations ?? {}),
         ...(patch.associations ?? {}),
       },
       updated_at: new Date().toISOString(),
     };
+    delete next.semantic_qa;
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
     this._indexSemanticQa(hgSessionId, evidenceId, next);
@@ -112,39 +158,36 @@ export class ExecutionEvidenceStore {
     }
   }
 
-  _indexAttempt(hgSessionId, evidenceId, correlation) {
+  /**
+   * Rebuild derived semantic navigation indexes from authoritative attempts.
+   */
+  rebuildSemanticNavigationIndexes(hgSessionId) {
+    const index = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
+    index.semantic = emptySemanticIndex();
+    index.participation_by_round = {};
+    for (const evidenceId of index.attempt_ids ?? []) {
+      const attempt = this.readAttempt(hgSessionId, evidenceId);
+      if (!attempt) continue;
+      if (attempt.correlation?.role === 'participation') {
+        this._indexParticipation(hgSessionId, evidenceId, attempt.correlation, index);
+        continue;
+      }
+      this._indexSemanticDecision(hgSessionId, evidenceId, attempt, index);
+      this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
+    }
+    index.updated_at = new Date().toISOString();
+    writeJsonAtomic(this.indexPath(hgSessionId), index);
+    return index;
+  }
+
+  _indexAttempt(hgSessionId, evidenceId, correlation, indexOverride = null) {
     const indexPath = this.indexPath(hgSessionId);
-    const current = readJsonIfExists(indexPath) ?? {
-      schema: INDEX_SCHEMA,
-      hg_session_id: hgSessionId,
-      attempt_ids: [],
-      rounds: {},
-      semantic: {
-        by_dimension: {},
-        hard_findings: [],
-        soft_findings: [],
-        residual_soft: [],
-        multi_candidate_inferences: [],
-        exhausted_hard_loops: [],
-        successful_correction_chains: [],
-        evaluator_failures: [],
-        evaluation_chains: {},
-        qa_by_target_role: {},
-      },
-    };
+    const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
     if (!current.semantic) {
-      current.semantic = {
-        by_dimension: {},
-        hard_findings: [],
-        soft_findings: [],
-        residual_soft: [],
-        multi_candidate_inferences: [],
-        exhausted_hard_loops: [],
-        successful_correction_chains: [],
-        evaluator_failures: [],
-        evaluation_chains: {},
-        qa_by_target_role: {},
-      };
+      current.semantic = emptySemanticIndex();
+    }
+    if (!current.participation_by_round) {
+      current.participation_by_round = {};
     }
     if (!current.attempt_ids.includes(evidenceId)) {
       current.attempt_ids.push(evidenceId);
@@ -157,7 +200,28 @@ export class ExecutionEvidenceStore {
       current.rounds[key] = [...roundAttempts];
     }
     current.updated_at = new Date().toISOString();
-    writeJsonAtomic(indexPath, current);
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
+  }
+
+  _indexParticipation(hgSessionId, evidenceId, correlation, indexOverride = null) {
+    const roundId = correlation?.hg_round_id;
+    if (!roundId) return;
+    const indexPath = this.indexPath(hgSessionId);
+    const current = indexOverride ?? readJsonIfExists(indexPath);
+    if (!current) return;
+    if (!current.participation_by_round) {
+      current.participation_by_round = {};
+    }
+    const key = String(roundId);
+    const bucket = current.participation_by_round[key] ?? [];
+    this._pushUnique(bucket, evidenceId);
+    current.participation_by_round[key] = bucket;
+    current.updated_at = new Date().toISOString();
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
   }
 
   _pushUnique(list, value) {
@@ -165,28 +229,17 @@ export class ExecutionEvidenceStore {
     list.push(value);
   }
 
-  _indexSemanticDecision(hgSessionId, evidenceId, attempt) {
+  _indexSemanticDecision(hgSessionId, evidenceId, attempt, indexOverride = null) {
     const decision = attempt?.decision ?? {};
     const correlation = attempt?.correlation ?? {};
     const inferenceId = correlation.inference_id;
     const semantic = decision.semantic_evaluation;
     const outcome = String(decision.outcome ?? '');
     const indexPath = this.indexPath(hgSessionId);
-    const current = readJsonIfExists(indexPath);
+    const current = indexOverride ?? readJsonIfExists(indexPath);
     if (!current) return;
     if (!current.semantic) {
-      current.semantic = {
-        by_dimension: {},
-        hard_findings: [],
-        soft_findings: [],
-        residual_soft: [],
-        multi_candidate_inferences: [],
-        exhausted_hard_loops: [],
-        successful_correction_chains: [],
-        evaluator_failures: [],
-        evaluation_chains: {},
-        qa_by_target_role: {},
-      };
+      current.semantic = emptySemanticIndex();
     }
     const sem = current.semantic;
 
@@ -230,15 +283,19 @@ export class ExecutionEvidenceStore {
     }
 
     current.updated_at = new Date().toISOString();
-    writeJsonAtomic(indexPath, current);
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
   }
 
-  _indexSemanticQa(hgSessionId, evidenceId, attempt) {
+  _indexSemanticQa(hgSessionId, evidenceId, attempt, indexOverride = null) {
     const semanticQa = attempt?.decision?.semantic_qa;
     if (!semanticQa) return;
 
+    const correlation = attempt?.correlation ?? {};
+    const inferenceId = correlation.inference_id;
     const indexPath = this.indexPath(hgSessionId);
-    const current = readJsonIfExists(indexPath);
+    const current = indexOverride ?? readJsonIfExists(indexPath);
     if (!current?.semantic) return;
 
     const targetRole = String(semanticQa.evaluation_target_role ?? '').trim();
@@ -250,6 +307,31 @@ export class ExecutionEvidenceStore {
     const bucket = current.semantic.qa_by_target_role[targetRole] ?? [];
     this._pushUnique(bucket, evidenceId);
     current.semantic.qa_by_target_role[targetRole] = bucket;
+
+    if (!current.semantic.qa_pass_chains) {
+      current.semantic.qa_pass_chains = {};
+    }
+    if (inferenceId && semanticQa.evaluation_pass_id) {
+      const chainKey = String(inferenceId);
+      const chain = [...(current.semantic.qa_pass_chains[chainKey] ?? [])];
+      const entry = {
+        candidate_evidence_id: evidenceId,
+        evaluator_evidence_id: semanticQa.evaluator_evidence_id ?? null,
+        evaluation_pass_id: semanticQa.evaluation_pass_id,
+        policy_action: semanticQa.policy_action ?? null,
+      };
+      const existingIndex = chain.findIndex(
+        (item) => item.evaluation_pass_id === entry.evaluation_pass_id,
+      );
+      if (existingIndex >= 0) {
+        chain[existingIndex] = entry;
+      } else {
+        chain.push(entry);
+      }
+      chain.sort((left, right) => String(left.evaluation_pass_id)
+        .localeCompare(String(right.evaluation_pass_id)));
+      current.semantic.qa_pass_chains[chainKey] = chain;
+    }
 
     if (semanticQa.infrastructure_failure) {
       this._pushUnique(current.semantic.evaluator_failures, evidenceId);
@@ -271,6 +353,8 @@ export class ExecutionEvidenceStore {
     }
 
     current.updated_at = new Date().toISOString();
-    writeJsonAtomic(indexPath, current);
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
   }
 }

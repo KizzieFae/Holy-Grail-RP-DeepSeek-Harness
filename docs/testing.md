@@ -62,6 +62,11 @@ When changing Character phase or semantic evaluation:
 - Run integration round tests (`two-character-round.test.mjs`, `execution-evidence.test.mjs`) when trace or evidence indexing changes.
 - Bounded real-provider semantic validation: `semantic-evaluation-live-pass.test.mjs` (requires `DEEPSEEK_API_KEY`; run from `v2/rp_runtime/` with `node --test tests/semantic-evaluation-live-pass.test.mjs`).
 
+Post-#28 forensic completeness (#28):
+
+- Run `node --test tests/execution-evidence-forensic.test.mjs tests/participation-round.test.mjs tests/director-semantic-qa-orchestration.test.mjs tests/narrator-semantic-qa-orchestration.test.mjs` from `v2/rp_runtime/`.
+- Validate CLI chains on fresh session evidence: `python tools/investigation/list_execution_evidence.py <hg_session_id> --chain participation --round <hg_round_id>`.
+
 ---
 
 Scenario manifest contracts and structured eval profiles are tested in the domain suite. See [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).

@@ -62,6 +62,21 @@ For post-hoc model/orchestration reconstruction:
 
 CLI helper: `python tools/investigation/list_execution_evidence.py <hg_session_id>`
 
+**Causal-chain investigation (#28):** Prefer role workflow flags over raw index topology:
+
+| Path | CLI starting point |
+|------|-------------------|
+| Character | `--chain character --round <hg_round_id>` |
+| Director | `--chain director --round <hg_round_id>` or `--inference-id <id>` |
+| Narrator | `--chain narrator --round <hg_round_id>` |
+| Participation-direct | `--chain participation --round <hg_round_id>` or `--participation --round <hg_round_id>` |
+
+Use `--summary` for human-readable blocks and `--cite <evidence_id>` to resolve finding `ref_id` → bounded authority-reference text from evaluator `request.contributions`.
+
+**Director/Narrator semantic QA on attempts:** read `decision.semantic_qa` (includes `policy_action`). Follow `evaluator_evidence_id` for evaluation-time authority-reference snapshots.
+
+**Participation-direct:** read `correlation.role = participation` records before inferring Director chains. No Director or semantic-evaluator attempts should exist for that selection.
+
 **Retention:** Local forensic store only. Default-on capture; opt out with `HG_EXECUTION_EVIDENCE=off`. No streaming-chunk or mandatory reasoning capture. Reasoning is optional when the provider supplies it. Manual evidence deletion is supported; there is no automatic pruning and no production session-delete hook that removes evidence trees.
 
 ### Audit artifacts vs runtime (operational note)

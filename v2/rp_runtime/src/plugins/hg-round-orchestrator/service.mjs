@@ -243,6 +243,20 @@ export default class HgRoundOrchestrator extends Service {
 
       const characterTurnIndex = characterTurns.length;
       const characterInferenceId = `inf-character-${characterTurnIndex}-${crypto.randomUUID()}`;
+      let participationEvidenceId = null;
+      if (directorPhase.participationDirect) {
+        participationEvidenceId = phaseExecutors.executionEvidenceRecorder
+          .recordParticipationDecision({
+            hgSessionId,
+            hgSceneId,
+            hgRoundId,
+            characterTurnIndex,
+            participation: participationSnapshot,
+            eligibilitySnapshot,
+            selectedCharacterId: directorPhase.selectedCharacterId,
+            characterInferenceId,
+          });
+      }
       const characterResponses = mockCharacterTurnResponses[characterTurnIndex] ?? [];
       const semanticMocks = mockSemanticEvaluatorTurnResponses[characterTurnIndex]
         ?? characterResponses.map(() => DEFAULT_SEMANTIC_PASS);
@@ -265,6 +279,7 @@ export default class HgRoundOrchestrator extends Service {
         semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
         liveMaxAttempts,
         prompt: livePrompts.character ?? LIVE_CHARACTER_PROMPT,
+        participationEvidenceId,
       });
       roleTimings.character_ms.push(Date.now() - characterStartedAt);
       roleTraces.character = characterTurn.characterInferenceTrace ?? null;

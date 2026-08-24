@@ -446,6 +446,7 @@ export async function runNarratorPhase({
               evaluationPassId,
               evaluationTargetRole: 'narrator',
               evaluatorEvidenceId: evalOutcome?.evidenceId ?? null,
+              policyAction: 'infra_fail',
               infrastructureFailure: true,
               rawEvaluatorOutput: evalOutcome?.raw ?? null,
             },

@@ -1,8 +1,84 @@
-import { semanticQaDecisionPatch } from './semantic-qa-patch.mjs';
+import { buildSemanticQaDecisionFields } from './semantic-qa-patch.mjs';
 
 /**
  * Map phase validation outcomes into durable decision evidence.
  */
+
+export function buildDirectorEligibilityBlock(
+  eligibilitySnapshot,
+  participationContext,
+  actorsUsedThisRound,
+) {
+  return {
+    eligibility_snapshot_id:
+      participationContext?.eligibilitySnapshotId
+      ?? eligibilitySnapshot?.eligibility_snapshot_id
+      ?? null,
+    eligible_actors: [...(eligibilitySnapshot?.eligible_actors ?? [])],
+    present_characters: [...(eligibilitySnapshot?.present_characters ?? [])],
+    offstage_characters: [...(eligibilitySnapshot?.offstage_characters ?? [])],
+    absent_but_relevant: [...(eligibilitySnapshot?.absent_but_relevant ?? [])],
+    director_constraint_actor: participationContext?.directorConstraintActor ?? null,
+    continuation_c2_skip: Boolean(participationContext?.continuationC2Skip),
+    actors_used_this_round: [...(actorsUsedThisRound ?? [])],
+  };
+}
+
+function applyDirectorDecisionBlocks(
+  patch,
+  {
+    outcome,
+    validation,
+    proposed,
+    eligibilitySnapshot,
+    participationContext,
+    actorsUsedThisRound,
+    semanticQa,
+    residualSoftConcerns,
+    terminalDisposition,
+    retention,
+  },
+) {
+  const director = {
+    eligibility: buildDirectorEligibilityBlock(
+      eligibilitySnapshot,
+      participationContext,
+      actorsUsedThisRound,
+    ),
+  };
+
+  if (validation?.accepted) {
+    const normalized = validation.normalized_decision ?? proposed;
+    director.normalized_decision = normalized;
+    director.selected_character_id =
+      validation.selected_character_id ?? normalized?.next_actor ?? null;
+    director.end_round = Boolean(normalized?.end_round);
+    director.constraints = {
+      eligibility_snapshot_id:
+        participationContext?.eligibilitySnapshotId
+        ?? eligibilitySnapshot?.eligibility_snapshot_id
+        ?? null,
+      director_constraint_actor: participationContext?.directorConstraintActor ?? null,
+      continuation_c2_skip: Boolean(participationContext?.continuationC2Skip),
+      actors_used_this_round: [...(actorsUsedThisRound ?? [])],
+    };
+  }
+
+  patch.decision.director = director;
+
+  if (semanticQa) {
+    patch.decision.semantic_qa = buildSemanticQaDecisionFields(semanticQa);
+  }
+  if (residualSoftConcerns) {
+    patch.decision.residual_soft_concerns = residualSoftConcerns;
+  }
+  if (terminalDisposition) {
+    patch.decision.terminal_disposition = terminalDisposition;
+  }
+  if (retention) {
+    patch.decision.retention = retention;
+  }
+}
 
 export function directorDecisionPatch({
   proposed,
@@ -37,36 +113,18 @@ export function directorDecisionPatch({
     };
   }
 
-  if (outcome === 'accepted' && validation) {
-    const normalized = validation.normalized_decision ?? proposed;
-    patch.decision.director = {
-      normalized_decision: normalized,
-      selected_character_id: validation.selected_character_id ?? normalized?.next_actor ?? null,
-      end_round: Boolean(normalized?.end_round),
-      constraints: {
-        eligibility_snapshot_id:
-          participationContext?.eligibilitySnapshotId
-          ?? eligibilitySnapshot?.eligibility_snapshot_id
-          ?? null,
-        director_constraint_actor: participationContext?.directorConstraintActor ?? null,
-        continuation_c2_skip: Boolean(participationContext?.continuationC2Skip),
-        actors_used_this_round: [...(actorsUsedThisRound ?? [])],
-      },
-    };
-  }
-
-  if (semanticQa) {
-    Object.assign(patch, semanticQaDecisionPatch(semanticQa));
-  }
-  if (residualSoftConcerns) {
-    patch.decision.residual_soft_concerns = residualSoftConcerns;
-  }
-  if (terminalDisposition) {
-    patch.decision.terminal_disposition = terminalDisposition;
-  }
-  if (retention) {
-    patch.decision.retention = retention;
-  }
+  applyDirectorDecisionBlocks(patch, {
+    outcome,
+    validation,
+    proposed,
+    eligibilitySnapshot,
+    participationContext,
+    actorsUsedThisRound,
+    semanticQa,
+    residualSoftConcerns,
+    terminalDisposition,
+    retention,
+  });
 
   return patch;
 }
@@ -176,7 +234,7 @@ export function narratorDecisionPatch({
     },
   };
   if (semanticQa) {
-    Object.assign(patch, semanticQaDecisionPatch(semanticQa));
+    patch.decision.semantic_qa = buildSemanticQaDecisionFields(semanticQa);
   }
   if (residualSoftConcerns) {
     patch.decision.residual_soft_concerns = residualSoftConcerns;

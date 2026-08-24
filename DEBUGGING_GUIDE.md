@@ -116,7 +116,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 - **Production authority** — bounded Character semantic evaluation (#19): `character-semantic-evaluation.mjs`, DSH `character-phase.mjs` (soft finding, max one challenge; residual soft does not block)
 - **Not a deterministic hard gate** — `response_validation_content.py` / `validate_bot_response_for_runtime` enforces objective contracts only (#18)
 - **Retry behavior** — DSH character phase attempt loop (unified candidate budget) + Host `validate_move` for objective failures
-- **Evidence** — execution evidence semantic index; `tools/investigation/list_execution_evidence.py --dimension R11`
+- **Evidence** — execution evidence; Character: `list_execution_evidence.py --dimension R11`; Director/Narrator QA: `--chain director|narrator --round <id> --summary`; participation-direct: `--chain participation --round <id>`
 
 ### Knowledge leaks / wrong “who knows what”
 

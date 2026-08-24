@@ -37,6 +37,7 @@ async function runCharacterInferenceWithInfraRetry({
   modelProfile,
   priorEvidenceId,
   prompt,
+  participationEvidenceId = null,
 }) {
   let lastRun = null;
   for (let infraAttempt = 0; infraAttempt <= CHAR_INFRA_RETRIES; infraAttempt += 1) {
@@ -67,6 +68,9 @@ async function runCharacterInferenceWithInfraRetry({
         inferenceId: characterInferenceId,
         attemptIndex,
         priorAttemptId: priorEvidenceId,
+        associations: participationEvidenceId && attemptIndex === 0
+          ? { participation_evidence_id: participationEvidenceId }
+          : {},
       },
     });
     lastRun = { characterRun, manifest, expectedTurnIndex };
@@ -99,6 +103,7 @@ export async function runCharacterPhase({
   liveMaxAttempts,
   prompt,
   semanticEvaluationEnabled = true,
+  participationEvidenceId = null,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
   let committed = false;
@@ -132,6 +137,7 @@ export async function runCharacterPhase({
       modelProfile,
       priorEvidenceId,
       prompt,
+      participationEvidenceId,
     });
 
     if (!inferenceAttempt.ok || !inferenceAttempt.characterRun) {
@@ -150,6 +156,14 @@ export async function runCharacterPhase({
     characterManifestId = String(manifest.manifest_id);
     characterInferenceSessionId = characterRun.inferenceSessionId;
     characterInferenceTrace = characterRun.trace;
+
+    if (participationEvidenceId && candidateSlotIndex === 0 && characterRun.evidenceId) {
+      recorder?.linkParticipationCharacter(hgSessionId, participationEvidenceId, {
+        characterEvidenceId: characterRun.evidenceId,
+        characterInferenceId,
+        selectedCharacterId: characterId,
+      });
+    }
 
     let proposed;
     let parseError = null;
