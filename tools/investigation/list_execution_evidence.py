@@ -136,7 +136,7 @@ def cite_trace(hg_session_id: str, evidence_id: str) -> str:
     refs = resolve_authority_refs(eval_attempt or {})
     for finding in findings:
         ref_id = (finding.get("authoritative_citation") or {}).get("ref_id")
-        lines.append(f"finding: {finding.get('dimension')} — {finding.get('finding')}")
+        lines.append(f"finding: {finding.get('dimension')} - {finding.get('finding')}")
         lines.append(f"rationale: {finding.get('rationale')}")
         if ref_id and ref_id in refs:
             ref = refs[ref_id]
@@ -198,7 +198,7 @@ def print_chain(
             if char_id:
                 char_attempt = load_attempt(hg_session_id, char_id)
                 if char_attempt:
-                    print("\n→ character execution")
+                    print("\n-> character execution")
                     print(summarize_attempt(char_attempt))
             print("")
         return
@@ -221,7 +221,7 @@ def print_chain(
             if evaluator_id:
                 evaluator = load_attempt(hg_session_id, evaluator_id)
                 if evaluator:
-                    print("→ evaluator")
+                    print("-> evaluator")
                     print(summarize_attempt(evaluator))
             print("")
         return
