@@ -86,6 +86,7 @@ export class ExecutionEvidenceStore {
     };
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
+    this._indexSemanticQa(hgSessionId, evidenceId, next);
   }
 
   readAttempt(hgSessionId, evidenceId) {
@@ -128,6 +129,7 @@ export class ExecutionEvidenceStore {
         successful_correction_chains: [],
         evaluator_failures: [],
         evaluation_chains: {},
+        qa_by_target_role: {},
       },
     };
     if (!current.semantic) {
@@ -141,6 +143,7 @@ export class ExecutionEvidenceStore {
         successful_correction_chains: [],
         evaluator_failures: [],
         evaluation_chains: {},
+        qa_by_target_role: {},
       };
     }
     if (!current.attempt_ids.includes(evidenceId)) {
@@ -182,6 +185,7 @@ export class ExecutionEvidenceStore {
         successful_correction_chains: [],
         evaluator_failures: [],
         evaluation_chains: {},
+        qa_by_target_role: {},
       };
     }
     const sem = current.semantic;
@@ -223,6 +227,47 @@ export class ExecutionEvidenceStore {
 
     if (inferenceId && sem.evaluation_chains[inferenceId]?.length > 2) {
       this._pushUnique(sem.multi_candidate_inferences, inferenceId);
+    }
+
+    current.updated_at = new Date().toISOString();
+    writeJsonAtomic(indexPath, current);
+  }
+
+  _indexSemanticQa(hgSessionId, evidenceId, attempt) {
+    const semanticQa = attempt?.decision?.semantic_qa;
+    if (!semanticQa) return;
+
+    const indexPath = this.indexPath(hgSessionId);
+    const current = readJsonIfExists(indexPath);
+    if (!current?.semantic) return;
+
+    const targetRole = String(semanticQa.evaluation_target_role ?? '').trim();
+    if (!targetRole) return;
+
+    if (!current.semantic.qa_by_target_role) {
+      current.semantic.qa_by_target_role = {};
+    }
+    const bucket = current.semantic.qa_by_target_role[targetRole] ?? [];
+    this._pushUnique(bucket, evidenceId);
+    current.semantic.qa_by_target_role[targetRole] = bucket;
+
+    if (semanticQa.infrastructure_failure) {
+      this._pushUnique(current.semantic.evaluator_failures, evidenceId);
+    }
+
+    const evalResult = semanticQa.result ?? {};
+    const findings = Array.isArray(evalResult.findings) ? evalResult.findings : [];
+    for (const finding of findings) {
+      const dimension = String(finding?.dimension ?? '').trim();
+      if (!dimension) continue;
+      const dimBucket = current.semantic.by_dimension[dimension] ?? [];
+      this._pushUnique(dimBucket, evidenceId);
+      current.semantic.by_dimension[dimension] = dimBucket;
+      if (finding.severity === 'hard') {
+        this._pushUnique(current.semantic.hard_findings, evidenceId);
+      } else if (finding.severity === 'soft') {
+        this._pushUnique(current.semantic.soft_findings, evidenceId);
+      }
     }
 
     current.updated_at = new Date().toISOString();

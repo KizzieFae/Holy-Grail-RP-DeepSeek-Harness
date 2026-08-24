@@ -230,6 +230,24 @@ class SemanticEvaluationContextResponse:
     candidate_package: dict[str, Any]
 
 
+SemanticQaAuthorityClass = Literal["authoritative", "derived", "advisory"]
+
+
+@dataclass(frozen=True)
+class SemanticQaContextPrepareResponse:
+    manifest_id: str
+    evaluation_pass_id: str
+    evaluation_target_role: str
+    inference_id: str
+    hg_scene_id: str
+    hg_round_id: str
+    turn_index: int
+    contributions: tuple[PromptContribution, ...]
+    authority_references: tuple[dict[str, Any], ...]
+    candidate_package: dict[str, Any]
+    character_id: str | None = None
+
+
 @dataclass(frozen=True)
 class CommitRequest:
     inference_id: str

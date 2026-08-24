@@ -97,6 +97,28 @@ Typical contents (all subject to token budget and relevance gates):
 
 ---
 
+## Shared semantic QA result envelope (#25)
+
+**Intent:** Common **evaluator output** and **authority-reference** transport for future Director/Narrator bounded semantic QA children. **Not** wired into production phase orchestration in #25; Character continues using `hg_semantic_evaluation_result_v1` on its existing path.
+
+**Schema:** `hg_semantic_qa_result_v1` — parsed by `v2/domain/modules/semantic_qa_envelope.py` and `v2/rp_runtime/src/lib/semantic-qa-envelope.mjs`.
+
+| Field | Role |
+|-------|------|
+| `evaluation_target_role` | Subject under QA (`director` \| `narrator` \| `character`) |
+| `evaluation_pass_id` | Correlation id linking candidate → evaluator evidence |
+| `overall_result` | Evaluator-stated `pass` \| `reject_soft` \| `reject_hard` (role policy interprets) |
+| `findings[]` | Opaque per-role `dimension` ids; `severity`; optional `authoritative_citation.ref_id` |
+| `evaluator_summary` | Optional neutral summary (no correction policy) |
+
+**Authority references (semantic QA lane):** records with `authority_class` `authoritative` \| `derived` \| `advisory`. Shared citation validation reports membership/class **without** mutating finding severity or promoting advisory material to continuity truth.
+
+**Runtime substrate:** `semantic-qa-substrate.mjs` invokes evaluator inference (`role: semantic_evaluator` in execution evidence) and returns parse/citation sidecars to role integration. Role children own rubrics, context enrichment, acceptance/retry/fallback.
+
+**Host assembly:** `semantic_qa_context.py` provides role-neutral manifest assembly helpers; role-specific prepare HTTP endpoints are owned by future children.
+
+---
+
 ## Evolution path (documentation commitment)
 
 1. Map card + continuity + prompt sections → packet fields above **without behavior change**. **(Character path:** live V2 composition is Domain Host **`PromptContributionManifest`** → **`HgContextBridge`** (`kernel.prepare_context`, including **`recent_scene_transcript`** / **`user_turn_trigger`** from `rp_history`); legacy monolithic `build_character_turn_prompt` remains reference-only, not production.)
