@@ -13,6 +13,11 @@ const LIVE_PROFILE = deepseekInferenceProfile({
   maxTokens: 768,
 });
 
+const EVALUATOR_PROFILE = deepseekInferenceProfile({
+  reasoningEffort: 'off',
+  maxTokens: 2048,
+});
+
 function findEvent(events, type) {
   return events.find((event) => event.type === type) ?? null;
 }
@@ -41,6 +46,7 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
       director: LIVE_PROFILE,
       character: LIVE_PROFILE,
       narrator: deepseekInferenceProfile({ reasoningEffort: 'off', maxTokens: 384 }),
+      semantic_evaluator: EVALUATOR_PROFILE,
     },
     liveMaxAttempts: 5,
   });
