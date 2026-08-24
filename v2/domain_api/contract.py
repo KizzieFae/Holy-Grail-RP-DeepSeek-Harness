@@ -20,6 +20,10 @@ SourceKind = Literal[
     "scene_grounding",
     "active_constraints",
     "character_profile",
+    "character_identity",
+    "character_expression",
+    "character_relationships",
+    "scene_context",
     "character_private",
     "character_memory",
     "authored_character_knowledge",
@@ -35,6 +39,7 @@ SourceKind = Literal[
     "recent_orchestration",
     "actor_suitability",
     "scene_pressures",
+    "director_context",
     "director_decision",
     "committed_move",
     "inference_instruction",
@@ -59,6 +64,7 @@ class ContextPrepareRequest:
     turn_index: int
     attempt_index: int
     correction_context: dict[str, Any] | None = None
+    director_decision: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

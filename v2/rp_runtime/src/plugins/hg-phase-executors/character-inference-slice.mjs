@@ -7,9 +7,10 @@ import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 
 const DEFAULT_CHARACTER_PROMPT = (
   'Respond with a single JSON object only (no markdown). '
-  + 'Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."}],'
+  + 'Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."},{"type":"speech","dialogue":"..."}],'
   + '"motivation":{"goal":"...","tactic":"...","emotional_driver":"...","risk_level":"low"},'
-  + '"semantic_evaluation":{"decision":"no_covered_change"}}'
+  + '"semantic_evaluation":{"decision":"no_covered_change"}}. '
+  + 'Action-only, speech-only, and mixed beat sequences are all valid when appropriate.'
 );
 
 /**
@@ -82,6 +83,7 @@ export async function runCharacterInferenceSlice({
       role,
       turn_index: expectedTurnIndex,
       attempt_index: attemptIndex,
+      director_decision: directorDecision,
     });
     manifestId = String(manifest.manifest_id);
 

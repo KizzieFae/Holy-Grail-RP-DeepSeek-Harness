@@ -137,7 +137,7 @@ class SessionSetupTests(unittest.TestCase):
             )
         )
         kinds = {item.source_kind for item in manifest.contributions}
-        self.assertIn("character_profile", kinds)
+        self.assertIn("character_identity", kinds)
         self.assertIn("scene_state", kinds)
         authored = [
             c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"

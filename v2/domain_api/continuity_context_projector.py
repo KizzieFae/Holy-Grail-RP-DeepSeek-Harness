@@ -29,6 +29,14 @@ ContextRole = Literal["character", "director", "narrator"]
 DEFAULT_CANON_LIMIT_CHARACTER = 6
 DEFAULT_CANON_LIMIT_SCENE = 10
 
+_IDENTITY_DUPLICATE_CANON_SOURCES = frozenset(
+    {
+        "character_state.core_goals",
+        "character_state.voice_profile",
+        "character_state.reaction_profile",
+    }
+)
+
 
 @dataclass(frozen=True)
 class AuthoritativeContextContribution:
@@ -73,13 +81,19 @@ def _select_canon_anchors(
     if role == "character":
         if not character_id:
             return []
-        return list(
+        anchors = list(
             mgr.get_relevant_canon_anchors(
                 character_id,
                 participants=present,
                 limit=DEFAULT_CANON_LIMIT_CHARACTER,
             )
         )
+        return [
+            anchor
+            for anchor in anchors
+            if str(getattr(anchor, "source", "") or "")
+            not in _IDENTITY_DUPLICATE_CANON_SOURCES
+        ]
     return list(mgr.get_scene_canon_anchors(limit=DEFAULT_CANON_LIMIT_SCENE))
 
 

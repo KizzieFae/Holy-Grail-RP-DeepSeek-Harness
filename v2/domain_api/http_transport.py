@@ -183,6 +183,11 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("correction_context"), dict)
                         else None
                     ),
+                    director_decision=(
+                        dict(data["director_decision"])
+                        if isinstance(data.get("director_decision"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_context(req))
                 return

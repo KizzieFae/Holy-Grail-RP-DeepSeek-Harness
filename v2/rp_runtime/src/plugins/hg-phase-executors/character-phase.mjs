@@ -33,6 +33,7 @@ async function runCharacterInferenceWithInfraRetry({
   hgSessionId,
   attemptIndex,
   correctionContext,
+  directorDecision,
   mockResponses,
   modelProfile,
   priorEvidenceId,
@@ -52,6 +53,7 @@ async function runCharacterInferenceWithInfraRetry({
       turn_index: expectedTurnIndex,
       attempt_index: attemptIndex,
       correction_context: correctionContext ?? undefined,
+      director_decision: directorDecision ?? undefined,
     });
     const characterRun = await runEphemeralInference({
       inferenceId: `${characterInferenceId}-${attemptIndex}${infraAttempt ? '-infra-retry' : ''}`,
@@ -133,6 +135,7 @@ export async function runCharacterPhase({
       hgSessionId,
       attemptIndex: candidateSlotIndex,
       correctionContext,
+      directorDecision,
       mockResponses: mockResponses.length ? [mockResponses[candidateSlotIndex]] : [],
       modelProfile,
       priorEvidenceId,

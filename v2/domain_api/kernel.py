@@ -78,6 +78,7 @@ from .contract import (  # noqa: E402
     SemanticEvaluationContextResponse,
     SemanticQaContextPrepareResponse,
 )
+from .character_context_projector import build_character_lane_contributions  # noqa: E402
 from .character_conversation_projection import (  # noqa: E402
     project_character_conversation_for_manifest,
 )
@@ -897,19 +898,15 @@ class DomainKernel:
                 )
             )
         contributions.extend(
-            (
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-character",
-                    source_kind="character_profile",
-                    authority_class="authoritative",
-                    knowledge_ids=(f"character:{req.character_id}",),
-                    priority=20,
-                    content=(
-                        f"You are {req.character_id} ({req.role}). "
-                        "Respond with a single JSON object: canonical character move v2."
-                    ),
-                    provenance={"character_id": req.character_id, "role": req.role},
-                ),
+            build_character_lane_contributions(
+                fixture,
+                manifest_id=manifest_id,
+                character_id=req.character_id,
+                role=req.role,
+                hg_scene_id=req.hg_scene_id,
+                hg_round_id=req.hg_round_id,
+                turn_index=req.turn_index,
+                director_decision=req.director_decision,
             )
         )
         for index, (source_kind, knowledge_content, knowledge_provenance) in enumerate(
@@ -969,7 +966,10 @@ class DomainKernel:
                 priority=30,
                 content=(
                     "Output only valid JSON for move_schema_version 2 with non-empty beats[], "
-                    "motivation object, and semantic_evaluation."
+                    "motivation object, and semantic_evaluation. "
+                    "Each beat must be type action (key action) or type speech (key dialogue). "
+                    "Action-only, speech-only, and mixed beat sequences are all valid when "
+                    "appropriate to the scene."
                 ),
                 provenance={"inference_id": req.inference_id},
             ),
