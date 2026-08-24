@@ -48,6 +48,28 @@ def _format_trigger_content(trigger_text: str) -> str:
     return f"TRIGGER FOR THIS BEAT:\n{trigger_text}"
 
 
+def project_director_trigger_for_manifest(
+    fixture: LiveSession,
+) -> tuple[str | None, dict[str, Any]]:
+    """Return the skip-aware unredacted player trigger for orchestration."""
+    provenance: dict[str, Any] = {
+        "projection_kind": "rp_history_orchestration_trigger",
+        "visibility": "orchestration_projection",
+        "trigger_redacted": False,
+    }
+    latest_user = substantive_user_entry_for_trigger(fixture.rp_history)
+    if latest_user is None:
+        return None, provenance
+    raw_content = latest_user.get("content")
+    if not isinstance(raw_content, str) or not raw_content.strip():
+        return None, provenance
+    entry_id = latest_user.get("entry_id")
+    if entry_id:
+        provenance["trigger_entry_id"] = str(entry_id)
+    provenance["trigger_sequence_index"] = latest_user.get("sequence_index")
+    return _format_trigger_content(raw_content), provenance
+
+
 def project_character_conversation_for_manifest(
     fixture: LiveSession,
     *,

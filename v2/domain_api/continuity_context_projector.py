@@ -14,6 +14,7 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
+from director_decision_contract import canonicalize_environment_event  # noqa: E402
 from scene_grounding import (  # noqa: E402
     format_character_binding_constraints_section,
     format_character_grounding_section,
@@ -21,7 +22,7 @@ from scene_grounding import (  # noqa: E402
     rebuild_scene_grounding_from_continuity,
 )
 
-from .session_state import LiveSession
+from .session_state import LiveSession  # noqa: E402
 
 ContextRole = Literal["character", "director", "narrator"]
 
@@ -209,10 +210,6 @@ def project_scene_progression(
     else:
         parts.append("- No committed public events yet.")
 
-    recent_delta = str(getattr(mgr.scene_state, "recent_delta", "") or "").strip()
-    if recent_delta:
-        parts.append(f"Recent delta: {recent_delta}")
-
     phase = getattr(mgr.scene_state, "phase", None)
     phase_value = (
         phase.value if hasattr(phase, "value") else str(phase or "unknown")
@@ -249,6 +246,79 @@ def project_scene_progression(
             ],
         },
         priority=11,
+    )
+
+
+def collect_recent_environment_evidence(fixture: LiveSession) -> list[str]:
+    """Collect bounded continuity-owned environment text with exact deduplication."""
+    mgr = fixture.manager
+    assert mgr.scene_state is not None
+    event_limit = max(1, int(getattr(mgr, "recent_event_window", 8)))
+    candidates = [
+        str(item)
+        for item in (mgr.scene_state.recent_environment_events or [])
+        if str(item).strip()
+    ]
+    candidates.extend(
+        str(getattr(event, "summary", "") or "")
+        for event in mgr.retrieve_public_events(limit=event_limit)
+        if str(getattr(event, "event_type", "") or "") == "environment"
+    )
+    evidence: list[str] = []
+    seen: set[str] = set()
+    for item in candidates:
+        canonical = canonicalize_environment_event(item)
+        if not canonical or canonical in seen:
+            continue
+        seen.add(canonical)
+        evidence.append(item.strip())
+    return evidence
+
+
+def project_recent_environment(
+    fixture: LiveSession,
+    *,
+    hg_scene_id: str,
+    hg_round_id: str,
+) -> AuthoritativeContextContribution | None:
+    """Project accepted environment state for Director novelty decisions."""
+    evidence = collect_recent_environment_evidence(fixture)
+    if not evidence:
+        return None
+    mgr = fixture.manager
+    event_limit = max(1, int(getattr(mgr, "recent_event_window", 8)))
+    environment_event_ids = [
+        str(getattr(event, "event_id", ""))
+        for event in mgr.retrieve_public_events(limit=event_limit)
+        if str(getattr(event, "event_type", "") or "") == "environment"
+        and getattr(event, "event_id", "")
+    ]
+    return AuthoritativeContextContribution(
+        source_kind="recent_environment",
+        content=(
+            "Recent accepted environment developments (committed continuity; "
+            "do not repeat these as new events):\n"
+            + "\n".join(f"- {item}" for item in evidence)
+        ),
+        authority_class="authoritative",
+        knowledge_ids=(
+            f"scene:{hg_scene_id}:recent_environment",
+            *(f"public_event:{event_id}" for event_id in environment_event_ids),
+        ),
+        provenance={
+            "hg_scene_id": hg_scene_id,
+            "hg_round_id": hg_round_id,
+            "projection_kind": "bounded_committed_environment",
+            "environment_count": len(evidence),
+            "recent_event_window": event_limit,
+            "public_event_ids": environment_event_ids,
+            "source_fields": [
+                "scene_state.recent_environment_events",
+                "public_events[event_type=environment]",
+            ],
+            "continuity_version": fixture.continuity_version,
+        },
+        priority=12,
     )
 
 
@@ -417,6 +487,14 @@ def project_authoritative_context(
                 continuity_turn_index=continuity_turn_index,
             )
         )
+    if role == "director":
+        recent_environment = project_recent_environment(
+            fixture,
+            hg_scene_id=hg_scene_id,
+            hg_round_id=hg_round_id,
+        )
+        if recent_environment is not None:
+            contributions.append(recent_environment)
     canon = project_continuity_canon(
         fixture,
         role=role,

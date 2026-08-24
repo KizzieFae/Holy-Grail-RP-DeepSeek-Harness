@@ -33,7 +33,7 @@ domain library (v2/domain/modules/)
 data/  (HG_DATA_DIR)
 ```
 
-**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host **`PromptContributionManifest`** projection (`kernel.prepare_context`, including **`recent_scene_transcript`** / **`user_turn_trigger`** from `rp_history`; Director/Narrator additionally receive bounded **`scene_setup`**, live **`scene_state`**, and authoritative **`scene_progression`** from committed continuity); `HgContextBridge` only transports manifests. Domain `prompt_builders.py` retains legacy formatting helpers but is not the live V2 composition path. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
+**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host **`PromptContributionManifest`** projection (`kernel.prepare_context`, including **`recent_scene_transcript`** / **`user_turn_trigger`** from `rp_history`; Director/Narrator additionally receive bounded **`scene_setup`**, live **`scene_state`**, and authoritative **`scene_progression`** from committed PublicEvents; Director also receives an unredacted, derived, skip-aware orchestration **`user_turn_trigger`** and bounded authoritative **`recent_environment`** projection from committed continuity). `recent_delta` is internal continuity state and is not a progression prompt lane. `HgContextBridge` only transports manifests. Domain `prompt_builders.py` retains legacy formatting helpers but is not the live V2 composition path. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
 
 ---
 
@@ -119,6 +119,8 @@ Host `validate_move` calls `validate_bot_response_for_runtime` only. Determinist
 Validators **reject or annotate**; they do not replace Director selection or continuity commits.
 
 **Director fallback:** on JSON parse failure, Host/DSH decision handling may record `"source": "fallback"`. Turn-selection preemption validation is skipped for fallback decisions; memory writes for committed turns are not.
+
+**Director auxiliary contract (#23):** Host validation normalizes `tension_shift` to `escalate` / `soften` / `steady`. Unsupported values are neutralized to `steady`. `environment_event` remains a proposal until Host exact-deduplicates it against bounded continuity-owned environment evidence (Unicode NFKC, whitespace normalization, casefold) and continuity commits the normalized decision. Auxiliary normalization does not retry an otherwise-valid actor selection.
 
 ---
 

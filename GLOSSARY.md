@@ -64,6 +64,10 @@ For **symptom → owner** routing and current module names, use [MODULE_INDEX.md
 
 **Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** at promotion time.
 
+**`recent_delta`** — Internal continuity-owned synopsis finalized after a turn commits and event promotion completes. It is persisted for local state compatibility but is not projected as a second progression timeline; prompt-facing progression uses committed `PublicEvent`s plus phase/tension.
+
+**`tension_shift`** — Normalized Director auxiliary pacing token: `escalate`, `soften`, or `steady`. `steady` is Director-neutral and permits consequence-derived pacing; unsupported values normalize to `steady`.
+
 **continuity_turn_index (audit)** — Integer on audit **`context_snapshot`**: **post-commit** **`ContinuityManager.turn_counter`** for that beat. Primary structural join key for offline audit pairing. **Not** a runtime control signal.
 
 **Turn (structural) vs event (`PublicEvent`)** — A **structural turn** is identified by the continuity **turn counter** after a beat commits. A **`PublicEvent`** is an optional **promoted** narrative fact for that turn; **event absence does not mean the turn did not commit**.

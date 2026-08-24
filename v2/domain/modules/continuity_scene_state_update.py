@@ -15,6 +15,10 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from character_move_adapters import (
+    legacy_flat_action_text,
+    legacy_flat_dialogue_text,
+)
 from continuity_presence_helpers import align_exit_narrative_with_effective_presence
 from continuity_semantic_proposals import (
     ProposalAuthorityOutcome,
@@ -81,6 +85,35 @@ def manager_align_exit_narrative_with_effective_presence(
     )
 
 
+def finalize_recent_delta_after_commit(
+    manager: Any,
+    *,
+    acting_character: str,
+    move: dict[str, Any],
+    event: Optional[PublicEvent],
+    turn_consequences: dict[str, Any],
+) -> None:
+    """Persist a continuity-owned synopsis only after event promotion completes."""
+    if manager.scene_state is None:
+        return
+    state_change = next(
+        (
+            str(change).strip()
+            for change in turn_consequences.get("state_changes", [])
+            if str(change).strip()
+        ),
+        "",
+    )
+    action = legacy_flat_action_text(move).strip()
+    dialogue = legacy_flat_dialogue_text(move).strip()
+    event_summary = str(event.summary).strip() if event is not None else ""
+    manager.scene_state.recent_delta = event_summary or state_change or action or (
+        f'{acting_character} said: "{dialogue}"'
+        if dialogue
+        else f"{acting_character} completed a committed turn."
+    )
+
+
 def run_update_scene_state(
     manager: Any,
     acting_character: str,
@@ -92,12 +125,6 @@ def run_update_scene_state(
     """Update scene state based on director decisions and flow (façade: ``_update_scene_state``)."""
     if manager.scene_state is None:
         return
-
-    tension_shift_raw = ""
-    if isinstance(director_decision, dict):
-        tension_shift_raw = str(
-            director_decision.get("tension_shift", "") or ""
-        ).strip()
 
     environment_event = (
         director_decision.get("environment_event", "")
@@ -179,24 +206,4 @@ def run_update_scene_state(
 
     manager_align_exit_narrative_with_effective_presence(
         manager, acting_character, turn_consequences
-    )
-
-    consequence_delta = next(
-        (
-            str(change)
-            for change in (
-                event.state_changes
-                if event is not None
-                else turn_consequences.get("state_changes", [])
-            )
-            if str(change).strip()
-        ),
-        "",
-    )
-    manager.scene_state.recent_delta = (
-        consequence_delta
-        or (event.summary if event else "")
-        or environment_event
-        or tension_shift_raw
-        or str(move.get("action", "character action"))
     )

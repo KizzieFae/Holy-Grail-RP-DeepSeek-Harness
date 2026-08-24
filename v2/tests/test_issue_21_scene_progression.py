@@ -116,7 +116,7 @@ class Issue21SceneProgressionTests(unittest.TestCase):
         self.assertNotIn("scene premise", scene.content.lower())
         self.assertNotIn(ENTRANCE_OPENING, scene.content)
         self.assertIn("scene progression", progression.content.lower())
-        self.assertIn("recent delta", progression.content.lower())
+        self.assertNotIn("recent delta", progression.content.lower())
         self.assertIn("scene phase: rising", progression.content.lower())
         self.assertIn("current tension level: moderate", progression.content.lower())
 
@@ -253,7 +253,7 @@ class Issue21SceneProgressionTests(unittest.TestCase):
             self.assertIn(ENTRANCE_OPENING, setup.content)
             self.assertNotIn(ENTRANCE_OPENING, scene.content)
             self.assertNotIn(ENTRANCE_OPENING, progression.content)
-            self.assertIn("recent delta", progression.content.lower())
+            self.assertNotIn("recent delta", progression.content.lower())
 
     def test_narrator_prompt_documents_environment_hierarchy(self) -> None:
         prompt = build_narrator_render_prompt(

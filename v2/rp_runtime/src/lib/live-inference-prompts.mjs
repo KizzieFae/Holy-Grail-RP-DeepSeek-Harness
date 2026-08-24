@@ -4,6 +4,8 @@ export const LIVE_DIRECTOR_PROMPT = [
   'Respond with ONLY one JSON object. No markdown, no commentary.',
   'Required keys: next_actor (string), end_round (boolean), reason (string),',
   'environment_event (string), tension_shift (string).',
+  'Set tension_shift to exactly escalate, soften, or steady.',
+  'environment_event is optional; use an empty string instead of repeating a recent accepted environment development.',
   'Select next_actor from the eligible cast in context. Set end_round false unless the scene should stop.',
 ].join(' ');
 

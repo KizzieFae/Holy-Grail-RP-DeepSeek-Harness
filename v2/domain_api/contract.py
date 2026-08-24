@@ -12,7 +12,10 @@ from typing import Any, Literal
 AuthorityClass = Literal["authoritative", "derived", "suggestive"]
 EligibilityStatus = Literal["eligible", "ineligible"]
 SourceKind = Literal[
+    "scene_setup",
     "scene_state",
+    "scene_progression",
+    "recent_environment",
     "continuity_canon",
     "scene_grounding",
     "active_constraints",

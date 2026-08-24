@@ -12,7 +12,7 @@ from character_move_adapters import (  # noqa: E402
     legacy_flat_action_text,
     legacy_flat_dialogue_text,
 )
-from character_move_ingress import (
+from character_move_ingress import (  # noqa: E402
     load_json_object_duplicate_safe,
     parse_character_move_content_to_v2,
     unwrap_fenced_json_object,
@@ -149,10 +149,14 @@ def parse_director_decision(
         return None, f"Invalid next_actor: {next_actor!r}"
 
     reason_str = str(data.get("reason", data.get("reason_for_choice", "")) or "")
+    environment_event = data.get("environment_event", "")
+    tension_shift = data.get("tension_shift", "")
     out: dict[str, Any] = {
         "next_actor": next_actor,
-        "environment_event": str(data.get("environment_event", "") or ""),
-        "tension_shift": str(data.get("tension_shift", "") or ""),
+        "environment_event": (
+            environment_event if isinstance(environment_event, str) else ""
+        ),
+        "tension_shift": tension_shift if isinstance(tension_shift, str) else "",
         "reason": reason_str,
         "end_round": end_round,
     }

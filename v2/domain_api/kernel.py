@@ -17,6 +17,10 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 ensure_domain_paths()
 
 from character_move_adapters import legacy_move_text_for_validation  # noqa: E402
+from director_decision_contract import (  # noqa: E402
+    normalize_environment_event,
+    normalize_tension_shift,
+)
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response_for_runtime  # noqa: E402
@@ -66,9 +70,11 @@ from .contract import (  # noqa: E402
 )
 from .character_conversation_projection import (  # noqa: E402
     project_character_conversation_for_manifest,
+    project_director_trigger_for_manifest,
 )
 from .continuity_context_projector import (  # noqa: E402
     AuthoritativeContextContribution,
+    collect_recent_environment_evidence,
     project_authoritative_context,
 )
 from .fixture_store import FixtureStore  # noqa: E402
@@ -425,6 +431,21 @@ class DomainKernel:
     def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
         return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
 
+    def _normalize_director_auxiliary_fields(
+        self,
+        fixture: LiveSession,
+        decision: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized = dict(decision)
+        normalized["tension_shift"] = normalize_tension_shift(
+            decision.get("tension_shift")
+        )
+        normalized["environment_event"] = normalize_environment_event(
+            decision.get("environment_event"),
+            recent_committed_events=collect_recent_environment_evidence(fixture),
+        )
+        return normalized
+
     def _presence_status(self, fixture: LiveSession, character_id: str) -> str:
         mgr = fixture.manager
         assert mgr.scene_state is not None
@@ -587,6 +608,29 @@ class DomainKernel:
         contributions: list[PromptContribution] = list(
             self._auth_contributions_to_prompt(manifest_id, auth_projections)
         )
+        trigger_content, trigger_provenance = project_director_trigger_for_manifest(
+            fixture
+        )
+        if trigger_content:
+            trigger_entry_id = trigger_provenance.get("trigger_entry_id")
+            contributions.append(
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-user-turn-trigger",
+                    source_kind="user_turn_trigger",
+                    authority_class="derived",
+                    knowledge_ids=(
+                        (f"rp_history:trigger:{trigger_entry_id}",)
+                        if trigger_entry_id
+                        else (f"rp_history:trigger:{req.hg_round_id}",)
+                    ),
+                    priority=15,
+                    content=trigger_content,
+                    provenance={
+                        "hg_round_id": req.hg_round_id,
+                        **trigger_provenance,
+                    },
+                )
+            )
         contributions.extend(
             (
             PromptContribution(
@@ -609,7 +653,9 @@ class DomainKernel:
                 priority=30,
                 content=(
                     "Output only JSON with next_actor, end_round, reason, environment_event, "
-                    "tension_shift."
+                    "tension_shift. tension_shift must be escalate, soften, or steady. "
+                    "environment_event is optional; use an empty string rather than repeating "
+                    "a recent accepted environment development."
                 ),
                 provenance={"inference_id": req.inference_id},
             ),
@@ -888,15 +934,36 @@ class DomainKernel:
         parsed, parse_err = parse_director_decision(
             raw,
             participant_names=list(fixture.cast),
-            available_actors=list(fixture.cast),
+            available_actors=available,
         )
         if parse_err or parsed is None:
+            proposed_actor = str(
+                req.proposed_decision.get("next_actor", "") or ""
+            ).strip()
+            if (
+                parse_err.startswith("Invalid next_actor:")
+                and proposed_actor in fixture.cast
+                and proposed_actor not in available
+            ):
+                exclusion = self._exclusion_reason(fixture, rnd, proposed_actor)
+                return DirectorDecisionResult(
+                    accepted=False,
+                    validation_class="domain_rule",
+                    reason=(
+                        f"Director selected ineligible actor {proposed_actor}"
+                        + (f" ({exclusion})" if exclusion else "")
+                        + f"; eligible: {', '.join(available) or 'none'}"
+                    ),
+                    retryable=True,
+                )
             return DirectorDecisionResult(
                 accepted=False,
                 validation_class="parse_error",
                 reason=parse_err or "parse failed",
                 retryable=True,
             )
+
+        parsed = self._normalize_director_auxiliary_fields(fixture, parsed)
 
         if bool(parsed.get("end_round")):
             return DirectorDecisionResult(
@@ -1036,7 +1103,9 @@ class DomainKernel:
             )
 
         others = [c for c in fixture.cast if c != req.character_id]
-        director_decision = dict(req.director_decision)
+        director_decision = self._normalize_director_auxiliary_fields(
+            fixture, dict(req.director_decision)
+        )
         move = dict(req.validated_move)
         if issue240_semantic_evaluation_enabled():
             move = normalize_issue240_semantic_evaluation_for_continuity(move)
@@ -1427,14 +1496,17 @@ class DomainKernel:
             PromptContribution(
                 contribution_id=f"{manifest_id}-director-decision",
                 source_kind="director_decision",
-                authority_class="authoritative",
+                authority_class="derived",
                 knowledge_ids=(f"round:{req.hg_round_id}",),
                 priority=25,
                 content=(
                     "Accepted director decision for this round: "
                     f"{json.dumps(director_decision, ensure_ascii=False)}"
                 ),
-                provenance={"hg_round_id": req.hg_round_id},
+                provenance={
+                    "hg_round_id": req.hg_round_id,
+                    "visibility": "orchestration_projection",
+                },
             ),
             PromptContribution(
                 contribution_id=f"{manifest_id}-instruction",

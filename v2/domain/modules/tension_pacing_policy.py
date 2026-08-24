@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any, Literal, Optional
 
+from director_decision_contract import normalize_tension_shift
+
 DirectionalPacing = Literal["escalate", "soften"]
 ConsequencePacing = Literal["up", "down", "hold"]
 PacingSource = Literal["director", "consequence", "none"]
@@ -43,12 +45,7 @@ def parse_director_directional_pacing(
     """
     if not isinstance(director_decision, dict):
         return None
-    raw = director_decision.get("tension_shift", "")
-    if raw is None:
-        return None
-    if not isinstance(raw, str):
-        return None
-    token = raw.strip().lower()
+    token = normalize_tension_shift(director_decision.get("tension_shift"))
     if token == "escalate":
         return "escalate"
     if token == "soften":
@@ -105,7 +102,6 @@ def resolve_hybrid_pacing(
     for Director escalate/soften this is mapped to up/down.
     """
     directional = parse_director_directional_pacing(director_decision)
-    neutral = directional is None
 
     if directional == "escalate":
         return ("director", "up", False)

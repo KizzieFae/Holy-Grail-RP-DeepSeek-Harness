@@ -67,10 +67,7 @@ def determine_significance(
     if categories.intersection(pivotal_categories):
         return "pivotal"
 
-    if risk_level in ["high", "extreme"] or tension_shift in [
-        "escalate",
-        "unsettle",
-    ]:
+    if risk_level in ["high", "extreme"] or tension_shift == "escalate":
         return "major"
     if dialogue and any(marker in dialogue for marker in ["?", "you", "why"]):
         return "major"
@@ -129,7 +126,7 @@ def compute_event_promotion_policy_fields(
     has_scene_shift = bool(
         environment_event
         or risk_level in ["high", "extreme"]
-        or tension_shift in ["escalate", "unsettle"]
+        or tension_shift == "escalate"
     )
     base_promotion = has_durable_change or has_scene_shift
 

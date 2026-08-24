@@ -21,6 +21,7 @@ from continuity_semantic_proposals import (
     proposal_authority_metadata,
 )
 from continuity_resolved_outcomes import apply_registered_resolved_outcome_updates
+from continuity_scene_state_update import finalize_recent_delta_after_commit
 
 
 def run_process_turn_after_resolved_mutations_applied(
@@ -67,6 +68,14 @@ def run_process_turn_after_resolved_mutations_applied(
         manager.public_events.append(event)
         manager.scene_state.recent_event_ids.append(event.event_id)
         manager.scene_state.recent_event_ids = manager.scene_state.recent_event_ids[-10:]
+
+    finalize_recent_delta_after_commit(
+        manager,
+        acting_character=acting_character,
+        move=move,
+        event=event,
+        turn_consequences=turn_consequences,
+    )
 
     manager._maybe_create_issue(
         acting_character,
