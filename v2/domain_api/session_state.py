@@ -72,6 +72,7 @@ class LiveSession:
     setup_snapshot: dict[str, Any] = field(default_factory=dict)
     character_file_ids: dict[str, str] = field(default_factory=dict)
     memory_scope_id: str = ""
+    librarian_proposal_audit_log: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def session_id(self) -> str:

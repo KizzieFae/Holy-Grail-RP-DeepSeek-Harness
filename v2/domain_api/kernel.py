@@ -131,6 +131,7 @@ from .memory_service import MemoryService  # noqa: E402
 from .knowledge_service import KnowledgeService  # noqa: E402
 from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
 from .librarian_service import LibrarianService  # noqa: E402
+from .librarian_proposal_service import LibrarianProposalService  # noqa: E402
 from .storyteller_contract import (  # noqa: E402
     StorytellerAdvisoryPackage,
     StorytellerOrientationAssessment,
@@ -265,6 +266,9 @@ class DomainKernel:
         from .retrieval_service import RetrievalService
 
         return LibrarianService(retrieval_service=RetrievalService(scope_repo=scope_repo))
+
+    def _librarian_proposal_service(self) -> LibrarianProposalService:
+        return LibrarianProposalService()
 
     def _storyteller_service(self) -> StorytellerService:
         return StorytellerService(librarian_service=self._librarian_service())
@@ -1295,6 +1299,100 @@ class DomainKernel:
         from dataclasses import asdict
 
         return asdict(bundle)
+
+    def prepare_librarian_proposal_context(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        proposal_context_request: dict[str, Any],
+    ) -> dict[str, Any]:
+        from .librarian_proposal_contract import proposal_context_request_from_dict
+
+        fixture = self.store.require(hg_scene_id)
+        request = proposal_context_request_from_dict(
+            {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
+        )
+        response = self._librarian_proposal_service().prepare_proposal_context(request, fixture)
+        return {
+            "manifest_id": response.manifest_id,
+            "inference_id": response.inference_id,
+            "request_id": response.request_id,
+            "hg_scene_id": response.hg_scene_id,
+            "hg_round_id": response.hg_round_id,
+            "domain_commit_id": response.domain_commit_id,
+            "authoritative_snapshot_id": response.authoritative_snapshot_id,
+            "contributions": [
+                {
+                    "contribution_id": item.contribution_id,
+                    "source_kind": item.source_kind,
+                    "authority_class": item.authority_class,
+                    "knowledge_ids": list(item.knowledge_ids),
+                    "priority": item.priority,
+                    "content": item.content,
+                    "provenance": dict(item.provenance),
+                }
+                for item in response.contributions
+            ],
+            "evidence_catalog": [
+                {
+                    "anchor_id": item.anchor_id,
+                    "evidence_kind": item.evidence_kind,
+                    "stable_ref": item.stable_ref,
+                    "authority_class": item.authority_class,
+                    "visibility_scope": item.visibility_scope,
+                    "anchor_commit_id": item.anchor_commit_id,
+                    "anchor_path": item.anchor_path,
+                    "content": item.content,
+                    "provenance": dict(item.provenance),
+                }
+                for item in response.evidence_catalog
+            ],
+        }
+
+    def finalize_librarian_proposals(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        proposal_context_request: dict[str, Any],
+        proposal_result: dict[str, Any] | None = None,
+        evidence_catalog: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        from dataclasses import asdict
+
+        from .librarian_proposal_contract import (
+            ProposalEvidenceCatalogItem,
+            proposal_context_request_from_dict,
+        )
+
+        fixture = self.store.require(hg_scene_id)
+        request = proposal_context_request_from_dict(
+            {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
+        )
+        catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None
+        if evidence_catalog:
+            catalog = tuple(
+                ProposalEvidenceCatalogItem(
+                    anchor_id=str(item["anchor_id"]),
+                    evidence_kind=str(item["evidence_kind"]),
+                    stable_ref=str(item["stable_ref"]),
+                    authority_class=item["authority_class"],  # type: ignore[arg-type]
+                    visibility_scope=str(item.get("visibility_scope") or "public"),
+                    content=str(item.get("content") or ""),
+                    anchor_commit_id=item.get("anchor_commit_id"),
+                    anchor_path=item.get("anchor_path"),
+                    provenance=dict(item.get("provenance") or {}),
+                )
+                for item in evidence_catalog
+            )
+        result = self._librarian_proposal_service().finalize_proposals(
+            request,
+            fixture,
+            proposal_result=proposal_result,
+            evidence_catalog=catalog,
+        )
+        return asdict(result)
 
     def prepare_storyteller_orientation_context(
         self,

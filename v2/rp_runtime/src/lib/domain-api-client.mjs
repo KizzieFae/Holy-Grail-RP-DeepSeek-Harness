@@ -118,6 +118,24 @@ export function createDomainApiClient(baseUrl) {
         'finalizeLibrarianMediation',
       );
     },
+    prepareLibrarianProposalContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/librarian/proposals/prepare',
+        body,
+        'prepareLibrarianProposalContext',
+      );
+    },
+    finalizeLibrarianProposals(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/librarian/proposals/finalize',
+        body,
+        'finalizeLibrarianProposals',
+      );
+    },
     prepareStorytellerOrientationContext(body) {
       return postJson(
         metrics,

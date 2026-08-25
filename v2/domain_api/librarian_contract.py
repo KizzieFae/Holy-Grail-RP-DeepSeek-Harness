@@ -1,7 +1,9 @@
 """Librarian read-side contracts (#34 S2a).
 
 Public request/response types for KnowledgeAccessRequest mediation through
-Retrieval (#31) and authoritative projection. Write-side proposals are out of scope.
+Retrieval (#31) and authoritative projection.
+
+Write-side grounded proposals: see ``librarian_proposal_contract.py`` (#34 S4a).
 """
 
 from __future__ import annotations

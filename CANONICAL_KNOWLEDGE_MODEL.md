@@ -25,14 +25,14 @@ Governance accepted a five-responsibility decomposition (parent **#33** closed; 
 | Layer | Role relative to this model |
 |-------|----------------------------|
 | **Retrieval (#31)** | Supplies **eligible candidate records** conforming to this envelope under hard visibility/budget constraints. `backend_retrieval_rank` (when present) is a weak within-backend prior only—not semantic relevance. |
-| **Librarian (#34)** | Performs **information-level** relevance/salience mediation across live authoritative projection and Retrieval candidates; may emit bounded suggestive synthesis traceable to source refs. Does **not** elevate suggestive retrieval to continuity truth. |
+| **Librarian (#34)** | Performs **information-level** relevance/salience mediation across live authoritative projection and Retrieval candidates (S2a read path); post-commit **`LibrarianSemanticProposal`** batches (S4a) are grounded by Host validation and accepted or rejected by Continuity **without durable mutation in S4a**. Does **not** elevate suggestive retrieval to continuity truth. |
 | **Storyteller (#32)** | Performs **narrative** interpretation on Librarian bundles; output is advisory only and does not change envelope authority classes. |
 | **Packaging** | Deterministically maps bundles and projections into `PromptContribution` lanes. |
 | **Continuity** | Exclusive writer of authoritative in-scene truth. |
 
 **Principle:** contextual intelligence proposes meaning; deterministic authority decides what is legal and records what becomes true. Semantic ranking for **prompt relevance** belongs to **Librarian**, not to Retrieval or this compile contract. Learned rankers and LLM-chosen sets (§2 non-goals for Phase 3.4) are **Librarian mediation concerns** when implemented—not Retrieval candidate-access concerns.
 
-**Current runtime:** Character-path deterministic selection via `retrieval_selection.py`; Librarian and Storyteller layers **do not exist** yet.
+**Current runtime:** Character-path deterministic selection via `retrieval_selection.py`; Librarian S2a read mediation and S4a post-commit proposal accept/reject seam are implemented; accepted S4a proposals do **not** mutate durable Continuity state. Storyteller advisory (S3) is implemented under Model A.
 
 ---
 

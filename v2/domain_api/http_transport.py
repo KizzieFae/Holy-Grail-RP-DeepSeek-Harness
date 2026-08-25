@@ -233,6 +233,34 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     ),
                 )
                 return
+            if path == "/v1/librarian/proposals/prepare":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.prepare_librarian_proposal_context(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        inference_id=str(body["inference_id"]),
+                        proposal_context_request=dict(body.get("proposal_context_request") or body),
+                    ),
+                )
+                return
+            if path == "/v1/librarian/proposals/finalize":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.finalize_librarian_proposals(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        inference_id=str(body["inference_id"]),
+                        proposal_context_request=dict(body.get("proposal_context_request") or body),
+                        proposal_result=(
+                            dict(body["proposal_result"])
+                            if isinstance(body.get("proposal_result"), dict)
+                            else None
+                        ),
+                        evidence_catalog=body.get("evidence_catalog"),
+                    ),
+                )
+                return
             if path == "/v1/storyteller/orientation/prepare":
                 body = dict(data)
                 self._send_json(
