@@ -39,7 +39,7 @@ data/  (HG_DATA_DIR)
 
 ## Knowledge mediation and narrative intelligence (#33)
 
-Parent program **#33** is closed; accepted architecture is authoritative on child Issues **#31**, **#34**, and **#32**. Implementation remains separately gated on each child.
+Parent program **#33** is closed; accepted architecture is authoritative on child Issues **#31**, **#34**, and **#32**. Child programs **#31**, **#32**, and **#34** are **closed** with governed validation of their in-scope slices (Retrieval S0+S1, Librarian S2/S4, Storyteller S3 Model A); remaining program items (for example S5 Continuity heuristic migrations, deferred Character direct Librarian wiring, post-commit Storyteller refresh) are explicitly deferred per those Issue records—not open implementation gates.
 
 ### Responsibility boundaries (accepted target)
 

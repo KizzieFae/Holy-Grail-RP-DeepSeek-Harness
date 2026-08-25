@@ -72,7 +72,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 | `response_validation` | Invalid/rejected character or narrator **payload** | `response_validation_parsing.py`, `response_validation_content.py` (`validate_bot_response_for_runtime`), `response_validation_presence.py`; Host `validate_move` |
 | `grounding` | SETTLED SCENE FACTS / BINDING CONSTRAINTS wrong vs continuity | `scene_grounding.py`, `continuity_context_projector.py`, `prompt_builders.py` |
 | `perception` | Wrong knowledge boundary in prompts | `perception_audibility.py`, Host projector, `prompt_builders.py` |
-| `memory` | Episodic or retrieved bundle wrong given continuity | `memory_layer/`, Host `memory_service.py` / `retrieval_selection.py` |
+| `memory` | Episodic or retrieved bundle wrong given continuity | `memory_layer/`, Host `memory_service.py` / `retrieval_selection.py` — see also **Narrative intelligence routing** below for #31–#34 semantic paths |
 | `rendering` | Prose garble, dialogue not verbatim in presented output | DSH `narrator-phase.mjs`, `prompt_builders.py` |
 | `audit_simulation` | Wrong or missing traces, harness, metrics | DSH `hg-trace-emitter`; Host `session_history.py`; `v2/rp_runtime/tests/`; [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | `application_infrastructure` | Encoding, UI shell, session I/O, loader/path mechanics | `v2/ui/streamlit_app.py`, Host `session_repository.py` / `session_setup.py`, `session_manager.py`, env/paths |
@@ -161,9 +161,27 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 
 ---
 
+## Narrative intelligence routing (#31–#34)
+
+Use this subsection when symptoms involve **Retrieval**, **Librarian**, **Storyteller**, **Packaging**, or **Continuity proposal** boundaries from the closed **#33** program—not as a second architecture authority. File-level routing: [MODULE_INDEX.md](./MODULE_INDEX.md).
+
+| Symptom / concern | Conceptual owner | First routing (see MODULE_INDEX) |
+|-------------------|------------------|----------------------------------|
+| Candidate access, visibility/budget, provenance-bearing recall, backend eligibility | **Retrieval (#31)** | `retrieval_service.py`, `retrieval_contract.py`, `character_retrieval_adapter.py` |
+| Semantic knowledge mediation, bundle relevance/salience, post-commit grounded proposals | **Librarian (#34)** | `librarian_service.py`, `librarian_mediation*.py`, `librarian_proposal_*.py`, Continuity proposal evaluators |
+| Narrative advisory cognition, round-local advisory validity, Model A timing (invalidate before Narrator) | **Storyteller (#32)** | `storyteller_service.py`, `hg-round-orchestrator/service.mjs`, Host bind + S3b mapper paths |
+| Manifest/context assembly, lane projection, mapper validity gates | **Packaging** | Host `kernel.prepare_*`, `librarian_packaging_mapper.py`, `storyteller_packaging_mapper.py`, DSH `HgContextBridge` (transport only) |
+| Authoritative committed state, proposal accept/reject, transactional truth | **Continuity** | `continuity_manager.py`, Host `commit_move`, `continuity_librarian_proposals.py` |
+
+**Do not misroute:** semantic mediation problems into legacy `retrieval_selection.py` alone; Packaging does not interpret meaning; Storyteller does not commit truth; Retrieval does not perform final semantic relevance ranking.
+
+**Transitional note:** Character direct Librarian manifest wiring and full #31 façade routing remain **deferred** per Issue records; live Librarian bundles reach rounds through the **Storyteller** cognition path. Default Character retrieval routing/precedence between #31 adapter and legacy `KnowledgeService` paths is an **implementation verification** question for Issue **#36**—do not infer from this guide.
+
+---
+
 ## Related
 
 - [GLOSSARY.md](./GLOSSARY.md)
-- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — future seam; do not implement retrieval as authoritative state
+- [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — live turn-time packet and knowledge-mediation contracts; retrieved material is non-authoritative relative to continuity
 - [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md)
 - [docs/audit-workflows.md](./docs/audit-workflows.md)

@@ -18,7 +18,9 @@ What exists in-repo today (no future design here):
 - **Compile CLI:** There is **no** in-repository compile CLI at this time. Operators may use external tooling or checked-in compiled artifacts; activate at runtime with `RP_RETRIEVED_CONTEXT_INDEX` or `HG_RETRIEVAL_INDEX_PATH`. See [docs/rp-data-layout.md](./docs/rp-data-layout.md).
 - **Continuity** remains the only authoritative in-scene truth; compiled knowledge is **non-authoritative** assistive material at retrieval/prompt boundaries.
 
-### Narrative intelligence architecture (#33 — accepted target, not yet implemented)
+### Narrative intelligence architecture (#33 — accepted target; current program status)
+
+**Temporal note:** The five-responsibility table below is the **accepted target architecture** from closed parent **#33** and child Issues **#31**, **#34**, **#32**. It is **not** a Phase 3.4 compile-contract delivery checklist. For **current validated program slices** at `main`, see **Current runtime (narrative intelligence)** immediately below—not this heading alone.
 
 Governance accepted a five-responsibility decomposition (parent **#33** closed; child Issues **#31**, **#34**, **#32**):
 
@@ -32,7 +34,15 @@ Governance accepted a five-responsibility decomposition (parent **#33** closed; 
 
 **Principle:** contextual intelligence proposes meaning; deterministic authority decides what is legal and records what becomes true. Semantic ranking for **prompt relevance** belongs to **Librarian**, not to Retrieval or this compile contract. Learned rankers and LLM-chosen sets (§2 non-goals for Phase 3.4) are **Librarian mediation concerns** when implemented—not Retrieval candidate-access concerns.
 
-**Current runtime:** Character-path deterministic selection via `retrieval_selection.py`; Librarian S2a read mediation and S4a post-commit proposal accept/reject seam are implemented; **S4b `knowledge_revelation_significance`** adds optional **per-knower** semantic significance annotations on grounded public events (`revelation_significance_by_character`) without altering deterministic knowledge authority or global `PublicEvent.significance`. **#31 does not rank by significance metadata.** Storyteller advisory (S3) is implemented under Model A.
+### Current runtime (narrative intelligence — validated program slices)
+
+Per closed Issue records (**#31**, **#34**, **#32**); authoritative detail in `governance/sources/architecture-overview.md` and `PACKET_CONTRACTS.md`:
+
+- Character-path deterministic selection via `retrieval_selection.py` (transitional live lane alongside #31 Retrieval façade work documented in `architecture-overview.md`).
+- Librarian **S2a** read mediation and **S4a** post-commit proposal accept/reject seam are validated; **S4b `knowledge_revelation_significance`** adds optional **per-knower** annotations on grounded public events without altering deterministic **`known_by`** authority.
+- **#31** does not rank by significance metadata.
+- Storyteller advisory (**S3**, Model A) is validated; Librarian bundles reach live rounds through the Storyteller cognition path per **#32**/**#34** records.
+- **Deferred / not required for program closure:** direct Character→Librarian `prepare_context` wiring (**#34** S2b mapper validated; Character manifest wiring deferred); post-commit Storyteller refresh; full episodic/cross-scope routing through the #31 façade.
 
 ---
 
