@@ -79,14 +79,14 @@ Narrative: state + bundle → Storyteller → StorytellerAdvisoryPackage → Pac
 
 **Hard rules:** Librarian may interpret committed truth; it may not manufacture truth. Storyteller `PreservationSignal` is an attention hint only—not evidence or a persistence proposal. Invalidated Storyteller advice is ineligible for new downstream consumption.
 
-### Implementation status (current vs target)
+### Implementation status (current vs deferred)
 
-| Capability | At `main` today | Accepted target (not yet implemented) |
-|------------|-----------------|--------------------------------------|
-| Retrieval | Character-only deterministic path (`KnowledgeService`, caps) | Role-agnostic `RetrievalAccessRequest` façade; bounded candidate pools per information class |
-| Librarian | Not present | `KnowledgeAccessRequest` / `LibrarianKnowledgeBundle`; grounded `LibrarianSemanticProposal` |
-| Storyteller | Not present | Orientation → bundle → `StorytellerAdvisoryPackage`; suggestive consumer lanes |
-| Packaging | `kernel.prepare_*` deterministic assembly | Adds bundle mapper + Storyteller lane projection when layers land |
+| Capability | At `main` today | Deferred / optional extensions |
+|------------|-----------------|--------------------------------|
+| **Retrieval** (#31, closed) | **S0+S1 validated** (`58478a1`): role-agnostic `RetrievalAccessRequest` → `RetrievalService` → bounded `RetrievalCandidate[]`; Layer A hard access + Layer B generation hints; backends: authored snapshot, compiled index, scope knowledge (`promoted_learned_world`, `user_profile`); Character compatibility adapter; **no semantic relevance** | Episodic/cross-scope memory behind façade; vector/graph/hybrid backends; round-local cache; formal backend registry |
+| **Librarian** (#34, closed) | Read mediation (S2a), Packaging mapper (S2b), grounded proposal seam (S4a), per-knower `knowledge_revelation_significance` (S4b) | Additional proposal-class migrations; Character direct `prepare_context` wiring; cache/scheduling |
+| **Storyteller** (#32, closed) | Model A advisory cognition (S3a/S3b/S3c); consumes Librarian bundles; suggestive `storyteller_*` lanes | Narrator policy socket; post-commit refresh |
+| **Packaging** | `kernel.prepare_*` deterministic assembly; Librarian bundle mapper; Storyteller lane projection | Character adapter retirement (future integration decision) |
 
 Recommended implementation sequencing (child Issues): **S0** shared contracts → **S1** #31 façade → **S2** #34 read + Packaging mapper → **S3** #32 advisory → **S4** #34 write/proposals → **S5** selective Continuity heuristic migrations. **S4 does not block S3.**
 
@@ -160,8 +160,8 @@ data/  (HG_DATA_DIR)
 - **Characters / scenes:** authored JSON under `data/`; Host session setup + DSH opening phase
 - **State / turn flow:** DSH phase plugins around Host prepare / validate / commit
 - **Memory:** commit-time writes; episodic read/format for prompts (`memory_layer/`, Host `memory_service.py`)
-- **Retrieval:** non-authoritative; Host `KnowledgeService` + caps today; generalized Retrieval façade (#31 target) not yet implemented
-- **Librarian / Storyteller:** accepted architecture (#34 / #32); **not implemented** at runtime
+- **Retrieval:** non-authoritative; **#31 S0+S1 façade implemented** (`retrieval_contract.py`, `retrieval_service.py`, `character_retrieval_adapter.py`); episodic/cross-scope memory remains on parallel `memory_service` path (not yet routed through façade)
+- **Librarian / Storyteller:** **#34 / #32 implemented and closed**; Librarian owns contextual semantic mediation; Storyteller owns advisory narrative cognition; neither performs Retrieval candidate access or Continuity commits
 - **Scene Grounding:** read-only settled-facts projection after continuity commit
 - **Validation:** reject/annotate only at Host call sites
 - **Sessions / audits:** Host `SessionRepository`; DSH trace emitter; optional `data/rp_audits/`
