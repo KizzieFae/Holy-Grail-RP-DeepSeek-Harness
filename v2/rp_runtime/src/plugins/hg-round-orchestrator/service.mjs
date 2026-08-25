@@ -3,6 +3,7 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
+import { runStorytellerCognition } from '../../lib/storyteller-cognition-substrate.mjs';
 import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
 import {
   agentOptionsFromProfile,
@@ -113,6 +114,69 @@ export default class HgRoundOrchestrator extends Service {
       defensive_turn_ceiling: defensiveTurnCeiling,
       continuity_version: continuityVersion,
     });
+
+    let storytellerRoundSummary = null;
+    if (options.skipStorytellerCognition !== true) {
+      trace.emit(sceneAgent.session, 'hg/storyteller-started', scope, {});
+      const storytellerInferenceId = `inf-storyteller-${hgRoundId}`;
+      let storytellerResult;
+      try {
+        storytellerResult = await runStorytellerCognition({
+          domainApi: api,
+          hgSceneId,
+          hgRoundId,
+          inferenceId: storytellerInferenceId,
+          runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+          mockOrientationResponse: options.mockStorytellerOrientationResponse ?? null,
+          mockMediationResponse: options.mockStorytellerMediationResponse ?? null,
+          mockAssessmentResponse: options.mockStorytellerAssessmentResponse ?? null,
+          modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
+          evidenceContextBase: {
+            hgSessionId,
+            hgSceneId,
+            hgRoundId,
+            sceneSessionId,
+          },
+          allowDeterministicFallback: options.storytellerAllowDeterministicFallback !== false,
+        });
+      } catch (error) {
+        storytellerResult = {
+          ok: false,
+          stage: 'error',
+          package: null,
+          audit: { reason: String(error?.message ?? error ?? 'storyteller_error') },
+        };
+      }
+      if (storytellerResult.ok && storytellerResult.package) {
+        const bindResult = await api.bindStorytellerAdvisoryPackage({
+          hg_scene_id: hgSceneId,
+          hg_round_id: hgRoundId,
+          package: storytellerResult.package,
+          audit: storytellerResult.audit ?? null,
+        });
+        storytellerRoundSummary = {
+          attempted: true,
+          bound: Boolean(bindResult.accepted),
+          package_id: storytellerResult.package.package_id ?? null,
+          degradation_level: storytellerResult.package.degradation?.level ?? 'none',
+          mapped_preview: bindResult.mapped_preview ?? null,
+        };
+        trace.emit(sceneAgent.session, 'hg/storyteller-completed', scope, {
+          package_id: storytellerRoundSummary.package_id,
+          degradation_level: storytellerRoundSummary.degradation_level,
+          bound: storytellerRoundSummary.bound,
+          mapped_preview: storytellerRoundSummary.mapped_preview,
+        });
+      } else {
+        storytellerRoundSummary = {
+          attempted: true,
+          bound: false,
+          stage: storytellerResult.stage,
+          reason: storytellerResult.audit?.reason ?? storytellerResult.stage,
+        };
+        trace.emit(sceneAgent.session, 'hg/storyteller-skipped', scope, storytellerRoundSummary);
+      }
+    }
 
     const characterTurns = [];
     const actorsUsedThisRound = [];
@@ -291,6 +355,25 @@ export default class HgRoundOrchestrator extends Service {
 
       actorsUsedThisRound.push(characterTurn.characterId);
 
+      if (storytellerRoundSummary?.bound) {
+        const storytellerState = await api.getStorytellerRoundState({
+          hgSceneId,
+          hgRoundId,
+        });
+        if (!storytellerState.is_valid && storytellerState.invalidation_reason) {
+          trace.emit(sceneAgent.session, 'hg/storyteller-invalidated', scope, {
+            package_id: storytellerState.package_id,
+            invalidation_reason: storytellerState.invalidation_reason,
+            character_turn_index: characterTurnIndex,
+          });
+          storytellerRoundSummary = {
+            ...storytellerRoundSummary,
+            invalidated: true,
+            invalidation_reason: storytellerState.invalidation_reason,
+          };
+        }
+      }
+
       const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
       const narratorResponses = mockNarratorTurnResponses[characterTurnIndex] ?? [];
       const narratorSemanticMocks = mockNarratorSemanticQaResponses.length
@@ -390,6 +473,7 @@ export default class HgRoundOrchestrator extends Service {
         character: roleTimings.character_ms,
         narrator: roleTimings.narrator_ms,
       },
+      storyteller: storytellerRoundSummary,
     };
   }
 }

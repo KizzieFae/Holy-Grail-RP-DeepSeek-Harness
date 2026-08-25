@@ -131,7 +131,16 @@ from .memory_service import MemoryService  # noqa: E402
 from .knowledge_service import KnowledgeService  # noqa: E402
 from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
 from .librarian_service import LibrarianService  # noqa: E402
-from .storyteller_contract import StorytellerOrientationAssessment  # noqa: E402
+from .storyteller_contract import (  # noqa: E402
+    StorytellerAdvisoryPackage,
+    StorytellerOrientationAssessment,
+    advisory_package_from_dict,
+    advisory_package_to_dict,
+    invalidate_storyteller_package,
+)
+from .storyteller_packaging_mapper import map_storyteller_package_to_contributions  # noqa: E402
+from .storyteller_packaging_policy import StorytellerPackagingConsumer  # noqa: E402
+from .librarian_packaging_validity import PackagingBindingContext  # noqa: E402
 from .storyteller_service import StorytellerService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
@@ -510,6 +519,155 @@ class DomainKernel:
     def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
         return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
 
+    def _active_storyteller_package(
+        self, rnd: RoundFixture
+    ) -> StorytellerAdvisoryPackage | None:
+        stored = rnd.storyteller_advisory_package
+        if not stored:
+            return None
+        package = advisory_package_from_dict(stored)
+        if not package.validity.is_valid:
+            return None
+        return package
+
+    def _storyteller_packaging_binding(
+        self,
+        fixture: LiveSession,
+        rnd: RoundFixture,
+        package: StorytellerAdvisoryPackage,
+        *,
+        pipeline_stage: str,
+    ) -> PackagingBindingContext:
+        return PackagingBindingContext(
+            hg_round_id=rnd.hg_round_id,
+            turn_index=int(rnd.turn_index),
+            pipeline_stage=pipeline_stage,
+            continuity_version=int(fixture.continuity_version),
+            authoritative_snapshot_id=package.validity.valid_from_authoritative_snapshot_id,
+        )
+
+    def _storyteller_contributions_for_role(
+        self,
+        fixture: LiveSession,
+        rnd: RoundFixture,
+        *,
+        manifest_id: str,
+        consumer_target: StorytellerPackagingConsumer,
+        character_id: str | None = None,
+    ) -> tuple[PromptContribution, ...]:
+        package = self._active_storyteller_package(rnd)
+        if package is None:
+            return ()
+        result = map_storyteller_package_to_contributions(
+            package,
+            manifest_id=manifest_id,
+            consumer_target=consumer_target,
+            binding=self._storyteller_packaging_binding(
+                fixture,
+                rnd,
+                package,
+                pipeline_stage=consumer_target,
+            ),
+            character_id=character_id,
+        )
+        return result.contributions
+
+    def _invalidate_storyteller_package_for_round(
+        self,
+        rnd: RoundFixture,
+        *,
+        reason: str,
+    ) -> str | None:
+        stored = rnd.storyteller_advisory_package
+        if not stored:
+            return None
+        package = advisory_package_from_dict(stored)
+        if not package.validity.is_valid:
+            return rnd.storyteller_invalidation_reason
+        invalidated = invalidate_storyteller_package(package, reason=reason)
+        rnd.storyteller_advisory_package = advisory_package_to_dict(invalidated)
+        rnd.storyteller_invalidation_reason = reason
+        return reason
+
+    def bind_storyteller_advisory_package(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        package: dict[str, Any],
+        audit: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        if not package:
+            return {"accepted": False, "reason": "missing_package", "package_id": None}
+        parsed = advisory_package_from_dict(package)
+        if parsed.hg_round_id and parsed.hg_round_id != rnd.hg_round_id:
+            return {
+                "accepted": False,
+                "reason": "round_mismatch",
+                "package_id": parsed.package_id,
+            }
+        if not parsed.validity.is_valid:
+            return {
+                "accepted": False,
+                "reason": parsed.validity.invalidation_reason or "package_invalid",
+                "package_id": parsed.package_id,
+            }
+        rnd.storyteller_advisory_package = advisory_package_to_dict(parsed)
+        rnd.storyteller_round_audit = dict(audit) if audit else None
+        rnd.storyteller_invalidation_reason = None
+        director_preview = map_storyteller_package_to_contributions(
+            parsed,
+            manifest_id=f"manifest-director-preview-{parsed.package_id}",
+            consumer_target="director",
+            binding=self._storyteller_packaging_binding(
+                fixture,
+                rnd,
+                parsed,
+                pipeline_stage="director",
+            ),
+        )
+        return {
+            "accepted": True,
+            "reason": "ok",
+            "package_id": parsed.package_id,
+            "degradation_level": parsed.degradation.level,
+            "validity": {
+                "is_valid": parsed.validity.is_valid,
+                "bound_hg_round_id": parsed.validity.bound_hg_round_id,
+            },
+            "mapped_preview": {
+                "director": {
+                    "items_mapped": director_preview.items_mapped,
+                    "source_kinds": sorted(
+                        {item.source_kind for item in director_preview.contributions}
+                    ),
+                }
+            },
+            "audit": rnd.storyteller_round_audit,
+        }
+
+    def get_storyteller_round_state(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        stored = rnd.storyteller_advisory_package
+        package = advisory_package_from_dict(stored) if stored else None
+        return {
+            "hg_scene_id": hg_scene_id,
+            "hg_round_id": hg_round_id,
+            "package_id": package.package_id if package else None,
+            "is_valid": bool(package and package.validity.is_valid),
+            "invalidation_reason": rnd.storyteller_invalidation_reason,
+            "degradation_level": package.degradation.level if package else None,
+            "audit": rnd.storyteller_round_audit,
+        }
+
     def _normalize_director_auxiliary_fields(
         self,
         fixture: LiveSession,
@@ -692,6 +850,14 @@ class DomainKernel:
             ),
         )
         contributions: list[PromptContribution] = list(scene_contributions)
+        contributions.extend(
+            self._storyteller_contributions_for_role(
+                fixture,
+                rnd,
+                manifest_id=manifest_id,
+                consumer_target="director",
+            )
+        )
         contributions.extend(
             (
                 PromptContribution(
@@ -921,6 +1087,15 @@ class DomainKernel:
                 hg_round_id=req.hg_round_id,
                 turn_index=req.turn_index,
                 director_decision=req.director_decision,
+            )
+        )
+        contributions.extend(
+            self._storyteller_contributions_for_role(
+                fixture,
+                rnd,
+                manifest_id=manifest_id,
+                consumer_target="character",
+                character_id=req.character_id,
             )
         )
         for index, (source_kind, knowledge_content, knowledge_provenance) in enumerate(
@@ -1487,6 +1662,10 @@ class DomainKernel:
         )
         rnd.spotlight_history.append(req.character_id)
         rnd.eligibility_epoch += 1
+        storyteller_invalidation_reason = self._invalidate_storyteller_package_for_round(
+            rnd,
+            reason="authoritative_commit",
+        )
 
         if isinstance(repository, SessionRepository):
             append_history_entry(
@@ -1508,6 +1687,7 @@ class DomainKernel:
             domain_commit_id=commit_id,
             hg_scene_id=req.hg_scene_id,
             inference_id=req.inference_id,
+            storyteller_invalidation_reason=storyteller_invalidation_reason,
         )
         if isinstance(repository, SessionRepository) and dedup_key is not None:
             repository.record_commit_dedup(
@@ -1781,6 +1961,14 @@ class DomainKernel:
         committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
         contributions: list[PromptContribution] = list(
             self._auth_contributions_to_prompt(manifest_id, auth_projections)
+        )
+        contributions.extend(
+            self._storyteller_contributions_for_role(
+                fixture,
+                rnd,
+                manifest_id=manifest_id,
+                consumer_target="narrator",
+            )
         )
         contributions.extend(
             (

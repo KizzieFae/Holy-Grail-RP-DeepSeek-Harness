@@ -154,6 +154,27 @@ export function createDomainApiClient(baseUrl) {
         'finalizeStorytellerAssessment',
       );
     },
+    bindStorytellerAdvisoryPackage(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/storyteller/round/bind',
+        body,
+        'bindStorytellerAdvisoryPackage',
+      );
+    },
+    getStorytellerRoundState({ hgSceneId, hgRoundId }) {
+      const params = new URLSearchParams({
+        hg_scene_id: String(hgSceneId),
+        hg_round_id: String(hgRoundId),
+      });
+      return fetch(`${baseUrl}/v1/storyteller/round/state?${params.toString()}`).then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`getStorytellerRoundState failed: ${res.status}`);
+        }
+        return res.json();
+      });
+    },
     validateMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/validate', body, 'validateMove');
     },

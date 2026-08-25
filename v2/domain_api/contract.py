@@ -330,6 +330,7 @@ class CommitResponse:
     hg_scene_id: str
     inference_id: str
     reason: str = ""
+    storyteller_invalidation_reason: str | None = None
 
 
 @dataclass(frozen=True)

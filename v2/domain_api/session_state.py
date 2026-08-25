@@ -48,6 +48,9 @@ class RoundFixture:
     character_turns: list[CharacterTurnRecord] = field(default_factory=list)
     spotlight_history: list[str] = field(default_factory=list)
     eligibility_epoch: int = 0
+    storyteller_advisory_package: dict[str, Any] | None = None
+    storyteller_round_audit: dict[str, Any] | None = None
+    storyteller_invalidation_reason: str | None = None
 
 
 @dataclass

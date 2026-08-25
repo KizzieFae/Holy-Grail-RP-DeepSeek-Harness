@@ -3,6 +3,10 @@ import { Service } from '@deepseek-ai/cordis';
 /** Holy Grail execution-event types (log-only; never imply canon). */
 export const HG_EVENT_TYPES = [
   'hg/round-started',
+  'hg/storyteller-started',
+  'hg/storyteller-completed',
+  'hg/storyteller-skipped',
+  'hg/storyteller-invalidated',
   'hg/eligibility-snapshot',
   'hg/eligibility-exhausted',
   'hg/participation-decision',

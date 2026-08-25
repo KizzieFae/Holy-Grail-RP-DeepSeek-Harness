@@ -681,3 +681,76 @@ def advisory_package_to_dict(package: StorytellerAdvisoryPackage) -> dict[str, A
     from dataclasses import asdict
 
     return asdict(package)
+
+
+def advisory_package_from_dict(data: dict[str, Any]) -> StorytellerAdvisoryPackage:
+    validity_data = data.get("validity") or {}
+    validity = AssessmentValidity(
+        validity_scope=validity_data.get("validity_scope", "round_stable"),  # type: ignore[arg-type]
+        bound_hg_round_id=str(validity_data.get("bound_hg_round_id", "")),
+        bound_turn_index=int(validity_data.get("bound_turn_index", 0)),
+        valid_from_authoritative_snapshot_id=str(
+            validity_data.get("valid_from_authoritative_snapshot_id", "")
+        ),
+        invalidation_keys=tuple(
+            InvalidationKey(
+                key_kind=str(item.get("key_kind", "")),
+                key_value=str(item.get("key_value", "")),
+            )
+            for item in validity_data.get("invalidation_keys") or ()
+            if isinstance(item, dict)
+        ),
+        is_valid=bool(validity_data.get("is_valid", True)),
+        invalidation_reason=validity_data.get("invalidation_reason"),
+    )
+    bundle_data = data.get("bundle_refs") or {}
+    bundle_refs = StorytellerBundleRefs(
+        primary_request_id=str(bundle_data.get("primary_request_id", "")),
+        primary_bundle_id=str(bundle_data.get("primary_bundle_id", "")),
+        follow_up_request_ids=tuple(
+            str(item) for item in bundle_data.get("follow_up_request_ids") or ()
+        ),
+        bundle_validity=None,
+    )
+    degradation_data = data.get("degradation") or {}
+    degradation = StorytellerDegradation(
+        level=str(degradation_data.get("level", "none")),  # type: ignore[arg-type]
+        mode=str(degradation_data.get("mode", "none")),  # type: ignore[arg-type]
+        detail=str(degradation_data.get("detail", "")),
+    )
+    audit_data = data.get("audit") or {}
+    audit = StorytellerAuditRecord(
+        orientation_inference_id=audit_data.get("orientation_inference_id"),
+        assessment_inference_id=audit_data.get("assessment_inference_id"),
+        inference_ids=tuple(str(item) for item in audit_data.get("inference_ids") or ()),
+        librarian_request_ids=tuple(
+            str(item) for item in audit_data.get("librarian_request_ids") or ()
+        ),
+        librarian_bundle_ids=tuple(
+            str(item) for item in audit_data.get("librarian_bundle_ids") or ()
+        ),
+        host_validation=dict(audit_data.get("host_validation") or {}),
+    )
+    return StorytellerAdvisoryPackage(
+        schema=str(data.get("schema", "")),
+        package_id=str(data.get("package_id", "")),
+        assessment_id=str(data.get("assessment_id", "")),
+        orientation_id=str(data.get("orientation_id", "")),
+        hg_scene_id=str(data.get("hg_scene_id", "")),
+        hg_round_id=str(data.get("hg_round_id", "")),
+        turn_index=int(data.get("turn_index", 0)),
+        computed_at_stage=str(data.get("computed_at_stage", "round_start")),  # type: ignore[arg-type]
+        validity=validity,
+        bundle_refs=bundle_refs,
+        evidence_refs=_parse_evidence_refs(data.get("evidence_refs")),
+        observations=_parse_observations(data.get("observations")),
+        active_tensions=_parse_tensions(data.get("active_tensions")),
+        narrative_priorities=_parse_priorities(data.get("narrative_priorities")),
+        progression_opportunities=_parse_opportunities(data.get("progression_opportunities")),
+        unresolved_threads=_parse_threads(data.get("unresolved_threads")),
+        uncertainty=_parse_uncertainty(data.get("uncertainty")),
+        information_gaps=_parse_information_gaps(data.get("information_gaps")),
+        preservation_signals=_parse_preservation_signals(data.get("preservation_signals")),
+        degradation=degradation,
+        audit=audit,
+    )

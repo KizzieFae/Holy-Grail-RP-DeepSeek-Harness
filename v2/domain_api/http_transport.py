@@ -6,7 +6,7 @@ import json
 from dataclasses import asdict, is_dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from .contract import (
     CommitRequest,
@@ -285,6 +285,18 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     ),
                 )
                 return
+            if path == "/v1/storyteller/round/bind":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.bind_storyteller_advisory_package(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        package=dict(body.get("package") or {}),
+                        audit=dict(body.get("audit")) if body.get("audit") else None,
+                    ),
+                )
+                return
             if path == "/v1/moves/validate":
                 req = ValidationRequest(
                     inference_id=str(data["inference_id"]),
@@ -452,6 +464,21 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 self._send_json(200, self.kernel.get_session_history(hg_session_id))
             except KeyError:
                 self._send_json(404, {"error": "unknown session"})
+            return
+        if path == "/v1/storyteller/round/state":
+            query = parse_qs(urlparse(self.path).query)
+            hg_scene_id = (query.get("hg_scene_id") or [""])[0]
+            hg_round_id = (query.get("hg_round_id") or [""])[0]
+            try:
+                self._send_json(
+                    200,
+                    self.kernel.get_storyteller_round_state(
+                        hg_scene_id=str(hg_scene_id),
+                        hg_round_id=str(hg_round_id),
+                    ),
+                )
+            except KeyError:
+                self._send_json(404, {"error": "unknown round"})
             return
         self._send_json(404, {"error": "not found"})
 
