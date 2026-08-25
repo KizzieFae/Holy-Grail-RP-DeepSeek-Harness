@@ -37,6 +37,27 @@ data/  (HG_DATA_DIR)
 
 ---
 
+## Knowledge mediation and narrative intelligence (#33)
+
+Parent program **#33** is closed; accepted architecture is authoritative on child Issues **#31**, **#34**, and **#32**. Implementation remains separately gated on each child.
+
+### Responsibility boundaries (accepted target)
+
+- **Retrieval (#31)** — hard access/disclosure constraints, candidate generation, provenance-bearing records, backend abstraction, bounded recall. Does **not** own final semantic relevance. Live authoritative Continuity state is **not** ordinary retrieved lore.
+- **Librarian (#34)** — `KnowledgeAccessRequest` in; provenance-aware `LibrarianKnowledgeBundle` out; semantic mediation across live projection + #31 candidates; post-commit `LibrarianSemanticProposal` to Continuity. **Librarian may interpret committed truth; it may not manufacture truth.** Continuity remains exclusive transactional writer.
+- **Storyteller (#32)** — bounded advisory narrative cognition: orientation → Librarian bundle → informed assessment → `StorytellerAdvisoryPackage` → Packaging suggestive lanes. Does **not** control plot outcomes, `next_actor`, Character intent, Narrator events, retrieval, information mediation, or persistence. `PreservationSignal` is an attention hint only. Invalidated packages are **not** injected into new `prepare_*` calls.
+- **Packaging** — deterministic consumer-specific assembly; does not perform semantic relevance ranking or narrative interpretation.
+
+### Current runtime (implemented today)
+
+Character suggestive retrieval only: `KnowledgeService.project_context` + `retrieval_selection.py` caps → manifest contributions. Director/Narrator receive authoritative continuity projections and digests; no Librarian bundles or Storyteller lanes. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) **RetrievedContextBundle** for the live retrieval seam.
+
+### Implementation sequencing (recorded on #33)
+
+S0 shared contracts → S1 #31 Retrieval façade → S2a #34 Librarian read → S2b Packaging bundle mapper → S3 #32 Storyteller advisory → S4 #34 write/proposals → S5 Continuity heuristic migrations (per class). S3 does not require S4.
+
+---
+
 ## Behavioral validation layer
 
 Scenario validation is a **core architectural layer**: fixed JSON scenarios, domain manifest tests, integration tests, optional audit JSON, and offline investigation tools.

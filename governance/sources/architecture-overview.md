@@ -53,6 +53,45 @@ Vector retrieval is for similarity and suggestions, not authoritative truth (see
 
 ---
 
+## Narrative intelligence and knowledge boundaries (#33)
+
+**Governance status:** Umbrella architecture program **#33** closed after accepted child consensus (**#31** Retrieval, **#34** Librarian, **#32** Storyteller). Full contracts live on those Issues; this section records standing boundaries only.
+
+### Responsibility decomposition (accepted target)
+
+| Responsibility | Owner | Principle |
+|----------------|-------|-----------|
+| Candidate access | **Retrieval** (#31) | Finds/accesses eligible information candidates under hard constraints |
+| Information mediation | **Librarian** (#34) | Semantically mediates information relevance and bundles |
+| Narrative cognition | **Storyteller** (#32) | Understands the story; advisory interpretation only |
+| Authoritative truth | **Continuity** | Validates and records committed story truth |
+| Manifest assembly | **Packaging** (Host `prepare_*`) | Assembles per-consumer runtime context |
+
+**Contextual intelligence proposes meaning; deterministic authority decides what is legal and records what becomes true.** Use contextual interpretation where meaning genuinely requires context; retain deterministic rules where objective rules are sufficient. Existing Continuity heuristics may be **augmented** where context matters; they are not categorically deprecated.
+
+### Accepted interface flows (target)
+
+```text
+Read:   consumer → KnowledgeAccessRequest → Librarian → (live state + #31 candidates) → bundle → reasoning
+Write:  commit → Librarian interpretation → LibrarianSemanticProposal → Continuity validate → state
+Narrative: state + bundle → Storyteller → StorytellerAdvisoryPackage → Packaging → suggestive role lanes
+```
+
+**Hard rules:** Librarian may interpret committed truth; it may not manufacture truth. Storyteller `PreservationSignal` is an attention hint only—not evidence or a persistence proposal. Invalidated Storyteller advice is ineligible for new downstream consumption.
+
+### Implementation status (current vs target)
+
+| Capability | At `main` today | Accepted target (not yet implemented) |
+|------------|-----------------|--------------------------------------|
+| Retrieval | Character-only deterministic path (`KnowledgeService`, caps) | Role-agnostic `RetrievalAccessRequest` façade; bounded candidate pools per information class |
+| Librarian | Not present | `KnowledgeAccessRequest` / `LibrarianKnowledgeBundle`; grounded `LibrarianSemanticProposal` |
+| Storyteller | Not present | Orientation → bundle → `StorytellerAdvisoryPackage`; suggestive consumer lanes |
+| Packaging | `kernel.prepare_*` deterministic assembly | Adds bundle mapper + Storyteller lane projection when layers land |
+
+Recommended implementation sequencing (child Issues): **S0** shared contracts → **S1** #31 façade → **S2** #34 read + Packaging mapper → **S3** #32 advisory → **S4** #34 write/proposals → **S5** selective Continuity heuristic migrations. **S4 does not block S3.**
+
+---
+
 ## Standing architectural invariants (Governance-critical)
 
 These principles are stable boundaries Governance must protect when reviewing proposals. Implementation retrieves module-level detail when evidence is needed.
@@ -121,7 +160,8 @@ data/  (HG_DATA_DIR)
 - **Characters / scenes:** authored JSON under `data/`; Host session setup + DSH opening phase
 - **State / turn flow:** DSH phase plugins around Host prepare / validate / commit
 - **Memory:** commit-time writes; episodic read/format for prompts (`memory_layer/`, Host `memory_service.py`)
-- **Retrieval:** non-authoritative; Host selection services; env `RP_RETRIEVED_CONTEXT_INDEX`
+- **Retrieval:** non-authoritative; Host `KnowledgeService` + caps today; generalized Retrieval façade (#31 target) not yet implemented
+- **Librarian / Storyteller:** accepted architecture (#34 / #32); **not implemented** at runtime
 - **Scene Grounding:** read-only settled-facts projection after continuity commit
 - **Validation:** reject/annotate only at Host call sites
 - **Sessions / audits:** Host `SessionRepository`; DSH trace emitter; optional `data/rp_audits/`

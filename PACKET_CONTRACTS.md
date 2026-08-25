@@ -14,6 +14,33 @@ For runtime behavior and guardrails, see [docs/architecture.md](./docs/architect
 
 ---
 
+## Knowledge mediation architecture (#33 — target vs current)
+
+Parent program **#33** closed with accepted child architecture on **#31** Retrieval, **#34** Librarian, and **#32** Storyteller. **None of the target layers below are implemented in production runtime yet** except the legacy Character retrieval path documented under **RetrievedContextBundle**.
+
+### Accepted responsibility model
+
+| Layer | Role at packaging boundary |
+|-------|----------------------------|
+| **Retrieval (#31)** | Candidate access under hard visibility/budget constraints; provenance-bearing records; no final semantic relevance |
+| **Librarian (#34)** | `KnowledgeAccessRequest` → provenance-aware `LibrarianKnowledgeBundle`; optional `LibrarianSemanticProposal` post-commit |
+| **Storyteller (#32)** | Advisory `StorytellerAdvisoryPackage` → suggestive role lanes via deterministic Packaging mapping |
+| **Packaging** | Assembles `PromptContributionManifest`; does not rank or reinterpret semantic/narrative meaning |
+| **Continuity** | Authoritative truth; live projection always stage-current |
+
+**Principles:** Librarian may interpret committed truth; it may not manufacture truth. Storyteller output is suggestive only; invalidated Storyteller packages are not injected. Contextual intelligence proposes meaning; deterministic authority decides legality and records truth.
+
+### Target bundles (not yet wired)
+
+- **`LibrarianKnowledgeBundle`** — bounded, provenance-aware information plane output from Librarian read path; may include suggestive cross-source synthesis with explicit source refs; coexists with fresh authoritative projection each stage.
+- **`StorytellerAdvisoryPackage`** — round-scoped advisory narrative assessment; mapped to per-role `storyteller_*` suggestive lanes (Director priorities/tensions, Character thematic context, Narrator emphasis guidance).
+
+### Current implementation seam
+
+**RetrievedContextBundle** (below) remains the **only** live retrieval-to-packaging path: Character-only, deterministic caps, non-authoritative labeling. Generalized Retrieval façade and Librarian/Storyteller integration are **accepted target architecture** on child Issues.
+
+---
+
 ## Design rules
 
 1. **Stable vs dynamic** — Identity and long-lived voice/world anchors change slowly; per-turn overlays and retrieved snippets change every turn.

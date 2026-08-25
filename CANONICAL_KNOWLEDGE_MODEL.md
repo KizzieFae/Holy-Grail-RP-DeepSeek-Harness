@@ -18,6 +18,22 @@ What exists in-repo today (no future design here):
 - **Compile CLI:** There is **no** in-repository compile CLI at this time. Operators may use external tooling or checked-in compiled artifacts; activate at runtime with `RP_RETRIEVED_CONTEXT_INDEX` or `HG_RETRIEVAL_INDEX_PATH`. See [docs/rp-data-layout.md](./docs/rp-data-layout.md).
 - **Continuity** remains the only authoritative in-scene truth; compiled knowledge is **non-authoritative** assistive material at retrieval/prompt boundaries.
 
+### Narrative intelligence architecture (#33 — accepted target, not yet implemented)
+
+Governance accepted a five-responsibility decomposition (parent **#33** closed; child Issues **#31**, **#34**, **#32**):
+
+| Layer | Role relative to this model |
+|-------|----------------------------|
+| **Retrieval (#31)** | Supplies **eligible candidate records** conforming to this envelope under hard visibility/budget constraints. `backend_retrieval_rank` (when present) is a weak within-backend prior only—not semantic relevance. |
+| **Librarian (#34)** | Performs **information-level** relevance/salience mediation across live authoritative projection and Retrieval candidates; may emit bounded suggestive synthesis traceable to source refs. Does **not** elevate suggestive retrieval to continuity truth. |
+| **Storyteller (#32)** | Performs **narrative** interpretation on Librarian bundles; output is advisory only and does not change envelope authority classes. |
+| **Packaging** | Deterministically maps bundles and projections into `PromptContribution` lanes. |
+| **Continuity** | Exclusive writer of authoritative in-scene truth. |
+
+**Principle:** contextual intelligence proposes meaning; deterministic authority decides what is legal and records what becomes true. Semantic ranking for **prompt relevance** belongs to **Librarian**, not to Retrieval or this compile contract. Learned rankers and LLM-chosen sets (§2 non-goals for Phase 3.4) are **Librarian mediation concerns** when implemented—not Retrieval candidate-access concerns.
+
+**Current runtime:** Character-path deterministic selection via `retrieval_selection.py`; Librarian and Storyteller layers **do not exist** yet.
+
 ---
 
 ## 1. Purpose and Scope
@@ -386,11 +402,11 @@ This section states **target semantics** aligned with the existing **packet / re
 
 ## 11. Future retrieval compatibility (not Phase 3.4)
 
-This section is **forward-looking** only. **Phase 3.4** does **not** implement graph stores, vector indexes, embedding pipelines, or a retrieval agent.
+This section is **forward-looking** only. **Phase 3.4** does **not** implement graph stores, vector indexes, embedding pipelines, or semantic mediation layers.
 
-- The **canonical model** must remain sufficient for future **graph-backed retrieval**, **vector similarity retrieval**, and **request-driven retrieval** (e.g. a dedicated **retrieval agent** that accepts structured requests and returns **ranked** canonical entries or projections compatible with this envelope).
-- A retrieval agent may **rank**, **broaden**, or **narrow** candidates; it **does not** determine **truth**. Effective **`authority_class`**, **`visibility`**, and conflict rules against continuity/grounding remain enforced by **packaging and compile policy**, not by agent output.
-- **Continuity** remains the sole authority for established in-scene play truth; **scene grounding** remains authoritative for **settled** prompt-facing facts derived from continuity. Retrieved knowledge—whether from static index, future graph/vector stores, or an agent—stays **non-authoritative** relative to those layers.
+- The **canonical model** must remain sufficient for future **graph-backed retrieval**, **vector similarity retrieval**, and **request-driven candidate access** (accepted **Retrieval (#31)** façade: structured requests returning **eligible** canonical entries or projections compatible with this envelope).
+- **Retrieval** may **broaden** or **narrow** candidate pools under hard constraints; it does **not** perform final **semantic relevance** selection for consumers—that belongs to **Librarian (#34)** when implemented. Effective **`authority_class`**, **`visibility`**, and conflict rules against continuity/grounding remain enforced by **Host hard gates and Packaging**, not by semantic mediation output alone.
+- **Continuity** remains the sole authority for established in-scene play truth; **scene grounding** remains authoritative for **settled** prompt-facing facts derived from continuity. Retrieved knowledge—whether from static index, future graph/vector stores, or Retrieval backends—stays **non-authoritative** relative to those layers until Continuity explicitly commits otherwise.
 
 ---
 
