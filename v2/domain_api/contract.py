@@ -47,9 +47,15 @@ SourceKind = Literal[
     "librarian_knowledge",
     "librarian_synthesis",
     "librarian_storyteller",
+    "storyteller_narrative_priorities",
+    "storyteller_active_tensions",
+    "storyteller_progression_opportunities",
+    "storyteller_unresolved_threads",
+    "storyteller_thematic_context",
+    "storyteller_progression_hooks",
+    "storyteller_emphasis_guidance",
 ]
-# librarian_storyteller is reserved vocabulary for future #32 advisory lanes;
-# S2b mapper emits librarian_knowledge / librarian_synthesis only.
+# librarian_storyteller remains reserved legacy vocabulary; S3b mapper emits storyteller_* lanes.
 ValidationClass = Literal[
     "accepted",
     "parse_error",

@@ -45,6 +45,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Librarian knowledge bundles / semantic mediation (#34 S2a) | Host `librarian_service.py`, `librarian_mediation*.py`; DSH `librarian-mediation-substrate.mjs`; HTTP `/v1/librarian/mediation/*` |
 | Librarian bundle → Packaging mapper (#34 S2b) | Host `librarian_packaging_mapper.py`, `librarian_packaging_policy.py`, `librarian_packaging_validity.py` |
 | Storyteller advisory cognition (#32 S3a) | Host `storyteller_service.py`, `storyteller_contract.py`; DSH `storyteller-cognition-substrate.mjs`; HTTP `/v1/storyteller/*` (isolated; no role manifest wiring) |
+| Storyteller → Packaging mapper (#32 S3b) | Host `storyteller_packaging_mapper.py`, `storyteller_packaging_policy.py`, `storyteller_packaging_validity.py` (isolated; not wired into `prepare_*`) |
 | Commit / continuity not updating | Host `kernel.py` (`commit_move`); `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
