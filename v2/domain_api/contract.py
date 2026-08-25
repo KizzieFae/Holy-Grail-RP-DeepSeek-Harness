@@ -44,7 +44,12 @@ SourceKind = Literal[
     "committed_move",
     "inference_instruction",
     "semantic_correction",
+    "librarian_knowledge",
+    "librarian_synthesis",
+    "librarian_storyteller",
 ]
+# librarian_storyteller is reserved vocabulary for future #32 advisory lanes;
+# S2b mapper emits librarian_knowledge / librarian_synthesis only.
 ValidationClass = Literal[
     "accepted",
     "parse_error",

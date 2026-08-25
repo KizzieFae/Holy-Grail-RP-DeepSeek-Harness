@@ -43,6 +43,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Episodic “memories” block | `memory_layer/retrieval.py`; Host `memory_service.py` / `memory_retrieval.py` |
 | Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py`, `retrieval_service.py` (#31) |
 | Librarian knowledge bundles / semantic mediation (#34 S2a) | Host `librarian_service.py`, `librarian_mediation*.py`; DSH `librarian-mediation-substrate.mjs`; HTTP `/v1/librarian/mediation/*` |
+| Librarian bundle → Packaging mapper (#34 S2b) | Host `librarian_packaging_mapper.py`, `librarian_packaging_policy.py`, `librarian_packaging_validity.py` |
 | Commit / continuity not updating | Host `kernel.py` (`commit_move`); `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
@@ -66,6 +67,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | `v2/domain_api/session_repository.py` | Live session cache + durable save via `SessionManager` | Persistence owner with Host |
 | `v2/domain_api/session_state.py` | `LiveSession` (continuity + character states + round fixture) | Not Streamlit session state |
 | `v2/domain_api/continuity_context_projector.py` | Authoritative context projection into prompt contributions | Domain interpretation for prompts |
+| `v2/domain_api/librarian_packaging_mapper.py` | Deterministic `LibrarianKnowledgeBundle` → `PromptContribution` mapping (#34 S2b) | Validity gate + consumer policies; not wired into Character manifests yet |
 | `v2/domain_api/semantic_evaluation_context.py` | Read-only semantic evaluation context + authority references | Host prepares evidence; DSH owns judgment |
 | `v2/domain_api/participation_policy.py` | Deterministic participation / forced-speaker policy | Complements Director phase |
 
