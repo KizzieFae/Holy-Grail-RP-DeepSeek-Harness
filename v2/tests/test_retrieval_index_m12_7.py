@@ -28,6 +28,7 @@ from domain_api.retrieval_selection import (
     select_retrieval_records,
 )
 from domain_api.session_repository import SessionRepository
+from domain_api.knowledge_test_helpers import retrieve_authored_text
 
 
 class RetrievalIndexM127Tests(unittest.TestCase):
@@ -65,12 +66,10 @@ class RetrievalIndexM127Tests(unittest.TestCase):
                 "willow": "protector",
             },
         )
-        manifest = self._prepare_manifest(info.hg_session_id, "Kizzie")
-        scene_refs = [
-            c for c in manifest.contributions if c.source_kind == "scene_reference"
-        ]
-        self.assertTrue(scene_refs)
-        joined = "\n".join(c.content for c in scene_refs)
+        fixture = self.repo.require(info.hg_session_id)
+        _char_text, scene_text = retrieve_authored_text(self.knowledge, fixture, character_id="Kizzie")
+        joined = "\n".join(scene_text)
+        self.assertTrue(scene_text)
         self.assertIn("role=protector", joined)
         self.assertIn("role=recovering_demi_human", joined)
         self.assertIn("apartment", joined.lower())
@@ -129,23 +128,15 @@ class RetrievalIndexM127Tests(unittest.TestCase):
                 "willow": "protector",
             },
         )
-        kizzie_manifest = self._prepare_manifest(info.hg_session_id, "Kizzie")
-        willow_manifest = self._prepare_manifest(info.hg_session_id, "Willow Reeves")
-
-        kizzie_authored = next(
-            c
-            for c in kizzie_manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-        )
-        willow_authored = next(
-            c
-            for c in willow_manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-        )
-        self.assertIn("one-tailed kitsune", kizzie_authored.content.lower())
-        self.assertNotIn("one-tailed kitsune", willow_authored.content.lower())
-        self.assertIn("willow reeves", willow_authored.content.lower())
-        self.assertNotIn("willow reeves", kizzie_authored.content.lower())
+        fixture = self.repo.require(info.hg_session_id)
+        kizzie_char, _ = retrieve_authored_text(self.knowledge, fixture, character_id="Kizzie")
+        willow_char, _ = retrieve_authored_text(self.knowledge, fixture, character_id="Willow Reeves")
+        kizzie_authored = "\n".join(kizzie_char)
+        willow_authored = "\n".join(willow_char)
+        self.assertIn("one-tailed kitsune", kizzie_authored.lower())
+        self.assertNotIn("one-tailed kitsune", willow_authored.lower())
+        self.assertIn("willow reeves", willow_authored.lower())
+        self.assertNotIn("willow reeves", kizzie_authored.lower())
 
     def test_snapshot_stability_after_source_edit(self) -> None:
         chars_dir = characters_data_dir()
@@ -203,13 +194,9 @@ class RetrievalIndexM127Tests(unittest.TestCase):
 
     def test_retrieval_diagnostics_exposed_in_manifest_provenance(self) -> None:
         info = self.kernel.create_session(characters=["kizzie"])
-        manifest = self._prepare_manifest(info.hg_session_id, "Kizzie")
-        authored = next(
-            c
-            for c in manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-        )
-        diagnostics = authored.provenance.get("retrieval_diagnostics")
+        fixture = self.repo.require(info.hg_session_id)
+        self.knowledge.retrieve_authored(fixture, character_id="Kizzie")
+        diagnostics = self.knowledge.last_retrieval_diagnostics("Kizzie")
         self.assertIsInstance(diagnostics, dict)
         self.assertIn("selected_ids", diagnostics)
         self.assertGreater(diagnostics.get("selected_character_count", 0), 0)

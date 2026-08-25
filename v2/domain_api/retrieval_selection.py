@@ -11,6 +11,8 @@ from .authored_knowledge import (
     MAX_LORE_EXCERPT_CHARS,
     MAX_SCENE_REFERENCE_ITEMS,
 )
+from .retrieval_contract import RetrievalAccessRequest, RetrievalCandidate
+from .session_state import LiveSession
 
 MAX_GLOBAL_RETRIEVAL_ITEMS = 8
 MAX_GLOBAL_RETRIEVAL_CHARS = 8000
@@ -195,3 +197,111 @@ def select_retrieval_records(
     diag.selected_scene_count = len(scene_records)
     diag.total_chars = total_chars
     return character_records, scene_records
+
+
+_AUTHORED_INFORMATION_CLASSES = frozenset({"authored_static", "compiled_index"})
+_SCOPE_INFORMATION_CLASSES = frozenset({"promoted_learned_world", "user_profile"})
+
+
+def build_viewer_retrieval_request(
+    fixture: LiveSession,
+    *,
+    character_id: str,
+    request_id: str | None = None,
+    information_classes: frozenset[str] | None = None,
+    audit_reason: str = "viewer_retrieval_access",
+) -> RetrievalAccessRequest:
+    """Build a viewer-scoped RetrievalAccessRequest for #31 contract tests and KnowledgeService."""
+    import uuid
+
+    from .retrieval_contract import ALL_INFORMATION_CLASSES, GenerationHints, HardAccessConstraints, ResponseBudget
+
+    classes = information_classes or ALL_INFORMATION_CLASSES
+    file_id = fixture.character_file_ids.get(character_id)
+    template_id = str((fixture.setup_snapshot or {}).get("scene_template_id") or "").strip() or None
+    anchors = character_index_keys(
+        character_file_id=file_id,
+        character_display_name=character_id,
+    )
+    last_round = fixture.rounds[-1] if fixture.rounds else None
+    return RetrievalAccessRequest(
+        request_id=request_id or f"hg-retrieval-{uuid.uuid4()}",
+        consumer_role="host_internal",
+        hg_scene_id=fixture.hg_session_id,
+        hg_round_id=str(last_round.hg_round_id if last_round else "unbound"),
+        turn_index=int(last_round.turn_index if last_round else 0),
+        memory_scope_id=fixture.memory_scope_id,
+        hard_access=HardAccessConstraints(
+            viewer_character_id=character_id,
+            subject_character_file_id=file_id,
+            session_template_id=template_id,
+            allowed_information_classes=classes,
+            exclude_authoritative_live=True,
+            known_by_character_name=character_id,
+        ),
+        generation_hints=GenerationHints(
+            entity_anchors=anchors,
+            recall_mode="broad",
+            class_recall_budgets={
+                "promoted_learned_world": 8,
+                "user_profile": 6,
+            },
+        ),
+        response_budget=ResponseBudget(),
+        audit_reason=audit_reason,
+    )
+
+
+def candidate_to_authored_record(candidate: RetrievalCandidate) -> AuthoredKnowledgeRecord | None:
+    if candidate.information_class not in _AUTHORED_INFORMATION_CLASSES:
+        return None
+    legacy = candidate.host_internal_metadata.get("legacy_authored_record")
+    if isinstance(legacy, dict):
+        return AuthoredKnowledgeRecord(
+            knowledge_id=str(legacy["knowledge_id"]),
+            knowledge_kind=str(legacy["knowledge_kind"]),
+            content=str(legacy["content"]),
+            authority_class=str(legacy["authority_class"]),
+            visibility=str(legacy["visibility"]),
+            subject_character_file_id=legacy.get("subject_character_file_id"),
+            source_kind=str(legacy["source_kind"]),
+            source_asset_id=str(legacy["source_asset_id"]),
+            provenance=dict(legacy.get("provenance") or {}),
+        )
+    provenance = dict(candidate.provenance)
+    return AuthoredKnowledgeRecord(
+        knowledge_id=candidate.candidate_id,
+        knowledge_kind=str(provenance.get("knowledge_lane", "authored")),
+        content=candidate.payload.content,
+        authority_class=candidate.authority_class,
+        visibility=candidate.visibility,
+        subject_character_file_id=candidate.subject_character_file_id,
+        source_kind=str(provenance.get("source_kind", "")),
+        source_asset_id=str(provenance.get("source_asset_id", "")),
+        provenance=provenance,
+    )
+
+
+def candidate_to_scope_record(candidate: RetrievalCandidate) -> ScopeKnowledgeRecord | None:
+    from .scope_knowledge_repository import ScopeKnowledgeRecord
+
+    if candidate.information_class not in _SCOPE_INFORMATION_CLASSES:
+        return None
+    legacy = candidate.host_internal_metadata.get("legacy_scope_record")
+    if isinstance(legacy, dict):
+        return ScopeKnowledgeRecord.from_dict(legacy)
+    provenance = dict(candidate.provenance)
+    return ScopeKnowledgeRecord(
+        knowledge_id=candidate.candidate_id,
+        scope_id=str(provenance.get("scope_id", "")),
+        knowledge_kind=str(provenance.get("knowledge_lane", candidate.information_class)),
+        content=candidate.payload.content,
+        authority_class=candidate.authority_class,
+        visibility=candidate.visibility,
+        subject_character_file_id=candidate.subject_character_file_id,
+        source_kind=str(provenance.get("source_kind", "")),
+        provenance=provenance,
+        created_at=str(candidate.temporal_metadata.get("created_at", "")),
+        profile_key=candidate.host_internal_metadata.get("profile_key"),
+        user_persona_id=candidate.host_internal_metadata.get("user_persona_id"),
+    )

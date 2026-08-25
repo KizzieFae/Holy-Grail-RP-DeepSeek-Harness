@@ -630,9 +630,9 @@ class RepositoryArchitectureTests(unittest.TestCase):
     def test_character_context_manifest_projects_rp_history(self) -> None:
         projection = _V2 / "domain_api" / "character_conversation_projection.py"
         self.assertTrue(projection.is_file())
-        kernel_text = (_V2 / "domain_api" / "kernel.py").read_text(encoding="utf-8")
-        self.assertIn("project_character_conversation_for_manifest", kernel_text)
-        self.assertIn("recent_scene_transcript", kernel_text)
+        upstream_text = (_V2 / "domain_api" / "character_upstream_context.py").read_text(encoding="utf-8")
+        self.assertIn("project_character_conversation_for_manifest", upstream_text)
+        self.assertIn("recent_scene_transcript", upstream_text)
         contract_text = (_V2 / "domain_api" / "contract.py").read_text(encoding="utf-8")
         self.assertIn("recent_scene_transcript", contract_text)
         self.assertIn("user_turn_trigger", contract_text)

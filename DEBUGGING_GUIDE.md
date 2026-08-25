@@ -167,7 +167,8 @@ Use this subsection when symptoms involve **Retrieval**, **Librarian**, **Storyt
 
 | Symptom / concern | Conceptual owner | First routing (see MODULE_INDEX) |
 |-------------------|------------------|----------------------------------|
-| Candidate access, visibility/budget, provenance-bearing recall, backend eligibility | **Retrieval (#31)** | `retrieval_service.py`, `retrieval_contract.py`, `character_retrieval_adapter.py` |
+| Candidate access, visibility/budget, provenance-bearing recall, backend eligibility | **Retrieval (#31)** | `retrieval_service.py`, `retrieval_contract.py`, `retrieval_selection.py` |
+| Character knowledge orientation, KAR, Librarian mediation, epistemic boundary | **Character (#38)** | `character-cognition-substrate.mjs`, `character_service.py`, `character_upstream_context.py`, `librarian_packaging_mapper.py` |
 | Semantic knowledge mediation, bundle relevance/salience, post-commit grounded proposals | **Librarian (#34)** | `librarian_service.py`, `librarian_mediation*.py`, `librarian_proposal_*.py`, Continuity proposal evaluators |
 | Narrative advisory cognition, round-local advisory validity, Model A timing (invalidate before Narrator) | **Storyteller (#32)** | `storyteller_service.py`, `hg-round-orchestrator/service.mjs`, Host bind + S3b mapper paths |
 | Manifest/context assembly, lane projection, mapper validity gates | **Packaging** | Host `kernel.prepare_*`, `librarian_packaging_mapper.py`, `storyteller_packaging_mapper.py`, DSH `HgContextBridge` (transport only) |
@@ -175,7 +176,7 @@ Use this subsection when symptoms involve **Retrieval**, **Librarian**, **Storyt
 
 **Do not misroute:** semantic mediation problems into legacy `retrieval_selection.py` alone; Packaging does not interpret meaning; Storyteller does not commit truth; Retrieval does not perform final semantic relevance ranking.
 
-**Transitional note:** Character direct Librarian manifest wiring and full #31 façade routing remain **deferred** per Issue records; live Librarian bundles reach rounds through the **Storyteller** cognition path. Default Character retrieval routing/precedence between #31 adapter and legacy `KnowledgeService` paths is an **implementation verification** question for Issue **#36**—do not infer from this guide.
+**Transitional note:** Character direct Librarian manifest wiring is **live** (#38). Storyteller remains the separate round-start advisory path (#32). Do not misroute Character knowledge symptoms into legacy `KnowledgeService` projection—the live path is orientation → Librarian → `prepare_context`.
 
 ---
 

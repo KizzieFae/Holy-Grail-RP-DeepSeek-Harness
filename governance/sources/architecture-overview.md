@@ -160,7 +160,8 @@ data/  (HG_DATA_DIR)
 - **Characters / scenes:** authored JSON under `data/`; Host session setup + DSH opening phase
 - **State / turn flow:** DSH phase plugins around Host prepare / validate / commit
 - **Memory:** commit-time writes; episodic read/format for prompts (`memory_layer/`, Host `memory_service.py`)
-- **Retrieval:** non-authoritative; **#31 S0+S1 façade implemented** (`retrieval_contract.py`, `retrieval_service.py`, `character_retrieval_adapter.py`); episodic/cross-scope memory remains on parallel `memory_service` path (not yet routed through façade)
+- **Retrieval:** non-authoritative; **#31 S0+S1 façade implemented** (`retrieval_contract.py`, `retrieval_service.py`, `retrieval_selection.py`); episodic/cross-scope memory remains on parallel `memory_service` path (not yet routed through façade)
+- **Character knowledge (#38):** orientation → KAR → Librarian → Packaging; legacy Character adapter retired; single production knowledge route
 - **Librarian / Storyteller:** **#34 / #32 implemented and closed**; Librarian owns contextual semantic mediation; Storyteller owns advisory narrative cognition; neither performs Retrieval candidate access or Continuity commits
 - **Scene Grounding:** read-only settled-facts projection after continuity commit
 - **Validation:** reject/annotate only at Host call sites

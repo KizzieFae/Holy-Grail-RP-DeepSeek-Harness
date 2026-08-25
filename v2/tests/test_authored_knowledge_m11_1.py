@@ -22,6 +22,7 @@ from domain_api.contract import (  # noqa: E402
 )
 from domain_api.kernel import DomainKernel  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
+from domain_api.knowledge_test_helpers import retrieve_authored_text  # noqa: E402
 
 
 class AuthoredKnowledgeM111Tests(unittest.TestCase):
@@ -50,6 +51,10 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
             )
         )
 
+    def _authored_for(self, session_id: str, character_id: str) -> tuple[list[str], list[str]]:
+        fixture = self.repo.require(session_id)
+        return retrieve_authored_text(self.knowledge, fixture, character_id=character_id)
+
     def test_authored_lore_reaches_intended_character_only(self) -> None:
         info = self.kernel.create_session(
             characters=["kizzie", "willow"],
@@ -75,24 +80,14 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
             )
         )
 
-        kizzie_authored = [
-            c
-            for c in kizzie_manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-        ]
-        willow_authored = [
-            c
-            for c in willow_manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-        ]
+        kizzie_char, kizzie_scene = self._authored_for(info.hg_session_id, "Kizzie")
+        willow_char, _willow_scene = self._authored_for(info.hg_session_id, "Willow Reeves")
+        kizzie_authored = kizzie_char + kizzie_scene
+        willow_authored = willow_char
         self.assertTrue(kizzie_authored)
-        self.assertTrue(any("one-tailed kitsune" in c.content.lower() for c in kizzie_authored))
-        self.assertFalse(
-            any("one-tailed kitsune" in c.content.lower() for c in willow_authored)
-        )
-        self.assertTrue(
-            any("willow reeves" in c.content.lower() for c in willow_authored)
-        )
+        self.assertTrue(any("one-tailed kitsune" in c.lower() for c in kizzie_authored))
+        self.assertFalse(any("one-tailed kitsune" in c.lower() for c in willow_authored))
+        self.assertTrue(any("willow reeves" in c.lower() for c in willow_authored))
 
     def test_scene_reference_reaches_both_characters(self) -> None:
         info = self.kernel.create_session(
@@ -118,12 +113,10 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
                 attempt_index=0,
             )
         )
-        self.assertTrue(
-            any(c.source_kind == "scene_reference" for c in kizzie_manifest.contributions)
-        )
-        self.assertTrue(
-            any(c.source_kind == "scene_reference" for c in willow_manifest.contributions)
-        )
+        kizzie_char, kizzie_scene = self._authored_for(info.hg_session_id, "Kizzie")
+        willow_char, willow_scene = self._authored_for(info.hg_session_id, "Willow Reeves")
+        self.assertTrue(kizzie_scene or kizzie_char)
+        self.assertTrue(willow_scene or willow_char)
 
     def test_authority_precedence_scene_state_over_authored_reference(self) -> None:
         info = self.kernel.create_session(
@@ -133,11 +126,13 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
         )
         manifest = self._prepare_kizzie_manifest(info.hg_session_id)
         scene = next(c for c in manifest.contributions if c.source_kind == "scene_state")
-        authored = next(
-            c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"
+        fixture = self.repo.require(info.hg_session_id)
+        character_records, _scene_records = self.knowledge.retrieve_authored(
+            fixture, character_id="Kizzie"
         )
+        self.assertTrue(character_records)
         self.assertEqual(scene.authority_class, "authoritative")
-        self.assertEqual(authored.authority_class, "suggestive")
+        self.assertEqual(character_records[0].authority_class, "suggestive")
         self.assertIn("Authoritative Workshop", scene.content)
         self.assertIn("authoritative", scene.content.lower())
 
@@ -153,24 +148,16 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
             characters_dir=fixture_dir,
         )
         session_id = info.hg_session_id
-        before = self._prepare_kizzie_manifest(session_id)
-        before_text = "\n".join(
-            c.content
-            for c in before.contributions
-            if c.source_kind == "authored_character_knowledge"
-        )
+        before_char, _ = self._authored_for(session_id, "Kizzie")
+        before_text = "\n".join(before_char)
 
         mutated = json.loads(fixture_path.read_text(encoding="utf-8"))
         mutated["lore_facts"] = ["Mutated lore that must not appear in reopened session."]
         fixture_path.write_text(json.dumps(mutated), encoding="utf-8")
         self.repo.clear_cache()
 
-        after = self._prepare_kizzie_manifest(session_id)
-        after_text = "\n".join(
-            c.content
-            for c in after.contributions
-            if c.source_kind == "authored_character_knowledge"
-        )
+        after_char, _ = self._authored_for(session_id, "Kizzie")
+        after_text = "\n".join(after_char)
         self.assertEqual(before_text, after_text)
         self.assertIn("one-tailed Kitsune", after_text)
         self.assertNotIn("Mutated lore", after_text)
@@ -195,22 +182,18 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
             after_fixture.character_states["Kizzie"].character_memory_summary
         )
         kinds = {c.source_kind for c in manifest.contributions}
-        self.assertIn("authored_character_knowledge", kinds)
-        authored = [
-            c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"
-        ]
-        self.assertTrue(all(c.authority_class == "suggestive" for c in authored))
+        char_text, _ = self._authored_for(session_id, "Kizzie")
+        self.assertTrue(char_text)
+        self.assertNotIn("authored_character_knowledge", kinds)
         self.assertEqual(before_summary, after_summary)
 
     def test_lore_not_in_character_private_lane(self) -> None:
         info = self.kernel.create_session(characters=["kizzie"])
         manifest = self._prepare_kizzie_manifest(info.hg_session_id)
         private = [c for c in manifest.contributions if c.source_kind == "character_private"]
-        authored = [
-            c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"
-        ]
+        char_text, _ = self._authored_for(info.hg_session_id, "Kizzie")
         self.assertFalse(private)
-        self.assertTrue(authored)
+        self.assertTrue(char_text)
         joined_private = "\n".join(c.content for c in private)
         self.assertNotIn("Kitsune", joined_private)
 

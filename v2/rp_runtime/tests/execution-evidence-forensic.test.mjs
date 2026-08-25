@@ -13,6 +13,7 @@ import { runDirectorPhase } from '../src/plugins/hg-phase-executors/director-pha
 import {
   startDomainApi,
 } from './helpers/domain-api.mjs';
+import { findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -158,7 +159,7 @@ test('participation record indexes and links to character attempt', async (t) =>
 
   const { index, attempts } = readAttempts(dataDir, result.hg_session_id);
   const participation = attempts.find((entry) => entry.correlation.role === 'participation');
-  const character = attempts.find((entry) => entry.correlation.role === 'character');
+  const character = findCharacterMoveAttempt(attempts);
   assert.ok(participation);
   assert.ok(character);
   assert.equal(attempts.some((entry) => entry.correlation.role === 'director'), false);

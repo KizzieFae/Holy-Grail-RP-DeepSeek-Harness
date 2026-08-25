@@ -7,6 +7,7 @@ import test from 'node:test';
 import { runCharacterPhase } from '../src/plugins/hg-phase-executors/character-phase.mjs';
 import { ExecutionEvidenceStore } from '../src/lib/execution-evidence/store.mjs';
 import { createExecutionEvidenceRecorder } from '../src/lib/execution-evidence/recorder.mjs';
+import { attachCharacterCognitionApiStubs, findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
 const PLAYER_AGENCY_GUARDRAIL_ID = 'guardrail:player_agency';
 
@@ -76,7 +77,7 @@ function createMockApi({
   let commitIndex = 0;
   let validationIndex = 0;
   const prepareCalls = [];
-  return {
+  return attachCharacterCognitionApiStubs({
     prepareCalls,
     async getSceneState() {
       return { turn_counter: turnIndex };
@@ -129,7 +130,7 @@ function createMockApi({
       commitIndex += 1;
       return result;
     },
-  };
+  });
 }
 
 function createMockInference(responses) {
@@ -488,7 +489,7 @@ test('character phase: evaluator infrastructure retry succeeds without new Chara
 
   assert.equal(result.committed, true);
   assert.equal(result.generatedCandidateCount, 1);
-  assert.equal(roleCalls.character, 1);
+  assert.equal(roleCalls.character, 2);
   assert.equal(roleCalls.semantic_evaluator, 2);
   assert.equal(api.prepareCalls.length, 1);
 
@@ -503,9 +504,9 @@ test('character phase: evaluator infrastructure retry succeeds without new Chara
     .map((id) => recorder.readAttempt('sess-1', id))
     .filter((attempt) => attempt?.correlation?.role === 'semantic_evaluator');
   assert.equal(evaluatorAttempts.length, 2);
-  const characterAttempt = (index.attempt_ids ?? [])
-    .map((id) => recorder.readAttempt('sess-1', id))
-    .find((attempt) => attempt?.correlation?.role === 'character');
+  const characterAttempt = findCharacterMoveAttempt(
+    (index.attempt_ids ?? []).map((id) => recorder.readAttempt('sess-1', id)),
+  );
   assert.ok(characterAttempt);
   for (const attempt of evaluatorAttempts) {
     assert.equal(attempt.correlation.prior_attempt_id, characterAttempt.evidence_id);
@@ -549,7 +550,7 @@ test('character phase: evaluator infrastructure retry exhaustion fails closed wi
   assert.equal(result.committed, false);
   assert.equal(result.terminalDisposition, 'semantic_evaluator_failed');
   assert.equal(result.generatedCandidateCount, 1);
-  assert.equal(roleCalls.character, 1);
+  assert.equal(roleCalls.character, 2);
   assert.equal(roleCalls.semantic_evaluator, 2);
   assert.equal(api.prepareCalls.length, 1);
   assert.equal(inferenceCalls.filter((call) => call.role === 'semantic_evaluator').length, 2);

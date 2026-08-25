@@ -32,6 +32,10 @@ from domain_api.kernel import (  # noqa: E402
 from domain_api.knowledge_write_policy import upsert_canon_anchor_for_test  # noqa: E402
 from domain_api.scope_knowledge_repository import LEARNED_WORLD_KNOWLEDGE  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
+from domain_api.knowledge_test_helpers import (  # noqa: E402
+    retrieve_authored_text,
+    retrieve_scope_world_text,
+)
 
 
 class ContinuityContextM113Tests(unittest.TestCase):
@@ -163,11 +167,11 @@ class ContinuityContextM113Tests(unittest.TestCase):
         self.repo.persist(fixture)
         manifest = self._prepare_character(session_id)
         canon = next(c for c in manifest.contributions if c.source_kind == "continuity_canon")
-        learned = [
-            c for c in manifest.contributions if c.source_kind == "learned_world_knowledge"
-        ]
+        learned_text = retrieve_scope_world_text(
+            self.repo.knowledge_service, self.repo.require(session_id), character_id="Alice"
+        )
         self.assertIn("storm has passed", canon.content.lower())
-        self.assertFalse(any("raining" in c.content.lower() for c in learned))
+        self.assertNotIn("raining", learned_text.lower())
 
     def test_character_canon_visibility_is_filtered(self) -> None:
         session_id = self._create_session()
@@ -236,9 +240,15 @@ class ContinuityContextM113Tests(unittest.TestCase):
         )
         manifest = self._prepare_character(info.hg_session_id, character_id="Kizzie")
         kinds = {c.source_kind for c in manifest.contributions}
+        fixture = self.repo.require(info.hg_session_id)
+        char_text, scene_text = retrieve_authored_text(
+            self.repo.knowledge_service, fixture, character_id="Kizzie"
+        )
         self.assertIn("scene_state", kinds)
-        self.assertIn("authored_character_knowledge", kinds)
-        self.assertIn("scene_reference", kinds)
+        self.assertTrue(char_text)
+        self.assertTrue(scene_text)
+        self.assertNotIn("authored_character_knowledge", kinds)
+        self.assertNotIn("scene_reference", kinds)
 
     def test_projector_reads_live_state_not_persisted_copy(self) -> None:
         session_id = self._create_session()

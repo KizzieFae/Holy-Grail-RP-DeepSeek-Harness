@@ -8,6 +8,7 @@ import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { createDomainApiClient } from '../src/lib/domain-api-client.mjs';
 import { deepseekInferenceProfile, mockInferenceProfile } from '../src/lib/inference-profile.mjs';
 import { startDomainApi } from './helpers/domain-api.mjs';
+import { findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
 const hasLiveKey = Boolean(process.env.DEEPSEEK_API_KEY?.trim());
 
@@ -108,7 +109,7 @@ test('live semantic evaluator inference through Character phase (bounded pass)',
     fs.readFileSync(path.join(evidenceRoot, 'attempts', `${evidenceId}.json`), 'utf8'),
   ));
 
-  const characterAttempt = attempts.find((attempt) => attempt.correlation?.role === 'character');
+  const characterAttempt = findCharacterMoveAttempt(attempts);
   assert.ok(characterAttempt);
   assert.equal(characterAttempt.decision?.outcome, 'accepted');
   assert.ok(characterAttempt.decision?.parse?.proposed_move);

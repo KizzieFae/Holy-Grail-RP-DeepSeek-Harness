@@ -10,7 +10,7 @@ Architectural specification for **Phase 3.4 — Canonical Knowledge Shape & Stat
 
 What exists in-repo today (no future design here):
 
-- **Runtime consumption:** Domain Host **`KnowledgeService`** (`v2/domain_api/knowledge_service.py`) projects authored records from the live setup snapshot via **`authored_knowledge.py`**, merges optional **compiled index** rows through **`CompiledIndexRetrievalProvider`** (`compiled_index_provider.py`), and selects bounded output via **`retrieval_selection.py`**. Formatted retrieval enters character inference through Host **`PromptContributionManifest`** contributions (live path: **`kernel.prepare_context`** → **`HgContextBridge`**), not through the legacy monolithic **`prompt_builders.build_character_turn_prompt`** assembler.
+- **Runtime consumption:** Domain Host **`KnowledgeService`** (`v2/domain_api/knowledge_service.py`) provides authored/scope retrieval helpers and post-commit promotion via **`retrieval_selection.py`** and **`CompiledIndexRetrievalProvider`**. **Character manifest knowledge** is Librarian-mediated (#38): DSH orientation → KAR → **`map_librarian_bundle_to_contributions`** in **`kernel.prepare_context`**. Formatted retrieval enters character inference through Host **`PromptContributionManifest`** contributions (**`HgContextBridge`**), not through the legacy monolithic **`prompt_builders.build_character_turn_prompt`** assembler.
 - **Compile adapter registry (offline contract):** `v2/domain/modules/canonical_compile_adapters.py` — table-driven `(manifest entry type, key_path)` → `knowledge_type`, `authority_class`, `visibility`, **decomposition strategy**. **Strict fallback:** unmapped keys → `lore_reference` + `reference_only`. Runtime retrieval does **not** import this module; it defines the mapping contract for compile tooling.
 - **`knowledge_id`:** Deterministic hash over `source_ref` + normalized chunk text + `knowledge_type` only — **excludes** `authority_class` and policy-volatile fields so the id stays stable if authority policy shifts.
 - **Decomposition strategies (fixed set):** `whole_value_single_row`, `one_row_per_string_list_item`, `nested_object_leaf_strings`, `role_slots_array_rows`, `emit_zero_chunks` — each manifest key path declares **exactly one** strategy (see adapter module).
@@ -38,11 +38,12 @@ Governance accepted a five-responsibility decomposition (parent **#33** closed; 
 
 Per closed Issue records (**#31**, **#34**, **#32**); authoritative detail in `governance/sources/architecture-overview.md` and `PACKET_CONTRACTS.md`:
 
-- Character-path deterministic selection via `retrieval_selection.py` (transitional live lane alongside #31 Retrieval façade work documented in `architecture-overview.md`).
+- Character-path deterministic selection via `retrieval_selection.py` for #31 contract tests and KnowledgeService helpers.
+- **#38** Character Librarian live path: orientation → KAR → `contextual_semantic` mediation → `librarian_*` lanes; legacy `project_context` manifest projection retired.
 - Librarian **S2a** read mediation and **S4a** post-commit proposal accept/reject seam are validated; **S4b `knowledge_revelation_significance`** adds optional **per-knower** annotations on grounded public events without altering deterministic **`known_by`** authority.
 - **#31** does not rank by significance metadata.
 - Storyteller advisory (**S3**, Model A) is validated; Librarian bundles reach live rounds through the Storyteller cognition path per **#32**/**#34** records.
-- **Deferred / not required for program closure:** direct Character→Librarian `prepare_context` wiring (**#34** S2b mapper validated; Character manifest wiring deferred); post-commit Storyteller refresh; full episodic/cross-scope routing through the #31 façade.
+- **Deferred / not required for program closure:** post-commit Storyteller refresh; full episodic/cross-scope routing through the #31 façade.
 
 ---
 

@@ -94,6 +94,6 @@ assemble_character_upstream_contributions
   → Character move inference
 ```
 
-Character orientation sees full pre-Librarian upstream context. Librarian mediation is bounded by per-character epistemic access (viewer/subject binding, hard access, `known_by` filtering, packaging `bound_character_id`). Character packaging rejects `deterministic_fallback`. Legacy `KnowledgeService.project_context` is no longer used on the live Character path.
+Character orientation sees full pre-Librarian upstream context. Librarian mediation is bounded by per-character epistemic access (viewer/subject binding, hard access, `known_by` filtering, packaging `bound_character_id`). Character packaging rejects `deterministic_fallback`. The retired legacy Character manifest projection (`KnowledgeService.project_context`) is no longer on the live path.
 
 **Principle:** Holy Grail determines what is true. DeepSeek Harness records what happened.

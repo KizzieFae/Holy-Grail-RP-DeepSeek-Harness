@@ -12,6 +12,7 @@ import {
   fetchSessionState,
   startDomainApi,
 } from './helpers/domain-api.mjs';
+import { findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -120,7 +121,7 @@ test('full round writes execution evidence with request, response, and correlati
   assert.ok(index.rounds[result.hg_round_id]?.length >= 3);
 
   const directorAttempt = attempts.find((entry) => entry.correlation.role === 'director');
-  const characterAttempt = attempts.find((entry) => entry.correlation.role === 'character');
+  const characterAttempt = findCharacterMoveAttempt(attempts);
   const narratorAttempt = attempts.find((entry) => entry.correlation.role === 'narrator');
 
   assert.ok(directorAttempt);
@@ -191,7 +192,7 @@ test('stored assembled request preserves served contribution text without reproj
   });
 
   const { attempts } = readAttempts(dataDir, result.hg_session_id);
-  const characterAttempt = attempts.find((entry) => entry.correlation.role === 'character');
+  const characterAttempt = findCharacterMoveAttempt(attempts);
   const attemptPath = path.join(
     dataDir,
     'execution_evidence',

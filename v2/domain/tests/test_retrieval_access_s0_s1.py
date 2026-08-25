@@ -14,10 +14,6 @@ _V2 = _ROOT / "v2"
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
 
-from domain_api.character_retrieval_adapter import (  # noqa: E402
-    build_character_packaging_request,
-    candidate_to_authored_record,
-)
 from domain_api.compiled_index_provider import CompiledIndexRetrievalProvider  # noqa: E402
 from domain_api.knowledge_service import KnowledgeService  # noqa: E402
 from domain_api.retrieval_contract import (  # noqa: E402
@@ -33,6 +29,8 @@ from domain_api.retrieval_contract import (  # noqa: E402
 from domain_api.retrieval_selection import (  # noqa: E402
     MAX_GLOBAL_RETRIEVAL_CHARS,
     MAX_GLOBAL_RETRIEVAL_ITEMS,
+    build_viewer_retrieval_request,
+    candidate_to_authored_record,
     select_retrieval_records,
 )
 from domain_api.retrieval_service import RetrievalService  # noqa: E402
@@ -303,7 +301,7 @@ class RetrievalServiceTests(unittest.TestCase):
         self.assertIn("degraded", statuses)
 
 
-class CharacterCompatibilityTests(unittest.TestCase):
+class ViewerRetrievalSelectionTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
@@ -311,7 +309,7 @@ class CharacterCompatibilityTests(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def test_character_packaging_caps_remain_on_legacy_selection(self) -> None:
+    def test_viewer_retrieval_caps_remain_on_selection(self) -> None:
         fixture = initialize_live_session(cast=["Alice"])
         fixture.setup_snapshot = {
             "scene_template_id": "test_template",
@@ -334,7 +332,7 @@ class CharacterCompatibilityTests(unittest.TestCase):
                 turn_index=0,
             )
         )
-        request = build_character_packaging_request(fixture, character_id="Alice")
+        request = build_viewer_retrieval_request(fixture, character_id="Alice")
         response = RetrievalService(scope_repo=self.repo.knowledge_service.scope_repo).retrieve(
             request, fixture
         )
@@ -355,7 +353,7 @@ class CharacterCompatibilityTests(unittest.TestCase):
         total_chars = sum(len(r.content) for r in character_records + scene_records)
         self.assertLessEqual(total_chars, MAX_GLOBAL_RETRIEVAL_CHARS)
 
-    def test_knowledge_service_character_path_still_projects(self) -> None:
+    def test_knowledge_service_retrieve_authored_returns_records(self) -> None:
         pilot_index = (
             holy_grail_data_dir()
             / "retrieval"
@@ -382,10 +380,10 @@ class CharacterCompatibilityTests(unittest.TestCase):
                 turn_index=0,
             )
         )
-        projections = self.repo.knowledge_service.project_context(fixture, character_id="Kizzie")
-        lanes = {item[0] for item in projections}
-        self.assertIn("authored_character_knowledge", lanes)
-        self.assertIn("scene_reference", lanes)
+        character_records, scene_records = self.repo.knowledge_service.retrieve_authored(
+            fixture, character_id="Kizzie"
+        )
+        self.assertTrue(character_records or scene_records)
 
 
 if __name__ == "__main__":

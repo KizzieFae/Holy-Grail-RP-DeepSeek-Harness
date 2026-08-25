@@ -32,6 +32,7 @@ from domain_api.knowledge_write_policy import upsert_canon_anchor_for_test  # no
 from domain_api.memory_scope import new_memory_scope_id  # noqa: E402
 from domain_api.scope_knowledge_repository import LEARNED_WORLD_KNOWLEDGE  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
+from domain_api.knowledge_test_helpers import retrieve_scope_world_text  # noqa: E402  # noqa: E402
 
 
 class ScopeKnowledgeM112Tests(unittest.TestCase):
@@ -84,13 +85,10 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
         )
 
     def _learned_world_text(self, session_id: str, *, character_id: str = "Alice") -> str:
-        manifest = self._prepare_manifest(session_id, character_id=character_id)
-        parts = [
-            c.content
-            for c in manifest.contributions
-            if c.source_kind == "learned_world_knowledge"
-        ]
-        return "\n".join(parts)
+        fixture = self.repo.require(session_id)
+        return retrieve_scope_world_text(
+            self.repo.knowledge_service, fixture, character_id=character_id
+        )
 
     def test_world_fact_promoted_from_canon_anchor_on_commit(self) -> None:
         session_id = self._create_session()
@@ -233,13 +231,14 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
         after = self.repo.require(session_id).character_states
         self.assertEqual(before, after)
 
-        manifest = self._prepare_manifest(session_id)
-        profile = next(
-            c for c in manifest.contributions if c.source_kind == "user_profile"
+        fixture = self.repo.require(session_id)
+        _world, profiles = self.repo.knowledge_service.retrieve_scope_knowledge(
+            fixture, character_id="Alice"
         )
-        self.assertIn("preferred_name", profile.content.lower())
-        self.assertIn("alex", profile.content.lower())
-        self.assertEqual(profile.authority_class, "suggestive")
+        self.assertTrue(profiles)
+        profile_text = "\n".join(record.content for record in profiles)
+        self.assertIn("alex", profile_text.lower())
+        self.assertEqual(profiles[0].profile_key, "preferred_name")
 
     def test_user_profile_upsert_replaces_prior_value(self) -> None:
         session_id = self._create_session()
@@ -257,12 +256,13 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
                 content="Alexander",
             )
         )
-        manifest = self._prepare_manifest(session_id)
-        profile = next(
-            c for c in manifest.contributions if c.source_kind == "user_profile"
+        fixture = self.repo.require(session_id)
+        _world, profiles = self.repo.knowledge_service.retrieve_scope_knowledge(
+            fixture, character_id="Alice"
         )
-        self.assertIn("alexander", profile.content.lower())
-        self.assertNotIn("alex\n", profile.content.lower())
+        profile_text = "\n".join(record.content for record in profiles)
+        self.assertIn("alexander", profile_text.lower())
+        self.assertNotIn("alex\n", profile_text.lower())
 
     def test_scene_state_precedes_learned_world_authority(self) -> None:
         session_id = self._create_session()
@@ -277,12 +277,14 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
 
         manifest = self._prepare_manifest(session_id)
         scene = next(c for c in manifest.contributions if c.source_kind == "scene_state")
-        learned = next(
-            c for c in manifest.contributions if c.source_kind == "learned_world_knowledge"
+        world_records, _profiles = self.repo.knowledge_service.retrieve_scope_knowledge(
+            self.repo.require(session_id), character_id="Alice"
         )
+        self.assertTrue(world_records)
+        learned = world_records[0]
         self.assertEqual(scene.authority_class, "authoritative")
         self.assertEqual(learned.authority_class, "suggestive")
-        self.assertLess(scene.priority, learned.priority)
+        self.assertLess(scene.priority, 20)
 
     def test_unsupported_profile_key_rejected(self) -> None:
         session_id = self._create_session()

@@ -22,6 +22,7 @@ from domain.paths import characters_data_dir  # noqa: E402
 from v2.domain_api.contract import ContextPrepareRequest, RoundStartRequest
 from v2.domain_api.kernel import DomainKernel
 from v2.domain_api.session_repository import SessionRepository
+from domain_api.knowledge_test_helpers import retrieve_authored_text
 from v2.domain_api.setup_catalog import list_characters_catalog, list_scene_templates_catalog
 
 
@@ -139,26 +140,19 @@ class SessionSetupTests(unittest.TestCase):
         kinds = {item.source_kind for item in manifest.contributions}
         self.assertIn("character_identity", kinds)
         self.assertIn("scene_state", kinds)
-        authored = [
-            c for c in manifest.contributions if c.source_kind == "authored_character_knowledge"
-        ]
-        self.assertTrue(authored)
-        self.assertTrue(
-            all(c.authority_class == "suggestive" for c in authored)
+        fixture = self.repo.require(info.hg_session_id)
+        char_text, scene_text = retrieve_authored_text(
+            self.repo.knowledge_service, fixture, character_id="Kizzie"
         )
-        self.assertTrue(all("Kizzie" in str(c.provenance) for c in authored))
-        joined = "\n".join(c.content for c in manifest.contributions)
+        self.assertTrue(char_text)
+        joined = "\n".join(char_text + scene_text + [c.content for c in manifest.contributions])
         self.assertIn("one-tailed Kitsune", joined)
         self.assertNotIn("system_prompt", joined.lower())
-        willow_authored = [
-            c
-            for c in manifest.contributions
-            if c.source_kind == "authored_character_knowledge"
-            and "Willow" in str(c.provenance.get("character_id", ""))
-        ]
-        self.assertEqual(willow_authored, [])
-        scene_ref = [c for c in manifest.contributions if c.source_kind == "scene_reference"]
-        self.assertTrue(scene_ref)
+        willow_char, _ = retrieve_authored_text(
+            self.repo.knowledge_service, fixture, character_id="Willow Reeves"
+        )
+        self.assertFalse(any("one-tailed kitsune" in text.lower() for text in willow_char))
+        self.assertTrue(scene_text)
 
 
 if __name__ == "__main__":

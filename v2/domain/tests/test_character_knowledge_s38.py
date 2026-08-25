@@ -229,6 +229,15 @@ class CharacterKnowledgeS38Tests(unittest.TestCase):
         )
         self.assertNotEqual(base, with_correction)
 
+    def test_no_legacy_character_knowledge_production_path(self) -> None:
+        kernel_path = Path(__file__).resolve().parents[2] / "domain_api" / "kernel.py"
+        source = kernel_path.read_text(encoding="utf-8")
+        prepare_block = source.split("def prepare_context(", 1)[1].split("\n    def ", 1)[0]
+        self.assertNotIn("project_context", prepare_block)
+        self.assertNotIn("authored_character_knowledge", prepare_block)
+        adapter_path = Path(__file__).resolve().parents[2] / "domain_api" / "character_retrieval_adapter.py"
+        self.assertFalse(adapter_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

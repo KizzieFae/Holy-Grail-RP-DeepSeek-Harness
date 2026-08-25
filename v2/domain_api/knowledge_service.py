@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Any
 from .authored_knowledge import (
     AuthoredKnowledgeRecord,
     compile_authored_records_from_snapshot,
-    format_knowledge_content,
     setup_snapshot_hash,
 )
 from .compiled_index_provider import CompiledIndexRetrievalProvider
@@ -26,15 +24,12 @@ from .scope_knowledge_repository import (
     ScopeKnowledgeRepository,
 )
 from .session_state import LiveSession
-from .character_retrieval_adapter import (
-    build_character_packaging_request,
-    candidate_to_authored_record,
-    candidate_to_scope_record,
-    packaging_setup_snapshot_hash,
-)
 from .retrieval_selection import (
     RetrievalDiagnostics,
     RetrievalQueryContext,
+    build_viewer_retrieval_request,
+    candidate_to_authored_record,
+    candidate_to_scope_record,
     character_index_keys,
     select_retrieval_records,
 )
@@ -110,10 +105,11 @@ class KnowledgeService:
         *,
         character_id: str,
     ) -> tuple[list[AuthoredKnowledgeRecord], list[AuthoredKnowledgeRecord]]:
-        request = build_character_packaging_request(
+        request = build_viewer_retrieval_request(
             fixture,
             character_id=character_id,
             information_classes=frozenset({"authored_static", "compiled_index"}),
+            audit_reason="knowledge_service_authored",
         )
         response = self._retrieval_service.retrieve(request, fixture)
         authored_candidates = [
@@ -125,7 +121,7 @@ class KnowledgeService:
         diagnostics = RetrievalDiagnostics(
             provider_id=self._retrieval_provider.provider_id,
             index_path=self._retrieval_provider.index_path,
-            setup_snapshot_hash=packaging_setup_snapshot_hash(fixture),
+            setup_snapshot_hash=setup_snapshot_hash(fixture.setup_snapshot or {}),
             dedupe_dropped=response.diagnostics.dedupe_dropped,
         )
         character_records, scene_records = select_retrieval_records(
@@ -207,10 +203,11 @@ class KnowledgeService:
     ) -> tuple[list[ScopeKnowledgeRecord], list[ScopeKnowledgeRecord]]:
         if self._scope_repo is None or not fixture.memory_scope_id:
             return [], []
-        request = build_character_packaging_request(
+        request = build_viewer_retrieval_request(
             fixture,
             character_id=character_id,
             information_classes=frozenset({"promoted_learned_world", "user_profile"}),
+            audit_reason="knowledge_service_scope",
         )
         response = self._retrieval_service.retrieve(request, fixture)
         world_records: list[ScopeKnowledgeRecord] = []
@@ -224,118 +221,6 @@ class KnowledgeService:
             elif candidate.information_class == "user_profile":
                 profile_records.append(record)
         return world_records, profile_records
-
-    def project_context(
-        self,
-        fixture: LiveSession,
-        *,
-        character_id: str,
-    ) -> list[tuple[str, str, dict[str, Any]]]:
-        """Legacy Character packaging projection — superseded by #38 Librarian path.
-
-        Retained for adapter/regression tests only; not used by live Character prepare_context.
-        """
-        """Return (source_kind, content, provenance) tuples for ContextAssembly."""
-        character_records, scene_records = self.retrieve_authored(
-            fixture, character_id=character_id
-        )
-        world_records, profile_records = self.retrieve_scope_knowledge(
-            fixture, character_id=character_id
-        )
-        projections: list[tuple[str, str, dict[str, Any]]] = []
-        file_id = fixture.character_file_ids.get(character_id)
-        snap_hash = setup_snapshot_hash(fixture.setup_snapshot or {})
-
-        character_content = format_knowledge_content(
-            character_records,
-            title="Authored character knowledge (reference; current scene state is authoritative)",
-        )
-        if character_content:
-            projections.append(
-                (
-                    "authored_character_knowledge",
-                    character_content,
-                    {
-                        "knowledge_lane": "authored_character_knowledge",
-                        "visibility": "character_scoped",
-                        "subject_character_file_id": file_id,
-                        "character_id": character_id,
-                        "knowledge_ids": [r.knowledge_id for r in character_records],
-                        "setup_snapshot_hash": snap_hash,
-                        "authority_class": "suggestive",
-                        "authority_note": "suggestive_reference_not_current_canon",
-                        "retrieval_diagnostics": self.last_retrieval_diagnostics(character_id),
-                    },
-                )
-            )
-
-        scene_content = format_knowledge_content(
-            scene_records,
-            title="Scene template reference (setup context; not current authoritative state)",
-        )
-        if scene_content:
-            projections.append(
-                (
-                    "scene_reference",
-                    scene_content,
-                    {
-                        "knowledge_lane": "scene_reference",
-                        "visibility": "template_participants",
-                        "character_id": character_id,
-                        "knowledge_ids": [r.knowledge_id for r in scene_records],
-                        "setup_snapshot_hash": snap_hash,
-                        "source_scene_template_id": (fixture.setup_snapshot or {}).get(
-                            "scene_template_id"
-                        ),
-                        "authority_class": "suggestive",
-                        "authority_note": "suggestive_reference_not_current_canon",
-                        "retrieval_diagnostics": self.last_retrieval_diagnostics(character_id),
-                    },
-                )
-            )
-
-        world_lines = [str(record.content).strip() for record in world_records if record.content]
-        if world_lines:
-            projections.append(
-                (
-                    "learned_world_knowledge",
-                    "Learned world knowledge (reference derived from continuity; "
-                    "current scene state is authoritative):\n"
-                    + "\n".join(f"- {line}" for line in world_lines),
-                    {
-                        "knowledge_lane": "learned_world_knowledge",
-                        "character_id": character_id,
-                        "knowledge_ids": [r.knowledge_id for r in world_records],
-                        "scope_id": fixture.memory_scope_id,
-                        "authority_class": "suggestive",
-                        "authority_note": "reference_derived_from_continuity_not_independent_canon",
-                    },
-                )
-            )
-
-        profile_lines = [
-            f"{record.profile_key}: {record.content}"
-            for record in profile_records
-            if record.profile_key and record.content
-        ]
-        if profile_lines:
-            projections.append(
-                (
-                    "user_profile",
-                    "User profile (player dimension only; not world canon):\n"
-                    + "\n".join(f"- {line}" for line in profile_lines),
-                    {
-                        "knowledge_lane": "user_profile",
-                        "character_id": character_id,
-                        "knowledge_ids": [r.knowledge_id for r in profile_records],
-                        "scope_id": fixture.memory_scope_id,
-                        "authority_class": "suggestive",
-                        "authority_note": "user_profile_not_world_canon",
-                    },
-                )
-            )
-
-        return projections
 
     @staticmethod
     def allowed_user_profile_keys() -> frozenset[str]:
