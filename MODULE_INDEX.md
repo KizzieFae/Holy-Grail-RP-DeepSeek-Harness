@@ -41,7 +41,8 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Whisper / private line known to the wrong character | `perception_audibility.py`, then Host projector / `prompt_builders.py`, `continuity_manager.py` |
 | Settled facts / binding constraints in prompts | `scene_grounding.py`, Host `continuity_context_projector.py`, `prompt_builders.py` |
 | Episodic “memories” block | `memory_layer/retrieval.py`; Host `memory_service.py` / `memory_retrieval.py` |
-| Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py` |
+| Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py`, `retrieval_service.py` (#31) |
+| Librarian knowledge bundles / semantic mediation (#34 S2a) | Host `librarian_service.py`, `librarian_mediation*.py`; DSH `librarian-mediation-substrate.mjs`; HTTP `/v1/librarian/mediation/*` |
 | Commit / continuity not updating | Host `kernel.py` (`commit_move`); `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |

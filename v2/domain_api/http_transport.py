@@ -205,6 +205,34 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.prepare_semantic_evaluation_context(req))
                 return
+            if path == "/v1/librarian/mediation/prepare":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.prepare_librarian_mediation_context(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        inference_id=str(body["inference_id"]),
+                        knowledge_access_request=dict(body.get("knowledge_access_request") or body),
+                    ),
+                )
+                return
+            if path == "/v1/librarian/mediation/finalize":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.finalize_librarian_mediation(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        inference_id=str(body["inference_id"]),
+                        knowledge_access_request=dict(body.get("knowledge_access_request") or body),
+                        mediation_result=(
+                            dict(body["mediation_result"])
+                            if isinstance(body.get("mediation_result"), dict)
+                            else None
+                        ),
+                        allow_deterministic_fallback=body.get("allow_deterministic_fallback"),
+                    ),
+                )
+                return
             if path == "/v1/moves/validate":
                 req = ValidationRequest(
                     inference_id=str(data["inference_id"]),

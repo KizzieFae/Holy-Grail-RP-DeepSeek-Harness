@@ -100,6 +100,24 @@ export function createDomainApiClient(baseUrl) {
         'prepareSemanticEvaluationContext',
       );
     },
+    prepareLibrarianMediationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/librarian/mediation/prepare',
+        body,
+        'prepareLibrarianMediationContext',
+      );
+    },
+    finalizeLibrarianMediation(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/librarian/mediation/finalize',
+        body,
+        'finalizeLibrarianMediation',
+      );
+    },
     validateMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/validate', body, 'validateMove');
     },

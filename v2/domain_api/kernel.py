@@ -129,6 +129,8 @@ from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .knowledge_service import KnowledgeService  # noqa: E402
+from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
+from .librarian_service import LibrarianService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -245,6 +247,13 @@ class DomainKernel:
         if isinstance(self.store, SessionRepository):
             return self.store.knowledge_service
         return None
+
+    def _librarian_service(self) -> LibrarianService:
+        knowledge = self._knowledge_service()
+        scope_repo = knowledge.scope_repo if knowledge is not None else None
+        from .retrieval_service import RetrievalService
+
+        return LibrarianService(retrieval_service=RetrievalService(scope_repo=scope_repo))
 
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
         session = self.store.create_session(**kwargs)
@@ -1028,6 +1037,84 @@ class DomainKernel:
             authority_references=tuple(authority_refs),
             candidate_package=candidate_package,
         )
+
+    def prepare_librarian_mediation_context(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        knowledge_access_request: dict[str, Any],
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        request = knowledge_access_request_from_dict(
+            {**knowledge_access_request, "hg_scene_id": hg_scene_id}
+        )
+        response = self._librarian_service().prepare_mediation_context(
+            request,
+            fixture,
+            inference_id=inference_id,
+        )
+        return {
+            "manifest_id": response.manifest_id,
+            "inference_id": response.inference_id,
+            "request_id": response.request_id,
+            "hg_scene_id": response.hg_scene_id,
+            "hg_round_id": response.hg_round_id,
+            "contributions": [
+                {
+                    "contribution_id": item.contribution_id,
+                    "source_kind": item.source_kind,
+                    "authority_class": item.authority_class,
+                    "knowledge_ids": list(item.knowledge_ids),
+                    "priority": item.priority,
+                    "content": item.content,
+                    "provenance": dict(item.provenance),
+                }
+                for item in response.contributions
+            ],
+            "mediation_catalog": [
+                {
+                    "source_id": item.source_id,
+                    "source_kind": item.source_kind,
+                    "stable_ref": item.stable_ref,
+                    "information_class": item.information_class,
+                    "authority_class": item.authority_class,
+                    "visibility_scope": item.visibility_scope,
+                    "source_tier": item.source_tier,
+                    "temporal_relationship": item.temporal_relationship,
+                    "content": item.content,
+                    "provenance": dict(item.provenance),
+                }
+                for item in response.mediation_catalog
+            ],
+            "retrieval_request_ids": list(response.retrieval_request_ids),
+            "candidate_ids_supplied": list(response.candidate_ids_supplied),
+            "authoritative_snapshot_id": response.authoritative_snapshot_id,
+        }
+
+    def finalize_librarian_mediation(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        knowledge_access_request: dict[str, Any],
+        mediation_result: dict[str, Any] | None = None,
+        allow_deterministic_fallback: bool | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        request = knowledge_access_request_from_dict(
+            {**knowledge_access_request, "hg_scene_id": hg_scene_id}
+        )
+        bundle = self._librarian_service().access_knowledge(
+            request,
+            fixture,
+            mediation_result=mediation_result,
+            inference_id=inference_id,
+            allow_deterministic_fallback=allow_deterministic_fallback,
+        )
+        from dataclasses import asdict
+
+        return asdict(bundle)
 
     def validate_director_decision(
         self, req: DirectorDecisionValidationRequest
