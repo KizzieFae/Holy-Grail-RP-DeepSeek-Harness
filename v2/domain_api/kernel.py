@@ -142,6 +142,10 @@ from .storyteller_contract import (  # noqa: E402
 from .storyteller_packaging_mapper import map_storyteller_package_to_contributions  # noqa: E402
 from .storyteller_packaging_policy import StorytellerPackagingConsumer  # noqa: E402
 from .librarian_packaging_validity import PackagingBindingContext  # noqa: E402
+from .character_service import CharacterKnowledgeService  # noqa: E402
+from .character_upstream_context import assemble_character_upstream_contributions  # noqa: E402
+from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict  # noqa: E402
+from .librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
 from .storyteller_service import StorytellerService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
@@ -272,6 +276,9 @@ class DomainKernel:
 
     def _storyteller_service(self) -> StorytellerService:
         return StorytellerService(librarian_service=self._librarian_service())
+
+    def _character_knowledge_service(self) -> CharacterKnowledgeService:
+        return CharacterKnowledgeService()
 
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
         session = self.store.create_session(**kwargs)
@@ -981,8 +988,6 @@ class DomainKernel:
     def prepare_context(self, req: ContextPrepareRequest) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        mgr = fixture.manager
-        assert mgr.scene_state is not None
         manifest_id = f"manifest-character-{req.inference_id}-{req.attempt_index}"
         private_secret = fixture.character_private_secrets.get(req.character_id, "")
         memory_service = self._memory_service()
@@ -995,161 +1000,64 @@ class DomainKernel:
                 fixture.character_states.get(req.character_id)
             )
             memory_projections = [single] if single is not None else []
-        knowledge_service = self._knowledge_service() or KnowledgeService()
-        knowledge_projections = knowledge_service.project_context(
-            fixture, character_id=req.character_id
-        )
-        auth_projections = project_authoritative_context(
+        upstream = assemble_character_upstream_contributions(
             fixture,
-            role="character",
+            rnd,
+            manifest_id=manifest_id,
             character_id=req.character_id,
+            role=req.role,
             hg_scene_id=req.hg_scene_id,
             hg_round_id=req.hg_round_id,
             turn_index=req.turn_index,
+            director_decision=req.director_decision,
+            correction_context=req.correction_context,
+            memory_projections=memory_projections,
+            private_secret=private_secret,
+            auth_contributions_fn=self._auth_contributions_to_prompt,
+            storyteller_contributions_fn=self._storyteller_contributions_for_role,
+            include_correction=True,
         )
-        contributions: list[PromptContribution] = list(
-            self._auth_contributions_to_prompt(manifest_id, auth_projections)
-        )
-        if rnd.character_turns:
-            prior_lines = []
-            for turn in rnd.character_turns:
-                move_json = json.dumps(turn.committed_move, ensure_ascii=False)
-                prior_lines.append(
-                    f"- {turn.character_id} (commit {turn.domain_commit_id}): {move_json}"
-                )
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-continuity-summary",
-                    source_kind="continuity_summary",
-                    authority_class="authoritative",
-                    knowledge_ids=tuple(
-                        f"commit:{turn.domain_commit_id}" for turn in rnd.character_turns
+        contributions: list[PromptContribution] = list(upstream.contributions)
+        librarian_audit = dict(req.librarian_knowledge_audit or {})
+        if isinstance(req.librarian_bundle, dict) and req.librarian_bundle:
+            try:
+                bundle = librarian_knowledge_bundle_from_dict(req.librarian_bundle)
+                binding = PackagingBindingContext(
+                    hg_round_id=req.hg_round_id,
+                    turn_index=req.turn_index,
+                    pipeline_stage="character",
+                    continuity_version=int(fixture.continuity_version),
+                    authoritative_snapshot_id=(
+                        f"cv:{fixture.continuity_version}:scene:{req.hg_scene_id}:round:{req.hg_round_id}"
                     ),
-                    priority=15,
-                    content=(
-                        "Committed turns earlier in this round:\n" + "\n".join(prior_lines)
-                    ),
-                    provenance={
-                        "hg_round_id": req.hg_round_id,
-                        "visibility": "orchestration_projection",
-                    },
+                    bound_character_id=req.character_id,
                 )
-            )
-        transcript_content, trigger_content, conv_prov = (
-            project_character_conversation_for_manifest(
-                fixture,
-                character_id=req.character_id,
-            )
-        )
-        if transcript_content:
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-recent-scene-transcript",
-                    source_kind="recent_scene_transcript",
-                    authority_class="derived",
-                    knowledge_ids=(
-                        f"rp_history:transcript:{req.character_id}:{req.hg_round_id}",
-                    ),
-                    priority=16,
-                    content=transcript_content,
-                    provenance={
-                        "hg_round_id": req.hg_round_id,
-                        "visibility": "character_viewer_projection",
-                        **conv_prov,
-                    },
+                packaging = map_librarian_bundle_to_contributions(
+                    bundle,
+                    manifest_id=manifest_id,
+                    consumer_target="character",
+                    binding=binding,
                 )
-            )
-        if trigger_content:
-            trigger_entry_id = conv_prov.get("trigger_entry_id")
-            knowledge_ids: tuple[str, ...] = (
-                (f"rp_history:trigger:{trigger_entry_id}",)
-                if trigger_entry_id
-                else (f"rp_history:trigger:{req.character_id}:{req.hg_round_id}",)
-            )
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-user-turn-trigger",
-                    source_kind="user_turn_trigger",
-                    authority_class="derived",
-                    knowledge_ids=knowledge_ids,
-                    priority=17,
-                    content=trigger_content,
-                    provenance={
-                        "hg_round_id": req.hg_round_id,
-                        "visibility": "character_viewer_projection",
-                        **conv_prov,
-                    },
+                librarian_audit.update(
+                    {
+                        "bundle_id": bundle.bundle_id,
+                        "eligibility_accepted": packaging.eligibility.accepted,
+                        "eligibility_reason": packaging.eligibility.reason,
+                        "rejection_codes": list(packaging.eligibility.rejection_codes),
+                        "entries_mapped": packaging.entries_mapped,
+                        "mediation_mode": bundle.mediation_mode,
+                        "omitted_reason": packaging.omitted_reason,
+                    }
                 )
-            )
-        contributions.extend(
-            build_character_lane_contributions(
-                fixture,
-                manifest_id=manifest_id,
-                character_id=req.character_id,
-                role=req.role,
-                hg_scene_id=req.hg_scene_id,
-                hg_round_id=req.hg_round_id,
-                turn_index=req.turn_index,
-                director_decision=req.director_decision,
-            )
-        )
-        contributions.extend(
-            self._storyteller_contributions_for_role(
-                fixture,
-                rnd,
-                manifest_id=manifest_id,
-                consumer_target="character",
-                character_id=req.character_id,
-            )
-        )
-        for index, (source_kind, knowledge_content, knowledge_provenance) in enumerate(
-            knowledge_projections
-        ):
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-knowledge-{index}",
-                    source_kind=source_kind,
-                    authority_class=str(
-                        knowledge_provenance.get("authority_class", "suggestive")
-                    ),
-                    knowledge_ids=tuple(knowledge_provenance.get("knowledge_ids") or ()),
-                    priority=21 + index,
-                    content=knowledge_content,
-                    provenance={
-                        "character_id": req.character_id,
-                        **knowledge_provenance,
-                    },
+                if packaging.contributions:
+                    contributions.extend(packaging.contributions)
+            except (KeyError, TypeError, ValueError) as exc:
+                librarian_audit.update(
+                    {
+                        "bundle_decode_error": str(exc),
+                        "eligibility_accepted": False,
+                    }
                 )
-            )
-        if private_secret.strip():
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-character-private",
-                    source_kind="character_private",
-                    authority_class="authoritative",
-                    knowledge_ids=(f"character-private:{req.character_id}",),
-                    priority=25,
-                    content=f"Character-private knowledge for {req.character_id}: {private_secret}",
-                    provenance={"character_id": req.character_id, "visibility": "character_only"},
-                )
-            )
-        for index, (memory_content, memory_provenance) in enumerate(memory_projections):
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-character-memory-{index}",
-                    source_kind="character_memory",
-                    authority_class="derived",
-                    knowledge_ids=(
-                        f"character-memory:{req.character_id}:{memory_provenance.get('memory_lane', 'session')}",
-                    ),
-                    priority=26 + index,
-                    content=memory_content,
-                    provenance={
-                        "character_id": req.character_id,
-                        **memory_provenance,
-                    },
-                )
-            )
         contributions.append(
             PromptContribution(
                 contribution_id=f"{manifest_id}-instruction",
@@ -1164,29 +1072,12 @@ class DomainKernel:
                     "Action-only, speech-only, and mixed beat sequences are all valid when "
                     "appropriate to the scene."
                 ),
-                provenance={"inference_id": req.inference_id},
+                provenance={
+                    "inference_id": req.inference_id,
+                    **({"librarian_knowledge_audit": librarian_audit} if librarian_audit else {}),
+                },
             ),
         )
-        correction = req.correction_context
-        if isinstance(correction, dict) and correction:
-            contributions.insert(
-                -1,
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-semantic-correction",
-                    source_kind="semantic_correction",
-                    authority_class="suggestive",
-                    knowledge_ids=(
-                        str(correction.get("evaluation_pass_id") or req.inference_id),
-                    ),
-                    priority=29,
-                    content=json.dumps(correction, ensure_ascii=False, indent=2),
-                    provenance={
-                        "inference_id": req.inference_id,
-                        "visibility": "orchestration_only",
-                        "attempt_index": req.attempt_index,
-                    },
-                ),
-            )
         return PromptContributionManifest(
             manifest_id=manifest_id,
             inference_id=req.inference_id,
@@ -1299,6 +1190,77 @@ class DomainKernel:
         from dataclasses import asdict
 
         return asdict(bundle)
+
+    def prepare_character_orientation_context(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        inference_id: str,
+        character_id: str,
+        role: str,
+        turn_index: int,
+        director_decision: dict[str, Any] | None = None,
+        correction_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        private_secret = fixture.character_private_secrets.get(character_id, "")
+        memory_service = self._memory_service()
+        if memory_service is not None:
+            memory_projections = memory_service.retrieve_memory_contributions(
+                fixture, character_id=character_id
+            )
+        else:
+            single = build_session_memory_projection(
+                fixture.character_states.get(character_id)
+            )
+            memory_projections = [single] if single is not None else []
+        return self._character_knowledge_service().prepare_orientation_context(
+            fixture,
+            rnd,
+            inference_id=inference_id,
+            character_id=character_id,
+            role=role,
+            turn_index=turn_index,
+            director_decision=director_decision,
+            correction_context=correction_context,
+            memory_projections=memory_projections,
+            private_secret=private_secret,
+            auth_contributions_fn=self._auth_contributions_to_prompt,
+            storyteller_contributions_fn=self._storyteller_contributions_for_role,
+        )
+
+    def finalize_character_orientation(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        inference_id: str,
+        character_id: str,
+        turn_index: int,
+        orientation_result: dict[str, Any],
+        upstream_fingerprint: str,
+        director_decision: dict[str, Any] | None = None,
+        correction_context: dict[str, Any] | None = None,
+        storyteller_package_id: str | None = None,
+        storyteller_valid: bool | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        return self._character_knowledge_service().finalize_orientation(
+            fixture,
+            rnd,
+            inference_id=inference_id,
+            character_id=character_id,
+            turn_index=turn_index,
+            orientation_result=orientation_result,
+            upstream_fingerprint=upstream_fingerprint,
+            director_decision=director_decision,
+            correction_context=correction_context,
+            storyteller_package_id=storyteller_package_id,
+            storyteller_valid=storyteller_valid,
+        )
 
     def prepare_librarian_proposal_context(
         self,

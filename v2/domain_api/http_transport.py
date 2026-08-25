@@ -188,8 +188,69 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("director_decision"), dict)
                         else None
                     ),
+                    librarian_bundle=(
+                        dict(data["librarian_bundle"])
+                        if isinstance(data.get("librarian_bundle"), dict)
+                        else None
+                    ),
+                    librarian_knowledge_audit=(
+                        dict(data["librarian_knowledge_audit"])
+                        if isinstance(data.get("librarian_knowledge_audit"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_context(req))
+                return
+            if path == "/v1/character/orientation/prepare":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.prepare_character_orientation_context(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        inference_id=str(body["inference_id"]),
+                        character_id=str(body["character_id"]),
+                        role=str(body.get("role", "guest")),
+                        turn_index=int(body.get("turn_index", 0)),
+                        director_decision=(
+                            dict(body["director_decision"])
+                            if isinstance(body.get("director_decision"), dict)
+                            else None
+                        ),
+                        correction_context=(
+                            dict(body["correction_context"])
+                            if isinstance(body.get("correction_context"), dict)
+                            else None
+                        ),
+                    ),
+                )
+                return
+            if path == "/v1/character/orientation/finalize":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.finalize_character_orientation(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        inference_id=str(body["inference_id"]),
+                        character_id=str(body["character_id"]),
+                        turn_index=int(body.get("turn_index", 0)),
+                        orientation_result=body.get("orientation_result") or {},
+                        upstream_fingerprint=str(body.get("upstream_fingerprint") or ""),
+                        director_decision=(
+                            dict(body["director_decision"])
+                            if isinstance(body.get("director_decision"), dict)
+                            else None
+                        ),
+                        correction_context=(
+                            dict(body["correction_context"])
+                            if isinstance(body.get("correction_context"), dict)
+                            else None
+                        ),
+                        storyteller_package_id=body.get("storyteller_package_id"),
+                        storyteller_valid=body.get("storyteller_valid"),
+                    ),
+                )
                 return
             if path == "/v1/context/prepare-semantic-evaluation":
                 req = SemanticEvaluationContextPrepareRequest(

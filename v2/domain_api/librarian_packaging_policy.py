@@ -66,7 +66,7 @@ def policy_for_consumer(target: PackagingConsumerTarget) -> LibrarianPackagingPo
             max_entries=8,
             max_chars=4000,
             allow_synthesis=True,
-            allow_deterministic_fallback=True,
+            allow_deterministic_fallback=False,
             allowed_visibility_scopes=_VISIBILITY_BY_CONSUMER["character"],
             base_priority=22,
             **common,

@@ -117,12 +117,16 @@ def build_retrieval_access_requests(
     if envelope.subject_character_id:
         subject_file_id = file_ids.get(envelope.subject_character_id, envelope.subject_character_id)
 
+    known_by_character = None
+    if request.consumer_role == "character":
+        known_by_character = envelope.viewer_character_id or request.consumer_instance_id
     hard_template = HardAccessConstraints(
         viewer_character_id=envelope.viewer_character_id,
         subject_character_file_id=subject_file_id,
         session_template_id=envelope.session_template_id,
         exclude_authoritative_live=True,
         require_provenance_complete=request.degradation_preferences.require_provenance_complete,
+        known_by_character_name=known_by_character,
     )
 
     query_terms = _query_terms(request)

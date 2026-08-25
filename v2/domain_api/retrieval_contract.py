@@ -68,6 +68,7 @@ class HardAccessConstraints:
     entity_eligibility_refs: tuple[EntityRef, ...] = ()
     exclude_authoritative_live: bool = True
     require_provenance_complete: bool = False
+    known_by_character_name: str | None = None
 
 
 @dataclass(frozen=True)

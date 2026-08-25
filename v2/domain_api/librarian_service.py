@@ -361,6 +361,10 @@ class LibrarianService:
             "deterministic_fallback": "structured_focus_question_fallback_v1",
             "authoritative_only": "authoritative_only_v1",
         }[mediation_mode]
+        structured_evidence = dict(structured_evidence or {})
+        structured_evidence.setdefault("consumer_role", request.consumer_role)
+        if request.consumer_instance_id:
+            structured_evidence.setdefault("consumer_instance_id", request.consumer_instance_id)
         audit_payload: dict[str, Any] = {
             "bundle_id": bundle_id,
             "request_id": request.request_id,
@@ -369,6 +373,8 @@ class LibrarianService:
             "candidate_ids_considered": list(candidate_ids),
             "entry_ids": [entry.entry_id for entry in entries],
             "fallback_reason": fallback_reason,
+            "consumer_instance_id": request.consumer_instance_id,
+            "consumer_role": request.consumer_role,
         }
         audit = BundleAudit(
             bundle_hash=compute_bundle_hash(audit_payload),

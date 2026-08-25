@@ -76,6 +76,8 @@ class ContextPrepareRequest:
     attempt_index: int
     correction_context: dict[str, Any] | None = None
     director_decision: dict[str, Any] | None = None
+    librarian_bundle: dict[str, Any] | None = None
+    librarian_knowledge_audit: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

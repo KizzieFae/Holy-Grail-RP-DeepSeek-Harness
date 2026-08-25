@@ -231,6 +231,10 @@ class KnowledgeService:
         *,
         character_id: str,
     ) -> list[tuple[str, str, dict[str, Any]]]:
+        """Legacy Character packaging projection — superseded by #38 Librarian path.
+
+        Retained for adapter/regression tests only; not used by live Character prepare_context.
+        """
         """Return (source_kind, content, provenance) tuples for ContextAssembly."""
         character_records, scene_records = self.retrieve_authored(
             fixture, character_id=character_id

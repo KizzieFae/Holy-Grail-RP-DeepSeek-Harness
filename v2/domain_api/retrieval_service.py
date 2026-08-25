@@ -12,6 +12,7 @@ from .authored_knowledge import (
 )
 from .compiled_index_provider import CompiledIndexRetrievalProvider
 from .knowledge_write_policy import filter_active_learned_world_records
+from .character_epistemic import character_may_know_candidate
 from .retrieval_contract import (
     BackendRetrievalRank,
     DegradationLevel,
@@ -186,6 +187,13 @@ def _hard_access_allows(
         if stable_refs and not stable_refs.intersection(candidate_refs):
             diagnostics.hard_access_rejected += 1
             return False
+    if hard.known_by_character_name and not character_may_know_candidate(
+        character_id=hard.known_by_character_name,
+        provenance=candidate.provenance,
+        host_internal_metadata=candidate.host_internal_metadata,
+    ):
+        diagnostics.hard_access_rejected += 1
+        return False
     return True
 
 

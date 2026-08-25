@@ -83,4 +83,17 @@ data/  (HG_DATA_DIR)
 
 Node calls the Domain Host. Python does not call DSH. The UI is presentation-only.
 
+### Character knowledge path (#38)
+
+```text
+assemble_character_upstream_contributions
+  → Character knowledge-orientation (DSH inference)
+  → Character KnowledgeAccessRequest (Host envelope + hard access)
+  → Librarian contextual-semantic mediation
+  → map_librarian_bundle_to_contributions → prepare_context
+  → Character move inference
+```
+
+Character orientation sees full pre-Librarian upstream context. Librarian mediation is bounded by per-character epistemic access (viewer/subject binding, hard access, `known_by` filtering, packaging `bound_character_id`). Character packaging rejects `deterministic_fallback`. Legacy `KnowledgeService.project_context` is no longer used on the live Character path.
+
 **Principle:** Holy Grail determines what is true. DeepSeek Harness records what happened.

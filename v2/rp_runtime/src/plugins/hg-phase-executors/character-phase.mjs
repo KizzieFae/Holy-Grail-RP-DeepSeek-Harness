@@ -16,6 +16,7 @@ import {
 } from './character-semantic-evaluation.mjs';
 import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
 const CHAR_INFRA_RETRIES = 1;
@@ -39,6 +40,8 @@ async function runCharacterInferenceWithInfraRetry({
   priorEvidenceId,
   prompt,
   participationEvidenceId = null,
+  librarianBundle = null,
+  librarianKnowledgeAudit = null,
 }) {
   let lastRun = null;
   for (let infraAttempt = 0; infraAttempt <= CHAR_INFRA_RETRIES; infraAttempt += 1) {
@@ -54,6 +57,8 @@ async function runCharacterInferenceWithInfraRetry({
       attempt_index: attemptIndex,
       correction_context: correctionContext ?? undefined,
       director_decision: directorDecision ?? undefined,
+      librarian_bundle: librarianBundle ?? undefined,
+      librarian_knowledge_audit: librarianKnowledgeAudit ?? undefined,
     });
     const characterRun = await runEphemeralInference({
       inferenceId: `${characterInferenceId}-${attemptIndex}${infraAttempt ? '-infra-retry' : ''}`,
@@ -106,6 +111,8 @@ export async function runCharacterPhase({
   prompt,
   semanticEvaluationEnabled = true,
   participationEvidenceId = null,
+  mockCharacterOrientationResponse = null,
+  mockCharacterMediationResponse = null,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
   let committed = false;
@@ -120,6 +127,47 @@ export async function runCharacterPhase({
   const budget = createCandidateBudgetState(liveMaxAttempts);
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   const evaluatorProfile = semanticEvaluatorProfile ?? modelProfile;
+
+  let librarianBundle = null;
+  let librarianKnowledgeAudit = null;
+  let cognitionAudit = null;
+  const state = await api.getSceneState(hgSceneId);
+  const cognitionTurnIndex = Number(state.turn_counter ?? 0);
+  const cognition = await runCharacterKnowledgeCognition({
+    domainApi: api,
+    hgSceneId,
+    hgRoundId,
+    characterId,
+    role,
+    turnIndex: cognitionTurnIndex,
+    inferenceId: characterInferenceId,
+    directorDecision,
+    correctionContext: null,
+    runEphemeralInference,
+    mockOrientationResponse: mockCharacterOrientationResponse,
+    mockMediationResponse: mockCharacterMediationResponse,
+    modelProfile,
+    evidenceContextBase: {
+      hgSessionId,
+      hgSceneId,
+      hgRoundId,
+      sceneSessionId,
+    },
+  });
+  cognitionAudit = cognition.audit ?? null;
+  librarianBundle = cognition.bundle;
+  librarianKnowledgeAudit = {
+    ...(cognition.audit ?? {}),
+    stage: cognition.stage,
+    ok: cognition.ok,
+  };
+  trace?.emit(sceneAgent.session, 'hg/character-knowledge-cognition', scope, {
+    inference_id: characterInferenceId,
+    character_id: characterId,
+    cognition_stage: cognition.stage,
+    cognition_ok: cognition.ok,
+    audit: cognitionAudit,
+  });
 
   while (!committed && canGenerateCandidate(budget)) {
     const candidateSlotIndex = budget.generatedCount;
@@ -141,6 +189,8 @@ export async function runCharacterPhase({
       priorEvidenceId,
       prompt,
       participationEvidenceId,
+      librarianBundle,
+      librarianKnowledgeAudit,
     });
 
     if (!inferenceAttempt.ok || !inferenceAttempt.characterRun) {

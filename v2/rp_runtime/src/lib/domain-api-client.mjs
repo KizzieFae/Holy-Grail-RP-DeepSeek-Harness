@@ -91,6 +91,24 @@ export function createDomainApiClient(baseUrl) {
     prepareCharacterContext(body) {
       return postJson(metrics, baseUrl, '/v1/context/prepare', body, 'prepareCharacterContext');
     },
+    prepareCharacterOrientationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/character/orientation/prepare',
+        body,
+        'prepareCharacterOrientationContext',
+      );
+    },
+    finalizeCharacterOrientation(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/character/orientation/finalize',
+        body,
+        'finalizeCharacterOrientation',
+      );
+    },
     prepareSemanticEvaluationContext(body) {
       return postJson(
         metrics,

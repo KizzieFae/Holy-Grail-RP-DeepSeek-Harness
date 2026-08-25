@@ -20,6 +20,7 @@ class PackagingBindingContext:
     continuity_version: int
     authoritative_snapshot_id: str
     domain_commit_id: str | None = None
+    bound_character_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,12 @@ def assess_bundle_packaging_eligibility(
             codes.append("domain_commit_required")
         elif validity.bound_domain_commit_id != context.domain_commit_id:
             codes.append("domain_commit_mismatch")
+
+    if context.bound_character_id and bundle.consumer_role == "character":
+        evidence = bundle.audit.structured_mediation_evidence or {}
+        bound_consumer = str(evidence.get("consumer_instance_id") or "").strip()
+        if bound_consumer and bound_consumer != context.bound_character_id:
+            codes.append("character_binding_mismatch")
 
     if codes:
         return PackagingEligibility(
