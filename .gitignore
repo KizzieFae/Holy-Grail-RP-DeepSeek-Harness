@@ -10,6 +10,9 @@ Thumbs.db
 *.swo
 .vs/
 
+# Local GitHub CLI workflow helpers (issue body/comment staging; not canonical)
+/.gh-*
+
 # Local issue drafting / one-off GitHub helpers (not intended as tracked source)
 .github/issue_drafts/
 .github/_draft_issues_*.md
