@@ -131,6 +131,8 @@ from .memory_service import MemoryService  # noqa: E402
 from .knowledge_service import KnowledgeService  # noqa: E402
 from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
 from .librarian_service import LibrarianService  # noqa: E402
+from .storyteller_contract import StorytellerOrientationAssessment  # noqa: E402
+from .storyteller_service import StorytellerService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -254,6 +256,9 @@ class DomainKernel:
         from .retrieval_service import RetrievalService
 
         return LibrarianService(retrieval_service=RetrievalService(scope_repo=scope_repo))
+
+    def _storyteller_service(self) -> StorytellerService:
+        return StorytellerService(librarian_service=self._librarian_service())
 
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
         session = self.store.create_session(**kwargs)
@@ -1115,6 +1120,101 @@ class DomainKernel:
         from dataclasses import asdict
 
         return asdict(bundle)
+
+    def prepare_storyteller_orientation_context(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        inference_id: str,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        return self._storyteller_service().prepare_orientation_context(
+            fixture,
+            rnd,
+            inference_id=inference_id,
+        )
+
+    def finalize_storyteller_orientation(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        inference_id: str,
+        orientation_result: dict[str, Any],
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        return self._storyteller_service().finalize_orientation(
+            fixture,
+            rnd,
+            inference_id=inference_id,
+            orientation_result=orientation_result,
+        )
+
+    def prepare_storyteller_assessment_context(
+        self,
+        *,
+        hg_scene_id: str,
+        inference_id: str,
+        orientation: dict[str, Any],
+        bundle: dict[str, Any],
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        orientation_obj = StorytellerOrientationAssessment(
+            orientation_id=str(orientation["orientation_id"]),
+            hg_round_id=str(orientation["hg_round_id"]),
+            turn_index=int(orientation.get("turn_index", 0)),
+            trigger=orientation.get("trigger", "round_start"),  # type: ignore[arg-type]
+            information_gaps=tuple(str(item) for item in orientation.get("information_gaps") or ()),
+            entity_attention=(),
+            relationship_focus=(),
+            temporal_focus=orientation.get("temporal_focus", "current"),  # type: ignore[arg-type]
+            breadth_preference=orientation.get("breadth_preference", "broad"),  # type: ignore[arg-type]
+        )
+        return self._storyteller_service().prepare_assessment_context(
+            orientation_obj,
+            bundle,
+            inference_id=inference_id,
+        )
+
+    def finalize_storyteller_assessment(
+        self,
+        *,
+        hg_scene_id: str,
+        hg_round_id: str,
+        inference_id: str,
+        orientation: dict[str, Any],
+        bundle: dict[str, Any],
+        assessment_result: dict[str, Any],
+        orientation_inference_id: str,
+        assessment_inference_id: str,
+        follow_up_request_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_scene_id)
+        rnd = self._require_round(fixture, hg_round_id)
+        orientation_obj = StorytellerOrientationAssessment(
+            orientation_id=str(orientation["orientation_id"]),
+            hg_round_id=str(orientation["hg_round_id"]),
+            turn_index=int(orientation.get("turn_index", 0)),
+            trigger=orientation.get("trigger", "round_start"),  # type: ignore[arg-type]
+            information_gaps=tuple(str(item) for item in orientation.get("information_gaps") or ()),
+            entity_attention=(),
+            relationship_focus=(),
+            temporal_focus=orientation.get("temporal_focus", "current"),  # type: ignore[arg-type]
+            breadth_preference=orientation.get("breadth_preference", "broad"),  # type: ignore[arg-type]
+        )
+        return self._storyteller_service().finalize_assessment(
+            fixture,
+            rnd,
+            orientation=orientation_obj,
+            bundle=bundle,
+            assessment_result=assessment_result,
+            orientation_inference_id=orientation_inference_id,
+            assessment_inference_id=assessment_inference_id,
+            follow_up_request_ids=tuple(follow_up_request_ids or ()),
+        )
 
     def validate_director_decision(
         self, req: DirectorDecisionValidationRequest

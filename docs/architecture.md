@@ -45,12 +45,12 @@ Parent program **#33** is closed; accepted architecture is authoritative on chil
 
 - **Retrieval (#31)** — hard access/disclosure constraints, candidate generation, provenance-bearing records, backend abstraction, bounded recall. Does **not** own final semantic relevance. Live authoritative Continuity state is **not** ordinary retrieved lore.
 - **Librarian (#34)** — `KnowledgeAccessRequest` in; provenance-aware `LibrarianKnowledgeBundle` out; semantic mediation across live projection + #31 candidates; post-commit `LibrarianSemanticProposal` to Continuity. **Librarian may interpret committed truth; it may not manufacture truth.** Continuity remains exclusive transactional writer.
-- **Storyteller (#32)** — bounded advisory narrative cognition: orientation → Librarian bundle → informed assessment → `StorytellerAdvisoryPackage` → Packaging suggestive lanes. Does **not** control plot outcomes, `next_actor`, Character intent, Narrator events, retrieval, information mediation, or persistence. `PreservationSignal` is an attention hint only. Invalidated packages are **not** injected into new `prepare_*` calls.
+- **Storyteller (#32)** — bounded advisory narrative cognition: orientation → Librarian bundle → informed assessment → `StorytellerAdvisoryPackage` → (future) Packaging suggestive lanes. **S3a implemented:** isolated cognition loop + Host validation + audit chain via `storyteller_service.py` and DSH `storyteller-cognition-substrate.mjs`. **Not implemented:** consumer wiring into `prepare_*` manifests or round orchestrator. Does **not** control plot outcomes, `next_actor`, Character intent, Narrator events, retrieval, information mediation, or persistence. `PreservationSignal` is an attention hint only. Invalidated packages are **not** injected into new `prepare_*` calls.
 - **Packaging** — deterministic consumer-specific assembly; does not perform semantic relevance ranking or narrative interpretation.
 
 ### Current runtime (implemented today)
 
-Character suggestive retrieval only: `KnowledgeService.project_context` + `retrieval_selection.py` caps → manifest contributions. Director/Narrator receive authoritative continuity projections and digests; no Librarian bundles or Storyteller lanes. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) **RetrievedContextBundle** for the live retrieval seam.
+Character suggestive retrieval only: `KnowledgeService.project_context` + `retrieval_selection.py` caps → manifest contributions. Director/Narrator receive authoritative continuity projections and digests; no Librarian bundles or Storyteller lanes in live role manifests. Storyteller S3a produces advisory packages through isolated Host/DSH test surfaces only. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) **RetrievedContextBundle** for the live retrieval seam.
 
 ### Implementation sequencing (recorded on #33)
 

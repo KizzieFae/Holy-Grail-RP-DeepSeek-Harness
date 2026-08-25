@@ -118,6 +118,42 @@ export function createDomainApiClient(baseUrl) {
         'finalizeLibrarianMediation',
       );
     },
+    prepareStorytellerOrientationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/storyteller/orientation/prepare',
+        body,
+        'prepareStorytellerOrientationContext',
+      );
+    },
+    finalizeStorytellerOrientation(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/storyteller/orientation/finalize',
+        body,
+        'finalizeStorytellerOrientation',
+      );
+    },
+    prepareStorytellerAssessmentContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/storyteller/assessment/prepare',
+        body,
+        'prepareStorytellerAssessmentContext',
+      );
+    },
+    finalizeStorytellerAssessment(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/storyteller/assessment/finalize',
+        body,
+        'finalizeStorytellerAssessment',
+      );
+    },
     validateMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/validate', body, 'validateMove');
     },

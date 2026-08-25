@@ -233,6 +233,58 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     ),
                 )
                 return
+            if path == "/v1/storyteller/orientation/prepare":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.prepare_storyteller_orientation_context(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        inference_id=str(body["inference_id"]),
+                    ),
+                )
+                return
+            if path == "/v1/storyteller/orientation/finalize":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.finalize_storyteller_orientation(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        inference_id=str(body["inference_id"]),
+                        orientation_result=dict(body.get("orientation_result") or {}),
+                    ),
+                )
+                return
+            if path == "/v1/storyteller/assessment/prepare":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.prepare_storyteller_assessment_context(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        inference_id=str(body["inference_id"]),
+                        orientation=dict(body.get("orientation") or {}),
+                        bundle=dict(body.get("bundle") or {}),
+                    ),
+                )
+                return
+            if path == "/v1/storyteller/assessment/finalize":
+                body = dict(data)
+                self._send_json(
+                    200,
+                    self.kernel.finalize_storyteller_assessment(
+                        hg_scene_id=str(body["hg_scene_id"]),
+                        hg_round_id=str(body["hg_round_id"]),
+                        inference_id=str(body["inference_id"]),
+                        orientation=dict(body.get("orientation") or {}),
+                        bundle=dict(body.get("bundle") or {}),
+                        assessment_result=dict(body.get("assessment_result") or {}),
+                        orientation_inference_id=str(body.get("orientation_inference_id") or body["inference_id"]),
+                        assessment_inference_id=str(body.get("assessment_inference_id") or body["inference_id"]),
+                        follow_up_request_ids=list(body.get("follow_up_request_ids") or ()),
+                    ),
+                )
+                return
             if path == "/v1/moves/validate":
                 req = ValidationRequest(
                     inference_id=str(data["inference_id"]),
