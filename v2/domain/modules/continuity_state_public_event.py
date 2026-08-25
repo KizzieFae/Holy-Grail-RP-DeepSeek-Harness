@@ -35,6 +35,8 @@ class PublicEvent:
     actionable_implications: list[str] = field(default_factory=list)
     # Deterministic scene-grounding markers (category:key|k=v|...); PRD §5.8
     grounding_markers: list[str] = field(default_factory=list)
+    # S4b per-character semantic annotations — separate from deterministic promotion-policy significance.
+    revelation_significance_by_character: dict[str, dict] | None = None
 
     def knowledge_level_for(self, character_name: str) -> str | None:
         """Return how the character knows this event, if known.
@@ -74,6 +76,15 @@ class PublicEvent:
             "state_changes": self.state_changes,
             "actionable_implications": self.actionable_implications,
             "grounding_markers": list(self.grounding_markers),
+            "revelation_significance_by_character": (
+                {
+                    str(key): dict(value)
+                    for key, value in self.revelation_significance_by_character.items()
+                    if str(key).strip() and isinstance(value, dict)
+                }
+                if isinstance(self.revelation_significance_by_character, dict)
+                else None
+            ),
         }
 
     @classmethod
@@ -107,4 +118,22 @@ class PublicEvent:
                 for item in data.get("grounding_markers", [])
                 if str(item).strip()
             ],
+            revelation_significance_by_character=_parse_revelation_significance_by_character(data),
         )
+
+
+def _parse_revelation_significance_by_character(data: dict) -> dict[str, dict] | None:
+    raw = data.get("revelation_significance_by_character")
+    if isinstance(raw, dict):
+        parsed = {
+            str(key): dict(value)
+            for key, value in raw.items()
+            if str(key).strip() and isinstance(value, dict)
+        }
+        return parsed or None
+    legacy = data.get("revelation_significance_annotation")
+    if isinstance(legacy, dict):
+        subject = str(legacy.get("subject_character", "") or "").strip()
+        if subject:
+            return {subject: dict(legacy)}
+    return None

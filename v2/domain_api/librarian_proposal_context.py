@@ -64,6 +64,46 @@ def build_post_commit_evidence_catalog(
 
     scene_state_obj = getattr(fixture.manager, "scene_state", None)
     scene_state = scene_state_obj.to_dict() if scene_state_obj is not None else {}
+    turn_index = request.turn_index
+    if turn_index is None and commit_record.get("turn_index") is not None:
+        turn_index = int(commit_record.get("turn_index"))
+
+    for event in getattr(fixture.manager, "public_events", []) or []:
+        event_turn = getattr(event, "turn_index", None)
+        if turn_index is not None and event_turn not in (None, turn_index):
+            continue
+        event_id = str(getattr(event, "event_id", "") or "").strip()
+        if not event_id:
+            continue
+        event_payload = {
+            "event_id": event_id,
+            "event_type": getattr(event, "event_type", "action"),
+            "summary": getattr(event, "summary", ""),
+            "significance": getattr(event, "significance", "minor"),
+            "known_by": list(getattr(event, "known_by", []) or []),
+            "observed_by": list(getattr(event, "observed_by", []) or []),
+            "turn_index": event_turn,
+            "revelation_significance_by_character": getattr(
+                event, "revelation_significance_by_character", None
+            ),
+        }
+        catalog.append(
+            ProposalEvidenceCatalogItem(
+                anchor_id=f"public_event:{event_id}",
+                evidence_kind="public_event",
+                stable_ref=f"event:{event_id}",
+                authority_class="authoritative",
+                visibility_scope="public",
+                content=json.dumps(event_payload, ensure_ascii=False, sort_keys=True),
+                anchor_commit_id=request.domain_commit_id,
+                anchor_path=f"/public_events/{event_id}",
+                provenance={
+                    "event_id": event_id,
+                    "turn_index": event_turn,
+                },
+            )
+        )
+
     if isinstance(scene_state, dict) and scene_state:
         catalog.append(
             ProposalEvidenceCatalogItem(

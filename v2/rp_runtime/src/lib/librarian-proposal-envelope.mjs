@@ -4,7 +4,11 @@ export const LIBRARIAN_PROPOSAL_RESULT_SCHEMA = 'hg_librarian_proposal_result_v1
 export const LIBRARIAN_PROPOSAL_CONFIG_ID = 'librarian_proposal_v1';
 
 const VALID_CONFIDENCE = new Set(['confirmed', 'likely', 'speculative']);
-const VALID_KINDS = new Set(['consequence_meaning', 'information_salience']);
+const VALID_KINDS = new Set([
+  'consequence_meaning',
+  'information_salience',
+  'knowledge_revelation_significance',
+]);
 
 function asStringArray(value) {
   if (!Array.isArray(value)) return [];

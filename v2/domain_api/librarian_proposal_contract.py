@@ -51,6 +51,13 @@ S4A_ACTIVE_PROPOSAL_KINDS: frozenset[str] = frozenset(
     {
         "consequence_meaning",
         "information_salience",
+        "knowledge_revelation_significance",
+    }
+)
+
+S4B_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
+    {
+        "knowledge_revelation_significance",
     }
 )
 
@@ -66,6 +73,7 @@ _CONSEQUENCE_TAGS = frozenset(
     }
 )
 _SALIENCE_LEVELS = frozenset({"minor", "major", "pivotal"})
+_REVELATION_SIGNIFICANCE_LEVELS = _SALIENCE_LEVELS
 
 
 @dataclass(frozen=True)
@@ -250,6 +258,25 @@ def validate_proposal_payload_schema(
                 "invalid_payload_schema",
             )
         if payload.get("authority_class") == "authoritative":
+            return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
+        return True, "", ()
+    if proposal_kind == "knowledge_revelation_significance":
+        event_ref = str(payload.get("event_ref", "") or "").strip()
+        subject = str(payload.get("subject_character", "") or "").strip()
+        level = str(payload.get("revelation_significance_level", "") or "").strip()
+        if (
+            not event_ref
+            or not subject
+            or level not in _REVELATION_SIGNIFICANCE_LEVELS
+        ):
+            return (
+                False,
+                "knowledge_revelation_significance requires event_ref, subject_character, and legal revelation_significance_level",
+                ("invalid_payload_schema",),
+            )
+        if payload.get("authority_class") == "authoritative":
+            return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
+        if payload.get("grant_knowledge") or payload.get("add_to_known_by"):
             return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
         return True, "", ()
     return False, f"unsupported_proposal_kind:{proposal_kind}", ("invalid_proposal_kind",)

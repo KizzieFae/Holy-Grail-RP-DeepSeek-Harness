@@ -175,6 +175,20 @@ def validate_host_proposal_item(
         codes.append("direct_mutation_attempt")
     if proposal.proposed_payload.get("manufactured_fact"):
         codes.append("manufactured_fact_ungrounded")
+    if str(proposal.proposal_kind) == "knowledge_revelation_significance":
+        event_ref = str(proposal.proposed_payload.get("event_ref", "") or "").strip()
+        if event_ref:
+            matched = False
+            for item in catalog:
+                if str(item.evidence_kind) != "public_event":
+                    continue
+                provenance = dict(item.provenance or {})
+                event_id = str(provenance.get("event_id", "") or "").strip()
+                if event_ref in {event_id, item.stable_ref}:
+                    matched = True
+                    break
+            if not matched:
+                codes.append("unknown_event_reference")
     deduped = tuple(dict.fromkeys(codes))
     accepted = not deduped
     return HostProposalItemValidation(

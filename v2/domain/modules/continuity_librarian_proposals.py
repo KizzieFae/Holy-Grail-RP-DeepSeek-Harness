@@ -13,6 +13,7 @@ from domain_api.librarian_proposal_contract import (
     ContinuityProposalBatchDecision,
     ContinuityProposalItemDecision,
     LibrarianSemanticProposal,
+    ProposalEvidenceCatalogItem,
     validate_proposal_payload_schema,
 )
 
@@ -27,6 +28,8 @@ REASON_MANUFACTURED_FACT = "manufactured_fact_ungrounded"
 REASON_INVALID_KIND = "invalid_proposal_kind"
 REASON_INVALID_PAYLOAD = "invalid_payload_schema"
 REASON_PRESERVATION_SIGNAL = "preservation_signal_not_evidence"
+REASON_UNKNOWN_EVENT = "unknown_event_reference"
+REASON_SUBJECT_NOT_KNOWER = "subject_not_in_known_by"
 
 
 @dataclass(frozen=True)
@@ -64,11 +67,109 @@ def _requires_authoritative_anchor(proposal_kind: str) -> bool:
     }
 
 
+def _public_event_catalog_items(
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> list[ProposalEvidenceCatalogItem]:
+    if not catalog:
+        return []
+    return [item for item in catalog if str(item.evidence_kind) == "public_event"]
+
+
+def _event_ref_matches_catalog(
+    event_ref: str,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> bool:
+    ref = str(event_ref or "").strip()
+    if not ref:
+        return False
+    for item in _public_event_catalog_items(catalog):
+        provenance = dict(item.provenance or {})
+        event_id = str(provenance.get("event_id", "") or "").strip()
+        if ref == event_id or ref == item.stable_ref:
+            return True
+    return False
+
+
+def _known_by_from_catalog_event_ref(
+    event_ref: str,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> list[str]:
+    ref = str(event_ref or "").strip()
+    import json
+
+    for item in _public_event_catalog_items(catalog):
+        provenance = dict(item.provenance or {})
+        event_id = str(provenance.get("event_id", "") or "").strip()
+        if ref not in {event_id, item.stable_ref}:
+            continue
+        try:
+            payload = json.loads(item.content or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        if isinstance(payload, dict):
+            return [str(x) for x in payload.get("known_by", []) if str(x).strip()]
+    return []
+
+
+def _validate_knowledge_revelation_significance_legality(
+    proposal: LibrarianSemanticProposal,
+    *,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> ContinuityProposalItemDecision | None:
+    payload = dict(proposal.proposed_payload or {})
+    event_ref = str(payload.get("event_ref", "") or "").strip()
+    subject = str(payload.get("subject_character", "") or "").strip()
+
+    if not _event_ref_matches_catalog(event_ref, catalog):
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_UNKNOWN_EVENT,
+            reason_detail=event_ref or "missing_event_ref",
+            durable_mutation_applied=False,
+        )
+
+    public_event_anchors = [
+        anchor
+        for anchor in proposal.evidence_anchors
+        if str(anchor.evidence_kind) == "public_event"
+    ]
+    if not public_event_anchors:
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_MISSING_ANCHORS,
+            reason_detail="requires public_event evidence anchor",
+            durable_mutation_applied=False,
+        )
+
+    if subject:
+        known_by = _known_by_from_catalog_event_ref(event_ref, catalog)
+        if subject not in known_by:
+            return ContinuityProposalItemDecision(
+                proposal_id=proposal.proposal_id,
+                outcome="reject",
+                reason_code=REASON_SUBJECT_NOT_KNOWER,
+                reason_detail=subject,
+                durable_mutation_applied=False,
+            )
+    else:
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_INVALID_PAYLOAD,
+            reason_detail="missing_subject_character",
+            durable_mutation_applied=False,
+        )
+    return None
+
+
 def evaluate_librarian_proposal_continuity(
     proposal: LibrarianSemanticProposal,
     *,
     closure: ContinuityEvidenceClosure,
     host_accepted: bool,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
 ) -> ContinuityProposalItemDecision:
     if not host_accepted:
         return ContinuityProposalItemDecision(
@@ -166,6 +267,14 @@ def evaluate_librarian_proposal_continuity(
             durable_mutation_applied=False,
         )
 
+    if str(proposal.proposal_kind) == "knowledge_revelation_significance":
+        legality = _validate_knowledge_revelation_significance_legality(
+            proposal,
+            catalog=catalog,
+        )
+        if legality is not None:
+            return legality
+
     return ContinuityProposalItemDecision(
         proposal_id=proposal.proposal_id,
         outcome="accept",
@@ -181,6 +290,7 @@ def evaluate_librarian_proposal_batch(
     closure: ContinuityEvidenceClosure,
     host_accepted_by_id: dict[str, bool],
     batch_id: str,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
 ) -> ContinuityProposalBatchDecision:
     decisions: list[ContinuityProposalItemDecision] = []
     accepted = 0
@@ -190,6 +300,7 @@ def evaluate_librarian_proposal_batch(
             proposal,
             closure=closure,
             host_accepted=host_accepted_by_id.get(proposal.proposal_id, False),
+            catalog=catalog,
         )
         decisions.append(decision)
         if decision.outcome == "accept":
@@ -227,5 +338,11 @@ def librarian_proposal_audit_metadata(
         "librarian_proposal_continuity_rejected_count": (
             continuity_decision.rejected_count if continuity_decision else 0
         ),
-        "librarian_proposal_durable_mutation_applied": False,
+        "librarian_proposal_durable_mutation_applied": bool(
+            continuity_decision
+            and any(
+                item.durable_mutation_applied
+                for item in continuity_decision.item_decisions
+            )
+        ),
     }
