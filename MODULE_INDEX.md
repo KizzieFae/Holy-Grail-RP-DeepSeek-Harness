@@ -46,7 +46,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Librarian bundle → Packaging mapper (#34 S2b) | Host `librarian_packaging_mapper.py`, `librarian_packaging_policy.py`, `librarian_packaging_validity.py` |
 | Storyteller advisory cognition (#32 S3a) | Host `storyteller_service.py`, `storyteller_contract.py`; DSH `storyteller-cognition-substrate.mjs`; HTTP `/v1/storyteller/*` (isolated; no role manifest wiring) |
 | Storyteller → Packaging mapper (#32 S3b) | Host `storyteller_packaging_mapper.py`, `storyteller_packaging_policy.py`, `storyteller_packaging_validity.py` |
-| Storyteller live round integration (#32 S3c) | `hg-round-orchestrator/service.mjs` round-start cognition hook; Host `kernel.bind_storyteller_advisory_package` + `prepare_*` S3b injection; commit invalidation |
+| Storyteller live round integration (#32 S3c, Model A) | `hg-round-orchestrator/service.mjs` round-start cognition; Host bind + Director/Character S3b injection; commit invalidates before Narrator (no live Narrator Storyteller lanes) |
 | Commit / continuity not updating | Host `kernel.py` (`commit_move`); `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
