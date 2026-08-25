@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -273,6 +274,14 @@ class DomainKernel:
 
     def _librarian_proposal_service(self) -> LibrarianProposalService:
         return LibrarianProposalService()
+
+    def _session_scope(self, hg_scene_id: str):
+        repository = self.store
+        if isinstance(repository, SessionRepository):
+            return repository.session_scope(hg_scene_id)
+        from contextlib import nullcontext
+
+        return nullcontext()
 
     def _storyteller_service(self) -> StorytellerService:
         return StorytellerService(librarian_service=self._librarian_service())
@@ -1270,47 +1279,67 @@ class DomainKernel:
         proposal_context_request: dict[str, Any],
     ) -> dict[str, Any]:
         from .librarian_proposal_contract import proposal_context_request_from_dict
+        from .librarian_proposal_service import find_terminal_audit_for_commit
 
-        fixture = self.store.require(hg_scene_id)
-        request = proposal_context_request_from_dict(
-            {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
-        )
-        response = self._librarian_proposal_service().prepare_proposal_context(request, fixture)
-        return {
-            "manifest_id": response.manifest_id,
-            "inference_id": response.inference_id,
-            "request_id": response.request_id,
-            "hg_scene_id": response.hg_scene_id,
-            "hg_round_id": response.hg_round_id,
-            "domain_commit_id": response.domain_commit_id,
-            "authoritative_snapshot_id": response.authoritative_snapshot_id,
-            "contributions": [
-                {
-                    "contribution_id": item.contribution_id,
-                    "source_kind": item.source_kind,
-                    "authority_class": item.authority_class,
-                    "knowledge_ids": list(item.knowledge_ids),
-                    "priority": item.priority,
-                    "content": item.content,
-                    "provenance": dict(item.provenance),
+        with self._session_scope(hg_scene_id):
+            fixture = self.store.require(hg_scene_id)
+            request = proposal_context_request_from_dict(
+                {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
+            )
+            existing = find_terminal_audit_for_commit(fixture, request.domain_commit_id)
+            if existing is not None:
+                return {
+                    "skipped": True,
+                    "orchestration_status": "already_terminal",
+                    "domain_commit_id": request.domain_commit_id,
+                    "existing_audit": existing,
+                    "manifest_id": None,
+                    "inference_id": inference_id,
+                    "request_id": request.request_id,
+                    "hg_scene_id": hg_scene_id,
+                    "hg_round_id": request.hg_round_id,
+                    "authoritative_snapshot_id": None,
+                    "contributions": [],
+                    "evidence_catalog": [],
                 }
-                for item in response.contributions
-            ],
-            "evidence_catalog": [
-                {
-                    "anchor_id": item.anchor_id,
-                    "evidence_kind": item.evidence_kind,
-                    "stable_ref": item.stable_ref,
-                    "authority_class": item.authority_class,
-                    "visibility_scope": item.visibility_scope,
-                    "anchor_commit_id": item.anchor_commit_id,
-                    "anchor_path": item.anchor_path,
-                    "content": item.content,
-                    "provenance": dict(item.provenance),
-                }
-                for item in response.evidence_catalog
-            ],
-        }
+            response = self._librarian_proposal_service().prepare_proposal_context(request, fixture)
+            return {
+                "skipped": False,
+                "orchestration_status": "prepared",
+                "manifest_id": response.manifest_id,
+                "inference_id": response.inference_id,
+                "request_id": response.request_id,
+                "hg_scene_id": response.hg_scene_id,
+                "hg_round_id": response.hg_round_id,
+                "domain_commit_id": response.domain_commit_id,
+                "authoritative_snapshot_id": response.authoritative_snapshot_id,
+                "contributions": [
+                    {
+                        "contribution_id": item.contribution_id,
+                        "source_kind": item.source_kind,
+                        "authority_class": item.authority_class,
+                        "knowledge_ids": list(item.knowledge_ids),
+                        "priority": item.priority,
+                        "content": item.content,
+                        "provenance": dict(item.provenance),
+                    }
+                    for item in response.contributions
+                ],
+                "evidence_catalog": [
+                    {
+                        "anchor_id": item.anchor_id,
+                        "evidence_kind": item.evidence_kind,
+                        "stable_ref": item.stable_ref,
+                        "authority_class": item.authority_class,
+                        "visibility_scope": item.visibility_scope,
+                        "anchor_commit_id": item.anchor_commit_id,
+                        "anchor_path": item.anchor_path,
+                        "content": item.content,
+                        "provenance": dict(item.provenance),
+                    }
+                    for item in response.evidence_catalog
+                ],
+            }
 
     def finalize_librarian_proposals(
         self,
@@ -1327,34 +1356,66 @@ class DomainKernel:
             ProposalEvidenceCatalogItem,
             proposal_context_request_from_dict,
         )
+        from .librarian_proposal_service import find_terminal_audit_for_commit
 
-        fixture = self.store.require(hg_scene_id)
-        request = proposal_context_request_from_dict(
-            {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
-        )
-        catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None
-        if evidence_catalog:
-            catalog = tuple(
-                ProposalEvidenceCatalogItem(
-                    anchor_id=str(item["anchor_id"]),
-                    evidence_kind=str(item["evidence_kind"]),
-                    stable_ref=str(item["stable_ref"]),
-                    authority_class=item["authority_class"],  # type: ignore[arg-type]
-                    visibility_scope=str(item.get("visibility_scope") or "public"),
-                    content=str(item.get("content") or ""),
-                    anchor_commit_id=item.get("anchor_commit_id"),
-                    anchor_path=item.get("anchor_path"),
-                    provenance=dict(item.get("provenance") or {}),
-                )
-                for item in evidence_catalog
+        with self._session_scope(hg_scene_id):
+            fixture = self.store.require(hg_scene_id)
+            request = proposal_context_request_from_dict(
+                {**proposal_context_request, "hg_scene_id": hg_scene_id, "librarian_inference_id": inference_id}
             )
-        result = self._librarian_proposal_service().finalize_proposals(
-            request,
-            fixture,
-            proposal_result=proposal_result,
-            evidence_catalog=catalog,
-        )
-        return asdict(result)
+            existing = find_terminal_audit_for_commit(fixture, request.domain_commit_id)
+            if existing is not None:
+                return {
+                    "skipped": True,
+                    "orchestration_status": "already_terminal",
+                    "domain_commit_id": request.domain_commit_id,
+                    "batch_id": existing.get("librarian_proposal_batch_id"),
+                    "request_id": existing.get("request_id"),
+                    "degradation_mode": existing.get("degradation_mode", "none"),
+                    "audit": existing,
+                }
+            manager_snapshot = None
+            if isinstance(self.store, SessionRepository):
+                manager_snapshot = self.store.snapshot_manager(fixture)
+            catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None
+            if evidence_catalog:
+                catalog = tuple(
+                    ProposalEvidenceCatalogItem(
+                        anchor_id=str(item["anchor_id"]),
+                        evidence_kind=str(item["evidence_kind"]),
+                        stable_ref=str(item["stable_ref"]),
+                        authority_class=item["authority_class"],  # type: ignore[arg-type]
+                        visibility_scope=str(item.get("visibility_scope") or "public"),
+                        content=str(item.get("content") or ""),
+                        anchor_commit_id=item.get("anchor_commit_id"),
+                        anchor_path=item.get("anchor_path"),
+                        provenance=dict(item.get("provenance") or {}),
+                    )
+                    for item in evidence_catalog
+                )
+            result = self._librarian_proposal_service().finalize_proposals(
+                request,
+                fixture,
+                proposal_result=proposal_result,
+                evidence_catalog=catalog,
+            )
+            payload = asdict(result)
+            if isinstance(self.store, SessionRepository):
+                try:
+                    if os.environ.get("HG_TEST_LIBRARIAN_PERSIST_FAIL") == "1":
+                        raise PersistenceError("HG_TEST_LIBRARIAN_PERSIST_FAIL")
+                    self.store.persist(fixture)
+                except Exception:
+                    audit_log = getattr(fixture, "librarian_proposal_audit_log", None)
+                    if audit_log:
+                        audit_log.pop()
+                    if manager_snapshot is not None:
+                        self.store.restore_manager(fixture, manager_snapshot)
+                    raise
+            payload["skipped"] = False
+            payload["orchestration_status"] = "finalized"
+            payload["persisted"] = isinstance(self.store, SessionRepository)
+            return payload
 
     def prepare_storyteller_orientation_context(
         self,

@@ -84,7 +84,7 @@ Narrative: state + bundle → Storyteller → StorytellerAdvisoryPackage → Pac
 | Capability | At `main` today | Deferred / optional extensions |
 |------------|-----------------|--------------------------------|
 | **Retrieval** (#31, closed) | **S0+S1 validated** (`58478a1`): role-agnostic `RetrievalAccessRequest` → `RetrievalService` → bounded `RetrievalCandidate[]`; Layer A hard access + Layer B generation hints; backends: authored snapshot, compiled index, scope knowledge (`promoted_learned_world`, `user_profile`); Character compatibility adapter; **no semantic relevance** | Episodic/cross-scope memory behind façade; vector/graph/hybrid backends; round-local cache; formal backend registry |
-| **Librarian** (#34, closed) | Read mediation (S2a), Packaging mapper (S2b), grounded proposal seam (S4a), per-knower `knowledge_revelation_significance` (S4b) | Additional proposal-class migrations; Character direct `prepare_context` wiring; cache/scheduling |
+| **Librarian** (#34, closed) | Read mediation (S2a), Packaging mapper (S2b), grounded proposal seam (S4a), per-knower `knowledge_revelation_significance` (S4b); **live post-commit S4 orchestration (#39)** — concurrent Narrator ∥ Librarian with per-commit join, session locks, durable audit | Additional proposal-class migrations; Character direct `prepare_context` wiring; cache/scheduling |
 | **Storyteller** (#32, closed) | Model A advisory cognition (S3a/S3b/S3c); consumes Librarian bundles; suggestive `storyteller_*` lanes | Narrator policy socket; post-commit refresh |
 | **Packaging** | `kernel.prepare_*` deterministic assembly; Librarian bundle mapper; Storyteller lane projection | Character adapter retirement (future integration decision) |
 

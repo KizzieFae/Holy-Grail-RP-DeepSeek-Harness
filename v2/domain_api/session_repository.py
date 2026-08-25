@@ -29,6 +29,7 @@ from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
 from .player_identity import resolve_player_display_name  # noqa: E402
+from .session_lock import SessionLockRegistry  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
 from .session_state import (  # noqa: E402
     EXECUTION_EVIDENCE_METADATA_KEY,
@@ -72,6 +73,7 @@ class SessionRepository:
         )
         self.memory_service = MemoryService(self._cross_scope_repo)
         self.knowledge_service = KnowledgeService(self._scope_knowledge_repo)
+        self._session_locks = SessionLockRegistry()
 
     @property
     def sessions_dir(self) -> Path:
@@ -160,6 +162,10 @@ class SessionRepository:
             raise KeyError(f"unknown hg_scene_id: {hg_scene_id}")
         return session
 
+    def session_scope(self, hg_scene_id: str):
+        """Per-session re-entrant lock for concurrent HTTP handler safety (#39)."""
+        return self._session_locks.session_scope(hg_scene_id)
+
     def persist(self, session: LiveSession) -> None:
         session.continuity_version += 1
         payload = self._build_session_payload(session)
@@ -241,6 +247,9 @@ class SessionRepository:
                 "setup_snapshot": copy.deepcopy(session.setup_snapshot),
                 "character_file_ids": dict(session.character_file_ids),
                 "memory_scope_id": session.memory_scope_id,
+                "librarian_proposal_audit_log": list(
+                    getattr(session, "librarian_proposal_audit_log", []) or []
+                ),
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -317,6 +326,9 @@ class SessionRepository:
             setup_snapshot=dict(host_state.get("setup_snapshot") or {}),
             character_file_ids=dict(host_state.get("character_file_ids") or {}),
             memory_scope_id=str(host_state.get("memory_scope_id") or ""),
+            librarian_proposal_audit_log=list(
+                host_state.get("librarian_proposal_audit_log") or []
+            ),
             rounds=[],
         )
 

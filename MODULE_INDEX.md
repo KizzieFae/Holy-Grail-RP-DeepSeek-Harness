@@ -45,6 +45,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Librarian knowledge bundles / semantic mediation (#34 S2a) | Host `librarian_service.py`, `librarian_mediation*.py`; DSH `librarian-mediation-substrate.mjs`; HTTP `/v1/librarian/mediation/*` |
 | Librarian bundle → Packaging mapper (#34 S2b) | Host `librarian_packaging_mapper.py`, `librarian_packaging_policy.py`, `librarian_packaging_validity.py` |
 | Librarian write-side proposal seam (#34 S4a/S4b) | Host `librarian_proposal_*.py`, `continuity_librarian_proposals.py`, `continuity_librarian_knowledge_significance.py`; DSH `librarian-proposal-substrate.mjs`; HTTP `/v1/librarian/proposals/*` |
+| Live post-commit S4 orchestration (#39) | DSH `librarian-proposal-orchestration.mjs`, `hg-round-orchestrator/service.mjs`; Host `session_lock.py`, `session_repository.py` audit persist/hydrate, `kernel.py` prepare/finalize join + at-most-once skip |
 | Storyteller advisory cognition (#32 S3a) | Host `storyteller_service.py`, `storyteller_contract.py`; DSH `storyteller-cognition-substrate.mjs`; HTTP `/v1/storyteller/*` (isolated; no role manifest wiring) |
 | Storyteller → Packaging mapper (#32 S3b) | Host `storyteller_packaging_mapper.py`, `storyteller_packaging_policy.py`, `storyteller_packaging_validity.py` |
 | Storyteller live round integration (#32 S3c, Model A) | `hg-round-orchestrator/service.mjs` round-start cognition; Host bind + Director/Character S3b injection; commit invalidates before Narrator (no live Narrator Storyteller lanes) |

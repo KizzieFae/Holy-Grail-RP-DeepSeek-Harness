@@ -81,5 +81,8 @@ export function domainHostSpawnEnv(options = {}) {
   }
   const sessionsDir = options.sessionsDir ?? defaultSessionsDir();
   if (sessionsDir) env.HG_SESSIONS_DIR = sessionsDir;
+  if (options.env && typeof options.env === 'object') {
+    Object.assign(env, options.env);
+  }
   return env;
 }

@@ -16,6 +16,7 @@ export async function startDomainApi(port, options = {}) {
     port,
     sessionsDir: options.sessionsDir,
     timeoutMs: options.timeoutMs,
+    env: options.hostEnv,
   });
   const result = {
     proc: host.proc,

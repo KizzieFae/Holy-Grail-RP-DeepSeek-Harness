@@ -32,6 +32,7 @@ from .contract import (
     ValidationRequest,
 )
 from .kernel import DomainKernel
+from .session_repository import PersistenceError
 
 
 def _to_jsonable(obj: Any) -> Any:
@@ -507,6 +508,8 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 self._send_json(201, self.kernel.persist_opening_presentation(req))
                 return
             self._send_json(404, {"error": "not found"})
+        except PersistenceError as exc:
+            self._send_json(503, {"error": str(exc), "error_kind": "persistence_failure"})
         except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:
             self._send_json(400, {"error": str(exc)})
 

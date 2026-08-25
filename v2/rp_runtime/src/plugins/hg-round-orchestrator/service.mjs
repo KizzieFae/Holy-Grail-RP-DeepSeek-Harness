@@ -3,6 +3,7 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
+import { runPostCommitLibrarianLifecycle } from '../../lib/librarian-proposal-orchestration.mjs';
 import { runStorytellerCognition } from '../../lib/storyteller-cognition-substrate.mjs';
 import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
 import {
@@ -50,6 +51,8 @@ export default class HgRoundOrchestrator extends Service {
     const mockSemanticEvaluatorTurnResponses = options.mockSemanticEvaluatorTurnResponses ?? [];
     const mockDirectorSemanticQaResponses = options.mockDirectorSemanticQaResponses ?? [];
     const mockNarratorSemanticQaResponses = options.mockNarratorSemanticQaResponses ?? [];
+    const mockLibrarianProposalResponses = options.mockLibrarianProposalResponses ?? [];
+    const librarianProposalDelayMs = Number(options.librarianProposalDelayMs ?? 0);
     const DEFAULT_SEMANTIC_PASS = JSON.stringify({
       schema: 'hg_semantic_evaluation_result_v1',
       overall_result: 'pass',
@@ -77,6 +80,7 @@ export default class HgRoundOrchestrator extends Service {
       director_ms: [],
       character_ms: [],
       narrator_ms: [],
+      librarian_ms: [],
     };
     const roleTraces = {
       director: null,
@@ -187,6 +191,7 @@ export default class HgRoundOrchestrator extends Service {
     let characterRoles = {};
     let pendingForcedDesignation = options.forcedDesignation ?? options.forced_designation ?? null;
     let forcedDesignationConsumed = false;
+    const librarianOrchestrationByCommit = new Map();
 
     while (true) {
       if (characterTurns.length >= defensiveTurnCeiling) {
@@ -375,14 +380,60 @@ export default class HgRoundOrchestrator extends Service {
       }
 
       const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
+      const librarianInferenceId = `inf-librarian-${characterTurnIndex}-${crypto.randomUUID()}`;
+      const domainCommitId = characterTurn.domainCommitId;
+
+      if (librarianOrchestrationByCommit.has(domainCommitId)) {
+        completionReason = 'librarian_orchestration_duplicate';
+        break;
+      }
+
       const narratorResponses = mockNarratorTurnResponses[characterTurnIndex] ?? [];
       const narratorSemanticMocks = mockNarratorSemanticQaResponses.length
         ? mockNarratorSemanticQaResponses
         : (narratorResponses.length
           ? narratorResponses.map(() => DEFAULT_NARRATOR_SEMANTIC_PASS)
           : [DEFAULT_NARRATOR_SEMANTIC_PASS, DEFAULT_NARRATOR_SEMANTIC_PASS]);
+      const librarianMockResponse = mockLibrarianProposalResponses[characterTurnIndex] ?? null;
+
+      const librarianStartedAt = Date.now();
+      let librarianJoinPromise;
+      if (options.skipLibrarianProposalGeneration === true) {
+        librarianJoinPromise = Promise.resolve({
+          ok: true,
+          terminal: true,
+          skipped: true,
+          blockingPersistenceFailure: false,
+          stage: 'skipped',
+        });
+      } else {
+        librarianJoinPromise = runPostCommitLibrarianLifecycle({
+          domainApi: api,
+          trace,
+          sceneAgent,
+          scope,
+          hgSceneId,
+          hgRoundId,
+          characterTurnIndex,
+          domainCommitId,
+          continuityTurnIndex: characterTurn.continuityTurnIndex,
+          librarianInferenceId,
+          runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+          mockResponse: librarianMockResponse,
+          modelProfile: roleProfiles.librarian ?? roleProfiles.director,
+          evidenceContextBase: {
+            hgSessionId,
+            hgSceneId,
+            hgRoundId,
+            sceneSessionId,
+          },
+          delayMs: librarianProposalDelayMs,
+        });
+      }
+      librarianOrchestrationByCommit.set(domainCommitId, librarianJoinPromise);
+
       const narratorStartedAt = Date.now();
-      const narratorResult = await phaseExecutors.runNarrator({
+      const narratorPromise = phaseExecutors.runNarrator({
         api,
         sceneAgent,
         sceneSessionId,
@@ -401,8 +452,44 @@ export default class HgRoundOrchestrator extends Service {
         narratorSemanticQaEnabled: options.narratorSemanticQaEnabled !== false,
         prompt: livePrompts.narrator ?? LIVE_NARRATOR_PROMPT,
       });
+
+      const narratorResult = await narratorPromise;
       roleTimings.narrator_ms.push(Date.now() - narratorStartedAt);
       roleTraces.narrator = narratorResult.narrator_inference_trace ?? null;
+
+      const librarianResult = await librarianJoinPromise;
+      roleTimings.librarian_ms.push(Date.now() - librarianStartedAt);
+
+      trace.emit(sceneAgent.session, 'hg/librarian-proposal-join', scope, {
+        domain_commit_id: domainCommitId,
+        character_turn_index: characterTurnIndex,
+        librarian_inference_id: librarianInferenceId,
+        narrator_inference_session_id: narratorResult.narrator_inference_session_id ?? null,
+        blocking_persistence_failure: Boolean(librarianResult.blockingPersistenceFailure),
+        terminal: Boolean(librarianResult.terminal),
+        stage: librarianResult.stage ?? null,
+      });
+
+      if (librarianResult.blockingPersistenceFailure) {
+        completionReason = 'librarian_persistence_failure';
+        characterTurns.push({
+          character_turn_index: characterTurnIndex,
+          character_id: characterTurn.characterId,
+          director_decision: directorPhase.directorDecision,
+          domain_commit_id: characterTurn.domainCommitId,
+          continuity_turn_index: characterTurn.continuityTurnIndex,
+          character_inference_session_id: characterTurn.characterInferenceSessionId,
+          narrator_inference_session_id: narratorResult.narrator_inference_session_id ?? null,
+          presentation_rendered: narratorResult.presentation_rendered,
+          presentation_text: narratorResult.presentation_text,
+          presentation_failed: narratorResult.presentation_failed,
+          inference_outcome: narratorResult.inference_outcome,
+          librarian_inference_id: librarianInferenceId,
+          librarian_stage: librarianResult.stage ?? null,
+          librarian_blocking_persistence_failure: true,
+        });
+        break;
+      }
 
       characterTurns.push({
         character_turn_index: characterTurnIndex,
@@ -416,6 +503,10 @@ export default class HgRoundOrchestrator extends Service {
         presentation_text: narratorResult.presentation_text,
         presentation_failed: narratorResult.presentation_failed,
         inference_outcome: narratorResult.inference_outcome,
+        librarian_inference_id: librarianInferenceId,
+        librarian_stage: librarianResult.stage ?? null,
+        librarian_degradation_mode: librarianResult.degradationMode ?? null,
+        librarian_terminal: librarianResult.terminal === true,
       });
     }
 
@@ -472,6 +563,7 @@ export default class HgRoundOrchestrator extends Service {
         director: roleTimings.director_ms,
         character: roleTimings.character_ms,
         narrator: roleTimings.narrator_ms,
+        librarian: roleTimings.librarian_ms,
       },
       storyteller: storytellerRoundSummary,
     };

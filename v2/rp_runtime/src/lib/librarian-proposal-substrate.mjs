@@ -24,6 +24,26 @@ export async function runLibrarianProposalGeneration({
     inference_id: inferenceId,
     proposal_context_request: proposalContextRequest,
   });
+
+  if (prepareResponse.skipped === true) {
+    return {
+      ok: true,
+      skipped: true,
+      stage: 'already_terminal',
+      inferenceError: null,
+      prepareResponse,
+      inferRun: null,
+      parsed: null,
+      batch: {
+        skipped: true,
+        orchestration_status: prepareResponse.orchestration_status ?? 'already_terminal',
+        domain_commit_id: prepareResponse.domain_commit_id ?? proposalContextRequest.domain_commit_id,
+        existing_audit: prepareResponse.existing_audit ?? null,
+        persisted: true,
+      },
+    };
+  }
+
   const catalogIds = new Set(
     (prepareResponse.evidence_catalog ?? []).map((item) => String(item.anchor_id)),
   );

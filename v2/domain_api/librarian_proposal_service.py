@@ -53,6 +53,21 @@ from .session_state import LiveSession
 _logger = logging.getLogger(__name__)
 
 
+def find_terminal_audit_for_commit(
+    fixture: LiveSession,
+    domain_commit_id: str,
+) -> dict[str, Any] | None:
+    """Return the latest persisted audit entry for a commit, if any (#39 at-most-once)."""
+    commit_id = str(domain_commit_id or "").strip()
+    if not commit_id:
+        return None
+    for entry in reversed(getattr(fixture, "librarian_proposal_audit_log", []) or []):
+        if str(entry.get("librarian_proposal_domain_commit_id") or "") != commit_id:
+            continue
+        return dict(entry)
+    return None
+
+
 def build_post_commit_proposal_request(
     *,
     hg_scene_id: str,
@@ -147,6 +162,7 @@ class LibrarianProposalService:
                 continuity_decision=None,
                 degradation_mode="inference_failed",
             )
+            self._record_audit(fixture, request, audit, None)
             return LibrarianProposalBatchResult(
                 batch_id=batch_id,
                 request_id=request.request_id,
@@ -180,6 +196,7 @@ class LibrarianProposalService:
                 continuity_decision=None,
                 degradation_mode="malformed_result",
             )
+            self._record_audit(fixture, request, audit, None)
             return LibrarianProposalBatchResult(
                 batch_id=batch_id,
                 request_id=request.request_id,
