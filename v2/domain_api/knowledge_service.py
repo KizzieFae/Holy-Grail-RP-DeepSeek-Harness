@@ -19,24 +19,26 @@ from .knowledge_write_policy import (
     ALLOWED_USER_PROFILE_KEYS,
     build_learned_world_records,
     build_user_profile_record,
-    filter_active_learned_world_records,
 )
 from .scope_knowledge_repository import (
-    DEFAULT_LEARNED_WORLD_LIMIT,
-    DEFAULT_USER_PROFILE_LIMIT,
-    LEARNED_WORLD_KNOWLEDGE,
     USER_PROFILE,
     ScopeKnowledgeRecord,
     ScopeKnowledgeRepository,
 )
 from .session_state import LiveSession
+from .character_retrieval_adapter import (
+    build_character_packaging_request,
+    candidate_to_authored_record,
+    candidate_to_scope_record,
+    packaging_setup_snapshot_hash,
+)
 from .retrieval_selection import (
     RetrievalDiagnostics,
     RetrievalQueryContext,
     character_index_keys,
-    merge_authored_record_sets,
     select_retrieval_records,
 )
+from .retrieval_service import RetrievalService
 
 _logger = logging.getLogger(__name__)
 
@@ -70,6 +72,10 @@ class KnowledgeService:
                 else CompiledIndexRetrievalProvider()
             )
         self._last_retrieval_diagnostics: dict[str, RetrievalDiagnostics] = {}
+        self._retrieval_service = RetrievalService(
+            scope_repo=self._scope_repo,
+            retrieval_provider=self._retrieval_provider,
+        )
 
     @property
     def scope_repo(self) -> ScopeKnowledgeRepository | None:
@@ -98,45 +104,29 @@ class KnowledgeService:
             ),
         )
 
-    def _supplemental_index_records(
-        self,
-        fixture: LiveSession,
-        *,
-        character_id: str,
-    ) -> list[AuthoredKnowledgeRecord]:
-        if not self._retrieval_provider.is_configured():
-            return []
-        try:
-            return self._retrieval_provider.query(
-                self._build_query_context(fixture, character_id=character_id)
-            )
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            _logger.warning(
-                "compiled retrieval index query failed for session %s: %s",
-                fixture.hg_session_id,
-                exc,
-            )
-            return []
-
     def retrieve_authored(
         self,
         fixture: LiveSession,
         *,
         character_id: str,
     ) -> tuple[list[AuthoredKnowledgeRecord], list[AuthoredKnowledgeRecord]]:
-        snapshot_records = self.compile_snapshot_records(fixture)
-        supplemental_records = self._supplemental_index_records(
-            fixture, character_id=character_id
+        request = build_character_packaging_request(
+            fixture,
+            character_id=character_id,
+            information_classes=frozenset({"authored_static", "compiled_index"}),
         )
-        merged, dedupe_dropped = merge_authored_record_sets(
-            snapshot_records, supplemental_records
-        )
+        response = self._retrieval_service.retrieve(request, fixture)
+        authored_candidates = [
+            candidate_to_authored_record(candidate)
+            for candidate in response.candidates
+        ]
+        merged = [record for record in authored_candidates if record is not None]
         query_ctx = self._build_query_context(fixture, character_id=character_id)
         diagnostics = RetrievalDiagnostics(
             provider_id=self._retrieval_provider.provider_id,
             index_path=self._retrieval_provider.index_path,
-            setup_snapshot_hash=setup_snapshot_hash(fixture.setup_snapshot or {}),
-            dedupe_dropped=dedupe_dropped,
+            setup_snapshot_hash=packaging_setup_snapshot_hash(fixture),
+            dedupe_dropped=response.diagnostics.dedupe_dropped,
         )
         character_records, scene_records = select_retrieval_records(
             merged,
@@ -209,20 +199,6 @@ class KnowledgeService:
             "knowledge_kind": USER_PROFILE,
         }
 
-    def _visible_to_character(
-        self,
-        record: ScopeKnowledgeRecord,
-        *,
-        character_id: str,
-        character_file_ids: dict[str, str],
-    ) -> bool:
-        if record.visibility == "scope_global":
-            return True
-        if record.visibility == "character_scoped":
-            file_id = character_file_ids.get(character_id)
-            return bool(file_id and file_id == record.subject_character_file_id)
-        return False
-
     def retrieve_scope_knowledge(
         self,
         fixture: LiveSession,
@@ -231,37 +207,23 @@ class KnowledgeService:
     ) -> tuple[list[ScopeKnowledgeRecord], list[ScopeKnowledgeRecord]]:
         if self._scope_repo is None or not fixture.memory_scope_id:
             return [], []
-        world_records = self._scope_repo.list_records(
-            fixture.memory_scope_id,
-            knowledge_kinds={LEARNED_WORLD_KNOWLEDGE},
-            limit=DEFAULT_LEARNED_WORLD_LIMIT,
+        request = build_character_packaging_request(
+            fixture,
+            character_id=character_id,
+            information_classes=frozenset({"promoted_learned_world", "user_profile"}),
         )
-        profile_records = self._scope_repo.list_records(
-            fixture.memory_scope_id,
-            knowledge_kinds={USER_PROFILE},
-            limit=DEFAULT_USER_PROFILE_LIMIT,
-        )
-        character_file_ids = dict(fixture.character_file_ids or {})
-        active_world = filter_active_learned_world_records(fixture, world_records)
-        visible_world = [
-            record
-            for record in active_world
-            if self._visible_to_character(
-                record,
-                character_id=character_id,
-                character_file_ids=character_file_ids,
-            )
-        ]
-        visible_profile = [
-            record
-            for record in profile_records
-            if self._visible_to_character(
-                record,
-                character_id=character_id,
-                character_file_ids=character_file_ids,
-            )
-        ]
-        return visible_world, visible_profile
+        response = self._retrieval_service.retrieve(request, fixture)
+        world_records: list[ScopeKnowledgeRecord] = []
+        profile_records: list[ScopeKnowledgeRecord] = []
+        for candidate in response.candidates:
+            record = candidate_to_scope_record(candidate)
+            if record is None:
+                continue
+            if candidate.information_class == "promoted_learned_world":
+                world_records.append(record)
+            elif candidate.information_class == "user_profile":
+                profile_records.append(record)
+        return world_records, profile_records
 
     def project_context(
         self,
