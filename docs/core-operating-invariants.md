@@ -23,6 +23,7 @@ Stable truths operators and agents rely on when working in **Holy Grail RP**. Th
 
 - Program audit semantics: **`governance/sources/audit-semantics.md`**
 - RP session-audit procedure: **`docs/audit-workflows.md`**
+- **Forward forensic auditability standard:** **`docs/forensic-auditability-standard.md`** (meaningful runtime decision reconstructability; not program-audit semantics)
 - Scenario validation framing: **`SCENARIO_VALIDATION_FRAMEWORK.md`**
 
 ---

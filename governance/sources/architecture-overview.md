@@ -126,6 +126,12 @@ These principles are stable boundaries Governance must protect when reviewing pr
 
 Major **behaviorally meaningful** changes should be evidenced with **scenario-grade validation** appropriate to the change — not unit tests alone. Canonical scenario framework (Implementation retrieval): [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
+### Forensic auditability (forward standard)
+
+Meaningful runtime decisions and information-flow seams should be **forensically reconstructable** from retained artifacts after process restart. **Auditability is normally part of architecture completion, not a later optional enhancement.**
+
+Normative standard (consolidated from #14–#28, #37, #45, #46): [docs/forensic-auditability-standard.md](../docs/forensic-auditability-standard.md). Operational artifact contracts: [docs/rp-data-layout.md](../docs/rp-data-layout.md). Investigator procedure: [docs/audit-workflows.md](../docs/audit-workflows.md). **Not** program-audit semantics ([audit-semantics.md](./audit-semantics.md)).
+
 ---
 
 ## Current system
@@ -187,3 +193,4 @@ Provisional sequencing references (not current authority): [governance/records/n
 - [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md)
 - [GLOSSARY.md](../GLOSSARY.md)
 - [docs/rp-data-layout.md](../docs/rp-data-layout.md)
+- [docs/forensic-auditability-standard.md](../docs/forensic-auditability-standard.md)

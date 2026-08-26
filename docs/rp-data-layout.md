@@ -99,6 +99,8 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Role:** V2 durable forensic store for inference attempts. Each attempt records the **exact Holy-Grail-assembled model request** (`hg_assembled_request_v1`), final model response (`hg_model_response_v1`), decision/validation outcomes, retry chains, and correlation identifiers.
 
+**Forward standard:** Normative forensic auditability requirements for new decision seams and information-flow architecture — [forensic-auditability-standard.md](./forensic-auditability-standard.md). This section records **retained-artifact contracts** only; it does not replace that standard.
+
 **Authority:** Observational only. Canonical RP truth remains `data/sessions/*.json` (`rp_history`, continuity). Execution evidence explains **how** execution produced committed/presented state; it must not be treated as continuity authority.
 
 **Layout:**
@@ -224,4 +226,5 @@ Trust **`continuity_state`** in session JSON and **`ContinuityManager`** at runt
 - [SCENARIO_VALIDATION_FRAMEWORK.md](../SCENARIO_VALIDATION_FRAMEWORK.md)
 - [MODULE_INDEX.md](../MODULE_INDEX.md) — session/Host persistence and symptom routing
 - [governance/sources/audit-semantics.md](../governance/sources/audit-semantics.md) — program audit semantics
-- [docs/audit-workflows.md](./docs/audit-workflows.md) — RP session-audit procedure and artifact layout
+- [audit-workflows.md](./audit-workflows.md) — RP session-audit procedure and artifact layout
+- [forensic-auditability-standard.md](./forensic-auditability-standard.md) — forward forensic auditability standard

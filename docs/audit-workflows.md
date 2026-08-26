@@ -2,7 +2,7 @@
 
 RP **session-audit procedure** for Holy Grail RP: how to read canonical session state, V2 `data/execution_evidence/` artifacts, and legacy `data/rp_audits/session_*` trees; diagnose layer ownership; and follow retention policy.
 
-**Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/sources/audit-semantics.md`**. Remediation Issue filing — see **`governance/sources/issue-tracking-workflow.md`** (§A.1, §D–§I).
+**Not in scope:** program/system quality audit semantics (finding classes, disposition, audit closure) — see **`governance/sources/audit-semantics.md`**. Remediation Issue filing — see **`governance/sources/issue-tracking-workflow.md`** (§A.1, §D–§I). **Forward forensic auditability standard** (architecture requirement for meaningful runtime decisions) — see **[`docs/forensic-auditability-standard.md`](./forensic-auditability-standard.md)** (this file is **procedure**, not the normative standard).
 
 For artifact layout, see [`docs/rp-data-layout.md`](./rp-data-layout.md). For optional **offline** `fact_spec.v1` post-processing, see [`SCENARIO_VALIDATION_FRAMEWORK.md`](../SCENARIO_VALIDATION_FRAMEWORK.md).
 
@@ -30,6 +30,8 @@ Use this workflow for:
 2. Read `data/audit_tags/<hg_session_id>/` when the operator flagged moments during play — defines **which visible outputs warrant investigation** (`hg_audit_tag_v1`, optional human comment).
 3. Read `data/execution_evidence/<hg_session_id>/index.json`, then relevant `attempts/<evidence_id>.json` files — define **how inference/decisions produced that truth**.
 4. Legacy V1 trees under `data/rp_audits/session_*` are historical only; they are **not** the live V2 forensic mechanism.
+
+**Normative standard:** Investigators apply the forward forensic auditability standard when judging whether retained evidence is sufficient for reconstruction — [`forensic-auditability-standard.md`](./forensic-auditability-standard.md). When evidence is missing or pre-contract, report **honest incompleteness**; do not infer `did not happen` from `not observable`.
 
 ### V2 human audit-tag workflow
 

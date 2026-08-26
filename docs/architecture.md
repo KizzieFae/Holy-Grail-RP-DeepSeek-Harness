@@ -107,6 +107,12 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 3. Prefer the smallest fix that preserves the design.
 4. Update shared docs when contracts change.
 
+### Forensic auditability (architecture completion)
+
+Meaningful semantic decisions, inference paths, information-flow seams, and authoritative mutation paths should include forensic evidence and an investigation path in their **normal acceptance contract**. **Auditability is normally part of architecture completion, not a later optional enhancement.**
+
+Normative standard: [forensic-auditability-standard.md](./forensic-auditability-standard.md). Retained-artifact contracts: [rp-data-layout.md](./rp-data-layout.md). Investigator procedure: [audit-workflows.md](./audit-workflows.md).
+
 ---
 
 ## RP audit diagnosis order
@@ -141,7 +147,7 @@ Host `validate_move` calls `validate_bot_response_for_runtime` only. Determinist
 
 **Bounded Character semantic evaluation (#19):** DSH Character orchestration runs `generate → objective validate → bounded semantic evaluate → commit`. Semantic judgment lives in DSH (`character-semantic-evaluation.mjs`), not `kernel.validate_move`. The Host exposes read-only evaluation context via `prepare_semantic_evaluation_context` and delivers orchestration-only correction via `semantic_correction` manifest contributions on `prepare_context`. The evaluator does not mutate continuity, write RP, or enter canonical history. Hard findings require a valid authority reference from the evaluation context; soft findings allow one challenge then residual recording. Maximum three generated Character candidates per turn (`min(configured limit, 3)`). Full forensic chains are preserved in execution evidence (#15).
 
-**Forensic execution evidence (#28):** Director/Narrator semantic QA patches use canonical **`decision.semantic_qa`** (including **`policy_action`**) on candidate attempts; participation-direct writes **`role: participation`** non-inference records; Director attempts carry bounded **`decision.director.eligibility`**. Derived navigation indexes (`qa_pass_chains`, `participation_by_round`) support investigation tooling — see [docs/rp-data-layout.md](./rp-data-layout.md) and [docs/audit-workflows.md](./audit-workflows.md). Post-#28 forensic completeness applies to sessions produced after #28 lands.
+**Forensic execution evidence (#28):** Director/Narrator semantic QA patches use canonical **`decision.semantic_qa`** (including **`policy_action`**) on candidate attempts; participation-direct writes **`role: participation`** non-inference records; Director attempts carry bounded **`decision.director.eligibility`**. Derived navigation indexes (`qa_pass_chains`, `participation_by_round`) support investigation tooling — see [docs/rp-data-layout.md](./rp-data-layout.md) and [docs/audit-workflows.md](./audit-workflows.md). Post-#28 forensic completeness applies to sessions produced after #28 lands. **Forward standard** for new seams and decisions: [forensic-auditability-standard.md](./forensic-auditability-standard.md).
 
 Validators **reject or annotate**; they do not replace Director selection or continuity commits.
 
