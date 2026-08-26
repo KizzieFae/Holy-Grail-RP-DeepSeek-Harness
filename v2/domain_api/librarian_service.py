@@ -28,6 +28,7 @@ from .librarian_contract import (
     LibrarianMediationPrepareResponse,
     LibrarianMediationResult,
     MediationMode,
+    RetrievalDispositionSnapshot,
     RequestSatisfactionSummary,
     SourceDiagnostics,
     SourceStatus,
@@ -67,6 +68,42 @@ class MediationAssembly:
     per_source: tuple[SourceStatus, ...]
     consulted: tuple[str, ...]
     omitted: tuple[str, ...]
+
+
+def build_retrieval_disposition(assembly: MediationAssembly) -> tuple[dict[str, Any], ...]:
+    """Compact Retrieval boundary snapshot for forensic evidence (#45)."""
+    if "retrieval_candidate" in assembly.omitted:
+        return (
+            {
+                "request_id": None,
+                "candidate_ids_returned": [],
+                "diagnostics": {"retrieval_omitted": True},
+                "retrieval_omitted": True,
+            },
+        )
+    snapshots: list[dict[str, Any]] = []
+    for response in assembly.retrieval_responses:
+        snapshots.append(
+            {
+                "request_id": response.request_id,
+                "candidate_ids_returned": [
+                    str(candidate.candidate_id) for candidate in response.candidates
+                ],
+                "diagnostics": response.diagnostics.to_dict(),
+                "retrieval_omitted": False,
+            }
+        )
+    if not snapshots and assembly.retrieval_request_ids:
+        for request_id in assembly.retrieval_request_ids:
+            snapshots.append(
+                {
+                    "request_id": request_id,
+                    "candidate_ids_returned": [],
+                    "diagnostics": {},
+                    "retrieval_omitted": False,
+                }
+            )
+    return tuple(snapshots)
 
 
 def _dedupe_candidates(candidates: list[RetrievalCandidate]) -> list[RetrievalCandidate]:
@@ -203,6 +240,15 @@ class LibrarianService:
             retrieval_request_ids=assembly.retrieval_request_ids,
             candidate_ids_supplied=assembly.working_set.candidate_ids,
             authoritative_snapshot_id=authoritative_snapshot_id(fixture, request),
+            retrieval_disposition=tuple(
+                RetrievalDispositionSnapshot(
+                    request_id=item.get("request_id"),
+                    candidate_ids_returned=tuple(item.get("candidate_ids_returned") or ()),
+                    diagnostics=dict(item.get("diagnostics") or {}),
+                    retrieval_omitted=bool(item.get("retrieval_omitted")),
+                )
+                for item in build_retrieval_disposition(assembly)
+            ),
         )
 
     def access_knowledge(

@@ -9,6 +9,7 @@ import {
   getCharacterKnowledgeCacheEntry,
   setCharacterKnowledgeCacheEntry,
 } from './character-knowledge-cache.mjs';
+import { buildCharacterOrientationDecisionPatch } from './execution-evidence/ni-evidence.mjs';
 
 /**
  * DSH-side Character knowledge cognition (#38).
@@ -29,6 +30,8 @@ export async function runCharacterKnowledgeCognition({
   mockMediationResponse = null,
   modelProfile = null,
   evidenceContextBase = null,
+  recorder = null,
+  hgSessionId = evidenceContextBase?.hgSessionId ?? null,
 }) {
   const evidenceBase = {
     ...evidenceContextBase,
@@ -37,6 +40,7 @@ export async function runCharacterKnowledgeCognition({
     inferenceId,
     hgSceneId,
     hgRoundId,
+    parentInferenceId: inferenceId,
   };
 
   const orientationPrepare = await domainApi.prepareCharacterOrientationContext({
@@ -59,6 +63,9 @@ export async function runCharacterKnowledgeCognition({
     modelProfile,
     evidenceContext: {
       ...evidenceBase,
+      inferenceId: orientationInferenceId,
+      inferenceKind: 'character_orientation',
+      niForensics: true,
       characterKnowledgePhase: 'orientation',
     },
   });
@@ -72,6 +79,7 @@ export async function runCharacterKnowledgeCognition({
       orientationRun,
       audit: {
         orientation_inference_id: orientationInferenceId,
+        orientation_evidence_id: orientationRun.evidenceId ?? null,
         failure: orientationRun.failure,
       },
     };
@@ -92,6 +100,20 @@ export async function runCharacterKnowledgeCognition({
     correction_context: correctionContext ?? undefined,
   });
 
+  if (recorder?.isEnabled?.() && orientationRun.evidenceId && hgSessionId) {
+    recorder.patchDecision(
+      orientationRun.evidenceId,
+      hgSessionId,
+      buildCharacterOrientationDecisionPatch({
+        accepted: Boolean(orientationFinalize.accepted),
+        reason: orientationFinalize.reason ?? null,
+        reuseKey: orientationFinalize.reuse_key ?? null,
+        knowledgeAccessRequestId: orientationFinalize.knowledge_access_request?.request_id ?? null,
+        upstreamFingerprint: orientationPrepare.upstream_fingerprint ?? null,
+      }),
+    );
+  }
+
   if (!orientationFinalize.accepted || !orientationFinalize.knowledge_access_request) {
     return {
       ok: false,
@@ -102,6 +124,7 @@ export async function runCharacterKnowledgeCognition({
       orientationFinalize,
       audit: {
         orientation_inference_id: orientationInferenceId,
+        orientation_evidence_id: orientationRun.evidenceId ?? null,
         reason: orientationFinalize.reason,
       },
     };
@@ -120,6 +143,8 @@ export async function runCharacterKnowledgeCognition({
       mediation: cached.mediation ?? null,
       audit: {
         orientation_inference_id: orientationInferenceId,
+        orientation_evidence_id: orientationRun.evidenceId ?? null,
+        mediation_evidence_id: cached.mediation?.mediationEvidenceId ?? null,
         reuse_key: reuseKey,
         cache_hit: true,
         librarian_bundle_id: cached.bundle?.bundle_id ?? null,
@@ -137,6 +162,10 @@ export async function runCharacterKnowledgeCognition({
     modelProfile,
     allowDeterministicFallback: false,
     evidenceContextBase: evidenceBase,
+    recorder,
+    hgSessionId,
+    upstreamEvidenceId: orientationRun.evidenceId ?? null,
+    upstreamAssociationKey: 'orientation_evidence_id',
   });
 
   const bundle = mediation.bundle ?? null;
@@ -155,6 +184,8 @@ export async function runCharacterKnowledgeCognition({
     mediation,
     audit: {
       orientation_inference_id: orientationInferenceId,
+      orientation_evidence_id: orientationRun.evidenceId ?? null,
+      mediation_evidence_id: mediation.mediationEvidenceId ?? null,
       reuse_key: reuseKey,
       cache_hit: false,
       librarian_request_id: bundle?.request_id ?? null,

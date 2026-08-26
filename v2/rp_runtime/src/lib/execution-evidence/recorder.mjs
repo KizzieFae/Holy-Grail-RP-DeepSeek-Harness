@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import {
   executionEvidenceRoot,
   isExecutionEvidenceEnabled,
+  NI_FORENSICS_CONTRACT,
 } from './config.mjs';
 import { buildAssembledRequest } from './assembled-request.mjs';
 import { buildModelResponse } from './model-response.mjs';
@@ -10,7 +11,7 @@ import { participationDecisionPatch } from './participation-decision.mjs';
 import { ExecutionEvidenceStore } from './store.mjs';
 
 function correlationFromContext(context, manifest, contextRegistration, inferenceSessionId) {
-  return {
+  const correlation = {
     evidence_id: null,
     hg_session_id: context.hgSessionId ?? manifest?.hg_scene_id ?? null,
     hg_scene_id: context.hgSceneId ?? manifest?.hg_scene_id ?? null,
@@ -30,6 +31,13 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
     participation_decision_id: context.participationDecisionId ?? null,
     character_turn_index: context.characterTurnIndex ?? null,
   };
+  if (context.inferenceKind) {
+    correlation.inference_kind = context.inferenceKind;
+  }
+  if (context.parentInferenceId) {
+    correlation.parent_inference_id = context.parentInferenceId;
+  }
+  return correlation;
 }
 
 /**
@@ -93,6 +101,9 @@ export class ExecutionEvidenceRecorder {
       decision: evidenceContext?.initialDecision ?? null,
       associations: evidenceContext?.associations ?? {},
     };
+    if (evidenceContext?.inferenceKind || evidenceContext?.niForensics) {
+      attempt.evidence_contract = NI_FORENSICS_CONTRACT;
+    }
 
     this.store.writeAttempt(attempt);
     return evidenceId;
@@ -181,6 +192,27 @@ export class ExecutionEvidenceRecorder {
   patchDecision(evidenceId, hgSessionId, patch) {
     if (!this.enabled || !evidenceId || !hgSessionId) return;
     this.store.patchAttempt(hgSessionId, evidenceId, patch);
+  }
+
+  /**
+   * Bidirectional NI association links (#45).
+   */
+  linkNiAssociation(hgSessionId, leftEvidenceId, rightEvidenceId, {
+    leftKey,
+    rightKey,
+  }) {
+    if (!this.enabled || !hgSessionId || !leftEvidenceId || !rightEvidenceId) return;
+    this.store.patchAttempt(hgSessionId, leftEvidenceId, {
+      associations: { [leftKey]: rightEvidenceId },
+    });
+    this.store.patchAttempt(hgSessionId, rightEvidenceId, {
+      associations: { [rightKey]: leftEvidenceId },
+    });
+  }
+
+  indexTagForensicScope(hgSessionId, tagId, forensicScope) {
+    if (!this.enabled || !hgSessionId || !tagId || !forensicScope) return;
+    this.store.indexTagForensicScope(hgSessionId, tagId, forensicScope);
   }
 
   readAttempt(hgSessionId, evidenceId) {

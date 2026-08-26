@@ -323,6 +323,16 @@ class HostMediationValidation:
 
 
 @dataclass(frozen=True)
+class RetrievalDispositionSnapshot:
+    """Observational Retrieval boundary at prepare time (#45)."""
+
+    request_id: str | None
+    candidate_ids_returned: tuple[str, ...]
+    diagnostics: dict[str, Any]
+    retrieval_omitted: bool = False
+
+
+@dataclass(frozen=True)
 class LibrarianMediationPrepareResponse:
     manifest_id: str
     inference_id: str
@@ -334,6 +344,7 @@ class LibrarianMediationPrepareResponse:
     retrieval_request_ids: tuple[str, ...]
     candidate_ids_supplied: tuple[str, ...]
     authoritative_snapshot_id: str
+    retrieval_disposition: tuple[RetrievalDispositionSnapshot, ...] = ()
 
 
 @dataclass(frozen=True)

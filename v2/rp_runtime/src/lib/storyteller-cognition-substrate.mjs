@@ -1,3 +1,7 @@
+import {
+  buildStorytellerAdvisoryDecisionPatch,
+  buildStorytellerOrientationDecisionPatch,
+} from './execution-evidence/ni-evidence.mjs';
 import { runLibrarianMediation } from './librarian-mediation-substrate.mjs';
 import {
   buildStorytellerAssessmentPrompt,
@@ -14,8 +18,6 @@ import {
 
 /**
  * DSH-side Storyteller cognition substrate (#32 S3a).
- * Orientation → KAR → Librarian bundle → informed assessment → validated package.
- * Does not inject advisory output into role manifests.
  */
 export async function runStorytellerCognition({
   domainApi,
@@ -30,6 +32,8 @@ export async function runStorytellerCognition({
   evidenceContextBase = null,
   allowDeterministicFallback = true,
   allowHostDefaultOnOrientationFailure = false,
+  recorder = null,
+  hgSessionId = evidenceContextBase?.hgSessionId ?? null,
 }) {
   const evidenceBase = {
     ...evidenceContextBase,
@@ -37,6 +41,7 @@ export async function runStorytellerCognition({
     inferenceId,
     hgSceneId,
     hgRoundId,
+    parentInferenceId: inferenceId,
   };
 
   const orientationPrepare = await domainApi.prepareStorytellerOrientationContext({
@@ -55,6 +60,9 @@ export async function runStorytellerCognition({
     modelProfile,
     evidenceContext: {
       ...evidenceBase,
+      inferenceId: orientationInferenceId,
+      inferenceKind: 'storyteller_orientation',
+      niForensics: true,
       storytellerPhase: 'orientation',
     },
   });
@@ -66,7 +74,11 @@ export async function runStorytellerCognition({
       package: null,
       orientationPrepare,
       orientationRun,
-      audit: { orientation_inference_id: orientationInferenceId, failure: orientationRun.failure },
+      audit: {
+        orientation_inference_id: orientationInferenceId,
+        orientation_evidence_id: orientationRun.evidenceId ?? null,
+        failure: orientationRun.failure,
+      },
     };
   }
 
@@ -80,6 +92,17 @@ export async function runStorytellerCognition({
       : orientationRun.raw,
   });
 
+  if (recorder?.isEnabled?.() && orientationRun.evidenceId && hgSessionId) {
+    recorder.patchDecision(
+      orientationRun.evidenceId,
+      hgSessionId,
+      buildStorytellerOrientationDecisionPatch({
+        accepted: Boolean(orientationFinalize.accepted),
+        reason: orientationFinalize.reason ?? null,
+      }),
+    );
+  }
+
   if (!orientationFinalize.accepted || !orientationFinalize.knowledge_access_request) {
     if (!allowHostDefaultOnOrientationFailure) {
       return {
@@ -91,6 +114,7 @@ export async function runStorytellerCognition({
         orientationFinalize,
         audit: {
           orientation_inference_id: orientationInferenceId,
+          orientation_evidence_id: orientationRun.evidenceId ?? null,
           reason: orientationFinalize.reason,
         },
       };
@@ -119,6 +143,10 @@ export async function runStorytellerCognition({
     modelProfile,
     allowDeterministicFallback,
     evidenceContextBase: evidenceBase,
+    recorder,
+    hgSessionId,
+    upstreamEvidenceId: orientationRun.evidenceId ?? null,
+    upstreamAssociationKey: 'orientation_evidence_id',
   });
 
   if (!mediation.bundle) {
@@ -150,6 +178,9 @@ export async function runStorytellerCognition({
     modelProfile,
     evidenceContext: {
       ...evidenceBase,
+      inferenceId: assessmentInferenceId,
+      inferenceKind: 'storyteller_assessment',
+      niForensics: true,
       storytellerPhase: 'assessment',
       bundleId: mediation.bundle.bundle_id,
     },
@@ -182,6 +213,36 @@ export async function runStorytellerCognition({
     follow_up_request_ids: [],
   });
 
+  if (recorder?.isEnabled?.() && assessmentRun.evidenceId && hgSessionId) {
+    recorder.patchDecision(
+      assessmentRun.evidenceId,
+      hgSessionId,
+      buildStorytellerAdvisoryDecisionPatch({
+        assessmentAccepted: Boolean(assessmentFinalize.accepted),
+        assessmentReason: assessmentFinalize.reason ?? null,
+        packageId: assessmentFinalize.package?.package_id ?? null,
+        degradationLevel: assessmentFinalize.package?.degradation?.level ?? null,
+      }),
+    );
+    if (orientationRun.evidenceId) {
+      recorder.linkNiAssociation(hgSessionId, orientationRun.evidenceId, assessmentRun.evidenceId, {
+        leftKey: 'assessment_evidence_id',
+        rightKey: 'orientation_evidence_id',
+      });
+    }
+    if (mediation.mediationEvidenceId) {
+      recorder.linkNiAssociation(
+        hgSessionId,
+        mediation.mediationEvidenceId,
+        assessmentRun.evidenceId,
+        {
+          leftKey: 'assessment_evidence_id',
+          rightKey: 'mediation_evidence_id',
+        },
+      );
+    }
+  }
+
   return {
     ok: Boolean(assessmentFinalize.accepted),
     stage: assessmentFinalize.accepted ? 'finalized' : 'assessment_finalize',
@@ -195,7 +256,10 @@ export async function runStorytellerCognition({
     assessmentFinalize,
     audit: {
       orientation_inference_id: orientationInferenceId,
+      orientation_evidence_id: orientationRun.evidenceId ?? null,
+      mediation_evidence_id: mediation.mediationEvidenceId ?? null,
       assessment_inference_id: assessmentInferenceId,
+      assessment_evidence_id: assessmentRun.evidenceId ?? null,
       librarian_request_id: mediation.bundle?.request_id ?? null,
       librarian_bundle_id: mediation.bundle?.bundle_id ?? null,
       host_validation: assessmentFinalize.reason ?? null,

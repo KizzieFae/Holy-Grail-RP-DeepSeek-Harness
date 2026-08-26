@@ -1,16 +1,20 @@
 import crypto from 'node:crypto';
 
 import { auditTagsRoot } from './config.mjs';
+import { enrichTagWithForensicScope, resolveTagForensicScope } from './forensic-scope.mjs';
 import { buildAnchorFromHistoryEntry, findHistoryEntryById } from './resolve-anchor.mjs';
 import { AuditTagStore } from './store.mjs';
+import { createExecutionEvidenceRecorder } from '../execution-evidence/recorder.mjs';
 
 export class AuditTagService {
   /**
-   * @param {{ root?: string, env?: NodeJS.ProcessEnv }} [options]
+   * @param {{ root?: string, env?: NodeJS.ProcessEnv, evidenceRecorder?: object }} [options]
    */
   constructor(options = {}) {
     const root = options.root ?? auditTagsRoot(options.env);
     this.store = new AuditTagStore(root);
+    this.evidenceRecorder = options.evidenceRecorder
+      ?? createExecutionEvidenceRecorder({ env: options.env });
   }
 
   /**
@@ -39,16 +43,23 @@ export class AuditTagService {
 
     const tagIndex = this.store.allocateTagIndex(hgSessionId);
     const tagId = crypto.randomUUID();
-    const tag = {
+    const anchor = buildAnchorFromHistoryEntry(entry);
+    const forensicScope = resolveTagForensicScope({
+      hgSessionId,
+      anchor,
+      evidenceRecorder: this.evidenceRecorder,
+    });
+    const tag = enrichTagWithForensicScope({
       tag_id: tagId,
       tag_index: tagIndex,
       hg_session_id: hgSessionId,
-      anchor: buildAnchorFromHistoryEntry(entry),
+      anchor,
       created_by: {
         surface: createdBy?.surface ?? 'api',
         persona: createdBy?.persona ?? 'Player',
       },
-    };
+    }, forensicScope, this.evidenceRecorder, hgSessionId);
+
     return this.store.createTag(hgSessionId, tag);
   }
 

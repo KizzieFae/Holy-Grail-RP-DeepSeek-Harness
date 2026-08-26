@@ -5,6 +5,7 @@ import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 import { runPostCommitLibrarianLifecycle } from '../../lib/librarian-proposal-orchestration.mjs';
 import { runStorytellerCognition } from '../../lib/storyteller-cognition-substrate.mjs';
+import { buildStorytellerAdvisoryDecisionPatch } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
 import {
   agentOptionsFromProfile,
@@ -52,6 +53,14 @@ export default class HgRoundOrchestrator extends Service {
     const mockDirectorSemanticQaResponses = options.mockDirectorSemanticQaResponses ?? [];
     const mockNarratorSemanticQaResponses = options.mockNarratorSemanticQaResponses ?? [];
     const mockLibrarianProposalResponses = options.mockLibrarianProposalResponses ?? [];
+    const mockCharacterOrientationResponses = options.mockCharacterOrientationResponses
+      ?? (options.mockCharacterOrientationResponse
+        ? [options.mockCharacterOrientationResponse]
+        : []);
+    const mockCharacterMediationResponses = options.mockCharacterMediationResponses
+      ?? (options.mockCharacterMediationResponse
+        ? [options.mockCharacterMediationResponse]
+        : []);
     const librarianProposalDelayMs = Number(options.librarianProposalDelayMs ?? 0);
     const DEFAULT_SEMANTIC_PASS = JSON.stringify({
       schema: 'hg_semantic_evaluation_result_v1',
@@ -120,6 +129,7 @@ export default class HgRoundOrchestrator extends Service {
     });
 
     let storytellerRoundSummary = null;
+    let storytellerAssessmentEvidenceId = null;
     if (options.skipStorytellerCognition !== true) {
       trace.emit(sceneAgent.session, 'hg/storyteller-started', scope, {});
       const storytellerInferenceId = `inf-storyteller-${hgRoundId}`;
@@ -142,6 +152,8 @@ export default class HgRoundOrchestrator extends Service {
             sceneSessionId,
           },
           allowDeterministicFallback: options.storytellerAllowDeterministicFallback !== false,
+          recorder: phaseExecutors.executionEvidenceRecorder,
+          hgSessionId,
         });
       } catch (error) {
         storytellerResult = {
@@ -158,12 +170,34 @@ export default class HgRoundOrchestrator extends Service {
           package: storytellerResult.package,
           audit: storytellerResult.audit ?? null,
         });
+        if (
+          phaseExecutors.executionEvidenceRecorder?.isEnabled?.()
+          && storytellerResult.assessmentRun?.evidenceId
+          && hgSessionId
+        ) {
+          phaseExecutors.executionEvidenceRecorder.patchDecision(
+            storytellerResult.assessmentRun.evidenceId,
+            hgSessionId,
+            buildStorytellerAdvisoryDecisionPatch({
+              assessmentAccepted: Boolean(storytellerResult.assessmentFinalize?.accepted),
+              assessmentReason: storytellerResult.assessmentFinalize?.reason ?? null,
+              packageId: storytellerResult.package?.package_id ?? null,
+              bindAccepted: Boolean(bindResult.accepted),
+              bindRejectionReason: bindResult.reason ?? null,
+              degradationLevel: storytellerResult.package?.degradation?.level ?? null,
+            }),
+          );
+        }
+        storytellerAssessmentEvidenceId = storytellerResult.assessmentRun?.evidenceId
+          ?? storytellerResult.audit?.assessment_evidence_id
+          ?? null;
         storytellerRoundSummary = {
           attempted: true,
           bound: Boolean(bindResult.accepted),
           package_id: storytellerResult.package.package_id ?? null,
           degradation_level: storytellerResult.package.degradation?.level ?? 'none',
           mapped_preview: bindResult.mapped_preview ?? null,
+          assessment_evidence_id: storytellerAssessmentEvidenceId,
         };
         trace.emit(sceneAgent.session, 'hg/storyteller-completed', scope, {
           package_id: storytellerRoundSummary.package_id,
@@ -286,6 +320,9 @@ export default class HgRoundOrchestrator extends Service {
           liveMaxAttempts,
           prompt: livePrompts.director ?? LIVE_DIRECTOR_PROMPT,
           directorSemanticQaEnabled: options.directorSemanticQaEnabled !== false,
+          storytellerAssessmentEvidenceId: storytellerRoundSummary?.bound
+            ? storytellerAssessmentEvidenceId
+            : null,
         });
         roleTimings.director_ms.push(Date.now() - directorStartedAt);
         roleTraces.director = directorPhase.directorInferenceTrace ?? null;
@@ -349,6 +386,8 @@ export default class HgRoundOrchestrator extends Service {
         liveMaxAttempts,
         prompt: livePrompts.character ?? LIVE_CHARACTER_PROMPT,
         participationEvidenceId,
+        mockCharacterOrientationResponse: mockCharacterOrientationResponses[characterTurnIndex] ?? null,
+        mockCharacterMediationResponse: mockCharacterMediationResponses[characterTurnIndex] ?? null,
       });
       roleTimings.character_ms.push(Date.now() - characterStartedAt);
       roleTraces.character = characterTurn.characterInferenceTrace ?? null;
@@ -394,7 +433,13 @@ export default class HgRoundOrchestrator extends Service {
         : (narratorResponses.length
           ? narratorResponses.map(() => DEFAULT_NARRATOR_SEMANTIC_PASS)
           : [DEFAULT_NARRATOR_SEMANTIC_PASS, DEFAULT_NARRATOR_SEMANTIC_PASS]);
-      const librarianMockResponse = mockLibrarianProposalResponses[characterTurnIndex] ?? null;
+      const librarianMockResponse = typeof mockLibrarianProposalResponses === 'function'
+        ? mockLibrarianProposalResponses({
+          domainCommitId,
+          characterTurnIndex,
+          hgRoundId,
+        })
+        : mockLibrarianProposalResponses[characterTurnIndex] ?? null;
 
       const librarianStartedAt = Date.now();
       let librarianJoinPromise;
@@ -428,6 +473,8 @@ export default class HgRoundOrchestrator extends Service {
             sceneSessionId,
           },
           delayMs: librarianProposalDelayMs,
+          recorder: phaseExecutors.executionEvidenceRecorder,
+          characterMoveEvidenceId: characterTurn.committedCharacterEvidenceId ?? null,
         });
       }
       librarianOrchestrationByCommit.set(domainCommitId, librarianJoinPromise);

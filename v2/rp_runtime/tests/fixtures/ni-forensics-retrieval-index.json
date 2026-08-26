@@ -1,0 +1,15 @@
+{
+  "characters": {
+    "Alice": [
+      {
+        "knowledge_id": "ni-fact-g",
+        "knowledge_type": "lore_reference",
+        "authority_class": "reference_only",
+        "visibility": "public",
+        "text": "FACT_G_VISIBLE_MARKER: the interior latch is rusted and sticks when turned.",
+        "source_kind": "character_card",
+        "source_ref": "ni-acceptance:fact-g"
+      }
+    ]
+  }
+}

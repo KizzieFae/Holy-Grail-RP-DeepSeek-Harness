@@ -17,6 +17,7 @@ import {
 import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
+import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
 const CHAR_INFRA_RETRIES = 1;
@@ -42,6 +43,7 @@ async function runCharacterInferenceWithInfraRetry({
   participationEvidenceId = null,
   librarianBundle = null,
   librarianKnowledgeAudit = null,
+  recorder = null,
 }) {
   let lastRun = null;
   for (let infraAttempt = 0; infraAttempt <= CHAR_INFRA_RETRIES; infraAttempt += 1) {
@@ -73,6 +75,9 @@ async function runCharacterInferenceWithInfraRetry({
         role: 'character',
         characterId,
         inferenceId: characterInferenceId,
+        parentInferenceId: characterInferenceId,
+        inferenceKind: 'character_move',
+        niForensics: true,
         attemptIndex,
         priorAttemptId: priorEvidenceId,
         associations: participationEvidenceId && attemptIndex === 0
@@ -82,6 +87,12 @@ async function runCharacterInferenceWithInfraRetry({
     });
     lastRun = { characterRun, manifest, expectedTurnIndex };
     if (!characterRun.failed) {
+      patchConsumerNiPackaging(recorder, {
+        hgSessionId,
+        evidenceId: characterRun.evidenceId,
+        cognitionAudit: librarianKnowledgeAudit,
+        manifest,
+      });
       return { ok: true, ...lastRun, infraAttempt };
     }
   }
@@ -118,6 +129,7 @@ export async function runCharacterPhase({
   let committed = false;
   let continuityTurnIndex = null;
   let domainCommitId = null;
+  let committedCharacterEvidenceId = null;
   let characterManifestId = '';
   let characterInferenceSessionId = null;
   let characterInferenceTrace = null;
@@ -153,6 +165,8 @@ export async function runCharacterPhase({
       hgRoundId,
       sceneSessionId,
     },
+    recorder,
+    hgSessionId,
   });
   cognitionAudit = cognition.audit ?? null;
   librarianBundle = cognition.bundle;
@@ -191,6 +205,7 @@ export async function runCharacterPhase({
       participationEvidenceId,
       librarianBundle,
       librarianKnowledgeAudit,
+      recorder,
     });
 
     if (!inferenceAttempt.ok || !inferenceAttempt.characterRun) {
@@ -455,6 +470,7 @@ export async function runCharacterPhase({
     committed = true;
     continuityTurnIndex = Number(commit.continuity_turn_index);
     domainCommitId = String(commit.domain_commit_id ?? '');
+    committedCharacterEvidenceId = characterRun.evidenceId ?? null;
     recorder?.patchDecision(
       characterRun.evidenceId,
       hgSessionId,
@@ -490,6 +506,7 @@ export async function runCharacterPhase({
     committed,
     continuityTurnIndex,
     domainCommitId,
+    committedCharacterEvidenceId,
     characterId,
     characterInferenceSessionId,
     characterInferenceTrace,

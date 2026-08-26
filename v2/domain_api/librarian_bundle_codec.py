@@ -43,7 +43,7 @@ def _bundle_entry(raw: dict[str, Any]) -> LibrarianBundleEntry:
             ),
             synthesis_authority=str(synth_raw.get("synthesis_authority", "suggestive")),  # type: ignore[arg-type]
         )
-        annotation_raw = dict(raw.get("librarian_annotation") or {})
+    annotation_raw = dict(raw.get("librarian_annotation") or {})
     return LibrarianBundleEntry(
         entry_id=str(raw.get("entry_id", "")),
         ref=_stable_ref(dict(raw.get("ref") or {})),
@@ -52,6 +52,7 @@ def _bundle_entry(raw: dict[str, Any]) -> LibrarianBundleEntry:
         information_class=str(raw.get("information_class", "")),
         visibility_scope=str(raw.get("visibility_scope", "")),
         source_tier=str(raw.get("source_tier", "")),
+        temporal_relationship=str(raw.get("temporal_relationship", "current")),
         librarian_annotation=LibrarianAnnotation(
             relevance_rank=int(annotation_raw.get("relevance_rank", 1)),
             salience_note=annotation_raw.get("salience_note"),

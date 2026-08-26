@@ -138,6 +138,8 @@ Session JSON may include a lightweight pointer under `metadata.execution_evidenc
 
 **Cleanup / retention:** Evidence trees are keyed by `hg_session_id` under `execution_evidence/`. Operators may delete a session's evidence tree manually (`ExecutionEvidenceStore.deleteSession()` exists; **not** wired to production session-delete). Deleting evidence does not corrupt canonical session JSON. No automatic pruning or session-delete-triggered cleanup. Pre-#15 sessions have no evidence (non-fatal).
 
+**NI forensic contract (#45, forward-only):** Post-#45 attempts that participate in narrative-intelligence lineage carry `evidence_contract: hg_ni_forensics_v1` and `correlation.inference_kind` (additive; `role` unchanged). Structured NI outcomes live in `decision.character_orientation`, `decision.librarian_mediation`, `decision.storyteller_advisory`, and `decision.librarian_proposal`. Candidate disposition uses the complete mediation catalog in the attempt `request` plus ID-level fields in `decision.librarian_mediation` (`catalog_source_ids`, `selected_source_ids`, `retrieval_disposition`, `source_id_to_entry_id`); Librarian omission is derived as set difference — no arbitrary evidence-layer truncation. Derived navigation: `index.ni.by_round`, `index.ni.by_commit`, `index.ni.by_tag` (rebuildable; non-authoritative). Pre-#45 evidence is not backfilled.
+
 ---
 
 ## Human audit tags (`audit_tags`)
@@ -157,6 +159,8 @@ data/audit_tags/<hg_session_id>/
 ```
 
 **Idempotency:** At most one active tag per `(hg_session_id, entry_id)` through normal UI/API create. Repeated create returns the existing tag.
+
+**Forensic enrichment (#45):** Optional `forensic_scope` on `hg_audit_tag_v1` records best-effort execution-evidence entry pointers at tag creation. Tag creation remains successful when evidence is disabled, unavailable, partial, or lookup fails; intrinsic anchors (`entry_id`, `hg_round_id`, `domain_commit_id`, `sequence_index`) remain authoritative. Dynamic re-resolution is Package B scope.
 
 **Interpretation:** [audit-workflows.md](./audit-workflows.md)
 

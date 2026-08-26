@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 import { runLibrarianProposalGeneration } from './librarian-proposal-substrate.mjs';
 
 /**
@@ -58,6 +60,8 @@ export async function runPostCommitLibrarianLifecycle({
   modelProfile = null,
   evidenceContextBase = null,
   delayMs = 0,
+  recorder = null,
+  characterMoveEvidenceId = null,
 }) {
   const correlation = {
     domain_commit_id: domainCommitId,
@@ -99,6 +103,9 @@ export async function runPostCommitLibrarianLifecycle({
         continuityTurnIndex,
         characterTurnIndex,
       },
+      recorder,
+      hgSessionId: evidenceContextBase?.hgSessionId ?? null,
+      characterMoveEvidenceId,
     });
   } catch (error) {
     trace.emit(sceneAgent.session, 'hg/librarian-proposal-failed', scope, {

@@ -14,6 +14,7 @@ import {
   runDirectorSemanticEvaluation,
 } from './director-semantic-qa.mjs';
 import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
+import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 
 const EVAL_INFRA_RETRIES = 1;
@@ -133,6 +134,7 @@ export async function runDirectorPhase({
   liveMaxAttempts,
   prompt,
   directorSemanticQaEnabled = true,
+  storytellerAssessmentEvidenceId = null,
 }) {
   const budget = createDirectorSelectionBudget(liveMaxAttempts);
   let directorAccepted = false;
@@ -182,6 +184,9 @@ export async function runDirectorPhase({
         hgRoundId,
         role: 'director',
         inferenceId: directorInferenceId,
+        parentInferenceId: directorInferenceId,
+        inferenceKind: 'director_decision',
+        niForensics: true,
         attemptIndex,
         priorAttemptId: priorEvidenceId,
       },
@@ -189,6 +194,15 @@ export async function runDirectorPhase({
     directorInferenceSessionId = directorRun.inferenceSessionId;
     directorInferenceTrace = directorRun.trace;
     lastDirectorAttempt = attemptIndex;
+
+    if (!directorRun.failed) {
+      patchConsumerNiPackaging(recorder, {
+        hgSessionId,
+        evidenceId: directorRun.evidenceId,
+        manifest,
+        storytellerAssessmentEvidenceId,
+      });
+    }
 
     if (directorRun.failed) {
       recorder?.patchDecision(

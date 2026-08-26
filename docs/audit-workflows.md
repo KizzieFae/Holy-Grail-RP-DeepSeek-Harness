@@ -79,6 +79,17 @@ Use `--summary` for human-readable blocks and `--cite <evidence_id>` to resolve 
 
 **Retention:** Local forensic store only. Default-on capture; opt out with `HG_EXECUTION_EVIDENCE=off`. No streaming-chunk or mandatory reasoning capture. Reasoning is optional when the provider supplies it. Manual evidence deletion is supported; there is no automatic pruning and no production session-delete hook that removes evidence trees.
 
+**NI lineage (#45, post-`hg_ni_forensics_v1` evidence only):**
+
+1. Tag → `forensic_scope.evidence_entry_points` (or intrinsic anchors → `index.ni.by_round` / `by_commit`)
+2. Character chain: `character_orientation` → `librarian_mediation` → `character_move` (via `associations` / `index.ni`)
+3. Mediation disposition: `decision.librarian_mediation.catalog_source_ids` vs `selected_source_ids` (omission = set difference; catalog text in `request`)
+4. Retrieval boundary: `decision.librarian_mediation.retrieval_disposition[*].candidate_ids_returned`
+5. Consumer packaging: `associations.packaging_disposition` on Director/Character attempts
+6. S4: `librarian_proposal` decision + `index.ni.by_commit[domain_commit_id]`
+
+Pre-#45 sessions: best-effort only; no backfill. Package B CLI expansion not yet available.
+
 ### Audit artifacts vs runtime (operational note)
 
 - Audit artifacts are optional for runtime. Session persistence: `data/sessions/*.json` — see [rp-data-layout.md](./rp-data-layout.md).

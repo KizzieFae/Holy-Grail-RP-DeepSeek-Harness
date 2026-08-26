@@ -1053,6 +1053,7 @@ class DomainKernel:
                         "eligibility_accepted": packaging.eligibility.accepted,
                         "eligibility_reason": packaging.eligibility.reason,
                         "rejection_codes": list(packaging.eligibility.rejection_codes),
+                        "entries_considered": packaging.entries_considered,
                         "entries_mapped": packaging.entries_mapped,
                         "mediation_mode": bundle.mediation_mode,
                         "omitted_reason": packaging.omitted_reason,
@@ -1174,6 +1175,15 @@ class DomainKernel:
             "retrieval_request_ids": list(response.retrieval_request_ids),
             "candidate_ids_supplied": list(response.candidate_ids_supplied),
             "authoritative_snapshot_id": response.authoritative_snapshot_id,
+            "retrieval_disposition": [
+                {
+                    "request_id": item.request_id,
+                    "candidate_ids_returned": list(item.candidate_ids_returned),
+                    "diagnostics": dict(item.diagnostics),
+                    "retrieval_omitted": bool(item.retrieval_omitted),
+                }
+                for item in response.retrieval_disposition
+            ],
         }
 
     def finalize_librarian_mediation(

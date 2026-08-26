@@ -4,6 +4,37 @@ import {
   manifestFromLibrarianPrepareResponse,
   parseLibrarianMediationResult,
 } from './librarian-mediation-envelope.mjs';
+import { buildLibrarianMediationDecisionPatch } from './execution-evidence/ni-evidence.mjs';
+
+function patchMediationEvidence({
+  recorder,
+  hgSessionId,
+  evidenceId,
+  prepareResponse,
+  parsedResult,
+  bundle,
+  upstreamEvidenceId = null,
+  upstreamAssociationKey = 'orientation_evidence_id',
+}) {
+  if (!recorder?.isEnabled?.() || !hgSessionId || !evidenceId) return;
+  const hostValidation = bundle?.audit?.host_validation ?? {};
+  const patch = buildLibrarianMediationDecisionPatch({
+    prepareResponse,
+    parsedResult: parsedResult?.ok ? parsedResult.result : null,
+    bundle,
+    hostAccepted: Boolean(hostValidation.accepted ?? parsedResult?.ok),
+    hostReason: hostValidation.reason ?? null,
+    hostRejectionCodes: hostValidation.rejection_codes ?? [],
+    mediationMode: bundle?.mediation_mode ?? null,
+  });
+  recorder.patchDecision(evidenceId, hgSessionId, patch);
+  if (upstreamEvidenceId) {
+    recorder.linkNiAssociation(hgSessionId, upstreamEvidenceId, evidenceId, {
+      leftKey: 'mediation_evidence_id',
+      rightKey: upstreamAssociationKey,
+    });
+  }
+}
 
 /**
  * DSH-side Librarian contextual mediation substrate (#34 S2a remediation).
@@ -19,6 +50,10 @@ export async function runLibrarianMediation({
   modelProfile = null,
   allowDeterministicFallback = true,
   evidenceContextBase = null,
+  recorder = null,
+  hgSessionId = null,
+  upstreamEvidenceId = null,
+  upstreamAssociationKey = 'orientation_evidence_id',
 }) {
   const prepareResponse = await domainApi.prepareLibrarianMediationContext({
     hg_scene_id: hgSceneId,
@@ -40,6 +75,10 @@ export async function runLibrarianMediation({
     evidenceContext: {
       ...evidenceContextBase,
       role: 'librarian',
+      inferenceId: mediationInferenceId,
+      parentInferenceId: evidenceContextBase?.parentInferenceId ?? inferenceId,
+      inferenceKind: 'librarian_mediation',
+      niForensics: true,
       requestId: prepareResponse.request_id,
       mediationPhase: 'contextual_semantic',
     },
@@ -52,6 +91,16 @@ export async function runLibrarianMediation({
       knowledge_access_request: knowledgeAccessRequest,
       mediation_result: null,
       allow_deterministic_fallback: allowDeterministicFallback,
+    });
+    patchMediationEvidence({
+      recorder,
+      hgSessionId,
+      evidenceId: inferRun.evidenceId,
+      prepareResponse,
+      parsedResult: null,
+      bundle,
+      upstreamEvidenceId,
+      upstreamAssociationKey,
     });
     return {
       ok: false,
@@ -73,6 +122,17 @@ export async function runLibrarianMediation({
     allow_deterministic_fallback: allowDeterministicFallback,
   });
 
+  patchMediationEvidence({
+    recorder,
+    hgSessionId,
+    evidenceId: inferRun.evidenceId,
+    prepareResponse,
+    parsedResult: parsed,
+    bundle,
+    upstreamEvidenceId,
+    upstreamAssociationKey,
+  });
+
   return {
     ok: parsed.ok,
     stage: parsed.ok ? 'finalized' : 'parse_or_host_validation',
@@ -81,5 +141,6 @@ export async function runLibrarianMediation({
     inferRun,
     parsed: parsed.ok ? parsed.result : null,
     bundle,
+    mediationEvidenceId: inferRun.evidenceId ?? null,
   };
 }

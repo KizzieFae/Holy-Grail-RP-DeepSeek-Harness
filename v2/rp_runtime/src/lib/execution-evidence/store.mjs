@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ATTEMPT_SCHEMA, INDEX_SCHEMA } from './config.mjs';
+import { ATTEMPT_SCHEMA, INDEX_SCHEMA, NI_FORENSICS_CONTRACT } from './config.mjs';
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -35,6 +35,15 @@ function emptySemanticIndex() {
   };
 }
 
+function emptyNiIndex() {
+  return {
+    evidence_contract: NI_FORENSICS_CONTRACT,
+    by_round: {},
+    by_commit: {},
+    by_tag: {},
+  };
+}
+
 function emptyIndex(hgSessionId) {
   return {
     schema: INDEX_SCHEMA,
@@ -43,6 +52,7 @@ function emptyIndex(hgSessionId) {
     rounds: {},
     participation_by_round: {},
     semantic: emptySemanticIndex(),
+    ni: emptyNiIndex(),
   };
 }
 
@@ -51,11 +61,21 @@ function mergeDecision(currentDecision, patchDecision) {
     ...(currentDecision ?? {}),
     ...(patchDecision ?? {}),
   };
-  if (patchDecision?.director || currentDecision?.director) {
-    next.director = {
-      ...(currentDecision?.director ?? {}),
-      ...(patchDecision?.director ?? {}),
-    };
+  const nestedKeys = [
+    'director',
+    'character_orientation',
+    'storyteller_orientation',
+    'librarian_mediation',
+    'storyteller_advisory',
+    'librarian_proposal',
+  ];
+  for (const key of nestedKeys) {
+    if (patchDecision?.[key] || currentDecision?.[key]) {
+      next[key] = {
+        ...(currentDecision?.[key] ?? {}),
+        ...(patchDecision?.[key] ?? {}),
+      };
+    }
   }
   if (patchDecision?.semantic_qa !== undefined) {
     next.semantic_qa = patchDecision.semantic_qa;
@@ -107,6 +127,9 @@ export class ExecutionEvidenceStore {
     if (attempt.correlation?.role === 'participation') {
       this._indexParticipation(hgSessionId, evidenceId, attempt.correlation);
     }
+    if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
+      this._indexNi(hgSessionId, evidenceId, attempt);
+    }
     return evidenceId;
   }
 
@@ -133,6 +156,9 @@ export class ExecutionEvidenceStore {
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
     this._indexSemanticQa(hgSessionId, evidenceId, next);
+    if (next.evidence_contract === NI_FORENSICS_CONTRACT) {
+      this._indexNi(hgSessionId, evidenceId, next);
+    }
   }
 
   readAttempt(hgSessionId, evidenceId) {
@@ -165,6 +191,7 @@ export class ExecutionEvidenceStore {
     const index = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
     index.semantic = emptySemanticIndex();
     index.participation_by_round = {};
+    index.ni = emptyNiIndex();
     for (const evidenceId of index.attempt_ids ?? []) {
       const attempt = this.readAttempt(hgSessionId, evidenceId);
       if (!attempt) continue;
@@ -174,6 +201,9 @@ export class ExecutionEvidenceStore {
       }
       this._indexSemanticDecision(hgSessionId, evidenceId, attempt, index);
       this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
+      if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
+        this._indexNi(hgSessionId, evidenceId, attempt, index);
+      }
     }
     index.updated_at = new Date().toISOString();
     writeJsonAtomic(this.indexPath(hgSessionId), index);
@@ -350,6 +380,72 @@ export class ExecutionEvidenceStore {
       } else if (finding.severity === 'soft') {
         this._pushUnique(current.semantic.soft_findings, evidenceId);
       }
+    }
+
+    current.updated_at = new Date().toISOString();
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
+  }
+
+  indexTagForensicScope(hgSessionId, tagId, forensicScope) {
+    const indexPath = this.indexPath(hgSessionId);
+    const current = readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
+    if (!current.ni) current.ni = emptyNiIndex();
+    current.ni.by_tag = {
+      ...(current.ni.by_tag ?? {}),
+      [String(tagId)]: forensicScope,
+    };
+    current.updated_at = new Date().toISOString();
+    writeJsonAtomic(indexPath, current);
+  }
+
+  _indexNi(hgSessionId, evidenceId, attempt, indexOverride = null) {
+    const correlation = attempt?.correlation ?? {};
+    const inferenceKind = correlation.inference_kind;
+    const parentInferenceId = correlation.parent_inference_id ?? correlation.inference_id;
+    const roundId = correlation.hg_round_id;
+    const commitId = correlation.domain_commit_id
+      ?? attempt?.associations?.domain_commit_id
+      ?? attempt?.decision?.commit?.domain_commit_id
+      ?? attempt?.decision?.librarian_proposal?.batch_id;
+    const indexPath = this.indexPath(hgSessionId);
+    const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
+    if (!current.ni) current.ni = emptyNiIndex();
+    const ni = current.ni;
+
+    if (roundId && parentInferenceId && inferenceKind) {
+      const roundKey = String(roundId);
+      const parentKey = String(parentInferenceId);
+      ni.by_round[roundKey] = {
+        ...(ni.by_round[roundKey] ?? {}),
+        [parentKey]: {
+          ...(ni.by_round[roundKey]?.[parentKey] ?? {}),
+          [inferenceKind]: evidenceId,
+        },
+      };
+    }
+
+    const proposalCommitId = attempt?.associations?.domain_commit_id
+      ?? attempt?.decision?.librarian_proposal?.batch_id;
+    if (inferenceKind === 'librarian_proposal' && proposalCommitId) {
+      ni.by_commit = {
+        ...(ni.by_commit ?? {}),
+        [String(proposalCommitId)]: {
+          ...(ni.by_commit?.[String(proposalCommitId)] ?? {}),
+          proposal_evidence_id: evidenceId,
+          domain_commit_id: correlation.domain_commit_id ?? null,
+        },
+      };
+    }
+    if (commitId && inferenceKind === 'character_move' && attempt?.decision?.commit?.committed) {
+      ni.by_commit = {
+        ...(ni.by_commit ?? {}),
+        [String(correlation.domain_commit_id ?? commitId)]: {
+          ...(ni.by_commit?.[String(correlation.domain_commit_id ?? commitId)] ?? {}),
+          move_evidence_id: evidenceId,
+        },
+      };
     }
 
     current.updated_at = new Date().toISOString();
