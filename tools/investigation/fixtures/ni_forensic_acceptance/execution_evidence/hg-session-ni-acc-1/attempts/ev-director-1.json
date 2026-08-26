@@ -1,0 +1,29 @@
+{
+  "evidence_id": "ev-director-1",
+  "evidence_contract": "hg_ni_forensics_v1",
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "inference_id": "inf-director-1",
+    "parent_inference_id": "inf-director-1",
+    "inference_kind": "director_decision",
+    "role": "director"
+  },
+  "request": {
+    "contributions": [
+      {
+        "contribution_id": "storyteller-advisory-1",
+        "content": "Betrayal tension and Trust fracture advisory for Alice."
+      }
+    ]
+  },
+  "response": {},
+  "decision": { "outcome": "accepted" },
+  "associations": {
+    "storyteller_assessment_evidence_id": "ev-st-assess-1",
+    "packaging_disposition": {
+      "package_id": "pkg-ni-1",
+      "mapped_contribution_ids": ["storyteller-advisory-1"]
+    }
+  }
+}

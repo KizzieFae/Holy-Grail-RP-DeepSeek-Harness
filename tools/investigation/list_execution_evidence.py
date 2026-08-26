@@ -15,6 +15,8 @@ if str(TOOLS) not in sys.path:
 
 from _repo_paths import EXECUTION_EVIDENCE_DIR, REPO_ROOT  # noqa: E402
 
+from investigation._ni_forensics import ni_cli_handoff  # noqa: E402
+
 
 def session_evidence_dir(hg_session_id: str) -> Path:
     return EXECUTION_EVIDENCE_DIR / hg_session_id
@@ -258,6 +260,11 @@ def main() -> int:
         help="Reconstruct a role-specific causal chain for the round",
     )
     parser.add_argument(
+        "--ni",
+        action="store_true",
+        help="Print NI investigator handoff for this session (or --round)",
+    )
+    parser.add_argument(
         "--participation",
         action="store_true",
         help="List participation evidence ids for the selected round",
@@ -272,6 +279,17 @@ def main() -> int:
     parser.add_argument("--residual-soft", action="store_true")
     parser.add_argument("--exhausted-hard", action="store_true")
     args = parser.parse_args()
+
+    if args.ni:
+        if args.round:
+            print(ni_cli_handoff(args.hg_session_id, "round", args.round))
+        else:
+            print(ni_cli_handoff(args.hg_session_id, "session"))
+        print(
+            "# Full NI CLI: python tools/investigation/trace_ni_forensics.py "
+            f"{args.hg_session_id} session"
+        )
+        return 0
 
     root = session_evidence_dir(args.hg_session_id)
     if not root.is_dir():

@@ -11,6 +11,8 @@ Offline utilities that operate on **current** repository paths (`data/`, audit J
 | `audit_episodic_issue_mismatch_scan.py` | Read-only scan of character audit `*_full.json` files |
 | `list_execution_evidence.py` | List V2 execution evidence for a session (`data/execution_evidence/`) |
 | `list_audit_tags.py` | List V2 human audit tags for a session (`data/audit_tags/`) |
+| `trace_ni_forensics.py` | Read-only NI forensic investigator over `hg_ni_forensics_v1` (#46 Package B) |
+| `_ni_forensics.py` | Shared NI traversal/reconstruction library (not invoked directly) |
 | `_issue240_*.py` | Offline Issue #240 audit analysis helpers (read audit trees only) |
 | `data/investigation_runs/` | Default local output for comparators (gitignored) |
 
@@ -27,6 +29,9 @@ python tools/investigation/compare_participation_calibration_ab.py --help
 python tools/investigation/audit_episodic_issue_mismatch_scan.py --help
 python tools/investigation/list_execution_evidence.py <hg_session_id>
 python tools/investigation/list_audit_tags.py <hg_session_id>
+python tools/investigation/trace_ni_forensics.py <hg_session_id> session
+python tools/investigation/trace_ni_forensics.py <hg_session_id> tag <tag_id> [--resolve]
+python tools/investigation/trace_ni_forensics.py <hg_session_id> lineage --source-id <id> [--json]
 ```
 
 ## Notes

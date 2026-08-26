@@ -1,0 +1,36 @@
+{
+  "schema": "hg_audit_tag_v1",
+  "tag_id": "tag-ni-acc-1",
+  "tag_index": 1,
+  "hg_session_id": "hg-session-ni-acc-1",
+  "anchor": {
+    "entry_id": "entry-presentation-1",
+    "sequence_index": 3,
+    "hg_round_id": "round-1",
+    "domain_commit_id": "commit-ni-1",
+    "speaker": "Narrator",
+    "transcript_role": "assistant"
+  },
+  "comment": "Suspicious latch behavior",
+  "forensic_scope": {
+    "resolution_status": "complete",
+    "hg_round_id": "round-1",
+    "domain_commit_id": "commit-ni-1",
+    "entry_sequence_index": 3,
+    "evidence_entry_points": {
+      "storyteller_chain": {
+        "assessment_evidence_id": "ev-st-assess-1",
+        "orientation_evidence_id": "ev-st-orient-1"
+      },
+      "character_chains": {
+        "inf-character-alice-1": {
+          "move_evidence_id": "ev-move-char-1",
+          "orientation_evidence_id": "ev-orient-char-1",
+          "mediation_evidence_id": "ev-med-char-1"
+        }
+      },
+      "proposal_evidence_id": "ev-proposal-1",
+      "move_evidence_id": "ev-move-char-1"
+    }
+  }
+}

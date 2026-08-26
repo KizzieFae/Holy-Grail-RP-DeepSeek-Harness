@@ -1,0 +1,13 @@
+{
+  "evidence_id": "legacy-director-1",
+  "correlation": {
+    "hg_session_id": "hg-session-pre45-1",
+    "hg_round_id": "round-legacy",
+    "inference_id": "inf-legacy-1",
+    "role": "director"
+  },
+  "request": { "contributions": [] },
+  "response": {},
+  "decision": { "outcome": "accepted" },
+  "associations": {}
+}

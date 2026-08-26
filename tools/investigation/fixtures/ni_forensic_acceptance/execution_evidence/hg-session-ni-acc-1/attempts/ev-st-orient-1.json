@@ -1,0 +1,16 @@
+{
+  "evidence_id": "ev-st-orient-1",
+  "evidence_contract": "hg_ni_forensics_v1",
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "inference_id": "inf-storyteller-1",
+    "parent_inference_id": "inf-storyteller-1",
+    "inference_kind": "storyteller_orientation",
+    "role": "storyteller"
+  },
+  "request": { "contributions": [] },
+  "response": {},
+  "decision": { "storyteller_orientation": { "accepted": true } },
+  "associations": {}
+}

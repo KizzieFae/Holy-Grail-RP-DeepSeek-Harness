@@ -88,7 +88,24 @@ Use `--summary` for human-readable blocks and `--cite <evidence_id>` to resolve 
 5. Consumer packaging: `associations.packaging_disposition` on Director/Character attempts
 6. S4: `librarian_proposal` decision + `index.ni.by_commit[domain_commit_id]`
 
-Pre-#45 sessions: best-effort only; no backfill. Package B CLI expansion not yet available.
+**Package B CLI (#46):** `python tools/investigation/trace_ni_forensics.py <hg_session_id> <view>`
+
+| View | Command |
+|------|---------|
+| Whole-run map | `session` |
+| Round NI activity | `round <hg_round_id>` |
+| Tag-driven | `tag <tag_id> [--resolve]` |
+| Mediation disposition | `mediation [--evidence-id <id>]` |
+| Storyteller influence | `storyteller [--round <id>]` |
+| Character context | `character` |
+| S4 chain | `s4 <domain_commit_id>` |
+| Source lineage (disposition discovered) | `lineage --source-id <id>` |
+
+Use `--json` for `hg_ni_investigator_v1` machine output. Use `--rebuild-index` for in-memory `index.ni` rebuild (never persisted).
+
+Handoffs: `list_execution_evidence.py --ni`; `list_audit_tags.py --tag <id>`.
+
+Pre-#45 sessions: best-effort only; NI views report `ni_contract_unavailable`.
 
 ### Audit artifacts vs runtime (operational note)
 

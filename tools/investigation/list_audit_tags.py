@@ -14,6 +14,8 @@ if str(TOOLS) not in sys.path:
 
 from _repo_paths import AUDIT_TAGS_DIR, REPO_ROOT  # noqa: E402
 
+from investigation._ni_forensics import ni_cli_handoff  # noqa: E402
+
 
 def session_tags_dir(hg_session_id: str) -> Path:
     return AUDIT_TAGS_DIR / hg_session_id
@@ -54,13 +56,52 @@ def main() -> int:
         action="store_true",
         help="Emit JSON instead of a human summary",
     )
+    parser.add_argument("--tag", help="Show one tag by tag_id")
+    parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="With --tag: hand off to trace_ni_forensics.py tag view",
+    )
+    parser.add_argument(
+        "--resolve",
+        action="store_true",
+        help="With --trace: re-resolve forensic_scope",
+    )
     args = parser.parse_args()
 
     root = session_tags_dir(args.hg_session_id)
-    tags = list_tags(args.hg_session_id)
     if not root.is_dir():
         print(f"No audit tag directory: {root}", file=sys.stderr)
         return 1
+
+    if args.tag:
+        tag = load_tag(args.hg_session_id, args.tag)
+        if tag is None:
+            print(f"Tag not found: {args.tag}", file=sys.stderr)
+            return 1
+        if args.trace:
+            cmd = ni_cli_handoff(args.hg_session_id, "tag", args.tag)
+            if args.resolve:
+                cmd += " --resolve"
+            print(cmd)
+            return 0
+        if args.json:
+            print(json.dumps(tag, indent=2, ensure_ascii=False))
+            return 0
+        anchor = tag.get("anchor") or {}
+        scope = tag.get("forensic_scope") or {}
+        print(f"tag_id: {tag.get('tag_id')}")
+        print(f"anchor.entry_id: {anchor.get('entry_id')}")
+        print(f"anchor.hg_round_id: {anchor.get('hg_round_id')}")
+        print(f"anchor.domain_commit_id: {anchor.get('domain_commit_id')}")
+        print(f"forensic_scope.resolution_status: {scope.get('resolution_status', 'n/a')}")
+        print(
+            f"ni_trace: python tools/investigation/trace_ni_forensics.py "
+            f"{args.hg_session_id} tag {args.tag}"
+        )
+        return 0
+
+    tags = list_tags(args.hg_session_id)
 
     if args.json:
         print(json.dumps({"hg_session_id": args.hg_session_id, "tags": tags}, indent=2, ensure_ascii=False))

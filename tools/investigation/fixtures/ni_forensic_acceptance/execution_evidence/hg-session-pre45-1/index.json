@@ -1,0 +1,28 @@
+{
+  "schema": "hg_execution_evidence_index_v1",
+  "hg_session_id": "hg-session-pre45-1",
+  "attempt_ids": ["legacy-director-1"],
+  "rounds": {
+    "round-legacy": ["legacy-director-1"]
+  },
+  "participation_by_round": {},
+  "semantic": {
+    "by_dimension": {},
+    "hard_findings": [],
+    "soft_findings": [],
+    "residual_soft": [],
+    "multi_candidate_inferences": [],
+    "exhausted_hard_loops": [],
+    "successful_correction_chains": [],
+    "evaluator_failures": [],
+    "evaluation_chains": {},
+    "qa_by_target_role": {},
+    "qa_pass_chains": {}
+  },
+  "ni": {
+    "evidence_contract": "hg_ni_forensics_v1",
+    "by_round": {},
+    "by_commit": {},
+    "by_tag": {}
+  }
+}

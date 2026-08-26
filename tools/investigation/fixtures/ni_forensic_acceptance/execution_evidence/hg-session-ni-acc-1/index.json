@@ -1,0 +1,70 @@
+{
+  "schema": "hg_execution_evidence_index_v1",
+  "hg_session_id": "hg-session-ni-acc-1",
+  "attempt_ids": [
+    "ev-orient-char-1",
+    "ev-med-char-1",
+    "ev-move-char-1",
+    "ev-st-orient-1",
+    "ev-st-assess-1",
+    "ev-director-1",
+    "ev-proposal-1"
+  ],
+  "rounds": {
+    "round-1": [
+      "ev-orient-char-1",
+      "ev-med-char-1",
+      "ev-move-char-1",
+      "ev-st-orient-1",
+      "ev-st-assess-1",
+      "ev-director-1",
+      "ev-proposal-1"
+    ]
+  },
+  "participation_by_round": {},
+  "semantic": {
+    "by_dimension": {},
+    "hard_findings": [],
+    "soft_findings": [],
+    "residual_soft": [],
+    "multi_candidate_inferences": [],
+    "exhausted_hard_loops": [],
+    "successful_correction_chains": [],
+    "evaluator_failures": [],
+    "evaluation_chains": {},
+    "qa_by_target_role": {},
+    "qa_pass_chains": {}
+  },
+  "ni": {
+    "evidence_contract": "hg_ni_forensics_v1",
+    "by_round": {
+      "round-1": {
+        "inf-character-alice-1": {
+          "character_orientation": "ev-orient-char-1",
+          "librarian_mediation": "ev-med-char-1",
+          "character_move": "ev-move-char-1"
+        },
+        "inf-storyteller-1": {
+          "storyteller_orientation": "ev-st-orient-1",
+          "storyteller_assessment": "ev-st-assess-1",
+          "librarian_mediation": "ev-med-char-1"
+        }
+      }
+    },
+    "by_commit": {
+      "commit-ni-1": {
+        "move_evidence_id": "ev-move-char-1",
+        "proposal_evidence_id": "ev-proposal-1",
+        "domain_commit_id": "commit-ni-1"
+      }
+    },
+    "by_tag": {
+      "tag-ni-acc-1": {
+        "resolution_status": "complete",
+        "hg_round_id": "round-1",
+        "domain_commit_id": "commit-ni-1"
+      }
+    }
+  },
+  "updated_at": "2026-08-26T00:00:00.000Z"
+}

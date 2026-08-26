@@ -1,0 +1,36 @@
+{
+  "evidence_id": "ev-proposal-1",
+  "evidence_contract": "hg_ni_forensics_v1",
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "inference_id": "inf-proposal-1",
+    "parent_inference_id": "inf-proposal-1",
+    "inference_kind": "librarian_proposal",
+    "role": "librarian",
+    "domain_commit_id": "commit-ni-1"
+  },
+  "request": { "contributions": [] },
+  "response": {},
+  "decision": {
+    "librarian_proposal": {
+      "batch_id": "batch-ni-1",
+      "host_accepted": true,
+      "host_rejection_codes": [],
+      "continuity_accepted_count": 1,
+      "continuity_rejected_count": 0,
+      "durable_mutation_applied": true,
+      "item_dispositions": [
+        {
+          "proposal_id": "prop-ni-1",
+          "outcome": "accepted",
+          "reason_code": null
+        }
+      ]
+    }
+  },
+  "associations": {
+    "domain_commit_id": "commit-ni-1",
+    "character_move_evidence_id": "ev-move-char-1"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "evidence_id": "ev-med-char-1",
+  "evidence_contract": "hg_ni_forensics_v1",
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "inference_id": "inf-med-char-1",
+    "parent_inference_id": "inf-character-alice-1",
+    "inference_kind": "librarian_mediation",
+    "role": "character"
+  },
+  "request": {
+    "contributions": [
+      {
+        "contribution_id": "manifest-librarian-fg-catalog",
+        "content": "Eligible mediation catalog",
+        "knowledge_ids": ["lmi:cand:ni-fact-f", "lmi:cand:ni-fact-g"]
+      }
+    ]
+  },
+  "response": {},
+  "decision": {
+    "librarian_mediation": {
+      "catalog_source_ids": ["lmi:cand:ni-fact-f", "lmi:cand:ni-fact-g"],
+      "selected_source_ids": ["lmi:cand:ni-fact-g"],
+      "retrieval_disposition": [
+        {
+          "request_id": "rr-1",
+          "candidate_ids_returned": ["ni-fact-f", "ni-fact-g"],
+          "retrieval_omitted": false
+        }
+      ],
+      "bundle_id": "bundle-ni-1",
+      "bundle_entry_ids": ["entry-g-1"],
+      "source_id_to_entry_id": {
+        "lmi:cand:ni-fact-g": "entry-g-1"
+      },
+      "host_accepted": true
+    }
+  },
+  "associations": {}
+}

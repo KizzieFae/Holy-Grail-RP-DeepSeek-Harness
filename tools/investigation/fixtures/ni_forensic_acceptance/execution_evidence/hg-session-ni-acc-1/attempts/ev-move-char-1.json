@@ -1,0 +1,38 @@
+{
+  "evidence_id": "ev-move-char-1",
+  "evidence_contract": "hg_ni_forensics_v1",
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "inference_id": "inf-move-char-1",
+    "parent_inference_id": "inf-character-alice-1",
+    "inference_kind": "character_move",
+    "role": "character",
+    "domain_commit_id": "commit-ni-1"
+  },
+  "request": {
+    "contributions": [
+      {
+        "contribution_id": "librarian-entry-g-1",
+        "source_kind": "librarian_knowledge",
+        "content": "FACT_G_VISIBLE_MARKER: visible treaty clause Alice may recall."
+      }
+    ]
+  },
+  "response": {},
+  "decision": {
+    "commit": {
+      "committed": true,
+      "domain_commit_id": "commit-ni-1"
+    }
+  },
+  "associations": {
+    "librarian_mediation_evidence_id": "ev-med-char-1",
+    "packaging_disposition": {
+      "bundle_id": "bundle-ni-1",
+      "entries_mapped": 1,
+      "mapped_contribution_ids": ["librarian-entry-g-1"],
+      "mapped_entry_ids": ["entry-g-1"]
+    }
+  }
+}
