@@ -355,6 +355,22 @@ class TestB2IssuePressureOverlay(unittest.TestCase):
         self.assertTrue(audit["issue_pressure_apply_results"])
         self.assertIn(issue.issue_id, fixture.manager.issue_pressure_semantic_overlays)
 
+    def test_inference_failure_retains_projectable_overlay(self) -> None:
+        fixture, request, issue = _session_with_issue()
+        apply_issue_tension_pressure(
+            fixture.manager,
+            _proposal(commit_id="commit-b2-1", issue_id=issue.issue_id),
+        )
+        self.assertIsNotNone(
+            get_projectable_issue_pressure_overlay(fixture.manager, issue.issue_id)
+        )
+        service = LibrarianProposalService()
+        result = service.finalize_proposals(request, fixture, proposal_result=None)
+        self.assertEqual(result.degradation_mode, "inference_failed")
+        self.assertIsNotNone(
+            get_projectable_issue_pressure_overlay(fixture.manager, issue.issue_id)
+        )
+
     def test_overlay_persists_round_trip(self) -> None:
         fixture, _request, issue = _session_with_issue()
         apply_issue_tension_pressure(
