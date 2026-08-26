@@ -48,6 +48,13 @@ def serialize_manager_state(*, manager: Any) -> dict[str, Any]:
             eid: rec.to_dict()
             for eid, rec in getattr(manager, "excursions", {}).items()
         },
+        "issue_pressure_semantic_overlays": {
+            str(issue_id): dict(overlay)
+            for issue_id, overlay in getattr(
+                manager, "issue_pressure_semantic_overlays", {}
+            ).items()
+            if isinstance(overlay, dict)
+        },
         "continuity_audit_origin_log": list(
             getattr(manager, "continuity_audit_origin_log", []) or []
         ),
@@ -134,6 +141,15 @@ def restore_manager_state(
         }
     else:
         manager.excursions = {}
+    raw_overlays = data.get("issue_pressure_semantic_overlays")
+    if isinstance(raw_overlays, dict):
+        manager.issue_pressure_semantic_overlays = {
+            str(issue_id): dict(overlay)
+            for issue_id, overlay in raw_overlays.items()
+            if isinstance(overlay, dict)
+        }
+    else:
+        manager.issue_pressure_semantic_overlays = {}
     raw_origin = data.get("continuity_audit_origin_log")
     if isinstance(raw_origin, list):
         manager.continuity_audit_origin_log = [
@@ -177,6 +193,7 @@ def initialize_scene_state(
     manager.anchor_character_id = None
     manager.setup_seam_complete = False
     manager.excursions = {}
+    manager.issue_pressure_semantic_overlays = {}
     manager.continuity_audit_origin_log = []
 
 

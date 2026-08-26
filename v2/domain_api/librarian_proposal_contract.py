@@ -35,6 +35,7 @@ EvidenceKind = Literal[
     "memory_record",
     "knowledge_record",
     "bundle_entry",
+    "continuity_issue",
 ]
 ProposalConfidence = Literal["confirmed", "likely", "speculative"]
 ProposalValidationOutcome = Literal["accept", "reject"]
@@ -52,12 +53,14 @@ S4A_ACTIVE_PROPOSAL_KINDS: frozenset[str] = frozenset(
         "consequence_meaning",
         "information_salience",
         "knowledge_revelation_significance",
+        "issue_tension_pressure",
     }
 )
 
 S4B_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
     {
         "knowledge_revelation_significance",
+        "issue_tension_pressure",
     }
 )
 
@@ -74,6 +77,18 @@ _CONSEQUENCE_TAGS = frozenset(
 )
 _SALIENCE_LEVELS = frozenset({"minor", "major", "pivotal"})
 _REVELATION_SIGNIFICANCE_LEVELS = _SALIENCE_LEVELS
+_MAX_SEMANTIC_UNMET_CONDITION_LEN = 500
+_MAX_STAKES_SUMMARY_LEN = 300
+_ISSUE_PRESSURE_FORBIDDEN_PAYLOAD_KEYS = frozenset(
+    {
+        "pressure_kind",
+        "required_next_step",
+        "issue_status",
+        "participants",
+        "grant_knowledge",
+        "add_to_known_by",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -277,6 +292,25 @@ def validate_proposal_payload_schema(
         if payload.get("authority_class") == "authoritative":
             return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
         if payload.get("grant_knowledge") or payload.get("add_to_known_by"):
+            return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
+        return True, "", ()
+    if proposal_kind == "issue_tension_pressure":
+        issue_ref = str(payload.get("issue_ref", "") or "").strip()
+        semantic = str(payload.get("semantic_unmet_condition", "") or "").strip()
+        stakes = str(payload.get("stakes_summary", "") or "").strip()
+        if not issue_ref or not semantic:
+            return (
+                False,
+                "issue_tension_pressure requires issue_ref and semantic_unmet_condition",
+                ("invalid_payload_schema",),
+            )
+        if len(semantic) > _MAX_SEMANTIC_UNMET_CONDITION_LEN:
+            return False, "semantic_unmet_condition_too_long", ("invalid_payload_schema",)
+        if stakes and len(stakes) > _MAX_STAKES_SUMMARY_LEN:
+            return False, "stakes_summary_too_long", ("invalid_payload_schema",)
+        if any(key in payload for key in _ISSUE_PRESSURE_FORBIDDEN_PAYLOAD_KEYS):
+            return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
+        if payload.get("authority_class") == "authoritative":
             return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
         return True, "", ()
     return False, f"unsupported_proposal_kind:{proposal_kind}", ("invalid_proposal_kind",)

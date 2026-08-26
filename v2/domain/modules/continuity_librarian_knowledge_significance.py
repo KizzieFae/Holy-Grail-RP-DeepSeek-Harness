@@ -214,52 +214,18 @@ def apply_accepted_librarian_proposals(
     manager: Any,
     proposals: tuple[LibrarianSemanticProposal, ...],
     continuity_decision: ContinuityProposalBatchDecision,
-) -> tuple[ContinuityProposalBatchDecision, list[KnowledgeSignificanceApplyResult]]:
-    apply_results: list[KnowledgeSignificanceApplyResult] = []
-    updated: list[ContinuityProposalItemDecision] = []
-
-    proposal_by_id = {item.proposal_id: item for item in proposals}
-
-    for item in continuity_decision.item_decisions:
-        proposal = proposal_by_id.get(item.proposal_id)
-        if (
-            item.outcome != "accept"
-            or proposal is None
-            or str(proposal.proposal_kind) != "knowledge_revelation_significance"
-        ):
-            updated.append(item)
-            continue
-
-        result = apply_knowledge_revelation_significance(manager, proposal)
-        apply_results.append(result)
-        if result.applied:
-            updated.append(
-                ContinuityProposalItemDecision(
-                    proposal_id=item.proposal_id,
-                    outcome="accept",
-                    reason_code=item.reason_code,
-                    reason_detail=item.reason_detail,
-                    durable_mutation_applied=result.reason_code == "applied",
-                )
-            )
-        else:
-            updated.append(
-                ContinuityProposalItemDecision(
-                    proposal_id=item.proposal_id,
-                    outcome="reject",
-                    reason_code=result.reason_code or "apply_failed",
-                    reason_detail="S4b apply rejected after continuity accept",
-                    durable_mutation_applied=False,
-                )
-            )
-
-    accepted = sum(1 for item in updated if item.outcome == "accept")
-    rejected = len(updated) - accepted
-    new_decision = ContinuityProposalBatchDecision(
-        batch_id=continuity_decision.batch_id,
-        domain_commit_id=continuity_decision.domain_commit_id,
-        item_decisions=tuple(updated),
-        accepted_count=accepted,
-        rejected_count=rejected,
+) -> tuple[ContinuityProposalBatchDecision, list[Any]]:
+    from continuity_librarian_issue_pressure import (  # noqa: WPS433
+        apply_accepted_librarian_proposals as _apply_all,
     )
-    return new_decision, apply_results
+
+    new_decision, combined_results, _b2_results = _apply_all(
+        manager,
+        proposals,
+        continuity_decision,
+    )
+    return new_decision, combined_results
+
+
+# Legacy inline implementation removed — unified dispatcher lives in
+# continuity_librarian_issue_pressure.py (#40 B2 overlay).

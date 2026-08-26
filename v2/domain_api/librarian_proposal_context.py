@@ -5,6 +5,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from continuity_issue_retrieval import get_active_issues
+from continuity_state import IssueStatus
+
 from .contract import PromptContribution
 from .librarian_proposal_contract import (
     LibrarianProposalContextRequest,
@@ -142,6 +145,41 @@ def build_post_commit_evidence_catalog(
                 ),
                 anchor_commit_id=request.domain_commit_id,
                 provenance={"snapshot": "post_commit"},
+            )
+        )
+
+    active_issues = get_active_issues(
+        manager=fixture.manager,
+        limit=8,
+        statuses=[IssueStatus.ACTIVE, IssueStatus.ESCALATING],
+    )
+    for issue in active_issues:
+        issue_id = str(issue.issue_id)
+        issue_payload = {
+            "issue_id": issue_id,
+            "status": issue.status.value,
+            "participants": list(issue.participants),
+            "pressure_kind": issue.pressure_kind,
+            "blocked_what": issue.blocked_what,
+            "required_next_step": issue.required_next_step,
+            "last_change": issue.last_change,
+            "description": issue.description,
+        }
+        catalog.append(
+            ProposalEvidenceCatalogItem(
+                anchor_id=f"continuity_issue:{issue_id}",
+                evidence_kind="continuity_issue",
+                stable_ref=f"issue:{issue_id}",
+                authority_class="authoritative",
+                visibility_scope="scene_orchestration",
+                content=json.dumps(issue_payload, ensure_ascii=False, sort_keys=True),
+                anchor_commit_id=request.domain_commit_id,
+                anchor_path=f"/issues/{issue_id}",
+                provenance={
+                    "issue_id": issue_id,
+                    "status": issue.status.value,
+                    "turn_index": request.turn_index,
+                },
             )
         )
 

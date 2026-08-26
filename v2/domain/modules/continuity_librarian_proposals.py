@@ -29,6 +29,8 @@ REASON_INVALID_KIND = "invalid_proposal_kind"
 REASON_INVALID_PAYLOAD = "invalid_payload_schema"
 REASON_PRESERVATION_SIGNAL = "preservation_signal_not_evidence"
 REASON_UNKNOWN_EVENT = "unknown_event_reference"
+REASON_UNKNOWN_ISSUE = "unknown_issue_reference"
+REASON_ISSUE_NOT_PROJECTABLE = "issue_not_projectable"
 REASON_SUBJECT_NOT_KNOWER = "subject_not_in_known_by"
 
 
@@ -75,6 +77,14 @@ def _public_event_catalog_items(
     return [item for item in catalog if str(item.evidence_kind) == "public_event"]
 
 
+def _continuity_issue_catalog_items(
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> list[ProposalEvidenceCatalogItem]:
+    if not catalog:
+        return []
+    return [item for item in catalog if str(item.evidence_kind) == "continuity_issue"]
+
+
 def _event_ref_matches_catalog(
     event_ref: str,
     catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
@@ -88,6 +98,42 @@ def _event_ref_matches_catalog(
         if ref == event_id or ref == item.stable_ref:
             return True
     return False
+
+
+def _issue_ref_matches_catalog(
+    issue_ref: str,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> bool:
+    ref = str(issue_ref or "").strip()
+    if not ref:
+        return False
+    for item in _continuity_issue_catalog_items(catalog):
+        provenance = dict(item.provenance or {})
+        issue_id = str(provenance.get("issue_id", "") or "").strip()
+        if ref in {issue_id, item.stable_ref, item.anchor_id.replace("continuity_issue:", "", 1)}:
+            return True
+    return False
+
+
+def _issue_status_from_catalog(
+    issue_ref: str,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> str:
+    ref = str(issue_ref or "").strip()
+    import json
+
+    for item in _continuity_issue_catalog_items(catalog):
+        provenance = dict(item.provenance or {})
+        issue_id = str(provenance.get("issue_id", "") or "").strip()
+        if ref not in {issue_id, item.stable_ref, item.anchor_id.replace("continuity_issue:", "", 1)}:
+            continue
+        try:
+            payload = json.loads(item.content or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        if isinstance(payload, dict):
+            return str(payload.get("status", "") or "").strip()
+    return ""
 
 
 def _known_by_from_catalog_event_ref(
@@ -164,6 +210,49 @@ def _validate_knowledge_revelation_significance_legality(
     return None
 
 
+def _validate_issue_tension_pressure_legality(
+    proposal: LibrarianSemanticProposal,
+    *,
+    catalog: tuple[ProposalEvidenceCatalogItem, ...] | None,
+) -> ContinuityProposalItemDecision | None:
+    payload = dict(proposal.proposed_payload or {})
+    issue_ref = str(payload.get("issue_ref", "") or "").strip()
+
+    if not _issue_ref_matches_catalog(issue_ref, catalog):
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_UNKNOWN_ISSUE,
+            reason_detail=issue_ref or "missing_issue_ref",
+            durable_mutation_applied=False,
+        )
+
+    issue_anchors = [
+        anchor
+        for anchor in proposal.evidence_anchors
+        if str(anchor.evidence_kind) == "continuity_issue"
+    ]
+    if not issue_anchors:
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_MISSING_ANCHORS,
+            reason_detail="requires continuity_issue evidence anchor",
+            durable_mutation_applied=False,
+        )
+
+    status = _issue_status_from_catalog(issue_ref, catalog)
+    if status and status not in {"active", "escalating"}:
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=REASON_ISSUE_NOT_PROJECTABLE,
+            reason_detail=status,
+            durable_mutation_applied=False,
+        )
+    return None
+
+
 def evaluate_librarian_proposal_continuity(
     proposal: LibrarianSemanticProposal,
     *,
@@ -220,6 +309,7 @@ def evaluate_librarian_proposal_continuity(
         if scope == "orchestration_only" and proposal.proposal_kind in {
             "knowledge_revelation_significance",
             "knowledge_propagation_augmentation",
+            "issue_tension_pressure",
         }:
             return ContinuityProposalItemDecision(
                 proposal_id=proposal.proposal_id,
@@ -269,6 +359,14 @@ def evaluate_librarian_proposal_continuity(
 
     if str(proposal.proposal_kind) == "knowledge_revelation_significance":
         legality = _validate_knowledge_revelation_significance_legality(
+            proposal,
+            catalog=catalog,
+        )
+        if legality is not None:
+            return legality
+
+    if str(proposal.proposal_kind) == "issue_tension_pressure":
+        legality = _validate_issue_tension_pressure_legality(
             proposal,
             catalog=catalog,
         )

@@ -8,6 +8,7 @@ const VALID_KINDS = new Set([
   'consequence_meaning',
   'information_salience',
   'knowledge_revelation_significance',
+  'issue_tension_pressure',
 ]);
 
 function asStringArray(value) {

@@ -17,6 +17,10 @@ ensure_domain_paths()
 
 from continuity_issue_manager_wiring import DEFAULT_ACTIVE_ISSUE_LIMIT  # noqa: E402
 from continuity_issue_retrieval import get_active_issues  # noqa: E402
+from continuity_scene_pressure_projection import (  # noqa: E402
+    build_scene_pressure_entry,
+    get_projectable_issue_pressure_overlay,
+)
 from continuity_state import IssueStatus  # noqa: E402
 
 from .contract import PromptContribution  # noqa: E402
@@ -239,16 +243,8 @@ def project_scene_pressures_digest(
     refs: list[dict[str, Any]] = []
     for issue in active_issues:
         issue_id = str(issue.issue_id)
-        entry = {
-            "issue_id": issue_id,
-            "status": issue.status.value,
-            "participants": list(issue.participants),
-            "last_change": issue.last_change,
-            "pressure_kind": issue.pressure_kind,
-            "blocked_what": issue.blocked_what,
-            "required_next_step": issue.required_next_step,
-            "description": issue.description,
-        }
+        overlay = get_projectable_issue_pressure_overlay(mgr, issue_id)
+        entry = build_scene_pressure_entry(issue, overlay)
         entries.append(entry)
         refs.extend(
             [
@@ -318,6 +314,26 @@ def project_scene_pressures_digest(
                     text=issue.description,
                 )
             )
+        if overlay:
+            refs.append(
+                _authority_ref(
+                    ref_id=f"issue:{issue_id}:semantic_unmet_condition",
+                    kind="librarian_issue_pressure_overlay",
+                    authority_class="derived",
+                    label=f"Librarian semantic unmet condition ({issue_id})",
+                    text=str(overlay.get("semantic_unmet_condition", "") or ""),
+                )
+            )
+            if overlay.get("stakes_summary"):
+                refs.append(
+                    _authority_ref(
+                        ref_id=f"issue:{issue_id}:stakes_summary",
+                        kind="librarian_issue_pressure_overlay",
+                        authority_class="derived",
+                        label=f"Librarian stakes summary ({issue_id})",
+                        text=str(overlay.get("stakes_summary", "") or ""),
+                    )
+                )
 
     content = (
         "SCENE PRESSURES (bounded active issues):\n"

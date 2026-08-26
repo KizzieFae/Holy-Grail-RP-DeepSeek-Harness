@@ -175,6 +175,7 @@ class ContinuityManager:
         self.anchor_character_id: Optional[str] = None
         self.setup_seam_complete: bool = False
         self.excursions: dict[str, ExcursionRecord] = {}
+        self.issue_pressure_semantic_overlays: dict[str, dict[str, Any]] = {}
         # Issue #79 Slice 3 — session audit origin log (read/flush at export only).
         self.continuity_audit_origin_log: list[dict[str, Any]] = []
         self._continuity_pipeline_turn_active: bool = False

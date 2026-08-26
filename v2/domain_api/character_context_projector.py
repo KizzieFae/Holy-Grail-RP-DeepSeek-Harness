@@ -17,6 +17,10 @@ ensure_domain_paths()
 from character_state_model import CharacterState  # noqa: E402
 from continuity_issue_manager_wiring import DEFAULT_ACTIVE_ISSUE_LIMIT  # noqa: E402
 from continuity_issue_retrieval import get_active_issues  # noqa: E402
+from continuity_scene_pressure_projection import (  # noqa: E402
+    build_scene_pressure_entry,
+    get_projectable_issue_pressure_overlay,
+)
 from continuity_state import IssueStatus  # noqa: E402
 
 from .continuity_context_projector import (  # noqa: E402
@@ -247,28 +251,14 @@ def project_character_scene_pressures(
         participants = list(issue.participants)
         if participants and character_id not in participants:
             continue
-        entries.append(
-            {
-                "issue_id": issue.issue_id,
-                "status": issue.status.value,
-                "participants": participants,
-                "pressure_kind": issue.pressure_kind,
-                "blocked_what": issue.blocked_what,
-                "required_next_step": issue.required_next_step,
-                "description": issue.description,
-            }
-        )
+        overlay = get_projectable_issue_pressure_overlay(mgr, str(issue.issue_id))
+        entries.append(build_scene_pressure_entry(issue, overlay))
     if not entries:
         entries = [
-            {
-                "issue_id": issue.issue_id,
-                "status": issue.status.value,
-                "participants": list(issue.participants),
-                "pressure_kind": issue.pressure_kind,
-                "blocked_what": issue.blocked_what,
-                "required_next_step": issue.required_next_step,
-                "description": issue.description,
-            }
+            build_scene_pressure_entry(
+                issue,
+                get_projectable_issue_pressure_overlay(mgr, str(issue.issue_id)),
+            )
             for issue in active_issues
         ]
     return PromptContribution(

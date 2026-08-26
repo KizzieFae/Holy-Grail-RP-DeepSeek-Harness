@@ -18,9 +18,6 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
-from continuity_librarian_knowledge_significance import (  # noqa: E402
-    apply_accepted_librarian_proposals,
-)
 from continuity_librarian_proposals import (  # noqa: E402
     build_evidence_closure,
     evaluate_librarian_proposal_batch,
@@ -229,7 +226,11 @@ class LibrarianProposalService:
             batch_id=batch_id,
             catalog=evidence_catalog,
         )
-        continuity_decision, apply_results = apply_accepted_librarian_proposals(
+        from continuity_librarian_issue_pressure import (  # noqa: WPS433
+            apply_accepted_librarian_proposals,
+        )
+
+        continuity_decision, apply_results, b2_apply_results = apply_accepted_librarian_proposals(
             fixture.manager,
             parsed,
             continuity_decision,
@@ -242,7 +243,12 @@ class LibrarianProposalService:
             "proposals": [asdict(proposal) for proposal in parsed],
             "host_validation": asdict(host_validation),
             "continuity_decision": asdict(continuity_decision),
-            "s4b_apply_results": [asdict(item) for item in apply_results],
+            "s4b_apply_results": [
+                asdict(item)
+                for item in apply_results
+                if item.__class__.__name__ != "IssuePressureOverlayApplyResult"
+            ],
+            "issue_pressure_apply_results": [asdict(item) for item in b2_apply_results],
         }
         audit = ProposalBatchAudit(
             batch_id=batch_id,
@@ -262,6 +268,7 @@ class LibrarianProposalService:
             audit,
             continuity_decision,
             apply_results=apply_results,
+            b2_apply_results=b2_apply_results,
         )
 
         return LibrarianProposalBatchResult(
@@ -283,6 +290,7 @@ class LibrarianProposalService:
         continuity_decision: Any,
         *,
         apply_results: list[Any] | None = None,
+        b2_apply_results: list[Any] | None = None,
     ) -> None:
         metadata = librarian_proposal_audit_metadata(
             batch_id=audit.batch_id,
@@ -296,7 +304,15 @@ class LibrarianProposalService:
         if continuity_decision is not None:
             metadata["continuity_decision"] = asdict(continuity_decision)
         if apply_results:
-            metadata["s4b_apply_results"] = [asdict(item) for item in apply_results]
+            metadata["s4b_apply_results"] = [
+                asdict(item)
+                for item in apply_results
+                if item.__class__.__name__ != "IssuePressureOverlayApplyResult"
+            ]
+        if b2_apply_results:
+            metadata["issue_pressure_apply_results"] = [
+                asdict(item) for item in b2_apply_results
+            ]
         if not hasattr(fixture, "librarian_proposal_audit_log"):
             fixture.librarian_proposal_audit_log = []  # type: ignore[attr-defined]
         fixture.librarian_proposal_audit_log.append(metadata)  # type: ignore[attr-defined]

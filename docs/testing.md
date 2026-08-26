@@ -49,6 +49,7 @@ When changing `v2/domain/modules/`:
 - Prefer tests beside behavior in `v2/domain/tests/`.
 - For continuity, orchestration, or validation fixes, check downstream effects on turn selection, session persistence, and audit output shape.
 - For scenario manifest changes, extend manifest regression tests under `v2/domain/tests/test_*manifest*.py`.
+- For #40 B2 issue-pressure semantic overlay changes, run `python -m pytest v2/domain/tests/test_librarian_proposal_b2_issue_pressure.py -q` plus `test_librarian_proposal_s4b.py` and `test_director_context_digests.py` regressions.
 
 ---
 
