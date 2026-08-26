@@ -358,6 +358,19 @@ class NiSession:
                 return attempt
         return None
 
+    def find_mediation_attempt(self) -> dict[str, Any] | None:
+        """Prefer character-chain mediation; fall back to any librarian_mediation."""
+        mediation = self.find_mediation_for_character()
+        if mediation:
+            return mediation
+        for evidence_id in self.index.get("attempt_ids") or []:
+            attempt = self.load_attempt(evidence_id)
+            if not attempt:
+                continue
+            if (attempt.get("correlation") or {}).get("inference_kind") == "librarian_mediation":
+                return attempt
+        return None
+
     def find_character_move(self) -> dict[str, Any] | None:
         for evidence_id in self.index.get("attempt_ids") or []:
             attempt = self.load_attempt(evidence_id)
@@ -416,7 +429,7 @@ class NiSession:
                 },
             )
 
-        mediation = self.find_mediation_for_character()
+        mediation = self.find_mediation_attempt()
         if not mediation:
             limitations.append(
                 limitation(
@@ -474,8 +487,9 @@ class NiSession:
 
         disposition = DISPOSITION_INDETERMINATE
         owning_seam: str | None = None
+        is_retrieval_candidate = source_id.startswith("lmi:cand:")
 
-        if candidate_id not in retrieval_returned:
+        if is_retrieval_candidate and candidate_id not in retrieval_returned:
             disposition = DISPOSITION_INCOMPLETE
             steps.append(
                 {
@@ -501,10 +515,10 @@ class NiSession:
                     "stage": "omission",
                     "observed": True,
                     "owning_seam": owning_seam,
-                    "omitted_candidate_id": candidate_id,
+                    "omitted_source_id": source_id,
                 }
             )
-        else:
+        elif is_retrieval_candidate:
             entry_id = (med.get("source_id_to_entry_id") or {}).get(source_id)
             steps.append(
                 {
@@ -571,6 +585,14 @@ class NiSession:
                     )
                 else:
                     disposition = DISPOSITION_INCOMPLETE
+        else:
+            disposition = DISPOSITION_INCOMPLETE
+            limitations.append(
+                limitation(
+                    "non_candidate_propagation_unresolved",
+                    "Authority/catalog source selected but downstream character propagation not deterministically resolved for non-candidate sources.",
+                )
+            )
 
         payload: dict[str, Any] = {
             "source_id": source_id,
@@ -600,7 +622,7 @@ class NiSession:
                     limitation("missing_artifact", f"Attempt not found: {evidence_id}")
                 )
         else:
-            attempt = self.find_mediation_for_character()
+            attempt = self.find_mediation_attempt()
         if not attempt:
             return build_envelope(
                 view="mediation",
@@ -661,7 +683,7 @@ class NiSession:
         if ni_lim:
             limitations.append(ni_lim)
         move = self.find_character_move()
-        mediation = self.find_mediation_for_character()
+        mediation = self.find_mediation_attempt()
         orientation = self.attempts_by_kind("character_orientation")
         orientation_attempt = orientation[0] if orientation else None
         if not move:
