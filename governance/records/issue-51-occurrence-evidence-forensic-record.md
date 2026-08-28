@@ -1,7 +1,7 @@
 # Issue #51 — Occurrence evidence forensic record
 
 **Issue:** [#51](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51)  
-**Implementation anchor:** _(recorded at commit)_  
+**Implementation anchor:** `6cec5938dc54273176dfa592a89e881d30d63236`  
 **Consensus:** [Full-weight consensus comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5449968967)
 
 ## Problem (before)
