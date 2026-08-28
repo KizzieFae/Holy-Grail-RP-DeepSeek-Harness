@@ -62,12 +62,13 @@ def _scene_round(kernel: DomainKernel) -> tuple[str, str]:
 
 class StorytellerS3cIntegrationTests(unittest.TestCase):
     def test_kernel_storyteller_service_seam_is_constructible(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
-        service = kernel._storyteller_service()
+        kernel = DomainKernel.for_fixture_store()
+        service = kernel.cognition.storyteller
         self.assertIsInstance(service, StorytellerService)
+        self.assertIs(kernel.cognition.storyteller, service)
 
     def test_kernel_prepare_storyteller_orientation_context_traverses_service(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         prepared = kernel.prepare_storyteller_orientation_context(
             hg_scene_id=scene_id,
@@ -79,7 +80,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         self.assertTrue(prepared["manifest_id"])
 
     def test_kernel_prepare_storyteller_assessment_context_traverses_service(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         orientation = {
             "orientation_id": "orient-kernel-1",
@@ -100,7 +101,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         self.assertTrue(prepared["manifest_id"])
 
     def test_bind_injects_director_storyteller_lanes(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         package = advisory_package_to_dict(
             _bound_package(hg_round_id=round_id, hg_scene_id=scene_id)
@@ -128,7 +129,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
                 self.assertEqual(contribution.authority_class, "suggestive")
 
     def test_character_scoped_storyteller_lanes(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         package = advisory_package_to_dict(
             _bound_package(
@@ -178,7 +179,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         self.assertIn("Alice", joined)
 
     def test_commit_invalidates_storyteller_for_later_contexts(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         package = advisory_package_to_dict(
             _bound_package(hg_round_id=round_id, hg_scene_id=scene_id)
@@ -248,7 +249,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         )
 
     def test_narrator_before_commit_has_storyteller_emphasis(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         package = advisory_package_to_dict(
             _bound_package(hg_round_id=round_id, hg_scene_id=scene_id)
@@ -298,7 +299,7 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         )
 
     def test_character_can_act_contrary_to_storyteller_opportunity(self) -> None:
-        kernel = DomainKernel(store=FixtureStore())
+        kernel = DomainKernel.for_fixture_store()
         scene_id, round_id = _scene_round(kernel)
         package = advisory_package_to_dict(
             _bound_package(hg_round_id=round_id, hg_scene_id=scene_id)

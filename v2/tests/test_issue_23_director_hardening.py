@@ -32,7 +32,7 @@ from domain_api.kernel import PROTOTYPE_VALID_MOVE, DomainKernel  # noqa: E402
 
 
 def _kernel_scene_round() -> tuple[DomainKernel, str, str]:
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     scene_id = kernel.create_scene().hg_scene_id
     round_id = kernel.start_round(
         RoundStartRequest(hg_scene_id=scene_id)
@@ -320,7 +320,7 @@ def test_scenario_grade_director_hardening(
     expected_environment: str,
 ) -> None:
     scenario = load_scenario(scenario_id)
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     info = kernel.create_session(cast=list(scenario["character_card_ids"]))
     scene_id = info.hg_scene_id
     fixture = kernel.store.require(scene_id)

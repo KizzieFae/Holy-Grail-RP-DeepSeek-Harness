@@ -51,7 +51,7 @@ def repository(sessions_dir: Path) -> SessionRepository:
 
 @pytest.fixture
 def kernel(repository: SessionRepository) -> DomainKernel:
-    return DomainKernel(repository=repository)
+    return DomainKernel.for_repository(repository)
 
 
 def test_record_player_skip_persists_without_user_entry(kernel: DomainKernel) -> None:

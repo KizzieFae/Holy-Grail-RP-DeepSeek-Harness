@@ -93,7 +93,7 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
         fixture, request = _session_with_commit()
         repo = SessionRepository()
         repo._cache[fixture.hg_scene_id] = fixture  # type: ignore[attr-defined]
-        kernel = DomainKernel(repository=repo)
+        kernel = DomainKernel.for_repository(repo)
 
         self.assertIsNone(find_terminal_audit_for_commit(fixture, request.domain_commit_id))
 
@@ -117,7 +117,7 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
         fixture, request = _session_with_commit()
         repo = SessionRepository()
         repo._cache[fixture.hg_scene_id] = fixture  # type: ignore[attr-defined]
-        kernel = DomainKernel(repository=repo)
+        kernel = DomainKernel.for_repository(repo)
 
         kernel.finalize_librarian_proposals(
             hg_scene_id=fixture.hg_scene_id,
@@ -149,7 +149,7 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             repo = SessionRepository(tmp)
             repo._cache[fixture.hg_scene_id] = fixture  # type: ignore[attr-defined]
-            kernel = DomainKernel(repository=repo)
+            kernel = DomainKernel.for_repository(repo)
 
             result = kernel.finalize_librarian_proposals(
                 hg_scene_id=fixture.hg_scene_id,
@@ -180,7 +180,7 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
         fixture, request = _session_with_commit(hg_scene_id="scene-persist-fail")
         repo = SessionRepository()
         repo._cache[fixture.hg_scene_id] = fixture  # type: ignore[attr-defined]
-        kernel = DomainKernel(repository=repo)
+        kernel = DomainKernel.for_repository(repo)
 
         with patch.object(repo._session_manager, "save_session", side_effect=OSError("disk full")):
             with self.assertRaises(PersistenceError):

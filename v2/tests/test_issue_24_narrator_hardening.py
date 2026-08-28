@@ -53,7 +53,7 @@ def _validate_director(kernel: DomainKernel, scene_id: str, round_id: str, actor
 
 
 def test_terminal_output_limit_uses_degraded_deterministic_fallback_for_ui() -> None:
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     created = kernel.create_session(cast=["Alice", "Bob"])
     session_id = created.hg_session_id
     round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
@@ -92,7 +92,7 @@ def test_terminal_output_limit_uses_degraded_deterministic_fallback_for_ui() -> 
 
 
 def test_kernel_validate_narrator_presentation_uses_committed_move() -> None:
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     created = kernel.create_session(cast=["Alice"])
     session_id = created.hg_session_id
     round_id = kernel.start_round(RoundStartRequest(hg_scene_id=session_id)).hg_round_id
@@ -143,7 +143,7 @@ def test_kernel_validate_narrator_presentation_uses_committed_move() -> None:
 @pytest.mark.parametrize("scenario_id", ["arrival_setup", "strong_user_steer", "conflict_3char"])
 def test_scenario_grade_narrator_hardening(scenario_id: str) -> None:
     scenario = load_scenario(scenario_id)
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     info = kernel.create_session(cast=list(scenario["character_card_ids"]))
     scene_id = info.hg_scene_id
     fixture = kernel.store.require(scene_id)

@@ -762,7 +762,7 @@ class NarratorContextIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
-        self.kernel = DomainKernel(store=self.repo)
+        self.kernel = DomainKernel.for_repository(self.repo)
 
     def tearDown(self) -> None:
         shutil.rmtree(self._tmpdir, ignore_errors=True)

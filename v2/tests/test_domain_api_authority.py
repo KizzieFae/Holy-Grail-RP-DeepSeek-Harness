@@ -55,7 +55,7 @@ def _invalid_move() -> dict:
 
 @pytest.fixture
 def kernel() -> DomainKernel:
-    k = DomainKernel(store=FixtureStore())
+    k = DomainKernel.for_fixture_store()
     scene = k.create_scene()
     k.start_round(RoundStartRequest(hg_scene_id=scene.hg_scene_id))
     return k

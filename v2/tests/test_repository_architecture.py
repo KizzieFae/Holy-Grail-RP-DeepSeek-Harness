@@ -216,7 +216,7 @@ class RepositoryArchitectureTests(unittest.TestCase):
                 self.assertEqual(characters_data_dir(), Path(tmp_data) / "characters")
                 self.assertEqual(sessions_data_dir(), Path(tmp_sessions))
                 repo = SessionRepository()
-                kernel = DomainKernel(repository=repo)
+                kernel = DomainKernel.for_repository(repo)
                 info = kernel.create_session(cast=["Alice", "Bob"])
             self.assertTrue((Path(tmp_sessions) / f"{info.hg_session_id}.json").is_file())
 

@@ -18,7 +18,7 @@ def main() -> None:
 
     sessions_dir = os.environ.get("HG_SESSIONS_DIR")
     repository = SessionRepository(sessions_dir) if sessions_dir else SessionRepository()
-    kernel = DomainKernel(repository=repository)
+    kernel = DomainKernel.for_repository(repository)
     server = serve(kernel, host=args.host, port=args.port)
     print(f"Holy Grail Domain Host listening on http://{args.host}:{args.port}")
     try:

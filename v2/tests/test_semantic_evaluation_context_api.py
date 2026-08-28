@@ -48,7 +48,7 @@ def test_authority_references_include_player_agency_guardrail() -> None:
 
 @pytest.fixture()
 def kernel() -> DomainKernel:
-    k = DomainKernel(store=FixtureStore())
+    k = DomainKernel.for_fixture_store()
     scene = k.create_scene(cast=["Alice"], location="Dorm")
     k.start_round(RoundStartRequest(hg_scene_id=scene.hg_scene_id))
     return k

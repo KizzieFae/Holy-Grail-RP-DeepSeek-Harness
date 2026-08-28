@@ -132,9 +132,8 @@ from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .knowledge_service import KnowledgeService  # noqa: E402
+from .cognition_composition import CognitionComposition  # noqa: E402
 from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
-from .librarian_service import LibrarianService  # noqa: E402
-from .librarian_proposal_service import LibrarianProposalService  # noqa: E402
 from .storyteller_contract import (  # noqa: E402
     StorytellerAdvisoryPackage,
     StorytellerOrientationAssessment,
@@ -145,11 +144,9 @@ from .storyteller_contract import (  # noqa: E402
 from .storyteller_packaging_mapper import map_storyteller_package_to_contributions  # noqa: E402
 from .storyteller_packaging_policy import StorytellerPackagingConsumer  # noqa: E402
 from .librarian_packaging_validity import PackagingBindingContext  # noqa: E402
-from .character_service import CharacterKnowledgeService  # noqa: E402
 from .character_upstream_context import assemble_character_upstream_contributions  # noqa: E402
 from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict  # noqa: E402
 from .librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
-from .storyteller_service import StorytellerService  # noqa: E402
 from .narrator_environment_cognition import (  # noqa: E402
     NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
     build_cognition_context_payload,
@@ -159,7 +156,6 @@ from .narrator_environment_cognition import (  # noqa: E402
     record_environment_cognition_failure,
 )
 from .narrator_environment_packet import assemble_narrator_environment_packet  # noqa: E402
-from .story_knowledge_service import StoryKnowledgeService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -259,13 +255,38 @@ class DomainKernel:
         repository: SessionRepository | None = None,
         *,
         store: FixtureStore | None = None,
+        cognition: CognitionComposition,
     ) -> None:
         if store is not None and repository is not None:
             raise ValueError("cannot specify both store and repository")
         if store is not None:
             self.store = store
         else:
-            self.store = repository or SessionRepository()
+            if repository is None:
+                raise ValueError(
+                    "DomainKernel requires repository= or store= and an explicit cognition composition"
+                )
+            self.store = repository
+        self.cognition = cognition
+
+    @classmethod
+    def for_repository(cls, repository: SessionRepository) -> DomainKernel:
+        """Construct a kernel with production cognition wiring from repository dependencies."""
+        return cls(
+            repository=repository,
+            cognition=CognitionComposition.create_for_production(
+                scope_knowledge_repository=repository.scope_knowledge_repo,
+                story_knowledge_repository=repository.story_knowledge_repo,
+            ),
+        )
+
+    @classmethod
+    def for_fixture_store(cls, store: FixtureStore | None = None) -> DomainKernel:
+        """Construct a kernel with explicit degraded cognition for in-memory tests."""
+        return cls(
+            store=store or FixtureStore(),
+            cognition=CognitionComposition.for_tests(),
+        )
 
     def _memory_service(self) -> MemoryService | None:
         if isinstance(self.store, SessionRepository):
@@ -277,24 +298,6 @@ class DomainKernel:
             return self.store.knowledge_service
         return None
 
-    def _librarian_service(self) -> LibrarianService:
-        knowledge = self._knowledge_service()
-        scope_repo = knowledge.scope_repo if knowledge is not None else None
-        story_repo = None
-        if isinstance(self.store, SessionRepository):
-            story_repo = self.store.story_knowledge_repo
-        from .retrieval_service import RetrievalService
-
-        return LibrarianService(
-            retrieval_service=RetrievalService(
-                scope_repo=scope_repo,
-                story_knowledge_repo=story_repo,
-            )
-        )
-
-    def _librarian_proposal_service(self) -> LibrarianProposalService:
-        return LibrarianProposalService()
-
     def _session_scope(self, hg_scene_id: str):
         repository = self.store
         if isinstance(repository, SessionRepository):
@@ -302,19 +305,6 @@ class DomainKernel:
         from contextlib import nullcontext
 
         return nullcontext()
-
-    def _story_knowledge_service(self) -> StoryKnowledgeService | None:
-        if isinstance(self.store, SessionRepository):
-            repo = self.store.story_knowledge_repo
-            if repo is not None:
-                return StoryKnowledgeService(repo)
-        return None
-
-    def _storyteller_service(self) -> StorytellerService:
-        return StorytellerService(librarian_service=self._librarian_service())
-
-    def _character_knowledge_service(self) -> CharacterKnowledgeService:
-        return CharacterKnowledgeService()
 
     def create_session(self, **kwargs: Any) -> SessionInfoResponse:
         session = self.store.create_session(**kwargs)
@@ -1161,7 +1151,7 @@ class DomainKernel:
         request = knowledge_access_request_from_dict(
             {**knowledge_access_request, "hg_scene_id": hg_scene_id}
         )
-        response = self._librarian_service().prepare_mediation_context(
+        response = self.cognition.librarian.prepare_mediation_context(
             request,
             fixture,
             inference_id=inference_id,
@@ -1226,7 +1216,7 @@ class DomainKernel:
         request = knowledge_access_request_from_dict(
             {**knowledge_access_request, "hg_scene_id": hg_scene_id}
         )
-        bundle = self._librarian_service().access_knowledge(
+        bundle = self.cognition.librarian.access_knowledge(
             request,
             fixture,
             mediation_result=mediation_result,
@@ -1262,7 +1252,7 @@ class DomainKernel:
                 fixture.character_states.get(character_id)
             )
             memory_projections = [single] if single is not None else []
-        return self._character_knowledge_service().prepare_orientation_context(
+        return self.cognition.character_knowledge.prepare_orientation_context(
             fixture,
             rnd,
             inference_id=inference_id,
@@ -1294,7 +1284,7 @@ class DomainKernel:
     ) -> dict[str, Any]:
         fixture = self.store.require(hg_scene_id)
         rnd = self._require_round(fixture, hg_round_id)
-        return self._character_knowledge_service().finalize_orientation(
+        return self.cognition.character_knowledge.finalize_orientation(
             fixture,
             rnd,
             inference_id=inference_id,
@@ -1339,7 +1329,7 @@ class DomainKernel:
                     "contributions": [],
                     "evidence_catalog": [],
                 }
-            response = self._librarian_proposal_service().prepare_proposal_context(request, fixture)
+            response = self.cognition.librarian_proposals.prepare_proposal_context(request, fixture)
             return {
                 "skipped": False,
                 "orchestration_status": "prepared",
@@ -1430,7 +1420,7 @@ class DomainKernel:
                     )
                     for item in evidence_catalog
                 )
-            result = self._librarian_proposal_service().finalize_proposals(
+            result = self.cognition.librarian_proposals.finalize_proposals(
                 request,
                 fixture,
                 proposal_result=proposal_result,
@@ -1463,7 +1453,7 @@ class DomainKernel:
     ) -> dict[str, Any]:
         fixture = self.store.require(hg_scene_id)
         rnd = self._require_round(fixture, hg_round_id)
-        return self._storyteller_service().prepare_orientation_context(
+        return self.cognition.storyteller.prepare_orientation_context(
             fixture,
             rnd,
             inference_id=inference_id,
@@ -1479,7 +1469,7 @@ class DomainKernel:
     ) -> dict[str, Any]:
         fixture = self.store.require(hg_scene_id)
         rnd = self._require_round(fixture, hg_round_id)
-        return self._storyteller_service().finalize_orientation(
+        return self.cognition.storyteller.finalize_orientation(
             fixture,
             rnd,
             inference_id=inference_id,
@@ -1506,7 +1496,7 @@ class DomainKernel:
             temporal_focus=orientation.get("temporal_focus", "current"),  # type: ignore[arg-type]
             breadth_preference=orientation.get("breadth_preference", "broad"),  # type: ignore[arg-type]
         )
-        return self._storyteller_service().prepare_assessment_context(
+        return self.cognition.storyteller.prepare_assessment_context(
             orientation_obj,
             bundle,
             inference_id=inference_id,
@@ -1538,7 +1528,7 @@ class DomainKernel:
             temporal_focus=orientation.get("temporal_focus", "current"),  # type: ignore[arg-type]
             breadth_preference=orientation.get("breadth_preference", "broad"),  # type: ignore[arg-type]
         )
-        return self._storyteller_service().finalize_assessment(
+        return self.cognition.storyteller.finalize_assessment(
             fixture,
             rnd,
             orientation=orientation_obj,
@@ -2062,7 +2052,7 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         turn_record = self._require_narrator_turn_record(fixture, rnd, req)
-        story_service = self._story_knowledge_service()
+        story_service = self.cognition.story_knowledge
         story_records = (
             story_service.list_records(str(fixture.memory_scope_id or ""))
             if story_service is not None
@@ -2167,7 +2157,7 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         turn_record = self._require_narrator_turn_record(fixture, rnd, req)
-        story_service = self._story_knowledge_service()
+        story_service = self.cognition.story_knowledge
         if story_service is None:
             raise ValueError("story knowledge service unavailable for narrator environment cognition")
         result = finalize_narrator_environment_cognition(
@@ -2264,7 +2254,7 @@ class DomainKernel:
             dict(turn_record.committed_move),
             present_characters=present_labels,
         )
-        story_service = self._story_knowledge_service()
+        story_service = self.cognition.story_knowledge
         story_records = (
             story_service.list_records(str(fixture.memory_scope_id or ""))
             if story_service is not None

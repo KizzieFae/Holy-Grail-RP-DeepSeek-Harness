@@ -63,7 +63,7 @@ class CharacterCardsM121Tests(unittest.TestCase):
     def test_v2_session_setup_uses_neutral_loader(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             repo = SessionRepository(tmpdir)
-            kernel = DomainKernel(repository=repo)
+            kernel = DomainKernel.for_repository(repo)
             info = kernel.create_session(
                 characters=["kizzie"],
                 opening={"mode": "minimal"},

@@ -30,7 +30,7 @@ from domain_api.kernel import DomainKernel  # noqa: E402
 
 
 def _kernel_scene_round() -> tuple[DomainKernel, str, str]:
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     scene_id = kernel.create_scene().hg_scene_id
     round_id = kernel.start_round(
         RoundStartRequest(hg_scene_id=scene_id)

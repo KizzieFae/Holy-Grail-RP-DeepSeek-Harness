@@ -35,7 +35,7 @@ class RetrievalIndexM127Tests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
-        self.kernel = DomainKernel(repository=self.repo)
+        self.kernel = DomainKernel.for_repository(self.repo)
         self.knowledge = self.repo.knowledge_service
 
     def tearDown(self) -> None:

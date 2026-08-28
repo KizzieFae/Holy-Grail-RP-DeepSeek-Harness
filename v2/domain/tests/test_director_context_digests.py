@@ -293,7 +293,7 @@ def test_validate_director_context_completeness_conditional_requirements() -> No
 
 
 def test_kernel_prepare_director_context_extended_response() -> None:
-    kernel = DomainKernel(store=FixtureStore())
+    kernel = DomainKernel.for_fixture_store()
     scene_id = kernel.create_scene().hg_scene_id
     round_id = kernel.start_round(RoundStartRequest(hg_scene_id=scene_id)).hg_round_id
     kernel.record_user_turn(

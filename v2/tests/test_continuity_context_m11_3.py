@@ -42,7 +42,7 @@ class ContinuityContextM113Tests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
-        self.kernel = DomainKernel(repository=self.repo)
+        self.kernel = DomainKernel.for_repository(self.repo)
 
     def tearDown(self) -> None:
         shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -223,7 +223,7 @@ class ContinuityContextM113Tests(unittest.TestCase):
         self.repo.persist(fixture)
         self.repo.clear_cache()
         restarted = SessionRepository(self._tmpdir)
-        restarted_kernel = DomainKernel(repository=restarted)
+        restarted_kernel = DomainKernel.for_repository(restarted)
         manifest = self._prepare_character(session_id)
         canon = next(c for c in manifest.contributions if c.source_kind == "continuity_canon")
         self.assertIn("lighthouse", canon.content.lower())

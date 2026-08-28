@@ -38,7 +38,7 @@ def repository(sessions_dir: Path) -> SessionRepository:
 
 @pytest.fixture
 def kernel(repository: SessionRepository) -> DomainKernel:
-    return DomainKernel(repository=repository)
+    return DomainKernel.for_repository(repository)
 
 
 def _start_round(kernel: DomainKernel, hg_scene_id: str) -> str:
@@ -102,7 +102,7 @@ def test_commit_survives_repository_restart(kernel: DomainKernel, repository: Se
 
     session_id = info.hg_session_id
     repository.clear_cache()
-    restarted = DomainKernel(repository=SessionRepository(repository.sessions_dir))
+    restarted = DomainKernel.for_repository(SessionRepository(repository.sessions_dir))
     reopened = restarted.open_session(session_id)
     assert reopened.turn_counter == 1
     assert reopened.committed_move_count == 1
@@ -187,7 +187,7 @@ def test_persistence_failure_rolls_back_live_state(
     assert kernel.scene_snapshot(hg_scene_id).turn_counter == before_turn
 
     repository.clear_cache()
-    reopened = DomainKernel(repository=SessionRepository(repository.sessions_dir)).open_session(
+    reopened = DomainKernel.for_repository(SessionRepository(repository.sessions_dir)).open_session(
         info.hg_session_id
     )
     assert reopened.turn_counter == before_turn
@@ -254,7 +254,7 @@ def test_http_health_and_session_lifecycle(sessions_dir: Path) -> None:
     from domain_api.http_transport import DomainApiHandler
     from domain_api.kernel import DomainKernel
 
-    kernel = DomainKernel(repository=SessionRepository(sessions_dir))
+    kernel = DomainKernel.for_repository(SessionRepository(sessions_dir))
     handler = type("H", (DomainApiHandler,), {"kernel": kernel})
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     port = server.server_address[1]

@@ -39,7 +39,7 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.mkdtemp()
         self.repo = SessionRepository(self._tmpdir)
-        self.kernel = DomainKernel(repository=self.repo)
+        self.kernel = DomainKernel.for_repository(self.repo)
 
     def tearDown(self) -> None:
         shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -194,7 +194,7 @@ class ScopeKnowledgeM112Tests(unittest.TestCase):
 
         self.repo.clear_cache()
         restarted_repo = SessionRepository(self._tmpdir)
-        restarted_kernel = DomainKernel(repository=restarted_repo)
+        restarted_kernel = DomainKernel.for_repository(restarted_repo)
         text = self._learned_world_text(session_b, character_id="Alice")
         self.assertIn("lighthouse", text.lower())
         _ = restarted_kernel
