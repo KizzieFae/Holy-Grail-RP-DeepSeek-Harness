@@ -1,7 +1,7 @@
-# Issue #49 — Narrator Environmental Response Forensic / Execution Record
+﻿# Issue #49 â€” Narrator Environmental Response Forensic / Execution Record
 
 **Status:** Implemented (remediated after Full validation FAIL; awaiting separate Full revalidation)  
-**Issue:** [#49 — Narrator environmental-response cognition and Librarian-mediated world detail](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/49)  
+**Issue:** [#49 â€” Narrator environmental-response cognition and Librarian-mediated world detail](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/49)  
 **Type:** `design_gap`  
 **Assigned workflow weight:** `standard`  
 **Effective workflow weight:** `full`  
@@ -17,7 +17,7 @@
 
 ## 0. Record purpose
 
-Preserves decision lineage: intake → investigation → Full consensus → #50/#51 prerequisites → implementation → **Full validation FAIL** → remediation.
+Preserves decision lineage: intake â†’ investigation â†’ Full consensus â†’ #50/#51 prerequisites â†’ implementation â†’ **Full validation FAIL** â†’ remediation.
 
 ---
 
@@ -46,20 +46,20 @@ Consensus architecture remained valid; remediation authorized against these defe
 | D1 | Import `./librarian-mediation-substrate.mjs`; pass `runEphemeralInference` into Librarian mediation |
 | D2 | New `narrator_environment_authority.py`: Host `evaluate_host_environmental_b2_establishment` (deterministic, repository-native pattern aligned with Host proposal validation) |
 | D3 | `epistemic_authority_for_b2_decision` stamps `decision_id`, `authorized`, `orchestration_only` from Host decision |
-| D4 | Production path enforces `no_match` for B2 origination; `match` → reject duplicate persistence |
+| D4 | Production path enforces `no_match` for B2 origination; `match` â†’ reject duplicate persistence |
 | D5 | `narrator-environment-cognition-substrate.test.mjs` + expanded Python authority/mediation tests |
 | D6 | Updated `GLOSSARY.md`, `CANONICAL_KNOWLEDGE_MODEL.md`, `docs/rp-data-layout.md`, `docs/forensic-auditability-standard.md`, `docs/audit-workflows.md` |
 | D7 | `record_environment_cognition_failure`, kernel persist on failure audit, `decision.environment_cognition` execution evidence, `hg/narrator-environment-cognition-failed` trace event |
 
-**Authority seam selected:** Host deterministic validation (`host_environmental_b2_validation`) — same architectural family as `validate_host_proposal_item` / Continuity accept-reject for Librarian proposals. No new LLM authority evaluator.
+**Authority seam selected:** Host deterministic validation (`host_environmental_b2_validation`) â€” same architectural family as `validate_host_proposal_item` / Continuity accept-reject for Librarian proposals. No new LLM authority evaluator.
 
-**Proposal → acceptance → persistence:**
+**Proposal â†’ acceptance â†’ persistence:**
 
 ```text
 N2 B2 candidate (Narrator proposal)
-→ evaluate_host_environmental_b2_establishment (Host decision_id, authorized flag)
-→ if authorized: persist_host_accepted_b2_environmental_descriptor → #50 submit_derived_record
-→ if rejected: audit only; no JSONL record
+â†’ evaluate_host_environmental_b2_establishment (Host decision_id, authorized flag)
+â†’ if authorized: persist_host_accepted_b2_environmental_descriptor â†’ #50 submit_derived_record
+â†’ if rejected: audit only; no JSONL record
 ```
 
 ---
@@ -70,7 +70,7 @@ N2 B2 candidate (Narrator proposal)
 |---------|----------------|
 | EnvironmentalCurrentView | `narrator_environment_projection.py` |
 | Host B2 authority | `narrator_environment_authority.py` |
-| B2 persistence | `narrator_environment_establishment.py` → `submit_derived_record` |
+| B2 persistence | `narrator_environment_establishment.py` â†’ `submit_derived_record` |
 | N1/N2 + mediation gating | `narrator_environment_cognition.py` |
 | DSH orchestration | `narrator-environment-cognition-substrate.mjs`, `narrator-phase.mjs` |
 | Forensic audit | `NarratorEnvironmentCognitionAudit` + `authority_decision` + failure records |
@@ -112,10 +112,10 @@ v2/domain/tests/test_narrator_environment_semantic_qa.py
 
 ---
 
-## 6. Full revalidation (2026-08-28) — FAIL (broad Node suite regression)
+## 6. Full revalidation (2026-08-28) â€” FAIL (broad Node suite regression)
 
 **Validation anchor (product):** `b807243130ff40b19413b25dff67f6e52979613e`  
-**First Full validation:** FAIL (D1–D7) at `ed98ca2`  
+**First Full validation:** FAIL (D1â€“D7) at `ed98ca2`  
 **Remediation:** `64c92bd` (+ forensic `b807243`)  
 **Premature PASS record:** `09382dc` (superseded by this section)
 
@@ -128,7 +128,7 @@ v2/domain/tests/test_narrator_environment_semantic_qa.py
 | Node focused narrator/env (6 files) | **38 passed** |
 | Node `--test-name-pattern=narrator` (broad) | **215 passed / 2 failed** (exit code 1) |
 
-### Broad Narrator-pattern suite — not green
+### Broad Narrator-pattern suite â€” not green
 
 ```text
 Broad Narrator-pattern suite:
@@ -142,7 +142,7 @@ Broad Narrator-pattern suite:
 
 **Suite-level status:** NOT green. **#49 regression determination:** both failures **caused by #49** (D8).
 
-### D8 — accidental `StorytellerService` import removal (`de0d4c0`)
+### D8 â€” accidental `StorytellerService` import removal (`de0d4c0`)
 
 During `kernel.py` edits for narrator-environment cognition (`de0d4c0`), the line:
 
@@ -162,14 +162,14 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 
 - Introduced in `de0d4c0`; unchanged through `64c92bd` / `b807243`.
 - Baseline `8e4249d` has the import; current HEAD does not (`git log -S storyteller_service`).
-- Repro: `DomainKernel()._storyteller_service()` → `NameError`.
+- Repro: `DomainKernel()._storyteller_service()` â†’ `NameError`.
 - Failing tests exercise storyteller cognition at round start (before narrator environmental cognition).
 - `#49` focused Node suite (38 passed) skips storyteller paths; environmental cognition runs in narrator phase only.
 - Python `594 passed` does not exercise `_storyteller_service()` prepare/finalize HTTP paths in integration.
 
 **Smallest remediation:** restore the deleted import in `v2/domain_api/kernel.py` (one line). Not applied during validation.
 
-**Chronology:** implementation → first Full validation FAIL (D1–D7) → remediation → second Full revalidation **FAIL** (D8; broad Node suite regression).
+**Chronology:** implementation â†’ first Full validation FAIL (D1â€“D7) â†’ remediation â†’ second Full revalidation **FAIL** (D8; broad Node suite regression).
 
 **Non-blocking deviations (unchanged):** `location:unknown` B2 collision edge case; per-need dual-outcome not integration-tested; `orchestration_only` blocks Character retrieval of B2 record.
 
@@ -181,7 +181,7 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 
 **Fix:** restore import in `v2/domain_api/kernel.py` (one line).
 
-**Regression coverage:** `test_storyteller_s3c_integration.py` — kernel `_storyteller_service()` constructibility; orientation/assessment prepare paths.
+**Regression coverage:** `test_storyteller_s3c_integration.py` â€” kernel `_storyteller_service()` constructibility; orientation/assessment prepare paths.
 
 | Suite | Result |
 |-------|--------|
@@ -192,15 +192,15 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 | Full `domain/tests/` | **597 passed** (+3 regression tests) |
 | #49 + #50 + #51 targeted Python | **76 passed** |
 
-**Broad suite note:** D8-target failures resolved. Remaining failure: `runtime-config: default does not reference historical autogen_rp venv` — drive-letter case (`e:` vs `E:`) on Windows; not caused by #49/D8 (no `kernel.py` storyteller-path change beyond import restoration).
+**Broad suite note:** D8-target failures resolved. Remaining failure: `runtime-config: default does not reference historical autogen_rp venv` â€” drive-letter case (`e:` vs `E:`) on Windows; not caused by #49/D8 (no `kernel.py` storyteller-path change beyond import restoration).
 
-**Chronology:** implementation → first Full validation FAIL (D1–D7) → remediation → second Full revalidation FAIL (D8) → D8 remediation.
+**Chronology:** implementation â†’ first Full validation FAIL (D1â€“D7) â†’ remediation â†’ second Full revalidation FAIL (D8) â†’ D8 remediation.
 
 **Remediation SHA:** `a07166716b18307b72b96c35efbae088d1f5a134`
 
 ---
 
-## 8. Third Full revalidation (2026-08-28) — PASS
+## 8. Third Full revalidation (2026-08-28) â€” PASS
 
 **Validation anchor (product):** `f7a08d006fa81e8e7d340717de6a1d32ad1e909b`
 
@@ -215,7 +215,7 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 | D8-target Node (NI forensic + storyteller integration) | **pass** |
 | Node `--test-name-pattern=narrator` (broad) | **216 passed / 1 failed** (exit code 1) |
 
-**Broad Narrator-pattern suite — not green:**
+**Broad Narrator-pattern suite â€” not green:**
 
 ```text
 216 passed / 1 failed
@@ -224,23 +224,23 @@ exit code 1
 
 | Failing test | Causality |
 |--------------|-----------|
-| `runtime-config: default does not reference historical autogen_rp venv` | **Pre-existing / environmental** — fails identically at baseline `8e4249d`; `runtime-config.mjs` / test unchanged by #49; Windows drive-letter case (`e:` vs `E:`) in `assert.equal(resolved, canonicalPythonExecutable())`; does not affect Narrator environmental execution |
+| `runtime-config: default does not reference historical autogen_rp venv` | **Pre-existing / environmental** â€” fails identically at baseline `8e4249d`; `runtime-config.mjs` / test unchanged by #49; Windows drive-letter case (`e:` vs `E:`) in `assert.equal(resolved, canonicalPythonExecutable())`; does not affect Narrator environmental execution |
 
-**D8 regression:** **fixed** — `StorytellerService` import restored; kernel seam tests green; D8-target Node cases pass.
+**D8 regression:** **fixed** â€” `StorytellerService` import restored; kernel seam tests green; D8-target Node cases pass.
 
 **Non-blocking deviations (documented):**
-- `location:unknown` can authorize durable B2 without Host guard (verified: `location:unknown` + `no_match` → authorized); normal sessions set location at create
+- `location:unknown` can authorize durable B2 without Host guard (verified: `location:unknown` + `no_match` â†’ authorized); normal sessions set location at create
 - per-need dual-outcome (`match` + `no_match` same turn) not integration-tested; production joins `librarian_outcomes` by `need_id` per resolution
 - `orchestration_only` blocks automatic Character Librarian retrieval; `allowed_viewers` / occurrence paths remain per #50
 
-**Chronology preserved:** implementation → Full validation FAIL (D1–D7) → remediation → Full revalidation FAIL (D8) → D8 remediation → **third Full revalidation PASS**.
+**Chronology preserved:** implementation â†’ Full validation FAIL (D1â€“D7) â†’ remediation â†’ Full revalidation FAIL (D8) â†’ D8 remediation â†’ **third Full revalidation PASS**.
 
 ---
 
 ## 9. Integration and closure (2026-08-28)
 
 **Product validation anchor:** `f7a08d006fa81e8e7d340717de6a1d32ad1e909b`  
-**Integrated SHA:** *(set at push)*  
+**Integrated SHA:** `f36cfdc9ee5d6461db81d68be7141b09f7e5a5f4`  
 **Baseline integrated from:** `8e4249d32ad66fddb2b62bdbfc934dfb6b5ca85`
 
 ### Objective
@@ -256,8 +256,8 @@ Narrator environmental-response cognition with Librarian-mediated world detail; 
 
 | Cycle | Result | Anchor / note |
 |-------|--------|----------------|
-| First Full validation | **FAIL** D1–D7 | `ed98ca2` |
-| D1–D7 remediation | complete | `64c92bd` / `b807243` |
+| First Full validation | **FAIL** D1â€“D7 | `ed98ca2` |
+| D1â€“D7 remediation | complete | `64c92bd` / `b807243` |
 | Second Full revalidation | **FAIL** D8 | `d936455` |
 | D8 remediation | complete | `a071667` |
 | Third Full revalidation | **PASS** | `f7a08d` / forensic `fa36288` |
@@ -273,23 +273,23 @@ Narrator environmental-response cognition with Librarian-mediated world detail; 
 | D8-target Storyteller | PASS |
 | Broad narrator-pattern | **216 passed / 1 failed** (exit code 1; not green) |
 
-Broad-suite exception: `runtime-config` Windows drive-letter case — pre-existing at `8e4249d`; not #49.
+Broad-suite exception: `runtime-config` Windows drive-letter case â€” pre-existing at `8e4249d`; not #49.
 
 ### Deferred non-blocking follow-ups (preserved)
 
-1. **`location:unknown` hardening** — `location:unknown` + legitimate `no_match` can pass Host B2 authorization if scene location initialization is bypassed; no product change under #49 closure.
-2. **Mixed per-need integration test** — production mediates by `need_id`; representative `match` + `no_match` same-turn case lacks dedicated end-to-end integration coverage.
+1. **`location:unknown` hardening** â€” `location:unknown` + legitimate `no_match` can pass Host B2 authorization if scene location initialization is bypassed; no product change under #49 closure.
+2. **Mixed per-need integration test** â€” production mediates by `need_id`; representative `match` + `no_match` same-turn case lacks dedicated end-to-end integration coverage.
 
 ### Dependencies
 
-- **#50** CLOSED — StoryKnowledge B2 persistence contract (unchanged boundary)
-- **#51** CLOSED — occurrence evidence / triggering user (unchanged boundary)
+- **#50** CLOSED â€” StoryKnowledge B2 persistence contract (unchanged boundary)
+- **#51** CLOSED â€” occurrence evidence / triggering user (unchanged boundary)
 
 **Issue terminal state:** CLOSED (`Current status: closed`). Project: Done / Done / P3.
 
 ---
 
-- [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
+- [docs/story-knowledge.md](../../docs/story-knowledge.md) Â§7
 - [docs/architecture.md](../../docs/architecture.md)
 - [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)
 - [governance/records/issue-50-story-knowledge-forensic-record.md](./issue-50-story-knowledge-forensic-record.md)
