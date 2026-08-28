@@ -127,7 +127,7 @@ python -m pytest v2/domain/tests/ -q                                            
 
 **Documentation:** authoritative docs updated per pre-closure investigation inventory (`GLOSSARY.md`, `docs/story-knowledge.md`, `docs/architecture.md`, `docs/rp-data-layout.md`, `PACKET_CONTRACTS.md`, `CANONICAL_KNOWLEDGE_MODEL.md`, `docs/forensic-auditability-standard.md`, `docs/audit-workflows.md`, `governance/sources/architecture-overview.md`).
 
-**Revalidation:** pending separate Governance authorization after remediation commit.
+**Revalidation:** pending separate Governance authorization after remediation commit `0a2a615805213e5d2192d67c6af04b99e46e3a0b`.
 
 ## Rejected implementation alternatives
 
