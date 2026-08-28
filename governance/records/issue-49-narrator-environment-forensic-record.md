@@ -112,11 +112,12 @@ v2/domain/tests/test_narrator_environment_semantic_qa.py
 
 ---
 
-## 6. Full revalidation (2026-08-28) — PASS
+## 6. Full revalidation (2026-08-28) — FAIL (broad Node suite regression)
 
 **Validation anchor (product):** `b807243130ff40b19413b25dff67f6e52979613e`  
 **First Full validation:** FAIL (D1–D7) at `ed98ca2`  
-**Remediation:** `64c92bd` (+ forensic `b807243`)
+**Remediation:** `64c92bd` (+ forensic `b807243`)  
+**Premature PASS record:** `09382dc` (superseded by this section)
 
 | Suite | Result |
 |-------|--------|
@@ -124,12 +125,53 @@ v2/domain/tests/test_narrator_environment_semantic_qa.py
 | Full `domain/tests/` | 594 passed |
 | #50 + #51 regression | 39 passed |
 | Scene Grounding + audibility | 49 passed |
-| Node focused narrator/env (6 files) | 38 passed |
-| Node `--test-name-pattern=narrator` (broad) | 215 passed / 2 failed (unrelated: NI forensic, live semantic evaluator) |
+| Node focused narrator/env (6 files) | **38 passed** |
+| Node `--test-name-pattern=narrator` (broad) | **215 passed / 2 failed** (exit code 1) |
 
-**Chronology preserved:** implementation → first Full validation FAIL → remediation → second Full revalidation PASS.
+### Broad Narrator-pattern suite — not green
 
-**Non-blocking deviations noted:** `location:unknown` B2 collision edge case; per-need dual-outcome not integration-tested; `orchestration_only` blocks Character retrieval of B2 record (occurrence/`allowed_viewers` paths remain available per #50 contract).
+```text
+Broad Narrator-pattern suite:
+215 passed / 2 failed
+```
+
+| # | Failing test | Assertion |
+|---|--------------|-----------|
+| 1 | `NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 join` | `storyteller assessment evidence` missing |
+| 2 | `storyteller round integration: cognition before director, invalidates after commit` | `hg/storyteller-completed` event absent |
+
+**Suite-level status:** NOT green. **#49 regression determination:** both failures **caused by #49** (D8).
+
+### D8 — accidental `StorytellerService` import removal (`de0d4c0`)
+
+During `kernel.py` edits for narrator-environment cognition (`de0d4c0`), the line:
+
+```python
+from .storyteller_service import StorytellerService
+```
+
+was accidentally deleted. `_storyteller_service()` still references `StorytellerService`, causing:
+
+```text
+NameError: name 'StorytellerService' is not defined
+```
+
+when Node round orchestration calls `prepareStorytellerOrientationContext` / assessment finalize paths.
+
+**Causality evidence:**
+
+- Introduced in `de0d4c0`; unchanged through `64c92bd` / `b807243`.
+- Baseline `8e4249d` has the import; current HEAD does not (`git log -S storyteller_service`).
+- Repro: `DomainKernel()._storyteller_service()` → `NameError`.
+- Failing tests exercise storyteller cognition at round start (before narrator environmental cognition).
+- `#49` focused Node suite (38 passed) skips storyteller paths; environmental cognition runs in narrator phase only.
+- Python `594 passed` does not exercise `_storyteller_service()` prepare/finalize HTTP paths in integration.
+
+**Smallest remediation:** restore the deleted import in `v2/domain_api/kernel.py` (one line). Not applied during validation.
+
+**Chronology:** implementation → first Full validation FAIL (D1–D7) → remediation → second Full revalidation **FAIL** (D8; broad Node suite regression).
+
+**Non-blocking deviations (unchanged):** `location:unknown` B2 collision edge case; per-need dual-outcome not integration-tested; `orchestration_only` blocks Character retrieval of B2 record.
 
 ---
 
