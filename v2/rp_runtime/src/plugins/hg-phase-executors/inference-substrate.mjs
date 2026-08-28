@@ -13,14 +13,14 @@ import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
 /**
  * Shared ephemeral inference substrate for all RP phase executors.
  */
-export function createInferenceSubstrate(ctx, inferenceConfig = {}) {
+export function createInferenceSubstrate(inferenceConfig = {}) {
   const recorder = createExecutionEvidenceRecorder({
     enabled: inferenceConfig.executionEvidence?.enabled,
     root: inferenceConfig.executionEvidence?.root,
     systemPersona: inferenceConfig.systemPersona ?? 'Holy Grail RP runtime.',
   });
 
-  async function runEphemeralInference({
+  async function runEphemeralInference(ctx, {
     inferenceId,
     prompt,
     manifest,

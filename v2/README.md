@@ -83,6 +83,10 @@ data/  (HG_DATA_DIR)
 
 Node calls the Domain Host. Python does not call DSH. The UI is presentation-only.
 
+### RP runtime bootstrap (#56 C4)
+
+`createHolyGrailRpContext` mounts the DSH substrate (`mountRpStack`) then long-lived Holy Grail Cordis services (`mountHolyGrailServices` via `ctx.plugin`). Domain orchestration behavior is unchanged; composition ownership is unified under Cordis plugin fibers.
+
 ### Commit transaction (#55 C3-F)
 
 `DomainKernel.commit_move` resolves session/round anchors and delegates to `domain_api/commit_move_transaction.py`. That module owns dedup, rollback, transactionally coupled state ordering, and post-durable effects. `ContinuityManager.process_turn` remains the sole continuity mutation authority. `SessionRepository.persist` is the durability gate.

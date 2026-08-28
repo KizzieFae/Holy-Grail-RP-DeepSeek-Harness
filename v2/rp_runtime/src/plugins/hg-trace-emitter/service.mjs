@@ -77,11 +77,4 @@ export default class HgTraceEmitter extends Service {
       ...payload,
     });
   }
-
-  static ensure(ctx) {
-    if (!ctx.hgTraceEmitter) {
-      new HgTraceEmitter(ctx);
-    }
-    return ctx.hgTraceEmitter;
-  }
 }

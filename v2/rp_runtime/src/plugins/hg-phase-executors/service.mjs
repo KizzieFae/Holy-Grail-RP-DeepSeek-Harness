@@ -1,8 +1,6 @@
 import { Service } from '@deepseek-ai/cordis';
 
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
-import HgContextBridge from '../hg-context-bridge/service.mjs';
-import HgTraceEmitter from '../hg-trace-emitter/service.mjs';
 import { runCharacterInferenceSlice } from './character-inference-slice.mjs';
 import { runCharacterPhase } from './character-phase.mjs';
 import { runDirectorPhase } from './director-phase.mjs';
@@ -17,12 +15,18 @@ import { runOpeningPhase } from './opening-phase.mjs';
 export default class HgPhaseExecutors extends Service {
   static name = 'hgPhaseExecutors';
 
+  static inject = ['hgContextBridge'];
+
   constructor(ctx, config = {}) {
     super(ctx, HgPhaseExecutors.name);
     this.config = config;
-    const substrate = createInferenceSubstrate(ctx, config.inference);
-    this.runEphemeralInference = substrate.runEphemeralInference;
+    const substrate = createInferenceSubstrate(config.inference);
+    this._runEphemeralInference = substrate.runEphemeralInference;
     this.executionEvidenceRecorder = substrate.recorder;
+  }
+
+  runEphemeralInference(params) {
+    return this._runEphemeralInference(this.ctx, params);
   }
 
   _phaseDeps() {
@@ -73,16 +77,5 @@ export default class HgPhaseExecutors extends Service {
       api,
       options,
     });
-  }
-
-  static ensure(ctx, config = {}) {
-    if (!ctx.hgContextBridge) {
-      new HgContextBridge(ctx);
-    }
-    HgTraceEmitter.ensure(ctx);
-    if (!ctx.hgPhaseExecutors) {
-      new HgPhaseExecutors(ctx, config);
-    }
-    return ctx.hgPhaseExecutors;
   }
 }

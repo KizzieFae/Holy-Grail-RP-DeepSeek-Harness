@@ -31,6 +31,8 @@ import {
 export default class HgRoundOrchestrator extends Service {
   static name = 'hgRoundOrchestrator';
 
+  static inject = ['hgPhaseExecutors', 'hgTraceEmitter', 'agentLoop'];
+
   constructor(ctx, config = {}) {
     super(ctx, HgRoundOrchestrator.name);
     this.config = config;
