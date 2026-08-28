@@ -127,7 +127,30 @@ python -m pytest v2/domain/tests/ -q                                            
 
 **Documentation:** authoritative docs updated per pre-closure investigation inventory (`GLOSSARY.md`, `docs/story-knowledge.md`, `docs/architecture.md`, `docs/rp-data-layout.md`, `PACKET_CONTRACTS.md`, `CANONICAL_KNOWLEDGE_MODEL.md`, `docs/forensic-auditability-standard.md`, `docs/audit-workflows.md`, `governance/sources/architecture-overview.md`).
 
-**Revalidation:** pending separate Governance authorization after remediation commit `0a2a615805213e5d2192d67c6af04b99e46e3a0b`.
+**Revalidation:** completed at `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` ([comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450420444)).
+
+## Closure (2026-08-28)
+
+| Field | Value |
+|-------|-------|
+| Assigned / effective weight | `standard` / `full` |
+| Bootstrap profile | Full |
+| Baseline anchor | `356a0b28adc656ac52a96a3e8cb48481178cd048` |
+| Primary implementation SHA | `6cec5938dc54273176dfa592a89e881d30d63236` |
+| First validation anchor | `9d9204148300afd2797fc243350ea012f1c2ec90` |
+| Audit/docs remediation SHA | `0a2a615805213e5d2192d67c6af04b99e46e3a0b` |
+| Final revalidation product anchor | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` |
+| Final integrated SHA | *(recorded at push — see Issue closure comment)* |
+| Full revalidation | **565 passed** (`v2/domain/tests/`) |
+| Documentation remediation | complete (9 authoritative docs) |
+| Auditability remediation | `summary_selection_source` + `evidence_projection` |
+| Architecture conformance | PASS |
+| #49 | unchanged, parked |
+| #50 | unchanged, closed |
+
+**Deferred boundaries (not new Issues):** per-query Retrieval candidate ledger; promotion-coverage expansion; Narrator B2/C establishment (#49).
+
+**Issue transition:** *(closure comment permalink recorded post-close)*
 
 ## Chronology
 
