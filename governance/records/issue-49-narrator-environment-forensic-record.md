@@ -112,7 +112,26 @@ v2/domain/tests/test_narrator_environment_semantic_qa.py
 
 ---
 
-## Related
+## 6. Full revalidation (2026-08-28) — PASS
+
+**Validation anchor (product):** `b807243130ff40b19413b25dff67f6e52979613e`  
+**First Full validation:** FAIL (D1–D7) at `ed98ca2`  
+**Remediation:** `64c92bd` (+ forensic `b807243`)
+
+| Suite | Result |
+|-------|--------|
+| #49 environmental + authority + semantic QA | 29 passed (+5 subtests) |
+| Full `domain/tests/` | 594 passed |
+| #50 + #51 regression | 39 passed |
+| Scene Grounding + audibility | 49 passed |
+| Node focused narrator/env (6 files) | 38 passed |
+| Node `--test-name-pattern=narrator` (broad) | 215 passed / 2 failed (unrelated: NI forensic, live semantic evaluator) |
+
+**Chronology preserved:** implementation → first Full validation FAIL → remediation → second Full revalidation PASS.
+
+**Non-blocking deviations noted:** `location:unknown` B2 collision edge case; per-need dual-outcome not integration-tested; `orchestration_only` blocks Character retrieval of B2 record (occurrence/`allowed_viewers` paths remain available per #50 contract).
+
+---
 
 - [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
 - [docs/architecture.md](../../docs/architecture.md)
