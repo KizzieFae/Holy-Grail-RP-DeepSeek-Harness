@@ -113,6 +113,10 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Precedence at mediation:** authored canon is the baseline where no applicable authoritative story knowledge supersedes it; legitimate story progression may govern current-state answers without rewriting authored sources.
 
+**Environmental descriptor derived rows (#49):** `record_kind=derived`, `event_type=environmental_descriptor`, `grounding_markers` includes `environmental_descriptor`. Payload `committed_text` JSON carries `property_key`, `value`, `stable_refs`, optional `supersedes`. `epistemic_authority_ref` uses `establishment_decision` with Host `decision_id` (orchestration-only visibility by default). `related_refs` may include `supersedes` → prior `story_record_id`.
+
+**Continuity audit (#49):** `turn_metadata_by_index[turn].narrator_environment_audit` stores N1/N2/Librarian outcomes, Host establishment decisions (`decision_id`), and cognition failure records (`cognition_failed`) when pre-finalize cognition is unavailable.
+
 ---
 
 ## Execution evidence (`execution_evidence`)

@@ -25,15 +25,22 @@ from domain_api.narrator_environment_contract import (  # noqa: E402
     ENVIRONMENTAL_DESCRIPTOR_MARKER,
     environmental_descriptor_payload,
 )
+from domain_api.narrator_environment_authority import (  # noqa: E402
+    NarratorEnvironmentalB2Proposal,
+    evaluate_host_environmental_b2_establishment,
+)
 from domain_api.narrator_environment_cognition import (  # noqa: E402
+    extract_triggering_user_context,
     finalize_narrator_environment_cognition,
     mediation_allows_bounded_composition,
     mediation_blocks_invention,
     parse_n1_cognition_result,
     parse_n2_cognition_results,
+    record_environment_cognition_failure,
 )
 from domain_api.narrator_environment_establishment import (  # noqa: E402
     accept_b2_environmental_descriptor,
+    persist_host_accepted_b2_environmental_descriptor,
     reject_c_establishment_via_narrator,
 )
 from domain_api.narrator_environment_packet import assemble_narrator_environment_packet  # noqa: E402
@@ -52,11 +59,35 @@ from domain_api.story_knowledge_contract import (  # noqa: E402
 )
 from domain_api.story_knowledge_repository import StoryKnowledgeRepository  # noqa: E402
 from domain_api.story_knowledge_service import StoryKnowledgeService  # noqa: E402
+from domain_api.story_knowledge_epistemic import (  # noqa: E402
+    resolve_epistemic_authority_ref,
+    story_record_epistemically_eligible,
+)
 from domain_api.contract import (  # noqa: E402
     CommitRequest,
     NarratorContextPrepareRequest,
     RoundStartRequest,
 )
+
+
+def _host_b2_decision(
+    *,
+    cognition_id: str = "cog-test",
+    need_id: str | None = "need-1",
+    property_key: str = "wall_color",
+    value: str = "teal",
+    stable_refs: tuple[str, ...] = ("location:workshop",),
+    mediation_outcome: str = "no_match",
+):
+    proposal = NarratorEnvironmentalB2Proposal(
+        cognition_id=cognition_id,
+        need_id=need_id,
+        property_key=property_key,
+        value=value,
+        stable_refs=stable_refs,
+        mediation_outcome=mediation_outcome,
+    )
+    return evaluate_host_environmental_b2_establishment(proposal)
 
 
 def _b2_submission(
@@ -348,6 +379,7 @@ class CognitionMediationTests(unittest.TestCase):
                 cognition_id="cog-1",
             )
             self.assertFalse(decisions[0]["accepted"])
+            self.assertIn("blocked_by_mediation", decisions[0]["reason"])
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
@@ -389,21 +421,25 @@ class CognitionMediationTests(unittest.TestCase):
 
 
 class B2EstablishmentTests(unittest.TestCase):
-    def test_b2_persists_and_appears_in_packet(self) -> None:
+    def test_b2_persists_after_host_authority_acceptance(self) -> None:
         fixture = initialize_live_session(cast=["Alice"], location="Workshop")
         fixture.memory_scope_id = "scope-b2"
         tmpdir = tempfile.mkdtemp()
         try:
             service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
             loc = bind_location_stable_ref("Workshop").stable_ref
-            result = accept_b2_environmental_descriptor(
+            decision = _host_b2_decision(stable_refs=(loc,))
+            self.assertTrue(decision.authorized)
+            result = persist_host_accepted_b2_environmental_descriptor(
                 fixture,
                 service,
+                establishment_decision=decision,
                 property_key="wall_color",
                 value="teal",
                 stable_refs=(loc,),
                 source_domain_commit_id="commit-b2",
                 turn_index=1,
+                cognition_id="cog-b2",
             )
             self.assertTrue(result["accepted"])
             records = service.list_records("scope-b2")
@@ -415,6 +451,311 @@ class B2EstablishmentTests(unittest.TestCase):
             self.assertTrue(any(d.property_key == "wall_color" for d in packet.effective_descriptors))
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_n2_b2_self_classification_without_host_decision_does_not_persist(self) -> None:
+        fixture = initialize_live_session(cast=["Alice"], location="Workshop")
+        fixture.memory_scope_id = "scope-no-host"
+        tmpdir = tempfile.mkdtemp()
+        try:
+            service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
+            loc = bind_location_stable_ref("Workshop").stable_ref
+            rejected = evaluate_host_environmental_b2_establishment(
+                NarratorEnvironmentalB2Proposal(
+                    cognition_id="cog-1",
+                    need_id="need-1",
+                    property_key="wall_color",
+                    value="teal",
+                    stable_refs=(loc,),
+                    mediation_outcome="match",
+                )
+            )
+            self.assertFalse(rejected.authorized)
+            result = persist_host_accepted_b2_environmental_descriptor(
+                fixture,
+                service,
+                establishment_decision=rejected,
+                property_key="wall_color",
+                value="teal",
+                stable_refs=(loc,),
+                source_domain_commit_id="commit-1",
+                turn_index=1,
+            )
+            self.assertFalse(result["accepted"])
+            self.assertEqual(service.list_records("scope-no-host"), [])
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+class B2AuthorityMediationTests(unittest.TestCase):
+    def test_match_blocks_b2_origination(self) -> None:
+        fixture = initialize_live_session(cast=["Alice"], location="Workshop")
+        fixture.memory_scope_id = "scope-match"
+        tmpdir = tempfile.mkdtemp()
+        try:
+            service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
+            turn = CharacterTurnRecord(
+                character_id="Alice",
+                committed_move={"move_schema_version": 2, "beats": []},
+                domain_commit_id="commit-match",
+                continuity_turn_index=1,
+                director_decision={},
+            )
+            from domain_api.narrator_environment_cognition import apply_n2_establishment_decisions
+
+            n2 = parse_n2_cognition_results(
+                {
+                    "resolutions": [
+                        {
+                            "category": "B2",
+                            "detail": "teal walls",
+                            "property_key": "wall_color",
+                            "value": "teal",
+                            "mediation_outcome": "match",
+                        }
+                    ]
+                }
+            )
+            decisions = apply_n2_establishment_decisions(
+                fixture, service, resolutions=n2, turn_record=turn, cognition_id="cog-match"
+            )
+            self.assertFalse(decisions[0]["accepted"])
+            self.assertEqual(decisions[0]["reason"], "origination_requires_no_match")
+            self.assertEqual(service.list_records("scope-match"), [])
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_no_match_may_reach_host_and_persist(self) -> None:
+        fixture = initialize_live_session(cast=["Alice"], location="Workshop")
+        fixture.memory_scope_id = "scope-nomatch"
+        tmpdir = tempfile.mkdtemp()
+        try:
+            service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
+            turn = CharacterTurnRecord(
+                character_id="Alice",
+                committed_move={"move_schema_version": 2, "beats": []},
+                domain_commit_id="commit-nm",
+                continuity_turn_index=1,
+                director_decision={},
+            )
+            from domain_api.narrator_environment_cognition import apply_n2_establishment_decisions
+
+            n2 = parse_n2_cognition_results(
+                {
+                    "resolutions": [
+                        {
+                            "category": "B2",
+                            "detail": "teal walls",
+                            "property_key": "wall_color",
+                            "value": "teal",
+                            "stable_refs": ["location:workshop"],
+                            "mediation_outcome": "no_match",
+                        }
+                    ]
+                }
+            )
+            decisions = apply_n2_establishment_decisions(
+                fixture, service, resolutions=n2, turn_record=turn, cognition_id="cog-nm"
+            )
+            self.assertTrue(decisions[0]["accepted"])
+            self.assertTrue(decisions[0]["authority_decision"]["authorized"])
+            self.assertEqual(len(service.list_records("scope-nomatch")), 1)
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_mediation_failure_modes_block_b2(self) -> None:
+        for outcome in ("ambiguous", "forbidden", "retrieval_failure", "mediation_failure", None):
+            with self.subTest(outcome=outcome):
+                fixture = initialize_live_session(cast=["Alice"])
+                fixture.memory_scope_id = f"scope-{outcome}"
+                tmpdir = tempfile.mkdtemp()
+                try:
+                    service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
+                    turn = CharacterTurnRecord(
+                        character_id="Alice",
+                        committed_move={"move_schema_version": 2, "beats": []},
+                        domain_commit_id="commit-x",
+                        continuity_turn_index=1,
+                        director_decision={},
+                    )
+                    from domain_api.narrator_environment_cognition import (
+                        apply_n2_establishment_decisions,
+                    )
+
+                    n2 = parse_n2_cognition_results(
+                        {
+                            "resolutions": [
+                                {
+                                    "category": "B2",
+                                    "property_key": "wall_color",
+                                    "value": "teal",
+                                    "mediation_outcome": outcome,
+                                }
+                            ]
+                        }
+                    )
+                    decisions = apply_n2_establishment_decisions(
+                        fixture, service, resolutions=n2, turn_record=turn, cognition_id="cog-x"
+                    )
+                    self.assertFalse(decisions[0]["accepted"])
+                    self.assertEqual(service.list_records(f"scope-{outcome}"), [])
+                finally:
+                    shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+class B2EpistemicTests(unittest.TestCase):
+    def test_accepted_b2_orchestration_only_not_auto_character_knowledge(self) -> None:
+        fixture = initialize_live_session(cast=["Alice", "Bob"], location="Workshop")
+        fixture.memory_scope_id = "scope-epi"
+        tmpdir = tempfile.mkdtemp()
+        try:
+            service = StoryKnowledgeService(StoryKnowledgeRepository(tmpdir))
+            loc = bind_location_stable_ref("Workshop").stable_ref
+            decision = _host_b2_decision(stable_refs=(loc,))
+            persist_host_accepted_b2_environmental_descriptor(
+                fixture,
+                service,
+                establishment_decision=decision,
+                property_key="wall_color",
+                value="teal",
+                stable_refs=(loc,),
+                source_domain_commit_id="commit-epi",
+                turn_index=1,
+            )
+            record = service.list_records("scope-epi")[0]
+            assert record.epistemic_authority_ref is not None
+            self.assertTrue(
+                resolve_epistemic_authority_ref(
+                    fixture,
+                    record.epistemic_authority_ref,
+                    viewer_character_id=None,
+                    viewer_role="narrator",
+                )
+            )
+            self.assertFalse(
+                story_record_epistemically_eligible(
+                    fixture,
+                    record,
+                    viewer_character_id="Alice",
+                    viewer_role="character",
+                )
+            )
+            self.assertFalse(
+                story_record_epistemically_eligible(
+                    fixture,
+                    record,
+                    viewer_character_id="Bob",
+                    viewer_role="character",
+                )
+            )
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+class TriggeringUserCognitionTests(unittest.TestCase):
+    def test_triggering_user_reaches_cognition_when_character_omits_environment(self) -> None:
+        from continuity_state_occurrence_evidence import (  # noqa: E402
+            OccurrenceContribution,
+            OccurrenceEvidence,
+            TriggeringUser,
+        )
+
+        fixture = initialize_live_session(cast=["Alice"], location="Workshop")
+        commit_id = "commit-user-env"
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-user-1",
+                timestamp=datetime.now(timezone.utc),
+                event_type="action",
+                participants=["Alice"],
+                summary="Alice shifts the heavy crate.",
+                turn_index=1,
+                known_by=["Alice"],
+                occurrence_evidence=OccurrenceEvidence(
+                    contributions=(
+                        OccurrenceContribution(
+                            contribution_kind="character:action",
+                            producer="character",
+                            content="Alice grunts and adjusts her stance.",
+                        ),
+                    ),
+                    triggering_user=TriggeringUser(
+                        entry_id="u-1",
+                        speaker="Player",
+                        content="I push the crate against the wall.",
+                    ),
+                ),
+            )
+        )
+        turn = CharacterTurnRecord(
+            character_id="Alice",
+            committed_move={
+                "move_schema_version": 2,
+                "beats": [{"type": "action", "action": "grunts and adjusts stance"}],
+            },
+            domain_commit_id=commit_id,
+            continuity_turn_index=1,
+            director_decision={},
+        )
+        trigger = extract_triggering_user_context(fixture, turn)
+        self.assertIsNotNone(trigger)
+        assert trigger is not None
+        self.assertIn("push the crate", trigger.get("content", ""))
+
+    def test_wrong_commit_does_not_fallback_to_unrelated_event(self) -> None:
+        from continuity_state_occurrence_evidence import (  # noqa: E402
+            OccurrenceEvidence,
+            TriggeringUser,
+        )
+
+        fixture = initialize_live_session(cast=["Alice"])
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-other",
+                timestamp=datetime.now(timezone.utc),
+                event_type="action",
+                participants=["Alice"],
+                summary="Other event",
+                turn_index=1,
+                known_by=["Alice"],
+                occurrence_evidence=OccurrenceEvidence(
+                    contributions=(),
+                    triggering_user=TriggeringUser(
+                        entry_id="u-x",
+                        speaker="Player",
+                        content="Unrelated action",
+                    ),
+                ),
+            )
+        )
+        turn = CharacterTurnRecord(
+            character_id="Alice",
+            committed_move={"move_schema_version": 2, "beats": []},
+            domain_commit_id="commit-missing",
+            continuity_turn_index=2,
+            director_decision={},
+        )
+        self.assertIsNone(extract_triggering_user_context(fixture, turn))
+
+
+class CognitionFailureAuditTests(unittest.TestCase):
+    def test_record_environment_cognition_failure_persists_audit(self) -> None:
+        fixture = initialize_live_session(cast=["Alice"])
+        turn = CharacterTurnRecord(
+            character_id="Alice",
+            committed_move={"move_schema_version": 2, "beats": []},
+            domain_commit_id="commit-fail",
+            continuity_turn_index=3,
+            director_decision={},
+        )
+        audit = record_environment_cognition_failure(
+            fixture,
+            turn,
+            failure_stage="substrate_exception",
+            failure_reason="import_error",
+        )
+        self.assertTrue(audit["cognition_failed"])
+        stored = fixture.manager.turn_metadata_by_index[3]["narrator_environment_audit"]
+        self.assertEqual(stored["failure_reason"], "import_error")
 
 
 class NarratorContextIntegrationTests(unittest.TestCase):

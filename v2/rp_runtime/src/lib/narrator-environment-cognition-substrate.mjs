@@ -1,4 +1,4 @@
-import { runLibrarianMediation } from '../../lib/librarian-mediation-substrate.mjs';
+import { runLibrarianMediation } from './librarian-mediation-substrate.mjs';
 
 const COGNITION_SCHEMA = {
   type: 'object',
@@ -120,7 +120,13 @@ export async function runNarratorEnvironmentCognition({
     });
     if (run.failed) {
       if (!allowDeterministicFallback) {
-        return { ok: false, stage: 'cognition_inference', audit: null, prepare };
+        return {
+          ok: false,
+          stage: 'cognition_inference',
+          failureReason: run.failure?.reason ?? 'cognition_inference_failed',
+          audit: null,
+          prepare,
+        };
       }
       cognitionRaw = JSON.stringify({
         baseline_sufficient: true,
@@ -162,7 +168,16 @@ export async function runNarratorEnvironmentCognition({
       hgSceneId,
       inferenceId: `${cognitionInferenceId}-lib-${index}`,
       knowledgeAccessRequest: kar,
+      runEphemeralInference,
       allowDeterministicFallback,
+      modelProfile,
+      evidenceContextBase: {
+        hgSceneId,
+        hgRoundId,
+        role: 'narrator',
+        characterId,
+        inferenceId: cognitionInferenceId,
+      },
     });
     librarianOutcomes.push({
       need_id: needId,

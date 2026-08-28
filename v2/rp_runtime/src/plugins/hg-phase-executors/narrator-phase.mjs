@@ -27,8 +27,18 @@ function recordAttemptEvidence({
   evidenceId,
   hgSessionId,
   patch,
+  environmentCognition = undefined,
 }) {
-  recorder?.patchDecision(evidenceId ?? null, hgSessionId, patch);
+  const merged = environmentCognition
+    ? {
+        ...patch,
+        decision: {
+          ...patch.decision,
+          environment_cognition: environmentCognition,
+        },
+      }
+    : patch;
+  recorder?.patchDecision(evidenceId ?? null, hgSessionId, merged);
 }
 
 function acceptNarratorPresentation({
@@ -52,6 +62,7 @@ function acceptNarratorPresentation({
   semanticQa = null,
   residualSoftConcerns = null,
   terminalDisposition = 'narrator_presented',
+  environmentCognition = null,
 }) {
   trace.emit(sceneAgent.session, 'hg/narrator-completed', scope, {
     inference_id: inferenceId,
@@ -90,7 +101,9 @@ function acceptNarratorPresentation({
       terminalDisposition,
       semanticQa,
       residualSoftConcerns,
+      environmentCognition,
     }),
+    environmentCognition,
   });
 
   return {
@@ -146,6 +159,7 @@ export async function runNarratorPhase({
   });
 
   let environmentCognitionAudit = null;
+  let environmentCognitionEvidence = null;
   try {
     const envCognition = await runNarratorEnvironmentCognition({
       api,
@@ -160,11 +174,36 @@ export async function runNarratorPhase({
       mockCognitionResponse: mockNarratorEnvironmentCognitionResponse,
       allowDeterministicFallback: true,
     });
-    environmentCognitionAudit = envCognition.audit;
+    if (!envCognition.ok) {
+      environmentCognitionAudit = {
+        cognition_failed: true,
+        failure_stage: envCognition.stage ?? 'cognition_failed',
+        failure_reason: envCognition.failureReason ?? 'environment_cognition_unavailable',
+        cognition_id: envCognition.audit?.cognition_id ?? null,
+        domain_commit_id: domainCommitId,
+      };
+      environmentCognitionEvidence = environmentCognitionAudit;
+    } else {
+      environmentCognitionAudit = envCognition.audit;
+      environmentCognitionEvidence = {
+        cognition_failed: false,
+        cognition_id: envCognition.audit?.cognition_id ?? null,
+        domain_commit_id: domainCommitId,
+      };
+    }
   } catch (error) {
+    const reason = String(error?.message ?? error);
+    environmentCognitionAudit = {
+      cognition_failed: true,
+      failure_stage: 'substrate_exception',
+      failure_reason: reason,
+      cognition_id: null,
+      domain_commit_id: domainCommitId,
+    };
+    environmentCognitionEvidence = environmentCognitionAudit;
     trace.emit(sceneAgent.session, 'hg/narrator-environment-cognition-failed', scope, {
       inference_id: narratorInferenceId,
-      reason: String(error?.message ?? error),
+      reason,
     });
   }
 
@@ -415,6 +454,7 @@ export async function runNarratorPhase({
           characterId,
           characterTurnIndex,
           manifestId,
+          environmentCognition: environmentCognitionEvidence,
         });
       }
 
@@ -596,6 +636,7 @@ export async function runNarratorPhase({
             policyAction: policy.action,
           },
           residualSoftConcerns: policy.residualSoftConcerns ?? null,
+          environmentCognition: environmentCognitionEvidence,
         });
       }
 
@@ -627,6 +668,7 @@ export async function runNarratorPhase({
           },
           residualSoftConcerns: policy.residualSoftConcerns ?? [],
           terminalDisposition: 'accepted_with_residual_soft_concerns',
+          environmentCognition: environmentCognitionEvidence,
         });
       }
 

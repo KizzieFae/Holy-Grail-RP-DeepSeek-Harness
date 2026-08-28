@@ -204,6 +204,7 @@ class NarratorEnvironmentResolution:
     stable_refs: tuple[str, ...] = ()
     mediation_outcome: MediationOutcomeKind | None = None
     establishment_record_id: str | None = None
+    supersedes: str | None = None
     reasoning_summary: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -223,6 +224,8 @@ class NarratorEnvironmentResolution:
             payload["mediation_outcome"] = self.mediation_outcome
         if self.establishment_record_id:
             payload["establishment_record_id"] = self.establishment_record_id
+        if self.supersedes:
+            payload["supersedes"] = self.supersedes
         return payload
 
 

@@ -1,6 +1,6 @@
 # Issue #49 — Narrator Environmental Response Forensic / Execution Record
 
-**Status:** Implemented (awaiting separate Full validation)  
+**Status:** Implemented (remediated after Full validation FAIL; awaiting separate Full revalidation)  
 **Issue:** [#49 — Narrator environmental-response cognition and Librarian-mediated world detail](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/49)  
 **Type:** `design_gap`  
 **Assigned workflow weight:** `standard`  
@@ -8,49 +8,72 @@
 **Bootstrap profile:** Full  
 **Consensus anchor:** `356a0b28adc656ac52a96a3e8cb48481178cd048`  
 **Implementation baseline (#51 integrated):** `8e4249d32ad66fddb2b62bdbfc934dfb6b5ca85`  
-**Implementation SHA:** *(set at commit — see §12)*
+**Initial implementation SHA:** `de0d4c0` (feat), `eddeb81`, `ed98ca2` (docs)  
+**Remediation SHA:** *(set at remediation commit)*
 
-**Prerequisites:** #50 CLOSED (story knowledge substrate); #51 CLOSED (occurrence evidence / `triggering_user`)
+**Prerequisites:** #50 CLOSED; #51 CLOSED
 
 ---
 
 ## 0. Record purpose
 
-Preserves decision lineage for #49: intake → investigation → Full consensus → #50/#51 prerequisites → implementation → tests.
+Preserves decision lineage: intake → investigation → Full consensus → #50/#51 prerequisites → implementation → **Full validation FAIL** → remediation.
 
 ---
 
-## 1. Implementation authorization
+## 1. Full validation FAIL (2026-08-28)
 
-Implementation began after #51 closed at integrated baseline `8e4249d32ad66fddb2b62bdbfc934dfb6b5ca85`. Governance authorized implementation in this cycle (implementation chat 2026-08-28).
+Independent Full validation determined **FAIL** (no transition to `validated`). Primary blockers:
+
+| ID | Classification | Finding |
+|----|----------------|---------|
+| D1 | Implementation | Broken Node import `../../lib/librarian-mediation-substrate.mjs` |
+| D2 | Authority-boundary | N2 `B2` self-classification directly triggered `submit_derived_record` |
+| D3 | Epistemic | `establishment_decision` ref missing `decision_id` / resolvable payload |
+| D4 | Mediation | `mediation_allows_bounded_composition` unused; `match` could originate B2 |
+| D5 | Test deficiency | No Node orchestration tests for environmental cognition |
+| D6 | Documentation | Five authoritative docs stale |
+| D7 | Auditability | Node cognition catch continued without durable failure audit |
+
+Consensus architecture remained valid; remediation authorized against these defects only.
 
 ---
 
-## 2. Accepted architecture (executed)
+## 2. Remediation decisions
+
+| Defect | Remediation |
+|--------|-------------|
+| D1 | Import `./librarian-mediation-substrate.mjs`; pass `runEphemeralInference` into Librarian mediation |
+| D2 | New `narrator_environment_authority.py`: Host `evaluate_host_environmental_b2_establishment` (deterministic, repository-native pattern aligned with Host proposal validation) |
+| D3 | `epistemic_authority_for_b2_decision` stamps `decision_id`, `authorized`, `orchestration_only` from Host decision |
+| D4 | Production path enforces `no_match` for B2 origination; `match` → reject duplicate persistence |
+| D5 | `narrator-environment-cognition-substrate.test.mjs` + expanded Python authority/mediation tests |
+| D6 | Updated `GLOSSARY.md`, `CANONICAL_KNOWLEDGE_MODEL.md`, `docs/rp-data-layout.md`, `docs/forensic-auditability-standard.md`, `docs/audit-workflows.md` |
+| D7 | `record_environment_cognition_failure`, kernel persist on failure audit, `decision.environment_cognition` execution evidence, `hg/narrator-environment-cognition-failed` trace event |
+
+**Authority seam selected:** Host deterministic validation (`host_environmental_b2_validation`) — same architectural family as `validate_host_proposal_item` / Continuity accept-reject for Librarian proposals. No new LLM authority evaluator.
+
+**Proposal → acceptance → persistence:**
+
+```text
+N2 B2 candidate (Narrator proposal)
+→ evaluate_host_environmental_b2_establishment (Host decision_id, authorized flag)
+→ if authorized: persist_host_accepted_b2_environmental_descriptor → #50 submit_derived_record
+→ if rejected: audit only; no JSONL record
+```
+
+---
+
+## 3. Accepted architecture (executed + remediated)
 
 | Concept | Implementation |
 |---------|----------------|
-| Bounded Narrator composition exception | Pre-render cognition + targeted Librarian; not unrestricted worldbuilding |
-| A/B1/B2/C taxonomy | `narrator_environment_contract.py` |
 | EnvironmentalCurrentView | `narrator_environment_projection.py` |
-| Narrator environmental packet | `narrator_environment_packet.py` → manifest lane `narrator_environment_baseline` |
-| N1/N2 cognition | `narrator_environment_cognition.py` + DSH `narrator-environment-cognition-substrate.mjs` |
-| B2 establishment | `narrator_environment_establishment.py` → `submit_derived_record` |
-| C establishment | Rejected at Narrator path; `reject_c_establishment_via_narrator()` |
-| B1 non-persistence | No JSONL record; audit via cognition + presentation evidence |
-| User trigger | `triggering_user_context` lane from #51 `occurrence_evidence` |
-| Forensic audit | `NarratorEnvironmentCognitionAudit` → `turn_metadata_by_index` |
-| Semantic QA | Extended rubric in `narrator_semantic_qa_context.py` |
-
----
-
-## 3. Rejected alternatives (unchanged from consensus)
-
-- Parallel environmental truth store
-- Persistent B1 ledger
-- Authored canon mutation
-- Keyword/verb taxonomy for action classification
-- Treating retrieval/mediation failure as `no_match`
+| Host B2 authority | `narrator_environment_authority.py` |
+| B2 persistence | `narrator_environment_establishment.py` → `submit_derived_record` |
+| N1/N2 + mediation gating | `narrator_environment_cognition.py` |
+| DSH orchestration | `narrator-environment-cognition-substrate.mjs`, `narrator-phase.mjs` |
+| Forensic audit | `NarratorEnvironmentCognitionAudit` + `authority_decision` + failure records |
 
 ---
 
@@ -58,42 +81,41 @@ Implementation began after #51 closed at integrated baseline `8e4249d32ad66fddb2
 
 ```
 v2/domain_api/
+  narrator_environment_authority.py          (remediation)
   narrator_environment_contract.py
   narrator_environment_location_binding.py
   narrator_environment_projection.py
   narrator_environment_packet.py
   narrator_environment_cognition.py
   narrator_environment_establishment.py
-  kernel.py (prepare/finalize endpoints, prepare_narrator_context)
-  http_transport.py
+  kernel.py, http_transport.py
   narrator_semantic_qa_context.py
-v2/domain/modules/prompt_builders.py
 v2/rp_runtime/src/lib/narrator-environment-cognition-substrate.mjs
 v2/rp_runtime/src/plugins/hg-phase-executors/narrator-phase.mjs
+v2/rp_runtime/tests/narrator-environment-cognition-substrate.test.mjs
 v2/domain/tests/test_issue_49_narrator_environment.py
+v2/domain/tests/test_narrator_environment_semantic_qa.py
 ```
 
 ---
 
-## 5. Tests
+## 5. Tests (remediation verification)
 
 | Suite | Result |
 |-------|--------|
-| `test_issue_49_narrator_environment.py` | 15 passed |
-| Full `domain/tests/` | 580 passed |
-
----
-
-## 12. Implementation SHA
-
-`de0d4c0` — feat(#49): Narrator environmental cognition and B2 establishment
+| `test_issue_49_narrator_environment.py` | *(see remediation commit)* |
+| `test_narrator_environment_semantic_qa.py` | *(see remediation commit)* |
+| `test_story_knowledge_issue_50.py` | regression |
+| `test_issue_51_*` | regression |
+| `narrator-environment-cognition-substrate.test.mjs` | Node orchestration |
+| Full `domain/tests/` | *(see remediation commit)* |
 
 ---
 
 ## Related
 
 - [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
-- [docs/architecture.md](../../docs/architecture.md) — Narrator manifest / #49
-- [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md) — #49 lanes
+- [docs/architecture.md](../../docs/architecture.md)
+- [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)
 - [governance/records/issue-50-story-knowledge-forensic-record.md](./issue-50-story-knowledge-forensic-record.md)
 - [governance/records/issue-51-occurrence-evidence-forensic-record.md](./issue-51-occurrence-evidence-forensic-record.md)

@@ -155,6 +155,7 @@ from .narrator_environment_cognition import (  # noqa: E402
     build_librarian_knowledge_access_request,
     finalize_narrator_environment_cognition,
     parse_n1_cognition_result,
+    record_environment_cognition_failure,
 )
 from .narrator_environment_packet import assemble_narrator_environment_packet  # noqa: E402
 from .story_knowledge_service import StoryKnowledgeService  # noqa: E402
@@ -2393,6 +2394,16 @@ class DomainKernel:
         )
         cognition_audit = req.environment_cognition_audit
         if isinstance(cognition_audit, dict) and cognition_audit:
+            if cognition_audit.get("cognition_failed"):
+                record_environment_cognition_failure(
+                    fixture,
+                    turn_record,
+                    failure_stage=str(cognition_audit.get("failure_stage") or "unknown"),
+                    failure_reason=str(cognition_audit.get("failure_reason") or ""),
+                    cognition_id=str(cognition_audit.get("cognition_id") or "") or None,
+                )
+                if isinstance(self.store, SessionRepository):
+                    self.store.persist(fixture)
             contributions.insert(
                 -1,
                 PromptContribution(

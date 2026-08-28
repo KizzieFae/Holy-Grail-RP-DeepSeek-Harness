@@ -62,6 +62,24 @@ producer / user history (rp_history)
 | `execution_evidence/` | Parallel inference forensic store (not the promotion seam) |
 | Librarian `BundleAudit` | Mediation candidate consideration (sufficient for #51; no per-query story ledger required) |
 
+### Issue #49 environmental cognition join recipe
+
+Reconstruct one Narrator environmental turn:
+
+```text
+domain_commit_id + continuity_turn_index
+  → turn_metadata_by_index[turn].narrator_environment_audit
+      (cognition_id, n1, librarian_queries, n2_resolutions, establishment_decisions)
+  → Host authority_decision.decision_id (proposal vs authorized)
+  → story_record_id when B2 accepted (records.jsonl + epistemic_authority_ref)
+  → EnvironmentalCurrentView / narrator_environment_baseline packet (location_ref)
+  → triggering_user_context from occurrence_evidence (turn_index join; no fallback)
+  → execution_evidence Narrator attempt: decision.environment_cognition
+  → semantic QA nar_environmental_* findings (if evaluated)
+```
+
+**Cognition failure path:** When `cognition_failed=true`, audit records `failure_stage` / `failure_reason`; Narrator may still render via fallback policy but no B2 establishment authority is created.
+
 ### V2 human audit-tag workflow
 
 During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.

@@ -22,26 +22,38 @@ from domain_api.narrator_environment_contract import (
     NarratorEnvironmentResolution,
     NarratorInformationNeed,
 )
+from domain_api.narrator_environment_authority import (
+    EnvironmentalB2EstablishmentDecision,
+    NarratorEnvironmentalB2Proposal,
+    evaluate_host_environmental_b2_establishment,
+    mediation_allows_bounded_composition,
+    mediation_blocks_invention,
+)
 from domain_api.narrator_environment_establishment import (
-    accept_b2_environmental_descriptor,
+    persist_host_accepted_b2_environmental_descriptor,
     reject_c_establishment_via_narrator,
 )
+from domain_api.narrator_environment_projection import build_environmental_current_view
 from domain_api.narrator_environment_packet import assemble_narrator_environment_packet
 from domain_api.story_knowledge_service import StoryKnowledgeService
 
 
-def _public_event_for_commit(fixture: LiveSession, domain_commit_id: str) -> Any | None:
+def _public_event_for_commit(
+    fixture: LiveSession,
+    domain_commit_id: str,
+    continuity_turn_index: int | None = None,
+) -> Any | None:
+    commit_id = str(domain_commit_id or "").strip()
+    if continuity_turn_index is not None:
+        for event in reversed(fixture.manager.public_events):
+            if getattr(event, "turn_index", None) == continuity_turn_index:
+                return event
     for event in fixture.manager.public_events:
-        if str(getattr(event, "source_domain_commit_id", "") or "") == domain_commit_id:
+        if str(getattr(event, "source_domain_commit_id", "") or "") == commit_id:
             return event
         meta = getattr(event, "metadata", None) or {}
-        if str(meta.get("domain_commit_id", "") or "") == domain_commit_id:
+        if isinstance(meta, dict) and str(meta.get("domain_commit_id", "") or "") == commit_id:
             return event
-    for event in fixture.manager.public_events:
-        if domain_commit_id and domain_commit_id in str(event.summary or ""):
-            return event
-    if fixture.manager.public_events:
-        return fixture.manager.public_events[-1]
     return None
 
 
@@ -49,7 +61,11 @@ def extract_triggering_user_context(
     fixture: LiveSession,
     turn_record: CharacterTurnRecord,
 ) -> dict[str, Any] | None:
-    event = _public_event_for_commit(fixture, turn_record.domain_commit_id)
+    event = _public_event_for_commit(
+        fixture,
+        turn_record.domain_commit_id,
+        turn_record.continuity_turn_index,
+    )
     if event is None or getattr(event, "occurrence_evidence", None) is None:
         return None
     trigger = event.occurrence_evidence.triggering_user
@@ -62,7 +78,11 @@ def extract_committed_occurrence_summary(
     fixture: LiveSession,
     turn_record: CharacterTurnRecord,
 ) -> dict[str, Any]:
-    event = _public_event_for_commit(fixture, turn_record.domain_commit_id)
+    event = _public_event_for_commit(
+        fixture,
+        turn_record.domain_commit_id,
+        turn_record.continuity_turn_index,
+    )
     payload: dict[str, Any] = {
         "character_id": turn_record.character_id,
         "domain_commit_id": turn_record.domain_commit_id,
@@ -138,6 +158,7 @@ def parse_n2_cognition_results(raw: dict[str, Any]) -> list[NarratorEnvironmentR
                 stable_refs=refs,
                 mediation_outcome=mediation,  # type: ignore[arg-type]
                 establishment_record_id=str(item.get("establishment_record_id", "") or "") or None,
+                supersedes=str(item.get("supersedes", "") or "") or None,
                 reasoning_summary=str(item.get("reasoning_summary", "") or ""),
             )
         )
@@ -198,20 +219,6 @@ def _entity_refs_for_retrieval(refs: tuple[str, ...]) -> tuple[EntityRef, ...]:
     )
 
 
-def mediation_allows_bounded_composition(outcome: str | None) -> bool:
-    return outcome == "no_match"
-
-
-def mediation_blocks_invention(outcome: str | None) -> bool:
-    return outcome in {
-        "ambiguous",
-        "forbidden",
-        "retrieval_failure",
-        "mediation_failure",
-        None,
-    }
-
-
 def apply_n2_establishment_decisions(
     fixture: LiveSession,
     service: StoryKnowledgeService,
@@ -220,24 +227,18 @@ def apply_n2_establishment_decisions(
     turn_record: CharacterTurnRecord,
     cognition_id: str,
 ) -> list[dict[str, Any]]:
+    story_records = service.list_records(str(fixture.memory_scope_id or ""))
+    current_view = build_environmental_current_view(fixture, story_records=story_records)
     decisions: list[dict[str, Any]] = []
     for resolution in resolutions:
         if resolution.category == "B2":
-            if mediation_blocks_invention(resolution.mediation_outcome):
-                decisions.append(
-                    {
-                        "resolution_need_id": resolution.need_id,
-                        "accepted": False,
-                        "reason": f"blocked_by_mediation:{resolution.mediation_outcome}",
-                    }
-                )
-                continue
             if not resolution.property_key or not resolution.value:
                 decisions.append(
                     {
                         "resolution_need_id": resolution.need_id,
                         "accepted": False,
                         "reason": "missing_property_key_or_value",
+                        "authority_decision": None,
                     }
                 )
                 continue
@@ -246,18 +247,50 @@ def apply_n2_establishment_decisions(
                 from .narrator_environment_location_binding import bind_location_stable_ref
 
                 refs = (bind_location_stable_ref(fixture.manager.scene_state.location).stable_ref,)
-            result = accept_b2_environmental_descriptor(
+            proposal = NarratorEnvironmentalB2Proposal(
+                cognition_id=cognition_id,
+                need_id=resolution.need_id,
+                property_key=resolution.property_key,
+                value=resolution.value,
+                stable_refs=refs,
+                mediation_outcome=resolution.mediation_outcome,
+                detail=resolution.detail,
+                supersedes=resolution.supersedes,
+            )
+            authority_decision = evaluate_host_environmental_b2_establishment(
+                proposal,
+                current_view=current_view,
+            )
+            decision_audit = authority_decision.to_audit_dict()
+            if not authority_decision.authorized:
+                decisions.append(
+                    {
+                        "resolution_need_id": resolution.need_id,
+                        "accepted": False,
+                        "reason": authority_decision.reason_code,
+                        "authority_decision": decision_audit,
+                    }
+                )
+                continue
+            result = persist_host_accepted_b2_environmental_descriptor(
                 fixture,
                 service,
+                establishment_decision=authority_decision,
                 property_key=resolution.property_key,
                 value=resolution.value,
                 stable_refs=refs,
                 source_domain_commit_id=turn_record.domain_commit_id,
                 turn_index=turn_record.continuity_turn_index,
                 cognition_id=cognition_id,
+                supersedes=resolution.supersedes,
             )
+            result["authority_decision"] = decision_audit
             if result.get("accepted"):
                 resolution.establishment_record_id = result.get("story_record_id")
+                story_records = service.list_records(str(fixture.memory_scope_id or ""))
+                current_view = build_environmental_current_view(
+                    fixture, story_records=story_records
+                )
             decisions.append(result)
         elif resolution.category == "C":
             decisions.append(
@@ -355,6 +388,35 @@ def finalize_narrator_environment_cognition(
         "establishment_decisions": decisions,
         "updated_environmental_view": view.to_dict(),
     }
+
+
+def record_environment_cognition_failure(
+    fixture: LiveSession,
+    turn_record: CharacterTurnRecord,
+    *,
+    failure_stage: str,
+    failure_reason: str,
+    cognition_id: str | None = None,
+) -> dict[str, Any]:
+    """Durable audit when environmental cognition fails before N2/finalize (#49 D7)."""
+    audit: dict[str, Any] = {
+        "cognition_failed": True,
+        "failure_stage": failure_stage,
+        "failure_reason": failure_reason,
+        "cognition_id": cognition_id,
+        "domain_commit_id": turn_record.domain_commit_id,
+        "location_ref": "",
+        "n1": {"baseline_sufficient": True, "information_needs": [], "assessment_notes": ""},
+        "librarian_queries": [],
+        "n2_resolutions": [],
+        "establishment_decisions": [],
+    }
+    turn_meta = fixture.manager.turn_metadata_by_index.setdefault(
+        turn_record.continuity_turn_index,
+        {},
+    )
+    turn_meta["narrator_environment_audit"] = audit
+    return audit
 
 
 NARRATOR_ENVIRONMENT_COGNITION_RUBRIC = (

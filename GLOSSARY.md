@@ -134,6 +134,20 @@ When reading historical PRDs or workshop records under `governance/records/`, tr
 
 ---
 
+## Narrator environmental response (#49)
+
+**EnvironmentalCurrentView** — Deterministic Host projection of **authored environmental baseline** plus **story-derived B2** descriptors for the active location. Surfaces effective properties, supersession, conflicts, and bounded recent changes. Not LLM-inferred.
+
+**Narrator environmental packet** — Bounded manifest lane `narrator_environment_baseline` assembled from `EnvironmentalCurrentView` for Narrator pre-render cognition and render. Separate from Scene Grounding logistics.
+
+**Environmental descriptor (B2)** — Continuity-bearing perceptible property on a persistent referent, persisted as a **derived** StoryKnowledge record (`event_type=environmental_descriptor`) only after **Host deterministic establishment** accepts a Narrator **proposal**. Distinct from Narrator self-classification.
+
+**Environmental taxonomy (N2)** — **A** established/mediated detail; **B1** ephemeral presentation texture (non-persistent); **B2** persistent environmental descriptor (Host-gated); **C** material story fact (not Narrator-establishable); **cannot_safely_resolve** when ambiguity/failure blocks invention.
+
+**Proposal vs acceptance** — Narrator N2 may **propose** B2; **Host** (`host_environmental_b2_validation`) emits a durable `decision_id` that authorizes `#50` persistence and `EpistemicAuthorityRef`. Narrator classification alone does not establish truth.
+
+---
+
 ## Misc
 
 **Round / response cycle** — User message (or opener) triggers up to **N** bot replies; same character should not act twice in the same cycle unless orchestration rules allow.

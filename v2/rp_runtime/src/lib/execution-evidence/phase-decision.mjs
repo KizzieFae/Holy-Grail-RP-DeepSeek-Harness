@@ -209,6 +209,7 @@ export function narratorDecisionPatch({
   terminalDisposition = null,
   semanticQa = null,
   residualSoftConcerns = null,
+  environmentCognition = null,
 }) {
   const patch = {
     decision: {
@@ -238,6 +239,9 @@ export function narratorDecisionPatch({
   }
   if (residualSoftConcerns) {
     patch.decision.residual_soft_concerns = residualSoftConcerns;
+  }
+  if (environmentCognition) {
+    patch.decision.environment_cognition = environmentCognition;
   }
   return patch;
 }

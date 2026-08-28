@@ -6,6 +6,11 @@ import uuid
 from typing import Any
 
 from .narrator_environment_location_binding import bind_location_stable_ref
+from domain_api.narrator_environment_authority import (
+    EnvironmentalB2EstablishmentDecision,
+    epistemic_authority_for_b2_decision,
+    validate_b2_proposal,
+)
 from domain_api.narrator_environment_contract import (
     ENVIRONMENTAL_DESCRIPTOR_EVENT_TYPE,
     ENVIRONMENTAL_DESCRIPTOR_MARKER,
@@ -14,43 +19,34 @@ from domain_api.narrator_environment_contract import (
 from domain_api.session_state import LiveSession
 from domain_api.story_knowledge_contract import (
     DerivedStoryRecordSubmission,
-    EpistemicAuthorityRef,
     StableRef,
     StoryEvidence,
-    StoryRelation,
 )
 from domain_api.story_knowledge_service import StoryKnowledgeService
 
 
-def validate_b2_proposal(
-    *,
-    property_key: str,
-    value: str,
-    stable_refs: tuple[str, ...],
-) -> tuple[bool, str]:
-    key = str(property_key or "").strip()
-    val = str(value or "").strip()
-    if not key:
-        return False, "property_key required"
-    if not val:
-        return False, "value required"
-    if not stable_refs:
-        return False, "stable_refs required for continuity-bearing environmental detail"
-    return True, ""
-
-
-def accept_b2_environmental_descriptor(
+def persist_host_accepted_b2_environmental_descriptor(
     fixture: LiveSession,
     service: StoryKnowledgeService,
     *,
+    establishment_decision: EnvironmentalB2EstablishmentDecision,
     property_key: str,
     value: str,
     stable_refs: tuple[str, ...],
     source_domain_commit_id: str,
     turn_index: int | None,
-    supersedes: str | None = None,
     cognition_id: str | None = None,
+    supersedes: str | None = None,
 ) -> dict[str, Any]:
+    """Persist B2 only after Host establishment decision authorizes (#50)."""
+    if not establishment_decision.authorized:
+        return {
+            "accepted": False,
+            "reason": "establishment_not_authorized",
+            "story_record_id": None,
+            "decision_id": establishment_decision.decision_id,
+        }
+
     ok, reason = validate_b2_proposal(
         property_key=property_key,
         value=value,
@@ -78,18 +74,16 @@ def accept_b2_environmental_descriptor(
         else:
             refs.append(StableRef(ref_kind="entity", stable_ref=ref))
 
+    from domain_api.story_knowledge_contract import StoryRelation
+
     related: list[StoryRelation] = []
     if supersedes:
         related.append(StoryRelation(rel="supersedes", target_id=supersedes))
 
-    authority = EpistemicAuthorityRef(
-        ref_kind="establishment_decision",
-        ref_payload={
-            "establishment_kind": "narrator_environmental_b2",
-            "domain_commit_id": source_domain_commit_id,
-            "cognition_id": cognition_id,
-            "property_key": property_key,
-        },
+    authority = epistemic_authority_for_b2_decision(
+        establishment_decision,
+        source_domain_commit_id=source_domain_commit_id,
+        cognition_id=cognition_id,
     )
     submission = DerivedStoryRecordSubmission(
         story_record_id=story_record_id,
@@ -109,7 +103,7 @@ def accept_b2_environmental_descriptor(
             ),
         ),
         epistemic_authority_ref=authority,
-        submission_authority_ref=f"narrator_environment:{cognition_id or source_domain_commit_id}",
+        submission_authority_ref=f"host_env_b2:{establishment_decision.decision_id}",
         related_refs=tuple(related),
         turn_index=turn_index,
         location=location_label or None,
@@ -123,6 +117,7 @@ def accept_b2_environmental_descriptor(
             "accepted": False,
             "reason": "duplicate or persistence failure",
             "story_record_id": story_record_id,
+            "decision_id": establishment_decision.decision_id,
         }
     return {
         "accepted": True,
@@ -131,7 +126,36 @@ def accept_b2_environmental_descriptor(
         "property_key": property_key,
         "value": value,
         "supersedes": supersedes,
+        "decision_id": establishment_decision.decision_id,
     }
+
+
+def accept_b2_environmental_descriptor(
+    fixture: LiveSession,
+    service: StoryKnowledgeService,
+    *,
+    establishment_decision: EnvironmentalB2EstablishmentDecision,
+    property_key: str,
+    value: str,
+    stable_refs: tuple[str, ...],
+    source_domain_commit_id: str,
+    turn_index: int | None,
+    cognition_id: str | None = None,
+    supersedes: str | None = None,
+) -> dict[str, Any]:
+    """Alias for persist after Host decision — requires explicit establishment_decision."""
+    return persist_host_accepted_b2_environmental_descriptor(
+        fixture,
+        service,
+        establishment_decision=establishment_decision,
+        property_key=property_key,
+        value=value,
+        stable_refs=stable_refs,
+        source_domain_commit_id=source_domain_commit_id,
+        turn_index=turn_index,
+        cognition_id=cognition_id,
+        supersedes=supersedes,
+    )
 
 
 def reject_c_establishment_via_narrator() -> dict[str, Any]:
