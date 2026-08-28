@@ -237,6 +237,58 @@ exit code 1
 
 ---
 
+## 9. Integration and closure (2026-08-28)
+
+**Product validation anchor:** `f7a08d006fa81e8e7d340717de6a1d32ad1e909b`  
+**Integrated SHA:** *(set at push)*  
+**Baseline integrated from:** `8e4249d32ad66fddb2b62bdbfc934dfb6b5ca85`
+
+### Objective
+
+Narrator environmental-response cognition with Librarian-mediated world detail; Host-gated B2 establishment via #50; environmental packet lane; forensic reconstruction.
+
+### Workflow
+
+- Assigned / effective: **standard / full**
+- Bootstrap: **Full**
+
+### Validation history (preserved)
+
+| Cycle | Result | Anchor / note |
+|-------|--------|----------------|
+| First Full validation | **FAIL** D1–D7 | `ed98ca2` |
+| D1–D7 remediation | complete | `64c92bd` / `b807243` |
+| Second Full revalidation | **FAIL** D8 | `d936455` |
+| D8 remediation | complete | `a071667` |
+| Third Full revalidation | **PASS** | `f7a08d` / forensic `fa36288` |
+
+### Final test evidence (third Full revalidation)
+
+| Suite | Result |
+|-------|--------|
+| Full `domain/tests/` | 597 passed |
+| Focused #49 Node | 38 passed |
+| #50 regression | 39 passed |
+| #51 regression | 39 passed |
+| D8-target Storyteller | PASS |
+| Broad narrator-pattern | **216 passed / 1 failed** (exit code 1; not green) |
+
+Broad-suite exception: `runtime-config` Windows drive-letter case — pre-existing at `8e4249d`; not #49.
+
+### Deferred non-blocking follow-ups (preserved)
+
+1. **`location:unknown` hardening** — `location:unknown` + legitimate `no_match` can pass Host B2 authorization if scene location initialization is bypassed; no product change under #49 closure.
+2. **Mixed per-need integration test** — production mediates by `need_id`; representative `match` + `no_match` same-turn case lacks dedicated end-to-end integration coverage.
+
+### Dependencies
+
+- **#50** CLOSED — StoryKnowledge B2 persistence contract (unchanged boundary)
+- **#51** CLOSED — occurrence evidence / triggering user (unchanged boundary)
+
+**Issue terminal state:** CLOSED (`Current status: closed`). Project: Done / Done / P3.
+
+---
+
 - [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
 - [docs/architecture.md](../../docs/architecture.md)
 - [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)
