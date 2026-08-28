@@ -132,7 +132,7 @@ def compute_event_promotion_policy_fields(
     )
     should_create_event = base_promotion or bool(grounding_markers)
 
-    summary = build_move_specific_summary(
+    summary, summary_selection_source = build_move_specific_summary(
         acting_character=acting_character,
         move=move,
         director_decision=director_decision,
@@ -149,6 +149,7 @@ def compute_event_promotion_policy_fields(
         "should_create_event": should_create_event,
         "event_type": event_type,
         "summary": summary,
+        "summary_selection_source": summary_selection_source,
         "significance": significance,
         "grounding_markers": grounding_markers,
     }

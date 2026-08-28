@@ -85,7 +85,20 @@ authoritative commit
 
 Authoritative commit **does not depend** on index success.
 
-**Occurrence evidence (#51):** When `PublicEvent.occurrence_evidence` is present, `story_knowledge_projection` composes `StoryEvidence.committed_text` from the audibility-safe `summary`, globally embeddable `contributions`, and permitted `triggering_user` excerpt. Scoped private evidence is **not** included in globally searchable embedding material. Thin legacy events without `occurrence_evidence` continue to project `summary` only.
+**Occurrence evidence (#51):** When `PublicEvent.occurrence_evidence` is present, `story_knowledge_projection` composes `StoryEvidence.committed_text` from the audibility-safe `summary`, globally embeddable `contributions`, and permitted `triggering_user` excerpt. Scoped private evidence is **not** included in globally searchable embedding material. Each occurrence JSONL row may carry **`evidence_projection`**: a bounded manifest listing which globally eligible PublicEvent components composed `committed_text` (`projection_sources`), plus safe flags when scoped evidence existed but was excluded (`scoped_evidence_present` / `scoped_evidence_projected: false`). Thin legacy events without `occurrence_evidence` continue to project `summary` only; legacy JSONL rows without `evidence_projection` remain readable.
+
+### PublicEvent committed-occurrence boundary (#51)
+
+`PublicEvent` is the durable committed-occurrence/evidence contract at promotion time:
+
+- **Classification** (`state_changes`, consequence tags) describes the **kind** of occurrence.
+- **Bounded semantic evidence** (`summary`, optional `occurrence_evidence`) preserves **what actually happened** when epistemically permitted.
+- One occurrence may retain **multiple producer contributions** (Character action/dialogue + Director `environment_event`) without granting new truth authority.
+- **`triggering_user`** links a promoted occurrence to a substantive user history entry (`entry_id`) plus bounded excerpt — not a transcript dump.
+- Continuity remains authoritative for mutable state and `resolved_outcomes`; PublicEvent holds bounded evidence and **references**, not a second registry.
+- **`known_by`** remains the live retrieval gate; richer evidence does not bypass epistemic limits.
+
+**Audit observability:** `turn_metadata_by_index[turn_index].summary_selection_source` records which branch selected the promoted summary. Story JSONL **`evidence_projection`** records which components were globally projected. Investigators join via `domain_commit_id`, `event_id`, and `turn_index` — see [audit-workflows.md](./audit-workflows.md).
 
 **Implementation:** `v2/domain_api/knowledge_service.py`, `story_knowledge_projection.py`, `story_knowledge_service.py`, wired from `session_repository.py`.
 

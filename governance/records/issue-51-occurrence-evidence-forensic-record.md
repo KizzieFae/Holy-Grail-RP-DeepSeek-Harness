@@ -65,8 +65,69 @@ producer inputs (move, director_decision, user history)
 
 ## Validation
 
-- `v2/domain/tests/test_issue_51_occurrence_evidence.py` (promotion, multi-producer, trigger, epistemic, #50 integration, backward compat)
-- Regression: `v2/domain/tests/test_story_knowledge_issue_50.py`
+**Validation anchor:** `9d9204148300afd2797fc243350ea012f1c2ec90`
+
+**Scoped diff:** `356a0b28adc656ac52a96a3e8cb48481178cd048` → `9d92041` (13 files; product + tests + docs + forensic only)
+
+**Determination:** PASS — Full-weight independent validation (2026-08-28)
+
+| Area | Result |
+|------|--------|
+| PublicEvent contract (optional `occurrence_evidence`, backward compat) | PASS |
+| Summary precedence (specific > template) | PASS |
+| Character contribution fidelity | PASS |
+| User-trigger provenance (entry_id, skip-aware, bounded) | PASS |
+| Multi-producer (Character + Director) | PASS |
+| Structured fact refs (grounding markers; resolved-outcome append path) | PASS |
+| Epistemic (scoped/private excluded from global embedding) | PASS |
+| #50 adapter (bounded `committed_text` composition only) | PASS |
+| Historical compatibility / projection idempotency | PASS |
+| Bounded limits (deterministic truncation) | PASS |
+| Promotion coverage unchanged | PASS |
+| Architecture conformance (10 questions) | PASS |
+
+**Commands executed at validation:**
+
+```text
+python -m pytest v2/domain/tests/test_issue_51_occurrence_evidence.py -q                    → 11 passed
+python -m pytest v2/domain/tests/test_story_knowledge_issue_50.py -q                        → 17 passed
+python -m pytest v2/domain/tests/test_continuity_issue_140_v2.py -q                         → (in targeted)
+python -m pytest v2/domain/tests/test_scene_grounding.py -q                                 → (in targeted)
+python -m pytest v2/domain/tests/test_perception_audibility.py -q                           → (in targeted)
+python -m pytest v2/domain/tests/test_continuity_mutation_pipeline.py -q                    → (in targeted)
+python -m pytest v2/domain/tests/test_issue_51_occurrence_evidence.py \
+  v2/domain/tests/test_story_knowledge_issue_50.py \
+  v2/domain/tests/test_continuity_issue_140_v2.py \
+  v2/domain/tests/test_scene_grounding.py \
+  v2/domain/tests/test_perception_audibility.py \
+  v2/domain/tests/test_continuity_mutation_pipeline.py -q                                   → 114 passed
+python -m pytest v2/domain/tests/ -q                                                        → 554 passed
+```
+
+**Documentation gap (non-blocking):** `PACKET_CONTRACTS.md` does not yet mention optional `occurrence_evidence`; `GLOSSARY.md` and `docs/story-knowledge.md` updated. Remediate before closure if Governance requires packet-level parity.
+
+**Issue transition:** [Validation comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450158856)
+
+## Post-validation remediation (audit observability + documentation)
+
+**Governance finding (2026-08-28):** Product semantics validated at `9d9204148300afd2797fc243350ea012f1c2ec90`; closure blocked pending explicit audit projections for summary selection and #50 committed-text composition. Status reverted to `implemented` for bounded remediation ([workflow comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450355924)).
+
+### Required observability additions
+
+| Field | Location | Purpose |
+|-------|----------|---------|
+| `summary_selection_source` | `turn_metadata_by_index[turn_index]` | Explicit branch that selected promoted `summary` |
+| `evidence_projection` | `StoryKnowledgeRecord` JSONL | Globally projected component manifest + scoped-exclusion flags |
+
+**`summary_selection_source` values:** `character_action`, `character_dialogue`, `character_action_and_dialogue`, `director_environment`, `state_change_fallback`, `default_fallback`, `grounding_markers`.
+
+**`evidence_projection`:** `{ source_event_id, projection_sources[], scoped_evidence_present, scoped_evidence_projected }` — no restricted content in manifest.
+
+**Out of scope:** per-query Retrieval/Librarian candidate ledger; parallel #51 audit log; promotion coverage change.
+
+**Documentation:** authoritative docs updated per pre-closure investigation inventory (`GLOSSARY.md`, `docs/story-knowledge.md`, `docs/architecture.md`, `docs/rp-data-layout.md`, `PACKET_CONTRACTS.md`, `CANONICAL_KNOWLEDGE_MODEL.md`, `docs/forensic-auditability-standard.md`, `docs/audit-workflows.md`, `governance/sources/architecture-overview.md`).
+
+**Revalidation:** pending separate Governance authorization after remediation commit.
 
 ## Rejected implementation alternatives
 

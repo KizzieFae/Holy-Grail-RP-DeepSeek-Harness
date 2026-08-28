@@ -221,8 +221,11 @@ def build_move_specific_summary(
     state_changes: list[str],
     grounding_markers: list[str],
     base_promotion: bool,
-) -> str:
-    """Prefer move-specific audibility-safe meaning; templates only as fallback."""
+) -> tuple[str, str]:
+    """Prefer move-specific audibility-safe meaning; templates only as fallback.
+
+    Returns ``(summary, summary_selection_source)`` for turn-metadata auditability.
+    """
     action = _move_action_text(move)
     dialogue = root_or_flat_dialogue_text(move)
     environment_event = str(
@@ -231,23 +234,30 @@ def build_move_specific_summary(
 
     if action and dialogue:
         summary = f'{acting_character} {action}; said: "{dialogue}"'
+        source = "character_action_and_dialogue"
     elif action:
         summary = f"{acting_character} {action}"
+        source = "character_action"
     elif dialogue:
         summary = f'{acting_character} said: "{dialogue}"'
+        source = "character_dialogue"
     elif environment_event:
         summary = environment_event
+        source = "director_environment"
     elif state_changes:
         summary = str(state_changes[0])
+        source = "state_change_fallback"
     else:
         summary = f"{acting_character} took action"
+        source = "default_fallback"
 
     if not base_promotion and grounding_markers:
         from scene_grounding import grounding_markers_event_summary
 
         summary = grounding_markers_event_summary(grounding_markers)
+        source = "grounding_markers"
 
-    return _bound_text(summary, limit=500)
+    return _bound_text(summary, limit=500), source
 
 
 def build_occurrence_evidence_for_promotion(

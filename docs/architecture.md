@@ -179,6 +179,8 @@ Validators **reject or annotate**; they do not replace Director selection or con
 
 **`SceneState`** and **`process_turn`** define committed truth. Distinguish **intent**, **interpretation**, **commit**, and **observation**. Narrator prose and classifier signals do not override `SceneState`.
 
+**Promoted `PublicEvent` (#51):** A durable committed-occurrence/evidence boundary — not merely a prose summary, not a duplicate Continuity store, not an execution log. Classification metadata (`state_changes`, consequence tags) describes **what kind** of occurrence occurred; bounded semantic evidence (`summary`, optional `occurrence_evidence`) preserves **what actually happened** when epistemically permitted. One occurrence may retain multiple authoritative producer contributions (Character + Director environment) without expanding producer truth authority. `triggering_user` provides bounded causal provenance to a user history entry. `known_by` remains the live retrieval gate; scoped/private evidence is not globally embedded. Audit observability: `turn_metadata_by_index.summary_selection_source` and story JSONL `evidence_projection` — see [story-knowledge.md](./story-knowledge.md) and [audit-workflows.md](./audit-workflows.md).
+
 Details: continuity modules under `v2/domain/modules/continuity_*.py`, [audit-workflows.md](./audit-workflows.md).
 
 ---

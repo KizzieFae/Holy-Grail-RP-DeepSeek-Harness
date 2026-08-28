@@ -33,6 +33,35 @@ Use this workflow for:
 
 **Normative standard:** Investigators apply the forward forensic auditability standard when judging whether retained evidence is sufficient for reconstruction — [`forensic-auditability-standard.md`](./forensic-auditability-standard.md). When evidence is missing or pre-contract, report **honest incompleteness**; do not infer `did not happen` from `not observable`.
 
+### Issue #51 committed-occurrence evidence join recipe
+
+Reconstruct promoted occurrence semantics without a duplicate #51 audit log:
+
+```text
+producer / user history (rp_history)
+  → domain_commit_id (commit_ids / committed_turn entry)
+  → turn_metadata_by_index[continuity_turn_index]
+      (classification, state_changes, summary_selection_source)
+  → public_events[] matched by turn_index / event_id
+      (summary, state_changes, occurrence_evidence incl. scoped_evidence)
+  → StoryKnowledgeRecord (records.jsonl by event_id + source_domain_commit_id)
+      (evidence.committed_text, evidence_projection.projection_sources)
+  → semantic_index_v1.json (rebuildable; non-authoritative)
+  → live retrieval / Librarian (known_by gate; BundleAudit at mediation)
+```
+
+**Artifact categories (do not conflate):**
+
+| Artifact | Category |
+|----------|----------|
+| `continuity_state.public_events` | Authoritative committed truth |
+| `turn_metadata_by_index` | Observational classifier/promotion metadata |
+| `occurrence_evidence.scoped_evidence` | Authoritative scoped truth (session only); excluded from global JSONL |
+| `records.jsonl` + `evidence_projection` | Derived globally searchable evidence + projection manifest |
+| `semantic_index_v1.json` | Rebuildable search index |
+| `execution_evidence/` | Parallel inference forensic store (not the promotion seam) |
+| Librarian `BundleAudit` | Mediation candidate consideration (sufficient for #51; no per-query story ledger required) |
+
 ### V2 human audit-tag workflow
 
 During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.

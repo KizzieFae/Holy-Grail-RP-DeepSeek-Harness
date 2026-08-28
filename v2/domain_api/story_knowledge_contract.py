@@ -129,6 +129,43 @@ class EpistemicAuthorityRef:
         )
 
 
+@dataclass(frozen=True)
+class StoryEvidenceProjectionProvenance:
+    """Audit manifest: which PublicEvent components composed globally searchable text."""
+
+    source_event_id: str
+    projection_sources: tuple[str, ...]
+    scoped_evidence_present: bool = False
+    scoped_evidence_projected: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_event_id": self.source_event_id,
+            "projection_sources": list(self.projection_sources),
+            "scoped_evidence_present": self.scoped_evidence_present,
+            "scoped_evidence_projected": self.scoped_evidence_projected,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> StoryEvidenceProjectionProvenance | None:
+        if not isinstance(data, dict) or not data:
+            return None
+        sources = [
+            str(item).strip()
+            for item in list(data.get("projection_sources") or [])
+            if str(item).strip()
+        ]
+        event_id = str(data.get("source_event_id", "") or "").strip()
+        if not event_id and not sources:
+            return None
+        return cls(
+            source_event_id=event_id,
+            projection_sources=tuple(sources),
+            scoped_evidence_present=bool(data.get("scoped_evidence_present")),
+            scoped_evidence_projected=bool(data.get("scoped_evidence_projected")),
+        )
+
+
 @dataclass
 class StoryKnowledgeRecord:
     schema_version: int
@@ -152,6 +189,7 @@ class StoryKnowledgeRecord:
     submission_authority_ref: str | None = None
     content_hash: str = ""
     written_at: str = ""
+    evidence_projection: StoryEvidenceProjectionProvenance | None = None
 
     @property
     def record_id(self) -> str:
@@ -195,6 +233,8 @@ class StoryKnowledgeRecord:
             payload["content_hash"] = self.content_hash or self.compute_content_hash()
         if self.written_at:
             payload["written_at"] = self.written_at
+        if self.evidence_projection is not None:
+            payload["evidence_projection"] = self.evidence_projection.to_dict()
         return payload
 
     @classmethod
@@ -230,6 +270,11 @@ class StoryKnowledgeRecord:
             submission_authority_ref=data.get("submission_authority_ref"),
             content_hash=str(data.get("content_hash", "")),
             written_at=str(data.get("written_at", "")),
+            evidence_projection=StoryEvidenceProjectionProvenance.from_dict(
+                data.get("evidence_projection")
+                if isinstance(data.get("evidence_projection"), dict)
+                else None
+            ),
         )
 
     def embedding_text(self) -> str:

@@ -181,6 +181,25 @@ Examples: `HG_EXECUTION_EVIDENCE=off`; pre-#28 or pre-#45 session trees; NI view
 | `data/audit_tags/` | Human observational entry points | `docs/rp-data-layout.md` |
 | `data/sessions/` | Authoritative committed truth | `docs/rp-data-layout.md` |
 
+### Issue #51 occurrence-evidence reconstruction substrate
+
+No separate #51 audit log is required. Investigators reconstruct the committed-occurrence lifecycle through **stable joins** across existing durable stores:
+
+| Substrate | Category | Join keys |
+|-----------|----------|-----------|
+| `continuity_state.public_events[]` | **Authoritative truth** | `event_id`, `turn_index` |
+| `continuity_state.turn_metadata_by_index` | **Observational audit metadata** | `continuity_turn_index`; includes `summary_selection_source` |
+| `metadata.v2_host_state.rp_history` | Producer / user history | `domain_commit_id`, `entry_id`, `sequence_index` |
+| `_story_knowledge/.../records.jsonl` | **Derived searchable evidence** | `event_id`, `source_domain_commit_id`, `content_hash` |
+| `semantic_index_v1.json` | **Rebuildable index** | `record_id` |
+
+**Explicit audit projections (#51 remediation):**
+
+- **`summary_selection_source`** — which semantic branch selected the promoted `PublicEvent.summary` (`character_action`, `character_dialogue`, `character_action_and_dialogue`, `director_environment`, `state_change_fallback`, `default_fallback`, `grounding_markers`).
+- **`evidence_projection`** on occurrence JSONL rows — which globally eligible PublicEvent components composed `committed_text` (`projection_sources`), plus safe flags when scoped evidence existed but was not globally projected.
+
+Procedure: [audit-workflows.md](./audit-workflows.md).
+
 Investigator procedure and CLI helpers: `docs/audit-workflows.md`, `tools/investigation/README.md`.
 
 ---

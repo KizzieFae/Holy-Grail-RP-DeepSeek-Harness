@@ -106,6 +106,7 @@ def classify_turn_consequences_for_manager(
         "should_create_event": promo["should_create_event"],
         "event_type": promo["event_type"],
         "summary": promo["summary"],
+        "summary_selection_source": promo["summary_selection_source"],
         "significance": promo["significance"],
         "state_changes": state_changes,
         "actionable_implications": actionable_implications,

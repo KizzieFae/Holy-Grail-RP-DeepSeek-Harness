@@ -223,5 +223,38 @@ def globally_embeddable_occurrence_text(
     return _bound_text("\n".join(parts), limit=MAX_SUMMARY_LEN * 2)
 
 
+def globally_projected_source_manifest(
+    *,
+    event_id: str,
+    summary: str,
+    occurrence_evidence: OccurrenceEvidence | None,
+) -> dict[str, Any]:
+    """Bounded audit manifest for globally eligible #50 projection components (#51)."""
+    sources: list[str] = []
+    if str(summary or "").strip():
+        sources.append("summary")
+    scoped_present = False
+    if occurrence_evidence is not None:
+        for idx, contribution in enumerate(occurrence_evidence.contributions):
+            if str(contribution.content or "").strip():
+                sources.append(
+                    "occurrence_evidence.contribution:"
+                    f"{contribution.producer}:{contribution.contribution_kind}:{idx}"
+                )
+        trigger = occurrence_evidence.triggering_user
+        if trigger is not None and str(trigger.content or "").strip():
+            entry_id = str(trigger.entry_id or "").strip()
+            sources.append(
+                f"triggering_user:{entry_id}" if entry_id else "triggering_user"
+            )
+        scoped_present = bool(occurrence_evidence.scoped_evidence)
+    return {
+        "source_event_id": str(event_id or "").strip(),
+        "projection_sources": sources,
+        "scoped_evidence_present": scoped_present,
+        "scoped_evidence_projected": False,
+    }
+
+
 def parse_occurrence_evidence(data: dict[str, Any] | None) -> OccurrenceEvidence | None:
     return OccurrenceEvidence.from_dict(data)

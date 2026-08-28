@@ -80,6 +80,10 @@ Historical pilot runbook (closed): [governance/records/operational-retrieval-pil
 
 New sessions use opaque UUIDv4 filenames. Exact JSON keys follow code-defined serialization — not a stable public API.
 
+**`continuity_state` (authoritative truth):** includes `public_events[]` (optional `occurrence_evidence` companion per Issue #51), `turn_metadata_by_index` (classifier/promotion observational record including `summary_selection_source`), `resolved_outcomes`, and related Continuity structures. This is the primary forensic substrate for occurrence-evidence lifecycle reconstruction — not a separate #51 audit log.
+
+**`metadata.v2_host_state`:** `rp_history`, `commit_ids`, and per-entry `domain_commit_id` correlate producer inputs to promoted occurrences.
+
 ### Audit identity in `metadata`
 
 | Subfield | Role |
@@ -99,7 +103,7 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 | File | Role |
 |------|------|
-| `records.jsonl` | Append-oriented durable occurrence/derived records (`event_id` or `story_record_id`) |
+| `records.jsonl` | Append-oriented durable occurrence/derived records (`event_id` or `story_record_id`); occurrence rows may include `evidence_projection` (#51) |
 | `manifest.json` | Record index offsets, schema version, index metadata (non-authoritative) |
 | `semantic_index_v1.json` | Rebuildable TF-IDF semantic index (candidate discovery only) |
 

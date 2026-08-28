@@ -10,6 +10,7 @@ from .story_knowledge_contract import (
     EstablishmentEpistemic,
     StableRef,
     StoryEvidence,
+    StoryEvidenceProjectionProvenance,
     StoryKnowledgeRecord,
 )
 from .session_state import LiveSession
@@ -18,11 +19,13 @@ try:
     from continuity_state_occurrence_evidence import (
         OccurrenceEvidence,
         globally_embeddable_occurrence_text,
+        globally_projected_source_manifest,
         parse_occurrence_evidence,
     )
 except ImportError:  # pragma: no cover - domain path bootstrap in tests
     OccurrenceEvidence = None  # type: ignore[misc, assignment]
     globally_embeddable_occurrence_text = None  # type: ignore[assignment]
+    globally_projected_source_manifest = None  # type: ignore[assignment]
     parse_occurrence_evidence = None  # type: ignore[assignment]
 
 _CONTEXT_LINES = 3
@@ -106,7 +109,20 @@ def project_occurrence_from_public_event(
         return None
 
     summary = str(getattr(event, "summary", "") or "").strip()
+    evidence = _occurrence_evidence_from_event(event)
     committed_text = _committed_text_from_public_event(event, summary=summary)
+    projection_raw: dict[str, Any] | None = None
+    if globally_projected_source_manifest is not None:
+        projection_raw = globally_projected_source_manifest(
+            event_id=event_id,
+            summary=summary,
+            occurrence_evidence=evidence,
+        )
+    evidence_projection = (
+        StoryEvidenceProjectionProvenance.from_dict(projection_raw)
+        if projection_raw is not None
+        else None
+    )
     turn_index = getattr(event, "turn_index", None)
     context_before, context_after = _transcript_context(fixture, turn_index=turn_index)
     known_by = [str(x) for x in list(getattr(event, "known_by", []) or []) if str(x).strip()]
@@ -141,6 +157,7 @@ def project_occurrence_from_public_event(
         establishment_epistemic=EstablishmentEpistemic(known_by_at_commit=tuple(known_by), routes=routes),
         event_id=event_id,
         written_at=datetime.now(UTC).isoformat(),
+        evidence_projection=evidence_projection,
     )
     record.content_hash = record.compute_content_hash()
     return record
