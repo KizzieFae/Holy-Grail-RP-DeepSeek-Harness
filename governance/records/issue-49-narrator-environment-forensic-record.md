@@ -9,7 +9,7 @@
 **Consensus anchor:** `356a0b28adc656ac52a96a3e8cb48481178cd048`  
 **Implementation baseline (#51 integrated):** `8e4249d32ad66fddb2b62bdbfc934dfb6b5ca85`  
 **Initial implementation SHA:** `de0d4c0` (feat), `eddeb81`, `ed98ca2` (docs)  
-**Remediation SHA:** *(set at remediation commit)*
+**Remediation SHA:** `64c92bd90e1177f6b85e6f89dd1f974a02dd6f0d`
 
 **Prerequisites:** #50 CLOSED; #51 CLOSED
 
