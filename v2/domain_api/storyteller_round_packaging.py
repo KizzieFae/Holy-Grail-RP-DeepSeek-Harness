@@ -8,7 +8,12 @@ from typing import Any
 from .contract import PromptContribution
 from .librarian_packaging_validity import PackagingBindingContext
 from .session_state import LiveSession, RoundFixture
-from .storyteller_contract import StorytellerAdvisoryPackage, advisory_package_from_dict
+from .storyteller_contract import (
+    StorytellerAdvisoryPackage,
+    advisory_package_from_dict,
+    advisory_package_to_dict,
+    invalidate_storyteller_package,
+)
 from .storyteller_packaging_mapper import map_storyteller_package_to_contributions
 from .storyteller_packaging_policy import StorytellerPackagingConsumer
 
@@ -150,3 +155,21 @@ def validate_storyteller_bind(
             }
         },
     )
+
+
+def invalidate_storyteller_package_for_round(
+    rnd: RoundFixture,
+    *,
+    reason: str,
+) -> str | None:
+    """Invalidate round-local Storyteller advisory after authoritative commit (S2)."""
+    stored = rnd.storyteller_advisory_package
+    if not stored:
+        return None
+    package = advisory_package_from_dict(stored)
+    if not package.validity.is_valid:
+        return rnd.storyteller_invalidation_reason
+    invalidated = invalidate_storyteller_package(package, reason=reason)
+    rnd.storyteller_advisory_package = advisory_package_to_dict(invalidated)
+    rnd.storyteller_invalidation_reason = reason
+    return reason

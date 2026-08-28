@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import json
 import os
 import sys
@@ -18,10 +17,6 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 ensure_domain_paths()
 
 from character_move_adapters import legacy_move_text_for_validation  # noqa: E402
-from director_decision_contract import (  # noqa: E402
-    normalize_environment_event,
-    normalize_tension_shift,
-)
 from narrator_presentation_validation import (  # noqa: E402
     validate_narrator_presentation as validate_narrator_presentation_rules,
 )
@@ -34,9 +29,10 @@ from response_validation_parsing import (  # noqa: E402
     parse_character_move,
     parse_director_decision,
 )
-from issue240_semantic_evaluation import (  # noqa: E402
-    issue240_semantic_evaluation_enabled,
-    normalize_issue240_semantic_evaluation_for_continuity,
+from .commit_input_normalization import normalize_director_auxiliary_fields  # noqa: E402
+from .commit_move_transaction import (  # noqa: E402
+    CommitTransactionDeps,
+    execute_commit_move,
 )
 from .contract import (  # noqa: E402
     CommitRequest,
@@ -111,13 +107,8 @@ from .session_history import (  # noqa: E402
     PRESENTATION_SOURCE_NARRATOR,
     append_history_entry,
     project_history_to_transcript,
-    summarize_committed_move,
 )
-from .session_repository import (  # noqa: E402
-    CommitDedupRecord,
-    PersistenceError,
-    SessionRepository,
-)
+from .session_repository import PersistenceError, SessionRepository  # noqa: E402
 from .narrator_environment_cognition import (  # noqa: E402
     finalize_narrator_environment_cognition,
     record_environment_cognition_failure,
@@ -133,7 +124,6 @@ from .storyteller_contract import (  # noqa: E402
     StorytellerOrientationAssessment,
     advisory_package_from_dict,
     advisory_package_to_dict,
-    invalidate_storyteller_package,
 )
 from .storyteller_round_packaging import validate_storyteller_bind  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
@@ -536,22 +526,12 @@ class DomainKernel:
     def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
         return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
 
-    def _invalidate_storyteller_package_for_round(
+    def _normalize_director_auxiliary_fields(
         self,
-        rnd: RoundFixture,
-        *,
-        reason: str,
-    ) -> str | None:
-        stored = rnd.storyteller_advisory_package
-        if not stored:
-            return None
-        package = advisory_package_from_dict(stored)
-        if not package.validity.is_valid:
-            return rnd.storyteller_invalidation_reason
-        invalidated = invalidate_storyteller_package(package, reason=reason)
-        rnd.storyteller_advisory_package = advisory_package_to_dict(invalidated)
-        rnd.storyteller_invalidation_reason = reason
-        return reason
+        fixture: LiveSession,
+        decision: dict[str, Any],
+    ) -> dict[str, Any]:
+        return normalize_director_auxiliary_fields(fixture, decision)
 
     def bind_storyteller_advisory_package(
         self,
@@ -591,21 +571,6 @@ class DomainKernel:
             "degradation_level": package.degradation.level if package else None,
             "audit": rnd.storyteller_round_audit,
         }
-
-    def _normalize_director_auxiliary_fields(
-        self,
-        fixture: LiveSession,
-        decision: dict[str, Any],
-    ) -> dict[str, Any]:
-        normalized = dict(decision)
-        normalized["tension_shift"] = normalize_tension_shift(
-            decision.get("tension_shift")
-        )
-        normalized["environment_event"] = normalize_environment_event(
-            decision.get("environment_event"),
-            recent_committed_events=collect_recent_environment_evidence(fixture),
-        )
-        return normalized
 
     def _presence_status(self, fixture: LiveSession, character_id: str) -> str:
         mgr = fixture.manager
@@ -1365,194 +1330,12 @@ class DomainKernel:
     def commit_move(self, req: CommitRequest) -> CommitResponse:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        mgr = fixture.manager
-
-        repository = self.store
-        dedup_key: str | None = None
-        if isinstance(repository, SessionRepository):
-            dedup_key = repository.commit_dedup_key(
-                hg_scene_id=req.hg_scene_id,
-                inference_id=req.inference_id,
-                expected_turn_index=req.expected_turn_index,
-                character_id=req.character_id,
-                validated_move=dict(req.validated_move),
-                director_decision=dict(req.director_decision),
-            )
-            existing = repository.get_commit_dedup(dedup_key)
-            if existing is not None:
-                return existing.response
-
-        if mgr.turn_counter != req.expected_turn_index:
-            return CommitResponse(
-                committed=False,
-                continuity_turn_index=None,
-                domain_commit_id=None,
-                hg_scene_id=req.hg_scene_id,
-                inference_id=req.inference_id,
-                reason=(
-                    f"continuity anchor mismatch: expected {req.expected_turn_index}, "
-                    f"actual {mgr.turn_counter}"
-                ),
-            )
-
-        others = [c for c in fixture.cast if c != req.character_id]
-        director_decision = self._normalize_director_auxiliary_fields(
-            fixture, dict(req.director_decision)
+        deps = CommitTransactionDeps(
+            repository=self.store,
+            memory_service=self._memory_service(),
+            knowledge_service=self._knowledge_service(),
         )
-        move = dict(req.validated_move)
-        if issue240_semantic_evaluation_enabled():
-            move = normalize_issue240_semantic_evaluation_for_continuity(move)
-
-        manager_snapshot: dict[str, Any] | None = None
-        round_snapshot: dict[str, Any] | None = None
-        host_snapshot: dict[str, Any] | None = None
-        if isinstance(repository, SessionRepository):
-            manager_snapshot = repository.snapshot_manager(fixture)
-            round_snapshot = {
-                "director_decision": rnd.director_decision,
-                "committed_character_id": rnd.committed_character_id,
-                "committed_move": copy.deepcopy(rnd.committed_move)
-                if rnd.committed_move is not None
-                else None,
-                "domain_commit_id": rnd.domain_commit_id,
-                "continuity_turn_index": rnd.continuity_turn_index,
-                "actors_used_this_round": list(rnd.actors_used_this_round),
-                "character_turns": copy.deepcopy(rnd.character_turns),
-                "spotlight_history": list(rnd.spotlight_history),
-                "eligibility_epoch": rnd.eligibility_epoch,
-            }
-            host_snapshot = {
-                "committed_move_count": fixture.committed_move_count,
-                "commit_ids": list(fixture.commit_ids),
-            }
-
-        mgr.process_turn(
-            acting_character=req.character_id,
-            move=move,
-            director_decision=director_decision,
-            other_characters=others,
-            rp_history=list(fixture.rp_history),
-        )
-        char_snapshot = (
-            self._memory_service().snapshot_character_states(fixture)
-            if self._memory_service() is not None
-            else snapshot_character_states(fixture)
-        )
-        memory_service = self._memory_service()
-        if memory_service is not None:
-            memory_service.write_character_turn_memory(
-                fixture,
-                acting_character=req.character_id,
-                move=move,
-                director_decision=director_decision,
-            )
-        else:
-            apply_character_turn_memory(
-                fixture,
-                acting_character=req.character_id,
-                move=move,
-                director_decision=director_decision,
-            )
-        after_turn = mgr.turn_counter
-        commit_id = f"hg-commit-{uuid.uuid4()}"
-        fixture.committed_move_count += 1
-        fixture.commit_ids.append(commit_id)
-        rnd.director_decision = director_decision
-        rnd.committed_character_id = req.character_id
-        rnd.committed_move = dict(req.validated_move)
-        rnd.domain_commit_id = commit_id
-        rnd.continuity_turn_index = after_turn
-        rnd.actors_used_this_round.append(req.character_id)
-        rnd.character_turns.append(
-            CharacterTurnRecord(
-                character_id=req.character_id,
-                committed_move=dict(req.validated_move),
-                domain_commit_id=commit_id,
-                continuity_turn_index=after_turn,
-                director_decision=director_decision,
-            )
-        )
-        rnd.spotlight_history.append(req.character_id)
-        rnd.eligibility_epoch += 1
-        storyteller_invalidation_reason = self._invalidate_storyteller_package_for_round(
-            rnd,
-            reason="authoritative_commit",
-        )
-
-        if isinstance(repository, SessionRepository):
-            append_history_entry(
-                fixture.rp_history,
-                kind="committed_turn",
-                content=summarize_committed_move(dict(req.validated_move)),
-                hg_round_id=req.hg_round_id,
-                domain_commit_id=commit_id,
-                actor_id=req.character_id,
-                metadata={
-                    "continuity_turn_index": after_turn,
-                    "structured_move": dict(req.validated_move),
-                },
-            )
-
-        response = CommitResponse(
-            committed=True,
-            continuity_turn_index=after_turn,
-            domain_commit_id=commit_id,
-            hg_scene_id=req.hg_scene_id,
-            inference_id=req.inference_id,
-            storyteller_invalidation_reason=storyteller_invalidation_reason,
-        )
-        if isinstance(repository, SessionRepository) and dedup_key is not None:
-            repository.record_commit_dedup(
-                dedup_key,
-                CommitDedupRecord(
-                    domain_commit_id=commit_id,
-                    continuity_turn_index=after_turn,
-                    response=response,
-                ),
-                fixture,
-            )
-
-        if hasattr(repository, "persist"):
-            try:
-                repository.persist(fixture)
-            except PersistenceError as exc:
-                if isinstance(repository, SessionRepository) and manager_snapshot is not None:
-                    repository.restore_manager(fixture, manager_snapshot)
-                    if memory_service is not None:
-                        memory_service.restore_character_states(fixture, char_snapshot)
-                    else:
-                        restore_character_states(fixture, char_snapshot)
-                    if round_snapshot is not None:
-                        rnd.director_decision = round_snapshot["director_decision"]
-                        rnd.committed_character_id = round_snapshot["committed_character_id"]
-                        rnd.committed_move = round_snapshot["committed_move"]
-                        rnd.domain_commit_id = round_snapshot["domain_commit_id"]
-                        rnd.continuity_turn_index = round_snapshot["continuity_turn_index"]
-                        rnd.actors_used_this_round = round_snapshot["actors_used_this_round"]
-                        rnd.character_turns = round_snapshot["character_turns"]
-                        rnd.spotlight_history = round_snapshot["spotlight_history"]
-                        rnd.eligibility_epoch = round_snapshot["eligibility_epoch"]
-                    if host_snapshot is not None:
-                        fixture.committed_move_count = host_snapshot["committed_move_count"]
-                        fixture.commit_ids = host_snapshot["commit_ids"]
-                    if dedup_key is not None:
-                        fixture.commit_dedup_index.pop(dedup_key, None)
-                        repository._commit_dedup.pop(dedup_key, None)
-                return CommitResponse(
-                    committed=False,
-                    continuity_turn_index=None,
-                    domain_commit_id=None,
-                    hg_scene_id=req.hg_scene_id,
-                    inference_id=req.inference_id,
-                    reason=str(exc),
-                )
-            knowledge_service = self._knowledge_service()
-            if knowledge_service is not None:
-                knowledge_service.promote_after_commit(
-                    fixture,
-                    source_domain_commit_id=commit_id,
-                )
-        return response
+        return execute_commit_move(req, fixture=fixture, rnd=rnd, deps=deps)
 
     def set_user_profile_fact(self, req: UserProfileSetRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)

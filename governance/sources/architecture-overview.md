@@ -103,13 +103,13 @@ These principles are stable boundaries Governance must protect when reviewing pr
 
 - **Presentation UI** (`v2/ui/`) is a client of the Node application API — not a domain authority.
 - **Node / DSH runtime** (`v2/rp_runtime/`) orchestrates inference rounds and calls the Domain Host over HTTP.
-- **Domain Host** (`v2/domain_api/`) is the authoritative Python kernel for prepare, validate, commit, and context projection. Per-role manifest assembly lives in bounded stateless context modules (`director_context.py`, `character_context.py`, `narrator_context.py`, `opening_context.py`, `narrator_environment_context.py`); `DomainKernel` retains eligibility, validation, commit, and round-state mutation. Cognition service composition (`cognition_composition.py`) is separate (#53 C1 / #54 C2).
+- **Domain Host** (`v2/domain_api/`) is the authoritative Python kernel for prepare, validate, commit, and context projection. Per-role manifest assembly lives in bounded stateless context modules (`director_context.py`, `character_context.py`, `narrator_context.py`, `opening_context.py`, `narrator_environment_context.py`); `DomainKernel` retains eligibility, validation, and a thin `commit_move` façade. Commit orchestration lives in `commit_move_transaction.py` (#55 C3-F); cognition service composition (`cognition_composition.py`) is separate (#53 C1 / #54 C2).
 - **Domain library** (`v2/domain/modules/`) holds continuity, validation, prompts, memory, and retrieval logic consumed by the Host.
 - **Node calls the Domain Host. Python domain code does not call DSH.** Keep the Domain Host the composition boundary.
 
 ### Continuity and evidence lanes
 
-- **`ContinuityManager`**, **`SceneState`**, and the commit path (`process_turn` / Host `commit_move`) define **committed** narrative truth.
+- **`ContinuityManager`**, **`SceneState`**, and **`process_turn`** define **committed** narrative truth. Host `commit_move` delegates to the bounded commit transaction module, which invokes `process_turn` as the sole continuity mutation authority (#55 C3-F).
 - Distinguish **intent**, **interpretation**, **commit**, and **observation** ([GitHub #224](https://github.com/KizzieFae/Holy_Grail_RP/issues/224)).
 - **Narrator rendered prose**, classifier tags, audit mirrors, and orchestration **consequences** are **observational or auxiliary** unless they reflect already-committed facts. They do **not** override committed continuity.
 
