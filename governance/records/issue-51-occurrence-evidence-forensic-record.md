@@ -140,7 +140,7 @@ python -m pytest v2/domain/tests/ -q                                            
 | First validation anchor | `9d9204148300afd2797fc243350ea012f1c2ec90` |
 | Audit/docs remediation SHA | `0a2a615805213e5d2192d67c6af04b99e46e3a0b` |
 | Final revalidation product anchor | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` |
-| Final integrated SHA | *(recorded at push — see Issue closure comment)* |
+| Final integrated SHA | `ca094c053c2b945bb83e9182eeb86214dc09ad22` |
 | Full revalidation | **565 passed** (`v2/domain/tests/`) |
 | Documentation remediation | complete (9 authoritative docs) |
 | Auditability remediation | `summary_selection_source` + `evidence_projection` |
@@ -163,6 +163,7 @@ python -m pytest v2/domain/tests/ -q                                            
 | Workflow rollback | [comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450355924) | `validated` → `implemented` |
 | Forensic SHA note | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` | docs-only |
 | **Full revalidation** | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` | **PASS** (2026-08-28) |
+| **Governed closure** | `ca094c053c2b945bb83e9182eeb86214dc09ad22` | integrated on `origin/main` |
 
 ## Revalidation (post-remediation)
 
