@@ -196,7 +196,7 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 
 **Chronology:** implementation → first Full validation FAIL (D1–D7) → remediation → second Full revalidation FAIL (D8) → D8 remediation.
 
-**Remediation SHA:** *(set at D8 commit)*
+**Remediation SHA:** `a07166716b18307b72b96c35efbae088d1f5a134`
 
 ---
 
