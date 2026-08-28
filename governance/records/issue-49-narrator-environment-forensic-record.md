@@ -175,6 +175,31 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 
 ---
 
+## 7. D8 remediation (2026-08-28)
+
+**Root cause:** accidental deletion of `from .storyteller_service import StorytellerService` in `de0d4c0`.
+
+**Fix:** restore import in `v2/domain_api/kernel.py` (one line).
+
+**Regression coverage:** `test_storyteller_s3c_integration.py` — kernel `_storyteller_service()` constructibility; orientation/assessment prepare paths.
+
+| Suite | Result |
+|-------|--------|
+| NI forensic acceptance (named case) | **pass** |
+| storyteller round integration (named case) | **pass** |
+| Node focused narrator/env (6 files) | **38 passed** |
+| Node `--test-name-pattern=narrator` (broad) | **216 passed / 1 failed** (exit code 1) |
+| Full `domain/tests/` | **597 passed** (+3 regression tests) |
+| #49 + #50 + #51 targeted Python | **76 passed** |
+
+**Broad suite note:** D8-target failures resolved. Remaining failure: `runtime-config: default does not reference historical autogen_rp venv` — drive-letter case (`e:` vs `E:`) on Windows; not caused by #49/D8 (no `kernel.py` storyteller-path change beyond import restoration).
+
+**Chronology:** implementation → first Full validation FAIL (D1–D7) → remediation → second Full revalidation FAIL (D8) → D8 remediation.
+
+**Remediation SHA:** *(set at D8 commit)*
+
+---
+
 - [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
 - [docs/architecture.md](../../docs/architecture.md)
 - [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)

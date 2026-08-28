@@ -25,6 +25,7 @@ from domain_api.contract import (  # noqa: E402
 from domain_api.fixture_store import FixtureStore  # noqa: E402
 from domain_api.kernel import DomainKernel, PROTOTYPE_VALID_MOVE  # noqa: E402
 from domain_api.storyteller_contract import advisory_package_to_dict  # noqa: E402
+from domain_api.storyteller_service import StorytellerService  # noqa: E402
 from domain.tests.test_storyteller_packaging_s3b import _binding, _package  # noqa: E402
 
 
@@ -60,6 +61,44 @@ def _scene_round(kernel: DomainKernel) -> tuple[str, str]:
 
 
 class StorytellerS3cIntegrationTests(unittest.TestCase):
+    def test_kernel_storyteller_service_seam_is_constructible(self) -> None:
+        kernel = DomainKernel(store=FixtureStore())
+        service = kernel._storyteller_service()
+        self.assertIsInstance(service, StorytellerService)
+
+    def test_kernel_prepare_storyteller_orientation_context_traverses_service(self) -> None:
+        kernel = DomainKernel(store=FixtureStore())
+        scene_id, round_id = _scene_round(kernel)
+        prepared = kernel.prepare_storyteller_orientation_context(
+            hg_scene_id=scene_id,
+            hg_round_id=round_id,
+            inference_id="inf-storyteller-orient",
+        )
+        self.assertEqual(prepared["hg_scene_id"], scene_id)
+        self.assertEqual(prepared["hg_round_id"], round_id)
+        self.assertTrue(prepared["manifest_id"])
+
+    def test_kernel_prepare_storyteller_assessment_context_traverses_service(self) -> None:
+        kernel = DomainKernel(store=FixtureStore())
+        scene_id, round_id = _scene_round(kernel)
+        orientation = {
+            "orientation_id": "orient-kernel-1",
+            "hg_round_id": round_id,
+            "turn_index": 0,
+            "trigger": "round_start",
+            "information_gaps": ("What tensions are active?", "Which relationships are under strain?"),
+            "temporal_focus": "current",
+            "breadth_preference": "broad",
+        }
+        prepared = kernel.prepare_storyteller_assessment_context(
+            hg_scene_id=scene_id,
+            inference_id="inf-storyteller-assess",
+            orientation=orientation,
+            bundle={"bundle_id": "bundle-kernel-1", "entries": []},
+        )
+        self.assertEqual(prepared["orientation_id"], "orient-kernel-1")
+        self.assertTrue(prepared["manifest_id"])
+
     def test_bind_injects_director_storyteller_lanes(self) -> None:
         kernel = DomainKernel(store=FixtureStore())
         scene_id, round_id = _scene_round(kernel)

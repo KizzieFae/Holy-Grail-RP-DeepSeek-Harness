@@ -149,6 +149,7 @@ from .character_service import CharacterKnowledgeService  # noqa: E402
 from .character_upstream_context import assemble_character_upstream_contributions  # noqa: E402
 from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict  # noqa: E402
 from .librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
+from .storyteller_service import StorytellerService  # noqa: E402
 from .narrator_environment_cognition import (  # noqa: E402
     NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
     build_cognition_context_payload,
