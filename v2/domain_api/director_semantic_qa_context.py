@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 from domain.modules.authority_reference import validate_authority_references
+
+from .context_substrate import auth_projections_to_contributions
 
 from .contract import (
     DirectorSemanticQaContextPrepareRequest,
@@ -63,13 +65,12 @@ def prepare_director_semantic_qa_context(
     req: DirectorSemanticQaContextPrepareRequest,
     *,
     available: list[str],
-    auth_contributions_fn: Callable[[str, list[Any]], list[PromptContribution]],
     auth_projections: list[Any],
     participation_mode: str | None = None,
 ) -> tuple[list[PromptContribution], list[dict[str, Any]], dict[str, Any]]:
     """Build Director scene evidence contributions shared with prepare_director_context."""
     manifest_id = f"manifest-director-semantic-qa-{req.evaluation_pass_id}"
-    auth_contributions = auth_contributions_fn(manifest_id, auth_projections)
+    auth_contributions = auth_projections_to_contributions(manifest_id, auth_projections)
     scene_contributions, authority_refs = build_director_scene_evidence_contributions(
         fixture,
         rnd,

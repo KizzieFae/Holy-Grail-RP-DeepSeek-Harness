@@ -5,13 +5,15 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from .character_context_projector import build_character_lane_contributions
 from .character_conversation_projection import project_character_conversation_for_manifest
 from .contract import PromptContribution
 from .continuity_context_projector import project_authoritative_context
+from .context_substrate import auth_projections_to_contributions, semantic_correction_contribution
 from .session_state import LiveSession, RoundFixture
+from .storyteller_round_packaging import storyteller_contributions_for_consumer
 
 
 LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS = frozenset(
@@ -59,8 +61,6 @@ def assemble_character_upstream_contributions(
     correction_context: dict[str, Any] | None,
     memory_projections: list[tuple[str, dict[str, Any]]],
     private_secret: str,
-    auth_contributions_fn: Callable[[str, Any], list[PromptContribution]],
-    storyteller_contributions_fn: Callable[..., list[PromptContribution]],
     include_correction: bool = True,
 ) -> CharacterUpstreamContext:
     auth_projections = project_authoritative_context(
@@ -72,7 +72,7 @@ def assemble_character_upstream_contributions(
         turn_index=turn_index,
     )
     contributions: list[PromptContribution] = list(
-        auth_contributions_fn(manifest_id, auth_projections)
+        auth_projections_to_contributions(manifest_id, auth_projections)
     )
     has_continuity_summary = False
     has_transcript = False
@@ -160,7 +160,7 @@ def assemble_character_upstream_contributions(
         )
     )
     contributions.extend(
-        storyteller_contributions_fn(
+        storyteller_contributions_for_consumer(
             fixture,
             rnd,
             manifest_id=manifest_id,
@@ -199,18 +199,10 @@ def assemble_character_upstream_contributions(
         )
     if include_correction and isinstance(correction_context, dict) and correction_context:
         contributions.append(
-            PromptContribution(
-                contribution_id=f"{manifest_id}-semantic-correction",
-                source_kind="semantic_correction",
-                authority_class="suggestive",
-                knowledge_ids=(
-                    str(correction_context.get("evaluation_pass_id") or manifest_id),
-                ),
-                priority=29,
-                content=json.dumps(correction_context, ensure_ascii=False, indent=2),
-                provenance={
-                    "visibility": "orchestration_only",
-                },
+            semantic_correction_contribution(
+                manifest_id,
+                correction_context,
+                inference_id=str(correction_context.get("evaluation_pass_id") or manifest_id),
             )
         )
     frozen = tuple(contributions)

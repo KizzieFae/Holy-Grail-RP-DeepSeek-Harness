@@ -44,8 +44,6 @@ class CharacterKnowledgeService:
         correction_context: dict[str, Any] | None,
         memory_projections: list[tuple[str, dict[str, Any]]],
         private_secret: str,
-        auth_contributions_fn: Any,
-        storyteller_contributions_fn: Any,
     ) -> dict[str, Any]:
         manifest_id = f"manifest-character-orient-{inference_id}"
         upstream = assemble_character_upstream_contributions(
@@ -61,8 +59,6 @@ class CharacterKnowledgeService:
             correction_context=correction_context,
             memory_projections=memory_projections,
             private_secret=private_secret,
-            auth_contributions_fn=auth_contributions_fn,
-            storyteller_contributions_fn=storyteller_contributions_fn,
             include_correction=True,
         )
         contributions, envelope = build_character_orientation_context(

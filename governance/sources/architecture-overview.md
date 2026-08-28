@@ -103,7 +103,7 @@ These principles are stable boundaries Governance must protect when reviewing pr
 
 - **Presentation UI** (`v2/ui/`) is a client of the Node application API — not a domain authority.
 - **Node / DSH runtime** (`v2/rp_runtime/`) orchestrates inference rounds and calls the Domain Host over HTTP.
-- **Domain Host** (`v2/domain_api/`) is the authoritative Python kernel for prepare, validate, commit, and context projection.
+- **Domain Host** (`v2/domain_api/`) is the authoritative Python kernel for prepare, validate, commit, and context projection. Per-role manifest assembly lives in bounded stateless context modules (`director_context.py`, `character_context.py`, `narrator_context.py`, `opening_context.py`, `narrator_environment_context.py`); `DomainKernel` retains eligibility, validation, commit, and round-state mutation. Cognition service composition (`cognition_composition.py`) is separate (#53 C1 / #54 C2).
 - **Domain library** (`v2/domain/modules/`) holds continuity, validation, prompts, memory, and retrieval logic consumed by the Host.
 - **Node calls the Domain Host. Python domain code does not call DSH.** Keep the Domain Host the composition boundary.
 

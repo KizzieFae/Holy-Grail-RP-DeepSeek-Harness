@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 _V2 = Path(__file__).resolve().parents[1]
 if str(_V2) not in sys.path:
@@ -18,6 +18,7 @@ from character_move_adapters import iter_speech_beats  # noqa: E402
 from domain.modules.authority_reference import validate_authority_references  # noqa: E402
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 
+from .context_substrate import auth_projections_to_contributions
 from .contract import (
     NarratorSemanticQaContextPrepareRequest,
     PromptContribution,
@@ -277,8 +278,6 @@ def prepare_narrator_semantic_qa_context(
     fixture: LiveSession,
     rnd: RoundFixture,
     req: NarratorSemanticQaContextPrepareRequest,
-    *,
-    auth_contributions_fn: Callable[[str, list[Any]], list[PromptContribution]],
 ) -> tuple[list[PromptContribution], list[dict[str, Any]], dict[str, Any]]:
     turn_record = next(
         (turn for turn in rnd.character_turns if turn.domain_commit_id == req.domain_commit_id),
@@ -299,7 +298,7 @@ def prepare_narrator_semantic_qa_context(
         hg_round_id=req.hg_round_id,
         continuity_turn_index=turn_record.continuity_turn_index,
     )
-    auth_contributions = auth_contributions_fn(manifest_id, auth_projections)
+    auth_contributions = auth_projections_to_contributions(manifest_id, auth_projections)
     authority_refs = build_narrator_authority_references(
         fixture,
         rnd,

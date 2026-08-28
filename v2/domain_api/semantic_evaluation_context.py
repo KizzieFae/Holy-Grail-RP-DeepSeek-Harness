@@ -7,6 +7,7 @@ from typing import Any
 
 from .continuity_context_projector import project_authoritative_context
 from .character_conversation_projection import project_character_conversation_for_manifest
+from .context_substrate import auth_projections_to_contributions
 from .contract import PromptContribution, SemanticEvaluationContextPrepareRequest
 
 PLAYER_AGENCY_GUARDRAIL_ID = "guardrail:player_agency"
@@ -114,8 +115,6 @@ def build_authority_references(
 def prepare_semantic_evaluation_context(
     fixture: Any,
     req: SemanticEvaluationContextPrepareRequest,
-    *,
-    auth_contributions_to_prompt,
 ) -> tuple[list[PromptContribution], list[dict[str, Any]], dict[str, Any]]:
     manifest_id = f"manifest-semantic-eval-{req.evaluation_pass_id}"
     auth_projections = project_authoritative_context(
@@ -127,7 +126,7 @@ def prepare_semantic_evaluation_context(
         turn_index=req.turn_index,
     )
     contributions: list[PromptContribution] = list(
-        auth_contributions_to_prompt(manifest_id, auth_projections)
+        auth_projections_to_contributions(manifest_id, auth_projections)
     )
     transcript_content, trigger_content, conv_prov = project_character_conversation_for_manifest(
         fixture,

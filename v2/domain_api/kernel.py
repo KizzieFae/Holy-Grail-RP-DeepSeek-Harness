@@ -25,8 +25,6 @@ from director_decision_contract import (  # noqa: E402
 from narrator_presentation_validation import (  # noqa: E402
     validate_narrator_presentation as validate_narrator_presentation_rules,
 )
-from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
-from prompt_builders import build_narrator_render_prompt  # noqa: E402
 from response_validation import validate_bot_response_for_runtime  # noqa: E402
 from response_validation_selection import (  # noqa: E402
     eligible_agent_keys_for_present_characters,
@@ -40,8 +38,6 @@ from issue240_semantic_evaluation import (  # noqa: E402
     issue240_semantic_evaluation_enabled,
     normalize_issue240_semantic_evaluation_for_continuity,
 )
-from domain.modules.authority_reference import validate_authority_references  # noqa: E402
-
 from .contract import (  # noqa: E402
     CommitRequest,
     CommitResponse,
@@ -81,28 +77,24 @@ from .contract import (  # noqa: E402
     SemanticEvaluationContextResponse,
     SemanticQaContextPrepareResponse,
 )
-from .character_context_projector import build_character_lane_contributions  # noqa: E402
-from .character_conversation_projection import (  # noqa: E402
-    project_character_conversation_for_manifest,
-)
-from .continuity_context_projector import (  # noqa: E402
-    AuthoritativeContextContribution,
-    collect_recent_environment_evidence,
-    project_authoritative_context,
-)
-from .director_context_digests import (  # noqa: E402
-    build_director_scene_evidence_contributions,
-    director_scene_condition_flags,
-    validate_director_context_completeness,
-)
+from .character_context import prepare_character_context  # noqa: E402
+from .context_substrate import memory_projections_for_character  # noqa: E402
+from .continuity_context_projector import collect_recent_environment_evidence, project_authoritative_context  # noqa: E402
+from .director_context import prepare_director_context as build_director_context  # noqa: E402
 from .director_semantic_qa_context import (  # noqa: E402
     build_director_semantic_qa_context_response,
     prepare_director_semantic_qa_context,
+)
+from .narrator_context import prepare_narrator_context as build_narrator_context  # noqa: E402
+from .narrator_environment_context import (  # noqa: E402
+    build_environment_knowledge_requests,
+    prepare_environment_cognition_context,
 )
 from .narrator_semantic_qa_context import (  # noqa: E402
     build_narrator_semantic_qa_context_response,
     prepare_narrator_semantic_qa_context,
 )
+from .opening_context import prepare_opening_context as build_opening_context  # noqa: E402
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
 from .semantic_evaluation_context import (  # noqa: E402
@@ -126,7 +118,10 @@ from .session_repository import (  # noqa: E402
     PersistenceError,
     SessionRepository,
 )
-from .opening_prompt import build_opening_generation_instruction  # noqa: E402
+from .narrator_environment_cognition import (  # noqa: E402
+    finalize_narrator_environment_cognition,
+    record_environment_cognition_failure,
+)
 from .player_identity import is_player_controlled  # noqa: E402
 from .session_setup import setup_provenance_for_ui  # noqa: E402
 from .memory_retrieval import build_session_memory_projection  # noqa: E402
@@ -135,27 +130,12 @@ from .knowledge_service import KnowledgeService  # noqa: E402
 from .cognition_composition import CognitionComposition  # noqa: E402
 from .librarian_contract import knowledge_access_request_from_dict  # noqa: E402
 from .storyteller_contract import (  # noqa: E402
-    StorytellerAdvisoryPackage,
     StorytellerOrientationAssessment,
     advisory_package_from_dict,
     advisory_package_to_dict,
     invalidate_storyteller_package,
 )
-from .storyteller_packaging_mapper import map_storyteller_package_to_contributions  # noqa: E402
-from .storyteller_packaging_policy import StorytellerPackagingConsumer  # noqa: E402
-from .librarian_packaging_validity import PackagingBindingContext  # noqa: E402
-from .character_upstream_context import assemble_character_upstream_contributions  # noqa: E402
-from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict  # noqa: E402
-from .librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
-from .narrator_environment_cognition import (  # noqa: E402
-    NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
-    build_cognition_context_payload,
-    build_librarian_knowledge_access_request,
-    finalize_narrator_environment_cognition,
-    parse_n1_cognition_result,
-    record_environment_cognition_failure,
-)
-from .narrator_environment_packet import assemble_narrator_environment_packet  # noqa: E402
+from .storyteller_round_packaging import validate_storyteller_bind  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -556,59 +536,6 @@ class DomainKernel:
     def _eligibility_snapshot_id(self, rnd: RoundFixture) -> str:
         return f"{rnd.hg_round_id}:{rnd.eligibility_epoch}"
 
-    def _active_storyteller_package(
-        self, rnd: RoundFixture
-    ) -> StorytellerAdvisoryPackage | None:
-        stored = rnd.storyteller_advisory_package
-        if not stored:
-            return None
-        package = advisory_package_from_dict(stored)
-        if not package.validity.is_valid:
-            return None
-        return package
-
-    def _storyteller_packaging_binding(
-        self,
-        fixture: LiveSession,
-        rnd: RoundFixture,
-        package: StorytellerAdvisoryPackage,
-        *,
-        pipeline_stage: str,
-    ) -> PackagingBindingContext:
-        return PackagingBindingContext(
-            hg_round_id=rnd.hg_round_id,
-            turn_index=int(rnd.turn_index),
-            pipeline_stage=pipeline_stage,
-            continuity_version=int(fixture.continuity_version),
-            authoritative_snapshot_id=package.validity.valid_from_authoritative_snapshot_id,
-        )
-
-    def _storyteller_contributions_for_role(
-        self,
-        fixture: LiveSession,
-        rnd: RoundFixture,
-        *,
-        manifest_id: str,
-        consumer_target: StorytellerPackagingConsumer,
-        character_id: str | None = None,
-    ) -> tuple[PromptContribution, ...]:
-        package = self._active_storyteller_package(rnd)
-        if package is None:
-            return ()
-        result = map_storyteller_package_to_contributions(
-            package,
-            manifest_id=manifest_id,
-            consumer_target=consumer_target,
-            binding=self._storyteller_packaging_binding(
-                fixture,
-                rnd,
-                package,
-                pipeline_stage=consumer_target,
-            ),
-            character_id=character_id,
-        )
-        return result.contributions
-
     def _invalidate_storyteller_package_for_round(
         self,
         rnd: RoundFixture,
@@ -636,54 +563,14 @@ class DomainKernel:
     ) -> dict[str, Any]:
         fixture = self.store.require(hg_scene_id)
         rnd = self._require_round(fixture, hg_round_id)
-        if not package:
-            return {"accepted": False, "reason": "missing_package", "package_id": None}
-        parsed = advisory_package_from_dict(package)
-        if parsed.hg_round_id and parsed.hg_round_id != rnd.hg_round_id:
-            return {
-                "accepted": False,
-                "reason": "round_mismatch",
-                "package_id": parsed.package_id,
-            }
-        if not parsed.validity.is_valid:
-            return {
-                "accepted": False,
-                "reason": parsed.validity.invalidation_reason or "package_invalid",
-                "package_id": parsed.package_id,
-            }
-        rnd.storyteller_advisory_package = advisory_package_to_dict(parsed)
+        validation = validate_storyteller_bind(fixture, rnd, package)
+        if not validation.accepted:
+            return validation.to_response_dict(audit=audit)
+        assert validation.parsed_package is not None
+        rnd.storyteller_advisory_package = advisory_package_to_dict(validation.parsed_package)
         rnd.storyteller_round_audit = dict(audit) if audit else None
         rnd.storyteller_invalidation_reason = None
-        director_preview = map_storyteller_package_to_contributions(
-            parsed,
-            manifest_id=f"manifest-director-preview-{parsed.package_id}",
-            consumer_target="director",
-            binding=self._storyteller_packaging_binding(
-                fixture,
-                rnd,
-                parsed,
-                pipeline_stage="director",
-            ),
-        )
-        return {
-            "accepted": True,
-            "reason": "ok",
-            "package_id": parsed.package_id,
-            "degradation_level": parsed.degradation.level,
-            "validity": {
-                "is_valid": parsed.validity.is_valid,
-                "bound_hg_round_id": parsed.validity.bound_hg_round_id,
-            },
-            "mapped_preview": {
-                "director": {
-                    "items_mapped": director_preview.items_mapped,
-                    "source_kinds": sorted(
-                        {item.source_kind for item in director_preview.contributions}
-                    ),
-                }
-            },
-            "audit": rnd.storyteller_round_audit,
-        }
+        return validation.to_response_dict(audit=rnd.storyteller_round_audit)
 
     def get_storyteller_round_state(
         self,
@@ -842,134 +729,16 @@ class DomainKernel:
             forced_designation=req.forced_designation,
         )
 
-    @staticmethod
-    def _auth_contributions_to_prompt(
-        manifest_id: str,
-        projections: list[AuthoritativeContextContribution],
-    ) -> list[PromptContribution]:
-        return [
-            PromptContribution(
-                contribution_id=f"{manifest_id}-{proj.source_kind}",
-                source_kind=proj.source_kind,  # type: ignore[arg-type]
-                authority_class=proj.authority_class,  # type: ignore[arg-type]
-                knowledge_ids=proj.knowledge_ids,
-                priority=proj.priority,
-                content=proj.content,
-                provenance=dict(proj.provenance),
-            )
-            for proj in projections
-        ]
-
     def prepare_director_context(
         self, req: DirectorContextPrepareRequest
     ) -> DirectorContextPrepareResponse:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
-        used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
-        available = self._available_actors(fixture, rnd)
-        auth_projections = project_authoritative_context(
-            fixture,
-            role="director",
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            turn_index=req.turn_index,
-            actors_used_this_round=used,
-            eligible_actors=available,
-        )
-        scene_contributions, authority_refs = build_director_scene_evidence_contributions(
+        return build_director_context(
             fixture,
             rnd,
-            manifest_id,
-            available,
-            auth_contributions=list(
-                self._auth_contributions_to_prompt(manifest_id, auth_projections)
-            ),
-        )
-        contributions: list[PromptContribution] = list(scene_contributions)
-        contributions.extend(
-            self._storyteller_contributions_for_role(
-                fixture,
-                rnd,
-                manifest_id=manifest_id,
-                consumer_target="director",
-            )
-        )
-        contributions.extend(
-            (
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-director-scratch",
-                    source_kind="director_scratch",
-                    authority_class="derived",
-                    knowledge_ids=(f"director:{req.inference_id}",),
-                    priority=20,
-                    content=(
-                        "Director scratch: weigh participation balance and select the next actor. "
-                        "Do not assume character-private knowledge."
-                    ),
-                    provenance={"inference_id": req.inference_id, "role": "director"},
-                ),
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-instruction",
-                    source_kind="inference_instruction",
-                    authority_class="derived",
-                    knowledge_ids=(f"inference:{req.inference_id}",),
-                    priority=30,
-                    content=(
-                        "Output only JSON with next_actor, end_round, reason, environment_event, "
-                        "tension_shift. tension_shift must be escalate, soften, or steady. "
-                        "environment_event is optional; use an empty string rather than repeating "
-                        "a recent accepted environment development."
-                    ),
-                    provenance={"inference_id": req.inference_id},
-                ),
-            )
-        )
-        correction = req.correction_context
-        if isinstance(correction, dict) and correction:
-            contributions.insert(
-                -1,
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-semantic-correction",
-                    source_kind="semantic_correction",
-                    authority_class="suggestive",
-                    knowledge_ids=(
-                        str(correction.get("evaluation_pass_id") or req.inference_id),
-                    ),
-                    priority=29,
-                    content=json.dumps(correction, ensure_ascii=False, indent=2),
-                    provenance={
-                        "inference_id": req.inference_id,
-                        "visibility": "orchestration_only",
-                        "attempt_index": req.attempt_index,
-                    },
-                ),
-            )
-        flags = director_scene_condition_flags(fixture, rnd, available)
-        context_completeness = validate_director_context_completeness(
-            contributions,
-            has_round_turns=flags["has_round_turns"],
-            multiple_eligible=flags["multiple_eligible"],
-            has_active_issues=flags["has_active_issues"],
-            has_user_turn=flags["has_user_turn"],
-        )
-        normalized_refs, ref_errors = validate_authority_references(authority_refs)
-        if ref_errors:
-            raise ValueError(
-                "Director context preparation failed: " + "; ".join(ref_errors)
-            )
-        return DirectorContextPrepareResponse(
-            manifest_id=manifest_id,
-            inference_id=req.inference_id,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            role="director",
-            character_id=None,
-            turn_index=rnd.turn_index,
-            attempt_index=req.attempt_index,
-            contributions=tuple(contributions),
-            authority_references=tuple(normalized_refs),
-            context_completeness=context_completeness,
+            req,
+            available_actors=self._available_actors(fixture, rnd),
         )
 
     def prepare_director_semantic_qa_context(
@@ -995,7 +764,6 @@ class DomainKernel:
                 rnd,
                 req,
                 available=available,
-                auth_contributions_fn=self._auth_contributions_to_prompt,
                 auth_projections=auth_projections,
             )
         )
@@ -1014,107 +782,11 @@ class DomainKernel:
     def prepare_context(self, req: ContextPrepareRequest) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        manifest_id = f"manifest-character-{req.inference_id}-{req.attempt_index}"
-        private_secret = fixture.character_private_secrets.get(req.character_id, "")
-        memory_service = self._memory_service()
-        if memory_service is not None:
-            memory_projections = memory_service.retrieve_memory_contributions(
-                fixture, character_id=req.character_id
-            )
-        else:
-            single = build_session_memory_projection(
-                fixture.character_states.get(req.character_id)
-            )
-            memory_projections = [single] if single is not None else []
-        upstream = assemble_character_upstream_contributions(
+        return prepare_character_context(
             fixture,
             rnd,
-            manifest_id=manifest_id,
-            character_id=req.character_id,
-            role=req.role,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            turn_index=req.turn_index,
-            director_decision=req.director_decision,
-            correction_context=req.correction_context,
-            memory_projections=memory_projections,
-            private_secret=private_secret,
-            auth_contributions_fn=self._auth_contributions_to_prompt,
-            storyteller_contributions_fn=self._storyteller_contributions_for_role,
-            include_correction=True,
-        )
-        contributions: list[PromptContribution] = list(upstream.contributions)
-        librarian_audit = dict(req.librarian_knowledge_audit or {})
-        if isinstance(req.librarian_bundle, dict) and req.librarian_bundle:
-            try:
-                bundle = librarian_knowledge_bundle_from_dict(req.librarian_bundle)
-                binding = PackagingBindingContext(
-                    hg_round_id=req.hg_round_id,
-                    turn_index=req.turn_index,
-                    pipeline_stage="character",
-                    continuity_version=int(fixture.continuity_version),
-                    authoritative_snapshot_id=(
-                        f"cv:{fixture.continuity_version}:scene:{req.hg_scene_id}:round:{req.hg_round_id}"
-                    ),
-                    bound_character_id=req.character_id,
-                )
-                packaging = map_librarian_bundle_to_contributions(
-                    bundle,
-                    manifest_id=manifest_id,
-                    consumer_target="character",
-                    binding=binding,
-                )
-                librarian_audit.update(
-                    {
-                        "bundle_id": bundle.bundle_id,
-                        "eligibility_accepted": packaging.eligibility.accepted,
-                        "eligibility_reason": packaging.eligibility.reason,
-                        "rejection_codes": list(packaging.eligibility.rejection_codes),
-                        "entries_considered": packaging.entries_considered,
-                        "entries_mapped": packaging.entries_mapped,
-                        "mediation_mode": bundle.mediation_mode,
-                        "omitted_reason": packaging.omitted_reason,
-                    }
-                )
-                if packaging.contributions:
-                    contributions.extend(packaging.contributions)
-            except (KeyError, TypeError, ValueError) as exc:
-                librarian_audit.update(
-                    {
-                        "bundle_decode_error": str(exc),
-                        "eligibility_accepted": False,
-                    }
-                )
-        contributions.append(
-            PromptContribution(
-                contribution_id=f"{manifest_id}-instruction",
-                source_kind="inference_instruction",
-                authority_class="derived",
-                knowledge_ids=(f"inference:{req.inference_id}",),
-                priority=30,
-                content=(
-                    "Output only valid JSON for move_schema_version 2 with non-empty beats[], "
-                    "motivation object, and semantic_evaluation. "
-                    "Each beat must be type action (key action) or type speech (key dialogue). "
-                    "Action-only, speech-only, and mixed beat sequences are all valid when "
-                    "appropriate to the scene."
-                ),
-                provenance={
-                    "inference_id": req.inference_id,
-                    **({"librarian_knowledge_audit": librarian_audit} if librarian_audit else {}),
-                },
-            ),
-        )
-        return PromptContributionManifest(
-            manifest_id=manifest_id,
-            inference_id=req.inference_id,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            role="character",
-            character_id=req.character_id,
-            turn_index=req.turn_index,
-            attempt_index=req.attempt_index,
-            contributions=contributions,
+            req,
+            memory_service=self._memory_service(),
         )
 
     def prepare_semantic_evaluation_context(
@@ -1125,7 +797,6 @@ class DomainKernel:
         contributions, authority_refs, candidate_package = build_semantic_evaluation_context(
             fixture,
             req,
-            auth_contributions_to_prompt=self._auth_contributions_to_prompt,
         )
         return SemanticEvaluationContextResponse(
             manifest_id=manifest_id,
@@ -1243,15 +914,9 @@ class DomainKernel:
         rnd = self._require_round(fixture, hg_round_id)
         private_secret = fixture.character_private_secrets.get(character_id, "")
         memory_service = self._memory_service()
-        if memory_service is not None:
-            memory_projections = memory_service.retrieve_memory_contributions(
-                fixture, character_id=character_id
-            )
-        else:
-            single = build_session_memory_projection(
-                fixture.character_states.get(character_id)
-            )
-            memory_projections = [single] if single is not None else []
+        memory_projections = memory_projections_for_character(
+            fixture, character_id, memory_service
+        )
         return self.cognition.character_knowledge.prepare_orientation_context(
             fixture,
             rnd,
@@ -1263,8 +928,6 @@ class DomainKernel:
             correction_context=correction_context,
             memory_projections=memory_projections,
             private_secret=private_secret,
-            auth_contributions_fn=self._auth_contributions_to_prompt,
-            storyteller_contributions_fn=self._storyteller_contributions_for_role,
         )
 
     def finalize_character_orientation(
@@ -1911,105 +1574,7 @@ class DomainKernel:
         self, req: OpeningContextPrepareRequest
     ) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_session_id)
-        opening_entry_id = f"opening-{req.hg_session_id}"
-        if any(
-            item.get("entry_id") == opening_entry_id or item.get("kind") == "opening"
-            for item in fixture.rp_history
-        ):
-            raise ValueError("opening presentation already materialized")
-
-        mgr = fixture.manager
-        assert mgr.scene_state is not None
-        hg_scene_id = fixture.hg_scene_id
-        hg_round_id = "opening-bootstrap"
-        manifest_id = f"manifest-opening-{req.inference_id}"
-        snapshot = fixture.setup_snapshot or {}
-        scene_template = dict(snapshot.get("scene_template") or {})
-        premise = str(
-            scene_template.get("premise")
-            or getattr(mgr.scene_state, "opening_description", "")
-            or ""
-        ).strip()
-
-        auth_projections = project_authoritative_context(
-            fixture,
-            role="narrator",
-            hg_scene_id=hg_scene_id,
-            hg_round_id=hg_round_id,
-        )
-        contributions: list[PromptContribution] = list(
-            self._auth_contributions_to_prompt(manifest_id, auth_projections)
-        )
-
-        if premise:
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-scene-reference",
-                    source_kind="scene_reference",
-                    authority_class="authoritative",
-                    knowledge_ids=(f"template:{scene_template.get('template_id', 'scene')}",),
-                    priority=8,
-                    content=f"Scene premise (authoritative): {premise}",
-                    provenance={
-                        "hg_scene_id": hg_scene_id,
-                        "template_id": scene_template.get("template_id"),
-                    },
-                )
-            )
-
-        profile_lines: list[str] = []
-        cards = dict(snapshot.get("character_cards") or {})
-        for display_name in fixture.cast:
-            card = None
-            file_id = fixture.character_file_ids.get(display_name)
-            if file_id and file_id in cards:
-                card = cards[file_id]
-            if not card:
-                continue
-            description = str(card.get("description", "")).strip()
-            personality = str(card.get("personality", "")).strip()
-            profile_lines.append(
-                f"- {display_name}: {description}"
-                + (f" Personality: {personality}" if personality else "")
-            )
-        if profile_lines:
-            contributions.append(
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-character-profiles",
-                    source_kind="character_profile",
-                    authority_class="authoritative",
-                    knowledge_ids=tuple(f"profile:{name}" for name in fixture.cast),
-                    priority=10,
-                    content="Character profiles (authoritative setup):\n" + "\n".join(profile_lines),
-                    provenance={"cast": list(fixture.cast)},
-                )
-            )
-
-        contributions.append(
-            PromptContribution(
-                contribution_id=f"{manifest_id}-instruction",
-                source_kind="inference_instruction",
-                authority_class="derived",
-                knowledge_ids=(f"inference:{req.inference_id}",),
-                priority=30,
-                content=build_opening_generation_instruction(
-                    present_characters=list(fixture.cast),
-                    premise=premise,
-                ),
-                provenance={"inference_id": req.inference_id, "role": "opening"},
-            )
-        )
-        return PromptContributionManifest(
-            manifest_id=manifest_id,
-            inference_id=req.inference_id,
-            hg_scene_id=hg_scene_id,
-            hg_round_id=hg_round_id,
-            role="opening",
-            character_id=None,
-            turn_index=0,
-            attempt_index=0,
-            contributions=tuple(contributions),
-        )
+        return build_opening_context(fixture, req)
 
     def persist_opening_presentation(self, req: OpeningPersistRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
@@ -2058,98 +1623,13 @@ class DomainKernel:
             if story_service is not None
             else None
         )
-        context = build_cognition_context_payload(
+        return prepare_environment_cognition_context(
             fixture,
             rnd,
             turn_record,
+            req,
             story_records=story_records,
         )
-        manifest_id = (
-            f"manifest-narrator-env-cog-{req.inference_id}-{req.domain_commit_id}"
-        )
-        contributions = [
-            PromptContribution(
-                contribution_id=f"{manifest_id}-environmental-baseline",
-                source_kind="narrator_environment_baseline",
-                authority_class="authoritative",
-                knowledge_ids=(f"env:{context['environmental_current_view']['location_ref']}",),
-                priority=18,
-                content=json.dumps(
-                    {
-                        "environmental_packet": context["environmental_packet"],
-                        "environmental_current_view": context["environmental_current_view"],
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                provenance={
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "orchestration_projection",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-triggering-user",
-                source_kind="triggering_user_context",
-                authority_class="authoritative",
-                knowledge_ids=(f"commit:{req.domain_commit_id}",),
-                priority=19,
-                content=json.dumps(
-                    {
-                        "triggering_user": context.get("triggering_user"),
-                        "committed_occurrence": context.get("committed_occurrence"),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                provenance={
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "orchestration_projection",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-instruction",
-                source_kind="narrator_environment_cognition",
-                authority_class="derived",
-                knowledge_ids=(f"inference:{req.inference_id}",),
-                priority=30,
-                content=NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
-                provenance={"inference_id": req.inference_id, "role": "narrator"},
-            ),
-        ]
-        manifest = PromptContributionManifest(
-            manifest_id=manifest_id,
-            inference_id=req.inference_id,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            role="narrator",
-            character_id=req.character_id,
-            turn_index=rnd.turn_index,
-            attempt_index=0,
-            contributions=contributions,
-        )
-        n1 = parse_n1_cognition_result({"baseline_sufficient": True, "information_needs": []})
-        knowledge_requests: list[dict[str, Any]] = []
-        if not n1.baseline_sufficient:
-            from dataclasses import asdict
-
-            for need in n1.information_needs:
-                kar = build_librarian_knowledge_access_request(
-                    fixture=fixture,
-                    rnd=rnd,
-                    need=need,
-                    location_ref=str(
-                        context["environmental_current_view"].get("location_ref", "")
-                    ),
-                    inference_id=req.inference_id,
-                    character_id=req.character_id,
-                    turn_index=rnd.turn_index,
-                )
-                knowledge_requests.append(asdict(kar))
-        return {
-            "manifest": manifest,
-            "context": context,
-            "knowledge_access_requests": knowledge_requests,
-        }
 
     def finalize_narrator_environment_cognition_result(
         self, req: NarratorEnvironmentCognitionFinalizeRequest
@@ -2178,33 +1658,14 @@ class DomainKernel:
     ) -> list[dict[str, Any]]:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
-        context_payload = build_cognition_context_payload(
+        turn_record = self._require_narrator_turn_record(fixture, rnd, req)
+        return build_environment_knowledge_requests(
             fixture,
             rnd,
-            self._require_narrator_turn_record(fixture, rnd, req),
+            turn_record,
+            req,
+            n1_raw=n1_raw,
         )
-        n1 = parse_n1_cognition_result(n1_raw)
-        if n1.baseline_sufficient:
-            return []
-        from dataclasses import asdict
-
-        location_ref = str(
-            context_payload["environmental_current_view"].get("location_ref", "")
-        )
-        return [
-            asdict(
-                build_librarian_knowledge_access_request(
-                    fixture=fixture,
-                    rnd=rnd,
-                    need=need,
-                    location_ref=location_ref,
-                    inference_id=req.inference_id,
-                    character_id=req.character_id,
-                    turn_index=rnd.turn_index,
-                )
-            )
-            for need in n1.information_needs
-        ]
 
     def _require_narrator_turn_record(
         self,
@@ -2219,6 +1680,8 @@ class DomainKernel:
             None,
         )
         if turn_record is None:
+            if isinstance(req, NarratorContextPrepareRequest):
+                raise ValueError("narrator context requires a committed move")
             raise ValueError(
                 f"narrator operation requires committed move for domain_commit_id "
                 f"{req.domain_commit_id}"
@@ -2241,207 +1704,32 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         turn_record = self._require_narrator_turn_record(fixture, rnd, req)
-
-        mgr = fixture.manager
-        assert mgr.scene_state is not None
-        manifest_id = f"manifest-narrator-{req.inference_id}-{req.attempt_index}"
-        present_labels = list(
-            getattr(mgr.scene_state, "present_characters", None) or fixture.cast
-        )
-        director_decision = dict(turn_record.director_decision)
-        environment_event = str(director_decision.get("environment_event", "") or "")
-        narrate_move = redact_structured_move_for_orchestration(
-            dict(turn_record.committed_move),
-            present_characters=present_labels,
-        )
+        cognition_audit = req.environment_cognition_audit
+        if isinstance(cognition_audit, dict) and cognition_audit.get("cognition_failed"):
+            record_environment_cognition_failure(
+                fixture,
+                turn_record,
+                failure_stage=str(cognition_audit.get("failure_stage") or "unknown"),
+                failure_reason=str(cognition_audit.get("failure_reason") or ""),
+                cognition_id=str(cognition_audit.get("cognition_id") or "") or None,
+            )
+            if isinstance(self.store, SessionRepository):
+                self.store.persist(fixture)
         story_service = self.cognition.story_knowledge
         story_records = (
             story_service.list_records(str(fixture.memory_scope_id or ""))
             if story_service is not None
             else None
         )
-        env_packet, env_view = assemble_narrator_environment_packet(
-            fixture,
-            story_records=story_records,
-        )
-        env_context = build_cognition_context_payload(
+        return build_narrator_context(
             fixture,
             rnd,
             turn_record,
+            req,
             story_records=story_records,
-        )
-        auth_projections = project_authoritative_context(
-            fixture,
-            role="narrator",
-            character_id=req.character_id,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            continuity_turn_index=turn_record.continuity_turn_index,
-        )
-        scene_context = next(
-            (proj.content for proj in auth_projections if proj.source_kind == "scene_state"),
-            (
-                f"Location: {mgr.scene_state.location or 'unknown'}. "
-                f"Present: {', '.join(present_labels)}. "
-                f"Continuity turn counter after commit: {turn_record.continuity_turn_index}."
-            ),
-        )
-        render_instruction = build_narrator_render_prompt(
-            char_name=req.character_id,
-            action="",
-            dialogue="",
-            environment_event=environment_event,
-            scene_context=scene_context,
-            structured_move=narrate_move,
-            environmental_baseline=env_packet.render_summary(),
-        )
-        committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
-        contributions: list[PromptContribution] = list(
-            self._auth_contributions_to_prompt(manifest_id, auth_projections)
-        )
-        contributions.extend(
-            self._storyteller_contributions_for_role(
-                fixture,
-                rnd,
-                manifest_id=manifest_id,
-                consumer_target="narrator",
-            )
-        )
-        contributions.extend(
-            (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-environmental-baseline",
-                source_kind="narrator_environment_baseline",
-                authority_class="authoritative",
-                knowledge_ids=(f"env:{env_view.location_ref}",),
-                priority=17,
-                content=env_packet.render_summary(),
-                provenance={
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "orchestration_projection",
-                    "assembly_metadata": env_packet.assembly_metadata,
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-triggering-user",
-                source_kind="triggering_user_context",
-                authority_class="authoritative",
-                knowledge_ids=(f"commit:{req.domain_commit_id}",),
-                priority=18,
-                content=json.dumps(
-                    {
-                        "triggering_user": env_context.get("triggering_user"),
-                        "committed_occurrence": env_context.get("committed_occurrence"),
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                provenance={
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "orchestration_projection",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-committed-move",
-                source_kind="committed_move",
-                authority_class="authoritative",
-                knowledge_ids=(f"commit:{req.domain_commit_id}",),
-                priority=20,
-                content=(
-                    f"Committed character move for {req.character_id} "
-                    f"(domain_commit_id={req.domain_commit_id}):\n{committed_move_json}"
-                ),
-                provenance={
-                    "character_id": req.character_id,
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "presentation",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-director-decision",
-                source_kind="director_decision",
-                authority_class="derived",
-                knowledge_ids=(f"round:{req.hg_round_id}",),
-                priority=25,
-                content=(
-                    "Accepted director decision for this round: "
-                    f"{json.dumps(director_decision, ensure_ascii=False)}"
-                ),
-                provenance={
-                    "hg_round_id": req.hg_round_id,
-                    "visibility": "orchestration_projection",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-instruction",
-                source_kind="inference_instruction",
-                authority_class="derived",
-                knowledge_ids=(f"inference:{req.inference_id}",),
-                priority=30,
-                content=render_instruction,
-                provenance={"inference_id": req.inference_id, "role": "narrator"},
-            ),
-            )
-        )
-        cognition_audit = req.environment_cognition_audit
-        if isinstance(cognition_audit, dict) and cognition_audit:
-            if cognition_audit.get("cognition_failed"):
-                record_environment_cognition_failure(
-                    fixture,
-                    turn_record,
-                    failure_stage=str(cognition_audit.get("failure_stage") or "unknown"),
-                    failure_reason=str(cognition_audit.get("failure_reason") or ""),
-                    cognition_id=str(cognition_audit.get("cognition_id") or "") or None,
-                )
-                if isinstance(self.store, SessionRepository):
-                    self.store.persist(fixture)
-            contributions.insert(
-                -1,
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-environment-cognition",
-                    source_kind="narrator_environment_cognition",
-                    authority_class="derived",
-                    knowledge_ids=(
-                        str(cognition_audit.get("cognition_id") or req.inference_id),
-                    ),
-                    priority=28,
-                    content=json.dumps(cognition_audit, ensure_ascii=False, indent=2),
-                    provenance={
-                        "inference_id": req.inference_id,
-                        "visibility": "orchestration_only",
-                    },
-                ),
-            )
-        correction = req.correction_context
-        if isinstance(correction, dict) and correction:
-            contributions.insert(
-                -1,
-                PromptContribution(
-                    contribution_id=f"{manifest_id}-semantic-correction",
-                    source_kind="semantic_correction",
-                    authority_class="suggestive",
-                    knowledge_ids=(
-                        str(correction.get("evaluation_pass_id") or req.inference_id),
-                    ),
-                    priority=29,
-                    content=json.dumps(correction, ensure_ascii=False, indent=2),
-                    provenance={
-                        "inference_id": req.inference_id,
-                        "visibility": "orchestration_only",
-                        "attempt_index": req.attempt_index,
-                    },
-                ),
-            )
-        return PromptContributionManifest(
-            manifest_id=manifest_id,
-            inference_id=req.inference_id,
-            hg_scene_id=req.hg_scene_id,
-            hg_round_id=req.hg_round_id,
-            role="narrator",
-            character_id=req.character_id,
-            turn_index=rnd.turn_index,
-            attempt_index=req.attempt_index,
-            contributions=contributions,
+            environment_cognition_audit=cognition_audit
+            if isinstance(cognition_audit, dict)
+            else None,
         )
 
     def prepare_narrator_semantic_qa_context(
@@ -2475,7 +1763,6 @@ class DomainKernel:
                 fixture,
                 rnd,
                 req,
-                auth_contributions_fn=self._auth_contributions_to_prompt,
             )
         )
         return build_narrator_semantic_qa_context_response(
