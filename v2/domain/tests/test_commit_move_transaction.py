@@ -27,7 +27,9 @@ from domain_api.kernel import (  # noqa: E402
     PROTOTYPE_VALID_MOVE,
     DomainKernel,
 )
+from domain_api.commit_move_transaction import CommitTransactionDeps, execute_commit_move  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
+from domain_api.session_state import RoundFixture  # noqa: E402
 from domain_api.storyteller_contract import advisory_package_to_dict  # noqa: E402
 
 
@@ -438,7 +440,7 @@ def test_knowledge_promotion_occurs_only_after_durability(
     with patch.object(repository, "persist", side_effect=tracking_persist):
         result = kernel.commit_move(request)
     assert result.committed is True
-    assert seen == ["persist", "persist"]
+    assert seen == ["persist"]
     promote.assert_called_once()
     assert promote.call_args.kwargs["source_domain_commit_id"] == result.domain_commit_id
 
@@ -522,3 +524,168 @@ def test_restart_durability_remains_correct(
     assert reopened.committed_move_count == 1
     history = [entry for entry in reopened.rp_history if entry.get("kind") == "committed_turn"]
     assert len(history) == 1
+
+
+def test_successful_commit_persists_exactly_once(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-single-persist"
+    )
+    with patch.object(repository, "persist", wraps=repository.persist) as persist_mock:
+        result = kernel.commit_move(request)
+    assert result.committed is True
+    assert persist_mock.call_count == 1
+
+
+def test_dedup_present_before_sole_persist(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-dedup-payload"
+    )
+    dedup_key = repository.commit_dedup_key(
+        hg_scene_id=hg_scene_id,
+        inference_id=request.inference_id,
+        expected_turn_index=request.expected_turn_index,
+        character_id=request.character_id,
+        validated_move=dict(request.validated_move),
+        director_decision=dict(request.director_decision),
+    )
+    seen: list[bool] = []
+    original_persist = repository.persist
+
+    def tracking_persist(session):  # type: ignore[no-untyped-def]
+        seen.append(dedup_key in session.commit_dedup_index)
+        return original_persist(session)
+
+    with patch.object(repository, "persist", side_effect=tracking_persist):
+        result = kernel.commit_move(request)
+    assert result.committed is True
+    assert seen == [True]
+
+
+def test_persist_failure_does_not_invoke_knowledge_promotion(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-no-k2-fail"
+    )
+    promote = MagicMock(return_value=0)
+    repository.knowledge_service.promote_after_commit = promote  # type: ignore[method-assign]
+    with patch.object(repository._session_manager, "save_session", side_effect=OSError("disk full")):
+        result = kernel.commit_move(request)
+    assert result.committed is False
+    promote.assert_not_called()
+
+
+def test_restart_replay_returns_cached_response_without_duplicate_mutation(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-restart-replay"
+    )
+    first = kernel.commit_move(request)
+    assert first.committed is True
+    dedup_key = repository.commit_dedup_key(
+        hg_scene_id=hg_scene_id,
+        inference_id=request.inference_id,
+        expected_turn_index=request.expected_turn_index,
+        character_id=request.character_id,
+        validated_move=dict(request.validated_move),
+        director_decision=dict(request.director_decision),
+    )
+    sessions_dir = repository.sessions_dir
+    session_id = info.hg_session_id
+    repository.clear_cache()
+    restarted_repo = SessionRepository(sessions_dir)
+    reopened = restarted_repo.open_session(session_id)
+    record = restarted_repo.get_commit_dedup(dedup_key)
+    assert record is not None
+    assert record.domain_commit_id == first.domain_commit_id
+    assert record.response.continuity_turn_index == first.continuity_turn_index
+
+    reopened.rounds.append(
+        RoundFixture(hg_round_id=hg_round_id, hg_scene_id=hg_scene_id, turn_index=0)
+    )
+    rnd = reopened.rounds[-1]
+    before_turn = reopened.manager.turn_counter
+    before_history = len(reopened.rp_history)
+    deps = CommitTransactionDeps(
+        repository=restarted_repo,
+        memory_service=restarted_repo.memory_service,
+        knowledge_service=restarted_repo.knowledge_service,
+    )
+    replay = execute_commit_move(request, fixture=reopened, rnd=rnd, deps=deps)
+    assert replay.committed is True
+    assert replay.domain_commit_id == first.domain_commit_id
+    assert replay.continuity_turn_index == first.continuity_turn_index
+    assert reopened.manager.turn_counter == before_turn
+    assert len(reopened.rp_history) == before_history
+
+
+def test_dedup_hit_wins_over_stale_expected_turn_index(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-dedup-anchor"
+    )
+    first = kernel.commit_move(request)
+    assert first.committed is True
+    stale = replace(request, expected_turn_index=0)
+    replay = kernel.commit_move(stale)
+    assert replay.committed is True
+    assert replay.domain_commit_id == first.domain_commit_id
+    assert kernel.scene_snapshot(hg_scene_id).turn_counter == 1
+
+
+def test_storyteller_invalidation_reason_parity_immediate_and_replay(
+    kernel: DomainKernel, repository: SessionRepository
+) -> None:
+    info = kernel.create_session(cast=["Alice"])
+    hg_scene_id = info.hg_scene_id
+    hg_round_id = _start_round(kernel, hg_scene_id)
+    kernel.bind_storyteller_advisory_package(
+        hg_scene_id=hg_scene_id,
+        hg_round_id=hg_round_id,
+        package=_bound_storyteller_package(hg_scene_id=hg_scene_id, hg_round_id=hg_round_id),
+    )
+    request = _validated_commit_request(
+        kernel, hg_scene_id=hg_scene_id, hg_round_id=hg_round_id, inference_id="inf-st-reason"
+    )
+    first = kernel.commit_move(request)
+    assert first.committed is True
+    assert first.storyteller_invalidation_reason == "authoritative_commit"
+    same_process = kernel.commit_move(request)
+    assert same_process.storyteller_invalidation_reason == first.storyteller_invalidation_reason
+
+    dedup_key = repository.commit_dedup_key(
+        hg_scene_id=hg_scene_id,
+        inference_id=request.inference_id,
+        expected_turn_index=request.expected_turn_index,
+        character_id=request.character_id,
+        validated_move=dict(request.validated_move),
+        director_decision=dict(request.director_decision),
+    )
+    sessions_dir = repository.sessions_dir
+    repository.clear_cache()
+    restarted_repo = SessionRepository(sessions_dir)
+    restarted_repo.open_session(info.hg_session_id)
+    record = restarted_repo.get_commit_dedup(dedup_key)
+    assert record is not None
+    assert record.response.storyteller_invalidation_reason == "authoritative_commit"

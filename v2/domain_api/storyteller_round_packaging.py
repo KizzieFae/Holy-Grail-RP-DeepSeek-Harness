@@ -157,18 +157,34 @@ def validate_storyteller_bind(
     )
 
 
-def invalidate_storyteller_package_for_round(
+def peek_storyteller_invalidation_reason_for_round(
     rnd: RoundFixture,
     *,
     reason: str,
 ) -> str | None:
-    """Invalidate round-local Storyteller advisory after authoritative commit (S2)."""
+    """Return the S2 invalidation reason without mutating round-local Storyteller state."""
     stored = rnd.storyteller_advisory_package
     if not stored:
         return None
     package = advisory_package_from_dict(stored)
     if not package.validity.is_valid:
         return rnd.storyteller_invalidation_reason
+    return reason
+
+
+def invalidate_storyteller_package_for_round(
+    rnd: RoundFixture,
+    *,
+    reason: str,
+) -> str | None:
+    """Invalidate round-local Storyteller advisory after authoritative commit (S2)."""
+    outcome = peek_storyteller_invalidation_reason_for_round(rnd, reason=reason)
+    stored = rnd.storyteller_advisory_package
+    if not stored:
+        return None
+    package = advisory_package_from_dict(stored)
+    if not package.validity.is_valid:
+        return outcome
     invalidated = invalidate_storyteller_package(package, reason=reason)
     rnd.storyteller_advisory_package = advisory_package_to_dict(invalidated)
     rnd.storyteller_invalidation_reason = reason

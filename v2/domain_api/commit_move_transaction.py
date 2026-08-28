@@ -20,7 +20,10 @@ from .memory_write_policy import (
 from .session_history import append_history_entry, summarize_committed_move
 from .session_repository import CommitDedupRecord, PersistenceError, SessionRepository
 from .session_state import CharacterTurnRecord, LiveSession, RoundFixture
-from .storyteller_round_packaging import invalidate_storyteller_package_for_round
+from .storyteller_round_packaging import (
+    invalidate_storyteller_package_for_round,
+    peek_storyteller_invalidation_reason_for_round,
+)
 
 
 @dataclass(frozen=True)
@@ -254,32 +257,10 @@ def execute_commit_move(
             },
         )
 
-    # Phase E — durability (H1: history already appended)
-    if hasattr(repository, "persist"):
-        try:
-            repository.persist(fixture)
-        except PersistenceError as exc:
-            _rollback_transaction(fixture, rnd, deps, snapshots)
-            return CommitResponse(
-                committed=False,
-                continuity_turn_index=None,
-                domain_commit_id=None,
-                hg_scene_id=req.hg_scene_id,
-                inference_id=req.inference_id,
-                reason=str(exc),
-            )
-
-    # Phase F — post-durable effects (S2, K2)
-    storyteller_invalidation_reason = invalidate_storyteller_package_for_round(
+    storyteller_invalidation_reason = peek_storyteller_invalidation_reason_for_round(
         rnd,
         reason="authoritative_commit",
     )
-    if deps.knowledge_service is not None:
-        deps.knowledge_service.promote_after_commit(
-            fixture,
-            source_domain_commit_id=commit_id,
-        )
-
     response = CommitResponse(
         committed=True,
         continuity_turn_index=after_turn,
@@ -299,10 +280,31 @@ def execute_commit_move(
             ),
             fixture,
         )
+
+    # Phase E — sole durability (H1: history and dedup already coupled)
+    if hasattr(repository, "persist"):
         try:
             repository.persist(fixture)
-        except PersistenceError:
-            # Authoritative commit already durable; dedup remains in-process until next persist.
-            pass
+        except PersistenceError as exc:
+            _rollback_transaction(fixture, rnd, deps, snapshots)
+            return CommitResponse(
+                committed=False,
+                continuity_turn_index=None,
+                domain_commit_id=None,
+                hg_scene_id=req.hg_scene_id,
+                inference_id=req.inference_id,
+                reason=str(exc),
+            )
+
+    # Phase F — post-durable effects (S2, K2)
+    invalidate_storyteller_package_for_round(
+        rnd,
+        reason="authoritative_commit",
+    )
+    if deps.knowledge_service is not None:
+        deps.knowledge_service.promote_after_commit(
+            fixture,
+            source_domain_commit_id=commit_id,
+        )
 
     return response
