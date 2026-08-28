@@ -44,6 +44,7 @@ Per closed Issue records (**#31**, **#34**, **#32**); authoritative detail in `g
 - **#31** does not rank by significance metadata.
 - Storyteller advisory (**S3**, Model A) is validated; Librarian bundles reach live rounds through the Storyteller cognition path per **#32**/**#34** records.
 - **Deferred / not required for program closure:** post-commit Storyteller refresh; full episodic/cross-scope routing through the #31 façade.
+- **Story knowledge (#50):** Occurrence-first JSONL corpus per `memory_scope_id` with rebuildable TF-IDF semantic index; `story_occurrence` / `story_derived` information classes; evidence-budget `full_eligible` / `semantic_ranked`; live epistemic eligibility via `PublicEvent.known_by` at query; Librarian `mediation_outcome` distinguishes failure modes from `no_match`. **Maintainer doc:** [docs/story-knowledge.md](./docs/story-knowledge.md). **Forensic record:** [governance/records/issue-50-story-knowledge-forensic-record.md](./governance/records/issue-50-story-knowledge-forensic-record.md).
 
 ---
 

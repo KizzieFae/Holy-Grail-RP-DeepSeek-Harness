@@ -24,6 +24,8 @@ from .scope_knowledge_repository import (
     ScopeKnowledgeRepository,
 )
 from .session_state import LiveSession
+from .story_knowledge_repository import StoryKnowledgeRepository
+from .story_knowledge_service import StoryKnowledgeService
 from .retrieval_selection import (
     RetrievalDiagnostics,
     RetrievalQueryContext,
@@ -55,6 +57,7 @@ class KnowledgeService:
         *,
         retrieval_provider: CompiledIndexRetrievalProvider | None = None,
         retrieval_index_path: str | Path | None = None,
+        story_knowledge_repo: StoryKnowledgeRepository | None = None,
     ) -> None:
         self._scope_repo = scope_repo
         if retrieval_provider is not None:
@@ -67,14 +70,23 @@ class KnowledgeService:
                 else CompiledIndexRetrievalProvider()
             )
         self._last_retrieval_diagnostics: dict[str, RetrievalDiagnostics] = {}
+        self._story_knowledge_repo = story_knowledge_repo
+        self._story_knowledge_service = (
+            StoryKnowledgeService(story_knowledge_repo) if story_knowledge_repo is not None else None
+        )
         self._retrieval_service = RetrievalService(
             scope_repo=self._scope_repo,
             retrieval_provider=self._retrieval_provider,
+            story_knowledge_repo=story_knowledge_repo,
         )
 
     @property
     def scope_repo(self) -> ScopeKnowledgeRepository | None:
         return self._scope_repo
+
+    @property
+    def story_knowledge_service(self) -> StoryKnowledgeService | None:
+        return self._story_knowledge_service
 
     def compile_snapshot_records(self, fixture: LiveSession) -> list[AuthoredKnowledgeRecord]:
         return compile_authored_records_from_snapshot(fixture.setup_snapshot or {})
@@ -144,23 +156,34 @@ class KnowledgeService:
         source_domain_commit_id: str,
     ) -> int:
         """Best-effort learned-world promotion after authoritative session persist."""
-        if self._scope_repo is None:
-            return 0
-        records = build_learned_world_records(
-            fixture,
-            source_domain_commit_id=source_domain_commit_id,
-        )
-        if not records:
-            return 0
-        try:
-            return self._scope_repo.append_records(records)
-        except OSError as exc:
-            _logger.warning(
-                "scope knowledge promotion failed for session %s: %s",
-                fixture.hg_session_id,
-                exc,
+        promoted = 0
+        if self._scope_repo is not None:
+            records = build_learned_world_records(
+                fixture,
+                source_domain_commit_id=source_domain_commit_id,
             )
-            return 0
+            if records:
+                try:
+                    promoted = self._scope_repo.append_records(records)
+                except OSError as exc:
+                    _logger.warning(
+                        "scope knowledge promotion failed for session %s: %s",
+                        fixture.hg_session_id,
+                        exc,
+                    )
+        if self._story_knowledge_service is not None:
+            try:
+                self._story_knowledge_service.project_after_commit(
+                    fixture,
+                    source_domain_commit_id=source_domain_commit_id,
+                )
+            except OSError as exc:
+                _logger.warning(
+                    "story knowledge projection failed for session %s: %s",
+                    fixture.hg_session_id,
+                    exc,
+                )
+        return promoted
 
     def write_user_profile(
         self,

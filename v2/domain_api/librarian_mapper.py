@@ -23,6 +23,8 @@ _DEFAULT_CLASS_BUDGETS = {
     "compiled_index": 128,
     "promoted_learned_world": 32,
     "user_profile": 24,
+    "story_occurrence": 64,
+    "story_derived": 32,
     "episodic_session": 16,
     "cross_scope_relationship": 16,
 }

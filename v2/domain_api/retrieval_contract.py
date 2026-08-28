@@ -19,6 +19,8 @@ InformationClass = Literal[
     "user_profile",
     "episodic_session",
     "cross_scope_relationship",
+    "story_occurrence",
+    "story_derived",
 ]
 
 RecallMode = Literal["broad", "focused"]
@@ -38,6 +40,8 @@ ALL_INFORMATION_CLASSES: frozenset[str] = frozenset(
         "user_profile",
         "episodic_session",
         "cross_scope_relationship",
+        "story_occurrence",
+        "story_derived",
     }
 )
 
@@ -185,9 +189,13 @@ class RetrievalAccessDiagnostics:
     budget_exhausted: int = 0
     incomplete_provenance_count: int = 0
     consulted_sources: list[str] = field(default_factory=list)
+    story_selection_path: str | None = None
+    story_eligible_count: int = 0
+    story_eligible_chars: int = 0
+    story_semantic_index_failed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "provider_status": [
                 {
                     "provider_id": item.provider_id,
@@ -204,6 +212,15 @@ class RetrievalAccessDiagnostics:
             "incomplete_provenance_count": self.incomplete_provenance_count,
             "consulted_sources": list(self.consulted_sources),
         }
+        if self.story_selection_path is not None:
+            payload["story_selection_path"] = self.story_selection_path
+        if self.story_eligible_count:
+            payload["story_eligible_count"] = self.story_eligible_count
+        if self.story_eligible_chars:
+            payload["story_eligible_chars"] = self.story_eligible_chars
+        if self.story_semantic_index_failed:
+            payload["story_semantic_index_failed"] = True
+        return payload
 
 
 @dataclass(frozen=True)

@@ -45,7 +45,7 @@ Quick orientation for humans and AI tools working in **Holy Grail RP**.
 | `data/scene_templates/` | Scene template definitions and template-associated assets |
 | `data/retrieval/` | Authored retrieval manifests and compiled index examples |
 | `data/fixtures/` | Tracked investigation and evaluation fixtures (includes scenario manifests) |
-| `data/sessions/` | Persisted RP sessions |
+| `data/sessions/` | Persisted RP sessions (includes `_story_knowledge/` corpus per #50 — see [story-knowledge.md](./story-knowledge.md)) |
 | `data/rp_audits/` | Optional per-turn audit trees (local, gitignored) |
 
 Details: [rp-data-layout.md](./rp-data-layout.md).

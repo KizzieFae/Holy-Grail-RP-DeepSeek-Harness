@@ -268,9 +268,17 @@ class DomainKernel:
     def _librarian_service(self) -> LibrarianService:
         knowledge = self._knowledge_service()
         scope_repo = knowledge.scope_repo if knowledge is not None else None
+        story_repo = None
+        if isinstance(self.store, SessionRepository):
+            story_repo = self.store.story_knowledge_repo
         from .retrieval_service import RetrievalService
 
-        return LibrarianService(retrieval_service=RetrievalService(scope_repo=scope_repo))
+        return LibrarianService(
+            retrieval_service=RetrievalService(
+                scope_repo=scope_repo,
+                story_knowledge_repo=story_repo,
+            )
+        )
 
     def _librarian_proposal_service(self) -> LibrarianProposalService:
         return LibrarianProposalService()

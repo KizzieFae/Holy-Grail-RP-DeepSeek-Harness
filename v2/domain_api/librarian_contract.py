@@ -16,6 +16,7 @@ from typing import Any, Literal
 
 from .contract import AuthorityClass
 from .retrieval_contract import ALL_INFORMATION_CLASSES, EntityRef, InformationClass
+from .story_knowledge_contract import MediationOutcome
 
 LibrarianConsumerRole = Literal[
     "storyteller",
@@ -378,6 +379,7 @@ class LibrarianKnowledgeBundle:
     source_diagnostics: SourceDiagnostics
     audit: BundleAudit
     connections: tuple[BundleConnection, ...] = ()
+    mediation_outcome: MediationOutcome | None = None
 
 
 def new_request_id(prefix: str = "hg-librarian-req") -> str:

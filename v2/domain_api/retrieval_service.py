@@ -40,6 +40,9 @@ from .scope_knowledge_repository import (
     ScopeKnowledgeRepository,
 )
 from .session_state import LiveSession
+from .story_knowledge_repository import StoryKnowledgeRepository
+from .story_knowledge_retrieval import select_story_candidates
+from .story_semantic_index import SemanticIndexBackend
 
 _logger = logging.getLogger(__name__)
 
@@ -48,8 +51,10 @@ CLASS_PRIORITY = {
     "compiled_index": 1,
     "promoted_learned_world": 2,
     "user_profile": 3,
-    "episodic_session": 4,
-    "cross_scope_relationship": 5,
+    "story_occurrence": 4,
+    "story_derived": 5,
+    "episodic_session": 6,
+    "cross_scope_relationship": 7,
 }
 
 DEFAULT_CLASS_RECALL = {
@@ -57,6 +62,8 @@ DEFAULT_CLASS_RECALL = {
     "compiled_index": 128,
     "promoted_learned_world": DEFAULT_LEARNED_WORLD_LIMIT,
     "user_profile": DEFAULT_USER_PROFILE_LIMIT,
+    "story_occurrence": 64,
+    "story_derived": 32,
 }
 
 
@@ -289,9 +296,11 @@ class RetrievalService:
         scope_repo: ScopeKnowledgeRepository | None = None,
         *,
         retrieval_provider: CompiledIndexRetrievalProvider | None = None,
+        story_knowledge_repo: StoryKnowledgeRepository | None = None,
     ) -> None:
         self._scope_repo = scope_repo
         self._retrieval_provider = retrieval_provider or CompiledIndexRetrievalProvider()
+        self._story_knowledge_repo = story_knowledge_repo
 
     def retrieve(
         self,
@@ -399,7 +408,44 @@ class RetrievalService:
                 for record in profile_records:
                     scope_candidates.append(_scope_to_candidate(record, "user_profile"))
 
-        combined = authored_candidates + scope_candidates
+        story_candidates: list[RetrievalCandidate] = []
+        story_classes = {"story_occurrence", "story_derived"} & allowed
+        if story_classes and scope_id and self._story_knowledge_repo is not None:
+            diagnostics.consulted_sources.append("story_knowledge_jsonl")
+            records = self._story_knowledge_repo.list_records(scope_id)
+            if "story_derived" not in story_classes:
+                records = [record for record in records if record.record_kind == "occurrence"]
+            elif "story_occurrence" not in story_classes:
+                records = [record for record in records if record.record_kind == "derived"]
+            semantic_index = SemanticIndexBackend(
+                index_path=self._story_knowledge_repo.semantic_index_path(scope_id)
+            )
+            selection = select_story_candidates(
+                fixture=fixture,
+                request=request,
+                records=records,
+                semantic_index=semantic_index,
+                diagnostics=diagnostics,
+            )
+            diagnostics.story_selection_path = selection.selection_path
+            diagnostics.story_eligible_count = selection.eligible_count
+            diagnostics.story_eligible_chars = selection.eligible_chars
+            diagnostics.story_semantic_index_failed = selection.semantic_index_failed
+            if selection.semantic_index_failed:
+                provider_status.append(
+                    ProviderStatus(
+                        provider_id="story_semantic_index",
+                        status="unavailable",
+                        detail="semantic index required but unavailable",
+                    )
+                )
+            elif selection.candidates:
+                provider_status.append(
+                    ProviderStatus(provider_id="story_knowledge_jsonl", status="ok")
+                )
+            story_candidates = selection.candidates
+
+        combined = authored_candidates + scope_candidates + story_candidates
         diagnostics.candidate_count_raw = len(combined)
 
         seen_ids: set[str] = set()

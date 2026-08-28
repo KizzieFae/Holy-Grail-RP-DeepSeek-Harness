@@ -28,6 +28,7 @@ from .cross_scope_memory_repository import CrossScopeMemoryRepository  # noqa: E
 from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
+from .story_knowledge_repository import StoryKnowledgeRepository  # noqa: E402
 from .player_identity import resolve_player_display_name  # noqa: E402
 from .session_lock import SessionLockRegistry  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
@@ -71,8 +72,14 @@ class SessionRepository:
         self._scope_knowledge_repo = ScopeKnowledgeRepository(
             self._session_manager.sessions_dir / "_scope_knowledge"
         )
+        self._story_knowledge_repo = StoryKnowledgeRepository(
+            self._session_manager.sessions_dir / "_story_knowledge"
+        )
         self.memory_service = MemoryService(self._cross_scope_repo)
-        self.knowledge_service = KnowledgeService(self._scope_knowledge_repo)
+        self.knowledge_service = KnowledgeService(
+            self._scope_knowledge_repo,
+            story_knowledge_repo=self._story_knowledge_repo,
+        )
         self._session_locks = SessionLockRegistry()
 
     @property
@@ -82,6 +89,10 @@ class SessionRepository:
     @property
     def scope_knowledge_repo(self) -> ScopeKnowledgeRepository:
         return self._scope_knowledge_repo
+
+    @property
+    def story_knowledge_repo(self) -> StoryKnowledgeRepository:
+        return self._story_knowledge_repo
 
     def health_ok(self) -> bool:
         return self._session_manager.sessions_dir.exists()

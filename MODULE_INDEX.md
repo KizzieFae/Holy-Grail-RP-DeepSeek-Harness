@@ -42,6 +42,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Settled facts / binding constraints in prompts | `scene_grounding.py`, Host `continuity_context_projector.py`, `prompt_builders.py` |
 | Episodic “memories” block | `memory_layer/retrieval.py`; Host `memory_service.py` / `memory_retrieval.py` |
 | Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py`, `retrieval_service.py` (#31) |
+| Story knowledge storage / retrieval (#50) | `story_knowledge_*.py`, `story_semantic_index.py`; [docs/story-knowledge.md](./docs/story-knowledge.md) |
 | Librarian knowledge bundles / semantic mediation (#34 S2a) | Host `librarian_service.py`, `librarian_mediation*.py`; DSH `librarian-mediation-substrate.mjs`; HTTP `/v1/librarian/mediation/*` |
 | Librarian bundle → Packaging mapper (#34 S2b) | Host `librarian_packaging_mapper.py`, `librarian_packaging_policy.py`, `librarian_packaging_validity.py` |
 | Librarian write-side proposal seam (#34 S4a/S4b; #40 B2 issue-pressure overlay) | Host `librarian_proposal_*.py`, `continuity_librarian_proposals.py`, `continuity_librarian_knowledge_significance.py`, `continuity_librarian_issue_pressure.py`, `continuity_scene_pressure_projection.py`; DSH `librarian-proposal-substrate.mjs`; HTTP `/v1/librarian/proposals/*` |

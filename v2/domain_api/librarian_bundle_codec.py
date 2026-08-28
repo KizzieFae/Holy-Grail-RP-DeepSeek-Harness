@@ -145,4 +145,5 @@ def librarian_knowledge_bundle_from_dict(data: dict[str, Any]) -> LibrarianKnowl
             structured_mediation_evidence=dict(audit_raw.get("structured_mediation_evidence") or {}),
         ),
         connections=(),
+        mediation_outcome=data.get("mediation_outcome"),
     )

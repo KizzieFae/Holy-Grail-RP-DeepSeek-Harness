@@ -91,6 +91,24 @@ Saves lacking `audit_session_owner` cannot be audited on load (no backfill from 
 
 When Scene Grounding is active, expect prompt-facing derived facts in metadata or continuity blobs per [scene-grounding-layer.md](./scene-grounding-layer.md).
 
+### Story knowledge corpus (`_story_knowledge`) — #50
+
+**Path:** `data/sessions/_story_knowledge/{memory_scope_id}/`
+
+**Authority:** Searchable **derived evidence** projected from authoritative `PublicEvent` occurrences (and separately authorized derived records). **Not** continuity truth and **not** authored canon. Story execution does not mutate character/scenario authored sources.
+
+| File | Role |
+|------|------|
+| `records.jsonl` | Append-oriented durable occurrence/derived records (`event_id` or `story_record_id`) |
+| `manifest.json` | Record index offsets, schema version, index metadata (non-authoritative) |
+| `semantic_index_v1.json` | Rebuildable TF-IDF semantic index (candidate discovery only) |
+
+**Full architecture:** [story-knowledge.md](./story-knowledge.md). **Forensic record:** [governance/records/issue-50-story-knowledge-forensic-record.md](../governance/records/issue-50-story-knowledge-forensic-record.md).
+
+**Lifecycle:** authoritative commit → session persist → occurrence projection → JSONL append → best-effort index update. Index failure is auditable and surfaces as Librarian `retrieval_failure`, not `no_match`.
+
+**Precedence at mediation:** authored canon is the baseline where no applicable authoritative story knowledge supersedes it; legitimate story progression may govern current-state answers without rewriting authored sources.
+
 ---
 
 ## Execution evidence (`execution_evidence`)

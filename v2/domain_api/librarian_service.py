@@ -56,6 +56,7 @@ from .librarian_contract import LibrarianBundleEntry
 from .retrieval_contract import RetrievalAccessResponse, RetrievalCandidate
 from .retrieval_service import RetrievalService
 from .session_state import LiveSession
+from .story_knowledge_contract import MediationOutcome
 
 _logger = logging.getLogger(__name__)
 
@@ -136,6 +137,47 @@ def _apply_bundle_budget(
         selected.append(entry)
         total_chars += content_len
     return selected, truncated
+
+
+def _compute_mediation_outcome(
+    *,
+    assembly: MediationAssembly,
+    entries: list[LibrarianBundleEntry],
+    host_validation: HostMediationValidation | None,
+    mediation_mode: MediationMode,
+) -> MediationOutcome:
+    for response in assembly.retrieval_responses:
+        diagnostics = response.diagnostics
+        if diagnostics.story_semantic_index_failed:
+            return "retrieval_failure"
+        if any(item.status == "unavailable" for item in diagnostics.provider_status):
+            if not response.candidates and not entries:
+                return "retrieval_failure"
+
+    if host_validation is not None and not host_validation.accepted:
+        if mediation_mode != "deterministic_fallback" and not entries:
+            return "mediation_failure"
+
+    if entries:
+        forbidden = any(
+            str(entry.provenance.get("access_status", "")) == "forbidden"
+            or str(entry.visibility_scope or "") == "forbidden"
+            for entry in entries
+        )
+        if forbidden:
+            return "forbidden"
+        ambiguous = any(
+            str(entry.librarian_annotation.interpretive_status or "") == "speculative"
+            and str(entry.provenance.get("provenance_domain", "")) == "story"
+            for entry in entries
+        )
+        if ambiguous and len(entries) > 1:
+            return "ambiguous"
+        return "match"
+
+    if assembly.working_set.mediation_items:
+        return "no_match"
+    return "no_match"
 
 
 class LibrarianService:
@@ -435,6 +477,13 @@ class LibrarianService:
             structured_mediation_evidence=structured_evidence,
         )
 
+        mediation_outcome = _compute_mediation_outcome(
+            assembly=assembly,
+            entries=entries,
+            host_validation=host_validation,
+            mediation_mode=mediation_mode,
+        )
+
         return LibrarianKnowledgeBundle(
             bundle_id=bundle_id,
             request_id=request.request_id,
@@ -466,6 +515,7 @@ class LibrarianService:
             ),
             audit=audit,
             connections=connections,
+            mediation_outcome=mediation_outcome,
         )
 
 
