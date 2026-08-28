@@ -200,6 +200,43 @@ when Node round orchestration calls `prepareStorytellerOrientationContext` / ass
 
 ---
 
+## 8. Third Full revalidation (2026-08-28) — PASS
+
+**Validation anchor (product):** `f7a08d006fa81e8e7d340717de6a1d32ad1e909b`
+
+| Suite | Result |
+|-------|--------|
+| #49 environmental + authority + semantic QA | **29 passed** (+5 subtests) |
+| Full `domain/tests/` | **597 passed** |
+| #50 + #51 regression | **39 passed** |
+| Scene Grounding + audibility | **49 passed** (combined in targeted run) |
+| Storyteller kernel-seam (s3c) | **8 passed** |
+| Node focused narrator/env (6 files) | **38 passed** |
+| D8-target Node (NI forensic + storyteller integration) | **pass** |
+| Node `--test-name-pattern=narrator` (broad) | **216 passed / 1 failed** (exit code 1) |
+
+**Broad Narrator-pattern suite — not green:**
+
+```text
+216 passed / 1 failed
+exit code 1
+```
+
+| Failing test | Causality |
+|--------------|-----------|
+| `runtime-config: default does not reference historical autogen_rp venv` | **Pre-existing / environmental** — fails identically at baseline `8e4249d`; `runtime-config.mjs` / test unchanged by #49; Windows drive-letter case (`e:` vs `E:`) in `assert.equal(resolved, canonicalPythonExecutable())`; does not affect Narrator environmental execution |
+
+**D8 regression:** **fixed** — `StorytellerService` import restored; kernel seam tests green; D8-target Node cases pass.
+
+**Non-blocking deviations (documented):**
+- `location:unknown` can authorize durable B2 without Host guard (verified: `location:unknown` + `no_match` → authorized); normal sessions set location at create
+- per-need dual-outcome (`match` + `no_match` same turn) not integration-tested; production joins `librarian_outcomes` by `need_id` per resolution
+- `orchestration_only` blocks automatic Character Librarian retrieval; `allowed_viewers` / occurrence paths remain per #50
+
+**Chronology preserved:** implementation → Full validation FAIL (D1–D7) → remediation → Full revalidation FAIL (D8) → D8 remediation → **third Full revalidation PASS**.
+
+---
+
 - [docs/story-knowledge.md](../../docs/story-knowledge.md) §7
 - [docs/architecture.md](../../docs/architecture.md)
 - [PACKET_CONTRACTS.md](../../PACKET_CONTRACTS.md)
