@@ -129,6 +129,61 @@ python -m pytest v2/domain/tests/ -q                                            
 
 **Revalidation:** pending separate Governance authorization after remediation commit `0a2a615805213e5d2192d67c6af04b99e46e3a0b`.
 
+## Chronology
+
+| Stage | Anchor / record | Status |
+|-------|-----------------|--------|
+| Initial implementation | `6cec5938dc54273176dfa592a89e881d30d63236` | complete |
+| First Full validation | `9d9204148300afd2797fc243350ea012f1c2ec90` | PASS (2026-08-28) |
+| Pre-closure conformance investigation | [comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450281251) | audit/docs gaps identified |
+| Governance-required remediation | `0a2a615805213e5d2192d67c6af04b99e46e3a0b` | `summary_selection_source` + `evidence_projection` + docs |
+| Workflow rollback | [comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450355924) | `validated` → `implemented` |
+| Forensic SHA note | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` | docs-only |
+| **Full revalidation** | `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138` | **PASS** (2026-08-28) |
+
+## Revalidation (post-remediation)
+
+**Revalidation anchor:** `e3ff28db08deb3ebcdf5b4f7df58a0b965fd1138`
+
+**Scoped diff (remediation):** `9d92041` → `e3ff28d` — audit observability + documentation + tests + forensic record only.
+
+**Determination:** PASS — semantic contract + forensic reconstructability
+
+| Area | Result |
+|------|--------|
+| Original #51 semantic contract | PASS (reconfirmed) |
+| `summary_selection_source` provenance | PASS |
+| `evidence_projection` manifest fidelity | PASS |
+| Composition manifest vs `committed_text` | PASS |
+| Forensic reconstruction join (no reverse-engineering) | PASS |
+| Epistemic (no audit-metadata leakage) | PASS |
+| Idempotency / legacy compatibility | PASS |
+| Documentation conformance (9 docs) | PASS |
+| Forensic standard / audit-workflow recipe | PASS |
+| Architecture conformance (12 questions) | PASS |
+
+**Forensic reconstruction trace (representative):**
+
+```text
+domain_commit_id=hg-commit-forensic-1
+  → turn_metadata_by_index[1].summary_selection_source=character_action_and_dialogue
+  → PublicEvent event_id=evt_* turn_index=1
+  → occurrence_evidence (contributions, triggering_user.entry_id=hist-u1, scoped_evidence)
+  → StoryKnowledgeRecord (source_domain_commit_id, evidence_projection.projection_sources)
+  → evidence.committed_text (globally eligible only)
+```
+
+**Commands at revalidation:**
+
+```text
+python -m pytest v2/domain/tests/test_issue_51_occurrence_evidence.py -q → 11 passed
+python -m pytest v2/domain/tests/test_issue_51_audit_provenance.py -q → 11 passed
+python -m pytest v2/domain/tests/test_story_knowledge_issue_50.py -q → 17 passed
+python -m pytest v2/domain/tests/ -q → 565 passed
+```
+
+**Issue transition:** [Revalidation comment](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/51#issuecomment-5450420444)
+
 ## Rejected implementation alternatives
 
 - Event-type-specific schema fields (`refusal_object`, etc.)
