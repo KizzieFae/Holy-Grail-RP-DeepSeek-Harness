@@ -14,6 +14,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from continuity_occurrence_evidence import append_resolved_outcome_refs
 from continuity_audit_origin import CONTINUITY_AUDIT_ORIGIN_KIND_PIPELINE_TURN
 from continuity_mutation_pipeline import resolved_mutations_audit_payload
 from continuity_semantic_proposals import (
@@ -35,6 +36,7 @@ def run_process_turn_after_resolved_mutations_applied(
     turn_index: int,
     resolved_mutations: list[Any],
     proposal_authority_context: ProposalAuthorityContext | None = None,
+    rp_history: list[dict[str, Any]] | None = None,
 ) -> Any:
     turn_consequences = manager._classify_turn_consequences(
         acting_character,
@@ -63,6 +65,7 @@ def run_process_turn_after_resolved_mutations_applied(
         timestamp,
         turn_index,
         turn_consequences,
+        rp_history=rp_history,
     )
     if event:
         manager.public_events.append(event)
@@ -103,6 +106,17 @@ def run_process_turn_after_resolved_mutations_applied(
     turn_consequences.setdefault("resolved_outcomes", {}).update(
         resolved_outcome_debug
     )
+    if event is not None:
+        outcome_ids = [
+            str(debug.get("outcome_id"))
+            for debug in resolved_outcome_debug.values()
+            if isinstance(debug, dict) and str(debug.get("outcome_id", "") or "").strip()
+        ]
+        if outcome_ids:
+            event.occurrence_evidence = append_resolved_outcome_refs(
+                event.occurrence_evidence,
+                outcome_ids,
+            )
 
     manager._update_interpretations(
         acting_character, move, director_decision, other_characters, timestamp

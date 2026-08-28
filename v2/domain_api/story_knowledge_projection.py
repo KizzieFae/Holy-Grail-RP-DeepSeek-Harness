@@ -14,6 +14,17 @@ from .story_knowledge_contract import (
 )
 from .session_state import LiveSession
 
+try:
+    from continuity_state_occurrence_evidence import (
+        OccurrenceEvidence,
+        globally_embeddable_occurrence_text,
+        parse_occurrence_evidence,
+    )
+except ImportError:  # pragma: no cover - domain path bootstrap in tests
+    OccurrenceEvidence = None  # type: ignore[misc, assignment]
+    globally_embeddable_occurrence_text = None  # type: ignore[assignment]
+    parse_occurrence_evidence = None  # type: ignore[assignment]
+
 _CONTEXT_LINES = 3
 
 
@@ -58,6 +69,29 @@ def _transcript_context(fixture: LiveSession, *, turn_index: int | None) -> tupl
     )
 
 
+def _occurrence_evidence_from_event(event: Any) -> OccurrenceEvidence | None:
+    raw = getattr(event, "occurrence_evidence", None)
+    if raw is not None and hasattr(raw, "contributions"):
+        return raw
+    if parse_occurrence_evidence is None:
+        return None
+    data = raw if isinstance(raw, dict) else None
+    if data is None and hasattr(event, "to_dict"):
+        payload = event.to_dict()
+        data = payload.get("occurrence_evidence") if isinstance(payload, dict) else None
+    return parse_occurrence_evidence(data if isinstance(data, dict) else None)
+
+
+def _committed_text_from_public_event(event: Any, *, summary: str) -> str:
+    evidence = _occurrence_evidence_from_event(event)
+    if globally_embeddable_occurrence_text is not None:
+        return globally_embeddable_occurrence_text(
+            summary=summary,
+            occurrence_evidence=evidence,
+        )
+    return summary
+
+
 def project_occurrence_from_public_event(
     fixture: LiveSession,
     event: Any,
@@ -72,6 +106,7 @@ def project_occurrence_from_public_event(
         return None
 
     summary = str(getattr(event, "summary", "") or "").strip()
+    committed_text = _committed_text_from_public_event(event, summary=summary)
     turn_index = getattr(event, "turn_index", None)
     context_before, context_after = _transcript_context(fixture, turn_index=turn_index)
     known_by = [str(x) for x in list(getattr(event, "known_by", []) or []) if str(x).strip()]
@@ -99,7 +134,7 @@ def project_occurrence_from_public_event(
         grounding_markers=markers,
         evidence=StoryEvidence(
             summary=summary or None,
-            committed_text=summary,
+            committed_text=committed_text,
             context_before=context_before,
             context_after=context_after,
         ),

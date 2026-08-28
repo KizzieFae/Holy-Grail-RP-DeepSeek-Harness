@@ -62,7 +62,7 @@ For **symptom → owner** routing and current module names, use [MODULE_INDEX.md
 
 **Issue / pressure** — Structured dramatic tension or blocked objective (`IssueState`, lifecycle active → escalating → stalled → resolved, etc.). Director and validators use issue context; not the same as free-form plot summary.
 
-**Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** at promotion time.
+**Event** — Structured promotion of what happened (e.g. dialogue/action distilled into `PublicEvent` and related structures). **`PublicEvent`** rows represent **knowability** for retrieval: **`known_by`** (and aligned **`observed_by`**) are scoped by **audibility**; **`summary`** avoids verbatim non-public **`dialogue`** at promotion time. Optional **`occurrence_evidence`** (Issue #51) carries bounded producer contributions, user-trigger provenance, structured fact refs, and scoped private evidence without duplicating Continuity state.
 
 **`recent_delta`** — Internal continuity-owned synopsis finalized after a turn commits and event promotion completes. It is persisted for local state compatibility but is not projected as a second progression timeline; prompt-facing progression uses committed `PublicEvent`s plus phase/tension.
 

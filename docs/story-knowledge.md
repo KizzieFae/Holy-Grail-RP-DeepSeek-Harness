@@ -85,6 +85,8 @@ authoritative commit
 
 Authoritative commit **does not depend** on index success.
 
+**Occurrence evidence (#51):** When `PublicEvent.occurrence_evidence` is present, `story_knowledge_projection` composes `StoryEvidence.committed_text` from the audibility-safe `summary`, globally embeddable `contributions`, and permitted `triggering_user` excerpt. Scoped private evidence is **not** included in globally searchable embedding material. Thin legacy events without `occurrence_evidence` continue to project `summary` only.
+
 **Implementation:** `v2/domain_api/knowledge_service.py`, `story_knowledge_projection.py`, `story_knowledge_service.py`, wired from `session_repository.py`.
 
 ---

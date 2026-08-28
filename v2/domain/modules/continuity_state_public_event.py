@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 from continuity_state_datetime import _parse_datetime
+from continuity_state_occurrence_evidence import OccurrenceEvidence, parse_occurrence_evidence
 
 
 @dataclass
@@ -37,6 +38,8 @@ class PublicEvent:
     grounding_markers: list[str] = field(default_factory=list)
     # S4b per-character semantic annotations — separate from deterministic promotion-policy significance.
     revelation_significance_by_character: dict[str, dict] | None = None
+    # Bounded semantic/causal evidence companion (Issue #51); optional for backward compatibility.
+    occurrence_evidence: OccurrenceEvidence | None = None
 
     def knowledge_level_for(self, character_name: str) -> str | None:
         """Return how the character knows this event, if known.
@@ -85,6 +88,11 @@ class PublicEvent:
                 if isinstance(self.revelation_significance_by_character, dict)
                 else None
             ),
+            "occurrence_evidence": (
+                self.occurrence_evidence.to_dict()
+                if self.occurrence_evidence is not None
+                else None
+            ),
         }
 
     @classmethod
@@ -119,6 +127,11 @@ class PublicEvent:
                 if str(item).strip()
             ],
             revelation_significance_by_character=_parse_revelation_significance_by_character(data),
+            occurrence_evidence=parse_occurrence_evidence(
+                data.get("occurrence_evidence")
+                if isinstance(data.get("occurrence_evidence"), dict)
+                else None
+            ),
         )
 
 

@@ -448,6 +448,7 @@ class ContinuityManager:
         *,
         session_mutation_candidates: Optional[list[MutationRequest]] = None,
         proposal_authority_context: Optional[ProposalAuthorityContext] = None,
+        rp_history: Optional[list[dict[str, Any]]] = None,
     ) -> ContinuitySnapshot:
         """Process a completed turn and update continuity state.
 
@@ -541,6 +542,7 @@ class ContinuityManager:
                 turn_index=turn_index,
                 resolved_mutations=resolved_mutations,
                 proposal_authority_context=authority_ctx,
+                rp_history=rp_history,
             )
         finally:
             self._continuity_pipeline_turn_active = False
@@ -554,6 +556,8 @@ class ContinuityManager:
         timestamp: datetime,
         turn_index: int,
         turn_consequences: dict[str, Any],
+        *,
+        rp_history: list[dict[str, Any]] | None = None,
     ) -> Optional[PublicEvent]:
         return maybe_create_event_for_manager(
             self,
@@ -563,6 +567,7 @@ class ContinuityManager:
             timestamp,
             turn_index,
             turn_consequences,
+            rp_history=rp_history,
         )
 
     def _maybe_generate_summary_block(self, timestamp: datetime) -> SummaryBlock | None:

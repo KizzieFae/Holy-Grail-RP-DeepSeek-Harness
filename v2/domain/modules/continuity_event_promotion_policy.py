@@ -11,8 +11,9 @@ from character_move_adapters import (
     legacy_flat_action_text,
     legacy_flat_dialogue_text,
 )
-from scene_grounding import compute_grounding_markers, grounding_markers_event_summary
+from scene_grounding import compute_grounding_markers
 
+from continuity_occurrence_evidence import build_move_specific_summary
 from continuity_state import ConsequenceCategory
 
 
@@ -109,19 +110,6 @@ def compute_event_promotion_policy_fields(
         detected, risk_level, tension_shift, dialogue, environment_event
     )
 
-    if state_changes:
-        summary = state_changes[0]
-    elif action and dialogue:
-        summary = f'{acting_character} {action}; said: "{dialogue}"'
-    elif action:
-        summary = f"{acting_character} {action}"
-    elif dialogue:
-        summary = f'{acting_character} said: "{dialogue}"'
-    elif environment_event:
-        summary = environment_event
-    else:
-        summary = f"{acting_character} took action"
-
     has_durable_change = bool(detected or state_changes or actionable_implications)
     has_scene_shift = bool(
         environment_event
@@ -144,8 +132,16 @@ def compute_event_promotion_policy_fields(
     )
     should_create_event = base_promotion or bool(grounding_markers)
 
+    summary = build_move_specific_summary(
+        acting_character=acting_character,
+        move=move,
+        director_decision=director_decision,
+        state_changes=state_changes,
+        grounding_markers=grounding_markers,
+        base_promotion=base_promotion,
+    )
+
     if should_create_event and not base_promotion and grounding_markers:
-        summary = grounding_markers_event_summary(grounding_markers)
         event_type = "state"
         significance = "minor"
 

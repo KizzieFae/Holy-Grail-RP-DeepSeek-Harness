@@ -1759,6 +1759,7 @@ class DomainKernel:
             move=move,
             director_decision=director_decision,
             other_characters=others,
+            rp_history=list(fixture.rp_history),
         )
         char_snapshot = (
             self._memory_service().snapshot_character_states(fixture)

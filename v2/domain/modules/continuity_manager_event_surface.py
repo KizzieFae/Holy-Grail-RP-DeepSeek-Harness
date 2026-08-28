@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
+from continuity_occurrence_evidence import build_occurrence_evidence_for_promotion
 from continuity_summary_helpers import (
     build_summary_block as build_summary_block_helper,
     collect_interpretation_shifts as collect_interpretation_shifts_helper,
@@ -23,6 +24,8 @@ def maybe_create_event_for_manager(
     timestamp: datetime,
     turn_index: int,
     turn_consequences: dict[str, Any],
+    *,
+    rp_history: list[dict[str, Any]] | None = None,
 ) -> Optional[PublicEvent]:
     if not turn_consequences.get("should_create_event", False):
         return None
@@ -52,6 +55,20 @@ def maybe_create_event_for_manager(
         provisional_summary=raw_summary,
     )
 
+    grounding_markers = [
+        str(item)
+        for item in turn_consequences.get("grounding_markers", [])
+        if str(item).strip()
+    ]
+    occurrence_evidence = build_occurrence_evidence_for_promotion(
+        acting_character=acting_character,
+        move=move,
+        director_decision=director_decision,
+        grounding_markers=grounding_markers,
+        rp_history=rp_history,
+        present_characters=present_list,
+    )
+
     return PublicEvent(
         event_id=event_id,
         timestamp=timestamp,
@@ -73,11 +90,8 @@ def maybe_create_event_for_manager(
             for item in turn_consequences.get("actionable_implications", [])
             if str(item).strip()
         ],
-        grounding_markers=[
-            str(item)
-            for item in turn_consequences.get("grounding_markers", [])
-            if str(item).strip()
-        ],
+        grounding_markers=grounding_markers,
+        occurrence_evidence=occurrence_evidence,
     )
 
 
