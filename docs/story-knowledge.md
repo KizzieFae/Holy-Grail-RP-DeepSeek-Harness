@@ -1,6 +1,6 @@
 # Story knowledge architecture (#50)
 
-**Status:** Implemented (validation anchor: see `governance/records/issue-50-story-knowledge-forensic-record.md`)  
+**Status:** Validated (anchor `40bd4b7e5b0ba259ff400e252013ad5d76333dbd`)  
 **Issue:** [#50](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/50)  
 **Related:** [#49](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/49) (Narrator authority — paused; not part of #50)
 

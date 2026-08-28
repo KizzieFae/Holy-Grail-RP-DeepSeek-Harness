@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-27  
 **Issue:** #50  
-**Validation anchor:** see `governance/records/issue-50-story-knowledge-forensic-record.md` §12
+**Validation anchor:** `40bd4b7e5b0ba259ff400e252013ad5d76333dbd`
 
 ## Purpose
 

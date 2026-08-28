@@ -1,6 +1,6 @@
 # Issue #50 — Story Knowledge Forensic / Execution Record
 
-**Status:** Validated (see §12 for validation anchor)  
+**Status:** Validated — anchor `40bd4b7e5b0ba259ff400e252013ad5d76333dbd`  
 **Issue:** [#50 — Story knowledge storage, retrieval, and Librarian mediation](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/50)  
 **Type:** `design_gap`  
 **Assigned workflow weight:** `standard`  
@@ -349,4 +349,20 @@ hard eligibility → eligible set E → S(E) vs budget B → full_eligible | sem
 
 ## 12. Validation anchor
 
-*(Populated after commit in this cycle.)*
+**Commit:** `40bd4b7e5b0ba259ff400e252013ad5d76333dbd`  
+**Message:** `feat(#50): story knowledge storage, retrieval, and mediation`  
+**Date:** 2026-08-27
+
+**Validation commands (executed at this SHA):**
+
+```text
+python -m pytest v2/domain/tests/test_story_knowledge_issue_50.py -q          → 17 passed
+python -m pytest v2/domain/tests/test_retrieval_access_s0_s1.py -q            → (included in targeted)
+python -m pytest v2/domain/tests/test_librarian_read_s2a.py -q                → (included in targeted)
+python -m pytest v2/domain/tests/test_character_knowledge_s38.py -q           → (included in targeted)
+python -m pytest v2/domain/tests/test_story_knowledge_issue_50.py \
+  v2/domain/tests/test_retrieval_access_s0_s1.py \
+  v2/domain/tests/test_librarian_read_s2a.py \
+  v2/domain/tests/test_character_knowledge_s38.py -q                          → 47 passed
+python -m pytest v2/domain/tests/ -q                                          → 543 passed
+```
