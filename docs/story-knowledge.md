@@ -156,7 +156,9 @@ InformationNeed (Librarian)
 - `DerivedStoryRecordSubmission` + `StoryKnowledgeService.submit_derived_record()`
 - Records **already-authorized** establishment via `EpistemicAuthorityRef`
 
-#50 does **not** grant Narrator, Director, Character, Storyteller, Librarian, or any other agent authority to **establish new story truth**. Agent-specific establishment remains governed separately (**#49** for Narrator).
+#50 does **not** grant Narrator, Director, Character, Storyteller, Librarian, or any other agent authority to **establish new story truth**. Agent-specific establishment remains governed separately.
+
+**#49 (implemented):** Narrator may propose **B2** continuity-bearing environmental descriptors through Host validation → `submit_derived_record` with `event_type=environmental_descriptor`. **B1** ephemeral texture is presentation-only (no JSONL record). **C** material facts require stronger governed establishment outside Narrator rendering. See `v2/domain_api/narrator_environment_*.py` and [architecture.md](./architecture.md).
 
 ---
 

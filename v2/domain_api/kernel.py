@@ -57,6 +57,8 @@ from .contract import (  # noqa: E402
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
     NarratorContextPrepareRequest,
+    NarratorEnvironmentCognitionFinalizeRequest,
+    NarratorEnvironmentCognitionPrepareRequest,
     NarratorPresentationValidationRequest,
     NarratorPresentationValidationResponse,
     NarratorSemanticQaContextPrepareRequest,
@@ -147,7 +149,15 @@ from .character_service import CharacterKnowledgeService  # noqa: E402
 from .character_upstream_context import assemble_character_upstream_contributions  # noqa: E402
 from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict  # noqa: E402
 from .librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
-from .storyteller_service import StorytellerService  # noqa: E402
+from .narrator_environment_cognition import (  # noqa: E402
+    NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
+    build_cognition_context_payload,
+    build_librarian_knowledge_access_request,
+    finalize_narrator_environment_cognition,
+    parse_n1_cognition_result,
+)
+from .narrator_environment_packet import assemble_narrator_environment_packet  # noqa: E402
+from .story_knowledge_service import StoryKnowledgeService  # noqa: E402
 from .memory_write_policy import (  # noqa: E402
     apply_character_turn_memory,
     apply_user_turn_memory,
@@ -290,6 +300,13 @@ class DomainKernel:
         from contextlib import nullcontext
 
         return nullcontext()
+
+    def _story_knowledge_service(self) -> StoryKnowledgeService | None:
+        if isinstance(self.store, SessionRepository):
+            repo = self.store.story_knowledge_repo
+            if repo is not None:
+                return StoryKnowledgeService(repo)
+        return None
 
     def _storyteller_service(self) -> StorytellerService:
         return StorytellerService(librarian_service=self._librarian_service())
@@ -2037,18 +2054,181 @@ class DomainKernel:
             self.store.persist(fixture)
         return entry
 
-    def prepare_narrator_context(
-        self, req: NarratorContextPrepareRequest
-    ) -> PromptContributionManifest:
+    def prepare_narrator_environment_cognition_context(
+        self, req: NarratorEnvironmentCognitionPrepareRequest
+    ) -> dict[str, Any]:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
+        turn_record = self._require_narrator_turn_record(fixture, rnd, req)
+        story_service = self._story_knowledge_service()
+        story_records = (
+            story_service.list_records(str(fixture.memory_scope_id or ""))
+            if story_service is not None
+            else None
+        )
+        context = build_cognition_context_payload(
+            fixture,
+            rnd,
+            turn_record,
+            story_records=story_records,
+        )
+        manifest_id = (
+            f"manifest-narrator-env-cog-{req.inference_id}-{req.domain_commit_id}"
+        )
+        contributions = [
+            PromptContribution(
+                contribution_id=f"{manifest_id}-environmental-baseline",
+                source_kind="narrator_environment_baseline",
+                authority_class="authoritative",
+                knowledge_ids=(f"env:{context['environmental_current_view']['location_ref']}",),
+                priority=18,
+                content=json.dumps(
+                    {
+                        "environmental_packet": context["environmental_packet"],
+                        "environmental_current_view": context["environmental_current_view"],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                provenance={
+                    "domain_commit_id": req.domain_commit_id,
+                    "visibility": "orchestration_projection",
+                },
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-triggering-user",
+                source_kind="triggering_user_context",
+                authority_class="authoritative",
+                knowledge_ids=(f"commit:{req.domain_commit_id}",),
+                priority=19,
+                content=json.dumps(
+                    {
+                        "triggering_user": context.get("triggering_user"),
+                        "committed_occurrence": context.get("committed_occurrence"),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                provenance={
+                    "domain_commit_id": req.domain_commit_id,
+                    "visibility": "orchestration_projection",
+                },
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-instruction",
+                source_kind="narrator_environment_cognition",
+                authority_class="derived",
+                knowledge_ids=(f"inference:{req.inference_id}",),
+                priority=30,
+                content=NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
+                provenance={"inference_id": req.inference_id, "role": "narrator"},
+            ),
+        ]
+        manifest = PromptContributionManifest(
+            manifest_id=manifest_id,
+            inference_id=req.inference_id,
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            role="narrator",
+            character_id=req.character_id,
+            turn_index=rnd.turn_index,
+            attempt_index=0,
+            contributions=contributions,
+        )
+        n1 = parse_n1_cognition_result({"baseline_sufficient": True, "information_needs": []})
+        knowledge_requests: list[dict[str, Any]] = []
+        if not n1.baseline_sufficient:
+            from dataclasses import asdict
+
+            for need in n1.information_needs:
+                kar = build_librarian_knowledge_access_request(
+                    fixture=fixture,
+                    rnd=rnd,
+                    need=need,
+                    location_ref=str(
+                        context["environmental_current_view"].get("location_ref", "")
+                    ),
+                    inference_id=req.inference_id,
+                    character_id=req.character_id,
+                    turn_index=rnd.turn_index,
+                )
+                knowledge_requests.append(asdict(kar))
+        return {
+            "manifest": manifest,
+            "context": context,
+            "knowledge_access_requests": knowledge_requests,
+        }
+
+    def finalize_narrator_environment_cognition_result(
+        self, req: NarratorEnvironmentCognitionFinalizeRequest
+    ) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        turn_record = self._require_narrator_turn_record(fixture, rnd, req)
+        story_service = self._story_knowledge_service()
+        if story_service is None:
+            raise ValueError("story knowledge service unavailable for narrator environment cognition")
+        result = finalize_narrator_environment_cognition(
+            fixture,
+            turn_record,
+            story_service=story_service,
+            n1_raw=req.cognition_result,
+            n2_raw=req.cognition_result,
+            librarian_outcomes=req.librarian_outcomes,
+            cognition_id=req.cognition_id,
+        )
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return result
+
+    def build_narrator_environment_knowledge_requests(
+        self, req: NarratorEnvironmentCognitionPrepareRequest, *, n1_raw: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        context_payload = build_cognition_context_payload(
+            fixture,
+            rnd,
+            self._require_narrator_turn_record(fixture, rnd, req),
+        )
+        n1 = parse_n1_cognition_result(n1_raw)
+        if n1.baseline_sufficient:
+            return []
+        from dataclasses import asdict
+
+        location_ref = str(
+            context_payload["environmental_current_view"].get("location_ref", "")
+        )
+        return [
+            asdict(
+                build_librarian_knowledge_access_request(
+                    fixture=fixture,
+                    rnd=rnd,
+                    need=need,
+                    location_ref=location_ref,
+                    inference_id=req.inference_id,
+                    character_id=req.character_id,
+                    turn_index=rnd.turn_index,
+                )
+            )
+            for need in n1.information_needs
+        ]
+
+    def _require_narrator_turn_record(
+        self,
+        fixture: LiveSession,
+        rnd: RoundFixture,
+        req: NarratorContextPrepareRequest
+        | NarratorEnvironmentCognitionPrepareRequest
+        | NarratorEnvironmentCognitionFinalizeRequest,
+    ) -> CharacterTurnRecord:
         turn_record = next(
             (turn for turn in rnd.character_turns if turn.domain_commit_id == req.domain_commit_id),
             None,
         )
         if turn_record is None:
             raise ValueError(
-                f"narrator context requires a committed move for domain_commit_id "
+                f"narrator operation requires committed move for domain_commit_id "
                 f"{req.domain_commit_id}"
             )
         if turn_record.continuity_turn_index != req.continuity_turn_index:
@@ -2061,6 +2241,14 @@ class DomainKernel:
                 f"character_id mismatch: expected {turn_record.character_id}, "
                 f"got {req.character_id}"
             )
+        return turn_record
+
+    def prepare_narrator_context(
+        self, req: NarratorContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_scene_id)
+        rnd = self._require_round(fixture, req.hg_round_id)
+        turn_record = self._require_narrator_turn_record(fixture, rnd, req)
 
         mgr = fixture.manager
         assert mgr.scene_state is not None
@@ -2073,6 +2261,22 @@ class DomainKernel:
         narrate_move = redact_structured_move_for_orchestration(
             dict(turn_record.committed_move),
             present_characters=present_labels,
+        )
+        story_service = self._story_knowledge_service()
+        story_records = (
+            story_service.list_records(str(fixture.memory_scope_id or ""))
+            if story_service is not None
+            else None
+        )
+        env_packet, env_view = assemble_narrator_environment_packet(
+            fixture,
+            story_records=story_records,
+        )
+        env_context = build_cognition_context_payload(
+            fixture,
+            rnd,
+            turn_record,
+            story_records=story_records,
         )
         auth_projections = project_authoritative_context(
             fixture,
@@ -2097,6 +2301,7 @@ class DomainKernel:
             environment_event=environment_event,
             scene_context=scene_context,
             structured_move=narrate_move,
+            environmental_baseline=env_packet.render_summary(),
         )
         committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
         contributions: list[PromptContribution] = list(
@@ -2112,6 +2317,38 @@ class DomainKernel:
         )
         contributions.extend(
             (
+            PromptContribution(
+                contribution_id=f"{manifest_id}-environmental-baseline",
+                source_kind="narrator_environment_baseline",
+                authority_class="authoritative",
+                knowledge_ids=(f"env:{env_view.location_ref}",),
+                priority=17,
+                content=env_packet.render_summary(),
+                provenance={
+                    "domain_commit_id": req.domain_commit_id,
+                    "visibility": "orchestration_projection",
+                    "assembly_metadata": env_packet.assembly_metadata,
+                },
+            ),
+            PromptContribution(
+                contribution_id=f"{manifest_id}-triggering-user",
+                source_kind="triggering_user_context",
+                authority_class="authoritative",
+                knowledge_ids=(f"commit:{req.domain_commit_id}",),
+                priority=18,
+                content=json.dumps(
+                    {
+                        "triggering_user": env_context.get("triggering_user"),
+                        "committed_occurrence": env_context.get("committed_occurrence"),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                provenance={
+                    "domain_commit_id": req.domain_commit_id,
+                    "visibility": "orchestration_projection",
+                },
+            ),
             PromptContribution(
                 contribution_id=f"{manifest_id}-committed-move",
                 source_kind="committed_move",
@@ -2154,6 +2391,25 @@ class DomainKernel:
             ),
             )
         )
+        cognition_audit = req.environment_cognition_audit
+        if isinstance(cognition_audit, dict) and cognition_audit:
+            contributions.insert(
+                -1,
+                PromptContribution(
+                    contribution_id=f"{manifest_id}-environment-cognition",
+                    source_kind="narrator_environment_cognition",
+                    authority_class="derived",
+                    knowledge_ids=(
+                        str(cognition_audit.get("cognition_id") or req.inference_id),
+                    ),
+                    priority=28,
+                    content=json.dumps(cognition_audit, ensure_ascii=False, indent=2),
+                    provenance={
+                        "inference_id": req.inference_id,
+                        "visibility": "orchestration_only",
+                    },
+                ),
+            )
         correction = req.correction_context
         if isinstance(correction, dict) and correction:
             contributions.insert(

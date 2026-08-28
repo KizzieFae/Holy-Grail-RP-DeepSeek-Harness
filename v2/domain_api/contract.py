@@ -54,6 +54,9 @@ SourceKind = Literal[
     "storyteller_thematic_context",
     "storyteller_progression_hooks",
     "storyteller_emphasis_guidance",
+    "narrator_environment_baseline",
+    "triggering_user_context",
+    "narrator_environment_cognition",
 ]
 # librarian_storyteller remains reserved legacy vocabulary; S3b mapper emits storyteller_* lanes.
 ValidationClass = Literal[
@@ -360,6 +363,30 @@ class NarratorContextPrepareRequest:
     continuity_turn_index: int
     attempt_index: int = 0
     correction_context: dict[str, Any] | None = None
+    environment_cognition_audit: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class NarratorEnvironmentCognitionPrepareRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    character_id: str
+    domain_commit_id: str
+    continuity_turn_index: int
+
+
+@dataclass(frozen=True)
+class NarratorEnvironmentCognitionFinalizeRequest:
+    hg_scene_id: str
+    hg_round_id: str
+    inference_id: str
+    character_id: str
+    domain_commit_id: str
+    continuity_turn_index: int
+    cognition_result: dict[str, Any]
+    librarian_outcomes: list[dict[str, Any]] | None = None
+    cognition_id: str | None = None
 
 
 @dataclass(frozen=True)

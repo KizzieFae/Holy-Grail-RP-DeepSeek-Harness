@@ -18,6 +18,8 @@ from .contract import (
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
     NarratorContextPrepareRequest,
+    NarratorEnvironmentCognitionFinalizeRequest,
+    NarratorEnvironmentCognitionPrepareRequest,
     NarratorPresentationValidationRequest,
     NarratorSemanticQaContextPrepareRequest,
     ParticipationDecisionRequest,
@@ -427,8 +429,68 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("correction_context"), dict)
                         else None
                     ),
+                    environment_cognition_audit=(
+                        dict(data["environment_cognition_audit"])
+                        if isinstance(data.get("environment_cognition_audit"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_narrator_context(req))
+                return
+            if path == "/v1/narrator/environment/cognition/prepare":
+                req = NarratorEnvironmentCognitionPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    continuity_turn_index=int(data["continuity_turn_index"]),
+                )
+                result = self.kernel.prepare_narrator_environment_cognition_context(req)
+                self._send_json(200, _to_jsonable(result))
+                return
+            if path == "/v1/narrator/environment/cognition/finalize":
+                req = NarratorEnvironmentCognitionFinalizeRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    continuity_turn_index=int(data["continuity_turn_index"]),
+                    cognition_result=dict(data.get("cognition_result") or {}),
+                    librarian_outcomes=(
+                        list(data.get("librarian_outcomes") or [])
+                        if isinstance(data.get("librarian_outcomes"), list)
+                        else None
+                    ),
+                    cognition_id=(
+                        str(data["cognition_id"]) if data.get("cognition_id") else None
+                    ),
+                )
+                self._send_json(
+                    200,
+                    self.kernel.finalize_narrator_environment_cognition_result(req),
+                )
+                return
+            if path == "/v1/narrator/environment/knowledge-requests/build":
+                req = NarratorEnvironmentCognitionPrepareRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    hg_round_id=str(data["hg_round_id"]),
+                    inference_id=str(data["inference_id"]),
+                    character_id=str(data["character_id"]),
+                    domain_commit_id=str(data["domain_commit_id"]),
+                    continuity_turn_index=int(data["continuity_turn_index"]),
+                )
+                n1_raw = dict(data.get("n1_result") or {})
+                self._send_json(
+                    200,
+                    {
+                        "knowledge_access_requests": self.kernel.build_narrator_environment_knowledge_requests(
+                            req,
+                            n1_raw=n1_raw,
+                        )
+                    },
+                )
                 return
             if path == "/v1/narrator/semantic-qa/context/prepare":
                 req = NarratorSemanticQaContextPrepareRequest(

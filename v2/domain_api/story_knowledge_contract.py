@@ -305,3 +305,5 @@ class DerivedStoryRecordSubmission:
     turn_index: int | None = None
     location: str | None = None
     participants: tuple[str, ...] = ()
+    event_type: str | None = None
+    grounding_markers: tuple[str, ...] = ()

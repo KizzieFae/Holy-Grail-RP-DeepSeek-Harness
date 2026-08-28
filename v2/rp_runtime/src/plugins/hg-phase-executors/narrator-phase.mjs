@@ -13,6 +13,7 @@ import {
   buildCorrectionContextFromNarratorQa,
   runNarratorSemanticEvaluation,
 } from './narrator-semantic-qa.mjs';
+import { runNarratorEnvironmentCognition } from '../../lib/narrator-environment-cognition-substrate.mjs';
 
 const MAX_NARRATOR_ATTEMPTS = 2;
 const EVAL_INFRA_RETRIES = 1;
@@ -120,6 +121,7 @@ export async function runNarratorPhase({
   narratorInferenceId,
   mockNarratorResponses,
   mockNarratorSemanticQaResponses = [],
+  mockNarratorEnvironmentCognitionResponse = null,
   characterTurnIndex,
   modelProfile,
   semanticEvaluatorProfile,
@@ -143,6 +145,29 @@ export async function runNarratorPhase({
     continuity_turn_index: continuityTurnIndex,
   });
 
+  let environmentCognitionAudit = null;
+  try {
+    const envCognition = await runNarratorEnvironmentCognition({
+      api,
+      runEphemeralInference,
+      hgSceneId,
+      hgRoundId,
+      inferenceId: narratorInferenceId,
+      characterId,
+      domainCommitId,
+      continuityTurnIndex,
+      modelProfile,
+      mockCognitionResponse: mockNarratorEnvironmentCognitionResponse,
+      allowDeterministicFallback: true,
+    });
+    environmentCognitionAudit = envCognition.audit;
+  } catch (error) {
+    trace.emit(sceneAgent.session, 'hg/narrator-environment-cognition-failed', scope, {
+      inference_id: narratorInferenceId,
+      reason: String(error?.message ?? error),
+    });
+  }
+
   for (let attemptIndex = 0; attemptIndex < MAX_NARRATOR_ATTEMPTS; attemptIndex += 1) {
     const inferenceId = attemptInferenceId(narratorInferenceId, attemptIndex);
     let manifestId = null;
@@ -157,6 +182,7 @@ export async function runNarratorPhase({
         continuity_turn_index: continuityTurnIndex,
         attempt_index: attemptIndex,
         correction_context: correctionContext ?? undefined,
+        environment_cognition_audit: environmentCognitionAudit ?? undefined,
       });
       manifestId = String(manifest.manifest_id);
     } catch (error) {

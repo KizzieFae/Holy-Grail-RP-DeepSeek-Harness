@@ -162,7 +162,9 @@ Typical contents (all subject to token budget and relevance gates):
 
 **Runtime substrate:** `semantic-qa-substrate.mjs` invokes evaluator inference (`role: semantic_evaluator` in execution evidence) and returns parse/citation sidecars to role integration. Durable candidate patches use **`decision.semantic_qa`** including **`policy_action`** (#28). Role children own rubrics, context enrichment, acceptance/retry/fallback.
 
-**Host assembly:** `semantic_qa_context.py` provides role-neutral manifest assembly helpers. Director semantic QA prepare is implemented at **`POST /v1/director/semantic-qa/context/prepare`** (#26). Narrator semantic QA prepare is implemented at **`POST /v1/narrator/semantic-qa/context/prepare`** (#27): bounded authority references from the same legitimate Narrator source surface (committed move slices, authoritative scene lanes, derived director decision, public events) plus candidate presentation package; no Narrator context enrichment program.
+**Host assembly:** `semantic_qa_context.py` provides role-neutral manifest assembly helpers. Director semantic QA prepare is implemented at **`POST /v1/director/semantic-qa/context/prepare`** (#26). Narrator semantic QA prepare is implemented at **`POST /v1/narrator/semantic-qa/context/prepare`** (#27): bounded authority references from the same legitimate Narrator source surface (committed move slices, authoritative scene lanes, derived director decision, public events, **environmental baseline**) plus candidate presentation package.
+
+**#49 Narrator environmental response (implemented):** Pre-render cognition at **`POST /v1/narrator/environment/cognition/prepare`** + **`finalize`**; manifest lanes **`narrator_environment_baseline`**, **`triggering_user_context`**, **`narrator_environment_cognition`**. `EnvironmentalCurrentView` = authored baseline + story-derived B2 with supersession. B2 → `submit_derived_record` (`environmental_descriptor`); B1 presentation-only; C requires separate establishment. DSH: `narrator-environment-cognition-substrate.mjs` before `prepareNarratorContext`.
 
 ---
 

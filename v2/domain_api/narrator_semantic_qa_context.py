@@ -24,6 +24,7 @@ from .contract import (
     SemanticQaContextPrepareResponse,
 )
 from .continuity_context_projector import project_authoritative_context
+from .narrator_environment_packet import assemble_narrator_environment_packet
 from .semantic_qa_context import (
     assemble_semantic_qa_context,
     build_semantic_qa_context_response,
@@ -55,6 +56,15 @@ NARRATOR_SEMANTIC_QA_RUBRIC = (
     "- nar_framing_distortion: tone, metaphor, causal framing, or descriptive treatment that "
     "materially changes source meaning or character fidelity. Soft by default; hard only when "
     "authoritative evidence establishes clear material meaning inversion.\n"
+    "- nar_environmental_contradiction: material contradiction or silent redesign of established "
+    "environmental baseline / B2 properties from narrator_environment_baseline or cognition audit. "
+    "Hard when supported by authoritative environmental refs.\n"
+    "- nar_environmental_under_description: sterile summary or omission where environmental "
+    "response was materially expected given triggering user action and cognition context. Soft.\n"
+    "- nar_environmental_repetition: full redundant re-description of established environment "
+    "without material turn need. Soft.\n"
+    "- nar_environmental_invention: material unsupported environmental fact after "
+    "ambiguity/forbidden/retrieval_failure/mediation_failure, or misuse of B1 to avoid B2. Hard.\n"
     "Authority rules:\n"
     "- Hard findings require valid authoritative_citation.ref_id from the authority references "
     "block with authority_class authoritative.\n"
@@ -216,6 +226,21 @@ def build_narrator_authority_references(
     )
 
     refs.extend(_refs_from_auth_projections(auth_projections))
+
+    try:
+        env_packet, env_view = assemble_narrator_environment_packet(fixture)
+        refs.append(
+            _authority_ref(
+                ref_id=f"env:{env_view.location_ref}",
+                kind="narrator_environment_baseline",
+                authority_class="authoritative",
+                label="Narrator environmental baseline",
+                text=_truncate(env_packet.render_summary()),
+                provenance={"location_ref": env_view.location_ref},
+            )
+        )
+    except (ValueError, AttributeError):
+        pass
 
     event_limit = max(1, int(getattr(mgr, "recent_event_window", 8)))
     for event in mgr.retrieve_public_events(limit=event_limit):

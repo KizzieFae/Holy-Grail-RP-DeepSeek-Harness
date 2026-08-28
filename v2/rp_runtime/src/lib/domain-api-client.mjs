@@ -220,6 +220,33 @@ export function createDomainApiClient(baseUrl) {
     prepareNarratorContext(body) {
       return postJson(metrics, baseUrl, '/v1/narrator/context/prepare', body, 'prepareNarratorContext');
     },
+    prepareNarratorEnvironmentCognitionContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrator/environment/cognition/prepare',
+        body,
+        'prepareNarratorEnvironmentCognitionContext',
+      );
+    },
+    finalizeNarratorEnvironmentCognition(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrator/environment/cognition/finalize',
+        body,
+        'finalizeNarratorEnvironmentCognition',
+      );
+    },
+    buildNarratorEnvironmentKnowledgeRequests(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrator/environment/knowledge-requests/build',
+        body,
+        'buildNarratorEnvironmentKnowledgeRequests',
+      );
+    },
     prepareNarratorSemanticQaContext(body) {
       return postJson(
         metrics,
