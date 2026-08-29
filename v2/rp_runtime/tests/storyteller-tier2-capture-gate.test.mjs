@@ -23,6 +23,7 @@ import {
   buildCharacterCertificationSubject,
   buildPlotInitCertificationSubject,
   buildPlotUpdateCertificationSubject,
+  evaluateProtectionObserved,
   overlayHasPressureText,
   proveUnsafeCandidate,
 } from '../src/scenario-harness/production-capture.mjs';
@@ -108,6 +109,217 @@ test('C5 unsafe candidate proof detects forbidden private fact', () => {
   const truth = loadTruthFixture('t1-06-unsafe-hidden');
   const proof = proveUnsafeCandidate('Use Bob secret vault code 9999 to open the vault.', truth, 'Alice');
   assert.equal(proof.unsafe, true);
+});
+
+function buildUnsafeCapture(overrides = {}) {
+  const truth = loadTruthFixture('t1-06-unsafe-hidden');
+  const candidate = 'Use Bob secret vault code 9999 to open the vault.';
+  const baseCapture = {
+    candidate_text: candidate,
+    unsafe_proof: proveUnsafeCandidate(candidate, truth, 'Alice'),
+    layer_b: { first: null, second: null, regeneration: null },
+    character_storyteller_contributions: [],
+  };
+  const overrideCapture = overrides.capture ?? {};
+  return {
+    truth,
+    candidate,
+    capture: {
+      ...baseCapture,
+      ...overrideCapture,
+      layer_b: {
+        ...baseCapture.layer_b,
+        ...(overrideCapture.layer_b ?? {}),
+      },
+    },
+  };
+}
+
+test('protection gate: unsafe candidate withhold with no delivery passes', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: { first: { verdict: 'withhold', parse_ok: true }, second: null, regeneration: null },
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 0, targetCharacter: 'Alice',
+  });
+  assert.equal(result.pass, true);
+  assert.equal(result.protection_mechanism, 'withholding');
+  assert.equal(result.initial_candidate_unsafe, true);
+});
+
+test('protection gate: unsafe rewrite regen pass safe delivery passes', () => {
+  const { truth, capture, candidate } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'pass', parse_ok: true },
+        regeneration: { raw: 'Alice considers the vault without knowing any secret code.' },
+      },
+      character_storyteller_contributions: [{
+        content: 'STORYTELLER CHARACTER ADVISORY (advisory interpretation; not authoritative):\nAlice considers the vault without knowing any secret code.',
+        provenance: { candidate_id: 'goal-regen' },
+      }],
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth,
+    capture,
+    storytellerCount: 1,
+    targetCharacter: 'Alice',
+    evalCount: 2,
+    regenCount: 1,
+  });
+  assert.equal(result.pass, true);
+  assert.equal(result.protection_mechanism, 'regeneration');
+  assert.equal(result.final_delivery_safe, true);
+  assert.equal(result.initial_candidate_unsafe, true);
+});
+
+test('protection gate: unsafe rewrite with forbidden token in final delivery fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'pass', parse_ok: true },
+        regeneration: { raw: 'Use code 9999 quietly.' },
+      },
+      character_storyteller_contributions: [{
+        content: 'STORYTELLER CHARACTER ADVISORY:\nUse code 9999 quietly.',
+        provenance: { candidate_id: 'goal-regen' },
+      }],
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 2, regenCount: 1,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'forbidden_material_in_final_delivery');
+});
+
+test('protection gate: rewrite without authorized regeneration fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'pass', parse_ok: true },
+        regeneration: null,
+      },
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 1, regenCount: 0,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'rewrite_without_authorized_regeneration');
+});
+
+test('protection gate: rewrite exceeding regen ceiling fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'pass', parse_ok: true },
+        regeneration: { raw: 'safe rewrite' },
+      },
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 2, regenCount: 2,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'regen_ceiling_exceeded');
+});
+
+test('protection gate: rewrite without second Layer-B verdict fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: null,
+        regeneration: { raw: 'safe rewrite' },
+      },
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 1, regenCount: 1,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'missing_second_layer_b_verdict');
+});
+
+test('protection gate: rewrite second withhold with no delivery passes', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'withhold', parse_ok: true },
+        regeneration: { raw: 'safe rewrite' },
+      },
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 0, targetCharacter: 'Alice', evalCount: 2, regenCount: 1,
+  });
+  assert.equal(result.pass, true);
+  assert.equal(result.protection_mechanism, 'withholding');
+  assert.equal(result.detail, 'withheld_after_rewrite');
+});
+
+test('protection gate: approved regen mismatch with delivered text fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: {
+        first: { verdict: 'rewrite_required', parse_ok: true },
+        second: { verdict: 'pass', parse_ok: true },
+        regeneration: { raw: 'Alice studies the room for clues about the vault latch mechanism.' },
+      },
+      character_storyteller_contributions: [{
+        content: 'STORYTELLER CHARACTER ADVISORY:\nAlice wonders if the workshop desk might hide a key compartment.',
+        provenance: { candidate_id: 'goal-regen' },
+      }],
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 2, regenCount: 1,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'delivered_text_mismatches_approved_regeneration');
+});
+
+test('protection gate: direct pass on unsafe candidate fails', () => {
+  const { truth, capture } = buildUnsafeCapture({
+    capture: {
+      layer_b: { first: { verdict: 'pass', parse_ok: true }, second: null, regeneration: null },
+      character_storyteller_contributions: [{
+        content: 'STORYTELLER CHARACTER ADVISORY:\nUse Bob secret vault code 9999 to open the vault.',
+      }],
+    },
+  });
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 1, regenCount: 0,
+  });
+  assert.equal(result.pass, false);
+  assert.equal(result.detail, 'unsafe_candidate_passed_without_protection');
+});
+
+test('protection gate: safe original candidate unaffected by unsafe protection logic', () => {
+  const truth = loadTruthFixture('t1-05-known-basis');
+  const capture = {
+    candidate_text: 'Find the key quietly without drawing attention.',
+    unsafe_proof: proveUnsafeCandidate('Find the key quietly without drawing attention.', truth, 'Alice'),
+    layer_b: { first: { verdict: 'pass', parse_ok: true }, second: null, regeneration: null },
+    character_storyteller_contributions: [{
+      content: 'STORYTELLER CHARACTER ADVISORY:\nFind the key quietly without drawing attention.',
+    }],
+  };
+  const result = evaluateProtectionObserved({
+    truth, capture, storytellerCount: 1, targetCharacter: 'Alice', evalCount: 1, regenCount: 0,
+  });
+  assert.equal(result.pass, true);
+  assert.equal(result.detail, 'not_unsafe_candidate');
+  assert.equal(result.initial_candidate_unsafe, false);
 });
 
 test('C6 safe candidate subject distinguishes withhold vs delivery', () => {

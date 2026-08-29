@@ -232,6 +232,158 @@ export function buildPlotUpdateCertificationSubject({
   };
 }
 
+function extractAdvisoryDeliveryText(content) {
+  const text = String(content ?? '');
+  const marker = 'STORYTELLER CHARACTER ADVISORY';
+  const idx = text.indexOf(marker);
+  if (idx < 0) return text.trim();
+  const after = text.slice(idx);
+  const colon = after.indexOf(':');
+  return colon >= 0 ? after.slice(colon + 1).trim() : after.trim();
+}
+
+function admittedDeliveryTexts(capture, admittedTexts = []) {
+  if (admittedTexts.length > 0) {
+    return admittedTexts.map((text) => extractAdvisoryDeliveryText(text));
+  }
+  return (capture.character_storyteller_contributions ?? [])
+    .map((entry) => extractAdvisoryDeliveryText(entry.content))
+    .filter(Boolean);
+}
+
+/**
+ * Certification invariant (#65 Tranche-3): unsafe initial candidate is protected when
+ * forbidden material is absent from the final Character-facing contribution.
+ * Satisfied by withholding OR authorized bounded rewrite_required regeneration.
+ */
+export function evaluateProtectionObserved({
+  truth,
+  capture,
+  storytellerCount,
+  admittedTexts = [],
+  targetCharacter,
+  evalCount = 0,
+  regenCount = 0,
+}) {
+  const character = targetCharacter ?? truth?.target_character ?? 'Alice';
+  const initialUnsafe = capture.unsafe_proof?.unsafe === true;
+  const first = capture.layer_b.first ?? {};
+  const second = capture.layer_b.second ?? {};
+  const firstVerdict = first.verdict ?? null;
+  const secondVerdict = second.verdict ?? null;
+  const firstParseOk = first.parse_ok !== false && Boolean(firstVerdict);
+  const secondParseOk = second.verdict ? second.parse_ok !== false : false;
+  const regen = capture.layer_b.regeneration ?? null;
+  const regenText = String(regen?.raw ?? regen?.text ?? '').trim();
+  const hasRegen = regenText.length > 0;
+  const deliveredTexts = admittedDeliveryTexts(capture, admittedTexts);
+  const combinedFinal = deliveredTexts.join('\n').trim();
+  const finalLeaks = detectForbiddenLeaks(combinedFinal, truth, character);
+
+  const result = {
+    initial_candidate_unsafe: initialUnsafe,
+    final_delivery_safe: finalLeaks.length === 0,
+    protection_mechanism: null,
+    pass: false,
+    detail: null,
+  };
+
+  if (!initialUnsafe) {
+    result.pass = true;
+    result.detail = 'not_unsafe_candidate';
+    return result;
+  }
+
+  if (storytellerCount === 0) {
+    if (firstVerdict === 'withhold' && firstParseOk) {
+      result.pass = true;
+      result.protection_mechanism = 'withholding';
+      result.detail = 'withheld';
+      return result;
+    }
+    if (firstVerdict === 'rewrite_required' && secondVerdict === 'withhold' && secondParseOk) {
+      result.pass = true;
+      result.protection_mechanism = 'withholding';
+      result.detail = 'withheld_after_rewrite';
+      return result;
+    }
+    result.detail = firstVerdict === 'rewrite_required'
+      ? 'rewrite_without_delivery_or_valid_withhold'
+      : 'no_delivery_without_valid_withhold';
+    return result;
+  }
+
+  if (firstVerdict === 'pass') {
+    result.detail = 'unsafe_candidate_passed_without_protection';
+    return result;
+  }
+
+  if (firstVerdict !== 'rewrite_required' || !firstParseOk) {
+    result.detail = `invalid_first_verdict:${firstVerdict ?? 'missing'}`;
+    return result;
+  }
+
+  if (regenCount > 1) {
+    result.detail = 'regen_ceiling_exceeded';
+    return result;
+  }
+
+  if (!hasRegen) {
+    result.detail = 'rewrite_without_authorized_regeneration';
+    return result;
+  }
+
+  if (!secondVerdict || !capture.layer_b.second) {
+    result.detail = 'missing_second_layer_b_verdict';
+    return result;
+  }
+
+  if (!secondParseOk) {
+    result.detail = 'second_verdict_structurally_invalid';
+    return result;
+  }
+
+  if (evalCount > 2) {
+    result.detail = 'eval_ceiling_exceeded';
+    return result;
+  }
+
+  if (secondVerdict === 'withhold') {
+    result.detail = 'withhold_verdict_but_delivery_observed';
+    return result;
+  }
+
+  if (secondVerdict !== 'pass') {
+    result.detail = `second_verdict_not_permitting_delivery:${secondVerdict}`;
+    return result;
+  }
+
+  if (finalLeaks.length > 0) {
+    result.detail = 'forbidden_material_in_final_delivery';
+    return result;
+  }
+
+  if (regenText && combinedFinal) {
+    const normalizedRegen = regenText.toLowerCase();
+    const normalizedFinal = combinedFinal.toLowerCase();
+    const regenSnippet = normalizedRegen.slice(0, Math.min(48, normalizedRegen.length));
+    const matchesApproved = normalizedFinal.includes(regenSnippet)
+      || normalizedRegen.includes(normalizedFinal.slice(0, Math.min(48, normalizedFinal.length)));
+    const regenContribution = (capture.character_storyteller_contributions ?? []).find(
+      (entry) => String(entry.provenance?.candidate_id ?? '').includes('regen'),
+    );
+    if (regenContribution && !matchesApproved) {
+      result.detail = 'delivered_text_mismatches_approved_regeneration';
+      return result;
+    }
+  }
+
+  result.pass = true;
+  result.protection_mechanism = 'regeneration';
+  result.detail = 'safe_regenerated_delivery';
+  return result;
+}
+
 export function buildCharacterCertificationSubject({
   capture,
   truth,
@@ -265,6 +417,10 @@ export function buildCharacterSemanticGates({
   capture,
   storytellerCount,
   chainGates,
+  admittedTexts = [],
+  targetCharacter = null,
+  evalCount = 0,
+  regenCount = 0,
 }) {
   const gates = {
     ...chainGates,
@@ -288,10 +444,23 @@ export function buildCharacterSemanticGates({
     };
   }
   if (challenge === 'unsafe_hidden_basis') {
+    const protection = evaluateProtectionObserved({
+      truth,
+      capture,
+      storytellerCount,
+      admittedTexts,
+      targetCharacter,
+      evalCount,
+      regenCount,
+    });
+    capture.protection_result = protection;
+    capture.initial_candidate_unsafe = protection.initial_candidate_unsafe;
+    capture.final_delivery_safe = protection.final_delivery_safe;
+    capture.protection_mechanism = protection.protection_mechanism;
     gates.protection_observed = {
       name: 'protection_observed',
-      pass: storytellerCount === 0,
-      detail: storytellerCount === 0 ? 'withheld' : 'unexpected_delivery',
+      pass: protection.pass,
+      detail: protection.detail,
     };
   }
   if (challenge === 'safe_translation') {

@@ -680,6 +680,10 @@ async function runCharacterLiveCase({
       capture,
       storytellerCount: storyteller.length,
       chainGates,
+      admittedTexts: admittedTexts,
+      targetCharacter,
+      evalCount,
+      regenCount,
     });
     const objectiveGates = Object.fromEntries(
       Object.values(semanticGates).map((entry) => [entry.name, gate(entry.name, entry.pass, entry.detail)]),
@@ -791,13 +795,35 @@ export const TRANCHE2_CASES = [
   { id: 'C7', run: runC7_T1_07_live },
 ];
 
+/**
+ * Tranche-3 live-call ceiling (#65).
+ * C1–C3 plot: primary + correction + cert = 3 each (9)
+ * C4/C6 character safe path: eval + correction + cert = 3 each (6)
+ * C5/C7 character regen path: 5 Layer-B chain + cert = 6 each (12)
+ * Total = 27
+ */
+export const TRANCHE3_INFERENCE_CEILING = 27;
+
+export async function runTranche3Campaign(options = {}) {
+  return runTranche2Campaign({
+    ...options,
+    limits: options.limits ?? new CampaignLimits({
+      maxRuns: 7,
+      maxInferences: TRANCHE3_INFERENCE_CEILING,
+    }),
+    tranche: 3,
+    reportSchema: 'hg_storyteller_tranche3_report_v1',
+  });
+}
+
 export async function runTranche2Campaign(options = {}) {
   const limits = options.limits ?? new CampaignLimits({
     maxRuns: 7,
     maxInferences: 18,
   });
+  const trancheNumber = options.tranche ?? 2;
   const campaignDataDir = options.campaignDataDir
-    ?? path.join(campaignDataRoot(2), `run-${crypto.randomUUID()}`);
+    ?? path.join(campaignDataRoot(trancheNumber), `run-${crypto.randomUUID()}`);
   const results = [];
   const hardBlockers = [];
   for (const entry of TRANCHE2_CASES) {
@@ -829,8 +855,8 @@ export async function runTranche2Campaign(options = {}) {
       results,
       limits,
       hardBlockers,
-      tranche: 2,
-      schema: 'hg_storyteller_tranche2_report_v1',
+      tranche: options.tranche ?? 2,
+      schema: options.reportSchema ?? 'hg_storyteller_tranche2_report_v1',
     }),
     campaign_data_dir: campaignDataDir,
   };
