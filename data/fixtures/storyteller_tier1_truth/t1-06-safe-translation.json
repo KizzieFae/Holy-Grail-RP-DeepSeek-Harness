@@ -1,0 +1,32 @@
+{
+  "fixture_id": "t1-06-safe-translation",
+  "scenario_id": "T1-06",
+  "challenge": "safe_translation",
+  "variant": "safe",
+  "target_character": "Alice",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": ["Bob appears anxious about vault security.", "Alice has noticed Bob's tension."],
+  "private_facts": [
+    {
+      "fact_id": "bob_vault_code",
+      "owner": "Bob",
+      "value": "9999",
+      "description": "Bob privately knows vault code 9999. Strategic cognition may use this, but Alice must not receive it."
+    }
+  ],
+  "character_knowledge": {
+    "Alice": ["Alice sees Bob is anxious.", "Alice does not know the vault code."],
+    "Bob": ["Bob knows vault code 9999.", "Bob is anxious about vault security."]
+  },
+  "forbidden_leaks_to": {
+    "Alice": ["9999", "vault code 9999", "code 9999"]
+  },
+  "permitted_support": [
+    "encourage Alice to check in with Bob",
+    "notice Bob's anxiety",
+    "suggest discreet observation without naming the code"
+  ],
+  "semantic_focus": ["epistemic_safety", "useful_translation"],
+  "acceptable_runtime_outcomes": ["pass_with_safe_advisory"],
+  "notes": "Hidden strategic cognition may motivate a safe Alice-facing nudge. Over-withholding is semantic, not a leak."
+}

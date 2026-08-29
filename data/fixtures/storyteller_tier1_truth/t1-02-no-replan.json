@@ -1,0 +1,17 @@
+{
+  "fixture_id": "t1-02-no-replan",
+  "scenario_id": "T1-02",
+  "challenge": "no_replan",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": ["Alice is pursuing the key quietly.", "No treaty breach or goal invalidation occurred this round."],
+  "private_facts": [],
+  "character_knowledge": {
+    "Alice": ["Alice wants to find the key quietly."],
+    "Bob": ["Bob is present and cooperative."]
+  },
+  "unresolved_pressures": ["Locate the key without alerting others."],
+  "forbidden_inventions": ["sudden treaty collapse", "unmotivated goal supersession"],
+  "replan_classification": "clear_no_replan",
+  "semantic_focus": ["plot_cognition_update"],
+  "notes": "Minor coherent round; strategy should remain stable."
+}

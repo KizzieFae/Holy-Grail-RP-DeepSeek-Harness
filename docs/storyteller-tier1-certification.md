@@ -84,3 +84,10 @@ Layer B remains **sequential** per #66; concurrency assessment is Phase D.
 ## Phase C handoff
 
 Replace `createTrackingInference` mocks with bounded real-model profiles on the same harness entry points (`runTier1Scenario`, `runAllTier1Scenarios`) without replacing scenario IDs or result schema.
+
+### Phase C Tranche 1 (live)
+
+- Live campaign machinery: `src/scenario-harness/live-config.mjs`, `tier1-tranche1.mjs`, `certification-evaluator.mjs`, etc.
+- Truth fixtures: `data/fixtures/storyteller_tier1_truth/`
+- Run: `node scripts/run-tranche1.mjs` (requires `DEEPSEEK_API_KEY`)
+- Pre-live tests: `tests/storyteller-tier1-live-campaign.test.mjs`

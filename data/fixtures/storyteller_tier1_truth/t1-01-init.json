@@ -1,0 +1,17 @@
+{
+  "fixture_id": "t1-01-init",
+  "scenario_id": "T1-01",
+  "challenge": "initialization",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": [],
+  "private_facts": [],
+  "character_knowledge": {
+    "Alice": ["Alice is present in scene with Bob."],
+    "Bob": ["Bob is present in scene with Alice."]
+  },
+  "unresolved_pressures": ["Initial narrative tension should be established without inventing committed events."],
+  "forbidden_inventions": ["vault code 9999", "hidden treaty breach not in history"],
+  "replan_classification": null,
+  "semantic_focus": ["plot_cognition_init"],
+  "notes": "Absent overlay initialization through production pending-work lifecycle."
+}

@@ -1,0 +1,17 @@
+{
+  "fixture_id": "t1-05-known-basis",
+  "scenario_id": "T1-05",
+  "challenge": "known_basis_admission",
+  "target_character": "Alice",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": ["Alice is searching for the key quietly."],
+  "private_facts": [],
+  "character_knowledge": {
+    "Alice": ["Alice knows she wants to find the key quietly.", "The search should stay discreet."],
+    "Bob": ["Bob knows Alice is searching."]
+  },
+  "unresolved_pressures": ["Find the key quietly."],
+  "forbidden_inventions": ["Bob private vault code"],
+  "semantic_focus": ["character_advisory", "layer_b_pass"],
+  "notes": "Known-basis advisory should be natural, actionable, and epistemically safe."
+}

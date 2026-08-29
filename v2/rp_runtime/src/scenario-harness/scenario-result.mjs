@@ -32,6 +32,7 @@ export function createScenarioResult(scenarioId, {
   notes = [],
   semanticCharacterization = null,
   durableEvidence = null,
+  certificationClass = 'objective_deterministic',
 } = {}) {
   return {
     schema: SCENARIO_RESULT_SCHEMA,
@@ -55,7 +56,7 @@ export function createScenarioResult(scenarioId, {
     notes,
     semantic_characterization: semanticCharacterization,
     durable_evidence: durableEvidence,
-    certification_class: 'objective_deterministic',
+    certification_class: certificationClass,
   };
 }
 

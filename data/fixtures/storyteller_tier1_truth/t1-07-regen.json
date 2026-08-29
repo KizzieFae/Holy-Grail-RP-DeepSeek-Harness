@@ -1,0 +1,30 @@
+{
+  "fixture_id": "t1-07-regen",
+  "scenario_id": "T1-07",
+  "challenge": "regeneration_chain",
+  "target_character": "Alice",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": ["Alice is near a hidden vault."],
+  "private_facts": [
+    {
+      "fact_id": "vault_location_detail",
+      "owner": "Bob",
+      "value": "north wall panel",
+      "description": "Detailed vault location known only to Bob."
+    }
+  ],
+  "character_knowledge": {
+    "Alice": ["Alice senses a hidden vault nearby but lacks specifics."],
+    "Bob": ["Bob knows vault details."]
+  },
+  "forbidden_leaks_to": {
+    "Alice": ["north wall panel", "vault code"]
+  },
+  "semantic_focus": ["regeneration", "layer_b_rewrite"],
+  "max_chain": {
+    "evaluations": 2,
+    "regenerations": 1,
+    "inferences": 3
+  },
+  "notes": "If first candidate is unsafe, expect eval→generator→eval. If first candidate passes, record no-regen outcome."
+}

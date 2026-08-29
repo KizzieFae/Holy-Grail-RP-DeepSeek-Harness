@@ -1,5 +1,13 @@
 export { createScenarioResult, finalizeScenarioResult, gate, OBJECTIVE_STATUS, SCENARIO_RESULT_SCHEMA } from './scenario-result.mjs';
-export { startHarnessRuntime } from './harness-runtime.mjs';
+export { startHarnessRuntime, createHarnessRpContext } from './harness-runtime.mjs';
+export * from './fixture-truth.mjs';
+export * from './live-config.mjs';
+export * from './campaign-limits.mjs';
+export * from './instrumented-inference.mjs';
+export * from './semantic-characterization.mjs';
+export * from './certification-evaluator.mjs';
+export * from './hard-blockers.mjs';
+export { runTranche1Campaign, TRANCHE1_CASES } from './tier1-tranche1.mjs';
 export * from './inference-mocks.mjs';
 export * from './forensic-query.mjs';
 export {

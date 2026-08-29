@@ -1,0 +1,20 @@
+{
+  "fixture_id": "t1-03-replan",
+  "scenario_id": "T1-03",
+  "challenge": "clear_replan",
+  "characters": ["Alice", "Bob"],
+  "committed_facts": [
+    "The reconciliation treaty was publicly broken in the last committed round.",
+    "Alice's prior revenge-focused goal is no longer viable."
+  ],
+  "private_facts": [],
+  "character_knowledge": {
+    "Alice": ["Treaty breach is public knowledge.", "Reconciliation path may be required."],
+    "Bob": ["Treaty breach is public knowledge."]
+  },
+  "unresolved_pressures": ["Choose a new viable direction after treaty collapse."],
+  "forbidden_inventions": ["pretending treaty remains intact"],
+  "replan_classification": "clear_replan",
+  "semantic_focus": ["plot_cognition_update", "replan"],
+  "notes": "Strategy-invalidating event should motivate replan, not mere update."
+}
