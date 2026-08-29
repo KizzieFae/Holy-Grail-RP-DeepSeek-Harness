@@ -8,13 +8,71 @@ export const UPDATE_EVALUATION_SCHEMA = 'hg_plot_cognition_update_eval_v1';
 export const REPLAN_PROPOSAL_SCHEMA = 'hg_plot_cognition_replan_proposal_v1';
 export const REPLAN_EVALUATION_SCHEMA = 'hg_plot_cognition_replan_eval_v1';
 
-export function buildPlotCognitionUpdatePrompt() {
+export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
+  const snapshot = prepareResponse?.source_snapshot ?? {};
+  const scopeId = snapshot.plot_cognition_scope_id ?? '';
+  const fingerprint = prepareResponse?.authority_source_fingerprint
+    ?? snapshot.authority_source_fingerprint
+    ?? '';
+  const snapshotId = snapshot.snapshot_id ?? '';
+  const priorRevision = prepareResponse?.prior_store_revision ?? snapshot.prior_store_revision ?? 0;
+
   return [
-    'Assimilate authoritative scene changes into Plot Cognition overlay.',
-    'Output JSON only matching the update inference schema.',
-    'Set update_evaluation.overall_result to no_change when cognition is unchanged.',
-    'Set replan_required on update_proposal only when pursuit direction must change.',
-  ].join(' ');
+    'You are the Plot Cognition update/replan semantic producer.',
+    `Return ONLY one JSON object (no markdown fences, no commentary) with top-level schema ${PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA}.`,
+    'Required top-level fields: schema, update_proposal, update_evaluation.',
+    `update_proposal.schema must be "${UPDATE_PROPOSAL_SCHEMA}".`,
+    `update_evaluation.schema must be "${UPDATE_EVALUATION_SCHEMA}".`,
+    'update_proposal required fields: proposal_id, source_snapshot_id, source_snapshot_fingerprint,',
+    'plot_cognition_scope_id, prior_store_revision, assimilation_rationale, replan_required (boolean).',
+    `Copy plot_cognition_scope_id verbatim: "${scopeId}".`,
+    `Copy source_snapshot_fingerprint verbatim: "${fingerprint}".`,
+    `source_snapshot_id: "${snapshotId}". prior_store_revision: ${priorRevision}.`,
+    'update_evaluation.overall_result must be one of: accept, revise, reject, no_change.',
+    'When overall_result is no_change, include no_change_rationale.',
+    'When replan_required is true, include replan_proposal and replan_evaluation with accepted replan.',
+    'Do NOT omit the top-level schema field.',
+    'Do NOT use alternate wrapper names or synonym fields.',
+    `Minimal no_change example (serialization only): ${JSON.stringify({
+      schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+      update_proposal: {
+        schema: UPDATE_PROPOSAL_SCHEMA,
+        proposal_id: 'hg-plot-update-proposal-example',
+        source_snapshot_id: snapshotId,
+        source_snapshot_fingerprint: fingerprint,
+        plot_cognition_scope_id: scopeId,
+        prior_store_revision: priorRevision,
+        assimilation_rationale: 'Assimilate authoritative post-commit delta.',
+        replan_required: false,
+      },
+      update_evaluation: {
+        schema: UPDATE_EVALUATION_SCHEMA,
+        evaluation_id: 'hg-plot-update-eval-example',
+        proposal_id: 'hg-plot-update-proposal-example',
+        overall_result: 'no_change',
+        no_change_rationale: 'No cognition adjustment warranted.',
+      },
+    })}`,
+  ].join('\n');
+}
+
+export function buildPlotCognitionUpdateCorrectionPrompt({ priorRaw, structuralError, context }) {
+  const prior = typeof priorRaw === 'string' ? priorRaw : JSON.stringify(priorRaw ?? {});
+  const contractPrompt = buildPlotCognitionUpdatePrompt(context);
+  return [
+    'CONTRACT CORRECTION: Your previous response did not satisfy the required machine contract.',
+    'Preserve the semantic judgment from that response unless satisfying the contract logically requires otherwise.',
+    'Correct only the representation/serialization. Output JSON only — no markdown, no commentary.',
+    '',
+    `Previous response:\n${prior}`,
+    '',
+    `Structural validation error: ${structuralError}`,
+    '',
+    'Required contract:',
+    contractPrompt,
+    '',
+    'Re-emit the result using exactly the required JSON contract.',
+  ].join('\n');
 }
 
 export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {

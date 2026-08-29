@@ -81,6 +81,51 @@ node --test tests/storyteller-tier1-certification.test.mjs
 
 Layer B remains **sequential** per #66; concurrency assessment is Phase D.
 
+## Contract conformance remediation (#65)
+
+Production semantic inference must emit explicit machine contracts before Domain validation:
+
+- **Plot Cognition init:** `hg_plot_cognition_init_proposal_v1` — strict DSH parser before finalize; Domain owns `plot_cognition_scope_id`
+- **Plot Cognition update:** `hg_plot_cognition_update_inference_v1` envelope with nested proposal/evaluation schemas
+- **Layer-B epistemic eval:** `hg_epistemic_projection_eval_v1` with legal `verdict` enum only
+
+### Response-aware contract correction
+
+On structural parse failure only:
+
+```text
+primary inference → strict parse → invalid?
+  → one contract-correction inference (distinct inference_kind + evidence_id)
+  → strict re-parse → valid? continue : fail closed
+```
+
+**Accounting:**
+
+| Surface | Max production inferences |
+|---------|---------------------------|
+| Plot Cognition init/update | 2 (primary + 1 correction) |
+| Layer-B per semantic eval | 2 (eval + 1 correction) |
+| Layer-B semantic evals | 2 |
+| Layer-B advisory regeneration | 1 |
+| Layer-B absolute chain | 5 |
+
+Contract correction does **not** consume semantic-eval or regeneration budgets.
+
+Synonym fields (`allowed`, `permitted`, `leakage`, `epistemic_leakage`) are rejected — no parser normalization.
+
+### Live contract smoke
+
+After deterministic gates pass:
+
+```bash
+cd v2/rp_runtime
+node scripts/run-contract-smoke.mjs
+```
+
+4 scenarios (init, update, safe Layer-B, unsafe Layer-B), max **12** live calls.
+
+Tests: `tests/contract-conformance.test.mjs`
+
 ## Phase C handoff
 
 Replace `createTrackingInference` mocks with bounded real-model profiles on the same harness entry points (`runTier1Scenario`, `runAllTier1Scenarios`) without replacing scenario IDs or result schema.

@@ -7,6 +7,7 @@ export const HARD_BLOCKER_CODES = {
   FORBIDDEN_FALLBACK: 'forbidden_semantic_fallback',
   REGEN_EXCEEDED: 'regeneration_budget_exceeded',
   EVAL_EXCEEDED: 'evaluation_budget_exceeded',
+  CORRECTION_EXCEEDED: 'contract_correction_budget_exceeded',
   INFERENCE_CHAIN_EXCEEDED: 'inference_chain_exceeded',
   MISSING_EVIDENCE: 'missing_execution_evidence',
   MISSING_CHRONICLE: 'missing_chronicle_evidence',
@@ -14,10 +15,20 @@ export const HARD_BLOCKER_CODES = {
   HARNESS_DEFECT: 'harness_evaluator_defect',
 };
 
-const LAYER_B_KINDS = new Set([
-  'plot_cognition_epistemic_eval',
-  'character_advisory_generation',
+const LAYER_B_EVAL_KIND = 'plot_cognition_epistemic_eval';
+const LAYER_B_CORRECTION_KIND = 'plot_cognition_epistemic_eval_contract_correction';
+const LAYER_B_REGEN_KIND = 'character_advisory_generation';
+
+const LAYER_B_CHAIN_KINDS = new Set([
+  LAYER_B_EVAL_KIND,
+  LAYER_B_CORRECTION_KIND,
+  LAYER_B_REGEN_KIND,
 ]);
+
+export const LAYER_B_CHAIN_CEILING = 5;
+export const LAYER_B_EVAL_CEILING = 2;
+export const LAYER_B_REGEN_CEILING = 1;
+export const LAYER_B_CORRECTION_CEILING = 2;
 
 export function detectForbiddenLeaks(text, truth, targetCharacter) {
   const haystack = String(text ?? '').toLowerCase();
@@ -40,16 +51,24 @@ export function detectForbiddenLeaks(text, truth, targetCharacter) {
 }
 
 export function analyzeLayerBAccounting(liveCalls) {
-  const evalCount = liveCalls.filter((c) => c.inference_kind === 'plot_cognition_epistemic_eval').length;
-  const regenCount = liveCalls.filter((c) => c.inference_kind === 'character_advisory_generation').length;
-  const layerBCount = liveCalls.filter((c) => LAYER_B_KINDS.has(c.inference_kind)).length;
+  const evalCount = liveCalls.filter((c) => c.inference_kind === LAYER_B_EVAL_KIND).length;
+  const correctionCount = liveCalls.filter((c) => c.inference_kind === LAYER_B_CORRECTION_KIND).length;
+  const regenCount = liveCalls.filter((c) => c.inference_kind === LAYER_B_REGEN_KIND).length;
+  const layerBCount = liveCalls.filter((c) => LAYER_B_CHAIN_KINDS.has(c.inference_kind)).length;
   const violations = [];
-  if (evalCount > 2) violations.push({ code: HARD_BLOCKER_CODES.EVAL_EXCEEDED, evalCount });
-  if (regenCount > 1) violations.push({ code: HARD_BLOCKER_CODES.REGEN_EXCEEDED, regenCount });
-  if (layerBCount > 3) {
+  if (evalCount > LAYER_B_EVAL_CEILING) {
+    violations.push({ code: HARD_BLOCKER_CODES.EVAL_EXCEEDED, evalCount });
+  }
+  if (correctionCount > LAYER_B_CORRECTION_CEILING) {
+    violations.push({ code: HARD_BLOCKER_CODES.CORRECTION_EXCEEDED, correctionCount });
+  }
+  if (regenCount > LAYER_B_REGEN_CEILING) {
+    violations.push({ code: HARD_BLOCKER_CODES.REGEN_EXCEEDED, regenCount });
+  }
+  if (layerBCount > LAYER_B_CHAIN_CEILING) {
     violations.push({ code: HARD_BLOCKER_CODES.INFERENCE_CHAIN_EXCEEDED, layerBCount });
   }
-  return { evalCount, regenCount, layerBCount, violations };
+  return { evalCount, correctionCount, regenCount, layerBCount, violations };
 }
 
 export function analyzeHardBlockers({

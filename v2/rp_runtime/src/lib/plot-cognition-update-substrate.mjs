@@ -1,12 +1,15 @@
 import {
   PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+  buildPlotCognitionUpdateCorrectionPrompt,
   buildPlotCognitionUpdatePrompt,
   manifestFromPlotCognitionUpdatePrepare,
   parsePlotCognitionUpdateInference,
 } from './plot-cognition-update-envelope.mjs';
+import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
 
 /**
  * DSH-side Plot Cognition update/replan semantic substrate (#63).
+ * Bounded contract correction (#65): max 1 correction per update inference.
  */
 export async function runPlotCognitionUpdateGeneration({
   domainApi,
@@ -28,61 +31,66 @@ export async function runPlotCognitionUpdateGeneration({
       stage: 'prepare',
       prepareResponse,
       inferRun: null,
+      inferRuns: [],
       parsed: null,
       finalizeResponse: null,
+      contractLineage: null,
     };
   }
 
   const resolvedMock = typeof mockResponse === 'function'
     ? mockResponse(prepareResponse)
     : mockResponse;
+  const mockList = resolvedMock
+    ? (Array.isArray(resolvedMock) ? resolvedMock : [resolvedMock])
+    : [];
 
   const updateInferenceId = `${inferenceId}-plot-update`;
-  const inferRun = await runEphemeralInference({
-    inferenceId: updateInferenceId,
-    prompt: buildPlotCognitionUpdatePrompt(),
-    manifest: manifestFromPlotCognitionUpdatePrepare(prepareResponse),
-    mockResponses: resolvedMock ? [resolvedMock] : [],
+  const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
+
+  const inference = await runInferenceWithContractCorrection({
+    runEphemeralInference,
+    primaryInferenceId: updateInferenceId,
+    primaryInferenceKind: 'plot_cognition_update',
+    correctionInferenceKind: 'plot_cognition_update_contract_correction',
+    buildPrimaryPrompt: () => buildPlotCognitionUpdatePrompt(prepareResponse),
+    buildCorrectionPrompt: buildPlotCognitionUpdateCorrectionPrompt,
+    parseFn: parsePlotCognitionUpdateInference,
+    parseContext: prepareResponse,
+    manifest,
+    mockResponses: mockList,
     modelProfile,
-    evidenceContext: {
+    evidenceContextBase: {
       ...evidenceContextBase,
-      inferenceId: updateInferenceId,
-      inferenceKind: 'plot_cognition_update',
       schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
     },
+    maxCorrections: 1,
   });
 
-  if (inferRun.failed) {
-    return {
-      ok: false,
-      stage: 'inference',
-      inferenceError: inferRun.failure ?? 'inference_failed',
-      prepareResponse,
-      inferRun,
-      parsed: null,
-      finalizeResponse: null,
-    };
-  }
+  const inferRun = inference.inferRun;
+  const inferRuns = inference.inferRuns ?? (inferRun ? [inferRun] : []);
 
-  const parsed = parsePlotCognitionUpdateInference(inferRun.raw, prepareResponse);
-  if (!parsed.ok || !parsed.result) {
+  if (!inference.ok) {
     return {
       ok: false,
-      stage: 'parsed',
-      inferenceError: parsed.error ?? 'malformed_update_inference',
+      stage: inference.stage ?? 'parsed',
+      inferenceError: inference.structuralError ?? inference.parsed?.error ?? 'malformed_update_inference',
       prepareResponse,
       inferRun,
-      parsed,
+      inferRuns,
+      parsed: inference.parsed,
       finalizeResponse: null,
+      contractLineage: inference.lineage ?? null,
+      correctionUsed: inference.correctionUsed === true,
     };
   }
 
   const finalizeResponse = await domainApi.finalizePlotCognitionUpdate({
     hg_scene_id: hgSceneId,
-    proposal: parsed.result.update_proposal,
-    evaluation: parsed.result.update_evaluation,
-    replan_proposal: parsed.result.replan_proposal,
-    replan_evaluation: parsed.result.replan_evaluation,
+    proposal: inference.parsed.result.update_proposal,
+    evaluation: inference.parsed.result.update_evaluation,
+    replan_proposal: inference.parsed.result.replan_proposal,
+    replan_evaluation: inference.parsed.result.replan_evaluation,
   });
 
   return {
@@ -90,8 +98,11 @@ export async function runPlotCognitionUpdateGeneration({
     stage: 'finalized',
     prepareResponse,
     inferRun,
-    parsed,
+    inferRuns,
+    parsed: inference.parsed,
     finalizeResponse,
-    inferenceEvidenceId: inferRun.evidenceId ?? null,
+    inferenceEvidenceId: inferRun?.evidenceId ?? null,
+    contractLineage: inference.lineage ?? null,
+    correctionUsed: inference.correctionUsed === true,
   };
 }

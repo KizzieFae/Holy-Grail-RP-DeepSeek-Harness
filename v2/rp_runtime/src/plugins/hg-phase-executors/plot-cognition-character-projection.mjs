@@ -1,5 +1,10 @@
-import { parseEpistemicProjectionEvalResult } from './character-epistemic-projection-eval.mjs';
+import {
+  buildEpistemicProjectionEvalCorrectionPrompt,
+  buildEpistemicProjectionEvalPrompt,
+  parseEpistemicProjectionEvalResult,
+} from './character-epistemic-projection-eval.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { runInferenceWithContractCorrection } from '../../lib/contract-correction-substrate.mjs';
 
 function orderedBatchItems(prepare) {
   const items = Array.isArray(prepare?.items) ? [...prepare.items] : [];
@@ -21,57 +26,65 @@ async function runEpistemicEval({
   evaluationAttempt = 1,
 }) {
   const attemptSuffix = evaluationAttempt > 1 ? `-attempt-${evaluationAttempt}` : '';
-  const inferRun = await runEphemeralInference({
-    inferenceId: `${inferenceId}-epistemic-${evaluationPassId}${attemptSuffix}`,
-    prompt: 'Evaluate Character advisory text for epistemic leakage. Output JSON only.',
+  const baseInferenceId = `${inferenceId}-epistemic-${evaluationPassId}${attemptSuffix}`;
+  const mockList = mockResponse
+    ? (Array.isArray(mockResponse) ? mockResponse : [mockResponse])
+    : [];
+
+  const inference = await runInferenceWithContractCorrection({
+    runEphemeralInference,
+    primaryInferenceId: baseInferenceId,
+    primaryInferenceKind: 'plot_cognition_epistemic_eval',
+    correctionInferenceKind: 'plot_cognition_epistemic_eval_contract_correction',
+    buildPrimaryPrompt: () => buildEpistemicProjectionEvalPrompt(),
+    buildCorrectionPrompt: buildEpistemicProjectionEvalCorrectionPrompt,
+    parseFn: parseEpistemicProjectionEvalResult,
+    parseContext: null,
     manifest: { contributions: manifestContributions },
-    mockResponses: mockResponse ? [mockResponse] : [],
+    mockResponses: mockList,
     modelProfile,
-    evidenceContext: {
+    evidenceContextBase: {
       ...scope,
       hgSceneId,
       hgRoundId,
       inferenceId,
-      inferenceKind: 'plot_cognition_epistemic_eval',
       evaluationPassId,
       parentInferenceId: parentEvidenceId ?? inferenceId,
+      evaluationAttempt,
     },
+    maxCorrections: 1,
   });
-  if (inferRun.failed) {
+
+  const inferRun = inference.inferRun;
+  const lineage = inference.lineage ?? null;
+
+  if (!inference.ok) {
     return {
       ok: false,
       verdict: 'evaluator_unavailable',
       semantic: {
         verdict: 'evaluator_unavailable',
-        rationale: 'inference_failed',
-        forensic_rationale: 'inference_failed',
+        rationale: inference.structuralError ?? inference.parsed?.error ?? 'malformed_evaluator_output',
+        forensic_rationale: inference.structuralError ?? inference.parsed?.error ?? 'malformed_evaluator_output',
         leak_indicators: [],
       },
-      evidenceId: inferRun.evidenceId ?? null,
-      raw: inferRun.raw ?? null,
+      evidenceId: inferRun?.evidenceId ?? null,
+      raw: inferRun?.raw ?? null,
+      contractLineage: lineage,
+      correctionUsed: inference.correctionUsed === true,
+      inferRuns: inference.inferRuns ?? [],
     };
   }
-  const parsed = parseEpistemicProjectionEvalResult(inferRun.raw);
-  if (!parsed.ok || !parsed.result) {
-    return {
-      ok: false,
-      verdict: 'evaluator_unavailable',
-      semantic: {
-        verdict: 'evaluator_unavailable',
-        rationale: parsed.error ?? 'malformed_evaluator_output',
-        forensic_rationale: parsed.error ?? 'malformed_evaluator_output',
-        leak_indicators: [],
-      },
-      evidenceId: inferRun.evidenceId ?? null,
-      raw: inferRun.raw ?? null,
-    };
-  }
+
   return {
     ok: true,
-    verdict: parsed.result.verdict,
-    semantic: parsed.result,
-    evidenceId: inferRun.evidenceId ?? null,
-    raw: inferRun.raw ?? null,
+    verdict: inference.parsed.result.verdict,
+    semantic: inference.parsed.result,
+    evidenceId: inferRun?.evidenceId ?? null,
+    raw: inferRun?.raw ?? null,
+    contractLineage: lineage,
+    correctionUsed: inference.correctionUsed === true,
+    inferRuns: inference.inferRuns ?? [],
   };
 }
 

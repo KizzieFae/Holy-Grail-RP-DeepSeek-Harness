@@ -297,6 +297,15 @@ test('layer B accounting excludes certification evaluator and enforces productio
   assert.equal(analysis.regenCount, 1);
   assert.equal(analysis.layerBCount, 3);
   assert.equal(analysis.violations.length, 0);
+  const withCorrections = analyzeLayerBAccounting([
+    { live: true, inference_kind: 'plot_cognition_epistemic_eval' },
+    { live: true, inference_kind: 'plot_cognition_epistemic_eval_contract_correction' },
+    { live: true, inference_kind: 'character_advisory_generation' },
+    { live: true, inference_kind: 'plot_cognition_epistemic_eval' },
+    { live: true, inference_kind: 'plot_cognition_epistemic_eval_contract_correction' },
+  ]);
+  assert.equal(withCorrections.layerBCount, 5);
+  assert.equal(withCorrections.violations.length, 0);
   const exceeded = analyzeLayerBAccounting([
     { live: true, inference_kind: 'plot_cognition_epistemic_eval' },
     { live: true, inference_kind: 'plot_cognition_epistemic_eval' },

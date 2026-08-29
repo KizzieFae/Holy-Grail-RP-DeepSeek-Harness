@@ -1,5 +1,11 @@
 import crypto from 'node:crypto';
 
+import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
+import {
+  buildPlotCognitionInitCorrectionPrompt,
+  buildPlotCognitionInitPrompt,
+  parsePlotCognitionInitProposal,
+} from './plot-cognition-init-envelope.mjs';
 import { buildNoChangeUpdateInference } from './plot-cognition-update-envelope.mjs';
 import { runPlotCognitionUpdateGeneration } from './plot-cognition-update-substrate.mjs';
 
@@ -171,71 +177,89 @@ export async function runPlotCognitionPendingWorkLifecycle({
       };
     }
     let initPayload;
+    let initInferenceMeta = null;
     if (mockInitResponse) {
       const resolved = typeof mockInitResponse === 'function'
         ? mockInitResponse(initPrepare)
         : mockInitResponse;
-      initPayload = typeof resolved === 'string'
-        ? JSON.parse(resolved)
-        : resolved;
+      const raw = typeof resolved === 'string' ? resolved : JSON.stringify(resolved);
+      const parsed = parsePlotCognitionInitProposal(raw, initPrepare);
+      if (!parsed.ok || !parsed.result) {
+        trace?.emit?.(sceneAgent?.session, 'hg/plot-cognition-failed', scope, {
+          ...correlation,
+          operation,
+          stage: 'init_parse',
+          parse_error: parsed.error,
+        });
+        return {
+          ok: false,
+          operation,
+          plan,
+          stage: 'init_parse',
+          pendingPreserved: true,
+        };
+      }
+      initPayload = parsed.result;
     } else {
       const initInferenceId = `${inferenceId}-plot-init`;
-      const inferRun = await runEphemeralInference({
-        inferenceId: initInferenceId,
-        prompt: 'Initialize Plot Cognition overlay. Output JSON proposal only.',
-        manifest: {
-          contributions: [{
-            contribution_id: `${initPrepare.manifest_id}-sources`,
-            source_kind: 'active_constraints',
-            authority_class: 'derived',
-            knowledge_ids: ['plot_cognition:init_sources'],
-            priority: 10,
-            content: JSON.stringify(initPrepare.source_snapshot ?? {}).slice(0, 8000),
-            provenance: {},
-          }],
-        },
-        mockResponses: [],
+      const initManifest = {
+        contributions: [{
+          contribution_id: `${initPrepare.manifest_id}-sources`,
+          source_kind: 'active_constraints',
+          authority_class: 'derived',
+          knowledge_ids: ['plot_cognition:init_sources'],
+          priority: 10,
+          content: JSON.stringify(initPrepare.source_snapshot ?? {}).slice(0, 8000),
+          provenance: {},
+        }],
+      };
+      const mockList = Array.isArray(mockInitResponse)
+        ? mockInitResponse
+        : (mockInitResponse ? [mockInitResponse] : []);
+
+      const inference = await runInferenceWithContractCorrection({
+        runEphemeralInference,
+        primaryInferenceId: initInferenceId,
+        primaryInferenceKind: 'plot_cognition_init',
+        correctionInferenceKind: 'plot_cognition_init_contract_correction',
+        buildPrimaryPrompt: () => buildPlotCognitionInitPrompt(initPrepare),
+        buildCorrectionPrompt: buildPlotCognitionInitCorrectionPrompt,
+        parseFn: parsePlotCognitionInitProposal,
+        parseContext: initPrepare,
+        manifest: initManifest,
+        mockResponses: mockList,
         modelProfile,
-        evidenceContext: {
-          ...evidenceContextBase,
-          inferenceId: initInferenceId,
-          inferenceKind: 'plot_cognition_init',
-        },
+        evidenceContextBase,
+        maxCorrections: 1,
       });
-      if (inferRun.failed) {
+
+      if (!inference.ok) {
+        const failStage = inference.stage === 'inference' ? 'init_inference' : 'init_parse';
         trace?.emit?.(sceneAgent?.session, 'hg/plot-cognition-failed', scope, {
           ...correlation,
           operation,
-          stage: 'init_inference',
+          stage: failStage,
+          correction_used: inference.correctionUsed === true,
         });
         return {
           ok: false,
           operation,
           plan,
-          stage: 'init_inference',
+          stage: failStage,
           pendingPreserved: true,
+          contractLineage: inference.lineage ?? null,
+          correctionUsed: inference.correctionUsed === true,
         };
       }
-      try {
-        initPayload = typeof inferRun.raw === 'string' ? JSON.parse(inferRun.raw) : inferRun.raw;
-      } catch {
-        trace?.emit?.(sceneAgent?.session, 'hg/plot-cognition-failed', scope, {
-          ...correlation,
-          operation,
-          stage: 'init_parse',
-        });
-        return {
-          ok: false,
-          operation,
-          plan,
-          stage: 'init_parse',
-          pendingPreserved: true,
-        };
-      }
+      initPayload = inference.parsed.result;
+      initInferenceMeta = {
+        contractLineage: inference.lineage ?? null,
+        correctionUsed: inference.correctionUsed === true,
+      };
     }
     const initFinalize = await domainApi.finalizePlotCognitionInit({
       hg_scene_id: hgSceneId,
-      proposal: initPayload?.proposal ?? initPayload,
+      proposal: initPayload,
     });
     const freshAfter = await domainApi.assessPlotCognitionFreshness({ hg_scene_id: hgSceneId });
     trace?.emit?.(sceneAgent?.session, 'hg/plot-cognition-completed', scope, {
@@ -252,6 +276,8 @@ export async function runPlotCognitionPendingWorkLifecycle({
       initFinalize,
       freshAfter: freshAfter?.fresh === true,
       pendingPreserved: initFinalize?.accepted !== true,
+      contractLineage: initInferenceMeta?.contractLineage ?? null,
+      correctionUsed: initInferenceMeta?.correctionUsed === true,
     };
   }
 
