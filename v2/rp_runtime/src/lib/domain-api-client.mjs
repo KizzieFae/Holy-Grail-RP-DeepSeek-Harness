@@ -214,6 +214,69 @@ export function createDomainApiClient(baseUrl) {
     validateMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/validate', body, 'validateMove');
     },
+    preparePlotCognitionProjection(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/prepare',
+        body,
+        'preparePlotCognitionProjection',
+      );
+    },
+    finalizePlotCognitionProjection(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/finalize',
+        body,
+        'finalizePlotCognitionProjection',
+      );
+    },
+    assessPlotCognitionFreshness(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/freshness/assess',
+        body,
+        'assessPlotCognitionFreshness',
+      );
+    },
+    preparePlotCognitionInit(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/init/prepare', body, 'preparePlotCognitionInit');
+    },
+    finalizePlotCognitionInit(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/init/finalize', body, 'finalizePlotCognitionInit');
+    },
+    preparePlotCognitionUpdate(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/update/prepare', body, 'preparePlotCognitionUpdate');
+    },
+    finalizePlotCognitionUpdate(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/update/finalize', body, 'finalizePlotCognitionUpdate');
+    },
+    preparePlotCognitionReplan(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/replan/prepare', body, 'preparePlotCognitionReplan');
+    },
+    finalizePlotCognitionReplan(body) {
+      return postJson(metrics, baseUrl, '/v1/plot-cognition/replan/finalize', body, 'finalizePlotCognitionReplan');
+    },
+    prepareCharacterAdvisoryGeneration(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/advisory-generation/prepare',
+        body,
+        'prepareCharacterAdvisoryGeneration',
+      );
+    },
+    finalizeCharacterAdvisoryGeneration(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/advisory-generation/finalize',
+        body,
+        'finalizeCharacterAdvisoryGeneration',
+      );
+    },
     commitMove(body) {
       return postJson(metrics, baseUrl, '/v1/moves/commit', body, 'commitMove');
     },

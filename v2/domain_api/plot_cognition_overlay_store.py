@@ -120,6 +120,7 @@ class PlotCognitionOverlayStore:
     pressures: dict[str, UnresolvedNarrativePressure]
     active_frame: GlobalPlotFrame | None = None
     assimilated_authority: AssimilatedAuthority | None = None
+    pending_work: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = {
@@ -143,6 +144,8 @@ class PlotCognitionOverlayStore:
         }
         if self.assimilated_authority is not None:
             payload["assimilated_authority"] = self.assimilated_authority.to_dict()
+        if self.pending_work is not None:
+            payload["pending_work"] = dict(self.pending_work)
         return payload
 
     @classmethod
@@ -180,6 +183,7 @@ class PlotCognitionOverlayStore:
             pressures=pressures,
             active_frame=active_frame,
             assimilated_authority=assimilated_authority,
+            pending_work=dict(data["pending_work"]) if isinstance(data.get("pending_work"), dict) else None,
         )
 
 

@@ -12,6 +12,7 @@ from .character_conversation_projection import project_character_conversation_fo
 from .contract import PromptContribution
 from .continuity_context_projector import project_authoritative_context
 from .context_substrate import auth_projections_to_contributions, semantic_correction_contribution
+from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .session_state import LiveSession, RoundFixture
 from .storyteller_round_packaging import storyteller_contributions_for_consumer
 
@@ -62,6 +63,9 @@ def assemble_character_upstream_contributions(
     memory_projections: list[tuple[str, dict[str, Any]]],
     private_secret: str,
     include_correction: bool = True,
+    overlay_service: PlotCognitionOverlayService | None = None,
+    projection_batch_id: str | None = None,
+    projection_semantic_results: list[dict[str, Any]] | None = None,
 ) -> CharacterUpstreamContext:
     auth_projections = project_authoritative_context(
         fixture,
@@ -166,6 +170,9 @@ def assemble_character_upstream_contributions(
             manifest_id=manifest_id,
             consumer_target="character",
             character_id=character_id,
+            overlay_service=overlay_service,
+            projection_batch_id=projection_batch_id,
+            projection_semantic_results=projection_semantic_results,
         )
     )
     if private_secret.strip():

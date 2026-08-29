@@ -161,6 +161,8 @@ class SemanticEvaluationResult:
     verdict: SemanticVerdictKind
     rationale: str
     leak_indicators: tuple[str, ...] = ()
+    forensic_rationale: str | None = None
+    regeneration_guidance: Any | None = None  # RegenerationGuidance when rewrite_required
 
 
 @dataclass(frozen=True)

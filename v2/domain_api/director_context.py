@@ -12,6 +12,8 @@ from .director_context_digests import (
     director_scene_condition_flags,
     validate_director_context_completeness,
 )
+from .plot_cognition_overlay_service import PlotCognitionOverlayService
+from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
 from .session_state import LiveSession, RoundFixture
 from .storyteller_round_packaging import storyteller_contributions_for_consumer
 
@@ -22,6 +24,7 @@ def prepare_director_context(
     req: DirectorContextPrepareRequest,
     *,
     available_actors: list[str],
+    overlay_service: PlotCognitionOverlayService | None = None,
 ) -> DirectorContextPrepareResponse:
     manifest_id = f"manifest-director-{req.inference_id}-{req.attempt_index}"
     used = list(req.actors_used_this_round) or list(rnd.actors_used_this_round)
@@ -50,6 +53,10 @@ def prepare_director_context(
             rnd,
             manifest_id=manifest_id,
             consumer_target="director",
+            overlay_service=overlay_service,
+            orchestration_service=PlotCognitionOrchestrationService(overlay_service)
+            if overlay_service is not None
+            else None,
         )
     )
     contributions.extend(

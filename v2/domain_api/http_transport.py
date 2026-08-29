@@ -201,6 +201,12 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("librarian_knowledge_audit"), dict)
                         else None
                     ),
+                    plot_cognition_projection_batch_id=data.get("plot_cognition_projection_batch_id"),
+                    plot_cognition_projection_semantic_results=(
+                        list(data["plot_cognition_projection_semantic_results"])
+                        if isinstance(data.get("plot_cognition_projection_semantic_results"), list)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_context(req))
                 return
@@ -414,6 +420,42 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     expected_turn_index=int(data["expected_turn_index"]),
                 )
                 self._send_json(200, self.kernel.commit_move(req))
+                return
+            if path == "/v1/plot-cognition/projection/prepare":
+                self._send_json(200, self.kernel.prepare_plot_cognition_projection(data))
+                return
+            if path == "/v1/plot-cognition/projection/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_projection(data))
+                return
+            if path == "/v1/plot-cognition/freshness/assess":
+                self._send_json(
+                    200,
+                    self.kernel.assess_plot_cognition_freshness(str(data["hg_scene_id"])),
+                )
+                return
+            if path == "/v1/plot-cognition/init/prepare":
+                self._send_json(200, self.kernel.prepare_plot_cognition_init(data))
+                return
+            if path == "/v1/plot-cognition/init/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_init(data))
+                return
+            if path == "/v1/plot-cognition/update/prepare":
+                self._send_json(200, self.kernel.prepare_plot_cognition_update(data))
+                return
+            if path == "/v1/plot-cognition/update/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_update(data))
+                return
+            if path == "/v1/plot-cognition/replan/prepare":
+                self._send_json(200, self.kernel.prepare_plot_cognition_replan(data))
+                return
+            if path == "/v1/plot-cognition/replan/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_replan(data))
+                return
+            if path == "/v1/plot-cognition/advisory-generation/prepare":
+                self._send_json(200, self.kernel.prepare_character_advisory_generation(data))
+                return
+            if path == "/v1/plot-cognition/advisory-generation/finalize":
+                self._send_json(200, self.kernel.finalize_character_advisory_generation(data))
                 return
             if path == "/v1/narrator/context/prepare":
                 req = NarratorContextPrepareRequest(

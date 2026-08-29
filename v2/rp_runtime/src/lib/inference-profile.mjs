@@ -101,6 +101,25 @@ export function resolveRoleProfiles(options = {}, runtimeConfig = {}) {
       ?? options.semanticEvaluatorProfile
       ?? grouped.semantic_evaluator_profile
       ?? fallback,
+    plot_cognition_epistemic_evaluator:
+      grouped.plot_cognition_epistemic_evaluator
+      ?? grouped.plotCognitionEpistemicEvaluator
+      ?? options.plotCognitionEpistemicEvaluatorProfile
+      ?? grouped.semantic_evaluator
+      ?? grouped.semanticEvaluator
+      ?? fallback,
+    character_advisory_generator:
+      grouped.character_advisory_generator
+      ?? grouped.characterAdvisoryGenerator
+      ?? options.characterAdvisoryGeneratorProfile
+      ?? grouped.storyteller
+      ?? grouped.storytellerProfile
+      ?? fallback,
+    storyteller:
+      grouped.storyteller
+      ?? grouped.storytellerProfile
+      ?? options.storytellerProfile
+      ?? fallback,
   };
 }
 

@@ -337,6 +337,29 @@ def _candidate_from_mapper_item(
     )
 
 
+def collect_model_a_character_candidates(
+    package: StorytellerAdvisoryPackage,
+    *,
+    policy: StorytellerPackagingPolicy | None = None,
+    character_id: str,
+) -> tuple[CharacterAdvisoryCandidate, ...]:
+    """Extract Model A Character candidates without projecting (provenance path A)."""
+    active_policy = policy or policy_for_storyteller_consumer("character")
+    raw_candidates = _collect_candidates(
+        package,
+        consumer_target="character",
+        policy=active_policy,
+        character_id=character_id,
+    )
+    advisory_candidates: list[CharacterAdvisoryCandidate] = []
+    for candidate in raw_candidates:
+        ok, _violations = validate_storyteller_payload({"text": candidate["text"]})
+        if not ok or _contains_prohibited_language(candidate["text"]):
+            continue
+        advisory_candidates.append(_candidate_from_mapper_item(package, candidate))
+    return tuple(advisory_candidates)
+
+
 def _map_character_package_via_projection(
     package: StorytellerAdvisoryPackage,
     *,

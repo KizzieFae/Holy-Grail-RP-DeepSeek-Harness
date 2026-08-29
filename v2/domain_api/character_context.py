@@ -11,6 +11,7 @@ from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict
 from .librarian_packaging_mapper import map_librarian_bundle_to_contributions
 from .librarian_packaging_validity import PackagingBindingContext
 from .memory_service import MemoryService
+from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .session_state import LiveSession, RoundFixture
 
 
@@ -20,6 +21,7 @@ def prepare_character_context(
     req: ContextPrepareRequest,
     *,
     memory_service: MemoryService | None,
+    overlay_service: PlotCognitionOverlayService | None = None,
 ) -> PromptContributionManifest:
     manifest_id = f"manifest-character-{req.inference_id}-{req.attempt_index}"
     private_secret = fixture.character_private_secrets.get(req.character_id, "")
@@ -40,6 +42,9 @@ def prepare_character_context(
         memory_projections=memory_projections,
         private_secret=private_secret,
         include_correction=True,
+        overlay_service=overlay_service,
+        projection_batch_id=req.plot_cognition_projection_batch_id,
+        projection_semantic_results=req.plot_cognition_projection_semantic_results,
     )
     contributions: list[PromptContribution] = list(upstream.contributions)
     librarian_audit = dict(req.librarian_knowledge_audit or {})

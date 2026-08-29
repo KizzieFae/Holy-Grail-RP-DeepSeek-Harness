@@ -81,6 +81,8 @@ class ContextPrepareRequest:
     director_decision: dict[str, Any] | None = None
     librarian_bundle: dict[str, Any] | None = None
     librarian_knowledge_audit: dict[str, Any] | None = None
+    plot_cognition_projection_batch_id: str | None = None
+    plot_cognition_projection_semantic_results: list[dict[str, Any]] | None = None
 
 
 @dataclass(frozen=True)

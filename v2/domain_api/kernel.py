@@ -705,6 +705,7 @@ class DomainKernel:
             rnd,
             req,
             available_actors=self._available_actors(fixture, rnd),
+            overlay_service=self.cognition.plot_cognition_overlay,
         )
 
     def prepare_director_semantic_qa_context(
@@ -753,6 +754,7 @@ class DomainKernel:
             rnd,
             req,
             memory_service=self._memory_service(),
+            overlay_service=self.cognition.plot_cognition_overlay,
         )
 
     def prepare_semantic_evaluation_context(
@@ -1336,7 +1338,16 @@ class DomainKernel:
             memory_service=self._memory_service(),
             knowledge_service=self._knowledge_service(),
         )
-        return execute_commit_move(req, fixture=fixture, rnd=rnd, deps=deps)
+        response = execute_commit_move(req, fixture=fixture, rnd=rnd, deps=deps)
+        if response.committed and response.domain_commit_id:
+            from .plot_cognition_orchestration_api import record_plot_cognition_post_commit
+
+            record_plot_cognition_post_commit(
+                self,
+                fixture,
+                domain_commit_id=response.domain_commit_id,
+            )
+        return response
 
     def set_user_profile_fact(self, req: UserProfileSetRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
@@ -1614,3 +1625,73 @@ class DomainKernel:
             reason=result.reason,
             retryable=result.retryable,
         )
+
+    def prepare_plot_cognition_projection(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import prepare_plot_cognition_projection
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return prepare_plot_cognition_projection(self, fixture, rnd, data)
+
+    def finalize_plot_cognition_projection(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import finalize_plot_cognition_projection
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return finalize_plot_cognition_projection(self, fixture, rnd, data)
+
+    def assess_plot_cognition_freshness(self, hg_scene_id: str) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import assess_plot_cognition_freshness
+
+        fixture = self.store.require(hg_scene_id)
+        return assess_plot_cognition_freshness(self, fixture)
+
+    def prepare_plot_cognition_init(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import prepare_plot_cognition_init
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return prepare_plot_cognition_init(self, fixture, data)
+
+    def finalize_plot_cognition_init(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_plot_cognition_init
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return finalize_plot_cognition_init(self, fixture, data)
+
+    def prepare_plot_cognition_update(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import prepare_plot_cognition_update
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return prepare_plot_cognition_update(self, fixture, data)
+
+    def finalize_plot_cognition_update(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_plot_cognition_update
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return finalize_plot_cognition_update(self, fixture, data)
+
+    def prepare_plot_cognition_replan(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import prepare_plot_cognition_replan
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return prepare_plot_cognition_replan(self, fixture, data)
+
+    def finalize_plot_cognition_replan(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_plot_cognition_replan
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return finalize_plot_cognition_replan(self, fixture, data)
+
+    def prepare_character_advisory_generation(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import prepare_character_advisory_generation
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return prepare_character_advisory_generation(self, fixture, rnd, data)
+
+    def finalize_character_advisory_generation(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_character_advisory_generation
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return finalize_character_advisory_generation(self, fixture, rnd, data)

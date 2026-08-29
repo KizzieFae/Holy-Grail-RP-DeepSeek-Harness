@@ -21,6 +21,11 @@ from .plot_cognition_overlay_store import (
 )
 from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .plot_cognition_projection_contract import ProjectionBudget
+from .plot_cognition_projection_service import project_director_overlay
+from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+from .plot_cognition_projection_batch import CharacterProjectionSemanticResult
+from .plot_cognition_projection_contract import SemanticEvaluationResult
+from .plot_cognition_orchestration_contract import RegenerationGuidance
 from .storyteller_packaging_mapper import map_storyteller_package_to_contributions
 from .storyteller_packaging_policy import StorytellerPackagingConsumer
 
@@ -82,6 +87,39 @@ def _resolve_overlay_view(
     )
 
 
+def _parse_semantic_results(
+    raw_results: list[dict[str, Any]] | None,
+) -> tuple[CharacterProjectionSemanticResult, ...]:
+    if not raw_results:
+        return ()
+    parsed: list[CharacterProjectionSemanticResult] = []
+    for item in raw_results:
+        if not isinstance(item, dict):
+            continue
+        semantic_raw = item.get("semantic") or {}
+        guidance_raw = item.get("regeneration_guidance")
+        guidance = None
+        if isinstance(guidance_raw, dict):
+            guidance = RegenerationGuidance.from_dict(guidance_raw)
+        semantic = SemanticEvaluationResult(
+            verdict=semantic_raw.get("verdict", "evaluator_unavailable"),  # type: ignore[arg-type]
+            rationale=str(semantic_raw.get("rationale", "")),
+            leak_indicators=tuple(str(x) for x in (semantic_raw.get("leak_indicators") or [])),
+            forensic_rationale=semantic_raw.get("forensic_rationale"),
+            regeneration_guidance=guidance,
+        )
+        parsed.append(
+            CharacterProjectionSemanticResult(
+                evaluation_pass_id=str(item.get("evaluation_pass_id", "")),
+                candidate_id=str(item.get("candidate_id", "")),
+                semantic=semantic,
+                regeneration_guidance=guidance,
+                inference_evidence_id=item.get("inference_evidence_id"),
+            )
+        )
+    return tuple(parsed)
+
+
 def storyteller_contributions_for_consumer(
     fixture: LiveSession,
     rnd: RoundFixture,
@@ -92,54 +130,82 @@ def storyteller_contributions_for_consumer(
     overlay_service: PlotCognitionOverlayService | None = None,
     overlay_view: OperativePlotCognitionView | None = None,
     overlay_policy: BoundednessPolicy | None = None,
+    orchestration_service: PlotCognitionOrchestrationService | None = None,
+    projection_batch_id: str | None = None,
+    projection_semantic_results: list[dict[str, Any]] | None = None,
 ) -> tuple[PromptContribution, ...]:
     contributions: list[PromptContribution] = []
     policy = overlay_policy or _DEFAULT_OVERLAY_POLICY
+    orch = orchestration_service or (
+        PlotCognitionOrchestrationService(overlay_service) if overlay_service else None
+    )
+    freshness = (
+        orch.assess_overlay_freshness(fixture) if orch is not None else None
+    )
+    overlay_fresh = freshness.fresh if freshness is not None else True
+
     view = _resolve_overlay_view(
         fixture,
         overlay_service,
         overlay_view,
         policy=policy,
-    )
-    if view is not None:
+    ) if overlay_fresh else None
+
+    if view is not None and orch is not None:
         if consumer_target == "director":
             contributions.extend(
-                project_director_overlay(view, manifest_id=manifest_id)
+                orch.director_overlay_contributions(
+                    view,
+                    manifest_id=manifest_id,
+                    freshness=freshness,  # type: ignore[arg-type]
+                )
             )
         elif consumer_target == "character" and character_id:
-            overlay_candidates = collect_overlay_character_candidates(
-                view,
+            all_candidates = orch.collect_character_candidates(
+                fixture,
+                rnd,
                 character_id=character_id,
+                overlay_view=view,
+                include_model_a=True,
             )
-            if overlay_candidates:
-                overlay_result = project_character_candidates(
-                    fixture,
-                    manifest_id=manifest_id,
-                    character_id=character_id,
-                    candidates=overlay_candidates,
-                    budget=_DEFAULT_CHARACTER_OVERLAY_BUDGET,
-                    overlay_revision=None,
-                    base_priority=18,
-                )
-                contributions.extend(overlay_result.contributions)
+            if projection_batch_id and projection_semantic_results is not None:
+                try:
+                    finalized = orch.finalize_projection(
+                        fixture,
+                        rnd,
+                        batch_id=projection_batch_id,
+                        semantic_results=_parse_semantic_results(projection_semantic_results),
+                    )
+                    contributions.extend(finalized.contributions)
+                except ValueError:
+                    pass
+            elif all_candidates:
+                # Production path without supplied semantic results remains fail-closed.
+                pass
+    elif view is not None:
+        if consumer_target == "director":
+            contributions.extend(project_director_overlay(view, manifest_id=manifest_id))
 
     package = active_storyteller_package(rnd)
     if package is None:
         return tuple(contributions)
-    result = map_storyteller_package_to_contributions(
-        package,
-        manifest_id=manifest_id,
-        consumer_target=consumer_target,
-        binding=storyteller_packaging_binding(
-            fixture,
-            rnd,
+
+    # Model A direct mapping for director/narrator; character uses orchestration finalize above.
+    if consumer_target != "character" or not (orch and projection_batch_id):
+        result = map_storyteller_package_to_contributions(
             package,
-            pipeline_stage=consumer_target,
-        ),
-        character_id=character_id,
-        fixture=fixture,
-    )
-    contributions.extend(result.contributions)
+            manifest_id=manifest_id,
+            consumer_target=consumer_target,
+            binding=storyteller_packaging_binding(
+                fixture,
+                rnd,
+                package,
+                pipeline_stage=consumer_target,
+            ),
+            character_id=character_id,
+            fixture=fixture,
+        )
+        contributions.extend(result.contributions)
     return tuple(contributions)
 
 
