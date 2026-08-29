@@ -142,6 +142,14 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
             replan_eval=replan_eval,
         )
 
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+
+    def _clear_pending_before_completion(result: Any) -> None:
+        if getattr(result, "success", False) and overlay is not None:
+            from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+            PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+
     result, forensic_ok = wafi_update_like(
         kernel,
         fixture,
@@ -156,6 +164,7 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
         },
         correlation_extra={"domain_commit_id": proposal.source_snapshot_fingerprint},
         commit_fn=do_commit,
+        before_completion_snapshot=_clear_pending_before_completion,
     )
     if not forensic_ok:
         return {
@@ -164,11 +173,6 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
             "message": "plot cognition update forensic persistence failed",
             "store_revision": result.store_revision if hasattr(result, "store_revision") else None,
         }
-    orch = getattr(kernel.cognition, "plot_cognition_overlay", None)
-    if result.success and orch is not None:
-        from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
-
-        PlotCognitionOrchestrationService(orch).clear_pending_work(fixture)
     return {
         "accepted": result.success,
         "code": result.code,
@@ -270,6 +274,12 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
 
     from .plot_cognition_forensics_integration import wafi_update_like
 
+    def _clear_pending_before_completion(result: Any) -> None:
+        if getattr(result, "success", False) and overlay is not None:
+            from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+            PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+
     result, forensic_ok = wafi_update_like(
         kernel,
         fixture,
@@ -278,6 +288,7 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
         intent_payload={"reconciliation": True},
         correlation_extra={},
         commit_fn=do_commit,
+        before_completion_snapshot=_clear_pending_before_completion,
     )
     if not forensic_ok:
         return {
@@ -285,10 +296,6 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
             "code": "forensic_persistence_failed",
             "message": "reconciliation forensic persistence failed",
         }
-    if result.success and overlay is not None:
-        from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
-
-        PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
     return {
         "accepted": result.success,
         "code": result.code,
@@ -340,6 +347,12 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
             source_snapshot=snapshot,
         )
 
+    def _clear_pending_before_completion(result: Any) -> None:
+        if getattr(result, "success", False) and overlay is not None:
+            from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+            PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+
     result, forensic_ok = wafi_update_like(
         kernel,
         fixture,
@@ -351,6 +364,7 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
         },
         correlation_extra={"domain_commit_id": snapshot.through_domain_commit_id},
         commit_fn=do_commit,
+        before_completion_snapshot=_clear_pending_before_completion,
     )
     if not forensic_ok:
         return {
@@ -358,10 +372,6 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
             "code": "forensic_persistence_failed",
             "message": "authority advance forensic persistence failed",
         }
-    if result.success:
-        from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
-
-        PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
     return {
         "accepted": result.success,
         "code": result.code,

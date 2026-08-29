@@ -5,7 +5,7 @@ Imported only from lifecycle/orchestration API layers — not from packaging mod
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from .plot_cognition_forensics_capture import (
     bounded_overlay_snapshot,
@@ -174,6 +174,7 @@ def wafi_update_like(
     correlation_extra: dict[str, Any],
     commit_fn: Any,
     completion_extra: dict[str, Any] | None = None,
+    before_completion_snapshot: Callable[[Any], None] | None = None,
 ) -> tuple[Any, bool]:
     """Returns (result, forensic_ok)."""
     forensics = get_forensics_service(kernel)
@@ -204,6 +205,8 @@ def wafi_update_like(
         return mutation_holder["result"]
 
     def completion_builder(result: Any) -> dict[str, Any]:
+        if before_completion_snapshot is not None:
+            before_completion_snapshot(result)
         overlay_after = overlay.load(scope_id, policy=policy) if overlay else None
         store_dict = overlay_after.store.to_dict() if overlay_after and overlay_after.store else {}
         payload = {
@@ -293,30 +296,118 @@ def record_projection_decisions(
     return result.ok
 
 
-def record_pending_work_mutation(
+def wafi_record_post_commit_pending_work(
     kernel: Any,
     fixture: LiveSession,
     *,
     domain_commit_id: str,
-    pending_work: dict[str, Any],
-    prior_store_dict: dict[str, Any] | None,
-) -> bool:
+) -> dict[str, Any]:
+    """Production post-commit pending-work path with full WAFI ordering."""
+    from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    if overlay is None:
+        return {"recorded": False, "reason": "plot_cognition_overlay_unavailable"}
+    orch = PlotCognitionOrchestrationService(overlay)
+    pending = orch.build_post_commit_pending_work(fixture, domain_commit_id=domain_commit_id)
+    if pending is None:
+        return {"recorded": False, "reason": "plot_cognition_scope_unconfigured"}
+
     forensics = get_forensics_service(kernel)
     scope_id = str(fixture.plot_cognition_scope_id or "")
     if forensics is None or not scope_id:
-        return True
+        result = orch.apply_post_commit_pending_work(fixture, pending, expected_revision=0)
+        return {
+            "recorded": result.success,
+            "pending_work": pending.to_dict() if result.success else None,
+            "code": result.code,
+            "message": result.message,
+        }
+
+    from .plot_cognition_overlay_store import BoundednessPolicy
+
+    policy = BoundednessPolicy(max_active_goals=8, max_active_pressures=8)
+    loaded = overlay.load(scope_id, policy=policy)
+    prior_revision = loaded.store.store_revision if loaded and loaded.store else 0
+    prior_store_dict = loaded.store.to_dict() if loaded and loaded.store else None
     ensure_activation(kernel, fixture, prior_store_dict)
+
     idempotency_key = f"{scope_id}:pending:{domain_commit_id}"
-    correlation = _base_correlation(fixture, domain_commit_id=domain_commit_id)
-    result = forensics.record_semantic_decision(
+    correlation = _base_correlation(
+        fixture,
+        domain_commit_id=domain_commit_id,
+        overlay_revision_before=prior_revision,
+    )
+    intent_payload = {
+        "pending_work": pending.to_dict(),
+        "prior_snapshot": bounded_overlay_snapshot(prior_store_dict),
+        "prior_revision": prior_revision,
+        "trigger_domain_commit_id": domain_commit_id,
+    }
+
+    mutation_holder: dict[str, Any] = {}
+
+    def mutation():
+        mutation_holder["result"] = orch.apply_post_commit_pending_work(
+            fixture,
+            pending,
+            expected_revision=prior_revision,
+        )
+        return mutation_holder["result"]
+
+    def completion_builder(result: Any) -> dict[str, Any]:
+        overlay_after = overlay.load(scope_id, policy=policy)
+        store_dict = (
+            overlay_after.store.to_dict()
+            if overlay_after and overlay_after.store is not None
+            else {}
+        )
+        return {
+            "pending_work": pending.to_dict(),
+            "prior_snapshot": bounded_overlay_snapshot(prior_store_dict),
+            "resulting_snapshot": bounded_overlay_snapshot(store_dict),
+            "store_revision": getattr(result, "store_revision", None),
+            "prior_revision": getattr(result, "prior_revision", prior_revision),
+            "overlay_mutated": getattr(result, "overlay_mutated", False),
+            "code": getattr(result, "code", None),
+        }
+
+    wafi = forensics.execute_wafi_mutation(
         plot_cognition_scope_id=scope_id,
         idempotency_key=idempotency_key,
-        record_class="operational_mutation",
         operation_kind="pending_work",
+        intent_payload=intent_payload,
         correlation=correlation,
-        payload={
-            "pending_work": pending_work,
-            "prior_snapshot": bounded_overlay_snapshot(prior_store_dict),
-        },
+        mutation_fn=mutation,
+        completion_builder=completion_builder,
     )
-    return result.ok
+    if wafi.replayed:
+        completion = _completion_payload(forensics, scope_id, idempotency_key)
+        return {
+            "recorded": True,
+            "replayed": True,
+            "pending_work": completion.get("pending_work") or pending.to_dict(),
+            "store_revision": completion.get("store_revision"),
+        }
+    if not wafi.ok:
+        mutation_result = mutation_holder.get("result")
+        return {
+            "recorded": False,
+            "code": wafi.code,
+            "message": wafi.message,
+            "pending_work": None,
+            "store_revision": getattr(mutation_result, "store_revision", None),
+        }
+    mutation_result = mutation_holder["result"]
+    if not getattr(mutation_result, "success", False):
+        return {
+            "recorded": False,
+            "code": getattr(mutation_result, "code", "mutation_failed"),
+            "message": getattr(mutation_result, "message", "pending-work mutation failed"),
+            "pending_work": None,
+        }
+    return {
+        "recorded": True,
+        "pending_work": pending.to_dict(),
+        "store_revision": mutation_result.store_revision,
+    }

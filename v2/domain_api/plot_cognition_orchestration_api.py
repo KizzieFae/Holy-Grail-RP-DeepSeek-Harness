@@ -190,36 +190,13 @@ def record_plot_cognition_post_commit(
     *,
     domain_commit_id: str,
 ) -> dict[str, Any]:
-    orch = _orchestration(kernel)
-    if orch is None:
-        return {"recorded": False, "reason": "plot_cognition_overlay_unavailable"}
-    pending = orch.record_post_commit_pending_work(
+    from .plot_cognition_forensics_integration import wafi_record_post_commit_pending_work
+
+    return wafi_record_post_commit_pending_work(
+        kernel,
         fixture,
         domain_commit_id=domain_commit_id,
     )
-    overlay = kernel.cognition.plot_cognition_overlay
-    prior_store = None
-    if overlay is not None and pending is not None:
-        from .plot_cognition_overlay_store import BoundednessPolicy, LoadStatus
-
-        scope_id = str(fixture.plot_cognition_scope_id or "")
-        loaded = overlay.load(scope_id, policy=BoundednessPolicy(max_active_goals=8, max_active_pressures=8))
-        if loaded.status == LoadStatus.READY and loaded.store is not None:
-            prior_store = loaded.store.to_dict()
-    if pending is not None:
-        from .plot_cognition_forensics_integration import record_pending_work_mutation
-
-        record_pending_work_mutation(
-            kernel,
-            fixture,
-            domain_commit_id=domain_commit_id,
-            pending_work=pending.to_dict(),
-            prior_store_dict=prior_store,
-        )
-    return {
-        "recorded": pending is not None,
-        "pending_work": pending.to_dict() if pending is not None else None,
-    }
 
 
 def assess_plot_cognition_freshness(kernel: Any, fixture: LiveSession) -> dict[str, Any]:

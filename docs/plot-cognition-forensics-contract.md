@@ -44,6 +44,8 @@ data/plot_cognition_forensics/{plot_cognition_scope_id}/
 2. **Mutation** — existing Overlay CAS services (Chronicle is not the executor).
 3. **Completion** — persist resulting revision + bounded snapshot; finalize must not report success until completion is durable.
 
+Post-commit pending-work recording (`record_plot_cognition_post_commit`) uses the same WAFI ordering via `wafi_record_post_commit_pending_work`. Lifecycle finalize paths that clear pending work do so inside the WAFI completion snapshot hook so the completion record captures the cleared state.
+
 Failure behavior:
 
 - Intent persistence failure → no mutation.
