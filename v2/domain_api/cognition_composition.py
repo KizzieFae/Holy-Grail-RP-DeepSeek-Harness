@@ -8,6 +8,7 @@ from .character_service import CharacterKnowledgeService
 from .librarian_proposal_service import LibrarianProposalService
 from .librarian_service import LibrarianService
 from .retrieval_service import RetrievalService
+from .plot_cognition_initialization_service import PlotCognitionInitializationService
 from .plot_cognition_overlay_repository import PlotCognitionOverlayRepository
 from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .plot_cognition_scope_lock import PlotCognitionScopeLockRegistry
@@ -28,6 +29,7 @@ class CognitionComposition:
     character_knowledge: CharacterKnowledgeService
     story_knowledge: StoryKnowledgeService | None
     plot_cognition_overlay: PlotCognitionOverlayService | None
+    plot_cognition_initialization: PlotCognitionInitializationService | None
 
     @classmethod
     def create(
@@ -60,6 +62,11 @@ class CognitionComposition:
             if plot_cognition_overlay_repository is not None
             else None
         )
+        plot_cognition_initialization = (
+            PlotCognitionInitializationService(plot_cognition_overlay)
+            if plot_cognition_overlay is not None
+            else None
+        )
         return cls(
             retrieval=retrieval,
             librarian=librarian,
@@ -68,6 +75,7 @@ class CognitionComposition:
             character_knowledge=character_knowledge,
             story_knowledge=story_knowledge,
             plot_cognition_overlay=plot_cognition_overlay,
+            plot_cognition_initialization=plot_cognition_initialization,
         )
 
     @classmethod

@@ -123,7 +123,7 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Authority:** Advisory Storyteller plot cognition **current state** only. **Not** Continuity truth, **not** round-local Model A, **not** forensic history. Session metadata persists `plot_cognition_scope_id` (defaults to `memory_scope_id` when not explicitly supplied).
 
-**Contract:** [plot-cognition-overlay-persistence-contract.md](./plot-cognition-overlay-persistence-contract.md) (semantic types: [plot-cognition-overlay-contract.md](./plot-cognition-overlay-contract.md)).
+**Contract:** [plot-cognition-overlay-persistence-contract.md](./plot-cognition-overlay-persistence-contract.md) (semantic types: [plot-cognition-overlay-contract.md](./plot-cognition-overlay-contract.md); initialization: [plot-cognition-initialization-contract.md](./plot-cognition-initialization-contract.md)).
 
 **Blocked marker:** `{plot_cognition_scope_id}.blocked.json` records corrupt/unsupported blocked state after quarantine or schema failure so the scope is not silently treated as absent.
 
