@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from .plot_cognition_overlay_contract import (
     GlobalPlotFrame,
@@ -22,6 +22,72 @@ from .plot_cognition_overlay_contract import (
 )
 
 PLOT_COGNITION_OVERLAY_STORE_SCHEMA = "hg_plot_cognition_overlay_store_v1"
+ASSIMILATED_AUTHORITY_SCHEMA = "hg_plot_cognition_assimilated_authority_v1"
+
+AuthorityFreshnessStatus = Literal[
+    "fresh",
+    "authority_generation_changed_unchecked",
+    "semantic_assimilation_pending",
+    "lineage_incomplete",
+    "shared_scope_ambiguous",
+    "freshness_unprovable",
+    "overlay_unavailable",
+]
+
+
+@dataclass(frozen=True)
+class AssimilatedSessionAuthority:
+    hg_scene_id: str
+    through_domain_commit_id: str | None
+    through_continuity_version: int
+    authority_source_fingerprint: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "hg_scene_id": self.hg_scene_id,
+            "through_domain_commit_id": self.through_domain_commit_id,
+            "through_continuity_version": self.through_continuity_version,
+            "authority_source_fingerprint": self.authority_source_fingerprint,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AssimilatedSessionAuthority:
+        return cls(
+            hg_scene_id=str(data.get("hg_scene_id", "")),
+            through_domain_commit_id=data.get("through_domain_commit_id"),
+            through_continuity_version=int(data.get("through_continuity_version", 0)),
+            authority_source_fingerprint=str(data.get("authority_source_fingerprint", "")),
+        )
+
+
+@dataclass
+class AssimilatedAuthority:
+    schema: str
+    sessions: tuple[AssimilatedSessionAuthority, ...]
+    scope_status: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "schema": self.schema,
+            "sessions": [session.to_dict() for session in self.sessions],
+        }
+        if self.scope_status is not None:
+            payload["scope_status"] = self.scope_status
+        return payload
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AssimilatedAuthority:
+        sessions_raw = data.get("sessions") or []
+        sessions: list[AssimilatedSessionAuthority] = []
+        if isinstance(sessions_raw, list):
+            for item in sessions_raw:
+                if isinstance(item, dict):
+                    sessions.append(AssimilatedSessionAuthority.from_dict(item))
+        return cls(
+            schema=str(data.get("schema", "")),
+            sessions=tuple(sessions),
+            scope_status=data.get("scope_status"),
+        )
 
 
 class LoadStatus(str, Enum):
@@ -53,9 +119,10 @@ class PlotCognitionOverlayStore:
     goals: dict[str, PlotGoal]
     pressures: dict[str, UnresolvedNarrativePressure]
     active_frame: GlobalPlotFrame | None = None
+    assimilated_authority: AssimilatedAuthority | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "store_schema": self.store_schema,
             "plot_cognition_scope_id": self.plot_cognition_scope_id,
             "store_revision": self.store_revision,
@@ -74,6 +141,9 @@ class PlotCognitionOverlayStore:
                 else None
             ),
         }
+        if self.assimilated_authority is not None:
+            payload["assimilated_authority"] = self.assimilated_authority.to_dict()
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PlotCognitionOverlayStore:
@@ -95,6 +165,12 @@ class PlotCognitionOverlayStore:
             if isinstance(frame_raw, dict)
             else None
         )
+        authority_raw = data.get("assimilated_authority")
+        assimilated_authority = (
+            AssimilatedAuthority.from_dict(authority_raw)
+            if isinstance(authority_raw, dict)
+            else None
+        )
         return cls(
             store_schema=str(data.get("store_schema", "")),
             plot_cognition_scope_id=str(data.get("plot_cognition_scope_id", "")),
@@ -103,6 +179,7 @@ class PlotCognitionOverlayStore:
             goals=goals,
             pressures=pressures,
             active_frame=active_frame,
+            assimilated_authority=assimilated_authority,
         )
 
 
@@ -293,6 +370,112 @@ def is_assimilation_stale(
     return not is_assimilation_current(
         store,
         current_domain_commit_id=current,
+    )
+
+
+def _session_authority_for_scene(
+    authority: AssimilatedAuthority | None,
+    *,
+    hg_scene_id: str,
+) -> AssimilatedSessionAuthority | None:
+    if authority is None:
+        return None
+    target = str(hg_scene_id or "").strip()
+    for session in authority.sessions:
+        if session.hg_scene_id == target:
+            return session
+    return None
+
+
+def sync_legacy_commit_lineage(
+    store: PlotCognitionOverlayStore,
+    *,
+    sole_contributor_hg_scene_id: str | None = None,
+) -> PlotCognitionOverlayStore:
+    """Keep legacy scalar aligned with sole-contributor vector entry."""
+    authority = store.assimilated_authority
+    if authority is None or len(authority.sessions) != 1:
+        return store
+    session = authority.sessions[0]
+    if sole_contributor_hg_scene_id and session.hg_scene_id != sole_contributor_hg_scene_id:
+        return store
+    store.assimilated_through_domain_commit_id = session.through_domain_commit_id
+    return store
+
+
+def authority_freshness_status(
+    store: PlotCognitionOverlayStore,
+    *,
+    current_domain_commit_id: str | None,
+    current_continuity_version: int,
+    current_authority_source_fingerprint: str | None,
+    contributor_hg_scene_ids: tuple[str, ...] = (),
+) -> AuthorityFreshnessStatus:
+    authority = store.assimilated_authority
+    if authority is None:
+        return "freshness_unprovable"
+
+    expected_contributors = tuple(
+        str(item).strip() for item in contributor_hg_scene_ids if str(item).strip()
+    )
+    known_ids = {session.hg_scene_id for session in authority.sessions}
+    if expected_contributors:
+        if not set(expected_contributors).issubset(known_ids):
+            return "shared_scope_ambiguous"
+        if len(authority.sessions) != len(expected_contributors):
+            return "shared_scope_ambiguous"
+
+    current_commit = str(current_domain_commit_id or "").strip() or None
+    if len(authority.sessions) == 1:
+        session = authority.sessions[0]
+        assimilated_commit = str(session.through_domain_commit_id or "").strip() or None
+        if current_commit is not None and assimilated_commit != current_commit:
+            return "semantic_assimilation_pending"
+        if current_continuity_version == session.through_continuity_version:
+            return "fresh"
+        if (
+            current_authority_source_fingerprint is not None
+            and current_authority_source_fingerprint == session.authority_source_fingerprint
+        ):
+            return "authority_generation_changed_unchecked"
+        return "semantic_assimilation_pending"
+
+    if not authority.sessions:
+        return "freshness_unprovable"
+
+    for session in authority.sessions:
+        if not str(session.hg_scene_id or "").strip():
+            return "shared_scope_ambiguous"
+        if not str(session.authority_source_fingerprint or "").strip():
+            return "shared_scope_ambiguous"
+
+    if expected_contributors:
+        for scene_id in expected_contributors:
+            session = _session_authority_for_scene(authority, hg_scene_id=scene_id)
+            if session is None:
+                return "shared_scope_ambiguous"
+            if current_continuity_version != session.through_continuity_version:
+                return "shared_scope_ambiguous"
+    return "shared_scope_ambiguous"
+
+
+def is_authority_fresh(
+    store: PlotCognitionOverlayStore,
+    *,
+    current_domain_commit_id: str | None,
+    current_continuity_version: int,
+    current_authority_source_fingerprint: str | None,
+    contributor_hg_scene_ids: tuple[str, ...] = (),
+) -> bool:
+    return (
+        authority_freshness_status(
+            store,
+            current_domain_commit_id=current_domain_commit_id,
+            current_continuity_version=current_continuity_version,
+            current_authority_source_fingerprint=current_authority_source_fingerprint,
+            contributor_hg_scene_ids=contributor_hg_scene_ids,
+        )
+        == "fresh"
     )
 
 

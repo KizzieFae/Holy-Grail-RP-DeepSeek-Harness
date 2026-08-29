@@ -140,11 +140,34 @@ Store metadata:
 
 ```text
 assimilated_through_domain_commit_id: str | null
+assimilated_authority: AssimilatedAuthority | null   (#61 successor extension)
 ```
 
-Meaning: latest authoritative domain commit whose consequences this snapshot **claims to have incorporated**. `null` = none yet assimilated.
+### Legacy scalar
 
-Staleness uses **equality only** against a supplied current commit id (`domain_commit_id` values are opaque UUID-based identifiers — no lexical ordering).
+`assimilated_through_domain_commit_id` records committed-move lineage semantically considered through that domain commit. It is **not** authoritative freshness proof.
+
+### Authority vector (#61)
+
+```text
+assimilated_authority:
+  schema: hg_plot_cognition_assimilated_authority_v1
+  sessions:
+    - hg_scene_id
+      through_domain_commit_id
+      through_continuity_version
+      authority_source_fingerprint
+```
+
+For a sole contributor, the legacy scalar stays synchronized with that contributor's `through_domain_commit_id`. For shared scopes, the vector is authoritative.
+
+### Backward compatibility
+
+Existing `hg_plot_cognition_overlay_store_v1` files without `assimilated_authority` remain valid `READY` stores. Cognition content is preserved; freshness is **unknown** (`freshness_unprovable`) until first #61 reconciliation. Absent metadata must not cause `CORRUPT` or re-initialization.
+
+Staleness against commit lineage uses **equality only** against a supplied current commit id (`domain_commit_id` values are opaque UUID-based identifiers — no lexical ordering).
+
+Full freshness semantics: [plot-cognition-update-replan-contract.md](./plot-cognition-update-replan-contract.md).
 
 ---
 
