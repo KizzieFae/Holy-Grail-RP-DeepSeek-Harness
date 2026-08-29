@@ -65,6 +65,7 @@ from domain_api.storyteller_contract import (  # noqa: E402
 )
 
 TEST_BUDGET = ProjectionBudget(max_evaluation_candidates=3, max_projection_candidates=2)
+TEST_EVALUATOR = DeterministicRuleBasedEpistemicEvaluator()
 
 
 def _session_with_event(*, known_by: list[str]):
@@ -231,6 +232,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(len(result.contributions), 1)
         self.assertIn("reconciliation", result.contributions[0].content)
@@ -260,6 +262,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(result.contributions, ())
         self.assertTrue(
@@ -289,6 +292,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(result.contributions, ())
 
@@ -310,6 +314,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate, bob_private),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         joined = "\n".join(item.content for item in result.contributions)
         self.assertNotIn("Bob's private distrust", joined)
@@ -335,6 +340,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(result.contributions[0].knowledge_ids, ("goal-parent", "frame-parent"))
 
@@ -358,6 +364,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         fixture.manager.public_events[0].known_by.append("Alice")
         second = project_character_candidates(
@@ -366,6 +373,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(first.contributions, ())
         self.assertEqual(len(second.contributions), 1)
@@ -386,6 +394,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(safe,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(len(char_result.contributions), 1)
         raw_frame_candidate = CharacterAdvisoryCandidate(
@@ -427,6 +436,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(derived,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(len(derived_result.contributions), 1)
 
@@ -501,6 +511,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=candidates,
             budget=budget,
+            evaluator=TEST_EVALUATOR,
         )
         excluded_records = [
             record for record in result.forensic.records if record.outcome == "evaluation_budget_excluded"
@@ -531,6 +542,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=candidates,
             budget=budget,
+            evaluator=TEST_EVALUATOR,
         )
         self.assertEqual(len(result.contributions), 2)
         excluded_records = [
@@ -593,6 +605,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(original,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
             regeneration_inputs={
                 "rewrite-me": RegenerationCycleInput(
                     original_candidate=original,
@@ -639,6 +652,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(original,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
             regeneration_inputs={
                 "rewrite-fail": RegenerationCycleInput(
                     original_candidate=original,
@@ -686,6 +700,7 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             candidates=(candidate,),
             budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
         )
         content = result.contributions[0].content
         self.assertIn("Approved advisory only.", content)
@@ -721,8 +736,110 @@ class PlotCognitionProjectionContractTests(unittest.TestCase):
             character_id="Alice",
             fixture=_fixture(),
         )
-        for contribution in mapped.contributions:
-            self.assertEqual(contribution.authority_class, "suggestive")
+        self.assertEqual(mapped.contributions, ())
+
+
+class PlotCognitionProjectionFailClosedTests(unittest.TestCase):
+    def test_no_evaluator_supplied_withholds_character_candidate(self) -> None:
+        fixture = _session_with_event(known_by=["Alice"])
+        candidate = overlay_goal_to_character_candidate(_character_goal())
+        result = project_character_candidates(
+            fixture,
+            manifest_id="m-no-eval",
+            character_id="Alice",
+            candidates=(candidate,),
+            budget=TEST_BUDGET,
+        )
+        self.assertEqual(result.contributions, ())
+        records = result.forensic.records
+        self.assertTrue(records)
+        self.assertEqual(records[0].outcome, "semantic_evaluator_unavailable")
+        self.assertEqual(records[0].semantic.verdict, "evaluator_unavailable")
+
+    def test_production_mapper_fail_closed_without_evaluator(self) -> None:
+        package = _package(
+            observations=(
+                NarrativeObservation(
+                    text="Alice feels the weight of betrayal.",
+                    evidence_refs=(_character_scope_ref("Alice"),),
+                ),
+            )
+        )
+        result = map_storyteller_package_to_contributions(
+            package,
+            manifest_id="m-prod-fail-closed",
+            consumer_target="character",
+            binding=_binding(pipeline_stage="character"),
+            character_id="Alice",
+            fixture=_fixture(),
+        )
+        self.assertEqual(result.contributions, ())
+
+    def test_model_a_scope_alone_does_not_authorize_private_third_party_knowledge(self) -> None:
+        """Validation probe: scope ref for Alice must not authorize Bob's secret without evaluator."""
+        fixture = initialize_live_session(cast=["Alice", "Bob"], plot_cognition_scope_id="scope-leak")
+        package = _package(
+            observations=(
+                NarrativeObservation(
+                    text=(
+                        "Alice should consider that Bob keeps a secret vault code in the cellar."
+                    ),
+                    evidence_refs=(_character_scope_ref("Alice"),),
+                ),
+            )
+        )
+        result = map_storyteller_package_to_contributions(
+            package,
+            manifest_id="m-leak-probe",
+            consumer_target="character",
+            binding=_binding(pipeline_stage="character"),
+            character_id="Alice",
+            fixture=fixture,
+        )
+        self.assertEqual(result.contributions, ())
+        structural = assess_structural_eligibility(
+            fixture,
+            candidate=CharacterAdvisoryCandidate(
+                candidate_id="probe",
+                text=package.observations[0].text,
+                source_kind="model_a_observation",
+                lineage=("probe",),
+                basis_refs=(),
+                structural_evidence_refs=package.observations[0].evidence_refs,
+            ),
+            character_id="Alice",
+        )
+        self.assertTrue(structural.eligible)
+        self.assertTrue(
+            model_a_has_structural_character_evidence(
+                package.observations[0].evidence_refs,
+                character_id="Alice",
+            )
+        )
+
+    def test_injected_deterministic_evaluator_still_exercises_semantic_path(self) -> None:
+        fixture = _session_with_event(known_by=["Alice"])
+        safe = CharacterAdvisoryCandidate(
+            candidate_id="safe",
+            text="Alice may reflect on recent tensions calmly.",
+            source_kind="overlay_character_candidate",
+            lineage=("safe",),
+            basis_refs=(StableReference(ref_kind="character_card", stable_ref="alice:goals"),),
+            applicability=CognitionApplicability(
+                applicability_kind="character",
+                primary_character_id="Alice",
+                involved_character_ids=("Alice",),
+            ),
+        )
+        result = project_character_candidates(
+            fixture,
+            manifest_id="m-injected",
+            character_id="Alice",
+            candidates=(safe,),
+            budget=TEST_BUDGET,
+            evaluator=TEST_EVALUATOR,
+        )
+        self.assertEqual(len(result.contributions), 1)
 
 
 if __name__ == "__main__":

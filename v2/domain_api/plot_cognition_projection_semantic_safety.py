@@ -108,5 +108,7 @@ class DeterministicRuleBasedEpistemicEvaluator:
         )
 
 
-def default_semantic_evaluator() -> CharacterEpistemicLeakageEvaluator:
-    return DeterministicRuleBasedEpistemicEvaluator()
+# Production semantic inference and evaluator injection belong to #63.
+# DeterministicRuleBasedEpistemicEvaluator is test/reference machinery only.
+# Callers must inject an evaluator explicitly in tests; production paths omit it
+# and project_character_candidates() fails closed.

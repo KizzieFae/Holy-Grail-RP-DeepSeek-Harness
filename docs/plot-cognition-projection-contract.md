@@ -67,11 +67,17 @@ Character projection uses:
 - Global `PlotGoal` / global pressure objects are **never** directly projected to Character.
 - Frame- or global-goal-informed Character advice must arrive as an independently supplied `CharacterAdvisoryCandidate` with lineage and pass the full Character safety path.
 - `projected_prospective` requires Layer B **pass**. Basis withholding alone is not a bypass.
-- Model A Character projection requires structural `character_scope` evidence; substring/name matching is forbidden.
+- Model A Character projection requires structural `character_scope` evidence for **relevance/scope only**; scope alone does not establish epistemic knowledge eligibility. Semantic exposure requires an injected production evaluator (#63).
 
 ---
 
 ## Layer B semantic evaluator
+
+**Layer B is required for Character projection.** #62 defines the `CharacterEpistemicLeakageEvaluator` interface and fail-closed behavior when no production evaluator is supplied.
+
+- **#63** owns production semantic inference and evaluator injection at Storyteller/Packaging runtime seams.
+- Until #63 supplies a production evaluator, `project_character_candidates()` records `semantic_evaluator_unavailable` and **withholds** all Character prompt contributions.
+- `DeterministicRuleBasedEpistemicEvaluator` is **test/reference machinery only**. Tests must inject it explicitly; production callers must not receive it implicitly.
 
 Question: does proposed Character-facing advisory text communicate or materially imply information outside the Character's permitted epistemic envelope?
 

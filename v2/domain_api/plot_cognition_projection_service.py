@@ -49,7 +49,6 @@ from .plot_cognition_projection_contract import (
 )
 from .plot_cognition_projection_semantic_safety import (
     CharacterEpistemicLeakageEvaluator,
-    default_semantic_evaluator,
 )
 from .session_state import LiveSession
 
@@ -353,7 +352,6 @@ def project_character_candidates(
     base_priority: int = 19,
     source_kind_map: dict[CognitionSourceKind, str] | None = None,
 ) -> ProjectionServiceResult:
-    active_evaluator = evaluator or default_semantic_evaluator()
     known_by_snapshot_id = compute_known_by_snapshot_id(fixture, character_id)
     regen_inputs = regeneration_inputs or {}
     kind_map = source_kind_map or {
@@ -432,7 +430,34 @@ def project_character_candidates(
     for candidate in eval_included:
         structural = structural_by_id[candidate.candidate_id]
         basis = structural.basis_exposure
-        semantic = active_evaluator.evaluate(
+        if evaluator is None:
+            unavailable = SemanticEvaluationResult(
+                verdict="evaluator_unavailable",
+                rationale="production semantic evaluator not supplied; projection fails closed",
+            )
+            records.append(
+                CandidateProjectionRecord(
+                    candidate_id=candidate.candidate_id,
+                    source_kind=candidate.source_kind,
+                    consumer="character",
+                    character_id=character_id,
+                    outcome="semantic_evaluator_unavailable",
+                    structural=structural,
+                    semantic=unavailable,
+                    regeneration=None,
+                    original_text=candidate.text,
+                    regenerated_text=None,
+                    final_text=None,
+                    projection_mode=None,
+                    lineage=candidate.lineage,
+                    known_by_snapshot_id=known_by_snapshot_id,
+                    authority_fingerprint=authority_fingerprint,
+                    overlay_revision=overlay_revision,
+                    rationale=unavailable.rationale,
+                )
+            )
+            continue
+        semantic = evaluator.evaluate(
             character_id=character_id,
             candidate_text=candidate.text,
             basis_exposure=basis,
@@ -452,7 +477,7 @@ def project_character_candidates(
                         evaluator_result=semantic,
                     ),
                 ),
-                evaluator=active_evaluator,
+                evaluator=evaluator,
                 character_id=character_id,
                 known_by_snapshot_id=known_by_snapshot_id,
                 basis_exposure=basis,

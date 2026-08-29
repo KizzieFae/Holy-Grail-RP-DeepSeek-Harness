@@ -146,9 +146,8 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
                                 "domain_api.librarian_contract",
                                 fromlist=["StableReference"],
                             ).StableReference(
-                                ref_kind="bundle_entry",
-                                stable_ref="alice-betrayal",
-                                display_hint="Alice betrayal",
+                                ref_kind="character_scope",
+                                stable_ref="Alice",
                             ),
                         ),
                     ),
@@ -174,9 +173,8 @@ class StorytellerS3cIntegrationTests(unittest.TestCase):
         storyteller = [
             item for item in character.contributions if item.source_kind.startswith("storyteller_")
         ]
-        self.assertGreaterEqual(len(storyteller), 1)
-        joined = "\n".join(item.content for item in storyteller)
-        self.assertIn("Alice", joined)
+        # #62 fail-closed: no production semantic evaluator until #63 injection.
+        self.assertEqual(storyteller, [])
 
     def test_commit_invalidates_storyteller_for_later_contexts(self) -> None:
         kernel = DomainKernel.for_fixture_store()

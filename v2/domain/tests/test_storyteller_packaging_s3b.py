@@ -200,7 +200,8 @@ class StorytellerDirectorPackagingTests(unittest.TestCase):
 
 
 class StorytellerCharacterPackagingTests(unittest.TestCase):
-    def test_character_scoping_omits_unscoped_advice(self) -> None:
+    def test_character_production_path_fails_closed_without_semantic_evaluator(self) -> None:
+        """#62: structurally scoped Model A items withhold until #63 injects Layer B."""
         package = _package(
             observations=(
                 NarrativeObservation(
@@ -238,21 +239,7 @@ class StorytellerCharacterPackagingTests(unittest.TestCase):
             character_id="Alice",
             fixture=_fixture(),
         )
-        contents = "\n".join(item.content for item in result.contributions)
-        self.assertIn("Alice", contents)
-        self.assertNotIn("Global scene mood", contents)
-        for contribution in result.contributions:
-            self.assertEqual(contribution.authority_class, "suggestive")
-            self.assertIn(
-                contribution.source_kind,
-                {
-                    "storyteller_thematic_context",
-                    "storyteller_active_tensions",
-                    "storyteller_progression_hooks",
-                },
-            )
-            self.assertNotIn("dialogue", contribution.content.lower())
-            self.assertNotIn("must say", contribution.content.lower())
+        self.assertEqual(result.contributions, ())
 
     def test_character_without_scope_maps_nothing(self) -> None:
         result = map_storyteller_package_to_contributions(
