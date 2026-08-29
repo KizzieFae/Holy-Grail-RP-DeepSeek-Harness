@@ -45,6 +45,7 @@ def prepare_character_context(
         overlay_service=overlay_service,
         projection_batch_id=req.plot_cognition_projection_batch_id,
         projection_semantic_results=req.plot_cognition_projection_semantic_results,
+        finalized_projection=req.plot_cognition_finalized_projection,
     )
     contributions: list[PromptContribution] = list(upstream.contributions)
     librarian_audit = dict(req.librarian_knowledge_audit or {})

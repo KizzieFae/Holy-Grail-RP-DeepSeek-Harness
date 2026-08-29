@@ -50,7 +50,10 @@ _PREPARED_BATCHES: dict[str, PreparedProjectionBatch] = {}
 
 
 def clear_prepared_batches_for_tests() -> None:
+    from .plot_cognition_projection_runtime import clear_all_batch_runtime_for_tests
+
     _PREPARED_BATCHES.clear()
+    clear_all_batch_runtime_for_tests()
 
 
 def get_prepared_batch(batch_id: str) -> PreparedProjectionBatch | None:
@@ -194,6 +197,9 @@ def prepare_character_projection_batch(
         excluded_records=tuple(records),
     )
     _PREPARED_BATCHES[batch.batch_id] = batch
+    from .plot_cognition_projection_runtime import ensure_batch_runtime_initialized
+
+    ensure_batch_runtime_initialized(batch.batch_id)
     return PrepareProjectionBatchResult(batch=batch, evaluator_manifests=manifests)
 
 
@@ -244,6 +250,9 @@ def finalize_character_projection_batch(
     batch = _PREPARED_BATCHES.pop(batch_id, None)
     if batch is None:
         raise ValueError(f"unknown or expired projection batch: {batch_id}")
+    from .plot_cognition_projection_runtime import clear_batch_runtime
+
+    clear_batch_runtime(batch_id)
 
     known_by_snapshot_id = compute_known_by_snapshot_id(fixture, batch.character_id)
     binding_digest = compute_binding_digest(

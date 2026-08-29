@@ -1640,6 +1640,27 @@ class DomainKernel:
         rnd = self._require_round(fixture, str(data["hg_round_id"]))
         return finalize_plot_cognition_projection(self, fixture, rnd, data)
 
+    def register_plot_cognition_projection_semantic_result(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import register_plot_cognition_projection_semantic_result
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return register_plot_cognition_projection_semantic_result(fixture, rnd, data)
+
+    def prepare_plot_cognition_projection_regeneration(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import prepare_plot_cognition_projection_regeneration
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return prepare_plot_cognition_projection_regeneration(self, fixture, rnd, data)
+
+    def finalize_plot_cognition_projection_regeneration(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import finalize_plot_cognition_projection_regeneration
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return finalize_plot_cognition_projection_regeneration(fixture, rnd, data)
+
     def assess_plot_cognition_freshness(self, hg_scene_id: str) -> dict[str, Any]:
         from .plot_cognition_orchestration_api import assess_plot_cognition_freshness
 

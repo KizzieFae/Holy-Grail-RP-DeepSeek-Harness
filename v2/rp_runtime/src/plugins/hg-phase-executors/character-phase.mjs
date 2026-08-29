@@ -17,6 +17,7 @@ import {
 import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
+import { runCharacterProjectionLifecycle } from './plot-cognition-character-projection.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
@@ -43,6 +44,7 @@ async function runCharacterInferenceWithInfraRetry({
   participationEvidenceId = null,
   librarianBundle = null,
   librarianKnowledgeAudit = null,
+  finalizedProjection = null,
   recorder = null,
 }) {
   let lastRun = null;
@@ -61,6 +63,7 @@ async function runCharacterInferenceWithInfraRetry({
       director_decision: directorDecision ?? undefined,
       librarian_bundle: librarianBundle ?? undefined,
       librarian_knowledge_audit: librarianKnowledgeAudit ?? undefined,
+      plot_cognition_finalized_projection: finalizedProjection ?? undefined,
     });
     const characterRun = await runEphemeralInference({
       inferenceId: `${characterInferenceId}-${attemptIndex}${infraAttempt ? '-infra-retry' : ''}`,
@@ -124,6 +127,10 @@ export async function runCharacterPhase({
   participationEvidenceId = null,
   mockCharacterOrientationResponse = null,
   mockCharacterMediationResponse = null,
+  mockProjectionEpistemicResponses = [],
+  mockProjectionRegenerationResponses = [],
+  plotCognitionEpistemicEvaluatorProfile = null,
+  projectionLifecycleEnabled = true,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
   let committed = false;
@@ -183,6 +190,38 @@ export async function runCharacterPhase({
     audit: cognitionAudit,
   });
 
+  let finalizedProjection = null;
+  if (projectionLifecycleEnabled) {
+    const projection = await runCharacterProjectionLifecycle({
+      api,
+      runEphemeralInference,
+      scope,
+      hgSceneId,
+      hgRoundId,
+      characterId,
+      inferenceId: characterInferenceId,
+      turnIndex: cognitionTurnIndex,
+      modelProfile: plotCognitionEpistemicEvaluatorProfile ?? evaluatorProfile,
+      mockEpistemicResponses: mockProjectionEpistemicResponses,
+      mockRegenerationResponses: mockProjectionRegenerationResponses,
+    });
+    trace?.emit(sceneAgent.session, 'hg/character-projection-lifecycle', scope, {
+      inference_id: characterInferenceId,
+      character_id: characterId,
+      ok: projection.ok === true,
+      stage: projection.stage ?? null,
+      call_log: projection.callLog ?? [],
+    });
+    if (projection.ok && projection.finalized) {
+      finalizedProjection = {
+        batch_id: projection.finalized.batch_id,
+        binding_digest: projection.finalized.binding_digest,
+        binding: projection.finalized.binding,
+        contributions: projection.finalized.contributions,
+      };
+    }
+  }
+
   while (!committed && canGenerateCandidate(budget)) {
     const candidateSlotIndex = budget.generatedCount;
     const inferenceAttempt = await runCharacterInferenceWithInfraRetry({
@@ -205,6 +244,7 @@ export async function runCharacterPhase({
       participationEvidenceId,
       librarianBundle,
       librarianKnowledgeAudit,
+      finalizedProjection,
       recorder,
     });
 

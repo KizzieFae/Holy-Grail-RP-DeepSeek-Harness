@@ -232,6 +232,33 @@ export function createDomainApiClient(baseUrl) {
         'finalizePlotCognitionProjection',
       );
     },
+    registerPlotCognitionProjectionSemanticResult(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/register-semantic-result',
+        body,
+        'registerPlotCognitionProjectionSemanticResult',
+      );
+    },
+    preparePlotCognitionProjectionRegeneration(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/regeneration/prepare',
+        body,
+        'preparePlotCognitionProjectionRegeneration',
+      );
+    },
+    finalizePlotCognitionProjectionRegeneration(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/regeneration/finalize',
+        body,
+        'finalizePlotCognitionProjectionRegeneration',
+      );
+    },
     assessPlotCognitionFreshness(body) {
       return postJson(
         metrics,

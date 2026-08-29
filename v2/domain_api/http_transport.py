@@ -207,6 +207,11 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("plot_cognition_projection_semantic_results"), list)
                         else None
                     ),
+                    plot_cognition_finalized_projection=(
+                        dict(data["plot_cognition_finalized_projection"])
+                        if isinstance(data.get("plot_cognition_finalized_projection"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_context(req))
                 return
@@ -423,6 +428,24 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 return
             if path == "/v1/plot-cognition/projection/prepare":
                 self._send_json(200, self.kernel.prepare_plot_cognition_projection(data))
+                return
+            if path == "/v1/plot-cognition/projection/register-semantic-result":
+                self._send_json(
+                    200,
+                    self.kernel.register_plot_cognition_projection_semantic_result(data),
+                )
+                return
+            if path == "/v1/plot-cognition/projection/regeneration/prepare":
+                self._send_json(
+                    200,
+                    self.kernel.prepare_plot_cognition_projection_regeneration(data),
+                )
+                return
+            if path == "/v1/plot-cognition/projection/regeneration/finalize":
+                self._send_json(
+                    200,
+                    self.kernel.finalize_plot_cognition_projection_regeneration(data),
+                )
                 return
             if path == "/v1/plot-cognition/projection/finalize":
                 self._send_json(200, self.kernel.finalize_plot_cognition_projection(data))

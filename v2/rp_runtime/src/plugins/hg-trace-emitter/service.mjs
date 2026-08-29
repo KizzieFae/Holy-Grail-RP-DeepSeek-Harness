@@ -8,6 +8,7 @@ export const HG_EVENT_TYPES = [
   'hg/storyteller-skipped',
   'hg/storyteller-invalidated',
   'hg/character-knowledge-cognition',
+  'hg/character-projection-lifecycle',
   'hg/eligibility-snapshot',
   'hg/eligibility-exhausted',
   'hg/participation-decision',

@@ -83,6 +83,7 @@ class ContextPrepareRequest:
     librarian_knowledge_audit: dict[str, Any] | None = None
     plot_cognition_projection_batch_id: str | None = None
     plot_cognition_projection_semantic_results: list[dict[str, Any]] | None = None
+    plot_cognition_finalized_projection: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

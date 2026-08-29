@@ -42,9 +42,27 @@ Freshness assessment: `POST /v1/plot-cognition/freshness/assess`.
 
 Hashes and IDs are **not** substitutes for semantic material. Withheld basis appears structurally (IDs/categories/reasons), not as hidden prose.
 
-### Regeneration (implementation-shape variance)
+### Regeneration authority (#66)
 
-Dedicated regeneration HTTP pairs are **not** required. Regeneration uses projection finalize with `regeneration_inputs` and `second_pass_results` after an initial `rewrite_required` evaluation — preserving prepare → infer → finalize boundaries, at-most-one regeneration, structured `RegenerationGuidance`, second Layer B evaluation, stale-binding protection, and forensic lineage.
+Production Character projection regeneration is **Domain-authorized**:
+
+| Step | Endpoint | Owner |
+|------|----------|-------|
+| Register first/second semantic result | `POST /v1/plot-cognition/projection/register-semantic-result` | Domain |
+| Authorize regeneration + manifest | `POST /v1/plot-cognition/projection/regeneration/prepare` | Domain |
+| DSH advisory regeneration infer | `character_advisory_generation` (DSH) | DSH |
+| Validate regenerated candidate | `POST /v1/plot-cognition/projection/regeneration/finalize` | Domain |
+| Finalize once per batch | `POST /v1/plot-cognition/projection/finalize` (`use_registered_results: true`) | Domain |
+
+DSH orchestrates inference only; Domain owns batch membership, regeneration eligibility, guidance validity, and finalize-once Chronicle gating. Node must not supply unregistered regeneration guidance.
+
+Pre-finalized projection contributions are transported to Character context via `plot_cognition_finalized_projection` on `ContextPrepareRequest`. Storyteller packaging **must not** re-finalize these contributions. Character move retries reuse the same finalized projection for the turn binding.
+
+Prepared batch runtime state is **transient**. Domain process loss abandons the attempt; execution evidence is forensic only and cannot bypass a new Domain binding.
+
+### Regeneration (legacy test path)
+
+Tests may still call `finalize_character_projection_batch()` directly with `regeneration_inputs` and `second_pass_results` after supplying semantic results inline.
 
 ## Candidate provenance paths
 
@@ -86,7 +104,7 @@ When pending Plot Cognition work exists:
 
 ## Layer B concurrency
 
-Production Layer B evaluation is **bounded sequential** in Domain finalize (deterministic order). Bounded parallel evaluation after Layer A is permitted by policy but not required for correctness; concurrency optimization remains available to **#65**.
+Production Layer B evaluation is **sequential** for #66 (`plot-cognition-character-projection.mjs`). Bounded parallel evaluation remains **#65** ownership; do not enable `max_parallel_epistemic_evals` in production wiring until #65 certifies a baseline.
 
 ## Layer B failure semantics
 
@@ -118,3 +136,5 @@ Orchestration ceilings live in `StorytellerOrchestrationPolicy` (generated candi
 - `v2/domain_api/plot_cognition_lifecycle_api.py`
 - `v2/rp_runtime/src/lib/plot-cognition-orchestration.mjs`
 - `v2/rp_runtime/src/lib/plot-cognition-update-substrate.mjs`
+- `v2/rp_runtime/src/plugins/hg-phase-executors/plot-cognition-character-projection.mjs`
+- `v2/domain_api/plot_cognition_projection_runtime.py`

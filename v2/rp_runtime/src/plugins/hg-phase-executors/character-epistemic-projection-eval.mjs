@@ -1,4 +1,4 @@
-"""DSH Character epistemic projection evaluation (#63)."""
+/** DSH Character epistemic projection evaluation (#63). */
 
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 

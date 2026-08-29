@@ -10,7 +10,15 @@ from .plot_cognition_projection_batch import (
     CharacterProjectionSemanticResult,
     clear_prepared_batches_for_tests,
     finalize_character_projection_batch,
+    get_prepared_batch,
     prepare_character_projection_batch,
+)
+from .plot_cognition_projection_runtime import (
+    collect_regeneration_inputs,
+    collect_registered_results_for_finalize,
+    finalize_projection_regeneration,
+    prepare_projection_regeneration,
+    register_projection_semantic_result,
 )
 from .plot_cognition_projection_contract import (
     ProjectionBudget,
@@ -87,7 +95,66 @@ def prepare_plot_cognition_projection(
         },
         "evaluator_manifests": prepared.evaluator_manifests,
         "candidate_count": len(prepared.batch.items),
+        "items": [
+            {
+                "evaluation_pass_id": item.evaluation_pass_id,
+                "candidate_id": item.candidate.candidate_id,
+            }
+            for item in prepared.batch.items
+        ],
     }
+
+
+def register_plot_cognition_projection_semantic_result(
+    fixture: LiveSession,
+    rnd: RoundFixture,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    return register_projection_semantic_result(
+        fixture,
+        batch_id=str(data.get("batch_id", "")),
+        evaluation_pass_id=str(data.get("evaluation_pass_id", "")),
+        candidate_id=str(data.get("candidate_id", "")),
+        semantic_raw=dict(data.get("semantic") or {}),
+        inference_evidence_id=data.get("inference_evidence_id"),
+        hg_round_id=rnd.hg_round_id,
+        turn_index=int(rnd.turn_index),
+        evaluation_attempt=int(data.get("evaluation_attempt", 1)),
+    )
+
+
+def prepare_plot_cognition_projection_regeneration(
+    kernel: Any,
+    fixture: LiveSession,
+    rnd: RoundFixture,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    return prepare_projection_regeneration(
+        kernel,
+        fixture,
+        batch_id=str(data.get("batch_id", "")),
+        evaluation_pass_id=str(data.get("evaluation_pass_id", "")),
+        hg_round_id=rnd.hg_round_id,
+        turn_index=int(rnd.turn_index),
+    )
+
+
+def finalize_plot_cognition_projection_regeneration(
+    fixture: LiveSession,
+    rnd: RoundFixture,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    return finalize_projection_regeneration(
+        fixture,
+        batch_id=str(data.get("batch_id", "")),
+        evaluation_pass_id=str(data.get("evaluation_pass_id", "")),
+        regeneration_prepare_id=str(data.get("regeneration_prepare_id", "")),
+        candidate_id=str(data.get("candidate_id", "")),
+        regenerated_text=str(data.get("regenerated_text", "")),
+        generator_inference_evidence_id=data.get("generator_inference_evidence_id"),
+        hg_round_id=rnd.hg_round_id,
+        turn_index=int(rnd.turn_index),
+    )
 
 
 def finalize_plot_cognition_projection(
@@ -97,34 +164,64 @@ def finalize_plot_cognition_projection(
     data: dict[str, Any],
 ) -> dict[str, Any]:
     batch_id = str(data.get("batch_id", ""))
+    use_registered = bool(data.get("use_registered_results", True))
     raw_results = data.get("semantic_results") or []
     semantic_results: list[CharacterProjectionSemanticResult] = []
-    for item in raw_results:
-        if not isinstance(item, dict):
-            continue
-        semantic_raw = item.get("semantic") or {}
-        guidance_raw = item.get("regeneration_guidance")
-        guidance = (
-            RegenerationGuidance.from_dict(guidance_raw)
-            if isinstance(guidance_raw, dict)
-            else None
-        )
-        semantic = SemanticEvaluationResult(
-            verdict=semantic_raw.get("verdict", "evaluator_unavailable"),  # type: ignore[arg-type]
-            rationale=str(semantic_raw.get("rationale", "")),
-            leak_indicators=tuple(str(x) for x in (semantic_raw.get("leak_indicators") or [])),
-            forensic_rationale=semantic_raw.get("forensic_rationale"),
-            regeneration_guidance=guidance,
-        )
-        semantic_results.append(
-            CharacterProjectionSemanticResult(
-                evaluation_pass_id=str(item.get("evaluation_pass_id", "")),
-                candidate_id=str(item.get("candidate_id", "")),
-                semantic=semantic,
-                regeneration_guidance=guidance,
-                inference_evidence_id=item.get("inference_evidence_id"),
+    regeneration_inputs = None
+    second_pass_results = None
+    if use_registered and not raw_results:
+        first_pass, second_pass = collect_registered_results_for_finalize(batch_id)
+        semantic_results = list(first_pass)
+        regeneration_inputs = collect_regeneration_inputs(batch_id)
+        second_pass_results = second_pass if second_pass else None
+    else:
+        for item in raw_results:
+            if not isinstance(item, dict):
+                continue
+            semantic_raw = item.get("semantic") or {}
+            guidance_raw = item.get("regeneration_guidance")
+            guidance = (
+                RegenerationGuidance.from_dict(guidance_raw)
+                if isinstance(guidance_raw, dict)
+                else None
             )
-        )
+            semantic = SemanticEvaluationResult(
+                verdict=semantic_raw.get("verdict", "evaluator_unavailable"),  # type: ignore[arg-type]
+                rationale=str(semantic_raw.get("rationale", "")),
+                leak_indicators=tuple(str(x) for x in (semantic_raw.get("leak_indicators") or [])),
+                forensic_rationale=semantic_raw.get("forensic_rationale"),
+                regeneration_guidance=guidance,
+            )
+            semantic_results.append(
+                CharacterProjectionSemanticResult(
+                    evaluation_pass_id=str(item.get("evaluation_pass_id", "")),
+                    candidate_id=str(item.get("candidate_id", "")),
+                    semantic=semantic,
+                    regeneration_guidance=guidance,
+                    inference_evidence_id=item.get("inference_evidence_id"),
+                )
+            )
+    if not semantic_results and use_registered:
+        empty_batch = get_prepared_batch(batch_id)
+        if empty_batch is None or empty_batch.items:
+            return {
+                "accepted": False,
+                "reason": "no_registered_semantic_results",
+                "contributions": [],
+                "forensic": None,
+            }
+        semantic_results = []
+    prepared_batch = get_prepared_batch(batch_id)
+    binding_payload = None
+    if prepared_batch is not None:
+        binding_payload = {
+            "batch_id": prepared_batch.batch_id,
+            "binding_digest": prepared_batch.binding_digest,
+            "character_id": prepared_batch.character_id,
+            "overlay_revision": prepared_batch.overlay_revision,
+            "hg_round_id": rnd.hg_round_id,
+            "turn_index": int(rnd.turn_index),
+        }
     try:
         finalized = finalize_character_projection_batch(
             fixture,
@@ -132,6 +229,8 @@ def finalize_plot_cognition_projection(
             semantic_results=tuple(semantic_results),
             hg_round_id=rnd.hg_round_id,
             turn_index=int(rnd.turn_index),
+            regeneration_inputs=regeneration_inputs,
+            second_pass_results=second_pass_results,
         )
     except ValueError as exc:
         return {"accepted": False, "reason": str(exc), "contributions": [], "forensic": None}
@@ -159,6 +258,8 @@ def finalize_plot_cognition_projection(
         }
     return {
         "accepted": True,
+        "batch_id": batch_id,
+        "binding": binding_payload,
         "contributions": [
             {
                 "contribution_id": item.contribution_id,
@@ -340,6 +441,9 @@ def plan_post_commit_plot_cognition_work(kernel: Any, fixture: LiveSession) -> d
 
 __all__ = [
     "prepare_plot_cognition_projection",
+    "register_plot_cognition_projection_semantic_result",
+    "prepare_plot_cognition_projection_regeneration",
+    "finalize_plot_cognition_projection_regeneration",
     "finalize_plot_cognition_projection",
     "record_plot_cognition_post_commit",
     "assess_plot_cognition_freshness",

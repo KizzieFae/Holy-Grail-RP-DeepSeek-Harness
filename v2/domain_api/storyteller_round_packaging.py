@@ -120,6 +120,52 @@ def _parse_semantic_results(
     return tuple(parsed)
 
 
+def _contributions_from_finalized_projection(
+    finalized_projection: dict[str, Any],
+    *,
+    manifest_id: str,
+    character_id: str,
+    hg_round_id: str,
+    turn_index: int,
+) -> tuple[PromptContribution, ...]:
+    binding = finalized_projection.get("binding") or {}
+    if str(binding.get("character_id", "")) != character_id:
+        return ()
+    if str(binding.get("hg_round_id", "")) != hg_round_id:
+        return ()
+    if int(binding.get("turn_index", -1)) != turn_index:
+        return ()
+    batch_id = str(binding.get("batch_id", ""))
+    binding_digest = str(binding.get("binding_digest", ""))
+    if not batch_id or not binding_digest:
+        return ()
+    if str(finalized_projection.get("batch_id", batch_id)) != batch_id:
+        return ()
+    if str(finalized_projection.get("binding_digest", binding_digest)) != binding_digest:
+        return ()
+    contributions: list[PromptContribution] = []
+    for index, item in enumerate(finalized_projection.get("contributions") or []):
+        if not isinstance(item, dict):
+            continue
+        contributions.append(
+            PromptContribution(
+                contribution_id=str(item.get("contribution_id", f"{manifest_id}-finalized-{index}")),
+                source_kind=str(item.get("source_kind", "storyteller_thematic_context")),
+                authority_class=str(item.get("authority_class", "derived")),
+                knowledge_ids=tuple(str(x) for x in (item.get("knowledge_ids") or [])),
+                priority=int(item.get("priority", 19)),
+                content=str(item.get("content", "")),
+                provenance={
+                    **dict(item.get("provenance") or {}),
+                    "projection_batch_id": batch_id,
+                    "binding_digest": binding_digest,
+                    "finalized_projection": True,
+                },
+            )
+        )
+    return tuple(contributions)
+
+
 def storyteller_contributions_for_consumer(
     fixture: LiveSession,
     rnd: RoundFixture,
@@ -133,6 +179,7 @@ def storyteller_contributions_for_consumer(
     orchestration_service: PlotCognitionOrchestrationService | None = None,
     projection_batch_id: str | None = None,
     projection_semantic_results: list[dict[str, Any]] | None = None,
+    finalized_projection: dict[str, Any] | None = None,
 ) -> tuple[PromptContribution, ...]:
     contributions: list[PromptContribution] = []
     policy = overlay_policy or _DEFAULT_OVERLAY_POLICY
@@ -161,27 +208,38 @@ def storyteller_contributions_for_consumer(
                 )
             )
         elif consumer_target == "character" and character_id:
-            all_candidates = orch.collect_character_candidates(
-                fixture,
-                rnd,
-                character_id=character_id,
-                overlay_view=view,
-                include_model_a=True,
-            )
-            if projection_batch_id and projection_semantic_results is not None:
-                try:
-                    finalized = orch.finalize_projection(
-                        fixture,
-                        rnd,
-                        batch_id=projection_batch_id,
-                        semantic_results=_parse_semantic_results(projection_semantic_results),
+            if isinstance(finalized_projection, dict) and finalized_projection:
+                contributions.extend(
+                    _contributions_from_finalized_projection(
+                        finalized_projection,
+                        manifest_id=manifest_id,
+                        character_id=character_id,
+                        hg_round_id=rnd.hg_round_id,
+                        turn_index=int(rnd.turn_index),
                     )
-                    contributions.extend(finalized.contributions)
-                except ValueError:
+                )
+            else:
+                all_candidates = orch.collect_character_candidates(
+                    fixture,
+                    rnd,
+                    character_id=character_id,
+                    overlay_view=view,
+                    include_model_a=True,
+                )
+                if projection_batch_id and projection_semantic_results is not None:
+                    try:
+                        finalized = orch.finalize_projection(
+                            fixture,
+                            rnd,
+                            batch_id=projection_batch_id,
+                            semantic_results=_parse_semantic_results(projection_semantic_results),
+                        )
+                        contributions.extend(finalized.contributions)
+                    except ValueError:
+                        pass
+                elif all_candidates:
+                    # Production path without supplied semantic results remains fail-closed.
                     pass
-            elif all_candidates:
-                # Production path without supplied semantic results remains fail-closed.
-                pass
     elif view is not None:
         if consumer_target == "director":
             contributions.extend(project_director_overlay(view, manifest_id=manifest_id))
@@ -191,7 +249,8 @@ def storyteller_contributions_for_consumer(
         return tuple(contributions)
 
     # Model A direct mapping for director/narrator; character uses orchestration finalize above.
-    if consumer_target != "character" or not (orch and projection_batch_id):
+    projection_bound = bool(projection_batch_id or finalized_projection)
+    if consumer_target != "character" or not (orch and projection_bound):
         result = map_storyteller_package_to_contributions(
             package,
             manifest_id=manifest_id,

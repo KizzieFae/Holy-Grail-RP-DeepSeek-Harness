@@ -66,6 +66,7 @@ def assemble_character_upstream_contributions(
     overlay_service: PlotCognitionOverlayService | None = None,
     projection_batch_id: str | None = None,
     projection_semantic_results: list[dict[str, Any]] | None = None,
+    finalized_projection: dict[str, Any] | None = None,
 ) -> CharacterUpstreamContext:
     auth_projections = project_authoritative_context(
         fixture,
@@ -173,6 +174,7 @@ def assemble_character_upstream_contributions(
             overlay_service=overlay_service,
             projection_batch_id=projection_batch_id,
             projection_semantic_results=projection_semantic_results,
+            finalized_projection=finalized_projection,
         )
     )
     if private_secret.strip():
