@@ -28,9 +28,23 @@ from .storyteller_packaging_policy import (
     StorytellerPackagingPolicy,
     policy_for_storyteller_consumer,
 )
+from .plot_cognition_projection_contract import (
+    CharacterAdvisoryCandidate,
+    ProjectionBudget,
+    new_candidate_id,
+)
+from .plot_cognition_projection_service import (
+    project_character_candidates,
+)
+from .session_state import LiveSession
 from .storyteller_packaging_validity import (
     StorytellerPackagingEligibility,
     assess_storyteller_packaging_eligibility,
+)
+
+_DEFAULT_CHARACTER_PROJECTION_BUDGET = ProjectionBudget(
+    max_evaluation_candidates=8,
+    max_projection_candidates=5,
 )
 
 _CATEGORY_SOURCE_KIND: dict[tuple[StorytellerPackagingConsumer, str], SourceKind] = {
@@ -64,6 +78,8 @@ def map_storyteller_package_to_contributions(
     binding: PackagingBindingContext,
     policy: StorytellerPackagingPolicy | None = None,
     character_id: str | None = None,
+    fixture: LiveSession | None = None,
+    projection_budget: ProjectionBudget | None = None,
 ) -> StorytellerPackagingResult:
     active_policy = policy or policy_for_storyteller_consumer(consumer_target)
     eligibility = assess_storyteller_packaging_eligibility(package, binding)
@@ -85,6 +101,18 @@ def map_storyteller_package_to_contributions(
             items_mapped=0,
             chars_mapped=0,
             omitted_reason=f"degradation_blocked:{package.degradation.level}",
+        )
+
+    if consumer_target == "character":
+        return _map_character_package_via_projection(
+            package,
+            manifest_id=manifest_id,
+            binding=binding,
+            eligibility=eligibility,
+            policy=active_policy,
+            character_id=character_id,
+            fixture=fixture,
+            projection_budget=projection_budget,
         )
 
     candidates = _collect_candidates(
@@ -210,14 +238,10 @@ def _collect_candidates(
 
     if "active_tensions" in policy.allowed_categories:
         for index, item in enumerate(package.active_tensions[: policy.max_tensions]):
-            if policy.require_character_scope and not _character_applicable(item, character_id):
-                continue
             items.append(_tension_candidate(item, index))
 
     if "progression_opportunities" in policy.allowed_categories:
         for index, item in enumerate(package.progression_opportunities[: policy.max_opportunities]):
-            if policy.require_character_scope and not _character_applicable(item, character_id):
-                continue
             items.append(_opportunity_candidate(item, index))
 
     if "unresolved_threads" in policy.allowed_categories:
@@ -226,8 +250,6 @@ def _collect_candidates(
 
     if "observations" in policy.allowed_categories:
         for index, item in enumerate(package.observations[: policy.max_observations]):
-            if policy.require_character_scope and not _character_applicable(item, character_id):
-                continue
             items.append(_observation_candidate(item, index))
 
     return [item for item in items if item["category"] in policy.allowed_categories]
@@ -289,24 +311,83 @@ def _observation_candidate(item: NarrativeObservation, index: int) -> dict[str, 
     }
 
 
-def _character_applicable(item: Any, character_id: str | None) -> bool:
-    if not character_id:
-        return False
-    needle = character_id.strip().lower()
-    if not needle:
-        return False
-    haystacks: list[str] = []
-    for attr in ("text", "focus", "why_it_matters", "label", "interpretive_note", "opportunity_label", "narrative_hook"):
-        value = getattr(item, attr, None)
-        if value:
-            haystacks.append(str(value).lower())
-    for ref in getattr(item, "evidence_refs", ()) or ():
-        for part in (ref.display_hint, ref.stable_ref):
-            if part:
-                haystacks.append(str(part).lower())
-    for issue_ref in getattr(item, "issue_refs", ()) or ():
-        haystacks.append(str(issue_ref).lower())
-    return any(needle in hay for hay in haystacks)
+def _model_a_source_kind(category: str) -> str:
+    return {
+        "observations": "model_a_observation",
+        "active_tensions": "model_a_tension",
+        "progression_opportunities": "model_a_opportunity",
+    }.get(category, "model_a_observation")
+
+
+def _candidate_from_mapper_item(
+    package: StorytellerAdvisoryPackage,
+    candidate: dict[str, Any],
+) -> CharacterAdvisoryCandidate:
+    category = str(candidate["category"])
+    evidence_refs = tuple(candidate.get("evidence_refs") or ())
+    return CharacterAdvisoryCandidate(
+        candidate_id=new_candidate_id(f"model-a-{candidate['item_id']}"),
+        text=str(candidate["text"]).strip(),
+        source_kind=_model_a_source_kind(category),  # type: ignore[arg-type]
+        lineage=(f"storyteller:{package.package_id}:{candidate['item_id']}",),
+        basis_refs=(),
+        structural_evidence_refs=evidence_refs,
+        creation_provenance=None,
+        host_metadata={"advisory_category": category, "package_id": package.package_id},
+    )
+
+
+def _map_character_package_via_projection(
+    package: StorytellerAdvisoryPackage,
+    *,
+    manifest_id: str,
+    binding: PackagingBindingContext,
+    eligibility: StorytellerPackagingEligibility,
+    policy: StorytellerPackagingPolicy,
+    character_id: str | None,
+    fixture: LiveSession | None,
+    projection_budget: ProjectionBudget | None,
+) -> StorytellerPackagingResult:
+    del binding
+    if not character_id or fixture is None:
+        return StorytellerPackagingResult(
+            contributions=(),
+            eligibility=eligibility,
+            items_considered=_count_items(package),
+            items_mapped=0,
+            chars_mapped=0,
+            omitted_reason="character_projection_requires_fixture_and_character_id",
+        )
+    raw_candidates = _collect_candidates(
+        package,
+        consumer_target="character",
+        policy=policy,
+        character_id=character_id,
+    )
+    advisory_candidates: list[CharacterAdvisoryCandidate] = []
+    for candidate in raw_candidates:
+        ok, _violations = validate_storyteller_payload({"text": candidate["text"]})
+        if not ok or _contains_prohibited_language(candidate["text"]):
+            continue
+        advisory_candidates.append(_candidate_from_mapper_item(package, candidate))
+
+    result = project_character_candidates(
+        fixture,
+        manifest_id=manifest_id,
+        character_id=character_id,
+        candidates=tuple(advisory_candidates),
+        budget=projection_budget or _DEFAULT_CHARACTER_PROJECTION_BUDGET,
+        authority_fingerprint=package.validity.valid_from_authoritative_snapshot_id,
+        base_priority=policy.base_priority,
+    )
+    chars_mapped = sum(len(item.content) for item in result.contributions)
+    return StorytellerPackagingResult(
+        contributions=result.contributions,
+        eligibility=eligibility,
+        items_considered=len(raw_candidates),
+        items_mapped=len(result.contributions),
+        chars_mapped=chars_mapped,
+    )
 
 
 def _contains_prohibited_language(text: str) -> bool:

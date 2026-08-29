@@ -30,6 +30,19 @@ from domain_api.storyteller_contract import (  # noqa: E402
 )
 from domain_api.storyteller_packaging_mapper import map_storyteller_package_to_contributions  # noqa: E402
 from domain_api.storyteller_packaging_policy import policy_for_storyteller_consumer  # noqa: E402
+from domain_api.session_state import initialize_live_session  # noqa: E402
+from domain_api.plot_cognition_projection_contract import MODEL_A_CHARACTER_SCOPE_REF_KIND  # noqa: E402
+
+
+def _character_scope_ref(character_id: str) -> StableReference:
+    return StableReference(
+        ref_kind=MODEL_A_CHARACTER_SCOPE_REF_KIND,
+        stable_ref=character_id,
+    )
+
+
+def _fixture():
+    return initialize_live_session(cast=["Alice", "Bob"], plot_cognition_scope_id="scope-s3b-test")
 
 
 def _binding(**overrides: object) -> PackagingBindingContext:
@@ -196,21 +209,24 @@ class StorytellerCharacterPackagingTests(unittest.TestCase):
                 ),
                 NarrativeObservation(
                     text="Alice feels the weight of betrayal.",
-                    evidence_refs=(_ref("alice-betrayal", display_hint="Alice betrayal"),),
+                    evidence_refs=(
+                        _character_scope_ref("Alice"),
+                        _ref("alice-betrayal", display_hint="Alice betrayal"),
+                    ),
                 ),
             ),
             active_tensions=(
                 NarrativeTension(
                     label="Bob distance",
                     interpretive_note="Bob is pulling away from Alice.",
-                    evidence_refs=(_ref("bob-alice"),),
+                    evidence_refs=(_character_scope_ref("Alice"), _ref("bob-alice")),
                 ),
             ),
             progression_opportunities=(
                 ProgressionOpportunity(
                     opportunity_label="Alice reconciliation",
                     narrative_hook="Alice could seek clarity if she chooses.",
-                    evidence_refs=(_ref("alice-hook"),),
+                    evidence_refs=(_character_scope_ref("Alice"), _ref("alice-hook")),
                 ),
             ),
         )
@@ -220,6 +236,7 @@ class StorytellerCharacterPackagingTests(unittest.TestCase):
             consumer_target="character",
             binding=_binding(pipeline_stage="character"),
             character_id="Alice",
+            fixture=_fixture(),
         )
         contents = "\n".join(item.content for item in result.contributions)
         self.assertIn("Alice", contents)
@@ -244,6 +261,7 @@ class StorytellerCharacterPackagingTests(unittest.TestCase):
             consumer_target="character",
             binding=_binding(pipeline_stage="character"),
             character_id="Bob",
+            fixture=_fixture(),
         )
         self.assertEqual(result.contributions, ())
 

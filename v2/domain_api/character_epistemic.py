@@ -1,10 +1,12 @@
-"""Per-character epistemic envelope helpers (#38)."""
+"""Per-character epistemic envelope helpers (#38, #62 basis resolution)."""
 
 from __future__ import annotations
 
 import hashlib
 from typing import Any
 
+from .librarian_contract import StableReference
+from .plot_cognition_projection_contract import BasisExposureResult
 from .session_state import LiveSession
 
 
@@ -42,6 +44,101 @@ def character_may_know_candidate(
     if required_knower and str(required_knower).strip() not in {"", character_id}:
         return False
     return True
+
+
+def _character_card_facet_owner(stable_ref: str) -> str | None:
+    text = str(stable_ref or "").strip()
+    if ":" not in text:
+        return None
+    return text.split(":", 1)[0].strip() or None
+
+
+def _event_known_by_character(fixture: LiveSession, character_id: str, event_ref: str) -> bool:
+    mgr = fixture.manager
+    needle = str(event_ref or "").strip()
+    if not needle:
+        return False
+    for event in getattr(mgr, "public_events", []) or []:
+        event_id = str(getattr(event, "event_id", "") or "")
+        if event_id != needle and not event_id.endswith(needle):
+            continue
+        known_by = {str(item) for item in (getattr(event, "known_by", []) or [])}
+        return character_id in known_by
+    return False
+
+
+def resolve_basis_exposure(
+    fixture: LiveSession,
+    *,
+    character_id: str,
+    basis_refs: tuple[StableReference, ...],
+) -> BasisExposureResult:
+    """Deterministic basis-ref resolution for Layer A structural eligibility."""
+    if not basis_refs:
+        return BasisExposureResult(
+            resolved=True,
+            exposable_facet_ids=(),
+            withheld_facet_ids=(),
+            has_hidden_basis=False,
+            epistemic_eligible=True,
+            rationale="no basis refs; storyteller-originated prospective path permitted",
+        )
+
+    exposable: list[str] = []
+    withheld: list[str] = []
+    unresolved = False
+    for ref in basis_refs:
+        facet_id = f"{ref.ref_kind}:{ref.stable_ref}"
+        ref_kind = str(ref.ref_kind or "").strip()
+        stable_ref = str(ref.stable_ref or "").strip()
+        if not ref_kind or not stable_ref:
+            unresolved = True
+            withheld.append(facet_id)
+            continue
+        if ref_kind == "character_card":
+            owner = _character_card_facet_owner(stable_ref)
+            if owner is None:
+                unresolved = True
+                withheld.append(facet_id)
+                continue
+            if owner.lower() == character_id.lower():
+                exposable.append(facet_id)
+            else:
+                withheld.append(facet_id)
+            continue
+        if ref_kind in {"public_event", "committed_event", "event"}:
+            if _event_known_by_character(fixture, character_id, stable_ref):
+                exposable.append(facet_id)
+            else:
+                withheld.append(facet_id)
+            continue
+        if ref_kind == "character_scope":
+            if stable_ref.strip().lower() == character_id.strip().lower():
+                exposable.append(facet_id)
+            else:
+                withheld.append(facet_id)
+            continue
+        unresolved = True
+        withheld.append(facet_id)
+
+    has_hidden = bool(withheld)
+    epistemic_eligible = bool(exposable) or (not unresolved and not has_hidden)
+    return BasisExposureResult(
+        resolved=not unresolved,
+        exposable_facet_ids=tuple(exposable),
+        withheld_facet_ids=tuple(withheld),
+        has_hidden_basis=has_hidden,
+        epistemic_eligible=epistemic_eligible,
+        rationale=(
+            "basis unresolved"
+            if unresolved
+            else "hidden basis present"
+            if has_hidden and exposable
+            else "basis withheld"
+            if has_hidden
+            else "basis fully exposable"
+        ),
+    )
 
 
 def build_character_visibility_envelope(

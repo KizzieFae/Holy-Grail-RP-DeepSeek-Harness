@@ -14,6 +14,13 @@ from .storyteller_contract import (
     advisory_package_to_dict,
     invalidate_storyteller_package,
 )
+from .plot_cognition_overlay_store import (
+    BoundednessPolicy,
+    LoadStatus,
+    OperativePlotCognitionView,
+)
+from .plot_cognition_overlay_service import PlotCognitionOverlayService
+from .plot_cognition_projection_contract import ProjectionBudget
 from .storyteller_packaging_mapper import map_storyteller_package_to_contributions
 from .storyteller_packaging_policy import StorytellerPackagingConsumer
 
@@ -44,6 +51,37 @@ def storyteller_packaging_binding(
     )
 
 
+_DEFAULT_OVERLAY_POLICY = BoundednessPolicy(max_active_goals=8, max_active_pressures=8)
+_DEFAULT_CHARACTER_OVERLAY_BUDGET = ProjectionBudget(
+    max_evaluation_candidates=8,
+    max_projection_candidates=5,
+)
+
+
+def _resolve_overlay_view(
+    fixture: LiveSession,
+    overlay_service: PlotCognitionOverlayService | None,
+    overlay_view: OperativePlotCognitionView | None,
+    *,
+    policy: BoundednessPolicy,
+) -> OperativePlotCognitionView | None:
+    if overlay_view is not None:
+        return overlay_view
+    if overlay_service is None:
+        return None
+    scope_id = str(fixture.plot_cognition_scope_id or "").strip()
+    if not scope_id:
+        return None
+    loaded = overlay_service.load(scope_id, policy=policy)
+    if loaded.status != LoadStatus.READY or loaded.store is None:
+        return None
+    return overlay_service.operative_view(
+        loaded.store,
+        policy=policy,
+        load_status=loaded.status,
+    )
+
+
 def storyteller_contributions_for_consumer(
     fixture: LiveSession,
     rnd: RoundFixture,
@@ -51,10 +89,43 @@ def storyteller_contributions_for_consumer(
     manifest_id: str,
     consumer_target: StorytellerPackagingConsumer,
     character_id: str | None = None,
+    overlay_service: PlotCognitionOverlayService | None = None,
+    overlay_view: OperativePlotCognitionView | None = None,
+    overlay_policy: BoundednessPolicy | None = None,
 ) -> tuple[PromptContribution, ...]:
+    contributions: list[PromptContribution] = []
+    policy = overlay_policy or _DEFAULT_OVERLAY_POLICY
+    view = _resolve_overlay_view(
+        fixture,
+        overlay_service,
+        overlay_view,
+        policy=policy,
+    )
+    if view is not None:
+        if consumer_target == "director":
+            contributions.extend(
+                project_director_overlay(view, manifest_id=manifest_id)
+            )
+        elif consumer_target == "character" and character_id:
+            overlay_candidates = collect_overlay_character_candidates(
+                view,
+                character_id=character_id,
+            )
+            if overlay_candidates:
+                overlay_result = project_character_candidates(
+                    fixture,
+                    manifest_id=manifest_id,
+                    character_id=character_id,
+                    candidates=overlay_candidates,
+                    budget=_DEFAULT_CHARACTER_OVERLAY_BUDGET,
+                    overlay_revision=None,
+                    base_priority=18,
+                )
+                contributions.extend(overlay_result.contributions)
+
     package = active_storyteller_package(rnd)
     if package is None:
-        return ()
+        return tuple(contributions)
     result = map_storyteller_package_to_contributions(
         package,
         manifest_id=manifest_id,
@@ -66,8 +137,10 @@ def storyteller_contributions_for_consumer(
             pipeline_stage=consumer_target,
         ),
         character_id=character_id,
+        fixture=fixture,
     )
-    return result.contributions
+    contributions.extend(result.contributions)
+    return tuple(contributions)
 
 
 @dataclass(frozen=True)
