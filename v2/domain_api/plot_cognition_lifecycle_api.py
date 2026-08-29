@@ -44,7 +44,21 @@ def finalize_plot_cognition_init(kernel: Any, fixture: LiveSession, data: dict[s
     if not isinstance(proposal_raw, dict):
         return {"accepted": False, "reason": "missing_proposal"}
     proposal = PlotCognitionInitializationProposal.from_dict(proposal_raw)
-    result = init_svc.commit_initial_overlay_if_absent(fixture, proposal, policy=_DEFAULT_POLICY)
+    sources = init_svc.gather_sources(fixture)
+
+    def do_commit():
+        return init_svc.commit_initial_overlay_if_absent(fixture, proposal, policy=_DEFAULT_POLICY)
+
+    from .plot_cognition_forensics_integration import wafi_initialize
+
+    result = wafi_initialize(
+        kernel,
+        fixture,
+        proposal=proposal,
+        sources=sources,
+        policy=_DEFAULT_POLICY,
+        commit_fn=do_commit,
+    )
     return {
         "accepted": result.success,
         "code": result.code,
@@ -102,14 +116,54 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
         replan_proposal = PlotCognitionReplanProposal.from_dict(data["replan_proposal"])
     if isinstance(data.get("replan_evaluation"), dict):
         replan_eval = PlotCognitionReplanEvaluation.from_dict(data["replan_evaluation"])
-    result = update_svc.commit_update(
+    operation_kind = "replan" if replan_proposal is not None else "update"
+    from .plot_cognition_forensics_integration import wafi_update_like
+    from .plot_cognition_forensics_capture import capture_authority_projection_verbatim
+
+    forensics = getattr(getattr(kernel, "store", None), "plot_cognition_forensics_service", None)
+    authority_artifact_id = None
+    if forensics is not None:
+        authority_artifact_id = forensics.store_semantic_artifact(
+            str(fixture.plot_cognition_scope_id or ""),
+            capture_authority_projection_verbatim(
+                fixture,
+                None,
+                proposal.source_snapshot_fingerprint,
+            ),
+        )
+
+    def do_commit():
+        return update_svc.commit_update(
+            fixture,
+            proposal,
+            evaluation,
+            policy=_DEFAULT_POLICY,
+            replan_proposal=replan_proposal,
+            replan_eval=replan_eval,
+        )
+
+    result, forensic_ok = wafi_update_like(
+        kernel,
         fixture,
-        proposal,
-        evaluation,
-        policy=_DEFAULT_POLICY,
-        replan_proposal=replan_proposal,
-        replan_eval=replan_eval,
+        operation_kind=operation_kind,
+        idempotency_suffix=str(proposal.proposal_id),
+        intent_payload={
+            "proposal": proposal.to_dict(),
+            "evaluation": evaluation.to_dict(),
+            "replan_proposal": replan_proposal.to_dict() if replan_proposal else None,
+            "replan_evaluation": replan_eval.to_dict() if replan_eval else None,
+            "authority_artifact_id": authority_artifact_id,
+        },
+        correlation_extra={"domain_commit_id": proposal.source_snapshot_fingerprint},
+        commit_fn=do_commit,
     )
+    if not forensic_ok:
+        return {
+            "accepted": False,
+            "code": "forensic_persistence_failed",
+            "message": "plot cognition update forensic persistence failed",
+            "store_revision": result.store_revision if hasattr(result, "store_revision") else None,
+        }
     orch = getattr(kernel.cognition, "plot_cognition_overlay", None)
     if result.success and orch is not None:
         from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
@@ -210,7 +264,27 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
     overlay, loaded = _loaded_store(kernel, fixture)
     if update_svc is None or loaded is None or loaded.store is None:
         return {"accepted": False, "reason": "plot_cognition_update_unavailable"}
-    result = update_svc.first_reconciliation(fixture, loaded.store, _DEFAULT_POLICY)
+
+    def do_commit():
+        return update_svc.first_reconciliation(fixture, loaded.store, _DEFAULT_POLICY)
+
+    from .plot_cognition_forensics_integration import wafi_update_like
+
+    result, forensic_ok = wafi_update_like(
+        kernel,
+        fixture,
+        operation_kind="reconciliation",
+        idempotency_suffix=f"reconciliation:{fixture.hg_scene_id}",
+        intent_payload={"reconciliation": True},
+        correlation_extra={},
+        commit_fn=do_commit,
+    )
+    if not forensic_ok:
+        return {
+            "accepted": False,
+            "code": "forensic_persistence_failed",
+            "message": "reconciliation forensic persistence failed",
+        }
     if result.success and overlay is not None:
         from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
 
@@ -242,12 +316,48 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
             contributors,
             catch_up_mode=str(data.get("catch_up_mode", "sequential")),
         )
-    result = update_svc.advance_authority_unchanged(
+
+    from .plot_cognition_forensics_capture import capture_authority_projection_verbatim
+    from .plot_cognition_forensics_integration import wafi_update_like
+
+    forensics = getattr(getattr(kernel, "store", None), "plot_cognition_forensics_service", None)
+    authority_artifact_id = None
+    if forensics is not None:
+        authority_artifact_id = forensics.store_semantic_artifact(
+            str(fixture.plot_cognition_scope_id or ""),
+            capture_authority_projection_verbatim(
+                fixture,
+                None,
+                snapshot.through_domain_commit_id,
+            ),
+        )
+
+    def do_commit():
+        return update_svc.advance_authority_unchanged(
+            fixture,
+            loaded.store,
+            _DEFAULT_POLICY,
+            source_snapshot=snapshot,
+        )
+
+    result, forensic_ok = wafi_update_like(
+        kernel,
         fixture,
-        loaded.store,
-        _DEFAULT_POLICY,
-        source_snapshot=snapshot,
+        operation_kind="authority_advance",
+        idempotency_suffix=str(snapshot.authority_source_fingerprint),
+        intent_payload={
+            "source_snapshot": snapshot.to_dict(),
+            "authority_artifact_id": authority_artifact_id,
+        },
+        correlation_extra={"domain_commit_id": snapshot.through_domain_commit_id},
+        commit_fn=do_commit,
     )
+    if not forensic_ok:
+        return {
+            "accepted": False,
+            "code": "forensic_persistence_failed",
+            "message": "authority advance forensic persistence failed",
+        }
     if result.success:
         from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
 

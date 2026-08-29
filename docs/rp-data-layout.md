@@ -127,6 +127,24 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Blocked marker:** `{plot_cognition_scope_id}.blocked.json` records corrupt/unsupported blocked state after quarantine or schema failure so the scope is not silently treated as absent.
 
+### Plot Cognition Forensic Chronicle (`plot_cognition_forensics`) — #64
+
+**Path:** `data/plot_cognition_forensics/{plot_cognition_scope_id}/`
+
+**Authority:** Append-only **historical** Plot Cognition semantic decisions and mutation forensics. **Not** operational Overlay truth, **not** Continuity, **not** a substitute for DSH execution evidence. Lifetime follows `plot_cognition_scope_id` (session delete does not remove the chronicle).
+
+**Contract:** [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md)
+
+**Layout:**
+
+```text
+data/plot_cognition_forensics/{plot_cognition_scope_id}/
+  scope_manifest.json
+  index.json                 # derived / rebuildable
+  records/{record_id}.json   # authoritative append-only
+  content/{artifact_id}.json
+```
+
 ---
 
 ## Execution evidence (`execution_evidence`)
@@ -165,8 +183,11 @@ data/execution_evidence/<hg_session_id>/
 | `semantic.qa_pass_chains[inference_id]` | Derived QA pass tuples `{candidate_evidence_id, evaluator_evidence_id, evaluation_pass_id, policy_action}` |
 | `semantic.qa_by_target_role[role]` | Flat discovery of Director/Narrator QA candidate ids |
 | `participation_by_round[hg_round_id]` | Participation-direct decision record ids |
+| `plot_cognition.by_round` / `by_commit` / `by_inference_kind` | Derived Plot Cognition inference navigation (#64; rebuildable) |
 
 Query via `python tools/investigation/list_execution_evidence.py <hg_session_id>` with `--chain`, `--role`, `--qa-target-role`, `--participation`, `--summary`, and `--cite` (see [audit-workflows.md](./audit-workflows.md)).
+
+Plot Cognition chronicle (scope-keyed, not session-keyed): `python tools/investigation/trace_plot_cognition_forensics.py <plot_cognition_scope_id> timeline` — see [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md).
 
 Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
 
@@ -250,6 +271,7 @@ Tracked JSON for investigation, evaluation, and scenario manifests. Scenario val
 |-------|---------------------|------------|
 | `data/sessions/*.json` | Yes | No (tracked or local per operator) |
 | `data/execution_evidence/` | No | Yes |
+| `data/plot_cognition_forensics/` | No | Yes |
 | `data/audit_tags/` | No | Yes |
 | `data/rp_audits/` | No | Yes |
 

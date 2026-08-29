@@ -18,7 +18,7 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
-from domain.paths import execution_evidence_data_dir  # noqa: E402
+from domain.paths import execution_evidence_data_dir, plot_cognition_forensics_data_dir  # noqa: E402
 from character_state_model import CharacterState  # noqa: E402
 from continuity_manager import ContinuityManager  # noqa: E402
 from session_manager import SessionManager  # noqa: E402
@@ -29,6 +29,8 @@ from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
 from .story_knowledge_repository import StoryKnowledgeRepository  # noqa: E402
+from .plot_cognition_forensics_repository import PlotCognitionForensicsRepository  # noqa: E402
+from .plot_cognition_forensics_service import PlotCognitionForensicsService  # noqa: E402
 from .plot_cognition_overlay_repository import PlotCognitionOverlayRepository  # noqa: E402
 from .plot_cognition_scope import resolve_plot_cognition_scope_id  # noqa: E402
 from .player_identity import resolve_player_display_name  # noqa: E402
@@ -80,6 +82,12 @@ class SessionRepository:
         self._plot_cognition_overlay_repo = PlotCognitionOverlayRepository(
             self._session_manager.sessions_dir / "_plot_cognition_overlay"
         )
+        self._plot_cognition_forensics_repo = PlotCognitionForensicsRepository(
+            plot_cognition_forensics_data_dir()
+        )
+        self._plot_cognition_forensics = PlotCognitionForensicsService(
+            self._plot_cognition_forensics_repo
+        )
         self.memory_service = MemoryService(self._cross_scope_repo)
         self.knowledge_service = KnowledgeService(
             self._scope_knowledge_repo,
@@ -102,6 +110,10 @@ class SessionRepository:
     @property
     def plot_cognition_overlay_repo(self) -> PlotCognitionOverlayRepository:
         return self._plot_cognition_overlay_repo
+
+    @property
+    def plot_cognition_forensics_service(self) -> PlotCognitionForensicsService:
+        return self._plot_cognition_forensics
 
     def health_ok(self) -> bool:
         return self._session_manager.sessions_dir.exists()

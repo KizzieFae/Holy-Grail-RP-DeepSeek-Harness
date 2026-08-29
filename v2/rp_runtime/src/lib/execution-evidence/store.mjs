@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ATTEMPT_SCHEMA, INDEX_SCHEMA, NI_FORENSICS_CONTRACT } from './config.mjs';
+import { ATTEMPT_SCHEMA, INDEX_SCHEMA, NI_FORENSICS_CONTRACT, PLOT_COGNITION_FORENSICS_INDEX_CONTRACT } from './config.mjs';
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -44,6 +44,17 @@ function emptyNiIndex() {
   };
 }
 
+function emptyPlotCognitionIndex() {
+  return {
+    index_contract: PLOT_COGNITION_FORENSICS_INDEX_CONTRACT,
+    by_round: {},
+    by_commit: {},
+    by_inference_kind: {},
+    by_scope: {},
+    by_candidate: {},
+  };
+}
+
 function emptyIndex(hgSessionId) {
   return {
     schema: INDEX_SCHEMA,
@@ -53,6 +64,7 @@ function emptyIndex(hgSessionId) {
     participation_by_round: {},
     semantic: emptySemanticIndex(),
     ni: emptyNiIndex(),
+    plot_cognition: emptyPlotCognitionIndex(),
   };
 }
 
@@ -130,6 +142,9 @@ export class ExecutionEvidenceStore {
     if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
       this._indexNi(hgSessionId, evidenceId, attempt);
     }
+    if (this._isPlotCognitionInference(attempt)) {
+      this._indexPlotCognition(hgSessionId, evidenceId, attempt);
+    }
     return evidenceId;
   }
 
@@ -158,6 +173,9 @@ export class ExecutionEvidenceStore {
     this._indexSemanticQa(hgSessionId, evidenceId, next);
     if (next.evidence_contract === NI_FORENSICS_CONTRACT) {
       this._indexNi(hgSessionId, evidenceId, next);
+    }
+    if (this._isPlotCognitionInference(next)) {
+      this._indexPlotCognition(hgSessionId, evidenceId, next);
     }
   }
 
@@ -192,6 +210,7 @@ export class ExecutionEvidenceStore {
     index.semantic = emptySemanticIndex();
     index.participation_by_round = {};
     index.ni = emptyNiIndex();
+    index.plot_cognition = emptyPlotCognitionIndex();
     for (const evidenceId of index.attempt_ids ?? []) {
       const attempt = this.readAttempt(hgSessionId, evidenceId);
       if (!attempt) continue;
@@ -203,6 +222,9 @@ export class ExecutionEvidenceStore {
       this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
       if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
         this._indexNi(hgSessionId, evidenceId, attempt, index);
+      }
+      if (this._isPlotCognitionInference(attempt)) {
+        this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
       }
     }
     index.updated_at = new Date().toISOString();
@@ -446,6 +468,61 @@ export class ExecutionEvidenceStore {
           move_evidence_id: evidenceId,
         },
       };
+    }
+
+    current.updated_at = new Date().toISOString();
+    if (!indexOverride) {
+      writeJsonAtomic(indexPath, current);
+    }
+  }
+
+  _isPlotCognitionInference(attempt) {
+    const kind = String(attempt?.correlation?.inference_kind ?? '');
+    return kind.startsWith('plot_cognition') || kind === 'character_advisory_generation';
+  }
+
+  _indexPlotCognition(hgSessionId, evidenceId, attempt, indexOverride = null) {
+    const correlation = attempt?.correlation ?? {};
+    const associations = attempt?.associations ?? {};
+    const inferenceKind = correlation.inference_kind;
+    const roundId = correlation.hg_round_id;
+    const commitId = correlation.domain_commit_id ?? associations.domain_commit_id;
+    const scopeId = associations.plot_cognition_scope_id ?? correlation.plot_cognition_scope_id;
+    const candidateId = associations.candidate_id ?? correlation.candidate_id;
+    const indexPath = this.indexPath(hgSessionId);
+    const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
+    if (!current.plot_cognition) current.plot_cognition = emptyPlotCognitionIndex();
+    const pc = current.plot_cognition;
+
+    if (inferenceKind) {
+      const kindKey = String(inferenceKind);
+      const bucket = pc.by_inference_kind[kindKey] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      pc.by_inference_kind[kindKey] = bucket;
+    }
+    if (roundId) {
+      const roundKey = String(roundId);
+      const bucket = pc.by_round[roundKey] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      pc.by_round[roundKey] = bucket;
+    }
+    if (commitId) {
+      const commitKey = String(commitId);
+      const bucket = pc.by_commit[commitKey] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      pc.by_commit[commitKey] = bucket;
+    }
+    if (scopeId) {
+      const scopeKey = String(scopeId);
+      const bucket = pc.by_scope[scopeKey] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      pc.by_scope[scopeKey] = bucket;
+    }
+    if (candidateId) {
+      const candidateKey = String(candidateId);
+      const bucket = pc.by_candidate[candidateKey] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      pc.by_candidate[candidateKey] = bucket;
     }
 
     current.updated_at = new Date().toISOString();

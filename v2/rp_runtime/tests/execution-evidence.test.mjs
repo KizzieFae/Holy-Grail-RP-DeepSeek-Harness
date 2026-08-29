@@ -71,6 +71,39 @@ test('execution evidence config: enabled by default; opt-out disables writes', (
   assert.equal(isExecutionEvidenceEnabled({ HG_EXECUTION_EVIDENCE: '0' }), false);
 });
 
+test('execution evidence store: plot cognition derived index', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-evidence-pc-'));
+  const store = new ExecutionEvidenceStore(root);
+  const evidenceId = 'ev-pc-1';
+  store.writeAttempt({
+    evidence_id: evidenceId,
+    correlation: {
+      evidence_id: evidenceId,
+      hg_session_id: 'sess-pc',
+      hg_scene_id: 'sess-pc',
+      hg_round_id: 'round-pc',
+      inference_kind: 'plot_cognition_update',
+      domain_commit_id: 'commit-pc',
+    },
+    associations: {
+      plot_cognition_scope_id: 'scope-pc',
+      candidate_id: 'cand-pc',
+    },
+    request: { schema: 'hg_assembled_request_v1', contributions: [] },
+    response: { schema: 'hg_model_response_v1', assistant_text: '{}' },
+  });
+  const index = store.readIndex('sess-pc');
+  assert.ok(index.plot_cognition);
+  assert.deepEqual(index.plot_cognition.by_round['round-pc'], [evidenceId]);
+  assert.deepEqual(index.plot_cognition.by_commit['commit-pc'], [evidenceId]);
+  assert.deepEqual(index.plot_cognition.by_inference_kind.plot_cognition_update, [evidenceId]);
+  assert.deepEqual(index.plot_cognition.by_scope['scope-pc'], [evidenceId]);
+  assert.deepEqual(index.plot_cognition.by_candidate['cand-pc'], [evidenceId]);
+  const rebuilt = store.rebuildSemanticNavigationIndexes('sess-pc');
+  assert.deepEqual(rebuilt.plot_cognition.by_commit['commit-pc'], [evidenceId]);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test('execution evidence store: atomic attempt + index writes', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-evidence-'));
   const store = new ExecutionEvidenceStore(root);

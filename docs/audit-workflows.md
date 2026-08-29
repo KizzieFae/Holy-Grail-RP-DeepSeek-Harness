@@ -156,6 +156,15 @@ Handoffs: `list_execution_evidence.py --ni`; `list_audit_tags.py --tag <id>`.
 
 Pre-#45 sessions: best-effort only; NI views report `ni_contract_unavailable`.
 
+**Plot Cognition forensics (#64):**
+
+1. Chronicle scope timeline: `trace_plot_cognition_forensics.py <plot_cognition_scope_id> timeline`
+2. Commit effects: `... commit <domain_commit_id>`
+3. Layer B join (Chronicle → execution evidence): `... layer_b <batch_id> --session <hg_session_id>`
+4. Integrity gaps: `... integrity`
+
+Normative contract: [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md). Pre-#64 scopes receive `chronicle_activation` baseline only (no synthetic history).
+
 ### Audit artifacts vs runtime (operational note)
 
 - Audit artifacts are optional for runtime. Session persistence: `data/sessions/*.json` — see [rp-data-layout.md](./rp-data-layout.md).

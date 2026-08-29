@@ -24,5 +24,6 @@ export function executionEvidenceRoot(env = process.env) {
 export const ATTEMPT_SCHEMA = 'hg_execution_evidence_attempt_v1';
 export const INDEX_SCHEMA = 'hg_execution_evidence_index_v1';
 export const NI_FORENSICS_CONTRACT = 'hg_ni_forensics_v1';
+export const PLOT_COGNITION_FORENSICS_INDEX_CONTRACT = 'hg_plot_cognition_forensics_index_v1';
 export const ASSEMBLED_REQUEST_SCHEMA = 'hg_assembled_request_v1';
 export const MODEL_RESPONSE_SCHEMA = 'hg_model_response_v1';

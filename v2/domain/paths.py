@@ -43,3 +43,10 @@ def execution_evidence_data_dir() -> Path:
     if explicit:
         return Path(explicit)
     return holy_grail_data_dir() / "execution_evidence"
+
+
+def plot_cognition_forensics_data_dir() -> Path:
+    explicit = os.environ.get("HG_PLOT_COGNITION_FORENSICS_DIR", "").strip()
+    if explicit:
+        return Path(explicit)
+    return holy_grail_data_dir() / "plot_cognition_forensics"

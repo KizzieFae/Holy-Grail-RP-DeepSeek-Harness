@@ -136,6 +136,27 @@ def finalize_plot_cognition_projection(
     except ValueError as exc:
         return {"accepted": False, "reason": str(exc), "contributions": [], "forensic": None}
     forensic = finalized.forensic
+    inference_map: dict[str, str] = {}
+    for item in semantic_results:
+        if item.inference_evidence_id:
+            inference_map[item.candidate_id] = str(item.inference_evidence_id)
+    from .plot_cognition_forensics_integration import record_projection_decisions
+
+    forensic_ok = record_projection_decisions(
+        kernel,
+        fixture,
+        rnd,
+        batch_id=batch_id,
+        forensic_payload=forensic.to_dict() if hasattr(forensic, "to_dict") else {},
+        inference_evidence_by_candidate=inference_map,
+    )
+    if not forensic_ok:
+        return {
+            "accepted": False,
+            "reason": "forensic_persistence_failed",
+            "contributions": [],
+            "forensic": forensic.to_dict() if hasattr(forensic, "to_dict") else None,
+        }
     return {
         "accepted": True,
         "contributions": [
@@ -176,6 +197,25 @@ def record_plot_cognition_post_commit(
         fixture,
         domain_commit_id=domain_commit_id,
     )
+    overlay = kernel.cognition.plot_cognition_overlay
+    prior_store = None
+    if overlay is not None and pending is not None:
+        from .plot_cognition_overlay_store import BoundednessPolicy, LoadStatus
+
+        scope_id = str(fixture.plot_cognition_scope_id or "")
+        loaded = overlay.load(scope_id, policy=BoundednessPolicy(max_active_goals=8, max_active_pressures=8))
+        if loaded.status == LoadStatus.READY and loaded.store is not None:
+            prior_store = loaded.store.to_dict()
+    if pending is not None:
+        from .plot_cognition_forensics_integration import record_pending_work_mutation
+
+        record_pending_work_mutation(
+            kernel,
+            fixture,
+            domain_commit_id=domain_commit_id,
+            pending_work=pending.to_dict(),
+            prior_store_dict=prior_store,
+        )
     return {
         "recorded": pending is not None,
         "pending_work": pending.to_dict() if pending is not None else None,

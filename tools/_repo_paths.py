@@ -21,6 +21,7 @@ VALIDATION_RUNS_ARCHIVE = INVESTIGATION_RUNS_DIR
 RP_AUDITS_DIR = DATA_DIR / "rp_audits"
 EXECUTION_EVIDENCE_DIR = DATA_DIR / "execution_evidence"
 AUDIT_TAGS_DIR = DATA_DIR / "audit_tags"
+PLOT_COGNITION_FORENSICS_DIR = DATA_DIR / "plot_cognition_forensics"
 
 
 def resolve_rp_audits_dir() -> Path:
