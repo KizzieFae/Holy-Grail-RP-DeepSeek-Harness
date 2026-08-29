@@ -329,14 +329,6 @@ def plan_post_commit_plot_cognition_work(kernel: Any, fixture: LiveSession) -> d
 
     overlay_status = orch.assess_overlay_freshness(fixture) if orch else None
     pending = overlay_status.pending_work if overlay_status else None
-    if overlay_status is not None and overlay_status.fresh and pending is None:
-        return {
-            "accepted": True,
-            "operation": "none",
-            "reason": "no_pending_work",
-            "fresh": True,
-            "pending_work": None,
-        }
 
     scope_id = str(fixture.plot_cognition_scope_id or "")
     loaded = overlay.load(scope_id, policy=_DEFAULT_POLICY)
@@ -351,6 +343,15 @@ def plan_post_commit_plot_cognition_work(kernel: Any, fixture: LiveSession) -> d
                 "fresh": False,
                 "pending_work": pending.to_dict() if pending else None,
             }
+
+    if overlay_status is not None and overlay_status.fresh and pending is None:
+        return {
+            "accepted": True,
+            "operation": "none",
+            "reason": "no_pending_work",
+            "fresh": True,
+            "pending_work": None,
+        }
 
     if loaded.status != LoadStatus.READY or loaded.store is None:
         return {

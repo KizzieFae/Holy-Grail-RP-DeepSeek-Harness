@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { createDomainApiClient } from '../lib/domain-api-client.mjs';
+import { createHolyGrailRpContext } from '../bootstrap.mjs';
 import { makeTempSessionsDir, startDomainApi } from '../../tests/helpers/domain-api.mjs';
 
 /**
@@ -35,4 +36,20 @@ export async function startHarnessRuntime(options = {}) {
       await host.stop();
     },
   };
+}
+
+/**
+ * RP context whose execution-evidence recorder writes to the harness data dir.
+ */
+export async function createHarnessRpContext({ baseUrl, dataDir }) {
+  const evidenceRoot = path.join(dataDir, 'execution_evidence');
+  return createHolyGrailRpContext({
+    domainApi: { baseUrl },
+    inference: {
+      executionEvidence: {
+        enabled: true,
+        root: evidenceRoot,
+      },
+    },
+  });
 }

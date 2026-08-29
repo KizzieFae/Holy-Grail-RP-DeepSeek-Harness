@@ -827,6 +827,31 @@ class PlotCognitionPostCommitPlanningTests(unittest.TestCase):
         self.assertTrue(finalized["accepted"])
         self.assertTrue(orch.assess_overlay_freshness(fixture).fresh)
 
+    def test_plan_routes_initialization_when_overlay_absent(self) -> None:
+        from domain_api.cognition_composition import CognitionComposition
+        from domain_api.plot_cognition_orchestration_api import plan_post_commit_plot_cognition_work
+        from domain_api.session_state import initialize_live_session
+
+        fixture = initialize_live_session(
+            cast=["Alice"],
+            plot_cognition_scope_id="scope-absent-init",
+        )
+        tmpdir = tempfile.mkdtemp()
+        try:
+            repo = PlotCognitionOverlayRepository(tmpdir)
+            composition = CognitionComposition.for_tests(
+                plot_cognition_overlay_repository=repo,
+            )
+
+            class _Kernel:
+                cognition = composition
+
+            plan = plan_post_commit_plot_cognition_work(_Kernel(), fixture)
+            self.assertEqual(plan["operation"], "initialization")
+            self.assertTrue(plan["accepted"])
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 if __name__ == "__main__":
     unittest.main()

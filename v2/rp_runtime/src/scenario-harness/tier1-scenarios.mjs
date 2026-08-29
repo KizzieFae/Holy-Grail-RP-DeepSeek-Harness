@@ -13,7 +13,7 @@ import {
   seedCharacterOverlayGoal,
   seedEmptyOverlayStore,
 } from '../../tests/helpers/plot-cognition-projection-fixtures.mjs';
-import { startHarnessRuntime } from './harness-runtime.mjs';
+import { startHarnessRuntime, createHarnessRpContext } from './harness-runtime.mjs';
 import {
   buildInitProposal,
   buildReplanUpdateInference,
@@ -30,6 +30,7 @@ import {
 import {
   chronicleKeysForScope,
   evidenceIdsForSession,
+  findEvidenceByKind,
   joinScenarioForensics,
   loadOverlayStore,
 } from './forensic-query.mjs';
@@ -70,47 +71,60 @@ async function createFreshOverlaySession(api, sessionsDir, {
 }
 
 export async function runT1_01() {
-  return withHarness(async ({ api, sessionsDir, forensicsDir, dataDir }) => {
+  return withHarness(async ({ api, baseUrl, sessionsDir, forensicsDir, dataDir }) => {
     const started = Date.now();
     const { session, scopeId, hgSceneId } = await createAbsentOverlaySession(api);
-    const initPrepare = await api.preparePlotCognitionInit({
-      hg_scene_id: hgSceneId,
-      manifest_id: `manifest-tier1-init-${crypto.randomUUID()}`,
-    });
-    const proposal = buildInitProposal(initPrepare);
-    const initFinalize = await api.finalizePlotCognitionInit({
-      hg_scene_id: hgSceneId,
-      proposal,
-    });
-    const freshness = await api.assessPlotCognitionFreshness({ hg_scene_id: hgSceneId });
-    const overlay = loadOverlayStore(sessionsDir, scopeId);
-    const forensics = joinScenarioForensics({
-      forensicsDir,
-      dataDir,
-      scopeId,
-      hgSessionId: session.hg_session_id,
-    });
-    const gates = {
-      init_prepare_accepted: gate('init_prepare_accepted', initPrepare.accepted === true),
-      init_finalize_accepted: gate('init_finalize_accepted', initFinalize.accepted === true),
-      overlay_ready: gate('overlay_ready', overlay && Object.keys(overlay.pressures ?? {}).length > 0),
-      freshness_fresh: gate('freshness_fresh', freshness.fresh === true),
-      chronicle_present: gate('chronicle_present', forensics.chronicleKeys.some((k) => k.includes(':init:'))),
-    };
-    return finalizeScenarioResult(createScenarioResult('T1-01', {
-      fixtureId: scopeId,
-      objectiveGates: gates,
-      operationSequence: ['init_prepare', 'init_finalize'],
-      overlayRevisions: [overlay?.store_revision ?? null],
-      inferenceCounts: {},
-      evidenceIds: forensics.evidenceIds,
-      chronicleKeys: forensics.chronicleKeys,
-      integrityGaps: forensics.chronicleKeys.some((k) => k.includes(':init:'))
-        ? []
-        : ['missing_chronicle_init'],
-      phaseDurationsMs: { total: Date.now() - started },
-      notes: ['New-scope initialization with absent overlay; WAFI via Domain finalize.'],
-    }));
+    const plan = await api.planPostCommitPlotCognitionWork({ hg_scene_id: hgSceneId });
+    const { ctx: rpCtx, phaseExecutors } = await createHarnessRpContext({ baseUrl, dataDir });
+    try {
+      const lifecycle = await runPlotCognitionPendingWorkLifecycle({
+        domainApi: api,
+        hgSceneId,
+        inferenceId: 'inf-tier1-init',
+        runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+        mockInitResponse: (initPrepare) => buildInitProposal(initPrepare),
+        evidenceContextBase: {
+          hgSessionId: session.hg_session_id,
+          hgSceneId,
+        },
+      });
+      const freshness = await api.assessPlotCognitionFreshness({ hg_scene_id: hgSceneId });
+      const overlay = loadOverlayStore(sessionsDir, scopeId);
+      const forensics = joinScenarioForensics({
+        forensicsDir,
+        dataDir,
+        scopeId,
+        hgSessionId: session.hg_session_id,
+      });
+      const gates = {
+        plan_initialization: gate('plan_initialization', plan.operation === 'initialization'),
+        lifecycle_ok: gate(
+          'lifecycle_ok',
+          lifecycle.ok === true && lifecycle.operation === 'initialization',
+        ),
+        overlay_ready: gate('overlay_ready', overlay && Object.keys(overlay.pressures ?? {}).length > 0),
+        freshness_fresh: gate('freshness_fresh', freshness.fresh === true),
+        chronicle_present: gate('chronicle_present', forensics.chronicleKeys.some((k) => k.includes(':init:'))),
+      };
+      return finalizeScenarioResult(createScenarioResult('T1-01', {
+        fixtureId: scopeId,
+        objectiveGates: gates,
+        operationSequence: ['plan_initialization', 'init_prepare', 'init_finalize'],
+        overlayRevisions: [overlay?.store_revision ?? null],
+        evidenceIds: forensics.evidenceIds,
+        chronicleKeys: forensics.chronicleKeys,
+        integrityGaps: forensics.chronicleKeys.some((k) => k.includes(':init:'))
+          ? []
+          : ['missing_chronicle_init'],
+        phaseDurationsMs: { total: Date.now() - started },
+        notes: [
+          'Integrated path: pending-work plan → runPlotCognitionPendingWorkLifecycle initialization.',
+          'Absent overlay fresh:true is non-stale for consumers; initialization routing is separate.',
+        ],
+      }));
+    } finally {
+      await rpCtx.fiber.dispose();
+    }
   });
 }
 
@@ -510,50 +524,124 @@ export async function runT1_09() {
 }
 
 export async function runT1_10() {
-  return withHarness(async ({ api, sessionsDir, forensicsDir, dataDir }) => {
+  return withHarness(async ({ api, baseUrl, sessionsDir, forensicsDir, dataDir }) => {
     const started = Date.now();
     const ctx = await createFreshOverlaySession(api, sessionsDir);
     const instrumented = instrumentProjectionApi(attachCharacterCognitionApiStubs(api));
-    const { runEphemeralInference, calls } = createTrackingInference([epistemicPass()]);
-    const projection = await runCharacterProjectionLifecycle({
-      api: instrumented,
-      runEphemeralInference,
-      scope: { hgSessionId: ctx.session.hg_session_id },
-      hgSceneId: ctx.hgSceneId,
-      hgRoundId: ctx.hgRoundId,
-      characterId: 'Alice',
-      inferenceId: 'inf-tier1-forensic',
-      turnIndex: ctx.turnIndex,
-    });
-    const forensics = joinScenarioForensics({
-      forensicsDir,
-      dataDir,
-      scopeId: ctx.scopeId,
-      hgSessionId: ctx.session.hg_session_id,
-      batchId: projection.finalized?.batch_id,
-    });
-    const gates = {
-      projection_ok: gate('projection_ok', projection.ok === true),
-      evidence_linked: gate(
-        'evidence_linked',
-        calls.some((c) => c.inferenceKind === 'plot_cognition_epistemic_eval'),
-      ),
-      chronicle_linked: gate('chronicle_linked', forensics.chronicleKeys.some((k) => k.includes(':projection:'))),
-      joinable_chain: gate(
-        'joinable_chain',
-        forensics.chronicleKeys.some((k) => k.includes(':projection:')),
-      ),
-    };
-    return finalizeScenarioResult(createScenarioResult('T1-10', {
-      fixtureId: ctx.scopeId,
-      objectiveGates: gates,
-      operationSequence: ['layer_b', 'projection_finalize', 'forensic_join'],
-      inferenceCounts: summarizeInferenceCounts(calls),
-      evidenceIds: forensics.evidenceIds,
-      chronicleKeys: forensics.chronicleKeys,
-      integrityGaps: [],
-      phaseDurationsMs: { total: Date.now() - started },
-    }));
+    const { ctx: rpCtx, phaseExecutors } = await createHarnessRpContext({ baseUrl, dataDir });
+    try {
+      const projection = await runCharacterProjectionLifecycle({
+        api: instrumented,
+        runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+        mockEpistemicResponses: [epistemicPass()],
+        scope: {
+          hgSessionId: ctx.session.hg_session_id,
+          hgSceneId: ctx.hgSceneId,
+          hgRoundId: ctx.hgRoundId,
+        },
+        hgSceneId: ctx.hgSceneId,
+        hgRoundId: ctx.hgRoundId,
+        characterId: 'Alice',
+        inferenceId: 'inf-tier1-forensic-pass',
+        turnIndex: ctx.turnIndex,
+      });
+      const passEvalEvidence = findEvidenceByKind(
+        dataDir,
+        ctx.session.hg_session_id,
+        'plot_cognition_epistemic_eval',
+      );
+      const forensics = joinScenarioForensics({
+        forensicsDir,
+        dataDir,
+        scopeId: ctx.scopeId,
+        hgSessionId: ctx.session.hg_session_id,
+        batchId: projection.finalized?.batch_id,
+      });
+
+      const ctxRegen = await createFreshOverlaySession(api, sessionsDir, {
+        direction: 'Reveal hidden vault [[REWRITE]]',
+      });
+      const projectionRegen = await runCharacterProjectionLifecycle({
+        api: instrumented,
+        runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+        mockEpistemicResponses: [epistemicRewriteRequired(), epistemicPass()],
+        mockRegenerationResponses: ['Revised advisory without hidden vault details.'],
+        scope: {
+          hgSessionId: ctxRegen.session.hg_session_id,
+          hgSceneId: ctxRegen.hgSceneId,
+          hgRoundId: ctxRegen.hgRoundId,
+        },
+        hgSceneId: ctxRegen.hgSceneId,
+        hgRoundId: ctxRegen.hgRoundId,
+        characterId: 'Alice',
+        inferenceId: 'inf-tier1-forensic-regen',
+        turnIndex: ctxRegen.turnIndex,
+      });
+      const regenEvalEvidence = findEvidenceByKind(
+        dataDir,
+        ctxRegen.session.hg_session_id,
+        'plot_cognition_epistemic_eval',
+      );
+      const regenGenEvidence = findEvidenceByKind(
+        dataDir,
+        ctxRegen.session.hg_session_id,
+        'character_advisory_generation',
+      );
+      const regenForensics = joinScenarioForensics({
+        forensicsDir,
+        dataDir,
+        scopeId: ctxRegen.scopeId,
+        hgSessionId: ctxRegen.session.hg_session_id,
+        batchId: projectionRegen.finalized?.batch_id,
+      });
+
+      const gates = {
+        pass_projection_ok: gate('pass_projection_ok', projection.ok === true),
+        pass_evidence_on_disk: gate('pass_evidence_on_disk', passEvalEvidence.length >= 1),
+        pass_chronicle_linked: gate(
+          'pass_chronicle_linked',
+          forensics.chronicleKeys.some((k) => k.includes(':projection:')),
+        ),
+        regen_projection_ok: gate('regen_projection_ok', projectionRegen.ok === true),
+        regen_eval_evidence_on_disk: gate('regen_eval_evidence_on_disk', regenEvalEvidence.length === 2),
+        regen_generator_evidence_on_disk: gate(
+          'regen_generator_evidence_on_disk',
+          regenGenEvidence.length === 1,
+        ),
+        regen_chronicle_linked: gate(
+          'regen_chronicle_linked',
+          regenForensics.chronicleKeys.some((k) => k.includes(':projection:')),
+        ),
+      };
+      const durableEvidence = {
+        pass: {
+          evidence_ids: passEvalEvidence.map((entry) => entry.evidence_id),
+          chronicle_keys: forensics.chronicleKeys.filter((k) => k.includes(':projection:')),
+        },
+        regen: {
+          eval_evidence_ids: regenEvalEvidence.map((entry) => entry.evidence_id),
+          generator_evidence_ids: regenGenEvidence.map((entry) => entry.evidence_id),
+          chronicle_keys: regenForensics.chronicleKeys.filter((k) => k.includes(':projection:')),
+        },
+      };
+      return finalizeScenarioResult(createScenarioResult('T1-10', {
+        fixtureId: ctx.scopeId,
+        objectiveGates: gates,
+        operationSequence: ['layer_b_pass', 'projection_finalize', 'layer_b_regen_chain'],
+        evidenceIds: [
+          ...passEvalEvidence.map((entry) => entry.evidence_id),
+          ...regenEvalEvidence.map((entry) => entry.evidence_id),
+          ...regenGenEvidence.map((entry) => entry.evidence_id),
+        ],
+        chronicleKeys: [...forensics.chronicleKeys, ...regenForensics.chronicleKeys],
+        durableEvidence,
+        integrityGaps: [],
+        phaseDurationsMs: { total: Date.now() - started },
+        notes: ['Durable execution-evidence recorder via production inference substrate.'],
+      }));
+    } finally {
+      await rpCtx.fiber.dispose();
+    }
   });
 }
 

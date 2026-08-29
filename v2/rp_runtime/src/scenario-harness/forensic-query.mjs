@@ -19,6 +19,12 @@ export function evidenceIdsForSession(dataDir, hgSessionId) {
   return attempts.map((attempt) => attempt.evidence_id ?? attempt.attempt_id).filter(Boolean);
 }
 
+export function findEvidenceByKind(dataDir, hgSessionId, inferenceKind) {
+  return readExecutionAttempts(dataDir, hgSessionId).filter(
+    (attempt) => attempt.correlation?.inference_kind === inferenceKind,
+  );
+}
+
 export function findChronicleOperationKeys(forensicsDir, scopeId, fragment) {
   return chronicleKeysForScope(forensicsDir, scopeId).filter((key) => key.includes(fragment));
 }

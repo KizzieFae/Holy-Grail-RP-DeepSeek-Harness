@@ -47,10 +47,13 @@ PlotGoal usefulness, Director strategic value, Character advisory naturalness, r
 Each run returns `hg_storyteller_tier1_scenario_result_v1` (`scenario-result.mjs`):
 
 - `scenario_id`, `run_id`, `fixture_id`
-- `objective_pass`, `objective_gates`
+- `objective_status`: `certified` | `blocked` | `not_proven`
+- `objective_pass` (true only when `objective_status === 'certified'`)
+- `objective_gates`
 - `operation_sequence`, `inference_counts`, `regeneration_count`
 - `consumer_contributions`, `withheld`
 - `evidence_ids`, `chronicle_keys`, `integrity_gaps`
+- `durable_evidence` (on-disk evidence IDs for forensic scenarios)
 - `phase_durations_ms`
 - `semantic_characterization` (reserved for Phase C; null in Phase B)
 

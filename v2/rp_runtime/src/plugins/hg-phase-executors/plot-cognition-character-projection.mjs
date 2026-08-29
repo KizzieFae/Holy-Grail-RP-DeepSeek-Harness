@@ -18,9 +18,11 @@ async function runEpistemicEval({
   modelProfile,
   mockResponse,
   parentEvidenceId = null,
+  evaluationAttempt = 1,
 }) {
+  const attemptSuffix = evaluationAttempt > 1 ? `-attempt-${evaluationAttempt}` : '';
   const inferRun = await runEphemeralInference({
-    inferenceId: `${inferenceId}-epistemic-${evaluationPassId}`,
+    inferenceId: `${inferenceId}-epistemic-${evaluationPassId}${attemptSuffix}`,
     prompt: 'Evaluate Character advisory text for epistemic leakage. Output JSON only.',
     manifest: { contributions: manifestContributions },
     mockResponses: mockResponse ? [mockResponse] : [],
@@ -260,6 +262,7 @@ export async function runCharacterProjectionLifecycle({
         modelProfile,
         mockResponse: mockEpistemicResponses[mockEpistemicIndex++] ?? null,
         parentEvidenceId: generation.evidenceId,
+        evaluationAttempt: 2,
       });
       callLog.push(`eval:${evaluationPassId}:2`);
       const registerSecond = await api.registerPlotCognitionProjectionSemanticResult({

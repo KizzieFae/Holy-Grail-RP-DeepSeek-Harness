@@ -17,6 +17,7 @@ for (const scenario of TIER1_SCENARIOS) {
     const result = await scenario.run();
     assert.equal(result.schema, 'hg_storyteller_tier1_scenario_result_v1');
     assert.equal(result.scenario_id, scenario.id);
+    assert.equal(result.objective_status, 'certified', JSON.stringify(result.objective_gates, null, 2));
     if (!result.objective_pass) {
       const failed = Object.entries(result.objective_gates ?? {})
         .filter(([, value]) => value.pass !== true)
@@ -29,5 +30,5 @@ for (const scenario of TIER1_SCENARIOS) {
 test('storyteller tier1 harness: runAllTier1Scenarios returns complete set', async () => {
   const results = await runAllTier1Scenarios();
   assert.equal(results.length, TIER1_SCENARIOS.length);
-  assert.ok(results.every((result) => result.objective_pass === true));
+  assert.ok(results.every((result) => result.objective_status === 'certified'));
 });

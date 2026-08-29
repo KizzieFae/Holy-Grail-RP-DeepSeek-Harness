@@ -172,9 +172,12 @@ export async function runPlotCognitionPendingWorkLifecycle({
     }
     let initPayload;
     if (mockInitResponse) {
-      initPayload = typeof mockInitResponse === 'string'
-        ? JSON.parse(mockInitResponse)
+      const resolved = typeof mockInitResponse === 'function'
+        ? mockInitResponse(initPrepare)
         : mockInitResponse;
+      initPayload = typeof resolved === 'string'
+        ? JSON.parse(resolved)
+        : resolved;
     } else {
       const initInferenceId = `${inferenceId}-plot-init`;
       const inferRun = await runEphemeralInference({

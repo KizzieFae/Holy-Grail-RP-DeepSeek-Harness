@@ -1,4 +1,4 @@
-export { createScenarioResult, finalizeScenarioResult, gate, SCENARIO_RESULT_SCHEMA } from './scenario-result.mjs';
+export { createScenarioResult, finalizeScenarioResult, gate, OBJECTIVE_STATUS, SCENARIO_RESULT_SCHEMA } from './scenario-result.mjs';
 export { startHarnessRuntime } from './harness-runtime.mjs';
 export * from './inference-mocks.mjs';
 export * from './forensic-query.mjs';

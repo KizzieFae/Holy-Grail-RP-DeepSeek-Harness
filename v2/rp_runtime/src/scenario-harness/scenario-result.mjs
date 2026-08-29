@@ -2,6 +2,12 @@ import crypto from 'node:crypto';
 
 export const SCENARIO_RESULT_SCHEMA = 'hg_storyteller_tier1_scenario_result_v1';
 
+export const OBJECTIVE_STATUS = {
+  CERTIFIED: 'certified',
+  BLOCKED: 'blocked',
+  NOT_PROVEN: 'not_proven',
+};
+
 /**
  * Structured objective certification result for a Tier-1 scenario run.
  * Semantic-quality fields are reserved for Phase C; not populated in Phase B.
@@ -10,6 +16,7 @@ export function createScenarioResult(scenarioId, {
   runId = `tier1-run-${crypto.randomUUID()}`,
   fixtureId = null,
   objectivePass = false,
+  objectiveStatus = OBJECTIVE_STATUS.NOT_PROVEN,
   objectiveGates = {},
   operationSequence = [],
   authorityCommits = [],
@@ -24,6 +31,7 @@ export function createScenarioResult(scenarioId, {
   phaseDurationsMs = {},
   notes = [],
   semanticCharacterization = null,
+  durableEvidence = null,
 } = {}) {
   return {
     schema: SCENARIO_RESULT_SCHEMA,
@@ -31,6 +39,7 @@ export function createScenarioResult(scenarioId, {
     run_id: runId,
     fixture_id: fixtureId,
     objective_pass: objectivePass,
+    objective_status: objectiveStatus,
     objective_gates: objectiveGates,
     operation_sequence: operationSequence,
     authority_commits: authorityCommits,
@@ -45,14 +54,26 @@ export function createScenarioResult(scenarioId, {
     phase_durations_ms: phaseDurationsMs,
     notes,
     semantic_characterization: semanticCharacterization,
+    durable_evidence: durableEvidence,
     certification_class: 'objective_deterministic',
   };
 }
 
-export function finalizeScenarioResult(result) {
+export function finalizeScenarioResult(result, { blocked = false } = {}) {
   const gates = Object.values(result.objective_gates ?? {});
-  const pass = gates.length > 0 && gates.every((gate) => gate.pass === true);
-  return { ...result, objective_pass: pass && result.integrity_gaps.length === 0 };
+  const gatesPass = gates.length > 0 && gates.every((entry) => entry.pass === true);
+  const integrityOk = (result.integrity_gaps ?? []).length === 0;
+  let objectiveStatus = OBJECTIVE_STATUS.NOT_PROVEN;
+  if (blocked) {
+    objectiveStatus = OBJECTIVE_STATUS.BLOCKED;
+  } else if (gatesPass && integrityOk) {
+    objectiveStatus = OBJECTIVE_STATUS.CERTIFIED;
+  }
+  return {
+    ...result,
+    objective_status: objectiveStatus,
+    objective_pass: objectiveStatus === OBJECTIVE_STATUS.CERTIFIED,
+  };
 }
 
 export function gate(name, pass, detail = null) {

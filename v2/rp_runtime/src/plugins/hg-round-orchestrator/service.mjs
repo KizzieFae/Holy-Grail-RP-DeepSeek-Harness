@@ -57,6 +57,7 @@ export default class HgRoundOrchestrator extends Service {
     const mockNarratorSemanticQaResponses = options.mockNarratorSemanticQaResponses ?? [];
     const mockLibrarianProposalResponses = options.mockLibrarianProposalResponses ?? [];
     const mockPlotCognitionUpdateResponses = options.mockPlotCognitionUpdateResponses ?? [];
+    const mockPlotCognitionInitResponse = options.mockPlotCognitionInitResponse ?? null;
     const plotCognitionDelayMs = Number(options.plotCognitionDelayMs ?? 0);
     const mockCharacterOrientationResponses = options.mockCharacterOrientationResponses
       ?? (options.mockCharacterOrientationResponse
@@ -246,6 +247,7 @@ export default class HgRoundOrchestrator extends Service {
         inferenceId: `inf-plot-cog-resume-${hgRoundId}`,
         runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
         mockUpdateResponse: mockPlotCognitionUpdateResponses[0] ?? null,
+        mockInitResponse: mockPlotCognitionInitResponse,
         modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
         evidenceContextBase: {
           hgSessionId,
