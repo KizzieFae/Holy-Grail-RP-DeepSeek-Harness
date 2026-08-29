@@ -89,6 +89,7 @@ Until that harness ships:
 
 - Use **domain manifest tests** for scenario contract regression.
 - Use **integration and runtime tests** for orchestration proof.
+- Use **`v2/rp_runtime/tests/storyteller-tier1-certification.test.mjs`** for deterministic Tier-1 objective gates (#65 Phase B); see [docs/storyteller-tier1-certification.md](./storyteller-tier1-certification.md).
 - Use **offline investigation tools** to analyze audit JSON produced by supervised runs or historical evidence.
 
 Do not point operators at deleted runner scripts or non-canonical data trees.
