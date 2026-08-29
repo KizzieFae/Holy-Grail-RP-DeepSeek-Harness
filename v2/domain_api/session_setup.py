@@ -35,6 +35,7 @@ from scene_template import (  # noqa: E402
 from scene_template_cohesion import resolve_effective_presence_constraint  # noqa: E402
 
 from .memory_scope import resolve_memory_scope_id  # noqa: E402
+from .plot_cognition_scope import resolve_plot_cognition_scope_id  # noqa: E402
 from .player_identity import (  # noqa: E402
     build_control_modes,
     normalize_user_persona_id,
@@ -161,6 +162,7 @@ def create_live_session_from_setup(
     hg_session_id: str | None = None,
     characters_dir: str | Path | None = None,
     memory_scope_id: str | None = None,
+    plot_cognition_scope_id: str | None = None,
     player_character_file_id: str | None = None,
     user_persona_id: str | None = None,
 ) -> LiveSession:
@@ -252,6 +254,10 @@ def create_live_session_from_setup(
         template_snapshot = SceneTemplateManager().load_template(scene_template_id).to_dict()
 
     resolved_scope = resolve_memory_scope_id(memory_scope_id)
+    resolved_plot_scope = resolve_plot_cognition_scope_id(
+        plot_cognition_scope_id,
+        resolved_scope,
+    )
     player_display_name = resolve_player_display_name(
         player_character_file_id=resolved_player_file,
         names_by_file=names_by_file,
@@ -271,6 +277,7 @@ def create_live_session_from_setup(
         "opening": {**(opening or {}), **opening_metadata},
         "location": resolved_location,
         "memory_scope_id": resolved_scope,
+        "plot_cognition_scope_id": resolved_plot_scope,
         "player_character_file_id": resolved_player_file,
         "user_persona_id": resolved_persona,
         "control_modes": control_modes,
@@ -298,6 +305,7 @@ def create_live_session_from_setup(
         setup_snapshot=setup_snapshot,
         character_file_ids={names_by_file[f]: f for f in character_files},
         memory_scope_id=resolved_scope,
+        plot_cognition_scope_id=resolved_plot_scope,
     )
 
 
@@ -315,6 +323,7 @@ def setup_provenance_for_ui(snapshot: dict[str, Any]) -> dict[str, Any]:
         "opening": dict(snapshot.get("opening") or {}),
         "location": snapshot.get("location"),
         "memory_scope_id": snapshot.get("memory_scope_id"),
+        "plot_cognition_scope_id": snapshot.get("plot_cognition_scope_id"),
         "player_character_file_id": player_file,
         "player_character_display_name": resolve_player_display_name(
             player_character_file_id=player_file,

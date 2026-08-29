@@ -8,6 +8,9 @@ from .character_service import CharacterKnowledgeService
 from .librarian_proposal_service import LibrarianProposalService
 from .librarian_service import LibrarianService
 from .retrieval_service import RetrievalService
+from .plot_cognition_overlay_repository import PlotCognitionOverlayRepository
+from .plot_cognition_overlay_service import PlotCognitionOverlayService
+from .plot_cognition_scope_lock import PlotCognitionScopeLockRegistry
 from .scope_knowledge_repository import ScopeKnowledgeRepository
 from .story_knowledge_repository import StoryKnowledgeRepository
 from .story_knowledge_service import StoryKnowledgeService
@@ -24,6 +27,7 @@ class CognitionComposition:
     librarian_proposals: LibrarianProposalService
     character_knowledge: CharacterKnowledgeService
     story_knowledge: StoryKnowledgeService | None
+    plot_cognition_overlay: PlotCognitionOverlayService | None
 
     @classmethod
     def create(
@@ -31,6 +35,8 @@ class CognitionComposition:
         *,
         scope_knowledge_repository: ScopeKnowledgeRepository | None,
         story_knowledge_repository: StoryKnowledgeRepository | None,
+        plot_cognition_overlay_repository: PlotCognitionOverlayRepository | None = None,
+        plot_cognition_scope_locks: PlotCognitionScopeLockRegistry | None = None,
     ) -> CognitionComposition:
         """Canonical cognition graph wiring (production and tests)."""
         retrieval = RetrievalService(
@@ -46,6 +52,14 @@ class CognitionComposition:
             if story_knowledge_repository is not None
             else None
         )
+        plot_cognition_overlay = (
+            PlotCognitionOverlayService(
+                plot_cognition_overlay_repository,
+                scope_locks=plot_cognition_scope_locks,
+            )
+            if plot_cognition_overlay_repository is not None
+            else None
+        )
         return cls(
             retrieval=retrieval,
             librarian=librarian,
@@ -53,6 +67,7 @@ class CognitionComposition:
             librarian_proposals=librarian_proposals,
             character_knowledge=character_knowledge,
             story_knowledge=story_knowledge,
+            plot_cognition_overlay=plot_cognition_overlay,
         )
 
     @classmethod
@@ -61,6 +76,8 @@ class CognitionComposition:
         *,
         scope_knowledge_repository: ScopeKnowledgeRepository,
         story_knowledge_repository: StoryKnowledgeRepository,
+        plot_cognition_overlay_repository: PlotCognitionOverlayRepository | None = None,
+        plot_cognition_scope_locks: PlotCognitionScopeLockRegistry | None = None,
     ) -> CognitionComposition:
         """Production bootstrap: fail if required repositories are missing."""
         if scope_knowledge_repository is None or story_knowledge_repository is None:
@@ -70,6 +87,8 @@ class CognitionComposition:
         return cls.create(
             scope_knowledge_repository=scope_knowledge_repository,
             story_knowledge_repository=story_knowledge_repository,
+            plot_cognition_overlay_repository=plot_cognition_overlay_repository,
+            plot_cognition_scope_locks=plot_cognition_scope_locks,
         )
 
     @classmethod
@@ -78,9 +97,13 @@ class CognitionComposition:
         *,
         scope_knowledge_repository: ScopeKnowledgeRepository | None = None,
         story_knowledge_repository: StoryKnowledgeRepository | None = None,
+        plot_cognition_overlay_repository: PlotCognitionOverlayRepository | None = None,
+        plot_cognition_scope_locks: PlotCognitionScopeLockRegistry | None = None,
     ) -> CognitionComposition:
         """Test helper — delegates to the canonical create() path."""
         return cls.create(
             scope_knowledge_repository=scope_knowledge_repository,
             story_knowledge_repository=story_knowledge_repository,
+            plot_cognition_overlay_repository=plot_cognition_overlay_repository,
+            plot_cognition_scope_locks=plot_cognition_scope_locks,
         )

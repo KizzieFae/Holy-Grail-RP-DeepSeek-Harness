@@ -29,6 +29,8 @@ from .knowledge_service import KnowledgeService  # noqa: E402
 from .memory_service import MemoryService  # noqa: E402
 from .scope_knowledge_repository import ScopeKnowledgeRepository  # noqa: E402
 from .story_knowledge_repository import StoryKnowledgeRepository  # noqa: E402
+from .plot_cognition_overlay_repository import PlotCognitionOverlayRepository  # noqa: E402
+from .plot_cognition_scope import resolve_plot_cognition_scope_id  # noqa: E402
 from .player_identity import resolve_player_display_name  # noqa: E402
 from .session_lock import SessionLockRegistry  # noqa: E402
 from .session_setup import create_live_session_from_setup  # noqa: E402
@@ -75,6 +77,9 @@ class SessionRepository:
         self._story_knowledge_repo = StoryKnowledgeRepository(
             self._session_manager.sessions_dir / "_story_knowledge"
         )
+        self._plot_cognition_overlay_repo = PlotCognitionOverlayRepository(
+            self._session_manager.sessions_dir / "_plot_cognition_overlay"
+        )
         self.memory_service = MemoryService(self._cross_scope_repo)
         self.knowledge_service = KnowledgeService(
             self._scope_knowledge_repo,
@@ -94,6 +99,10 @@ class SessionRepository:
     def story_knowledge_repo(self) -> StoryKnowledgeRepository:
         return self._story_knowledge_repo
 
+    @property
+    def plot_cognition_overlay_repo(self) -> PlotCognitionOverlayRepository:
+        return self._plot_cognition_overlay_repo
+
     def health_ok(self) -> bool:
         return self._session_manager.sessions_dir.exists()
 
@@ -110,6 +119,7 @@ class SessionRepository:
         opening_description: str | None = None,
         characters_dir: str | Path | None = None,
         memory_scope_id: str | None = None,
+        plot_cognition_scope_id: str | None = None,
         player_character_file_id: str | None = None,
         user_persona_id: str | None = None,
     ) -> LiveSession:
@@ -123,6 +133,7 @@ class SessionRepository:
                 hg_session_id=hg_session_id,
                 characters_dir=characters_dir,
                 memory_scope_id=memory_scope_id,
+                plot_cognition_scope_id=plot_cognition_scope_id,
                 player_character_file_id=player_character_file_id,
                 user_persona_id=user_persona_id,
             )
@@ -134,6 +145,7 @@ class SessionRepository:
                 opening_description=opening_description
                 or "A quiet workshop for Holy Grail domain host sessions.",
                 memory_scope_id=memory_scope_id,
+                plot_cognition_scope_id=plot_cognition_scope_id,
             )
         self._cache[session.hg_scene_id] = session
         self.persist(session)
@@ -258,6 +270,7 @@ class SessionRepository:
                 "setup_snapshot": copy.deepcopy(session.setup_snapshot),
                 "character_file_ids": dict(session.character_file_ids),
                 "memory_scope_id": session.memory_scope_id,
+                "plot_cognition_scope_id": session.plot_cognition_scope_id,
                 "librarian_proposal_audit_log": list(
                     getattr(session, "librarian_proposal_audit_log", []) or []
                 ),
@@ -322,6 +335,13 @@ class SessionRepository:
                 if state and state.private_memories:
                     secrets[name] = str(state.private_memories[0])
 
+        memory_scope = str(host_state.get("memory_scope_id") or "")
+        plot_scope_raw = str(host_state.get("plot_cognition_scope_id") or "")
+        plot_scope = (
+            plot_scope_raw
+            if plot_scope_raw.strip()
+            else resolve_plot_cognition_scope_id(None, memory_scope)
+        )
         return LiveSession(
             hg_session_id=hg_session_id,
             hg_scene_id=hg_session_id,
@@ -336,7 +356,8 @@ class SessionRepository:
             rp_history=list(host_state.get("rp_history") or []),
             setup_snapshot=dict(host_state.get("setup_snapshot") or {}),
             character_file_ids=dict(host_state.get("character_file_ids") or {}),
-            memory_scope_id=str(host_state.get("memory_scope_id") or ""),
+            memory_scope_id=memory_scope,
+            plot_cognition_scope_id=plot_scope,
             librarian_proposal_audit_log=list(
                 host_state.get("librarian_proposal_audit_log") or []
             ),

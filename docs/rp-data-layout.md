@@ -117,6 +117,16 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Continuity audit (#49):** `turn_metadata_by_index[turn].narrator_environment_audit` stores N1/N2/Librarian outcomes, Host establishment decisions (`decision_id`), and cognition failure records (`cognition_failed`) when pre-finalize cognition is unavailable.
 
+### Plot Cognition Overlay (`_plot_cognition_overlay`) — #59
+
+**Path:** `data/sessions/_plot_cognition_overlay/{plot_cognition_scope_id}.json`
+
+**Authority:** Advisory Storyteller plot cognition **current state** only. **Not** Continuity truth, **not** round-local Model A, **not** forensic history. Session metadata persists `plot_cognition_scope_id` (defaults to `memory_scope_id` when not explicitly supplied).
+
+**Contract:** [plot-cognition-overlay-persistence-contract.md](./plot-cognition-overlay-persistence-contract.md) (semantic types: [plot-cognition-overlay-contract.md](./plot-cognition-overlay-contract.md)).
+
+**Blocked marker:** `{plot_cognition_scope_id}.blocked.json` records corrupt/unsupported blocked state after quarantine or schema failure so the scope is not silently treated as absent.
+
 ---
 
 ## Execution evidence (`execution_evidence`)

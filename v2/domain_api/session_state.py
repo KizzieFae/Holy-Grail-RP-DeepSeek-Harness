@@ -20,6 +20,7 @@ from continuity_manager import ContinuityManager  # noqa: E402
 from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E402
 
 from .memory_scope import resolve_memory_scope_id  # noqa: E402
+from .plot_cognition_scope import resolve_plot_cognition_scope_id  # noqa: E402
 
 V2_HOST_METADATA_KEY = "v2_host_state"
 EXECUTION_EVIDENCE_METADATA_KEY = "execution_evidence"
@@ -72,6 +73,7 @@ class LiveSession:
     setup_snapshot: dict[str, Any] = field(default_factory=dict)
     character_file_ids: dict[str, str] = field(default_factory=dict)
     memory_scope_id: str = ""
+    plot_cognition_scope_id: str = ""
     librarian_proposal_audit_log: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -90,6 +92,7 @@ def initialize_live_session(
     cast: list[str] | None = None,
     opening_description: str = "A quiet workshop for boundary prototype tests.",
     memory_scope_id: str | None = None,
+    plot_cognition_scope_id: str | None = None,
 ) -> LiveSession:
     cast = cast or ["Alice", "Bob"]
     session_id = hg_session_id or f"hg-session-{uuid.uuid4()}"
@@ -120,5 +123,9 @@ def initialize_live_session(
         character_states=character_states,
         character_private_secrets=secrets,
         memory_scope_id=resolve_memory_scope_id(memory_scope_id),
+        plot_cognition_scope_id=resolve_plot_cognition_scope_id(
+            plot_cognition_scope_id,
+            resolve_memory_scope_id(memory_scope_id),
+        ),
         character_file_ids={name: name.strip().lower().replace(" ", "_") for name in cast},
     )

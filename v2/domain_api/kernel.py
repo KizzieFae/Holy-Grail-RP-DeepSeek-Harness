@@ -247,6 +247,7 @@ class DomainKernel:
             cognition=CognitionComposition.create_for_production(
                 scope_knowledge_repository=repository.scope_knowledge_repo,
                 story_knowledge_repository=repository.story_knowledge_repo,
+                plot_cognition_overlay_repository=repository.plot_cognition_overlay_repo,
             ),
         )
 

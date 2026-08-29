@@ -78,6 +78,7 @@ class CognitionCompositionTests(unittest.TestCase):
         class _RepoMissingScope:
             scope_knowledge_repo = None
             story_knowledge_repo = object()
+            plot_cognition_overlay_repo = object()
 
         with self.assertRaises(ValueError):
             DomainKernel.for_repository(_RepoMissingScope())  # type: ignore[arg-type]
