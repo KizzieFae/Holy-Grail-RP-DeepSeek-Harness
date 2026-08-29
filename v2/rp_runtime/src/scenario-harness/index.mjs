@@ -8,6 +8,9 @@ export * from './semantic-characterization.mjs';
 export * from './certification-evaluator.mjs';
 export * from './hard-blockers.mjs';
 export { runTranche1Campaign, TRANCHE1_CASES } from './tier1-tranche1.mjs';
+export { runTranche2Campaign, TRANCHE2_CASES } from './tier1-tranche2.mjs';
+export * from './production-capture.mjs';
+export * from './campaign-report.mjs';
 export * from './inference-mocks.mjs';
 export * from './forensic-query.mjs';
 export {

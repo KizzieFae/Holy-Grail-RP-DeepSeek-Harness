@@ -5,10 +5,20 @@ import { SEMANTIC_RUBRIC_VERSION } from './semantic-characterization.mjs';
 
 export const CERTIFICATION_EVAL_SCHEMA = 'hg_storyteller_certification_eval_v1';
 
-function buildEvaluatorPrompt({ truth, outputText, evaluationTarget, scenarioId }) {
+function buildEvaluatorPrompt({
+  truth,
+  outputText,
+  evaluationSubject = null,
+  evaluationTarget,
+  scenarioId,
+}) {
+  const subjectText = evaluationSubject != null
+    ? JSON.stringify(evaluationSubject, null, 2)
+    : String(outputText ?? '');
   return [
     'You are a read-only Storyteller certification evaluator.',
-    'Judge ONLY the supplied candidate output against authoritative fixture truth.',
+    'Judge ONLY the supplied certification subject against authoritative fixture truth.',
+    'When production_outcome is withheld, evaluate whether withholding was appropriate for the candidate and verdict shown.',
     'Do NOT assume hidden facts are forbidden in source cognition; judge final Character-facing epistemic envelope.',
     'Return ONLY one JSON object.',
     '',
@@ -30,8 +40,8 @@ function buildEvaluatorPrompt({ truth, outputText, evaluationTarget, scenarioId 
     'Authoritative fixture truth JSON:',
     JSON.stringify(truth, null, 2),
     '',
-    'Candidate output to evaluate:',
-    String(outputText ?? ''),
+    'Certification subject to evaluate:',
+    subjectText,
   ].join('\n');
 }
 
@@ -61,7 +71,8 @@ export function parseCertificationEvalResult(raw) {
 export async function runCertificationEvaluator({
   runEphemeralInference,
   truth,
-  outputText,
+  outputText = '',
+  evaluationSubject = null,
   evaluationTarget = 'storyteller',
   scenarioId,
   modelProfile = null,
@@ -72,6 +83,7 @@ export async function runCertificationEvaluator({
   const prompt = buildEvaluatorPrompt({
     truth,
     outputText,
+    evaluationSubject,
     evaluationTarget,
     scenarioId,
   });

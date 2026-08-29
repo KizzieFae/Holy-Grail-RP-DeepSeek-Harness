@@ -65,14 +65,39 @@ export function seedEmptyOverlayStore(sessionsDir, scopeId) {
   fs.writeFileSync(path.join(overlayDir, `${safe}.json`), JSON.stringify(payload));
 }
 
-export function seedCharacterOverlayGoal(sessionsDir, scopeId, {
-  characterId = 'Alice',
-  direction = 'Find the key quietly.',
-} = {}) {
+function overlayStorePath(sessionsDir, scopeId) {
   const overlayDir = path.join(sessionsDir, '_plot_cognition_overlay');
   fs.mkdirSync(overlayDir, { recursive: true });
   const safe = scopeId.replace(/\//g, '_').replace(/\\/g, '_');
+  return path.join(overlayDir, `${safe}.json`);
+}
+
+export function seedCharacterOverlayGoal(sessionsDir, scopeId, {
+  characterId = 'Alice',
+  direction = 'Find the key quietly.',
+  pressures = [],
+} = {}) {
   const goalId = `hg-plot-goal-${crypto.randomUUID()}`;
+  const pressureEntries = {};
+  for (const pressure of pressures) {
+    const pressureId = `hg-plot-pressure-${crypto.randomUUID()}`;
+    pressureEntries[pressureId] = {
+      schema: 'hg_unresolved_narrative_pressure_v1',
+      pressure_id: pressureId,
+      pressure_text: String(pressure.pressure_text ?? pressure.text ?? ''),
+      dramatic_rationale: String(pressure.dramatic_rationale ?? pressure.rationale ?? 'Persistent narrative pressure.'),
+      basis_note: pressure.basis_note ?? null,
+      basis_refs: pressure.basis_refs ?? [{ ref_kind: 'character_card', stable_ref: `${characterId.toLowerCase()}:goals` }],
+      continuity_issue_refs: pressure.continuity_issue_refs ?? [],
+      applicability: pressure.applicability ?? {
+        applicability_kind: 'character',
+        primary_character_id: characterId,
+        involved_character_ids: [characterId],
+      },
+      creation_provenance: pressure.creation_provenance ?? { source: 'storyteller' },
+      activity_state: 'active',
+    };
+  }
   const payload = {
     store_schema: 'hg_plot_cognition_overlay_store_v1',
     plot_cognition_scope_id: scopeId,
@@ -96,10 +121,48 @@ export function seedCharacterOverlayGoal(sessionsDir, scopeId, {
         activity_state: 'active',
       },
     },
-    pressures: {},
+    pressures: pressureEntries,
     active_frame: null,
   };
-  fs.writeFileSync(path.join(overlayDir, `${safe}.json`), JSON.stringify(payload));
+  fs.writeFileSync(overlayStorePath(sessionsDir, scopeId), JSON.stringify(payload));
+}
+
+export function seedCharacterOverlayPressure(sessionsDir, scopeId, {
+  characterId = 'Alice',
+  pressureText = 'Locate the key without alerting others.',
+  dramaticRationale = 'The search must stay discreet.',
+} = {}) {
+  const storePath = overlayStorePath(sessionsDir, scopeId);
+  const payload = fs.existsSync(storePath)
+    ? JSON.parse(fs.readFileSync(storePath, 'utf8'))
+    : {
+      store_schema: 'hg_plot_cognition_overlay_store_v1',
+      plot_cognition_scope_id: scopeId,
+      store_revision: 1,
+      assimilated_through_domain_commit_id: null,
+      goals: {},
+      pressures: {},
+      active_frame: null,
+    };
+  const pressureId = `hg-plot-pressure-${crypto.randomUUID()}`;
+  payload.pressures = payload.pressures ?? {};
+  payload.pressures[pressureId] = {
+    schema: 'hg_unresolved_narrative_pressure_v1',
+    pressure_id: pressureId,
+    pressure_text: pressureText,
+    dramatic_rationale: dramaticRationale,
+    basis_note: null,
+    basis_refs: [{ ref_kind: 'character_card', stable_ref: `${characterId.toLowerCase()}:goals` }],
+    continuity_issue_refs: [],
+    applicability: {
+      applicability_kind: 'character',
+      primary_character_id: characterId,
+      involved_character_ids: [characterId],
+    },
+    creation_provenance: { source: 'storyteller' },
+    activity_state: 'active',
+  };
+  fs.writeFileSync(storePath, JSON.stringify(payload));
 }
 
 export async function startProjectionDomainHost(t, options = {}) {

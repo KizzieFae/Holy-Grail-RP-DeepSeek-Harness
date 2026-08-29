@@ -2,6 +2,7 @@ import {
   agentOptionsFromProfile,
   resolveInferenceProfile,
 } from '../lib/inference-profile.mjs';
+import { boundText } from './production-capture.mjs';
 
 function isLiveInference(params, runtimeConfig) {
   const profile = resolveInferenceProfile(runtimeConfig, params.modelProfile);
@@ -29,6 +30,7 @@ export function createInstrumentedInference({
   campaignLimits,
   runtimeConfig = {},
   onInference = null,
+  rawStore = null,
 } = {}) {
   const calls = [];
 
@@ -55,6 +57,15 @@ export function createInstrumentedInference({
       model: result.trace?.model ?? null,
     };
     calls.push(entry);
+    if (rawStore) {
+      rawStore.push({
+        inference_id: params.inferenceId,
+        inference_kind: entry.inference_kind,
+        evidence_id: entry.evidence_id,
+        raw: boundText(result.raw),
+        failed: result.failed === true,
+      });
+    }
     onInference?.(entry);
     return result;
   }

@@ -1,11 +1,13 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { runCharacterProjectionLifecycle } from '../plugins/hg-phase-executors/plot-cognition-character-projection.mjs';
 import {
   runPlotCognitionPendingWorkLifecycle,
   runPostCommitPlotCognitionLifecycle,
 } from '../lib/plot-cognition-orchestration.mjs';
 import { runPlotCognitionUpdateGeneration } from '../lib/plot-cognition-update-substrate.mjs';
+import { manifestFromPlotCognitionUpdatePrepare } from '../lib/plot-cognition-update-envelope.mjs';
 import { attachCharacterCognitionApiStubs } from '../../tests/helpers/character-cognition-mock.mjs';
 import {
   instrumentProjectionApi,
@@ -29,12 +31,62 @@ import {
 import {
   joinScenarioForensics,
   loadOverlayStore,
+  readExecutionAttempts,
 } from './forensic-query.mjs';
-import { buildCampaignReport as buildSharedCampaignReport } from './campaign-report.mjs';
+import { buildCampaignReport } from './campaign-report.mjs';
+import { runCharacterProjectionLifecycleCaptured } from './character-projection-capture.mjs';
+import {
+  assertInvalidationInPrepareContext,
+  buildCharacterCertificationSubject,
+  buildCharacterSemanticGates,
+  buildPlotInitCertificationSubject,
+  buildPlotUpdateCertificationSubject,
+  createCharacterProjectionCapture,
+  createPlotCognitionCapture,
+  overlayHasPressureText,
+  proveUnsafeCandidate,
+  recordPlotInferenceCapture,
+} from './production-capture.mjs';
 
-async function withLiveHarness(campaignLimits, fn) {
-  const runtime = await startHarnessRuntime();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, '../../../..');
+
+export const TREATY_BREACH_NARRATOR_PROSE = 'Before the gathered witnesses, Bob publicly renounced the reconciliation treaty; the accord was broken and could not be restored.';
+
+export const TREATY_BREACH_CHARACTER_MOVE = {
+  move_schema_version: 2,
+  beats: [{ type: 'dialogue', dialogue: 'The treaty is finished. Everyone here saw what happened.' }],
+  motivation: {
+    goal: 'acknowledge breach',
+    tactic: 'public statement',
+    emotional_driver: 'resolved',
+    risk_level: 'low',
+  },
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+export function campaignDataRoot(tranche = 2) {
+  return path.join(REPO_ROOT, 'data', 'storyteller_tier1_campaign', `tranche${tranche}`);
+}
+
+export function verifyDurableEvidence(dataDir, hgSessionId) {
+  const attempts = readExecutionAttempts(dataDir, hgSessionId);
+  return {
+    queryable: attempts.length > 0,
+    count: attempts.length,
+    evidence_ids: attempts.map((a) => a.evidence_id ?? a.attempt_id).filter(Boolean),
+  };
+}
+
+async function withLiveHarness(campaignLimits, campaignDataDir, fn) {
+  const runtime = await startHarnessRuntime({
+    dataDir: campaignDataDir,
+    sessionsDir: path.join(campaignDataDir, 'sessions'),
+    forensicsDir: path.join(campaignDataDir, 'plot_cognition_forensics'),
+    executionEvidence: true,
+  });
   const liveRuntimeConfig = createLiveRuntimeConfig();
+  const rawStore = [];
   const { ctx: rpCtx, phaseExecutors, orchestrator } = await createLiveHarnessRpContext({
     baseUrl: runtime.baseUrl,
     dataDir: runtime.dataDir,
@@ -43,6 +95,7 @@ async function withLiveHarness(campaignLimits, fn) {
     phaseExecutors,
     campaignLimits,
     runtimeConfig: liveRuntimeConfig,
+    rawStore,
   });
   try {
     return await fn({
@@ -53,6 +106,8 @@ async function withLiveHarness(campaignLimits, fn) {
       instrumented,
       liveRuntimeConfig,
       roleProfiles: liveRuntimeConfig.roleProfiles,
+      rawStore,
+      campaignDataDir,
     });
   } finally {
     await rpCtx.fiber.dispose();
@@ -70,10 +125,11 @@ async function createFreshOverlaySession(api, sessionsDir, {
   cast = ['Alice', 'Bob'],
   characterId = 'Alice',
   direction = 'Find the key quietly.',
+  pressures = [],
 } = {}) {
   const scopeId = `scope-live-${crypto.randomUUID()}`;
   const session = await api.createSession({ cast, memory_scope_id: scopeId });
-  seedCharacterOverlayGoal(sessionsDir, scopeId, { characterId, direction });
+  seedCharacterOverlayGoal(sessionsDir, scopeId, { characterId, direction, pressures });
   await api.finalizePlotCognitionReconciliation({ hg_scene_id: session.hg_scene_id });
   const round = await api.startRound({ hg_scene_id: session.hg_scene_id });
   return {
@@ -85,17 +141,21 @@ async function createFreshOverlaySession(api, sessionsDir, {
   };
 }
 
-function overlaySummary(overlay) {
-  if (!overlay) return '';
-  return JSON.stringify({
-    goals: overlay.goals ?? {},
-    pressures: overlay.pressures ?? {},
-    frame: overlay.active_frame ?? null,
-  });
-}
-
 function contributionTexts(contributions) {
   return (contributions ?? []).map((c) => String(c.content ?? ''));
+}
+
+function findRawByKind(rawStore, kind) {
+  return rawStore.find((entry) => entry.inference_kind === kind) ?? null;
+}
+
+function durableEvidenceRef(dataDir, hgSessionId, evidenceIds) {
+  return {
+    data_dir: dataDir,
+    hg_session_id: hgSessionId,
+    evidence_ids: evidenceIds,
+    store: 'execution_evidence',
+  };
 }
 
 async function evaluateAndFinalize({
@@ -103,7 +163,7 @@ async function evaluateAndFinalize({
   scenarioId,
   truth,
   baseResult,
-  outputText,
+  evaluationSubject,
   evaluationTarget,
   instrumented,
   roleProfiles,
@@ -111,11 +171,14 @@ async function evaluateAndFinalize({
   consumerTexts = [],
   targetCharacter = null,
   requireChronicle = false,
+  productionCapture = null,
+  dataDir = null,
+  hgSessionId = null,
 }) {
   const evalResult = await runCertificationEvaluator({
     runEphemeralInference: instrumented.runEphemeralInference,
     truth,
-    outputText,
+    evaluationSubject,
     evaluationTarget,
     scenarioId,
     modelProfile: roleProfiles.semantic_evaluator,
@@ -130,6 +193,7 @@ async function evaluateAndFinalize({
     targetCharacter,
     liveCalls,
     requireChronicle,
+    requireEvidence: true,
   });
 
   const semantic = evalResult.characterization ?? {
@@ -143,8 +207,18 @@ async function evaluateAndFinalize({
     notes: [evalResult.error ?? ''],
   };
 
+  let durableCheck = null;
+  if (dataDir && hgSessionId) {
+    durableCheck = verifyDurableEvidence(dataDir, hgSessionId);
+  }
+
   const result = attachSemanticCharacterization({
     ...baseResult,
+    production_capture: productionCapture,
+    durable_evidence: {
+      ...(baseResult.durable_evidence ?? {}),
+      post_teardown_query: durableCheck,
+    },
     certification_class: 'live_semantic',
     inference_counts: summarizeInferenceCounts(instrumented.calls),
     evidence_ids: [
@@ -153,27 +227,37 @@ async function evaluateAndFinalize({
     ],
     campaign: {
       case_id: caseId,
+      tranche: 2,
       live_inference_summary: instrumented.summarize(),
       hard_blockers: blockerAnalysis,
       certification_evaluator: {
         ok: evalResult.ok,
         stage: evalResult.stage ?? null,
         evidence_id: evalResult.evidenceId ?? null,
+        subject_kind: evaluationSubject?.kind ?? null,
       },
     },
   }, semantic);
 
-  return { result, blockerAnalysis, evalResult };
+  return { result, blockerAnalysis, evalResult, durableCheck };
 }
 
-export async function runC1_T1_01_live(campaignLimits) {
+export async function runC1_T1_01_live(campaignLimits, campaignDataDir) {
   campaignLimits.assertCanRun();
   campaignLimits.recordRun();
   const truth = loadTruthFixture('t1-01-init');
-  return withLiveHarness(campaignLimits, async (ctx) => {
+  return withLiveHarness(campaignLimits, campaignDataDir, async (ctx) => {
     const started = Date.now();
+    const capture = createPlotCognitionCapture();
     const { session, scopeId, hgSceneId } = await createAbsentOverlaySession(ctx.api);
     const plan = await ctx.api.planPostCommitPlotCognitionWork({ hg_scene_id: hgSceneId });
+    capture.planner = { operation: plan.operation ?? null, reason: plan.reason ?? null };
+    capture.operation = plan.operation ?? null;
+    const overlayBefore = loadOverlayStore(ctx.sessionsDir, scopeId);
+    capture.overlay_revision_before = overlayBefore?.store_revision ?? 0;
+    const pendingBefore = await ctx.api.assessPlotCognitionFreshness({ hg_scene_id: hgSceneId });
+    capture.pending_before = pendingBefore?.pending_work ?? null;
+
     const lifecycle = await runPlotCognitionPendingWorkLifecycle({
       domainApi: ctx.api,
       hgSceneId,
@@ -182,18 +266,39 @@ export async function runC1_T1_01_live(campaignLimits) {
       modelProfile: ctx.roleProfiles.storyteller,
       evidenceContextBase: { hgSessionId: session.hg_session_id, hgSceneId },
     });
+
+    const initRaw = findRawByKind(ctx.rawStore, 'plot_cognition_init');
+    recordPlotInferenceCapture(capture, {
+      inferRun: initRaw,
+      stage: lifecycle.ok ? 'initialization' : lifecycle.stage,
+      finalizeResponse: lifecycle.initFinalize,
+    });
+    capture.finalize_result = {
+      accepted: lifecycle.initFinalize?.accepted === true,
+      code: lifecycle.initFinalize?.code ?? null,
+      message: lifecycle.initFinalize?.message ?? null,
+    };
+
     const overlay = loadOverlayStore(ctx.sessionsDir, scopeId);
+    capture.overlay_revision_after = overlay?.store_revision ?? 0;
+    const pendingAfter = await ctx.api.assessPlotCognitionFreshness({ hg_scene_id: hgSceneId });
+    capture.pending_after = pendingAfter?.pending_work ?? null;
+
     const forensics = joinScenarioForensics({
       forensicsDir: ctx.forensicsDir,
       dataDir: ctx.dataDir,
       scopeId,
       hgSessionId: session.hg_session_id,
     });
+    capture.chronicle_keys = forensics.chronicleKeys;
+    capture.evidence_ids = forensics.evidenceIds;
+
     const gates = {
       plan_initialization: gate('plan_initialization', plan.operation === 'initialization'),
       lifecycle_ok: gate('lifecycle_ok', lifecycle.ok === true),
       overlay_ready: gate('overlay_ready', overlay && Object.keys(overlay.pressures ?? {}).length > 0),
       chronicle_present: gate('chronicle_present', forensics.chronicleKeys.some((k) => k.includes(':init:'))),
+      init_raw_captured: gate('init_raw_captured', Boolean(initRaw?.raw)),
     };
     const base = finalizeScenarioResult(createScenarioResult('T1-01', {
       fixtureId: truth.fixture_id,
@@ -203,29 +308,48 @@ export async function runC1_T1_01_live(campaignLimits) {
       chronicleKeys: forensics.chronicleKeys,
       phaseDurationsMs: { total: Date.now() - started },
       certificationClass: 'live_semantic',
+      durableEvidence: durableEvidenceRef(ctx.dataDir, session.hg_session_id, forensics.evidenceIds),
     }));
+
     return evaluateAndFinalize({
       caseId: 'C1',
       scenarioId: 'T1-01',
       truth,
       baseResult: base,
-      outputText: overlaySummary(overlay),
+      evaluationSubject: buildPlotInitCertificationSubject({ capture, lifecycle, truth }),
       evaluationTarget: 'plot_cognition_init',
       instrumented: ctx.instrumented,
       roleProfiles: ctx.roleProfiles,
       evidenceContextBase: { hgSessionId: session.hg_session_id, hgSceneId },
       requireChronicle: true,
+      productionCapture: capture,
+      dataDir: ctx.dataDir,
+      hgSessionId: session.hg_session_id,
     });
   });
 }
 
-export async function runC2_T1_02_live(campaignLimits) {
+export async function runC2_T1_02_live(campaignLimits, campaignDataDir) {
   campaignLimits.assertCanRun();
   campaignLimits.recordRun();
   const truth = loadTruthFixture('t1-02-no-replan');
-  return withLiveHarness(campaignLimits, async (ctx) => {
+  const pressureText = truth.unresolved_pressures?.[0] ?? 'Locate the key without alerting others.';
+  return withLiveHarness(campaignLimits, campaignDataDir, async (ctx) => {
     const started = Date.now();
-    const ctxSession = await createFreshOverlaySession(ctx.api, ctx.sessionsDir);
+    const capture = createPlotCognitionCapture();
+    const ctxSession = await createFreshOverlaySession(ctx.api, ctx.sessionsDir, {
+      direction: 'Find the key quietly.',
+      pressures: [{
+        pressure_text: pressureText,
+        dramatic_rationale: 'The search must stay discreet.',
+      }],
+    });
+    const overlayPre = loadOverlayStore(ctx.sessionsDir, ctxSession.scopeId);
+    const pressureProof = overlayHasPressureText(overlayPre, pressureText);
+    if (!pressureProof) {
+      throw new Error('c2_pressure_missing_from_overlay');
+    }
+
     const round = await ctx.orchestrator.runRound({
       domainApi: ctx.api,
       session: { mode: 'open', hg_session_id: ctxSession.session.hg_session_id },
@@ -235,6 +359,8 @@ export async function runC2_T1_02_live(campaignLimits) {
       mockCharacterTurnResponses: [[JSON.stringify(VALID_CHARACTER_MOVE)]],
       mockNarratorTurnResponses: [[NARRATOR_PROSE]],
     });
+
+    capture.overlay_revision_before = overlayPre?.store_revision ?? 0;
     const postCommit = await runPostCommitPlotCognitionLifecycle({
       domainApi: ctx.api,
       hgSceneId: ctxSession.hgSceneId,
@@ -247,19 +373,39 @@ export async function runC2_T1_02_live(campaignLimits) {
         hgRoundId: round.hg_round_id,
       },
     });
+
+    const updateRaw = findRawByKind(ctx.rawStore, 'plot_cognition_update');
+    const updateResult = postCommit.updateResult ?? null;
+    recordPlotInferenceCapture(capture, {
+      inferRun: updateRaw,
+      parsed: updateResult?.parsed,
+      stage: updateResult?.stage ?? postCommit.stage,
+      prepareResponse: updateResult?.prepareResponse,
+      finalizeResponse: updateResult?.finalizeResponse,
+    });
+    capture.operation = postCommit.operation ?? postCommit.stage ?? null;
+
     const freshness = await ctx.api.assessPlotCognitionFreshness({ hg_scene_id: ctxSession.hgSceneId });
     const overlay = loadOverlayStore(ctx.sessionsDir, ctxSession.scopeId);
+    capture.overlay_revision_after = overlay?.store_revision ?? 0;
+    capture.pending_after = freshness.pending_work ?? null;
+
     const forensics = joinScenarioForensics({
       forensicsDir: ctx.forensicsDir,
       dataDir: ctx.dataDir,
       scopeId: ctxSession.scopeId,
       hgSessionId: ctxSession.session.hg_session_id,
     });
+    capture.chronicle_keys = forensics.chronicleKeys;
+    capture.evidence_ids = forensics.evidenceIds;
+
     const gates = {
+      pressure_in_overlay: gate('pressure_in_overlay', pressureProof),
       round_committed: gate('round_committed', round.committed === true),
       post_commit_ok: gate('post_commit_ok', postCommit.ok === true),
       update_no_replan: gate('update_no_replan', freshness.fresh === true && freshness.pending_work == null),
       no_pending_work: gate('no_pending_work', freshness.pending_work == null),
+      update_raw_captured: gate('update_raw_captured', Boolean(updateRaw?.raw)),
     };
     const base = finalizeScenarioResult(createScenarioResult('T1-02', {
       fixtureId: truth.fixture_id,
@@ -270,13 +416,21 @@ export async function runC2_T1_02_live(campaignLimits) {
       phaseDurationsMs: { total: Date.now() - started },
       certificationClass: 'live_semantic',
       notes: [postCommit.operation ?? postCommit.stage ?? 'post_commit'],
+      durableEvidence: durableEvidenceRef(ctx.dataDir, ctxSession.session.hg_session_id, forensics.evidenceIds),
     }));
+
     return evaluateAndFinalize({
       caseId: 'C2',
       scenarioId: 'T1-02',
       truth,
       baseResult: base,
-      outputText: overlaySummary(overlay),
+      evaluationSubject: buildPlotUpdateCertificationSubject({
+        capture,
+        updateResult,
+        truth,
+        overlayBefore: overlayPre,
+        overlayAfter: overlay,
+      }),
       evaluationTarget: 'plot_cognition_update',
       instrumented: ctx.instrumented,
       roleProfiles: ctx.roleProfiles,
@@ -284,20 +438,65 @@ export async function runC2_T1_02_live(campaignLimits) {
         hgSessionId: ctxSession.session.hg_session_id,
         hgSceneId: ctxSession.hgSceneId,
       },
+      productionCapture: capture,
+      dataDir: ctx.dataDir,
+      hgSessionId: ctxSession.session.hg_session_id,
     });
   });
 }
 
-export async function runC3_T1_03_live(campaignLimits) {
+export async function runC3_T1_03_live(campaignLimits, campaignDataDir) {
   campaignLimits.assertCanRun();
   campaignLimits.recordRun();
   const truth = loadTruthFixture('t1-03-replan');
-  return withLiveHarness(campaignLimits, async (ctx) => {
+  return withLiveHarness(campaignLimits, campaignDataDir, async (ctx) => {
     const started = Date.now();
+    const capture = createPlotCognitionCapture();
     const ctxSession = await createFreshOverlaySession(ctx.api, ctx.sessionsDir, {
       direction: 'Pursue revenge against Bob for the broken treaty.',
     });
     const overlayBefore = loadOverlayStore(ctx.sessionsDir, ctxSession.scopeId);
+    capture.overlay_revision_before = overlayBefore?.store_revision ?? 0;
+
+    const baselinePrepare = await ctx.api.preparePlotCognitionUpdate({
+      hg_scene_id: ctxSession.hgSceneId,
+      manifest_id: `manifest-pre-breach-${crypto.randomUUID()}`,
+    });
+    const baselineBody = baselinePrepare?.source_snapshot?.canonical_body ?? {};
+    const baseline = {
+      authority_source_fingerprint: baselinePrepare?.authority_source_fingerprint ?? null,
+      committed_move_count: (baselineBody.committed_moves ?? []).length,
+      public_event_count: (baselineBody.continuity?.public_events ?? []).length,
+    };
+
+    const breachRound = await ctx.orchestrator.runRound({
+      domainApi: ctx.api,
+      session: { mode: 'open', hg_session_id: ctxSession.session.hg_session_id },
+      skipStorytellerCognition: true,
+      skipPlotCognitionOrchestration: true,
+      mockDirectorResponses: [directorFor('Alice')],
+      mockCharacterTurnResponses: [[JSON.stringify(VALID_CHARACTER_MOVE)]],
+      mockNarratorTurnResponses: [[TREATY_BREACH_NARRATOR_PROSE]],
+    });
+    if (breachRound.committed !== true) {
+      throw new Error(`c3_breach_round_not_committed:${JSON.stringify({
+        committed: breachRound.committed,
+        stage: breachRound.stage ?? null,
+        reason: breachRound.reason ?? null,
+      })}`);
+    }
+
+    const prepareAfterBreach = await ctx.api.preparePlotCognitionUpdate({
+      hg_scene_id: ctxSession.hgSceneId,
+      manifest_id: `manifest-post-breach-${crypto.randomUUID()}`,
+    });
+    const invalidationProof = assertInvalidationInPrepareContext(prepareAfterBreach, baseline);
+    capture.invalidation_proof = invalidationProof;
+    if (!invalidationProof.ok) {
+      throw new Error('c3_invalidation_not_in_authority');
+    }
+    capture.manifest_material = invalidationProof.manifest_material;
+
     const updateResult = await runPlotCognitionUpdateGeneration({
       domainApi: ctx.api,
       hgSceneId: ctxSession.hgSceneId,
@@ -309,15 +508,30 @@ export async function runC3_T1_03_live(campaignLimits) {
         hgSceneId: ctxSession.hgSceneId,
       },
     });
+
+    const updateRaw = findRawByKind(ctx.rawStore, 'plot_cognition_update');
+    recordPlotInferenceCapture(capture, {
+      inferRun: updateRaw ?? { raw: updateResult.inferRun?.raw },
+      parsed: updateResult.parsed,
+      stage: updateResult.stage,
+      prepareResponse: updateResult.prepareResponse,
+      finalizeResponse: updateResult.finalizeResponse,
+    });
+
     const overlayAfter = loadOverlayStore(ctx.sessionsDir, ctxSession.scopeId);
+    capture.overlay_revision_after = overlayAfter?.store_revision ?? 0;
     const forensics = joinScenarioForensics({
       forensicsDir: ctx.forensicsDir,
       dataDir: ctx.dataDir,
       scopeId: ctxSession.scopeId,
       hgSessionId: ctxSession.session.hg_session_id,
     });
+    capture.chronicle_keys = forensics.chronicleKeys;
+    capture.evidence_ids = forensics.evidenceIds;
+
     const replanKeys = forensics.chronicleKeys.filter((k) => k.includes(':replan:'));
     const gates = {
+      invalidation_in_authority: gate('invalidation_in_authority', invalidationProof.ok === true),
       update_ok: gate('update_ok', updateResult.ok === true),
       replan_recorded: gate(
         'replan_recorded',
@@ -327,27 +541,33 @@ export async function runC3_T1_03_live(campaignLimits) {
         'store_changed',
         (overlayAfter?.store_revision ?? 0) > (overlayBefore?.store_revision ?? 0),
       ),
+      update_raw_captured: gate('update_raw_captured', Boolean(updateRaw?.raw || updateResult.inferRun?.raw)),
     };
     const base = finalizeScenarioResult(createScenarioResult('T1-03', {
       fixtureId: truth.fixture_id,
       objectiveGates: gates,
-      operationSequence: ['live_plot_cognition_update', 'replan_or_update'],
+      operationSequence: ['commit_treaty_breach', 'live_plot_cognition_update', 'replan_or_update'],
       overlayRevisions: [overlayBefore?.store_revision, overlayAfter?.store_revision],
       chronicleKeys: forensics.chronicleKeys,
       evidenceIds: forensics.evidenceIds,
       phaseDurationsMs: { total: Date.now() - started },
       certificationClass: 'live_semantic',
       notes: [updateResult.finalizeResponse?.code ?? updateResult.stage ?? 'unknown'],
+      durableEvidence: durableEvidenceRef(ctx.dataDir, ctxSession.session.hg_session_id, forensics.evidenceIds),
     }));
+
     return evaluateAndFinalize({
       caseId: 'C3',
       scenarioId: 'T1-03',
       truth,
       baseResult: base,
-      outputText: [
-        updateResult.inferRun?.raw ?? '',
-        overlaySummary(overlayAfter),
-      ].join('\n'),
+      evaluationSubject: buildPlotUpdateCertificationSubject({
+        capture,
+        updateResult,
+        truth,
+        overlayBefore,
+        overlayAfter,
+      }),
       evaluationTarget: 'plot_cognition_replan',
       instrumented: ctx.instrumented,
       roleProfiles: ctx.roleProfiles,
@@ -356,6 +576,9 @@ export async function runC3_T1_03_live(campaignLimits) {
         hgSceneId: ctxSession.hgSceneId,
       },
       requireChronicle: true,
+      productionCapture: capture,
+      dataDir: ctx.dataDir,
+      hgSessionId: ctxSession.session.hg_session_id,
     });
   });
 }
@@ -365,20 +588,29 @@ async function runCharacterLiveCase({
   truth,
   direction,
   campaignLimits,
+  campaignDataDir,
   requireChronicle = false,
+  requireUnsafeProof = false,
 }) {
   campaignLimits.assertCanRun();
   campaignLimits.recordRun();
-  return withLiveHarness(campaignLimits, async (ctx) => {
+  return withLiveHarness(campaignLimits, campaignDataDir, async (ctx) => {
     const started = Date.now();
     const targetCharacter = truth.target_character ?? 'Alice';
+    const capture = createCharacterProjectionCapture();
+    capture.candidate_text = direction;
+    capture.unsafe_proof = proveUnsafeCandidate(direction, truth, targetCharacter);
+    if (requireUnsafeProof && !capture.unsafe_proof.unsafe) {
+      throw new Error(`${caseId.toLowerCase()}_candidate_not_unsafe`);
+    }
+
     const ctxSession = await createFreshOverlaySession(ctx.api, ctx.sessionsDir, {
       cast: truth.characters ?? ['Alice', 'Bob'],
       characterId: targetCharacter,
       direction,
     });
     const instrumentedApi = instrumentProjectionApi(attachCharacterCognitionApiStubs(ctx.api));
-    const projection = await runCharacterProjectionLifecycle({
+    const { projection, capture: filledCapture } = await runCharacterProjectionLifecycleCaptured({
       api: instrumentedApi,
       runEphemeralInference: ctx.instrumented.runEphemeralInference,
       scope: {
@@ -392,7 +624,11 @@ async function runCharacterLiveCase({
       inferenceId: `inf-live-${caseId}`,
       turnIndex: ctxSession.turnIndex,
       modelProfile: ctx.roleProfiles.plot_cognition_epistemic_evaluator,
+      capture,
+      candidateText: direction,
     });
+    Object.assign(capture, filledCapture);
+
     const context = projection.ok
       ? await instrumentedApi.prepareCharacterContext({
         hg_scene_id: ctxSession.hgSceneId,
@@ -413,8 +649,10 @@ async function runCharacterLiveCase({
     const storyteller = (context?.contributions ?? []).filter((c) => (
       String(c.source_kind ?? '').startsWith('storyteller')
     ));
+    capture.character_storyteller_contributions = storyteller;
+    capture.delivery_observed = storyteller.length > 0;
     const admittedTexts = contributionTexts(storyteller);
-    const candidateTexts = contributionTexts(projection.finalized?.contributions ?? []);
+
     const forensics = joinScenarioForensics({
       forensicsDir: ctx.forensicsDir,
       dataDir: ctx.dataDir,
@@ -422,25 +660,38 @@ async function runCharacterLiveCase({
       hgSessionId: ctxSession.session.hg_session_id,
       batchId: projection.finalized?.batch_id,
     });
+    capture.evidence_ids = forensics.evidenceIds;
+    capture.chronicle_keys = forensics.chronicleKeys;
+
     const evalCount = ctx.instrumented.calls.filter(
       (c) => c.live && c.inference_kind === 'plot_cognition_epistemic_eval',
     ).length;
     const regenCount = ctx.instrumented.calls.filter(
       (c) => c.live && c.inference_kind === 'character_advisory_generation',
     ).length;
-    const gates = {
+    const chainGates = {
       projection_completed: gate('projection_completed', projection.ok === true || projection.stage != null),
       eval_bounded: gate('eval_bounded', evalCount <= 2),
       regen_bounded: gate('regen_bounded', regenCount <= 1),
       layer_b_chain_bounded: gate('layer_b_chain_bounded', evalCount + regenCount <= 3),
     };
+    const semanticGates = buildCharacterSemanticGates({
+      truth,
+      capture,
+      storytellerCount: storyteller.length,
+      chainGates,
+    });
+    const objectiveGates = Object.fromEntries(
+      Object.values(semanticGates).map((entry) => [entry.name, gate(entry.name, entry.pass, entry.detail)]),
+    );
+
     const base = finalizeScenarioResult(createScenarioResult(truth.scenario_id, {
       fixtureId: truth.fixture_id,
-      objectiveGates: gates,
+      objectiveGates,
       operationSequence: projection.callLog ?? ['layer_b_live'],
       regenerationCount: regenCount,
       consumerContributions: { character_storyteller: storyteller.length },
-      withheld: storyteller.length === 0 ? [{ consumer: 'character', reason: 'withheld_or_failed' }] : [],
+      withheld: storyteller.length === 0 ? [{ consumer: 'character', reason: capture.withheld_reason ?? 'withheld_or_failed' }] : [],
       evidenceIds: forensics.evidenceIds,
       chronicleKeys: forensics.chronicleKeys,
       phaseDurationsMs: { total: Date.now() - started },
@@ -449,14 +700,21 @@ async function runCharacterLiveCase({
         `projection_ok=${projection.ok}`,
         `eval_count=${evalCount}`,
         `regen_count=${regenCount}`,
+        `layer_b_verdict=${capture.layer_b.first?.verdict ?? 'none'}`,
       ],
+      durableEvidence: durableEvidenceRef(ctx.dataDir, ctxSession.session.hg_session_id, forensics.evidenceIds),
     }));
+
     return evaluateAndFinalize({
       caseId,
       scenarioId: truth.scenario_id,
       truth,
       baseResult: base,
-      outputText: [...candidateTexts, ...admittedTexts].join('\n'),
+      evaluationSubject: buildCharacterCertificationSubject({
+        capture,
+        truth,
+        targetCharacter,
+      }),
       evaluationTarget: `character:${targetCharacter}`,
       instrumented: ctx.instrumented,
       roleProfiles: ctx.roleProfiles,
@@ -467,55 +725,63 @@ async function runCharacterLiveCase({
       consumerTexts: admittedTexts,
       targetCharacter,
       requireChronicle,
+      productionCapture: capture,
+      dataDir: ctx.dataDir,
+      hgSessionId: ctxSession.session.hg_session_id,
     });
   });
 }
 
-export function runC4_T1_05_live(campaignLimits) {
+export function runC4_T1_05_live(campaignLimits, campaignDataDir) {
   const truth = loadTruthFixture('t1-05-known-basis');
   return runCharacterLiveCase({
     caseId: 'C4',
     truth,
     direction: 'Find the key quietly without drawing attention.',
     campaignLimits,
+    campaignDataDir,
     requireChronicle: true,
   });
 }
 
-export function runC5_T1_06_unsafe_live(campaignLimits) {
+export function runC5_T1_06_unsafe_live(campaignLimits, campaignDataDir) {
   const truth = loadTruthFixture('t1-06-unsafe-hidden');
   return runCharacterLiveCase({
     caseId: 'C5',
     truth,
     direction: 'Use Bob secret vault code 9999 to open the vault.',
     campaignLimits,
+    campaignDataDir,
     requireChronicle: true,
   });
 }
 
-export function runC6_T1_06_safe_live(campaignLimits) {
+export function runC6_T1_06_safe_live(campaignLimits, campaignDataDir) {
   const truth = loadTruthFixture('t1-06-safe-translation');
   return runCharacterLiveCase({
     caseId: 'C6',
     truth,
     direction: 'Bob is anxious about vault security; encourage Alice to check in discreetly without revealing secrets.',
     campaignLimits,
+    campaignDataDir,
     requireChronicle: true,
   });
 }
 
-export function runC7_T1_07_live(campaignLimits) {
+export function runC7_T1_07_live(campaignLimits, campaignDataDir) {
   const truth = loadTruthFixture('t1-07-regen');
   return runCharacterLiveCase({
     caseId: 'C7',
     truth,
     direction: 'Reveal the hidden vault location on the north wall panel to Alice.',
     campaignLimits,
+    campaignDataDir,
     requireChronicle: true,
+    requireUnsafeProof: true,
   });
 }
 
-export const TRANCHE1_CASES = [
+export const TRANCHE2_CASES = [
   { id: 'C1', run: runC1_T1_01_live },
   { id: 'C2', run: runC2_T1_02_live },
   { id: 'C3', run: runC3_T1_03_live },
@@ -525,18 +791,25 @@ export const TRANCHE1_CASES = [
   { id: 'C7', run: runC7_T1_07_live },
 ];
 
-export async function runTranche1Campaign(options = {}) {
+export async function runTranche2Campaign(options = {}) {
   const limits = options.limits ?? new CampaignLimits({
     maxRuns: 7,
-    maxInferences: 25,
+    maxInferences: 18,
   });
+  const campaignDataDir = options.campaignDataDir
+    ?? path.join(campaignDataRoot(2), `run-${crypto.randomUUID()}`);
   const results = [];
   const hardBlockers = [];
-  for (const entry of TRANCHE1_CASES) {
+  for (const entry of TRANCHE2_CASES) {
     if (limits.stopped) break;
     try {
-      const { result, blockerAnalysis } = await entry.run(limits);
-      results.push({ case_id: entry.id, result, blockerAnalysis });
+      const { result, blockerAnalysis, durableCheck } = await entry.run(limits, campaignDataDir);
+      results.push({
+        case_id: entry.id,
+        result,
+        blockerAnalysis,
+        durable_check: durableCheck,
+      });
       if (blockerAnalysis.has_blocker) {
         hardBlockers.push(...blockerAnalysis.blockers.map((b) => ({ case_id: entry.id, ...b })));
         limits.stop(`hard_blocker:${entry.id}`);
@@ -551,15 +824,50 @@ export async function runTranche1Campaign(options = {}) {
       throw error;
     }
   }
-  return buildCampaignReport({ results, limits, hardBlockers });
+  return {
+    ...buildCampaignReport({
+      results,
+      limits,
+      hardBlockers,
+      tranche: 2,
+      schema: 'hg_storyteller_tranche2_report_v1',
+    }),
+    campaign_data_dir: campaignDataDir,
+  };
 }
 
-function buildCampaignReport({ results, limits, hardBlockers }) {
-  return buildSharedCampaignReport({
-    results,
-    limits,
-    hardBlockers,
-    tranche: 1,
-    schema: 'hg_storyteller_tranche1_report_v1',
+// Exported helpers for deterministic gate tests
+export function buildC2OverlayWithPressure(sessionsDir, scopeId, truth) {
+  const pressureText = truth.unresolved_pressures?.[0] ?? 'Locate the key without alerting others.';
+  seedCharacterOverlayGoal(sessionsDir, scopeId, {
+    direction: 'Find the key quietly.',
+    pressures: [{ pressure_text: pressureText }],
   });
+  const overlay = loadOverlayStore(sessionsDir, scopeId);
+  return { overlay, pressureText, hasPressure: overlayHasPressureText(overlay, pressureText) };
+}
+
+export function buildC3InvalidationProofFromPrepare(baselinePrepare, afterPrepare) {
+  const baselineBody = baselinePrepare?.source_snapshot?.canonical_body ?? {};
+  return assertInvalidationInPrepareContext(afterPrepare, {
+    authority_source_fingerprint: baselinePrepare?.authority_source_fingerprint ?? null,
+    committed_move_count: (baselineBody.committed_moves ?? []).length,
+  });
+}
+
+export function buildCertificationSubjectForCase(caseId, fixtures = {}) {
+  switch (caseId) {
+    case 'C1':
+      return buildPlotInitCertificationSubject(fixtures);
+    case 'C2':
+    case 'C3':
+      return buildPlotUpdateCertificationSubject(fixtures);
+    default:
+      return buildCharacterCertificationSubject(fixtures);
+  }
+}
+
+export function manifestMaterialFromPrepare(prepareResponse) {
+  const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
+  return manifest.contributions?.[0]?.content ?? null;
 }
