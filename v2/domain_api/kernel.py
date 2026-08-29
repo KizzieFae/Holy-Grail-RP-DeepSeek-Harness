@@ -1646,6 +1646,30 @@ class DomainKernel:
         fixture = self.store.require(hg_scene_id)
         return assess_plot_cognition_freshness(self, fixture)
 
+    def plan_post_commit_plot_cognition_work(self, hg_scene_id: str) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import plan_post_commit_plot_cognition_work
+
+        fixture = self.store.require(hg_scene_id)
+        return plan_post_commit_plot_cognition_work(self, fixture)
+
+    def finalize_plot_cognition_reconciliation(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_plot_cognition_reconciliation
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return finalize_plot_cognition_reconciliation(self, fixture, data)
+
+    def finalize_plot_cognition_authority_advance(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import finalize_plot_cognition_authority_advance
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return finalize_plot_cognition_authority_advance(self, fixture, data)
+
+    def clear_plot_cognition_pending_work(self, hg_scene_id: str) -> dict[str, Any]:
+        from .plot_cognition_lifecycle_api import clear_plot_cognition_pending_work
+
+        fixture = self.store.require(hg_scene_id)
+        return clear_plot_cognition_pending_work(self, fixture)
+
     def prepare_plot_cognition_init(self, data: dict[str, Any]) -> dict[str, Any]:
         from .plot_cognition_lifecycle_api import prepare_plot_cognition_init
 

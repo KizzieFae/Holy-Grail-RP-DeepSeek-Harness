@@ -433,6 +433,24 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     self.kernel.assess_plot_cognition_freshness(str(data["hg_scene_id"])),
                 )
                 return
+            if path == "/v1/plot-cognition/pending-work/plan":
+                self._send_json(
+                    200,
+                    self.kernel.plan_post_commit_plot_cognition_work(str(data["hg_scene_id"])),
+                )
+                return
+            if path == "/v1/plot-cognition/reconciliation/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_reconciliation(data))
+                return
+            if path == "/v1/plot-cognition/authority-advance/finalize":
+                self._send_json(200, self.kernel.finalize_plot_cognition_authority_advance(data))
+                return
+            if path == "/v1/plot-cognition/pending-work/clear":
+                self._send_json(
+                    200,
+                    self.kernel.clear_plot_cognition_pending_work(str(data["hg_scene_id"])),
+                )
+                return
             if path == "/v1/plot-cognition/init/prepare":
                 self._send_json(200, self.kernel.prepare_plot_cognition_init(data))
                 return

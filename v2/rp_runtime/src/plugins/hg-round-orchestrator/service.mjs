@@ -4,6 +4,7 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 import { createDomainApiClient } from '../../lib/domain-api-client.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 import { runPostCommitLibrarianLifecycle } from '../../lib/librarian-proposal-orchestration.mjs';
+import { runPlotCognitionPendingWorkLifecycle, runPostCommitPlotCognitionLifecycle } from '../../lib/plot-cognition-orchestration.mjs';
 import { runStorytellerCognition } from '../../lib/storyteller-cognition-substrate.mjs';
 import { buildStorytellerAdvisoryDecisionPatch } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { roleForCharacter } from '../hg-phase-executors/role-utils.mjs';
@@ -55,6 +56,8 @@ export default class HgRoundOrchestrator extends Service {
     const mockDirectorSemanticQaResponses = options.mockDirectorSemanticQaResponses ?? [];
     const mockNarratorSemanticQaResponses = options.mockNarratorSemanticQaResponses ?? [];
     const mockLibrarianProposalResponses = options.mockLibrarianProposalResponses ?? [];
+    const mockPlotCognitionUpdateResponses = options.mockPlotCognitionUpdateResponses ?? [];
+    const plotCognitionDelayMs = Number(options.plotCognitionDelayMs ?? 0);
     const mockCharacterOrientationResponses = options.mockCharacterOrientationResponses
       ?? (options.mockCharacterOrientationResponse
         ? [options.mockCharacterOrientationResponse]
@@ -92,6 +95,7 @@ export default class HgRoundOrchestrator extends Service {
       character_ms: [],
       narrator_ms: [],
       librarian_ms: [],
+      plot_cognition_ms: [],
     };
     const roleTraces = {
       director: null,
@@ -228,6 +232,36 @@ export default class HgRoundOrchestrator extends Service {
     let pendingForcedDesignation = options.forcedDesignation ?? options.forced_designation ?? null;
     let forcedDesignationConsumed = false;
     const librarianOrchestrationByCommit = new Map();
+    const plotCognitionOrchestrationByCommit = new Map();
+    let plotCognitionResumeSummary = null;
+
+    if (options.skipPlotCognitionOrchestration !== true) {
+      const resumeStartedAt = Date.now();
+      plotCognitionResumeSummary = await runPlotCognitionPendingWorkLifecycle({
+        domainApi: api,
+        trace,
+        sceneAgent,
+        scope,
+        hgSceneId,
+        inferenceId: `inf-plot-cog-resume-${hgRoundId}`,
+        runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+        mockUpdateResponse: mockPlotCognitionUpdateResponses[0] ?? null,
+        modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
+        evidenceContextBase: {
+          hgSessionId,
+          hgSceneId,
+          hgRoundId,
+          sceneSessionId,
+        },
+      });
+      roleTimings.plot_cognition_ms.push(Date.now() - resumeStartedAt);
+      trace.emit(sceneAgent.session, 'hg/plot-cognition-resume', scope, {
+        ok: plotCognitionResumeSummary.ok === true,
+        operation: plotCognitionResumeSummary.operation ?? null,
+        stage: plotCognitionResumeSummary.stage ?? null,
+        fresh_after: plotCognitionResumeSummary.freshAfter === true,
+      });
+    }
 
     while (true) {
       if (characterTurns.length >= defensiveTurnCeiling) {
@@ -422,10 +456,15 @@ export default class HgRoundOrchestrator extends Service {
 
       const narratorInferenceId = `inf-narrator-${characterTurnIndex}-${crypto.randomUUID()}`;
       const librarianInferenceId = `inf-librarian-${characterTurnIndex}-${crypto.randomUUID()}`;
+      const plotCognitionInferenceId = `inf-plot-cog-${characterTurnIndex}-${crypto.randomUUID()}`;
       const domainCommitId = characterTurn.domainCommitId;
 
       if (librarianOrchestrationByCommit.has(domainCommitId)) {
         completionReason = 'librarian_orchestration_duplicate';
+        break;
+      }
+      if (plotCognitionOrchestrationByCommit.has(domainCommitId)) {
+        completionReason = 'plot_cognition_orchestration_duplicate';
         break;
       }
 
@@ -481,6 +520,41 @@ export default class HgRoundOrchestrator extends Service {
       }
       librarianOrchestrationByCommit.set(domainCommitId, librarianJoinPromise);
 
+      const plotCognitionMockResponse = typeof mockPlotCognitionUpdateResponses === 'function'
+        ? mockPlotCognitionUpdateResponses
+        : mockPlotCognitionUpdateResponses[characterTurnIndex] ?? null;
+      const plotCognitionStartedAt = Date.now();
+      let plotCognitionJoinPromise;
+      if (options.skipPlotCognitionOrchestration === true) {
+        plotCognitionJoinPromise = Promise.resolve({
+          ok: true,
+          skipped: true,
+          terminal: true,
+          stage: 'skipped',
+        });
+      } else {
+        plotCognitionJoinPromise = runPostCommitPlotCognitionLifecycle({
+          domainApi: api,
+          trace,
+          sceneAgent,
+          scope,
+          hgSceneId,
+          inferenceId: plotCognitionInferenceId,
+          runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+          mockUpdateResponse: plotCognitionMockResponse,
+          modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
+          evidenceContextBase: {
+            hgSessionId,
+            hgSceneId,
+            hgRoundId,
+            sceneSessionId,
+            domainCommitId,
+          },
+          delayMs: plotCognitionDelayMs,
+        });
+      }
+      plotCognitionOrchestrationByCommit.set(domainCommitId, plotCognitionJoinPromise);
+
       const narratorStartedAt = Date.now();
       const narratorPromise = phaseExecutors.runNarrator({
         api,
@@ -508,6 +582,20 @@ export default class HgRoundOrchestrator extends Service {
 
       const librarianResult = await librarianJoinPromise;
       roleTimings.librarian_ms.push(Date.now() - librarianStartedAt);
+
+      const plotCognitionResult = await plotCognitionJoinPromise;
+      roleTimings.plot_cognition_ms.push(Date.now() - plotCognitionStartedAt);
+
+      trace.emit(sceneAgent.session, 'hg/plot-cognition-join', scope, {
+        domain_commit_id: domainCommitId,
+        character_turn_index: characterTurnIndex,
+        plot_cognition_inference_id: plotCognitionInferenceId,
+        ok: plotCognitionResult.ok === true,
+        operation: plotCognitionResult.operation ?? null,
+        stage: plotCognitionResult.stage ?? null,
+        fresh_after: plotCognitionResult.freshAfter === true,
+        pending_preserved: plotCognitionResult.pendingPreserved === true,
+      });
 
       trace.emit(sceneAgent.session, 'hg/librarian-proposal-join', scope, {
         domain_commit_id: domainCommitId,
@@ -556,6 +644,11 @@ export default class HgRoundOrchestrator extends Service {
         librarian_stage: librarianResult.stage ?? null,
         librarian_degradation_mode: librarianResult.degradationMode ?? null,
         librarian_terminal: librarianResult.terminal === true,
+        plot_cognition_inference_id: plotCognitionInferenceId,
+        plot_cognition_stage: plotCognitionResult.stage ?? null,
+        plot_cognition_ok: plotCognitionResult.ok === true,
+        plot_cognition_fresh_after: plotCognitionResult.freshAfter === true,
+        plot_cognition_pending_preserved: plotCognitionResult.pendingPreserved === true,
       });
     }
 
@@ -613,7 +706,9 @@ export default class HgRoundOrchestrator extends Service {
         character: roleTimings.character_ms,
         narrator: roleTimings.narrator_ms,
         librarian: roleTimings.librarian_ms,
+        plot_cognition: roleTimings.plot_cognition_ms,
       },
+      plot_cognition_resume: plotCognitionResumeSummary,
       storyteller: storytellerRoundSummary,
     };
   }

@@ -42,9 +42,9 @@ Freshness assessment: `POST /v1/plot-cognition/freshness/assess`.
 
 Hashes and IDs are **not** substitutes for semantic material. Withheld basis appears structurally (IDs/categories/reasons), not as hidden prose.
 
-## Regeneration guidance
+### Regeneration (implementation-shape variance)
 
-`RegenerationGuidance` is structurally separate from full forensic evaluator rationale. `rewrite_required` without valid guidance **fails closed** for that candidate. The generator receives safe guidance only.
+Dedicated regeneration HTTP pairs are **not** required. Regeneration uses projection finalize with `regeneration_inputs` and `second_pass_results` after an initial `rewrite_required` evaluation — preserving prepare → infer → finalize boundaries, at-most-one regeneration, structured `RegenerationGuidance`, second Layer B evaluation, stale-binding protection, and forensic lineage.
 
 ## Candidate provenance paths
 
@@ -58,6 +58,23 @@ All paths converge only at the prepared Character projection batch.
 
 Post-authoritative-commit, Domain records `PlotCognitionPendingWork` on the overlay store (`pending_work`). DSH may cache scheduling pointers but is **not** the authority. Pending work survives overlay reload.
 
+### DSH post-commit scheduling (#63)
+
+Production round orchestration (`hg-round-orchestrator/service.mjs`) invokes `runPostCommitPlotCognitionLifecycle` after each successful Character commit (parallel to Narrator, joined before the next turn). At round start, `runPlotCognitionPendingWorkLifecycle` re-discovers outstanding work from Domain state only (resume-safe across orchestrator restart).
+
+Routing uses `POST /v1/plot-cognition/pending-work/plan` (#61 freshness semantics):
+
+| Plan operation | DSH action |
+|----------------|------------|
+| `none` / `clear_pending` | Skip or clear stale pending flag |
+| `reconciliation` | Domain finalize (no inference) |
+| `authority_advance` | Domain finalize (no inference) |
+| `initialization` | Init prepare → infer → finalize |
+| `semantic_update` | Update prepare → infer → finalize (+ replan when `replan_required`) |
+| `blocked` | Pending preserved; freshness barrier withholds overlay |
+
+Implementation modules: `plot-cognition-orchestration.mjs`, `plot-cognition-update-substrate.mjs`.
+
 ## Next-consumer freshness barrier
 
 When pending Plot Cognition work exists:
@@ -66,6 +83,10 @@ When pending Plot Cognition work exists:
 - **Director:** withhold stale overlay slice; Model A may continue.
 - No warning/banner exposure of stale strategic cognition.
 - Prepared projection batches fail closed on stale binding.
+
+## Layer B concurrency
+
+Production Layer B evaluation is **bounded sequential** in Domain finalize (deterministic order). Bounded parallel evaluation after Layer A is permitted by policy but not required for correctness; concurrency optimization remains available to **#65**.
 
 ## Layer B failure semantics
 
@@ -95,4 +116,5 @@ Orchestration ceilings live in `StorytellerOrchestrationPolicy` (generated candi
 - `v2/domain_api/plot_cognition_orchestration_service.py`
 - `v2/domain_api/plot_cognition_orchestration_api.py`
 - `v2/domain_api/plot_cognition_lifecycle_api.py`
-- `v2/rp_runtime/src/plugins/hg-phase-executors/character-epistemic-projection-eval.mjs`
+- `v2/rp_runtime/src/lib/plot-cognition-orchestration.mjs`
+- `v2/rp_runtime/src/lib/plot-cognition-update-substrate.mjs`

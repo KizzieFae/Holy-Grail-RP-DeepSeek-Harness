@@ -194,10 +194,138 @@ def assess_plot_cognition_freshness(kernel: Any, fixture: LiveSession) -> dict[s
     }
 
 
+def plan_post_commit_plot_cognition_work(kernel: Any, fixture: LiveSession) -> dict[str, Any]:
+    """Route post-commit Plot Cognition work using #61 freshness semantics."""
+    from .plot_cognition_overlay_store import BoundednessPolicy, LoadStatus
+    from .plot_cognition_lifecycle_api import _DEFAULT_POLICY
+
+    orch = _orchestration(kernel)
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    if overlay is None:
+        return {
+            "accepted": False,
+            "operation": "blocked",
+            "reason": "plot_cognition_overlay_unavailable",
+            "fresh": True,
+        }
+
+    overlay_status = orch.assess_overlay_freshness(fixture) if orch else None
+    pending = overlay_status.pending_work if overlay_status else None
+    if overlay_status is not None and overlay_status.fresh and pending is None:
+        return {
+            "accepted": True,
+            "operation": "none",
+            "reason": "no_pending_work",
+            "fresh": True,
+            "pending_work": None,
+        }
+
+    scope_id = str(fixture.plot_cognition_scope_id or "")
+    loaded = overlay.load(scope_id, policy=_DEFAULT_POLICY)
+    init_svc = getattr(kernel.cognition, "plot_cognition_initialization", None)
+    if loaded.status != LoadStatus.READY and init_svc is not None:
+        eligible, reason = init_svc.is_initialization_eligible(fixture, policy=_DEFAULT_POLICY)
+        if eligible or (pending is not None and pending.work_kind == "initialization"):
+            return {
+                "accepted": True,
+                "operation": "initialization",
+                "reason": reason,
+                "fresh": False,
+                "pending_work": pending.to_dict() if pending else None,
+            }
+
+    if loaded.status != LoadStatus.READY or loaded.store is None:
+        return {
+            "accepted": False,
+            "operation": "blocked",
+            "reason": f"overlay_{loaded.status.value}",
+            "fresh": False,
+            "pending_work": pending.to_dict() if pending else None,
+        }
+
+    update_svc = getattr(kernel.cognition, "plot_cognition_update", None)
+    if update_svc is None:
+        return {
+            "accepted": False,
+            "operation": "blocked",
+            "reason": "plot_cognition_update_unavailable",
+            "fresh": False,
+            "pending_work": pending.to_dict() if pending else None,
+        }
+
+    assessment = update_svc.assess_freshness(fixture, loaded.store, _DEFAULT_POLICY)
+    freshness_status = assessment.status
+    snapshot_dict = (
+        assessment.source_snapshot.to_dict() if assessment.source_snapshot is not None else None
+    )
+
+    if freshness_status == "freshness_unprovable":
+        return {
+            "accepted": True,
+            "operation": "reconciliation",
+            "reason": assessment.message,
+            "freshness_status": freshness_status,
+            "source_snapshot": snapshot_dict,
+            "fresh": False,
+            "pending_work": pending.to_dict() if pending else None,
+        }
+
+    if freshness_status == "authority_generation_changed_unchecked":
+        return {
+            "accepted": True,
+            "operation": "authority_advance",
+            "reason": assessment.message,
+            "freshness_status": freshness_status,
+            "source_snapshot": snapshot_dict,
+            "fresh": False,
+            "pending_work": pending.to_dict() if pending else None,
+        }
+
+    if freshness_status == "fresh":
+        if pending is not None and orch is not None:
+            return {
+                "accepted": True,
+                "operation": "clear_pending",
+                "reason": "authority_fresh_pending_flag_stale",
+                "freshness_status": freshness_status,
+                "fresh": True,
+                "pending_work": pending.to_dict(),
+            }
+        return {
+            "accepted": True,
+            "operation": "none",
+            "reason": "fresh",
+            "freshness_status": freshness_status,
+            "fresh": True,
+            "pending_work": None,
+        }
+
+    if freshness_status == "semantic_assimilation_pending":
+        return {
+            "accepted": True,
+            "operation": "semantic_update",
+            "reason": assessment.message,
+            "freshness_status": freshness_status,
+            "source_snapshot": snapshot_dict,
+            "fresh": False,
+            "pending_work": pending.to_dict() if pending else None,
+        }
+
+    return {
+        "accepted": False,
+        "operation": "blocked",
+        "reason": assessment.message,
+        "freshness_status": freshness_status,
+        "fresh": False,
+        "pending_work": pending.to_dict() if pending else None,
+    }
+
+
 __all__ = [
     "prepare_plot_cognition_projection",
     "finalize_plot_cognition_projection",
     "record_plot_cognition_post_commit",
     "assess_plot_cognition_freshness",
+    "plan_post_commit_plot_cognition_work",
     "clear_prepared_batches_for_tests",
 ]

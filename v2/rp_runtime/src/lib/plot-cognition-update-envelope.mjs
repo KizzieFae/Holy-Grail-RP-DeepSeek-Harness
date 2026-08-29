@@ -1,0 +1,182 @@
+import crypto from 'node:crypto';
+
+import { parseJsonObject } from './inference-utils.mjs';
+
+export const PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA = 'hg_plot_cognition_update_inference_v1';
+export const UPDATE_PROPOSAL_SCHEMA = 'hg_plot_cognition_update_proposal_v1';
+export const UPDATE_EVALUATION_SCHEMA = 'hg_plot_cognition_update_eval_v1';
+export const REPLAN_PROPOSAL_SCHEMA = 'hg_plot_cognition_replan_proposal_v1';
+export const REPLAN_EVALUATION_SCHEMA = 'hg_plot_cognition_replan_eval_v1';
+
+export function buildPlotCognitionUpdatePrompt() {
+  return [
+    'Assimilate authoritative scene changes into Plot Cognition overlay.',
+    'Output JSON only matching the update inference schema.',
+    'Set update_evaluation.overall_result to no_change when cognition is unchanged.',
+    'Set replan_required on update_proposal only when pursuit direction must change.',
+  ].join(' ');
+}
+
+export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
+  const snapshot = prepareResponse?.source_snapshot ?? {};
+  const body = snapshot.canonical_body ?? {};
+  const contributions = [
+    {
+      contribution_id: `${prepareResponse.manifest_id}-authority`,
+      source_kind: 'active_constraints',
+      authority_class: 'derived',
+      knowledge_ids: ['plot_cognition:authority_projection'],
+      priority: 10,
+      content: JSON.stringify(body).slice(0, 12000),
+      provenance: {
+        snapshot_id: snapshot.snapshot_id ?? null,
+        authority_source_fingerprint: prepareResponse.authority_source_fingerprint ?? null,
+      },
+    },
+  ];
+  return { contributions };
+}
+
+function newId(prefix) {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
+export function parsePlotCognitionUpdateInference(raw, prepareResponse) {
+  let parsed;
+  try {
+    parsed = typeof raw === 'string' ? parseJsonObject(raw) : raw;
+  } catch (error) {
+    return { ok: false, error: String(error?.message ?? error ?? 'parse_error'), result: null };
+  }
+  if (parsed?.schema !== PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA) {
+    return { ok: false, error: 'schema_mismatch', result: null };
+  }
+
+  const snapshot = prepareResponse?.source_snapshot ?? {};
+  const proposalRaw = parsed.update_proposal ?? {};
+  const evaluationRaw = parsed.update_evaluation ?? {};
+  const proposalId = String(proposalRaw.proposal_id ?? newId('hg-plot-update-proposal'));
+  const evaluationId = String(evaluationRaw.evaluation_id ?? newId('hg-plot-update-eval'));
+
+  const updateProposal = {
+    schema: UPDATE_PROPOSAL_SCHEMA,
+    proposal_id: proposalId,
+    source_snapshot_id: String(proposalRaw.source_snapshot_id ?? snapshot.snapshot_id ?? ''),
+    source_snapshot_fingerprint: String(
+      proposalRaw.source_snapshot_fingerprint
+      ?? prepareResponse.authority_source_fingerprint
+      ?? snapshot.authority_source_fingerprint
+      ?? '',
+    ),
+    plot_cognition_scope_id: String(
+      proposalRaw.plot_cognition_scope_id ?? snapshot.plot_cognition_scope_id ?? '',
+    ),
+    prior_store_revision: Number(
+      proposalRaw.prior_store_revision ?? prepareResponse.prior_store_revision ?? snapshot.prior_store_revision ?? 0,
+    ),
+    assimilation_rationale: String(
+      proposalRaw.assimilation_rationale ?? 'Assimilate authoritative post-commit delta.',
+    ),
+    goals: Array.isArray(proposalRaw.goals) ? proposalRaw.goals : [],
+    pressures: Array.isArray(proposalRaw.pressures) ? proposalRaw.pressures : [],
+    global_frame: proposalRaw.global_frame ?? null,
+    retained_goal_ids: proposalRaw.retained_goal_ids ?? [],
+    retained_pressure_ids: proposalRaw.retained_pressure_ids ?? [],
+    inactivated_goal_ids: proposalRaw.inactivated_goal_ids ?? [],
+    inactivated_pressure_ids: proposalRaw.inactivated_pressure_ids ?? [],
+    replan_required: Boolean(proposalRaw.replan_required),
+    per_item_rationale: proposalRaw.per_item_rationale ?? [],
+    revision_of_proposal_id: proposalRaw.revision_of_proposal_id ?? null,
+  };
+
+  const updateEvaluation = {
+    schema: UPDATE_EVALUATION_SCHEMA,
+    evaluation_id: evaluationId,
+    proposal_id: proposalId,
+    overall_result: String(evaluationRaw.overall_result ?? 'no_change'),
+    findings: Array.isArray(evaluationRaw.findings) ? evaluationRaw.findings : [],
+    revision_brief: evaluationRaw.revision_brief ?? null,
+    accepted_item_ids: evaluationRaw.accepted_item_ids ?? [],
+    no_change_rationale: String(
+      evaluationRaw.no_change_rationale ?? 'No cognition adjustment warranted.',
+    ),
+  };
+
+  let replanProposal = null;
+  let replanEvaluation = null;
+  if (updateProposal.replan_required) {
+    const replanRaw = parsed.replan_proposal ?? {};
+    const replanEvalRaw = parsed.replan_evaluation ?? {};
+    const replanProposalId = String(replanRaw.proposal_id ?? newId('hg-plot-replan-proposal'));
+    const replanEvaluationId = String(replanEvalRaw.evaluation_id ?? newId('hg-plot-replan-eval'));
+    replanProposal = {
+      schema: REPLAN_PROPOSAL_SCHEMA,
+      proposal_id: replanProposalId,
+      source_snapshot_id: updateProposal.source_snapshot_id,
+      source_snapshot_fingerprint: updateProposal.source_snapshot_fingerprint,
+      plot_cognition_scope_id: updateProposal.plot_cognition_scope_id,
+      prior_store_revision: updateProposal.prior_store_revision,
+      replan_rationale: String(replanRaw.replan_rationale ?? 'Replan pursuit direction.'),
+      trigger_summary: String(replanRaw.trigger_summary ?? 'Update flagged replan_required.'),
+      goals: Array.isArray(replanRaw.goals) ? replanRaw.goals : [],
+      pressures: Array.isArray(replanRaw.pressures) ? replanRaw.pressures : [],
+      global_frame: replanRaw.global_frame ?? null,
+      superseded_goal_ids: replanRaw.superseded_goal_ids ?? [],
+      superseded_pressure_ids: replanRaw.superseded_pressure_ids ?? [],
+      retained_goal_ids: replanRaw.retained_goal_ids ?? [],
+      retained_pressure_ids: replanRaw.retained_pressure_ids ?? [],
+    };
+    replanEvaluation = {
+      schema: REPLAN_EVALUATION_SCHEMA,
+      evaluation_id: replanEvaluationId,
+      proposal_id: replanProposalId,
+      overall_result: String(replanEvalRaw.overall_result ?? 'reject'),
+      findings: Array.isArray(replanEvalRaw.findings) ? replanEvalRaw.findings : [],
+      revision_brief: replanEvalRaw.revision_brief ?? null,
+      accepted_item_ids: replanEvalRaw.accepted_item_ids ?? [],
+    };
+    if (replanEvaluation.overall_result !== 'accept') {
+      return { ok: false, error: 'replan_required_without_accept', result: null };
+    }
+  }
+
+  return {
+    ok: true,
+    error: null,
+    result: {
+      update_proposal: updateProposal,
+      update_evaluation: updateEvaluation,
+      replan_proposal: replanProposal,
+      replan_evaluation: replanEvaluation,
+    },
+  };
+}
+
+export function buildNoChangeUpdateInference(prepareResponse) {
+  const snapshot = prepareResponse?.source_snapshot ?? {};
+  const proposalId = newId('hg-plot-update-proposal');
+  return JSON.stringify({
+    schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+    update_proposal: {
+      schema: UPDATE_PROPOSAL_SCHEMA,
+      proposal_id: proposalId,
+      source_snapshot_id: snapshot.snapshot_id ?? '',
+      source_snapshot_fingerprint: prepareResponse.authority_source_fingerprint ?? '',
+      plot_cognition_scope_id: snapshot.plot_cognition_scope_id ?? '',
+      prior_store_revision: prepareResponse.prior_store_revision ?? 0,
+      assimilation_rationale: 'Assimilate authoritative post-commit delta.',
+      goals: [],
+      pressures: [],
+      global_frame: null,
+      replan_required: false,
+    },
+    update_evaluation: {
+      schema: UPDATE_EVALUATION_SCHEMA,
+      evaluation_id: newId('hg-plot-update-eval'),
+      proposal_id: proposalId,
+      overall_result: 'no_change',
+      findings: [],
+      no_change_rationale: 'No cognition adjustment warranted after commit.',
+    },
+  });
+}

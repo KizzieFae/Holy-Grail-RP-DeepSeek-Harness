@@ -203,3 +203,68 @@ def finalize_character_advisory_generation(
         "candidates": parsed,
         "reason": "ok" if parsed else "no_valid_candidates",
     }
+
+
+def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, data: dict[str, Any]) -> dict[str, Any]:
+    update_svc = getattr(kernel.cognition, "plot_cognition_update", None)
+    overlay, loaded = _loaded_store(kernel, fixture)
+    if update_svc is None or loaded is None or loaded.store is None:
+        return {"accepted": False, "reason": "plot_cognition_update_unavailable"}
+    result = update_svc.first_reconciliation(fixture, loaded.store, _DEFAULT_POLICY)
+    if result.success and overlay is not None:
+        from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+        PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+    return {
+        "accepted": result.success,
+        "code": result.code,
+        "message": result.message,
+        "store_revision": result.store_revision,
+    }
+
+
+def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession, data: dict[str, Any]) -> dict[str, Any]:
+    update_svc = getattr(kernel.cognition, "plot_cognition_update", None)
+    overlay, loaded = _loaded_store(kernel, fixture)
+    if update_svc is None or overlay is None or loaded is None or loaded.store is None:
+        return {"accepted": False, "reason": "plot_cognition_update_unavailable"}
+    contributors = tuple(str(item) for item in (data.get("contributors") or (fixture.hg_scene_id,)))
+    snapshot_raw = data.get("source_snapshot")
+    if isinstance(snapshot_raw, dict):
+        from .plot_cognition_update_contract import CognitionUpdateSourceSnapshot
+
+        snapshot = CognitionUpdateSourceSnapshot.from_dict(snapshot_raw)
+    else:
+        snapshot = update_svc.gather_sources(
+            fixture,
+            loaded.store,
+            None,
+            contributors,
+            catch_up_mode=str(data.get("catch_up_mode", "sequential")),
+        )
+    result = update_svc.advance_authority_unchanged(
+        fixture,
+        loaded.store,
+        _DEFAULT_POLICY,
+        source_snapshot=snapshot,
+    )
+    if result.success:
+        from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+        PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+    return {
+        "accepted": result.success,
+        "code": result.code,
+        "message": result.message,
+        "store_revision": result.store_revision,
+    }
+
+
+def clear_plot_cognition_pending_work(kernel: Any, fixture: LiveSession) -> dict[str, Any]:
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    if overlay is None:
+        return {"cleared": False, "reason": "plot_cognition_overlay_unavailable"}
+    from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
+
+    PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
+    return {"cleared": True}

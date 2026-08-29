@@ -739,5 +739,94 @@ class PlotCognitionOrchestrationTests(unittest.TestCase):
         )
 
 
+class PlotCognitionPostCommitPlanningTests(unittest.TestCase):
+    def test_plan_routes_reconciliation_when_authority_missing(self) -> None:
+        from domain_api.plot_cognition_orchestration_api import plan_post_commit_plot_cognition_work
+
+        fixture = _session_with_event(known_by=["Alice"])
+        service = _overlay_service()
+        _seed_overlay(service, fixture, goals=(_character_goal(),))
+        orch = PlotCognitionOrchestrationService(service)
+        orch.record_post_commit_pending_work(fixture, domain_commit_id="commit-plan-1")
+
+        class _Kernel:
+            cognition = type(
+                "Cognition",
+                (),
+                {
+                    "plot_cognition_overlay": service,
+                    "plot_cognition_update": __import__(
+                        "domain_api.plot_cognition_update_service",
+                        fromlist=["PlotCognitionUpdateService"],
+                    ).PlotCognitionUpdateService(service),
+                    "plot_cognition_initialization": None,
+                },
+            )()
+
+        plan = plan_post_commit_plot_cognition_work(_Kernel(), fixture)
+        self.assertEqual(plan["operation"], "reconciliation")
+
+    def test_post_commit_plan_update_then_finalize_clears_pending(self) -> None:
+        from domain_api.plot_cognition_orchestration_api import plan_post_commit_plot_cognition_work
+        from domain_api.plot_cognition_update_contract import (
+            UPDATE_EVALUATION_SCHEMA,
+            new_evaluation_id,
+        )
+        from domain_api.plot_cognition_update_service import PlotCognitionUpdateService
+        from domain_api.plot_cognition_update_sources import gather_update_source_snapshot
+        from domain.tests.test_plot_cognition_update_replan import (
+            _initialized_store,
+            _update_proposal,
+        )
+        from domain_api.plot_cognition_update_contract import PlotCognitionUpdateEvaluation
+        from domain_api.plot_cognition_lifecycle_api import finalize_plot_cognition_update
+
+        fixture = _session_with_event(known_by=["Alice"])
+        service = _overlay_service()
+        store = _initialized_store(fixture, service)
+        update_svc = PlotCognitionUpdateService(service)
+        update_svc.first_reconciliation(fixture, store, TEST_POLICY)
+        orch = PlotCognitionOrchestrationService(service)
+        orch.record_post_commit_pending_work(fixture, domain_commit_id="commit-e2e-1")
+        fixture.continuity_version += 1
+        fixture.manager.scene_state.location = "Changed Hall"
+        self.assertFalse(orch.assess_overlay_freshness(fixture).fresh)
+
+        class _Kernel:
+            cognition = type(
+                "Cognition",
+                (),
+                {
+                    "plot_cognition_overlay": service,
+                    "plot_cognition_update": update_svc,
+                    "plot_cognition_initialization": None,
+                },
+            )()
+
+        plan = plan_post_commit_plot_cognition_work(_Kernel(), fixture)
+        self.assertEqual(plan["operation"], "semantic_update")
+        loaded = service.load(str(fixture.plot_cognition_scope_id), policy=TEST_POLICY)
+        assert loaded.store is not None
+        proposal = _update_proposal(fixture, loaded.store)
+        evaluation = PlotCognitionUpdateEvaluation(
+            schema=UPDATE_EVALUATION_SCHEMA,
+            evaluation_id=new_evaluation_id(),
+            proposal_id=proposal.proposal_id,
+            overall_result="no_change",
+            findings=(),
+            no_change_rationale="No cognition adjustment warranted.",
+        )
+        finalized = finalize_plot_cognition_update(
+            _Kernel(),
+            fixture,
+            {
+                "proposal": proposal.to_dict(),
+                "evaluation": evaluation.to_dict(),
+            },
+        )
+        self.assertTrue(finalized["accepted"])
+        self.assertTrue(orch.assess_overlay_freshness(fixture).fresh)
+
+
 if __name__ == "__main__":
     unittest.main()

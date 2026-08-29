@@ -241,6 +241,42 @@ export function createDomainApiClient(baseUrl) {
         'assessPlotCognitionFreshness',
       );
     },
+    planPostCommitPlotCognitionWork(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/pending-work/plan',
+        body,
+        'planPostCommitPlotCognitionWork',
+      );
+    },
+    finalizePlotCognitionReconciliation(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/reconciliation/finalize',
+        body,
+        'finalizePlotCognitionReconciliation',
+      );
+    },
+    finalizePlotCognitionAuthorityAdvance(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/authority-advance/finalize',
+        body,
+        'finalizePlotCognitionAuthorityAdvance',
+      );
+    },
+    clearPlotCognitionPendingWork(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/pending-work/clear',
+        body,
+        'clearPlotCognitionPendingWork',
+      );
+    },
     preparePlotCognitionInit(body) {
       return postJson(metrics, baseUrl, '/v1/plot-cognition/init/prepare', body, 'preparePlotCognitionInit');
     },
