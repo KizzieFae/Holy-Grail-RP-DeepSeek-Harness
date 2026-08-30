@@ -158,3 +158,53 @@ Outcomes: `semantic_update`, `semantic_replan`, `semantic_no_change`, `objective
 | #61 | #64 |
 |-----|-----|
 | Ephemeral forensic handoff shapes | Durable decision journal |
+
+---
+
+## Replan transport envelope (#68)
+
+Node (`plot-cognition-update-envelope.mjs`) performs **structural** transport normalization and validation only. Python/domain (`plot_cognition_update_contract.py`, `commit_update`) remains authoritative for objective cognition policy (activity-state legality, provenance, applicability, budgets, integrity, semantic grounding).
+
+### Canonical replan proposal fields
+
+When `replan_required=true`, the top-level inference envelope must include `replan_proposal` and `replan_evaluation` per existing schemas. The replan proposal uses canonical fields:
+
+| Canonical field | Purpose |
+|-----------------|--------|
+| `proposal_id` | Replan proposal identity |
+| `goals` | Replacement goal drafts |
+| `pressures` | Replacement pressure drafts |
+| `replan_rationale` | Why replan is warranted |
+| `global_frame` | Optional replacement frame |
+
+Each goal must include `goal_id` and `intended_direction`. Each pressure must include `pressure_id` and **`pressure_text`** (not `description`).
+
+### Supported top-level aliases (bounded, deterministic)
+
+When canonical and alias are both present, **canonical wins** (aliases are not merged).
+
+| Canonical | Supported alias |
+|-----------|-----------------|
+| `goals` | `proposed_goals` |
+| `pressures` | `proposed_pressures` |
+| `replan_rationale` | `proposal_rationale` |
+| `proposal_id` | `replan_id` |
+| `global_frame` | `proposed_global_plot_frame` |
+
+Unsupported synonym fields are not generically coerced. Nested semantic fields (for example `description` → `pressure_text`) are **not** auto-normalized.
+
+### Non-empty replan requirement
+
+When `replan_required=true`, after alias normalization the replan proposal must contain **at least one** substantive goal and/or pressure meeting structural field requirements. Zero goals and zero pressures fails pre-finalize contract validation (`replan_required_empty_cognition`) and is eligible for bounded contract correction.
+
+`replan_required=false` behavior is unchanged.
+
+### Finalize failure distinction (#68)
+
+Plot Cognition finalize/WAFI distinguishes:
+
+1. **Forensic intent persistence failure** — intent chronicle could not be written (`forensic_persistence_failed`, stage `intent_persistence_failed`).
+2. **Domain mutation rejection** — intent persisted; `commit_update()` rejected the proposal. Public response preserves domain `UpdateCommitResult.code` (for example `integrity_invalid`, `stale_revision`, `budget_exceeded`) with `forensic_stage=mutation_failed`. Not collapsed into `forensic_persistence_failed`.
+3. **Forensic completion persistence failure** — mutation succeeded but completion chronicle failed (`forensic_persistence_failed`, stage `completion_persistence_failed`).
+
+Successful finalize behavior is unchanged.

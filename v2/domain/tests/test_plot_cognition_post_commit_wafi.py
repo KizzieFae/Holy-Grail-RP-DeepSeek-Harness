@@ -231,7 +231,7 @@ class PostCommitPendingWorkWafiTests(unittest.TestCase):
 
         from domain_api.plot_cognition_forensics_integration import wafi_update_like
 
-        result, forensic_ok = wafi_update_like(
+        result, forensic_ok, _wafi = wafi_update_like(
             self.kernel,
             self.fixture,
             operation_kind="update",

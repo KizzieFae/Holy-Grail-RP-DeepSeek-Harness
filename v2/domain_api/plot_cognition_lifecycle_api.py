@@ -150,7 +150,9 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
 
             PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
 
-    result, forensic_ok = wafi_update_like(
+    from .plot_cognition_forensics_integration import format_plot_cognition_wafi_finalize_response
+
+    result, forensic_ok, wafi = wafi_update_like(
         kernel,
         fixture,
         operation_kind=operation_kind,
@@ -166,19 +168,12 @@ def finalize_plot_cognition_update(kernel: Any, fixture: LiveSession, data: dict
         commit_fn=do_commit,
         before_completion_snapshot=_clear_pending_before_completion,
     )
-    if not forensic_ok:
-        return {
-            "accepted": False,
-            "code": "forensic_persistence_failed",
-            "message": "plot cognition update forensic persistence failed",
-            "store_revision": result.store_revision if hasattr(result, "store_revision") else None,
-        }
-    return {
-        "accepted": result.success,
-        "code": result.code,
-        "message": result.message,
-        "store_revision": result.store_revision,
-    }
+    return format_plot_cognition_wafi_finalize_response(
+        result,
+        forensic_ok,
+        wafi,
+        persistence_message="plot cognition update forensic persistence failed",
+    )
 
 
 def prepare_plot_cognition_replan(kernel: Any, fixture: LiveSession, data: dict[str, Any]) -> dict[str, Any]:
@@ -280,7 +275,9 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
 
             PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
 
-    result, forensic_ok = wafi_update_like(
+    from .plot_cognition_forensics_integration import format_plot_cognition_wafi_finalize_response
+
+    result, forensic_ok, wafi = wafi_update_like(
         kernel,
         fixture,
         operation_kind="reconciliation",
@@ -290,18 +287,12 @@ def finalize_plot_cognition_reconciliation(kernel: Any, fixture: LiveSession, da
         commit_fn=do_commit,
         before_completion_snapshot=_clear_pending_before_completion,
     )
-    if not forensic_ok:
-        return {
-            "accepted": False,
-            "code": "forensic_persistence_failed",
-            "message": "reconciliation forensic persistence failed",
-        }
-    return {
-        "accepted": result.success,
-        "code": result.code,
-        "message": result.message,
-        "store_revision": result.store_revision,
-    }
+    return format_plot_cognition_wafi_finalize_response(
+        result,
+        forensic_ok,
+        wafi,
+        persistence_message="reconciliation forensic persistence failed",
+    )
 
 
 def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession, data: dict[str, Any]) -> dict[str, Any]:
@@ -353,7 +344,9 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
 
             PlotCognitionOrchestrationService(overlay).clear_pending_work(fixture)
 
-    result, forensic_ok = wafi_update_like(
+    from .plot_cognition_forensics_integration import format_plot_cognition_wafi_finalize_response
+
+    result, forensic_ok, wafi = wafi_update_like(
         kernel,
         fixture,
         operation_kind="authority_advance",
@@ -366,18 +359,12 @@ def finalize_plot_cognition_authority_advance(kernel: Any, fixture: LiveSession,
         commit_fn=do_commit,
         before_completion_snapshot=_clear_pending_before_completion,
     )
-    if not forensic_ok:
-        return {
-            "accepted": False,
-            "code": "forensic_persistence_failed",
-            "message": "authority advance forensic persistence failed",
-        }
-    return {
-        "accepted": result.success,
-        "code": result.code,
-        "message": result.message,
-        "store_revision": result.store_revision,
-    }
+    return format_plot_cognition_wafi_finalize_response(
+        result,
+        forensic_ok,
+        wafi,
+        persistence_message="authority advance forensic persistence failed",
+    )
 
 
 def clear_plot_cognition_pending_work(kernel: Any, fixture: LiveSession) -> dict[str, Any]:

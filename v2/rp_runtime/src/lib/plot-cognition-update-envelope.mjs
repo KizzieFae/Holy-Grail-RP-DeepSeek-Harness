@@ -27,6 +27,71 @@ function plotCognitionUpdateEnvelopeSemantics() {
   ];
 }
 
+export const REPLAN_PROPOSAL_FIELD_ALIASES = Object.freeze({
+  goals: ['proposed_goals'],
+  pressures: ['proposed_pressures'],
+  replan_rationale: ['proposal_rationale'],
+  proposal_id: ['replan_id'],
+  global_frame: ['proposed_global_plot_frame'],
+});
+
+function pickReplanField(raw, canonicalKey) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  if (raw[canonicalKey] !== undefined && raw[canonicalKey] !== null) {
+    return raw[canonicalKey];
+  }
+  for (const alias of REPLAN_PROPOSAL_FIELD_ALIASES[canonicalKey] ?? []) {
+    if (raw[alias] !== undefined && raw[alias] !== null) {
+      return raw[alias];
+    }
+  }
+  return undefined;
+}
+
+function validateStructuralReplanGoal(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return 'replan_cognition_item_incomplete';
+  }
+  const goalId = String(raw.goal_id ?? '').trim();
+  const direction = String(raw.intended_direction ?? '').trim();
+  if (!goalId || !direction) return 'replan_cognition_item_incomplete';
+  return null;
+}
+
+function validateStructuralReplanPressure(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return 'replan_cognition_item_incomplete';
+  }
+  const pressureId = String(raw.pressure_id ?? '').trim();
+  const pressureText = String(raw.pressure_text ?? '').trim();
+  if (!pressureId) return 'replan_cognition_item_incomplete';
+  if (!pressureText) {
+    if (String(raw.description ?? '').trim()) {
+      return 'replan_pressure_missing_pressure_text';
+    }
+    return 'replan_cognition_item_incomplete';
+  }
+  return null;
+}
+
+function validateSubstantiveReplanCognition(goals, pressures) {
+  if (!Array.isArray(goals) || !Array.isArray(pressures)) {
+    return 'replan_cognition_item_incomplete';
+  }
+  if (goals.length === 0 && pressures.length === 0) {
+    return 'replan_required_empty_cognition';
+  }
+  for (const goal of goals) {
+    const error = validateStructuralReplanGoal(goal);
+    if (error) return error;
+  }
+  for (const pressure of pressures) {
+    const error = validateStructuralReplanPressure(pressure);
+    if (error) return error;
+  }
+  return null;
+}
+
 function plotCognitionUpdateEnvelopeCorrectionGuidance(structuralError) {
   const error = String(structuralError ?? '').trim();
   if (!error) return [];
@@ -43,6 +108,25 @@ function plotCognitionUpdateEnvelopeCorrectionGuidance(structuralError) {
       '  not revise. revise means this JSON output needs correction, not that strategy must change.',
       '- Do not flip replan_required unless your preserved judgment requires it.',
       '- Do not omit replan objects while leaving replan_required true.',
+    );
+  } else if (error === 'replan_required_empty_cognition') {
+    lines.push(
+      '- replan_required is true but the replan proposal has no substantive replacement cognition.',
+      '- Include at least one goal and/or pressure in replan_proposal.goals / replan_proposal.pressures',
+      '  (or supported aliases proposed_goals / proposed_pressures).',
+      '- Do not leave both collections empty when replan_required is true.',
+    );
+  } else if (error === 'replan_pressure_missing_pressure_text') {
+    lines.push(
+      '- Each replan pressure must use canonical field pressure_text (not description).',
+      '- Include pressure_id and pressure_text for every replan pressure object.',
+    );
+  } else if (error === 'replan_cognition_item_incomplete') {
+    lines.push(
+      '- Each replan goal must include goal_id and intended_direction.',
+      '- Each replan pressure must include pressure_id and pressure_text.',
+      '- Use canonical replan_proposal field names or supported aliases (proposed_goals, proposed_pressures,',
+      '  proposal_rationale, replan_id).',
     );
   }
   return lines;
@@ -248,7 +332,17 @@ export function parsePlotCognitionUpdateInference(raw, prepareResponse) {
   if (updateProposal.replan_required) {
     const replanRaw = parsed.replan_proposal ?? {};
     const replanEvalRaw = parsed.replan_evaluation ?? {};
-    const replanProposalId = String(replanRaw.proposal_id ?? newId('hg-plot-replan-proposal'));
+    const replanGoals = pickReplanField(replanRaw, 'goals');
+    const replanPressures = pickReplanField(replanRaw, 'pressures');
+    const goals = Array.isArray(replanGoals) ? replanGoals : [];
+    const pressures = Array.isArray(replanPressures) ? replanPressures : [];
+    const structuralError = validateSubstantiveReplanCognition(goals, pressures);
+    if (structuralError) {
+      return { ok: false, error: structuralError, result: null };
+    }
+    const replanProposalId = String(
+      pickReplanField(replanRaw, 'proposal_id') ?? newId('hg-plot-replan-proposal'),
+    );
     const replanEvaluationId = String(replanEvalRaw.evaluation_id ?? newId('hg-plot-replan-eval'));
     replanProposal = {
       schema: REPLAN_PROPOSAL_SCHEMA,
@@ -257,11 +351,13 @@ export function parsePlotCognitionUpdateInference(raw, prepareResponse) {
       source_snapshot_fingerprint: updateProposal.source_snapshot_fingerprint,
       plot_cognition_scope_id: updateProposal.plot_cognition_scope_id,
       prior_store_revision: updateProposal.prior_store_revision,
-      replan_rationale: String(replanRaw.replan_rationale ?? 'Replan pursuit direction.'),
+      replan_rationale: String(
+        pickReplanField(replanRaw, 'replan_rationale') ?? 'Replan pursuit direction.',
+      ),
       trigger_summary: String(replanRaw.trigger_summary ?? 'Update flagged replan_required.'),
-      goals: Array.isArray(replanRaw.goals) ? replanRaw.goals : [],
-      pressures: Array.isArray(replanRaw.pressures) ? replanRaw.pressures : [],
-      global_frame: replanRaw.global_frame ?? null,
+      goals,
+      pressures,
+      global_frame: pickReplanField(replanRaw, 'global_frame') ?? null,
       superseded_goal_ids: replanRaw.superseded_goal_ids ?? [],
       superseded_pressure_ids: replanRaw.superseded_pressure_ids ?? [],
       retained_goal_ids: replanRaw.retained_goal_ids ?? [],

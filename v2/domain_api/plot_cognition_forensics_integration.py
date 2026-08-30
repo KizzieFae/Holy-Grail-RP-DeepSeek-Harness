@@ -12,8 +12,42 @@ from .plot_cognition_forensics_capture import (
     capture_authority_projection_verbatim,
     capture_epistemic_envelope,
 )
-from .plot_cognition_forensics_service import PlotCognitionForensicsService
+from .plot_cognition_forensics_service import PlotCognitionForensicsService, WafiResult
 from .session_state import LiveSession, RoundFixture
+
+
+def format_plot_cognition_wafi_finalize_response(
+    result: Any,
+    forensic_ok: bool,
+    wafi: WafiResult | None,
+    *,
+    persistence_message: str,
+) -> dict[str, Any]:
+    """Map WAFI/update outcomes to public finalize responses (#68)."""
+    if forensic_ok:
+        return {
+            "accepted": bool(getattr(result, "success", False)),
+            "code": getattr(result, "code", None),
+            "message": getattr(result, "message", None),
+            "store_revision": getattr(result, "store_revision", None),
+        }
+    if wafi is not None and wafi.code == "mutation_failed" and result is not None:
+        return {
+            "accepted": False,
+            "code": getattr(result, "code", "integrity_invalid"),
+            "message": getattr(result, "message", "plot cognition update rejected"),
+            "store_revision": getattr(result, "store_revision", None),
+            "forensic_stage": wafi.code,
+            "forensic_message": wafi.message,
+        }
+    return {
+        "accepted": False,
+        "code": "forensic_persistence_failed",
+        "message": wafi.message if wafi is not None else persistence_message,
+        "store_revision": getattr(result, "store_revision", None) if result is not None else None,
+        "forensic_stage": wafi.code if wafi is not None else None,
+        "forensic_message": wafi.message if wafi is not None else None,
+    }
 
 
 def get_forensics_service(kernel: Any) -> PlotCognitionForensicsService | None:
@@ -175,12 +209,12 @@ def wafi_update_like(
     commit_fn: Any,
     completion_extra: dict[str, Any] | None = None,
     before_completion_snapshot: Callable[[Any], None] | None = None,
-) -> tuple[Any, bool]:
-    """Returns (result, forensic_ok)."""
+) -> tuple[Any, bool, WafiResult | None]:
+    """Returns (result, forensic_ok, wafi_result)."""
     forensics = get_forensics_service(kernel)
     scope_id = str(fixture.plot_cognition_scope_id or "")
     if forensics is None or not scope_id:
-        return commit_fn(), True
+        return commit_fn(), True, None
 
     overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
     from .plot_cognition_overlay_store import BoundednessPolicy
@@ -239,12 +273,12 @@ def wafi_update_like(
             message="mutation already completed",
             store_revision=completion.get("store_revision"),
             prior_revision=completion.get("prior_revision"),
-        ), True
+        ), True, wafi
     if not wafi.ok:
         if "result" in mutation_holder:
-            return mutation_holder["result"], False
-        return None, False
-    return mutation_holder["result"], True
+            return mutation_holder["result"], False, wafi
+        return None, False, wafi
+    return mutation_holder["result"], True, wafi
 
 
 def record_projection_decisions(

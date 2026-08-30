@@ -15,6 +15,7 @@ import {
   buildPlotCognitionUpdatePrompt,
   parsePlotCognitionUpdateInference,
   PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+  REPLAN_PROPOSAL_FIELD_ALIASES,
 } from '../src/lib/plot-cognition-update-envelope.mjs';
 import {
   buildEpistemicProjectionEvalCorrectionPrompt,
@@ -53,6 +54,60 @@ const UPDATE_PREPARE = {
     canonical_body: {},
   },
 };
+
+function buildReplanAcceptEnvelope({
+  replanProposal = {},
+  updateProposal = {},
+} = {}) {
+  const proposalId = updateProposal.proposal_id ?? 'p-replan';
+  const replanProposalId = replanProposal.proposal_id ?? replanProposal.replan_id ?? 'rp1';
+  return JSON.stringify({
+    schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+    update_proposal: {
+      schema: 'hg_plot_cognition_update_proposal_v1',
+      proposal_id: proposalId,
+      source_snapshot_id: 'snap-update-1',
+      source_snapshot_fingerprint: 'fp-update-1',
+      plot_cognition_scope_id: 'scope-authoritative-1',
+      prior_store_revision: 2,
+      assimilation_rationale: 'Prior direction invalidated; replan required.',
+      replan_required: true,
+      ...updateProposal,
+    },
+    update_evaluation: {
+      schema: 'hg_plot_cognition_update_eval_v1',
+      evaluation_id: 'e-replan',
+      proposal_id: proposalId,
+      overall_result: 'accept',
+    },
+    replan_proposal: (() => {
+      const body = {
+        schema: 'hg_plot_cognition_replan_proposal_v1',
+        proposal_id: replanProposalId,
+        source_snapshot_id: 'snap-update-1',
+        source_snapshot_fingerprint: 'fp-update-1',
+        plot_cognition_scope_id: 'scope-authoritative-1',
+        prior_store_revision: 2,
+        replan_rationale: 'Replace invalidated pursuit.',
+        trigger_summary: 'Authority invalidated prior direction.',
+        ...replanProposal,
+      };
+      if (!('goals' in replanProposal) && !('proposed_goals' in replanProposal)) {
+        body.goals = [{ goal_id: 'g1', intended_direction: 'New direction.' }];
+      }
+      if (!('pressures' in replanProposal) && !('proposed_pressures' in replanProposal)) {
+        body.pressures = [];
+      }
+      return body;
+    })(),
+    replan_evaluation: {
+      schema: 'hg_plot_cognition_replan_eval_v1',
+      evaluation_id: 're1',
+      proposal_id: replanProposalId,
+      overall_result: 'accept',
+    },
+  });
+}
 
 function mockRunEphemeralInference(responses) {
   let index = 0;
@@ -148,6 +203,21 @@ test('update parser still rejects replan_required without accepted replan envelo
         overall_result: 'revise',
         revision_brief: 'needs work',
       },
+      replan_proposal: {
+        schema: 'hg_plot_cognition_replan_proposal_v1',
+        proposal_id: 'rp1',
+        replan_rationale: 'Replace invalidated pursuit.',
+        trigger_summary: 'Authority invalidated prior direction.',
+        goals: [{ goal_id: 'g1', intended_direction: 'New direction.' }],
+        pressures: [],
+      },
+      replan_evaluation: {
+        schema: 'hg_plot_cognition_replan_eval_v1',
+        evaluation_id: 're1',
+        proposal_id: 'rp1',
+        overall_result: 'revise',
+        revision_brief: 'needs work',
+      },
     }),
     UPDATE_PREPARE,
   );
@@ -155,51 +225,162 @@ test('update parser still rejects replan_required without accepted replan envelo
   assert.equal(parsed.error, 'replan_required_without_accept');
 });
 
-test('update parser accepts replan_required with accept update and accept replan evaluation', () => {
+test('update parser rejects replan_required with empty normalized cognition', () => {
   const parsed = parsePlotCognitionUpdateInference(
-    JSON.stringify({
-      schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
-      update_proposal: {
-        schema: 'hg_plot_cognition_update_proposal_v1',
-        proposal_id: 'p-replan',
-        source_snapshot_id: 'snap-update-1',
-        source_snapshot_fingerprint: 'fp-update-1',
-        plot_cognition_scope_id: 'scope-authoritative-1',
-        prior_store_revision: 2,
-        assimilation_rationale: 'Prior direction invalidated; replan required.',
-        replan_required: true,
-      },
-      update_evaluation: {
-        schema: 'hg_plot_cognition_update_eval_v1',
-        evaluation_id: 'e-replan',
-        proposal_id: 'p-replan',
-        overall_result: 'accept',
-      },
-      replan_proposal: {
-        schema: 'hg_plot_cognition_replan_proposal_v1',
-        proposal_id: 'rp1',
-        source_snapshot_id: 'snap-update-1',
-        source_snapshot_fingerprint: 'fp-update-1',
-        plot_cognition_scope_id: 'scope-authoritative-1',
-        prior_store_revision: 2,
-        replan_rationale: 'Replace invalidated pursuit.',
-        trigger_summary: 'Authority invalidated prior direction.',
+    buildReplanAcceptEnvelope({
+      replanProposal: {
         goals: [],
         pressures: [],
       },
-      replan_evaluation: {
-        schema: 'hg_plot_cognition_replan_eval_v1',
-        evaluation_id: 're1',
-        proposal_id: 'rp1',
-        overall_result: 'accept',
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'replan_required_empty_cognition');
+});
+
+test('update parser accepts replan_required with substantive goals', () => {
+  const parsed = parsePlotCognitionUpdateInference(buildReplanAcceptEnvelope(), UPDATE_PREPARE);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.update_proposal.replan_required, true);
+  assert.equal(parsed.result.replan_proposal.goals.length, 1);
+  assert.equal(parsed.result.replan_proposal.goals[0].goal_id, 'g1');
+});
+
+test('update parser maps proposed_goals alias to canonical goals', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        proposed_goals: [{ goal_id: 'alias-goal', intended_direction: 'Alias direction.' }],
       },
     }),
     UPDATE_PREPARE,
   );
   assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.replan_proposal.goals.length, 1);
+  assert.equal(parsed.result.replan_proposal.goals[0].goal_id, 'alias-goal');
+});
+
+test('update parser prefers canonical goals over proposed_goals alias', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [{ goal_id: 'canonical-goal', intended_direction: 'Canonical wins.' }],
+        proposed_goals: [{ goal_id: 'alias-goal', intended_direction: 'Alias ignored.' }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.replan_proposal.goals[0].goal_id, 'canonical-goal');
+});
+
+test('update parser maps replan alias fields to canonical transport', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        proposal_id: undefined,
+        replan_id: 'alias-replan-id',
+        replan_rationale: undefined,
+        proposal_rationale: 'Alias rationale.',
+        proposed_pressures: [{
+          pressure_id: 'p-alias',
+          pressure_text: 'Alias pressure.',
+        }],
+        proposed_goals: [{ goal_id: 'g-alias', intended_direction: 'Alias goal.' }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.replan_proposal.proposal_id, 'alias-replan-id');
+  assert.equal(parsed.result.replan_proposal.replan_rationale, 'Alias rationale.');
+  assert.equal(parsed.result.replan_proposal.pressures[0].pressure_id, 'p-alias');
+});
+
+test('update parser does not coerce unsupported replan aliases', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [],
+        pressures: [],
+        replacement_goals: [{ goal_id: 'unsupported', intended_direction: 'Ignored.' }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'replan_required_empty_cognition');
+  assert.equal(REPLAN_PROPOSAL_FIELD_ALIASES.goals.includes('replacement_goals'), false);
+});
+
+test('update parser rejects description-only replan pressure without coercion', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [],
+        pressures: [{ pressure_id: 'p1', description: 'Only description.' }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'replan_pressure_missing_pressure_text');
+});
+
+test('update correction prompt guides empty replan repair', () => {
+  const prompt = buildPlotCognitionUpdateCorrectionPrompt({
+    priorRaw: '{"update_proposal":{"replan_required":true}}',
+    structuralError: 'replan_required_empty_cognition',
+    context: UPDATE_PREPARE,
+  });
+  assert.ok(prompt.includes('replan_required_empty_cognition'));
+  assert.ok(prompt.includes('proposed_goals'));
+  assert.ok(prompt.includes('Do not leave both collections empty'));
+});
+
+test('update parser accepts replan_required with accept update and accept replan evaluation', () => {
+  const parsed = parsePlotCognitionUpdateInference(buildReplanAcceptEnvelope(), UPDATE_PREPARE);
+  assert.equal(parsed.ok, true);
   assert.equal(parsed.result.update_proposal.replan_required, true);
   assert.equal(parsed.result.update_evaluation.overall_result, 'accept');
   assert.equal(parsed.result.replan_evaluation.overall_result, 'accept');
+});
+
+test('update parser accepts structurally complete replan without domain objective checks', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [{ goal_id: 'transport-only-goal', intended_direction: 'Transport complete.' }],
+        pressures: [{ pressure_id: 'transport-only-pressure', pressure_text: 'Transport only.' }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.replan_proposal.goals[0].goal_id, 'transport-only-goal');
+});
+
+test('empty replan enters bounded correction and repaired envelope passes', async () => {
+  const emptyReplan = buildReplanAcceptEnvelope({
+    replanProposal: { goals: [], pressures: [] },
+  });
+  const repaired = buildReplanAcceptEnvelope();
+  const result = await runInferenceWithContractCorrection({
+    runEphemeralInference: mockRunEphemeralInference([emptyReplan, repaired]),
+    primaryInferenceId: 'inf-update-empty-replan',
+    primaryInferenceKind: 'plot_cognition_update',
+    correctionInferenceKind: 'plot_cognition_update_contract_correction',
+    buildPrimaryPrompt: () => buildPlotCognitionUpdatePrompt(UPDATE_PREPARE),
+    buildCorrectionPrompt: buildPlotCognitionUpdateCorrectionPrompt,
+    parseFn: parsePlotCognitionUpdateInference,
+    parseContext: UPDATE_PREPARE,
+    manifest: { contributions: [] },
+    maxCorrections: 1,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.correctionUsed, true);
+  assert.equal(result.parsed.result.replan_proposal.goals.length, 1);
 });
 
 test('Layer-B prompt contains exact verdict contract', () => {
