@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .plot_cognition_proposal_enrichment import enrich_initialization_proposal
 from .plot_cognition_initialization_contract import (
     InitializationCommitResult,
     InitializationForensicHandoff,
@@ -94,6 +95,7 @@ class PlotCognitionInitializationService:
                 message="opening presentation required for initialization is not yet durable",
             )
 
+        proposal = enrich_initialization_proposal(proposal)
         validation = self.validate_proposal(proposal, policy=policy)
         if not validation.ok:
             code = "budget_exceeded" if validation.over_budget else "integrity_invalid"

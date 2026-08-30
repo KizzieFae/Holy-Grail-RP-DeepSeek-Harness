@@ -177,7 +177,20 @@ When `replan_required=true`, the top-level inference envelope must include `repl
 | `replan_rationale` | Why replan is warranted |
 | `global_frame` | Optional replacement frame |
 
-Each goal must include `goal_id` and `intended_direction`. Each pressure must include `pressure_id` and **`pressure_text`** (not `description`).
+Each goal must include `goal_id`, `intended_direction`, `planning_horizon`, and `applicability`. Each pressure must include `pressure_id`, **`pressure_text`** (not `description`), `dramatic_rationale`, and `applicability`.
+
+### Proposal-to-persistence bridge (#68 Part C)
+
+Storyteller inference emits **semantic proposal items**; the persisted #58 overlay requires additional deterministic metadata. These layers are distinct:
+
+| Layer | Owner | Contents |
+|-------|-------|----------|
+| **Model inference / transport** | Storyteller (#63) | Semantic fields only (`intended_direction`, `planning_horizon`, `pressure_text`, `dramatic_rationale`, applicability, optional basis notes) |
+| **Deterministic enrichment** | Domain (`plot_cognition_proposal_enrichment.py`) | Fill-only stamps before validation: item `schema`, `creation_provenance.source = storyteller`, `activity_state = active` when absent |
+| **Objective validation** | Domain (#61) | Full #58 overlay rules on enriched proposal |
+| **Persisted overlay** | Domain (#59) | Complete cognition after materialization |
+
+Enrichment is fill-only: explicit non-Storyteller provenance and explicit lifecycle values are preserved. Correction may request missing **semantic** transport fields; it must not request `schema`, `creation_provenance`, or `activity_state`.
 
 ### Supported top-level aliases (bounded, deterministic)
 

@@ -122,9 +122,12 @@ Filesystem mtimes, wall-clock timestamps, and random IDs are **not** freshness a
 Bounded correction pattern (orchestrated by #63):
 
 ```text
-generator → objective validation → semantic evaluator
-→ accept OR one revision → objective validation → accept/fail
+generator → deterministic metadata enrichment (#68 Part C)
+→ objective validation → semantic evaluator
+→ accept OR one revision → enrichment → objective validation → accept/fail
 ```
+
+**Inference vs persistence (#68 Part C):** Model-facing init proposals supply semantic cognition fields only. Domain enrichment stamps missing deterministic metadata (`schema`, Storyteller `creation_provenance`, initial `activity_state`) immediately before objective validation. The persisted overlay DTO is not identical to the raw inference schema.
 
 No separate curator role. Over-budget proposals return `budget_exceeded`; semantic revision must reduce/merge — no deterministic truncation.
 

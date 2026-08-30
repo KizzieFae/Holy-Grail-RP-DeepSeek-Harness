@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 
 import { parseJsonObject } from './inference-utils.mjs';
+import {
+  plotCognitionSemanticTransportCorrectionGuidance,
+  plotCognitionSemanticTransportPromptLines,
+  validateSemanticCognitionItems,
+} from './plot-cognition-semantic-transport.mjs';
 
 export const PLOT_COGNITION_INIT_PROPOSAL_SCHEMA = 'hg_plot_cognition_init_proposal_v1';
 
@@ -30,6 +35,8 @@ export function buildPlotCognitionInitPrompt(initPrepare) {
     `- plot_cognition_scope_id: copy "${scopeId}" verbatim — do not invent or transform`,
     '- adoption_rationale: non-empty string explaining adoption',
     'Optional: goals[], pressures[], global_frame, per_item_rationale[].',
+    'When goals[] or pressures[] are non-empty, each item must satisfy the cognition semantic transport contract.',
+    ...plotCognitionSemanticTransportPromptLines(),
     'Do NOT use alternate wrapper keys such as plot_cognition_initialize_proposal.',
     `Do NOT use alternate schema names such as ${FORBIDDEN_INIT_SCHEMA_NAMES.join(' or ')}.`,
     'Do NOT return overlay/character_arcs shapes — use goals and pressures arrays.',
@@ -49,6 +56,9 @@ export function buildPlotCognitionInitCorrectionPrompt({ priorRaw, structuralErr
     `Previous response:\n${prior}`,
     '',
     `Structural validation error: ${structuralError}`,
+    ...(plotCognitionSemanticTransportCorrectionGuidance(structuralError).length > 0
+      ? ['', ...plotCognitionSemanticTransportCorrectionGuidance(structuralError)]
+      : []),
     '',
     'Required contract:',
     contractPrompt,
@@ -141,6 +151,11 @@ export function parsePlotCognitionInitProposal(raw, initPrepare) {
 
   if (!proposal.source_snapshot_fingerprint) {
     return { ok: false, error: 'source_snapshot_fingerprint_required', result: null };
+  }
+
+  const cognitionError = validateSemanticCognitionItems(proposal.goals, proposal.pressures);
+  if (cognitionError) {
+    return { ok: false, error: cognitionError, result: null };
   }
 
   return { ok: true, error: null, result: proposal };

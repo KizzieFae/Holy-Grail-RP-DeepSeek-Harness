@@ -13,6 +13,7 @@ from .plot_cognition_overlay_store import (
     authority_freshness_status,
     sync_legacy_commit_lineage,
 )
+from .plot_cognition_proposal_enrichment import enrich_replan_proposal, enrich_update_proposal
 from .plot_cognition_update_contract import (
     CognitionUpdateSourceSnapshot,
     FreshnessAssessment,
@@ -370,6 +371,10 @@ class PlotCognitionUpdateService:
                 message="overlay store revision changed since proposal",
                 store_revision=current_store.store_revision,
             )
+
+        proposal = enrich_update_proposal(proposal)
+        if replan_proposal is not None:
+            replan_proposal = enrich_replan_proposal(replan_proposal)
 
         validation = validate_update_proposal_objective(
             proposal,

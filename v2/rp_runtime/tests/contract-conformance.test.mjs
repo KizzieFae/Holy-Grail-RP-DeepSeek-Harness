@@ -18,6 +18,10 @@ import {
   REPLAN_PROPOSAL_FIELD_ALIASES,
 } from '../src/lib/plot-cognition-update-envelope.mjs';
 import {
+  semanticTransportGoalFixture,
+  semanticTransportPressureFixture,
+} from '../src/lib/plot-cognition-semantic-transport.mjs';
+import {
   buildEpistemicProjectionEvalCorrectionPrompt,
   buildEpistemicProjectionEvalPrompt,
   parseEpistemicProjectionEvalResult,
@@ -93,7 +97,7 @@ function buildReplanAcceptEnvelope({
         ...replanProposal,
       };
       if (!('goals' in replanProposal) && !('proposed_goals' in replanProposal)) {
-        body.goals = [{ goal_id: 'g1', intended_direction: 'New direction.' }];
+        body.goals = [semanticTransportGoalFixture({ goal_id: 'g1', intended_direction: 'New direction.' })];
       }
       if (!('pressures' in replanProposal) && !('proposed_pressures' in replanProposal)) {
         body.pressures = [];
@@ -208,7 +212,7 @@ test('update parser still rejects replan_required without accepted replan envelo
         proposal_id: 'rp1',
         replan_rationale: 'Replace invalidated pursuit.',
         trigger_summary: 'Authority invalidated prior direction.',
-        goals: [{ goal_id: 'g1', intended_direction: 'New direction.' }],
+        goals: [semanticTransportGoalFixture({ goal_id: 'g1', intended_direction: 'New direction.' })],
         pressures: [],
       },
       replan_evaluation: {
@@ -251,7 +255,7 @@ test('update parser maps proposed_goals alias to canonical goals', () => {
   const parsed = parsePlotCognitionUpdateInference(
     buildReplanAcceptEnvelope({
       replanProposal: {
-        proposed_goals: [{ goal_id: 'alias-goal', intended_direction: 'Alias direction.' }],
+        proposed_goals: [semanticTransportGoalFixture({ goal_id: 'alias-goal', intended_direction: 'Alias direction.' })],
       },
     }),
     UPDATE_PREPARE,
@@ -265,8 +269,8 @@ test('update parser prefers canonical goals over proposed_goals alias', () => {
   const parsed = parsePlotCognitionUpdateInference(
     buildReplanAcceptEnvelope({
       replanProposal: {
-        goals: [{ goal_id: 'canonical-goal', intended_direction: 'Canonical wins.' }],
-        proposed_goals: [{ goal_id: 'alias-goal', intended_direction: 'Alias ignored.' }],
+        goals: [semanticTransportGoalFixture({ goal_id: 'canonical-goal', intended_direction: 'Canonical wins.' })],
+        proposed_goals: [semanticTransportGoalFixture({ goal_id: 'alias-goal', intended_direction: 'Alias ignored.' })],
       },
     }),
     UPDATE_PREPARE,
@@ -283,11 +287,11 @@ test('update parser maps replan alias fields to canonical transport', () => {
         replan_id: 'alias-replan-id',
         replan_rationale: undefined,
         proposal_rationale: 'Alias rationale.',
-        proposed_pressures: [{
+        proposed_pressures: [semanticTransportPressureFixture({
           pressure_id: 'p-alias',
           pressure_text: 'Alias pressure.',
-        }],
-        proposed_goals: [{ goal_id: 'g-alias', intended_direction: 'Alias goal.' }],
+        })],
+        proposed_goals: [semanticTransportGoalFixture({ goal_id: 'g-alias', intended_direction: 'Alias goal.' })],
       },
     }),
     UPDATE_PREPARE,
@@ -347,12 +351,83 @@ test('update parser accepts replan_required with accept update and accept replan
   assert.equal(parsed.result.replan_evaluation.overall_result, 'accept');
 });
 
+test('update parser rejects replan goal missing planning_horizon', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [{ goal_id: 'g1', intended_direction: 'No horizon.' }],
+        pressures: [],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'goal_missing_planning_horizon');
+});
+
+test('update parser rejects replan pressure missing dramatic_rationale', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    buildReplanAcceptEnvelope({
+      replanProposal: {
+        goals: [],
+        pressures: [{
+          pressure_id: 'p1',
+          pressure_text: 'Pressure only.',
+          applicability: {
+            applicability_kind: 'global',
+            primary_character_id: null,
+            involved_character_ids: [],
+          },
+        }],
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'pressure_missing_dramatic_rationale');
+});
+
+test('update correction prompt guides missing dramatic_rationale without persistence metadata', () => {
+  const prompt = buildPlotCognitionUpdateCorrectionPrompt({
+    priorRaw: '{}',
+    structuralError: 'pressure_missing_dramatic_rationale',
+    context: UPDATE_PREPARE,
+  });
+  assert.ok(prompt.includes('dramatic_rationale'));
+  assert.ok(prompt.includes('Do NOT add schema, creation_provenance, or activity_state'));
+});
+
+test('init parser rejects goal missing semantic transport fields', () => {
+  const parsed = parsePlotCognitionInitProposal(JSON.stringify({
+    schema: PLOT_COGNITION_INIT_PROPOSAL_SCHEMA,
+    proposal_id: 'p-init',
+    source_snapshot_id: 'snap-init-1',
+    source_snapshot_fingerprint: 'fp-init-1',
+    plot_cognition_scope_id: 'scope-authoritative-1',
+    adoption_rationale: 'Adopt cognition.',
+    goals: [{ goal_id: 'g1', intended_direction: 'Thin goal.' }],
+    pressures: [],
+  }), INIT_PREPARE);
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'goal_missing_planning_horizon');
+});
+
+test('update prompt documents semantic transport without persistence metadata', () => {
+  const prompt = buildPlotCognitionUpdatePrompt(UPDATE_PREPARE);
+  assert.ok(prompt.includes('Do NOT emit item schema, creation_provenance, or activity_state'));
+  assert.ok(prompt.includes('dramatic_rationale'));
+  assert.ok(prompt.includes('planning_horizon'));
+});
+
 test('update parser accepts structurally complete replan without domain objective checks', () => {
   const parsed = parsePlotCognitionUpdateInference(
     buildReplanAcceptEnvelope({
       replanProposal: {
-        goals: [{ goal_id: 'transport-only-goal', intended_direction: 'Transport complete.' }],
-        pressures: [{ pressure_id: 'transport-only-pressure', pressure_text: 'Transport only.' }],
+        goals: [semanticTransportGoalFixture({ goal_id: 'transport-only-goal', intended_direction: 'Transport complete.' })],
+        pressures: [semanticTransportPressureFixture({
+          pressure_id: 'transport-only-pressure',
+          pressure_text: 'Transport only.',
+        })],
       },
     }),
     UPDATE_PREPARE,

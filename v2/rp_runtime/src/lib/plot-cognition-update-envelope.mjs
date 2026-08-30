@@ -1,6 +1,13 @@
 import crypto from 'node:crypto';
 
 import { parseJsonObject } from './inference-utils.mjs';
+import {
+  plotCognitionSemanticTransportCorrectionGuidance,
+  plotCognitionSemanticTransportPromptLines,
+  validateSemanticCognitionItems,
+  validateSemanticGoalTransport,
+  validateSemanticPressureTransport,
+} from './plot-cognition-semantic-transport.mjs';
 
 export const PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA = 'hg_plot_cognition_update_inference_v1';
 export const UPDATE_PROPOSAL_SCHEMA = 'hg_plot_cognition_update_proposal_v1';
@@ -49,29 +56,15 @@ function pickReplanField(raw, canonicalKey) {
 }
 
 function validateStructuralReplanGoal(raw) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return 'replan_cognition_item_incomplete';
-  }
-  const goalId = String(raw.goal_id ?? '').trim();
-  const direction = String(raw.intended_direction ?? '').trim();
-  if (!goalId || !direction) return 'replan_cognition_item_incomplete';
-  return null;
+  return validateSemanticGoalTransport(raw);
 }
 
 function validateStructuralReplanPressure(raw) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return 'replan_cognition_item_incomplete';
-  }
-  const pressureId = String(raw.pressure_id ?? '').trim();
-  const pressureText = String(raw.pressure_text ?? '').trim();
-  if (!pressureId) return 'replan_cognition_item_incomplete';
-  if (!pressureText) {
-    if (String(raw.description ?? '').trim()) {
-      return 'replan_pressure_missing_pressure_text';
-    }
-    return 'replan_cognition_item_incomplete';
-  }
-  return null;
+  return validateSemanticPressureTransport(raw);
+}
+
+function validateProposalCognitionItems(goals, pressures) {
+  return validateSemanticCognitionItems(goals, pressures);
 }
 
 function validateSubstantiveReplanCognition(goals, pressures) {
@@ -123,12 +116,13 @@ function plotCognitionUpdateEnvelopeCorrectionGuidance(structuralError) {
     );
   } else if (error === 'replan_cognition_item_incomplete') {
     lines.push(
-      '- Each replan goal must include goal_id and intended_direction.',
-      '- Each replan pressure must include pressure_id and pressure_text.',
+      '- Each replan goal must include goal_id, intended_direction, planning_horizon, and applicability.',
+      '- Each replan pressure must include pressure_id, pressure_text, dramatic_rationale, and applicability.',
       '- Use canonical replan_proposal field names or supported aliases (proposed_goals, proposed_pressures,',
       '  proposal_rationale, replan_id).',
     );
   }
+  lines.push(...plotCognitionSemanticTransportCorrectionGuidance(error));
   return lines;
 }
 
@@ -161,6 +155,8 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
     'Base these judgments on semantic comparison — not keyword lists, event types, or pattern rules.',
     '',
     ...plotCognitionUpdateEnvelopeSemantics(),
+    '',
+    ...plotCognitionSemanticTransportPromptLines(),
     '',
     `Return ONLY one JSON object (no markdown fences, no commentary) with top-level schema ${PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA}.`,
     'Required top-level fields: schema, update_proposal, update_evaluation.',
@@ -313,6 +309,14 @@ export function parsePlotCognitionUpdateInference(raw, prepareResponse) {
     per_item_rationale: proposalRaw.per_item_rationale ?? [],
     revision_of_proposal_id: proposalRaw.revision_of_proposal_id ?? null,
   };
+
+  const updateCognitionError = validateProposalCognitionItems(
+    updateProposal.goals,
+    updateProposal.pressures,
+  );
+  if (updateCognitionError) {
+    return { ok: false, error: updateCognitionError, result: null };
+  }
 
   const updateEvaluation = {
     schema: UPDATE_EVALUATION_SCHEMA,
