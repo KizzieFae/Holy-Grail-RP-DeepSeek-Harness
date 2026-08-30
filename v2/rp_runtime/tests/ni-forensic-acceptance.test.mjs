@@ -26,6 +26,7 @@ import { STORYTELLER_ASSESSMENT_SCHEMA } from '../src/lib/storyteller-assessment
 import { STORYTELLER_ORIENTATION_SCHEMA } from '../src/lib/storyteller-orientation-envelope.mjs';
 import {
   makeTempSessionsDir,
+  reserveLocalPort,
   startDomainApi,
 } from './helpers/domain-api.mjs';
 
@@ -336,8 +337,9 @@ function reconstructFromTag(tag, dataDir, hgSessionId) {
 
 test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 join', async (t) => {
   const { dataDir, sessionsDir } = makeTempDataEnv(t);
-  const port = 48765 + Math.floor(Math.random() * 1000);
+  const port = await reserveLocalPort();
   const host = await startDomainApi(port, {
+    t,
     sessionsDir,
     hostEnv: { HG_RETRIEVAL_INDEX_PATH: RETRIEVAL_INDEX },
   });
@@ -404,11 +406,12 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
     'storyteller advisory projected into director request',
   );
 
-  const host2 = await startDomainApi(port + 1, {
+  const port2 = await reserveLocalPort();
+  const host2 = await startDomainApi(port2, {
+    t,
     sessionsDir,
     hostEnv: { HG_RETRIEVAL_INDEX_PATH: RETRIEVAL_INDEX },
   });
-  t.after(() => host2.stop());
   const api = createDomainApiClient(host2.baseUrl);
   await api.openSession(hgSessionId);
 

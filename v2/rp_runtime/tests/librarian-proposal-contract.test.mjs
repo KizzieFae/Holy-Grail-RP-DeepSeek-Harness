@@ -11,7 +11,7 @@ import {
 import { runLibrarianProposalGeneration } from '../src/lib/librarian-proposal-substrate.mjs';
 import { createDomainApiClient } from '../src/lib/domain-api-client.mjs';
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
-import { makeTempSessionsDir, startDomainApi } from './helpers/domain-api.mjs';
+import { makeTempSessionsDir, reserveLocalPort, startDomainApi } from './helpers/domain-api.mjs';
 
 const COMMIT_ID = 'commit-contract-test-1';
 const CATALOG = new Set([`committed_move:${COMMIT_ID}`]);
@@ -176,10 +176,10 @@ test('contract correction stops after second malformed response', async () => {
   assert.equal(inference.inferRuns.length, 2);
 });
 
-test('host semantic rejection does not trigger contract correction', async () => {
+test('host semantic rejection does not trigger contract correction', async (t) => {
   const calls = [];
-  const port = 46765 + Math.floor(Math.random() * 1000);
-  const host = await startDomainApi(port);
+  const port = await reserveLocalPort();
+  const host = await startDomainApi(port, { t });
   const api = createDomainApiClient(host.baseUrl);
   const session = await api.createSession({ cast: ['Alice'] });
   const round = await api.startRound({ hg_scene_id: session.hg_scene_id });
@@ -268,9 +268,9 @@ test('host semantic rejection does not trigger contract correction', async () =>
   assert.equal(result.correctionUsed, false);
 });
 
-test('structural parse failure is classified separately from provider inference failure', async () => {
-  const port = 47765 + Math.floor(Math.random() * 1000);
-  const host = await startDomainApi(port);
+test('structural parse failure is classified separately from provider inference failure', async (t) => {
+  const port = await reserveLocalPort();
+  const host = await startDomainApi(port, { t });
   const api = createDomainApiClient(host.baseUrl);
 
   async function commitAlice(prefix) {

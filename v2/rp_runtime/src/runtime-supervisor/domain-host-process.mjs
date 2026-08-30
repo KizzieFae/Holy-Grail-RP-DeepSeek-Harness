@@ -11,6 +11,9 @@ import {
   repoRoot,
 } from '../lib/runtime-config.mjs';
 
+const DOMAIN_HOST_LIFECYCLE = Symbol('domainHostLifecycle');
+const STDERR_TAIL_MAX_BYTES = 8_192;
+
 export async function reserveLocalPort(host = '127.0.0.1') {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -22,6 +25,71 @@ export async function reserveLocalPort(host = '127.0.0.1') {
         if (err) reject(err);
         else resolve(port);
       });
+    });
+  });
+}
+
+function attachPipeDrainers(proc, lifecycle) {
+  proc.stdout?.on('data', () => {});
+  proc.stderr?.on('data', (chunk) => {
+    const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+    lifecycle.stderrTail = `${lifecycle.stderrTail}${text}`.slice(-STDERR_TAIL_MAX_BYTES);
+  });
+}
+
+function attachDomainHostLifecycle(proc, meta) {
+  const lifecycle = {
+    pid: proc.pid,
+    host: meta.host,
+    port: meta.port,
+    baseUrl: meta.baseUrl,
+    stderrTail: '',
+    stopped: false,
+    stopPromise: null,
+  };
+  proc[DOMAIN_HOST_LIFECYCLE] = lifecycle;
+  attachPipeDrainers(proc, lifecycle);
+  return lifecycle;
+}
+
+export function getDomainHostLifecycle(proc) {
+  return proc?.[DOMAIN_HOST_LIFECYCLE] ?? null;
+}
+
+export function getDomainHostDiagnostics(proc) {
+  if (!proc) {
+    return {
+      pid: null,
+      alive: false,
+      stopped: true,
+    };
+  }
+  const lifecycle = getDomainHostLifecycle(proc);
+  const alive = !lifecycle?.stopped && proc.exitCode === null && !proc.killed;
+  return {
+    pid: lifecycle?.pid ?? proc.pid ?? null,
+    port: lifecycle?.port ?? null,
+    host: lifecycle?.host ?? null,
+    baseUrl: lifecycle?.baseUrl ?? null,
+    alive,
+    stopped: lifecycle?.stopped ?? !alive,
+    exitCode: proc.exitCode,
+    signal: proc.signalCode,
+    stderrTail: lifecycle?.stderrTail ? lifecycle.stderrTail.slice(-2_048) : undefined,
+  };
+}
+
+export async function isDomainHostPortAvailable(host, port) {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port });
+    const done = (available) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(available);
+    };
+    socket.once('connect', () => done(false));
+    socket.once('error', (err) => {
+      done(err?.code === 'ECONNREFUSED' || err?.code === 'ENOTFOUND');
     });
   });
 }
@@ -50,6 +118,7 @@ export function spawnDomainHostProcess(options = {}) {
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  attachDomainHostLifecycle(proc, { host, port, baseUrl });
   return { proc, baseUrl, host, port };
 }
 
@@ -80,18 +149,74 @@ export async function waitForHealthyDomainHost(baseUrl, options = {}) {
   throw new Error(`${lastError} (timeout ${timeoutMs}ms waiting for ${baseUrl}/health)`);
 }
 
+function formatLifecycleDiagnostics(proc) {
+  return JSON.stringify(getDomainHostDiagnostics(proc));
+}
+
 export async function stopDomainHostProcess(proc, options = {}) {
-  if (!proc || proc.killed || proc.exitCode !== null) return;
-  const signal = options.signal ?? 'SIGTERM';
-  proc.kill(signal);
-  const exitTimer = setTimeout(() => {
-    if (proc.exitCode === null) proc.kill('SIGKILL');
-  }, Number(options.forceKillAfterMs ?? 5_000));
-  try {
-    await once(proc, 'exit');
-  } finally {
-    clearTimeout(exitTimer);
+  if (!proc) {
+    return { alreadyStopped: true, diagnostics: getDomainHostDiagnostics(proc) };
   }
+
+  const lifecycle = getDomainHostLifecycle(proc);
+  if (lifecycle?.stopped) {
+    return {
+      alreadyStopped: true,
+      exitCode: proc.exitCode,
+      signal: proc.signalCode,
+      diagnostics: getDomainHostDiagnostics(proc),
+    };
+  }
+  if (lifecycle?.stopPromise) {
+    return lifecycle.stopPromise;
+  }
+
+  if (proc.exitCode !== null || proc.killed) {
+    if (lifecycle) lifecycle.stopped = true;
+    return {
+      alreadyStopped: true,
+      exitCode: proc.exitCode,
+      signal: proc.signalCode,
+      diagnostics: getDomainHostDiagnostics(proc),
+    };
+  }
+
+  const runStop = async () => {
+    const signal = options.signal ?? 'SIGTERM';
+    proc.kill(signal);
+    const exitTimer = setTimeout(() => {
+      if (proc.exitCode === null && !proc.killed) {
+        proc.kill('SIGKILL');
+      }
+    }, Number(options.forceKillAfterMs ?? 5_000));
+    try {
+      await once(proc, 'exit');
+    } finally {
+      clearTimeout(exitTimer);
+    }
+
+    if (lifecycle) {
+      lifecycle.stopped = true;
+    }
+
+    const diagnostics = getDomainHostDiagnostics(proc);
+    const verifyPortRelease = options.verifyPortRelease !== false;
+    if (verifyPortRelease && lifecycle?.port && lifecycle?.host) {
+      diagnostics.portReleased = await isDomainHostPortAvailable(lifecycle.host, lifecycle.port);
+    }
+
+    return {
+      exitCode: proc.exitCode,
+      signal: proc.signalCode,
+      diagnostics,
+    };
+  };
+
+  if (lifecycle) {
+    lifecycle.stopPromise = runStop();
+    return lifecycle.stopPromise;
+  }
+  return runStop();
 }
 
 export async function startDomainHost(options = {}) {
@@ -107,6 +232,7 @@ export async function startDomainHost(options = {}) {
     return { proc, baseUrl, host, port, health };
   } catch (err) {
     await stopDomainHostProcess(proc);
-    throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`${message} [Domain Host lifecycle: ${formatLifecycleDiagnostics(proc)}]`);
   }
 }

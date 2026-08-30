@@ -3,32 +3,50 @@ import os from 'node:os';
 import path from 'node:path';
 import { once } from 'node:events';
 
-import { startDomainHost, stopDomainHostProcess } from '../../src/runtime-supervisor/domain-host-process.mjs';
+import {
+  getDomainHostDiagnostics,
+  reserveLocalPort,
+  startDomainHost,
+  stopDomainHostProcess,
+} from '../../src/runtime-supervisor/domain-host-process.mjs';
 
 export { repoRoot, defaultPythonExecutable } from '../../src/lib/runtime-config.mjs';
+export { reserveLocalPort } from '../../src/runtime-supervisor/domain-host-process.mjs';
 
 /**
  * Start a Domain Host for integration tests using production supervisor primitives.
+ * When `options.t` is provided, teardown is registered immediately via `t.after`.
  */
 export async function startDomainApi(port, options = {}) {
+  const resolvedPort = port ?? await reserveLocalPort();
   const host = await startDomainHost({
     host: '127.0.0.1',
-    port,
+    port: resolvedPort,
     sessionsDir: options.sessionsDir,
     timeoutMs: options.timeoutMs,
     env: options.hostEnv,
   });
-  const result = {
+  const handle = {
     proc: host.proc,
     baseUrl: host.baseUrl,
+    port: host.port,
+    pid: host.proc.pid,
+    getDiagnostics() {
+      return getDomainHostDiagnostics(host.proc);
+    },
     async stop() {
-      await stopDomainHostProcess(host.proc);
+      return stopDomainHostProcess(host.proc);
     },
   };
-  if (options.withSession) {
-    result.scene = await createTestSession(host.baseUrl, options.cast ?? ['Alice', 'Bob']);
+  if (options.t) {
+    options.t.after(async () => {
+      await handle.stop();
+    });
   }
-  return result;
+  if (options.withSession) {
+    handle.scene = await createTestSession(host.baseUrl, options.cast ?? ['Alice', 'Bob']);
+  }
+  return handle;
 }
 
 export async function createTestSession(baseUrl, cast = ['Alice', 'Bob']) {
@@ -52,14 +70,28 @@ export function makeTempSessionsDir() {
 }
 
 export async function withDomainHost(t, options, fn) {
+  const port = options.port ?? await reserveLocalPort();
   const host = await startDomainHost({
     host: '127.0.0.1',
-    port: options.port,
+    port,
     sessionsDir: options.sessionsDir,
+    env: options.hostEnv,
   });
+  const handle = {
+    proc: host.proc,
+    baseUrl: host.baseUrl,
+    port: host.port,
+    pid: host.proc.pid,
+    getDiagnostics() {
+      return getDomainHostDiagnostics(host.proc);
+    },
+    async stop() {
+      return stopDomainHostProcess(host.proc);
+    },
+  };
   t.after(async () => {
-    await stopDomainHostProcess(host.proc);
+    await handle.stop();
     await once(host.proc, 'exit').catch(() => {});
   });
-  return fn(host);
+  return fn(handle);
 }

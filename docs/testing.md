@@ -55,6 +55,8 @@ When changing `v2/domain/modules/`:
 
 ## RP runtime guidance
 
+Domain Host integration tests start a supervised Python subprocess via `startDomainApi` / `startDomainHost`. Pass the active Node test context as `options.t` so teardown is registered immediately (`t.after`) even when assertions fail. Prefer `reserveLocalPort()` over ad-hoc random port windows to avoid collisions with stale local hosts.
+
 Semantic evaluation orchestration tests: `v2/rp_runtime/tests/semantic-evaluation.test.mjs`, `semantic-evaluation-orchestration.test.mjs`. Run with `node --test` on those files for fast deterministic coverage without starting the full npm suite.
 
 When changing Character phase or semantic evaluation:

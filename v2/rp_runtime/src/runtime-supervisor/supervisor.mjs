@@ -72,11 +72,13 @@ export class HolyGrailRuntimeSupervisor {
       await this.runtime.ctx.fiber.dispose();
       this.runtime = null;
     }
+    let stopResult = null;
     if (this.domainHost?.proc) {
-      await stopDomainHostProcess(this.domainHost.proc, this.options.shutdown ?? {});
+      stopResult = await stopDomainHostProcess(this.domainHost.proc, this.options.shutdown ?? {});
       this.domainHost = null;
     }
     this.state = 'stopped';
+    return stopResult;
   }
 
   onDomainHostExit(handler) {

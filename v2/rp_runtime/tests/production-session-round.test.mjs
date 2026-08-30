@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
-import { makeTempSessionsDir, startDomainApi, fetchSessionState } from './helpers/domain-api.mjs';
+import { makeTempSessionsDir, reserveLocalPort, startDomainApi, fetchSessionState } from './helpers/domain-api.mjs';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -79,8 +79,8 @@ test('production session: Domain Host restart resumes between rounds', async (t)
     fs.rmSync(sessionsDir, { recursive: true, force: true });
   });
 
-  const port1 = 32765 + Math.floor(Math.random() * 1000);
-  const host1 = await startDomainApi(port1, { sessionsDir });
+  const port1 = await reserveLocalPort();
+  const host1 = await startDomainApi(port1, { t, sessionsDir });
   const { ctx: ctx1, orchestrator: orch1 } = await createHolyGrailRpContext({
     domainApi: { baseUrl: host1.baseUrl },
   });
@@ -98,8 +98,8 @@ test('production session: Domain Host restart resumes between rounds', async (t)
   await ctx1.fiber.dispose();
   await host1.stop();
 
-  const port2 = 33765 + Math.floor(Math.random() * 1000);
-  const host2 = await startDomainApi(port2, { sessionsDir });
+  const port2 = await reserveLocalPort();
+  const host2 = await startDomainApi(port2, { t, sessionsDir });
   t.after(async () => {
     await host2.stop();
   });
