@@ -3,28 +3,85 @@ import { projectHistoryToTranscript } from './project-history.mjs';
 
 export { projectHistoryToTranscript };
 
-async function postJson(metrics, baseUrl, path, body, label) {
-  trackBoundaryCall(metrics, label, body);
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+export class DomainApiTransportError extends Error {
+  constructor({ label, path, cause }) {
+    const code = cause?.code ?? null;
+    const causeMessage = cause?.message ?? 'fetch failed';
+    const suffix = code ? ` [${code}]` : '';
+    super(`Domain API transport failure for ${label} (${path})${suffix}: ${causeMessage}`);
+    this.name = 'DomainApiTransportError';
+    this.failureClass = 'transport_error';
+    this.operation = label;
+    this.path = path;
+    if (code) {
+      this.transportCode = code;
+    }
+    this.cause = cause;
+  }
+}
+
+function parseErrorKind(text) {
+  try {
+    const payload = JSON.parse(text);
+    return typeof payload?.error_kind === 'string' ? payload.error_kind : null;
+  } catch {
+    return null;
+  }
+}
+
+function classifyHttpFailure(errorKind, status) {
+  if (errorKind === 'host_internal_error') {
+    return 'host_internal_error';
+  }
+  if (errorKind === 'persistence_failure' || status === 503) {
+    return 'service_unavailable';
+  }
+  return 'api_http_error';
+}
+
+function throwHttpError(path, status, text, label) {
+  const errorKind = parseErrorKind(text);
+  const err = new Error(`Domain API ${path} failed (${status}): ${text}`);
+  err.name = 'DomainApiHttpError';
+  err.failureClass = classifyHttpFailure(errorKind, status);
+  err.httpStatus = status;
+  err.operation = label;
+  err.path = path;
+  err.errorKind = errorKind;
+  throw err;
+}
+
+async function fetchJson(baseUrl, path, init, label) {
+  let res;
+  try {
+    res = await fetch(`${baseUrl}${path}`, init);
+  } catch (cause) {
+    throw new DomainApiTransportError({ label, path, cause });
+  }
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Domain API ${path} failed (${res.status}): ${text}`);
+    throwHttpError(path, res.status, text, label);
   }
   return res.json();
 }
 
+async function postJson(metrics, baseUrl, path, body, label) {
+  trackBoundaryCall(metrics, label, body);
+  return fetchJson(
+    baseUrl,
+    path,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+    label,
+  );
+}
+
 async function getJson(metrics, baseUrl, path, label) {
   trackBoundaryCall(metrics, label, {});
-  const res = await fetch(`${baseUrl}${path}`);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Domain API ${path} failed (${res.status}): ${text}`);
-  }
-  return res.json();
+  return fetchJson(baseUrl, path, undefined, label);
 }
 
 export function createDomainApiClient(baseUrl) {

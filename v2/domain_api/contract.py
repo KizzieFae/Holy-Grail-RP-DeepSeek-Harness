@@ -2,6 +2,10 @@
 
 The logical contract is architectural. Prototype HTTP transport in
 ``http_transport.py`` is replaceable and must not be treated as permanent.
+
+Unexpected handler failures at the HTTP boundary return HTTP 500 with
+``error_kind: host_internal_error`` and a bounded generic message; detailed
+traceback evidence remains server-side only.
 """
 
 from __future__ import annotations

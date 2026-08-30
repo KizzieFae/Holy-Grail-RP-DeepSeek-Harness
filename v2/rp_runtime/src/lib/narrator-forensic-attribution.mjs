@@ -45,6 +45,12 @@ export class NarratorEnvironmentCognitionError extends Error {
  * @param {string} [defaultBoundary]
  */
 export function classifyFailureBoundary(error, defaultBoundary = FORENSIC_BOUNDARIES.INTERNAL) {
+  if (error?.name === 'DomainApiTransportError' || error?.failureClass === 'transport_error') {
+    return FORENSIC_BOUNDARIES.DOMAIN_API;
+  }
+  if (error?.failureClass === 'host_internal_error' || error?.errorKind === 'host_internal_error') {
+    return FORENSIC_BOUNDARIES.DOMAIN_API;
+  }
   const message = String(error?.message ?? error ?? '');
   if (/^Domain API .+ failed \(\d+\)/.test(message)) {
     return FORENSIC_BOUNDARIES.DOMAIN_API;
@@ -64,6 +70,21 @@ export function extractEnvironmentCognitionFailure(error) {
       stage: error.stage,
       boundary: error.boundary,
       reason: String(error.cause?.message ?? error.message),
+    };
+  }
+  if (error?.name === 'DomainApiTransportError') {
+    const code = error.transportCode ? `${error.transportCode}: ` : '';
+    return {
+      stage: 'substrate_exception',
+      boundary: FORENSIC_BOUNDARIES.DOMAIN_API,
+      reason: `${code}${error.message}`,
+    };
+  }
+  if (error?.failureClass === 'host_internal_error') {
+    return {
+      stage: 'substrate_exception',
+      boundary: FORENSIC_BOUNDARIES.DOMAIN_API,
+      reason: 'host_internal_error',
     };
   }
   return {

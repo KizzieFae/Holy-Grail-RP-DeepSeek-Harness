@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, is_dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
@@ -35,6 +36,11 @@ from .contract import (
 )
 from .kernel import DomainKernel
 from .session_repository import PersistenceError
+
+_logger = logging.getLogger(__name__)
+
+HOST_INTERNAL_ERROR_KIND = "host_internal_error"
+HOST_INTERNAL_ERROR_MESSAGE = "internal handler error"
 
 
 def _to_jsonable(obj: Any) -> Any:
@@ -70,6 +76,16 @@ class DomainApiHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_host_internal_error(self, path: str) -> None:
+        _logger.exception("Unhandled Domain API request failure on %s", path)
+        self._send_json(
+            500,
+            {
+                "error": HOST_INTERNAL_ERROR_MESSAGE,
+                "error_kind": HOST_INTERNAL_ERROR_KIND,
+            },
+        )
 
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
@@ -658,9 +674,17 @@ class DomainApiHandler(BaseHTTPRequestHandler):
             self._send_json(503, {"error": str(exc), "error_kind": "persistence_failure"})
         except (KeyError, TypeError, ValueError, FileNotFoundError) as exc:
             self._send_json(400, {"error": str(exc)})
+        except Exception:
+            self._send_host_internal_error(path)
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
+        try:
+            self._do_get(path)
+        except Exception:
+            self._send_host_internal_error(path)
+
+    def _do_get(self, path: str) -> None:
         if path == "/health":
             healthy = getattr(self.kernel.store, "health_ok", lambda: True)()
             self._send_json(
