@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
 from typing import Any
 
 from .contract import (
@@ -17,6 +16,7 @@ from .narrator_environment_cognition import (
     build_librarian_knowledge_access_request,
     parse_n1_cognition_result,
 )
+from .knowledge_access_request_serialization import knowledge_access_request_to_dict
 from .session_state import CharacterTurnRecord, LiveSession, RoundFixture
 
 
@@ -125,7 +125,7 @@ def prepare_environment_cognition_context(
                 character_id=req.character_id,
                 turn_index=rnd.turn_index,
             )
-            knowledge_requests.append(asdict(kar))
+            knowledge_requests.append(knowledge_access_request_to_dict(kar))
     return {
         "manifest": manifest,
         "context": context,
@@ -147,7 +147,7 @@ def build_environment_knowledge_requests(
         return []
     location_ref = str(context_payload["environmental_current_view"].get("location_ref", ""))
     return [
-        asdict(
+        knowledge_access_request_to_dict(
             build_librarian_knowledge_access_request(
                 fixture=fixture,
                 rnd=rnd,

@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from .knowledge_access_request_serialization import knowledge_access_request_to_dict
 from .librarian_authoritative_input import authoritative_snapshot_id
 from .librarian_contract import (
     ALL_INFORMATION_CLASSES,
@@ -49,15 +50,6 @@ def _bundle_degradation(bundle: LibrarianKnowledgeBundle | dict[str, Any]) -> tu
     if isinstance(degradation, dict):
         return str(degradation.get("level") or "none"), str(degradation.get("mode") or "none")
     return degradation.level, degradation.mode
-
-
-def _kar_to_dict(request: KnowledgeAccessRequest) -> dict[str, Any]:
-    payload = asdict(request)
-    for key in ("requested_information_classes", "exclude_source_tiers", "host_allowed_information_classes"):
-        value = payload.get(key)
-        if isinstance(value, (set, frozenset)):
-            payload[key] = sorted(value)
-    return payload
 
 
 class StorytellerService:
@@ -158,7 +150,7 @@ class StorytellerService:
             "accepted": True,
             "reason": "ok",
             "orientation": asdict(normalized),
-            "knowledge_access_request": _kar_to_dict(request),
+            "knowledge_access_request": knowledge_access_request_to_dict(request),
         }
 
     def prepare_assessment_context(
@@ -330,7 +322,7 @@ class StorytellerService:
             parent_request_id=primary_request_id,
         )
         validate_knowledge_access_request(request)
-        return _kar_to_dict(request)
+        return knowledge_access_request_to_dict(request)
 
     @staticmethod
     def invalidate_package(package: StorytellerAdvisoryPackage, *, reason: str) -> dict[str, Any]:

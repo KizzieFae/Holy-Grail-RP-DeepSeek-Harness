@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict
 from typing import Any
 
 from .character_contract import (
@@ -17,17 +16,9 @@ from .character_epistemic import build_character_visibility_envelope
 from .character_knowledge_validity import build_character_knowledge_reuse_key
 from .character_orientation_context import build_character_orientation_context
 from .character_upstream_context import CharacterUpstreamContext, assemble_character_upstream_contributions
+from .knowledge_access_request_serialization import knowledge_access_request_to_dict
 from .librarian_contract import ALL_INFORMATION_CLASSES, new_request_id, validate_knowledge_access_request
 from .session_state import LiveSession, RoundFixture
-
-
-def _kar_to_dict(request: Any) -> dict[str, Any]:
-    payload = asdict(request)
-    for key in ("requested_information_classes", "exclude_source_tiers", "host_allowed_information_classes"):
-        value = payload.get(key)
-        if isinstance(value, (set, frozenset)):
-            payload[key] = sorted(value)
-    return payload
 
 
 class CharacterKnowledgeService:
@@ -171,7 +162,7 @@ class CharacterKnowledgeService:
                 "knowledge_access_request": None,
                 "reuse_key": None,
             }
-        kar_dict = _kar_to_dict(request)
+        kar_dict = knowledge_access_request_to_dict(request)
         reuse_key = build_character_knowledge_reuse_key(
             character_id=character_id,
             hg_round_id=rnd.hg_round_id,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -294,6 +295,7 @@ def test_build_environment_knowledge_requests_from_n1() -> None:
     )
     assert via_kernel == via_module
     assert len(via_kernel) == 1
+    json.dumps(via_kernel)
 
 
 def test_narrator_n2_failure_audit_kernel_orchestration() -> None:
