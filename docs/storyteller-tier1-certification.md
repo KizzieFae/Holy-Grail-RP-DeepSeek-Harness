@@ -135,6 +135,10 @@ Tests: `tests/contract-conformance.test.mjs`
 
 C6 requires useful safe Character-facing delivery when independently supportable committed context exists. Fail-closed withholding remains epistemically safe but does **not** certify safe translation. Harness seeds observable committed facts through production Domain rounds before Layer-B evaluation.
 
+After the Bob anxiety seed commit, the harness runs the same `runPlotCognitionPendingWorkLifecycle` seam used at production round-start so pending Plot Cognition work is resolved before Alice projection. Stale-overlay withholding of finalized projections remains production policy; C6 certification requires overlay freshness at Character-context admission time.
+
+Deterministic coverage: `tests/storyteller-c6-sequencing.test.mjs`, `tests/plot-cognition-character-projection.test.mjs` (fresh vs stale finalized-projection admission).
+
 ## Phase C handoff
 
 Replace `createTrackingInference` mocks with bounded real-model profiles on the same harness entry points (`runTier1Scenario`, `runAllTier1Scenarios`) without replacing scenario IDs or result schema.

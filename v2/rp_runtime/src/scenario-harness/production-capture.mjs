@@ -301,6 +301,72 @@ export function evaluateSafeTranslationAchieved({
   };
 }
 
+export const BOB_ANXIETY_SEED_ACTION = 'fidgets nervously and admits he cannot stop thinking about the vault';
+
+export function assertObservableAnxietySupportInPrepare(prepareResponse, {
+  seedAction = BOB_ANXIETY_SEED_ACTION,
+  characterId = 'Bob',
+  baselineCommittedMoveCount = 0,
+} = {}) {
+  const body = prepareResponse?.source_snapshot?.canonical_body ?? {};
+  const excerpts = prepareResponse?.source_snapshot?.semantic_authority_excerpts ?? {};
+  const moves = body.committed_moves ?? [];
+  const excerptMoves = excerpts.committed_moves ?? [];
+  const publicEvents = body.continuity?.public_events ?? [];
+  const bobDigestMoves = moves.filter((move) => (move.character_id ?? move.actor_id ?? move.actor ?? '') === characterId);
+  const bobDigestObserved = bobDigestMoves.length > 0 && moves.length > baselineCommittedMoveCount;
+  const excerptTexts = excerptMoves
+    .filter((move) => (move.character_id ?? '') === characterId)
+    .map((move) => String(move.bounded_excerpt ?? ''))
+    .join(' ')
+    .toLowerCase();
+  const seedNeedle = String(seedAction).toLowerCase();
+  const excerptSignalObserved = excerptTexts.includes('vault')
+    || excerptTexts.includes('anxious')
+    || excerptTexts.includes('nervous')
+    || excerptTexts.includes('fidget')
+    || excerptTexts.includes(seedNeedle.slice(0, 24));
+  const moveSignals = moves.flatMap((move) => {
+    const actor = move.character_id ?? move.actor_id ?? move.actor ?? null;
+    const beats = move.beats ?? move.normalized_move?.beats ?? [];
+    const beatText = beats.map((beat) => String(beat.action ?? beat.text ?? '')).join(' ');
+    return [actor, beatText];
+  });
+  const eventSignals = publicEvents.flatMap((event) => [
+    event.summary ?? '',
+    event.description ?? '',
+    event.prose ?? '',
+  ]);
+  const combined = [...moveSignals, ...eventSignals, JSON.stringify(body), excerptTexts].join(' ').toLowerCase();
+  const bobMoveObserved = moves.some((move) => {
+    const actor = move.character_id ?? move.actor_id ?? move.actor ?? null;
+    const beats = move.beats ?? move.normalized_move?.beats ?? [];
+    const beatText = beats.map((beat) => String(beat.action ?? beat.text ?? '')).join(' ').toLowerCase();
+    return actor === characterId && (
+      beatText.includes('vault')
+      || beatText.includes('anxious')
+      || beatText.includes('nervous')
+      || beatText.includes(seedNeedle.slice(0, 24))
+    );
+  });
+  const anxietySignalObserved = combined.includes('vault')
+    || combined.includes('anxious')
+    || combined.includes('nervous')
+    || combined.includes(seedNeedle.slice(0, 24));
+  return {
+    ok: bobDigestObserved || excerptSignalObserved || bobMoveObserved || anxietySignalObserved,
+    committed_move_count: moves.length,
+    bob_committed_move_count: bobDigestMoves.length,
+    bob_move_observed: bobMoveObserved || bobDigestObserved,
+    excerpt_signal_observed: excerptSignalObserved,
+    anxiety_signal_observed: anxietySignalObserved,
+    committed_moves: moves,
+    excerpt_moves: excerptMoves,
+    public_event_count: publicEvents.length,
+    baseline_committed_move_count: baselineCommittedMoveCount,
+  };
+}
+
 export function assertInvalidationInPrepareContext(prepareResponse, baseline = {}) {
   const body = prepareResponse?.source_snapshot?.canonical_body ?? {};
   const moves = body.committed_moves ?? [];
@@ -623,6 +689,34 @@ export function buildCharacterSemanticGates({
         pass: capture.observable_context_seed?.committed === true,
         detail: capture.observable_context_seed ?? null,
       };
+      if (capture.plot_cognition_pending_before != null) {
+        gates.plot_cognition_pending_recorded = {
+          name: 'plot_cognition_pending_recorded',
+          pass: capture.plot_cognition_pending_before != null,
+          detail: capture.plot_cognition_pending_before,
+        };
+      }
+      if (capture.plot_cognition_pending_lifecycle != null) {
+        gates.plot_cognition_pending_cleared = {
+          name: 'plot_cognition_pending_cleared',
+          pass: capture.plot_cognition_pending_lifecycle.ok === true
+            && capture.plot_cognition_freshness_after?.fresh === true
+            && capture.plot_cognition_freshness_after?.pending_work == null,
+          detail: capture.plot_cognition_pending_lifecycle,
+        };
+        gates.overlay_fresh_before_projection = {
+          name: 'overlay_fresh_before_projection',
+          pass: capture.plot_cognition_freshness_after?.fresh === true,
+          detail: capture.plot_cognition_freshness_after ?? null,
+        };
+      }
+      if (capture.observable_anxiety_support != null) {
+        gates.observable_anxiety_support_retained = {
+          name: 'observable_anxiety_support_retained',
+          pass: capture.observable_anxiety_support.ok === true,
+          detail: capture.observable_anxiety_support,
+        };
+      }
     }
     const safeTranslation = evaluateSafeTranslationAchieved({
       truth,

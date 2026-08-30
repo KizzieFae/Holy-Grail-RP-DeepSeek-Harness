@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
+import { buildNoChangeUpdateInference } from '../src/lib/plot-cognition-update-envelope.mjs';
 import { runCharacterProjectionLifecycle } from '../src/plugins/hg-phase-executors/plot-cognition-character-projection.mjs';
 import { runCharacterPhase } from '../src/plugins/hg-phase-executors/character-phase.mjs';
 import { createExecutionEvidenceRecorder } from '../src/lib/execution-evidence/recorder.mjs';
@@ -31,6 +33,28 @@ const VALID_MOVE = {
   },
   semantic_evaluation: { decision: 'no_covered_change' },
 };
+
+const BOB_ANXIETY_MOVE = {
+  move_schema_version: 2,
+  beats: [{ type: 'action', action: 'fidgets nervously and admits he cannot stop thinking about the vault' }],
+  motivation: {
+    goal: 'express anxiety',
+    tactic: 'visible tension',
+    emotional_driver: 'anxious',
+    risk_level: 'low',
+  },
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+const DIRECTOR_FOR = (name) => ({
+  next_actor: name,
+  end_round: false,
+  reason: `${name} should speak next.`,
+  environment_event: '',
+  tension_shift: 'steady',
+});
+
+const NARRATOR_PROSE = 'Bob shifted uneasily near the vault.';
 
 function semanticPassChar() {
   return JSON.stringify({
@@ -217,6 +241,107 @@ test('projection seam: rewrite_required runs single regen and two semantic evals
     result.callLog.filter((entry) => entry.startsWith('regen_')),
     [`regen_prepare:${result.prepare.items[0].evaluation_pass_id}`, `regen_infer:${result.prepare.items[0].evaluation_pass_id}`, `regen_finalize:${result.prepare.items[0].evaluation_pass_id}`],
   );
+});
+
+test('projection seam: regenerated pass admits contribution under fresh overlay', async (t) => {
+  const { api, sessionsDir } = await startProjectionDomainHost(t);
+  const ctx = await setupProjectionSession(api, sessionsDir);
+  const freshness = await api.assessPlotCognitionFreshness({ hg_scene_id: ctx.hgSceneId });
+  assert.equal(freshness.fresh, true);
+  const { runEphemeralInference } = createTrackingInference();
+  const result = await runCharacterProjectionLifecycle({
+    api,
+    runEphemeralInference,
+    scope: {},
+    hgSceneId: ctx.hgSceneId,
+    hgRoundId: ctx.hgRoundId,
+    characterId: 'Alice',
+    inferenceId: 'inf-proj-regen-fresh',
+    turnIndex: ctx.turnIndex,
+    mockEpistemicResponses: [epistemicRewriteRequired(), epistemicPass()],
+    mockRegenerationResponses: ['Revised advisory without hidden vault details.'],
+  });
+  assert.equal(result.ok, true);
+  assert.ok(result.finalized.contributions.length > 0);
+  const manifest = await api.prepareCharacterContext({
+    hg_scene_id: ctx.hgSceneId,
+    hg_round_id: ctx.hgRoundId,
+    inference_id: 'inf-proj-regen-fresh',
+    character_id: 'Alice',
+    role: 'guest',
+    turn_index: ctx.turnIndex,
+    attempt_index: 0,
+    plot_cognition_finalized_projection: {
+      batch_id: result.finalized.batch_id,
+      binding_digest: result.finalized.binding_digest,
+      binding: result.finalized.binding,
+      contributions: result.finalized.contributions,
+    },
+  });
+  const storyteller = (manifest.contributions ?? []).filter((c) => (
+    String(c.source_kind ?? '').startsWith('storyteller')
+  ));
+  assert.ok(storyteller.length > 0, 'expected regenerated storyteller contribution under fresh overlay');
+  const joined = storyteller.map((c) => c.content).join('\n');
+  assert.match(joined, /Revised advisory without hidden vault details/);
+});
+
+test('projection seam: finalized regen contribution withheld when overlay stale', async (t) => {
+  const { api, sessionsDir, baseUrl } = await startProjectionDomainHost(t);
+  const ctx = await setupProjectionSession(api, sessionsDir);
+  const { ctx: rpCtx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl } });
+  t.after(async () => {
+    await rpCtx.fiber.dispose();
+  });
+  const seedRound = await orchestrator.runRound({
+    domainApi: { baseUrl },
+    session: { mode: 'open', hg_session_id: ctx.session.hg_session_id },
+    skipStorytellerCognition: true,
+    skipPlotCognitionOrchestration: true,
+    mockDirectorResponses: [JSON.stringify(DIRECTOR_FOR('Bob'))],
+    mockCharacterTurnResponses: [[JSON.stringify(BOB_ANXIETY_MOVE)]],
+    mockNarratorTurnResponses: [[NARRATOR_PROSE]],
+  });
+  assert.equal(seedRound.committed, true);
+  const stale = await api.assessPlotCognitionFreshness({ hg_scene_id: ctx.hgSceneId });
+  assert.equal(stale.fresh, false);
+  assert.ok(stale.pending_work);
+
+  const { runEphemeralInference } = createTrackingInference();
+  const result = await runCharacterProjectionLifecycle({
+    api,
+    runEphemeralInference,
+    scope: {},
+    hgSceneId: ctx.hgSceneId,
+    hgRoundId: ctx.hgRoundId,
+    characterId: 'Alice',
+    inferenceId: 'inf-proj-regen-stale',
+    turnIndex: ctx.turnIndex,
+    mockEpistemicResponses: [epistemicRewriteRequired(), epistemicPass()],
+    mockRegenerationResponses: ['Safe regenerated advisory text.'],
+  });
+  assert.equal(result.ok, true);
+  assert.ok(result.finalized.contributions.length > 0, 'finalize may still contain approved contribution');
+
+  const manifest = await api.prepareCharacterContext({
+    hg_scene_id: ctx.hgSceneId,
+    hg_round_id: ctx.hgRoundId,
+    inference_id: 'inf-proj-regen-stale',
+    character_id: 'Alice',
+    role: 'guest',
+    turn_index: ctx.turnIndex,
+    attempt_index: 0,
+    plot_cognition_finalized_projection: {
+      batch_id: result.finalized.batch_id,
+      binding_digest: result.finalized.binding_digest,
+      binding: result.finalized.binding,
+      contributions: result.finalized.contributions,
+    },
+  });
+  const storyteller = (manifest.contributions ?? []).filter((c) => (
+    String(c.source_kind ?? '').startsWith('storyteller')
+  ));
+  assert.equal(storyteller.length, 0, 'stale overlay must withhold finalized storyteller contribution');
 });
 
 test('projection seam: regenerated reject withholds contribution', async (t) => {

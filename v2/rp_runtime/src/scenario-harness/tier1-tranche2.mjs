@@ -37,6 +37,7 @@ import { buildCampaignReport } from './campaign-report.mjs';
 import { runCharacterProjectionLifecycleCaptured } from './character-projection-capture.mjs';
 import {
   assertInvalidationInPrepareContext,
+  assertObservableAnxietySupportInPrepare,
   assertSemanticAuthorityInPrepare,
   buildCharacterCertificationSubject,
   buildCharacterSemanticGates,
@@ -796,6 +797,113 @@ export function runC5_T1_06_unsafe_live(campaignLimits, campaignDataDir) {
   });
 }
 
+export async function seedC6ObservableContext({
+  ctx,
+  ctxSession,
+  capture,
+  inferenceId = 'inf-live-c6-pending',
+  mockUpdateResponse = null,
+}) {
+  capture.observable_context_seed = {
+    committed: false,
+    character_id: 'Bob',
+    hg_round_id: null,
+  };
+
+  const baselineUpdatePrepare = await ctx.api.preparePlotCognitionUpdate({
+    hg_scene_id: ctxSession.hgSceneId,
+    manifest_id: `manifest-c6-baseline-${inferenceId}`,
+  });
+  const baselineMoveCount = (
+    baselineUpdatePrepare?.source_snapshot?.canonical_body?.committed_moves ?? []
+  ).length;
+  capture.observable_context_baseline = {
+    committed_move_count: baselineMoveCount,
+    manifest_id: baselineUpdatePrepare?.manifest_id ?? null,
+  };
+
+  const seedRound = await ctx.orchestrator.runRound({
+    domainApi: ctx.api,
+    session: { mode: 'open', hg_session_id: ctxSession.session.hg_session_id },
+    skipStorytellerCognition: true,
+    skipPlotCognitionOrchestration: true,
+    mockDirectorResponses: [directorFor('Bob')],
+    mockCharacterTurnResponses: [[JSON.stringify(BOB_ANXIETY_CHARACTER_MOVE)]],
+    mockNarratorTurnResponses: [[NARRATOR_PROSE]],
+  });
+  capture.observable_context_seed = {
+    committed: seedRound.committed === true,
+    character_id: 'Bob',
+    hg_round_id: seedRound.hg_round_id ?? null,
+  };
+  if (seedRound.committed !== true) {
+    throw new Error('c6_observable_context_seed_failed');
+  }
+
+  const freshnessBeforeLifecycle = await ctx.api.assessPlotCognitionFreshness({
+    hg_scene_id: ctxSession.hgSceneId,
+  });
+  capture.plot_cognition_freshness_before = freshnessBeforeLifecycle;
+  capture.plot_cognition_pending_before = freshnessBeforeLifecycle?.pending_work ?? null;
+  if (freshnessBeforeLifecycle?.fresh !== false || !freshnessBeforeLifecycle?.pending_work) {
+    throw new Error('c6_pending_work_missing_after_seed');
+  }
+
+  const lifecycle = await runPlotCognitionPendingWorkLifecycle({
+    domainApi: ctx.api,
+    hgSceneId: ctxSession.hgSceneId,
+    inferenceId,
+    runEphemeralInference: ctx.instrumented.runEphemeralInference,
+    modelProfile: ctx.roleProfiles.storyteller,
+    mockUpdateResponse,
+    evidenceContextBase: {
+      hgSessionId: ctxSession.session.hg_session_id,
+      hgSceneId: ctxSession.hgSceneId,
+      hgRoundId: ctxSession.hgRoundId,
+    },
+  });
+  capture.plot_cognition_pending_lifecycle = {
+    ok: lifecycle.ok === true,
+    operation: lifecycle.operation ?? null,
+    stage: lifecycle.stage ?? null,
+    fresh_after: lifecycle.freshAfter === true,
+    pending_preserved: lifecycle.pendingPreserved === true,
+  };
+
+  const freshnessAfterLifecycle = await ctx.api.assessPlotCognitionFreshness({
+    hg_scene_id: ctxSession.hgSceneId,
+  });
+  capture.plot_cognition_freshness_after = freshnessAfterLifecycle;
+  if (freshnessAfterLifecycle?.fresh !== true || freshnessAfterLifecycle?.pending_work != null) {
+    throw new Error('c6_pending_work_not_cleared_before_projection');
+  }
+
+  const supportPrepare = await ctx.api.preparePlotCognitionUpdate({
+    hg_scene_id: ctxSession.hgSceneId,
+    manifest_id: `manifest-c6-support-${inferenceId}`,
+  });
+  const anxietySupport = assertObservableAnxietySupportInPrepare(supportPrepare, {
+    baselineCommittedMoveCount: baselineMoveCount,
+  });
+  capture.observable_anxiety_support = anxietySupport;
+  if (!anxietySupport.ok) {
+    throw new Error('c6_observable_anxiety_support_lost_after_pending_lifecycle');
+  }
+
+  const nextRound = await ctx.api.startRound({ hg_scene_id: ctxSession.hgSceneId });
+  ctxSession.hgRoundId = nextRound.hg_round_id;
+  ctxSession.turnIndex = Number(nextRound.turn_index ?? ctxSession.turnIndex + 1);
+
+  return {
+    seedRound,
+    lifecycle,
+    freshnessBeforeLifecycle,
+    freshnessAfterLifecycle,
+    anxietySupport,
+    nextRound,
+  };
+}
+
 export function runC6_T1_06_safe_live(campaignLimits, campaignDataDir) {
   const truth = loadTruthFixture('t1-06-safe-translation');
   return runCharacterLiveCase({
@@ -806,26 +914,7 @@ export function runC6_T1_06_safe_live(campaignLimits, campaignDataDir) {
     campaignDataDir,
     requireChronicle: true,
     beforeProjection: async (ctx, ctxSession, capture) => {
-      const seedRound = await ctx.orchestrator.runRound({
-        domainApi: ctx.api,
-        session: { mode: 'open', hg_session_id: ctxSession.session.hg_session_id },
-        skipStorytellerCognition: true,
-        skipPlotCognitionOrchestration: true,
-        mockDirectorResponses: [directorFor('Bob')],
-        mockCharacterTurnResponses: [[JSON.stringify(BOB_ANXIETY_CHARACTER_MOVE)]],
-        mockNarratorTurnResponses: [[NARRATOR_PROSE]],
-      });
-      capture.observable_context_seed = {
-        committed: seedRound.committed === true,
-        character_id: 'Bob',
-        hg_round_id: seedRound.hg_round_id ?? null,
-      };
-      if (seedRound.committed !== true) {
-        throw new Error('c6_observable_context_seed_failed');
-      }
-      const nextRound = await ctx.api.startRound({ hg_scene_id: ctxSession.hgSceneId });
-      ctxSession.hgRoundId = nextRound.hg_round_id;
-      ctxSession.turnIndex = Number(nextRound.turn_index ?? ctxSession.turnIndex + 1);
+      await seedC6ObservableContext({ ctx, ctxSession, capture });
     },
   });
 }
@@ -863,16 +952,20 @@ export const TRANCHE2_CASES = [
 export const TRANCHE3_INFERENCE_CEILING = 27;
 
 /**
- * Targeted unresolved-case revalidation (#65 remediation).
- * C1 skipped when gate-only; C3 + C6 live.
+ * Targeted C6-only revalidation (#65 remediation).
+ * C1/C3 not rerun; C6 only.
  */
 export const TARGETED_REVALIDATION_CASES = [
-  { id: 'C3', run: runC3_T1_03_live },
   { id: 'C6', run: runC6_T1_06_safe_live },
 ];
 
-/** C3: update + correction + cert (3); C6: eval + correction + regen + eval + cert (6) */
-export const TARGETED_REVALIDATION_CEILING = 9;
+/**
+ * C6 live-call ceiling (#65 final C6 revalidation):
+ * pending Plot Cognition lifecycle: update + optional correction (2)
+ * Character projection regen path: eval + correction + regen + eval + correction (5)
+ * certification evaluator (1)
+ */
+export const TARGETED_REVALIDATION_CEILING = 8;
 
 export async function runTargetedRevalidationCampaign(options = {}) {
   const limits = options.limits ?? new CampaignLimits({
