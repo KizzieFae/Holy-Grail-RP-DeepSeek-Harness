@@ -10,6 +10,7 @@ from character_move_adapters import (
     iter_speech_beats,
     root_or_flat_dialogue_text,
 )
+from text_comparison_profiles import canonicalize_for_presentation_verbatim
 
 
 @dataclass(frozen=True)
@@ -57,9 +58,11 @@ def validate_narrator_presentation(
             retryable=False,
         )
 
+    prose_cmp = canonicalize_for_presentation_verbatim(prose)
     last_index = -1
     for index, dialogue in enumerate(required_speech, start=1):
-        position = prose.find(dialogue)
+        dialogue_cmp = canonicalize_for_presentation_verbatim(dialogue)
+        position = prose_cmp.find(dialogue_cmp)
         if position < 0:
             return NarratorPresentationValidationResult(
                 accepted=False,
