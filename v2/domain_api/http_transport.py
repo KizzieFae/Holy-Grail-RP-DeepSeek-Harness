@@ -333,6 +333,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                             else None
                         ),
                         evidence_catalog=body.get("evidence_catalog"),
+                        proposal_generation_failure=body.get("proposal_generation_failure"),
                     ),
                 )
                 return

@@ -131,6 +131,7 @@ class LibrarianProposalService:
         *,
         proposal_result: dict[str, Any] | None,
         evidence_catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
+        proposal_generation_failure: str | None = None,
     ) -> LibrarianProposalBatchResult:
         batch_id = new_proposal_batch_id()
         commit_binding = ProposalCommitBinding(
@@ -144,11 +145,20 @@ class LibrarianProposalService:
             evidence_catalog = ()
 
         if proposal_result is None:
-            host_validation = HostProposalBatchValidation(
-                accepted=False,
-                reason="inference_unavailable",
-                rejection_codes=("inference_failed",),
-            )
+            if proposal_generation_failure == "structural_parse_failed":
+                host_validation = HostProposalBatchValidation(
+                    accepted=False,
+                    reason="structural_parse_failed",
+                    rejection_codes=("malformed_result",),
+                )
+                degradation_mode: ProposalBatchDegradationMode = "malformed_result"
+            else:
+                host_validation = HostProposalBatchValidation(
+                    accepted=False,
+                    reason="inference_unavailable",
+                    rejection_codes=("inference_failed",),
+                )
+                degradation_mode = "inference_failed"
             audit = ProposalBatchAudit(
                 batch_id=batch_id,
                 batch_hash=compute_proposal_batch_hash({"batch_id": batch_id, "proposals": []}),
@@ -157,7 +167,7 @@ class LibrarianProposalService:
                 librarian_inference_id=request.librarian_inference_id,
                 host_validation=host_validation,
                 continuity_decision=None,
-                degradation_mode="inference_failed",
+                degradation_mode=degradation_mode,
             )
             self._record_audit(fixture, request, audit, None)
             return LibrarianProposalBatchResult(
@@ -168,7 +178,7 @@ class LibrarianProposalService:
                 host_validation=host_validation,
                 continuity_decision=None,
                 audit=audit,
-                degradation_mode="inference_failed",
+                degradation_mode=degradation_mode,
             )
 
         parsed, parse_error = parse_librarian_proposal_result(

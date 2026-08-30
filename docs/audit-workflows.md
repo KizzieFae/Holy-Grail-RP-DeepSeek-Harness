@@ -139,6 +139,7 @@ Use `--summary` for human-readable blocks and `--cite <evidence_id>` to resolve 
 4. Retrieval boundary: `decision.librarian_mediation.retrieval_disposition[*].candidate_ids_returned`
 5. Consumer packaging: `associations.packaging_disposition` on Director/Character attempts
 6. S4: `librarian_proposal` decision + `index.ni.by_commit[domain_commit_id]`
+   - **Proposal generation failure (#72):** `decision.proposal_generation_failure` distinguishes `provider_inference_failed` vs `structural_parse_failed` (pre-Host). `degradation_mode: malformed_result` is structural parse failure; `inference_failed` is provider failure. Contract correction lineage: `decision.contract_correction_used`, `decision.proposal_generation_stage` (`primary` | `contract_correction`), `decision.structural_parse_error` on primary, `decision.contract_lineage`.
 
 **Package B CLI (#46):** `python tools/investigation/trace_ni_forensics.py <hg_session_id> <view>`
 

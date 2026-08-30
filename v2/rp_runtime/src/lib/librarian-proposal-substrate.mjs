@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
 
+import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
 import {
   LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
+  buildLibrarianProposalCorrectionPrompt,
   buildLibrarianProposalPrompt,
   manifestFromLibrarianProposalPrepareResponse,
   parseLibrarianProposalResult,
@@ -13,8 +15,27 @@ function proposalContentHash(raw) {
   return crypto.createHash('sha256').update(String(raw)).digest('hex');
 }
 
+function summarizeContractLineage(lineage) {
+  if (!lineage) return null;
+  return {
+    correction_used: lineage.correction_used === true,
+    primary_inference_id: lineage.primary?.inference_id ?? null,
+    primary_evidence_id: lineage.primary?.evidence_id ?? null,
+    primary_parse_error: lineage.primary?.parse_error ?? null,
+    correction_inference_id: lineage.correction?.inference_id ?? null,
+    correction_evidence_id: lineage.correction?.evidence_id ?? null,
+    correction_parse_error: lineage.correction?.parse_error ?? null,
+  };
+}
+
+function resolveProposalGenerationFailure({ inferenceFailed, structuralParseFailed }) {
+  if (inferenceFailed) return 'provider_inference_failed';
+  if (structuralParseFailed) return 'structural_parse_failed';
+  return null;
+}
+
 /**
- * DSH-side Librarian post-commit proposal substrate (#34 S4a).
+ * DSH-side Librarian post-commit proposal substrate (#34 S4a, #72 contract correction).
  */
 export async function runLibrarianProposalGeneration({
   domainApi,
@@ -43,7 +64,9 @@ export async function runLibrarianProposalGeneration({
       inferenceError: null,
       prepareResponse,
       inferRun: null,
+      inferRuns: [],
       parsed: null,
+      contractLineage: null,
       batch: {
         skipped: true,
         orchestration_status: prepareResponse.orchestration_status ?? 'already_terminal',
@@ -57,87 +80,150 @@ export async function runLibrarianProposalGeneration({
   const catalogIds = new Set(
     (prepareResponse.evidence_catalog ?? []).map((item) => String(item.anchor_id)),
   );
+  const sampleAnchorId = [...catalogIds][0] ?? `committed_move:${proposalContextRequest.domain_commit_id}`;
+  const parseContext = {
+    catalogIds,
+    sampleAnchorId,
+    domainCommitId: proposalContextRequest.domain_commit_id,
+  };
   const manifest = manifestFromLibrarianProposalPrepareResponse(prepareResponse);
   const proposalInferenceId = `${inferenceId}-librarian-proposal`;
+  const mockList = mockResponse
+    ? (Array.isArray(mockResponse) ? mockResponse : [mockResponse])
+    : [];
 
-  const inferRun = await runEphemeralInference({
-    inferenceId: proposalInferenceId,
-    prompt: buildLibrarianProposalPrompt({ schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA }),
+  const inference = await runInferenceWithContractCorrection({
+    runEphemeralInference,
+    primaryInferenceId: proposalInferenceId,
+    primaryInferenceKind: 'librarian_proposal',
+    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    buildPrimaryPrompt: () => buildLibrarianProposalPrompt(parseContext),
+    buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
+    parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
+    parseContext,
     manifest,
-    mockResponses: mockResponse ? [mockResponse] : [],
+    mockResponses: mockList,
     modelProfile,
-    evidenceContext: {
+    evidenceContextBase: {
       ...evidenceContextBase,
       role: 'librarian',
-      inferenceId: proposalInferenceId,
       parentInferenceId: inferenceId,
-      inferenceKind: 'librarian_proposal',
       niForensics: true,
       requestId: prepareResponse.request_id,
       proposalPhase: 'post_commit_semantic',
       domainCommitId: proposalContextRequest.domain_commit_id,
     },
+    maxCorrections: 1,
   });
 
-  const patchProposalEvidence = (batch) => {
-    if (!recorder?.isEnabled?.() || !inferRun?.evidenceId || !hgSessionId) return;
+  const inferRuns = inference.inferRuns ?? (inference.inferRun ? [inference.inferRun] : []);
+  const primaryRun = inferRuns[0] ?? null;
+  const finalRun = inference.inferRun ?? primaryRun;
+  const contractLineage = summarizeContractLineage(inference.lineage);
+  const structuralError = inference.structuralError
+    ?? inference.lineage?.primary?.parse_error
+    ?? inference.parsed?.error
+    ?? null;
+
+  const patchProposalEvidence = (batch, { stage = 'primary' } = {}) => {
+    if (!recorder?.isEnabled?.() || !hgSessionId) return;
+    const targetRun = stage === 'contract_correction'
+      ? (inferRuns[1] ?? finalRun)
+      : (primaryRun ?? finalRun);
+    if (!targetRun?.evidenceId) return;
     recorder.patchDecision(
-      inferRun.evidenceId,
+      targetRun.evidenceId,
       hgSessionId,
       buildLibrarianProposalDecisionPatch({
         batch,
-        proposalContentHash: proposalContentHash(inferRun.raw),
+        proposalContentHash: proposalContentHash(targetRun.raw),
         characterMoveEvidenceId,
+        contractLineage,
+        structuralParseError: stage === 'primary' ? structuralError : null,
+        proposalGenerationStage: stage,
+        proposalGenerationFailure: batch?.proposal_generation_failure ?? null,
       }),
     );
-    if (characterMoveEvidenceId) {
-      recorder.linkNiAssociation(hgSessionId, characterMoveEvidenceId, inferRun.evidenceId, {
+    if (characterMoveEvidenceId && stage === 'primary') {
+      recorder.linkNiAssociation(hgSessionId, characterMoveEvidenceId, targetRun.evidenceId, {
         leftKey: 'proposal_evidence_id',
         rightKey: 'character_move_evidence_id',
       });
     }
   };
 
-  if (inferRun.failed) {
+  if (inference.stage === 'inference' || primaryRun?.failed) {
     const batch = await domainApi.finalizeLibrarianProposals({
       hg_scene_id: hgSceneId,
       inference_id: inferenceId,
       proposal_context_request: proposalContextRequest,
       proposal_result: null,
       evidence_catalog: prepareResponse.evidence_catalog,
+      proposal_generation_failure: 'provider_inference_failed',
     });
-    patchProposalEvidence(batch);
+    patchProposalEvidence(batch, { stage: 'primary' });
     return {
       ok: false,
       stage: 'inference',
-      inferenceError: inferRun.failure ?? 'inference_failed',
+      inferenceError: primaryRun?.failure ?? 'inference_failed',
       prepareResponse,
-      inferRun,
+      inferRun: finalRun,
+      inferRuns,
       parsed: null,
+      contractLineage,
       batch,
-      proposalEvidenceId: inferRun.evidenceId ?? null,
+      proposalEvidenceId: primaryRun?.evidenceId ?? null,
+      proposalGenerationFailure: 'provider_inference_failed',
     };
   }
 
-  const parsed = parseLibrarianProposalResult(inferRun.raw, catalogIds);
+  const parsed = inference.parsed?.ok ? inference.parsed.result : null;
+  const structuralParseFailed = !parsed;
   const batch = await domainApi.finalizeLibrarianProposals({
     hg_scene_id: hgSceneId,
     inference_id: inferenceId,
     proposal_context_request: proposalContextRequest,
-    proposal_result: parsed.ok ? parsed.result : null,
+    proposal_result: parsed,
     evidence_catalog: prepareResponse.evidence_catalog,
+    proposal_generation_failure: resolveProposalGenerationFailure({
+      inferenceFailed: false,
+      structuralParseFailed,
+    }),
   });
-  patchProposalEvidence(batch);
+
+  if (contractLineage?.correction_used) {
+    patchProposalEvidence(batch, { stage: 'contract_correction' });
+    if (primaryRun?.evidenceId) {
+      recorder?.patchDecision?.(
+        primaryRun.evidenceId,
+        hgSessionId,
+        buildLibrarianProposalDecisionPatch({
+          proposalContentHash: proposalContentHash(primaryRun.raw),
+          characterMoveEvidenceId,
+          contractLineage,
+          structuralParseError: structuralError,
+          proposalGenerationStage: 'primary',
+          proposalGenerationFailure: structuralParseFailed ? 'structural_parse_failed' : null,
+        }),
+      );
+    }
+  } else {
+    patchProposalEvidence(batch, { stage: 'primary' });
+  }
 
   return {
-    ok: parsed.ok,
-    stage: parsed.ok ? 'finalized' : 'parse_or_host_validation',
-    inferenceError: parsed.ok ? null : parsed.error,
+    ok: Boolean(parsed),
+    stage: parsed ? 'finalized' : 'structural_parse_failed',
+    inferenceError: parsed ? null : (structuralError ?? 'structural_parse_failed'),
     prepareResponse,
-    inferRun,
-    parsed: parsed.ok ? parsed.result : null,
+    inferRun: finalRun,
+    inferRuns,
+    parsed,
+    contractLineage,
     batch,
-    proposalEvidenceId: inferRun.evidenceId ?? null,
-    proposalContentHash: proposalContentHash(inferRun.raw),
+    proposalEvidenceId: finalRun?.evidenceId ?? null,
+    proposalContentHash: proposalContentHash(finalRun?.raw),
+    proposalGenerationFailure: batch?.proposal_generation_failure ?? null,
+    correctionUsed: contractLineage?.correction_used === true,
   };
 }

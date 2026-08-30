@@ -189,6 +189,10 @@ export function buildLibrarianProposalDecisionPatch({
   batch,
   proposalContentHash = null,
   characterMoveEvidenceId = null,
+  contractLineage = null,
+  structuralParseError = null,
+  proposalGenerationStage = null,
+  proposalGenerationFailure = null,
 }) {
   const hostValidation = batch?.host_validation ?? batch?.audit?.host_validation ?? {};
   const continuity = batch?.continuity_decision
@@ -229,6 +233,13 @@ export function buildLibrarianProposalDecisionPatch({
         ),
         item_dispositions: itemDispositions,
         proposal_content_hash: proposalContentHash ?? null,
+        proposal_generation_failure: proposalGenerationFailure
+          ?? batch?.proposal_generation_failure
+          ?? null,
+        structural_parse_error: structuralParseError ?? null,
+        proposal_generation_stage: proposalGenerationStage ?? null,
+        contract_correction_used: contractLineage?.correction_used === true,
+        contract_lineage: contractLineage ?? null,
       },
     },
     associations: {

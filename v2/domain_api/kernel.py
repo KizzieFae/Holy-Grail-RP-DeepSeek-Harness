@@ -1007,6 +1007,7 @@ class DomainKernel:
         proposal_context_request: dict[str, Any],
         proposal_result: dict[str, Any] | None = None,
         evidence_catalog: list[dict[str, Any]] | None = None,
+        proposal_generation_failure: str | None = None,
     ) -> dict[str, Any]:
         from dataclasses import asdict
 
@@ -1056,8 +1057,10 @@ class DomainKernel:
                 fixture,
                 proposal_result=proposal_result,
                 evidence_catalog=catalog,
+                proposal_generation_failure=proposal_generation_failure,
             )
             payload = asdict(result)
+            payload["proposal_generation_failure"] = proposal_generation_failure
             if isinstance(self.store, SessionRepository):
                 try:
                     if os.environ.get("HG_TEST_LIBRARIAN_PERSIST_FAIL") == "1":

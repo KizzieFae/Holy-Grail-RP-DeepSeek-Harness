@@ -11,19 +11,153 @@ const VALID_KINDS = new Set([
   'issue_tension_pressure',
 ]);
 
+const CONSEQUENCE_TAGS = [
+  'advancement',
+  'complication',
+  'revelation',
+  'resolution_candidate',
+  'relationship_shift',
+  'tension_escalation',
+  'tension_release',
+];
+
+const SALIENCE_LEVELS = ['minor', 'major', 'pivotal'];
+
+const FORBIDDEN_PROPOSAL_FIELD_ALIASES = [
+  'change_kind',
+  'target',
+  'type',
+  'candidate_id',
+  'info_kind',
+];
+
 function asStringArray(value) {
   if (!Array.isArray(value)) return [];
   return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 }
 
-export function buildLibrarianProposalPrompt({ schema = LIBRARIAN_PROPOSAL_RESULT_SCHEMA } = {}) {
+/**
+ * Canonical machine-readable Librarian proposal output contract (#72).
+ * Single source for prompts and correction prompts.
+ */
+export function buildLibrarianProposalContractSpec({
+  sampleAnchorId = 'committed_move:COMMIT_ID',
+  domainCommitId = 'COMMIT_ID',
+} = {}) {
+  const anchorId = String(sampleAnchorId || `committed_move:${domainCommitId}`);
+  const commitId = String(domainCommitId || 'COMMIT_ID');
+  return {
+    schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
+    top_level: {
+      schema: `exact string "${LIBRARIAN_PROPOSAL_RESULT_SCHEMA}"`,
+      proposals: 'array (required; may be empty when no grounded proposal exists)',
+    },
+    proposal_fields: {
+      proposal_kind: [...VALID_KINDS].join(' | '),
+      derivation_summary: 'non-empty string',
+      confidence: [...VALID_CONFIDENCE].join(' | '),
+      proposed_payload: 'object (per-kind shape below)',
+      evidence_anchors: 'non-empty array of objects: { anchor_id, evidence_kind, anchor_commit_id?, anchor_path? }',
+      proposal_id: 'optional string',
+      affected_entities: 'optional string[]',
+      affected_state_classes: 'optional string[]',
+      source_bundle_id: 'optional string',
+    },
+    payload_by_kind: {
+      consequence_meaning: `{ tags: non-empty string[] from ${CONSEQUENCE_TAGS.join('|')} }`,
+      information_salience: `{ subject_ref: string, salience_level: ${SALIENCE_LEVELS.join('|')} }`,
+      knowledge_revelation_significance: `{ event_ref, subject_character, revelation_significance_level: ${SALIENCE_LEVELS.join('|')} }`,
+      issue_tension_pressure: '{ issue_ref, semantic_unmet_condition, stakes_summary? }',
+    },
+    forbidden: [
+      `Do NOT use field aliases: ${FORBIDDEN_PROPOSAL_FIELD_ALIASES.join(', ')} — use proposal_kind and proposed_payload.`,
+      'Do NOT use string entries in evidence_anchors — each anchor must be an object.',
+      'Do NOT omit the top-level schema field.',
+      'Do NOT use preservation_signal anchors.',
+      'Do NOT invent anchor_id values outside the evidence catalog.',
+    ],
+    minimal_example: {
+      schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
+      proposals: [
+        {
+          proposal_id: 'prop-example-1',
+          proposal_kind: 'information_salience',
+          derivation_summary: 'Committed move advances scene salience.',
+          confidence: 'likely',
+          evidence_anchors: [
+            {
+              anchor_id: anchorId,
+              evidence_kind: 'committed_move',
+              anchor_commit_id: commitId,
+            },
+          ],
+          proposed_payload: {
+            subject_ref: `commit:${commitId}`,
+            salience_level: 'major',
+          },
+        },
+      ],
+    },
+  };
+}
+
+export function librarianProposalContractPromptLines(context = {}) {
+  const spec = buildLibrarianProposalContractSpec(context);
+  return [
+    'Required top-level JSON object:',
+    `- schema: "${spec.schema}"`,
+    '- proposals: array',
+    '',
+    'Each proposal object MUST include:',
+    `- proposal_kind: one of ${spec.proposal_fields.proposal_kind}`,
+    '- derivation_summary: non-empty string',
+    `- confidence: one of ${spec.proposal_fields.confidence}`,
+    '- proposed_payload: object matching proposal_kind (see below)',
+    '- evidence_anchors: non-empty array of objects with anchor_id and evidence_kind from the catalog only',
+    '',
+    'proposed_payload by proposal_kind:',
+    `- consequence_meaning: ${spec.payload_by_kind.consequence_meaning}`,
+    `- information_salience: ${spec.payload_by_kind.information_salience}`,
+    `- knowledge_revelation_significance: ${spec.payload_by_kind.knowledge_revelation_significance}`,
+    `- issue_tension_pressure: ${spec.payload_by_kind.issue_tension_pressure}`,
+    '',
+    'Forbidden:',
+    ...spec.forbidden.map((line) => `- ${line}`),
+    '',
+    `Minimal example (replace anchor_id with a catalog value such as "${spec.minimal_example.proposals[0].evidence_anchors[0].anchor_id}"):`,
+    JSON.stringify(spec.minimal_example, null, 2),
+  ];
+}
+
+export function buildLibrarianProposalPrompt(context = {}) {
   return [
     'You are the Holy Grail Librarian post-commit semantic interpreter.',
     'Propose grounded information-level persistence/change candidates ONLY from evidence catalog anchor_id values.',
     'Do NOT invent facts, authority, or continuity commits.',
     'Do NOT use Storyteller PreservationSignal or attention refs as evidence.',
-    'Each proposal must include non-empty evidence_anchors and a derivation_summary.',
-    `Return ONLY one JSON object matching schema ${schema}.`,
+    'Return ONLY one JSON object (no markdown fences, no commentary).',
+    '',
+    ...librarianProposalContractPromptLines(context),
+  ].join('\n');
+}
+
+export function buildLibrarianProposalCorrectionPrompt({ priorRaw, structuralError, context }) {
+  const prior = typeof priorRaw === 'string' ? priorRaw : JSON.stringify(priorRaw ?? {});
+  const contractPrompt = buildLibrarianProposalPrompt(context ?? {});
+  return [
+    'CONTRACT CORRECTION: Your previous response did not satisfy the required Librarian proposal machine contract.',
+    'Preserve the intended proposal meaning and cited evidence from that response unless satisfying the contract logically requires otherwise.',
+    'Correct ONLY representation/serialization. Do NOT invent new evidence, anchors, or unrelated proposals.',
+    'Output JSON only — no markdown, no commentary.',
+    '',
+    `Previous response:\n${prior}`,
+    '',
+    `Structural validation error: ${structuralError}`,
+    '',
+    'Required contract:',
+    contractPrompt,
+    '',
+    'Re-emit the result using exactly the required JSON contract.',
   ].join('\n');
 }
 
