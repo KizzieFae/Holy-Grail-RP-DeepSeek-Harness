@@ -80,6 +80,8 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 
 **Opener selection (UI):** template-owned Opener JSON or custom text; multiple template openers require an explicit pick before scene start. The UI posts that choice through the Node application API. Test and DSH paths carry opener choice on Host session-create payloads. DSH `opening-phase.mjs` runs opening inference when the setup requests generated opening text.
 
+**Persistent premise vs opener:** at scene start, template `premise` is written to continuity as `scene_state.scene_premise` and projected authoritatively through the shared `scene_setup` lane (including Character `scene_context`). The selected opener (or minimal/custom/generated opening text) is stored separately as `opening_description` and reaches ongoing Character cognition through `rp_history` / `recent_scene_transcript` — it must not substitute for the persistent scenario premise in `scene_setup`.
+
 ### Core responsibilities
 
 - Character agents produce self-only structured moves.

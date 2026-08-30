@@ -165,8 +165,8 @@ def project_scene_setup(
 ) -> AuthoritativeContextContribution | None:
     mgr = fixture.manager
     assert mgr.scene_state is not None
-    opening = str(getattr(mgr.scene_state, "opening_description", "") or "").strip()
-    if not opening:
+    premise = str(getattr(mgr.scene_state, "scene_premise", "") or "").strip()
+    if not premise:
         return None
     turn_counter = (
         continuity_turn_index if continuity_turn_index is not None else mgr.turn_counter
@@ -174,9 +174,9 @@ def project_scene_setup(
     return AuthoritativeContextContribution(
         source_kind="scene_setup",
         content=(
-            "Scene setup (authored at scene start — historical background and premise; "
-            "not the current scene position after committed progression):\n"
-            f"{opening}"
+            "Persistent scenario premise (authored at scene start; not the current scene "
+            "position after committed progression):\n"
+            f"{premise}"
         ),
         authority_class="authoritative",
         knowledge_ids=(f"scene_setup:{hg_scene_id}",),

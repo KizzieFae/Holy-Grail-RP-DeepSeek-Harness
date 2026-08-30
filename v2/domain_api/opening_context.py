@@ -43,7 +43,8 @@ def prepare_opening_context(
         auth_projections_to_contributions(manifest_id, auth_projections)
     )
 
-    if premise:
+    has_scene_setup = any(c.source_kind == "scene_setup" for c in contributions)
+    if premise and not has_scene_setup:
         contributions.append(
             PromptContribution(
                 contribution_id=f"{manifest_id}-scene-reference",

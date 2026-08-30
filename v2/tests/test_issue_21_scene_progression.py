@@ -38,6 +38,9 @@ from domain_api.kernel import (  # noqa: E402
 from domain_api.session_repository import SessionRepository  # noqa: E402
 
 
+SCENE_PREMISE = (
+    "A formal household evaluation places a newcomer under scrutiny in a controlled space."
+)
 ENTRANCE_OPENING = (
     "You stood at the mansion entrance and lifted your hand toward the door."
 )
@@ -56,6 +59,7 @@ class Issue21SceneProgressionTests(unittest.TestCase):
         session_id = self.kernel.create_session(cast=["Alice", "Bob"]).hg_session_id
         fixture = self.repo.require(session_id)
         assert fixture.manager.scene_state is not None
+        fixture.manager.scene_state.scene_premise = SCENE_PREMISE
         fixture.manager.scene_state.opening_description = ENTRANCE_OPENING
         fixture.manager.scene_state.recent_delta = "Alice stepped into the foyer."
         fixture.manager.scene_state.phase = ScenePhase.RISING
@@ -112,8 +116,9 @@ class Issue21SceneProgressionTests(unittest.TestCase):
         progression = next(
             c for c in manifest.contributions if c.source_kind == "scene_progression"
         )
-        self.assertIn("historical background", setup.content.lower())
-        self.assertIn(ENTRANCE_OPENING, setup.content)
+        self.assertIn("persistent scenario premise", setup.content.lower())
+        self.assertIn(SCENE_PREMISE, setup.content)
+        self.assertNotIn(ENTRANCE_OPENING, setup.content)
         self.assertNotIn("scene premise", scene.content.lower())
         self.assertNotIn(ENTRANCE_OPENING, scene.content)
         self.assertIn("scene progression", progression.content.lower())
@@ -251,7 +256,8 @@ class Issue21SceneProgressionTests(unittest.TestCase):
             progression = next(
                 c for c in manifest.contributions if c.source_kind == "scene_progression"
             )
-            self.assertIn(ENTRANCE_OPENING, setup.content)
+            self.assertIn(SCENE_PREMISE, setup.content)
+            self.assertNotIn(ENTRANCE_OPENING, setup.content)
             self.assertNotIn(ENTRANCE_OPENING, scene.content)
             self.assertNotIn(ENTRANCE_OPENING, progression.content)
             self.assertNotIn("recent delta", progression.content.lower())

@@ -269,6 +269,11 @@ def test_move_schema_accepts_action_speech_and_mixed_beats(
 
 
 def test_director_manifest_unchanged_by_character_projection(kernel: DomainKernel) -> None:
+    fixture = next(iter(kernel.store._scenes.values()))  # noqa: SLF001
+    assert fixture.manager.scene_state is not None
+    fixture.manager.scene_state.scene_premise = (
+        "A workshop calibration scenario for projection parity."
+    )
     hg_scene_id, hg_round_id = _scene_and_round(kernel)
     director = kernel.prepare_director_context(
         DirectorContextPrepareRequest(

@@ -200,6 +200,10 @@ class ContinuityContextM113Tests(unittest.TestCase):
     def test_director_receives_authoritative_lanes_with_canon(self) -> None:
         session_id = self._create_session()
         fixture = self.repo.require(session_id)
+        assert fixture.manager.scene_state is not None
+        fixture.manager.scene_state.scene_premise = (
+            "A cordoned market square under active investigation."
+        )
         upsert_canon_anchor_for_test(
             fixture.manager,
             anchor_id="anchor_director",
