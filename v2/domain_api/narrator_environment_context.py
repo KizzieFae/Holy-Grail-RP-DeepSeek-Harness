@@ -20,6 +20,40 @@ from .knowledge_access_request_serialization import knowledge_access_request_to_
 from .session_state import CharacterTurnRecord, LiveSession, RoundFixture
 
 
+def immediate_user_turn_contribution(
+    manifest_id: str,
+    *,
+    domain_commit_id: str,
+    immediate_user_turn: dict[str, Any],
+    priority: int = 18,
+) -> PromptContribution:
+    entry_id = str(immediate_user_turn.get("entry_id", "") or "")
+    knowledge_ids = (
+        (f"rp_history:immediate_user:{entry_id}",)
+        if entry_id
+        else (f"commit:{domain_commit_id}:immediate_user",)
+    )
+    return PromptContribution(
+        contribution_id=f"{manifest_id}-immediate-user-turn",
+        source_kind="immediate_user_turn_context",
+        authority_class="derived",
+        knowledge_ids=knowledge_ids,
+        priority=priority,
+        content=json.dumps(
+            {"immediate_user_turn": immediate_user_turn},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        provenance={
+            "domain_commit_id": domain_commit_id,
+            "visibility": "orchestration_projection",
+            "trigger_entry_id": entry_id or None,
+            "trigger_sequence_index": immediate_user_turn.get("sequence_index"),
+            "source": immediate_user_turn.get("source"),
+        },
+    )
+
+
 def triggering_user_contribution(
     manifest_id: str,
     *,
@@ -70,7 +104,7 @@ def prepare_environment_cognition_context(
             source_kind="narrator_environment_baseline",
             authority_class="authoritative",
             knowledge_ids=(f"env:{context['environmental_current_view']['location_ref']}",),
-            priority=18,
+            priority=17,
             content=json.dumps(
                 {
                     "environmental_packet": context["environmental_packet"],
@@ -84,6 +118,19 @@ def prepare_environment_cognition_context(
                 "visibility": "orchestration_projection",
             },
         ),
+    ]
+    immediate = context.get("immediate_user_turn")
+    if isinstance(immediate, dict) and immediate:
+        contributions.append(
+            immediate_user_turn_contribution(
+                manifest_id,
+                domain_commit_id=req.domain_commit_id,
+                immediate_user_turn=immediate,
+                priority=18,
+            )
+        )
+    contributions.extend(
+        [
         triggering_user_contribution(
             manifest_id,
             domain_commit_id=req.domain_commit_id,
@@ -100,7 +147,8 @@ def prepare_environment_cognition_context(
             content=NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
             provenance={"inference_id": req.inference_id, "role": "narrator"},
         ),
-    ]
+        ]
+    )
     manifest = PromptContributionManifest(
         manifest_id=manifest_id,
         inference_id=req.inference_id,

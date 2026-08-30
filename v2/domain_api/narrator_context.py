@@ -12,7 +12,10 @@ from .context_substrate import auth_projections_to_contributions, semantic_corre
 from .continuity_context_projector import project_authoritative_context
 from .contract import NarratorContextPrepareRequest, PromptContribution, PromptContributionManifest
 from .narrator_environment_cognition import build_cognition_context_payload
-from .narrator_environment_context import triggering_user_contribution
+from .narrator_environment_context import (
+    immediate_user_turn_contribution,
+    triggering_user_contribution,
+)
 from .narrator_environment_packet import assemble_narrator_environment_packet
 from .session_state import CharacterTurnRecord, LiveSession, RoundFixture
 from .storyteller_round_packaging import storyteller_contributions_for_consumer
@@ -86,8 +89,7 @@ def prepare_narrator_context(
             consumer_target="narrator",
         )
     )
-    contributions.extend(
-        (
+    narrator_contributions: list[PromptContribution] = [
             PromptContribution(
                 contribution_id=f"{manifest_id}-environmental-baseline",
                 source_kind="narrator_environment_baseline",
@@ -101,12 +103,25 @@ def prepare_narrator_context(
                     "assembly_metadata": env_packet.assembly_metadata,
                 },
             ),
+    ]
+    immediate = env_context.get("immediate_user_turn")
+    if isinstance(immediate, dict) and immediate:
+        narrator_contributions.append(
+            immediate_user_turn_contribution(
+                manifest_id,
+                domain_commit_id=req.domain_commit_id,
+                immediate_user_turn=immediate,
+                priority=18,
+            )
+        )
+    narrator_contributions.extend(
+        [
             triggering_user_contribution(
                 manifest_id,
                 domain_commit_id=req.domain_commit_id,
                 triggering_user=env_context.get("triggering_user"),
                 committed_occurrence=env_context.get("committed_occurrence"),
-                priority=18,
+                priority=19,
             ),
             PromptContribution(
                 contribution_id=f"{manifest_id}-committed-move",
@@ -148,8 +163,9 @@ def prepare_narrator_context(
                 content=render_instruction,
                 provenance={"inference_id": req.inference_id, "role": "narrator"},
             ),
-        )
+        ]
     )
+    contributions.extend(narrator_contributions)
     cognition_audit = environment_cognition_audit
     if isinstance(cognition_audit, dict) and cognition_audit:
         contributions.insert(

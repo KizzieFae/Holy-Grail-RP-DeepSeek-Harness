@@ -65,6 +65,49 @@ class RpHistoryEntry:
         )
 
 
+IMMEDIATE_USER_TURN_SOURCE = "rp_history_substantive_user_entry"
+_MAX_IMMEDIATE_USER_CONTENT = 300
+
+
+def project_immediate_user_turn_context(
+    history: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Bounded immediate substantive user turn for Narrator orchestration (#71).
+
+    Uses the same skip-aware latest-user selection as Character/Director triggers.
+    Non-authoritative current-turn context — not durable occurrence evidence.
+    """
+    entry = substantive_user_entry_for_trigger(history)
+    if entry is None:
+        return None
+    entry_id = str(entry.get("entry_id", "") or "").strip()
+    if not entry_id:
+        return None
+    metadata = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
+    speaker = str(entry.get("actor_id") or metadata.get("speaker") or "Player").strip()
+    raw_content = str(entry.get("content", "") or "").strip()
+    if not raw_content:
+        return None
+    content = (
+        raw_content
+        if len(raw_content) <= _MAX_IMMEDIATE_USER_CONTENT
+        else raw_content[: _MAX_IMMEDIATE_USER_CONTENT - 1] + "…"
+    )
+    payload: dict[str, Any] = {
+        "entry_id": entry_id,
+        "speaker": speaker,
+        "content": content,
+        "source": IMMEDIATE_USER_TURN_SOURCE,
+    }
+    seq = entry.get("sequence_index")
+    if seq is not None:
+        payload["sequence_index"] = int(seq)
+    hg_round_id = entry.get("hg_round_id")
+    if hg_round_id:
+        payload["hg_round_id"] = str(hg_round_id)
+    return payload
+
+
 def substantive_user_entry_for_trigger(history: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Latest substantive user entry eligible for user_turn_trigger (skip-aware)."""
     entries = history_entries(history)

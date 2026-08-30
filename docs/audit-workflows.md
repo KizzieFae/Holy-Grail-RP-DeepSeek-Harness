@@ -73,7 +73,8 @@ domain_commit_id + continuity_turn_index
   → Host authority_decision.decision_id (proposal vs authorized)
   → story_record_id when B2 accepted (records.jsonl + epistemic_authority_ref)
   → EnvironmentalCurrentView / narrator_environment_baseline packet (location_ref)
-  → triggering_user_context from occurrence_evidence (turn_index join; no fallback)
+  → immediate_user_turn_context from rp_history substantive user entry (#71; skip-aware)
+  → triggering_user_context from occurrence_evidence only (turn_index join; no history fallback)
   → execution_evidence Narrator attempt: decision.environment_cognition
   → semantic QA nar_environmental_* findings (if evaluated)
 ```

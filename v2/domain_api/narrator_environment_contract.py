@@ -239,6 +239,7 @@ class NarratorEnvironmentCognitionAudit:
     librarian_queries: list[dict[str, Any]] = field(default_factory=list)
     n2_resolutions: list[NarratorEnvironmentResolution] = field(default_factory=list)
     establishment_decisions: list[dict[str, Any]] = field(default_factory=list)
+    immediate_user_turn: dict[str, Any] | None = None
     triggering_user: dict[str, Any] | None = None
     domain_commit_id: str | None = None
 
@@ -250,6 +251,9 @@ class NarratorEnvironmentCognitionAudit:
             "librarian_queries": list(self.librarian_queries),
             "n2_resolutions": [item.to_dict() for item in self.n2_resolutions],
             "establishment_decisions": list(self.establishment_decisions),
+            "immediate_user_turn": (
+                dict(self.immediate_user_turn) if self.immediate_user_turn else None
+            ),
             "triggering_user": dict(self.triggering_user) if self.triggering_user else None,
             "domain_commit_id": self.domain_commit_id,
         }

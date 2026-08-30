@@ -242,7 +242,7 @@ def test_narrator_environment_context_manifest_priorities() -> None:
         "narrator_environment_cognition",
     ]
     priorities = [c.priority for c in manifest.contributions]
-    assert priorities == [18, 19, 30]
+    assert priorities == [17, 19, 30]
 
 
 def test_build_environment_knowledge_requests_from_n1() -> None:

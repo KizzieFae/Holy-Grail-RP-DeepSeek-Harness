@@ -471,7 +471,7 @@ ESTABLISHED ENVIRONMENTAL BASELINE (authoritative — preserve; do not silently 
     immersive_rules = """
 IMMERSIVE ENVIRONMENT DUTY (#49):
 - Make the physical environment perceptibly present through selective concrete detail (spatial relationships, lighting, sound, texture, temperature, smell, visible wear, motion, atmosphere).
-- Respond physically to what the user/character actually did; use triggering-user context when present.
+- Respond physically to what the user/character actually did; use immediate_user_turn_context for current-turn player intent and triggering_user_context when authoritative occurrence evidence is present.
 - Preserve established environmental facts from the baseline; do not reinvent continuity-bearing properties each turn.
 - Use ephemeral sensory texture for liveliness where appropriate; avoid sterile action-summary narration and generic irrelevant filler.
 - Do not invent material facts when baseline or cognition marked ambiguity/failure; omit rather than guess.

@@ -56,6 +56,7 @@ SourceKind = Literal[
     "storyteller_emphasis_guidance",
     "narrator_environment_baseline",
     "triggering_user_context",
+    "immediate_user_turn_context",
     "narrator_environment_cognition",
 ]
 # librarian_storyteller remains reserved legacy vocabulary; S3b mapper emits storyteller_* lanes.

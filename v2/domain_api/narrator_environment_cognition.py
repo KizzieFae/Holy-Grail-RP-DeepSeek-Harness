@@ -36,6 +36,7 @@ from domain_api.narrator_environment_establishment import (
 from domain_api.narrator_environment_projection import build_environmental_current_view
 from domain_api.narrator_environment_packet import assemble_narrator_environment_packet
 from domain_api.story_knowledge_service import StoryKnowledgeService
+from .session_history import project_immediate_user_turn_context
 
 
 def _public_event_for_commit(
@@ -321,6 +322,7 @@ def build_cognition_context_payload(
     return {
         "environmental_packet": packet.to_dict(),
         "environmental_current_view": view.to_dict(),
+        "immediate_user_turn": project_immediate_user_turn_context(fixture.rp_history),
         "triggering_user": extract_triggering_user_context(fixture, turn_record),
         "committed_occurrence": extract_committed_occurrence_summary(fixture, turn_record),
         "committed_move": turn_record.committed_move,
@@ -371,6 +373,7 @@ def finalize_narrator_environment_cognition(
         librarian_queries=list(librarian_outcomes or []),
         n2_resolutions=n2,
         establishment_decisions=decisions,
+        immediate_user_turn=project_immediate_user_turn_context(fixture.rp_history),
         triggering_user=extract_triggering_user_context(fixture, turn_record),
         domain_commit_id=turn_record.domain_commit_id,
     )
@@ -421,9 +424,15 @@ def record_environment_cognition_failure(
 
 NARRATOR_ENVIRONMENT_COGNITION_RUBRIC = (
     "Structured Narrator environmental cognition (#49). Two stages in one JSON object.\n"
+    "Input authority (#71 dual-input):\n"
+    "- immediate_user_turn_context (when present): current-turn player action/speech; "
+    "semantic signal for perceptual/descriptive obligation — NOT durable world truth.\n"
+    "- triggering_user_context (when present): authoritative promoted occurrence evidence (#51); "
+    "precedence for durable factual claims; overlapping wording does not create two events.\n"
     "Stage N1 — baseline assessment:\n"
-    "- baseline_sufficient: true when EnvironmentalCurrentView already answers material needs.\n"
-    "- information_needs: semantic questions only when baseline is insufficient; never keyword rules.\n"
+    "- Semantically assess whether the immediate user action requires environmental/perceptual response.\n"
+    "- baseline_sufficient: true only when baseline + inputs already answer material needs.\n"
+    "- information_needs: semantic questions when insufficient; never keyword/regex rules.\n"
     "Stage N2 — grounded resolution for each need:\n"
     "- category A: established grounded detail from packet or Librarian match.\n"
     "- category B1: ephemeral immersive texture (no persistence).\n"
