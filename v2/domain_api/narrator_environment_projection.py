@@ -135,7 +135,7 @@ def load_authored_environmental_descriptors(
         dedupe = f"{desc.property_key}|{desc.value}"
         if dedupe in seen:
             continue
-        seen.add(dupe)
+        seen.add(dedupe)
         descriptors.append(desc)
     return descriptors
 

@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 _ROOT = Path(__file__).resolve().parents[3]
 _V2 = _ROOT / "v2"
@@ -47,6 +48,7 @@ from domain_api.narrator_environment_packet import assemble_narrator_environment
 from domain_api.narrator_environment_projection import (  # noqa: E402
     build_environmental_current_view,
     descriptor_from_story_record,
+    load_authored_environmental_descriptors,
     load_story_derived_environmental_descriptors,
 )
 from domain_api.session_repository import SessionRepository  # noqa: E402
@@ -162,6 +164,42 @@ class EnvironmentalProjectionTests(unittest.TestCase):
         self.assertEqual(view.location_ref, location_stable_ref("Workshop"))
         # Authored extraction is best-effort from setup snapshot; may be empty without full M9 compile.
         self.assertIsInstance(view.effective_descriptors, dict)
+
+    def test_load_authored_environmental_descriptors_ayame_snapshot_does_not_raise(self) -> None:
+        """Regression #73: load_authored must use dedupe key when recording seen entries."""
+        template_path = _ROOT / "data" / "scene_templates" / "ayame_household_entry_evaluation.json"
+        template = json.loads(template_path.read_text(encoding="utf-8"))
+        self.fixture.setup_snapshot = {
+            "scene_template_id": "ayame_household_entry_evaluation",
+            "scene_template": template,
+            "character_cards": {},
+        }
+        loc = location_stable_ref("Scene")
+        descriptors = load_authored_environmental_descriptors(self.fixture, location_ref=loc)
+        self.assertIsInstance(descriptors, list)
+
+    def test_load_authored_environmental_descriptors_skips_duplicate_dedupe_keys(self) -> None:
+        from domain_api.authored_knowledge import AuthoredKnowledgeRecord
+
+        loc = location_stable_ref("Scene")
+        record = AuthoredKnowledgeRecord(
+            knowledge_id="auth-env-dedupe-1",
+            knowledge_kind="scene_setup_fact",
+            content="Scene foyer is polished marble for household evaluation.",
+            authority_class="authored",
+            visibility="template_participants",
+            subject_character_file_id=None,
+            source_kind="scene_template",
+            source_asset_id="ayame_household_entry_evaluation",
+            provenance={"knowledge_lane": "scene_reference"},
+        )
+        self.fixture.setup_snapshot = {"scene_template_id": "test", "scene_template": {}}
+        with patch(
+            "domain_api.narrator_environment_projection.compile_authored_records_from_snapshot",
+            return_value=[record, record],
+        ):
+            descriptors = load_authored_environmental_descriptors(self.fixture, location_ref=loc)
+        self.assertEqual(len(descriptors), 1)
 
     def test_story_derived_b2_addition(self) -> None:
         loc = location_stable_ref("Workshop")
