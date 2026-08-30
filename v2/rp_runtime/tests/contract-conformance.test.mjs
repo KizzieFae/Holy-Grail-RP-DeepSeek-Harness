@@ -96,6 +96,112 @@ test('update prompt does not prescribe deterministic trigger mechanisms', () => 
   assert.ok(!prompt.includes('T2-R'));
 });
 
+test('update prompt distinguishes package revise from strategic revision', () => {
+  const prompt = buildPlotCognitionUpdatePrompt(UPDATE_PREPARE);
+  assert.ok(prompt.includes('does NOT mean the old strategy should be revised'));
+  assert.ok(prompt.includes('generated JSON package is incomplete'));
+  assert.ok(prompt.includes('MAY coexist with replan_required=true'));
+});
+
+test('update prompt requires complete replan envelope when replan_required', () => {
+  const prompt = buildPlotCognitionUpdatePrompt(UPDATE_PREPARE);
+  assert.ok(prompt.includes('complete replan_proposal and replan_evaluation'));
+  assert.ok(prompt.includes('replan_evaluation.overall_result must be accept'));
+});
+
+test('update correction explains replan envelope repair without deciding semantics', () => {
+  const prompt = buildPlotCognitionUpdateCorrectionPrompt({
+    priorRaw: JSON.stringify({
+      schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+      update_proposal: { replan_required: true },
+      update_evaluation: { overall_result: 'revise' },
+    }),
+    structuralError: 'replan_required_without_accept',
+    context: UPDATE_PREPARE,
+  });
+  assert.ok(prompt.includes('replan_required_without_accept'));
+  assert.ok(prompt.includes('complete replan_proposal and replan_evaluation'));
+  assert.ok(prompt.includes('not revise'));
+  assert.ok(prompt.includes('Do not flip replan_required'));
+  assert.ok(!prompt.includes('you must replan'));
+  assert.ok(!prompt.includes('set replan_required to true'));
+});
+
+test('update parser still rejects replan_required without accepted replan envelope', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    JSON.stringify({
+      schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+      update_proposal: {
+        schema: 'hg_plot_cognition_update_proposal_v1',
+        proposal_id: 'p1',
+        source_snapshot_id: 'snap-update-1',
+        source_snapshot_fingerprint: 'fp-update-1',
+        plot_cognition_scope_id: 'scope-authoritative-1',
+        prior_store_revision: 2,
+        assimilation_rationale: 'Invalidation requires replan.',
+        replan_required: true,
+      },
+      update_evaluation: {
+        schema: 'hg_plot_cognition_update_eval_v1',
+        evaluation_id: 'e1',
+        proposal_id: 'p1',
+        overall_result: 'revise',
+        revision_brief: 'needs work',
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, false);
+  assert.equal(parsed.error, 'replan_required_without_accept');
+});
+
+test('update parser accepts replan_required with accept update and accept replan evaluation', () => {
+  const parsed = parsePlotCognitionUpdateInference(
+    JSON.stringify({
+      schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
+      update_proposal: {
+        schema: 'hg_plot_cognition_update_proposal_v1',
+        proposal_id: 'p-replan',
+        source_snapshot_id: 'snap-update-1',
+        source_snapshot_fingerprint: 'fp-update-1',
+        plot_cognition_scope_id: 'scope-authoritative-1',
+        prior_store_revision: 2,
+        assimilation_rationale: 'Prior direction invalidated; replan required.',
+        replan_required: true,
+      },
+      update_evaluation: {
+        schema: 'hg_plot_cognition_update_eval_v1',
+        evaluation_id: 'e-replan',
+        proposal_id: 'p-replan',
+        overall_result: 'accept',
+      },
+      replan_proposal: {
+        schema: 'hg_plot_cognition_replan_proposal_v1',
+        proposal_id: 'rp1',
+        source_snapshot_id: 'snap-update-1',
+        source_snapshot_fingerprint: 'fp-update-1',
+        plot_cognition_scope_id: 'scope-authoritative-1',
+        prior_store_revision: 2,
+        replan_rationale: 'Replace invalidated pursuit.',
+        trigger_summary: 'Authority invalidated prior direction.',
+        goals: [],
+        pressures: [],
+      },
+      replan_evaluation: {
+        schema: 'hg_plot_cognition_replan_eval_v1',
+        evaluation_id: 're1',
+        proposal_id: 'rp1',
+        overall_result: 'accept',
+      },
+    }),
+    UPDATE_PREPARE,
+  );
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.result.update_proposal.replan_required, true);
+  assert.equal(parsed.result.update_evaluation.overall_result, 'accept');
+  assert.equal(parsed.result.replan_evaluation.overall_result, 'accept');
+});
+
 test('Layer-B prompt contains exact verdict contract', () => {
   const prompt = buildEpistemicProjectionEvalPrompt();
   assert.ok(prompt.includes(EPISTEMIC_PROJECTION_EVAL_SCHEMA));

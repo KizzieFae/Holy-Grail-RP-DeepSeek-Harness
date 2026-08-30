@@ -84,7 +84,20 @@ At update inference time, the production prompt requires semantic comparison of 
 |----------|---------|-----------------|
 | `no_change` | Authoritative change does not materially require cognition alteration | `overall_result=no_change`, `replan_required=false` |
 | Assimilable update | New authority changes relevant cognition but operative strategic direction remains viable | `replan_required=false`, incremental goal/pressure/frame adjustments |
-| Invalidation replan | New authority materially invalidates assumptions, trajectories, targets, or strategic direction | `replan_required=true` plus replan proposal/evaluation |
+| Invalidation replan | New authority materially invalidates assumptions, trajectories, targets, or strategic direction | `replan_required=true`, complete `replan_proposal` + `replan_evaluation`, `update_evaluation.overall_result=accept` when package is complete |
+
+### `overall_result` vs strategic revision
+
+`update_evaluation.overall_result` disposes the **generated package** toward commit, not whether the old strategy should change:
+
+| Value | Meaning |
+|-------|---------|
+| `accept` | Generated update package is commit-ready. May coexist with `replan_required=true` when a complete replan envelope is included. |
+| `revise` | Generated package itself is incomplete and needs another correction pass — **not** “the prior strategy must be revised.” |
+| `reject` | Reject the generated package. |
+| `no_change` | No cognition alteration; `replan_required` must be false. |
+
+Strategic invalidation is expressed through `replan_required` and the replan envelope, not through `overall_result=revise`.
 
 These distinctions are semantic — not keyword triggers, regex classifiers, or event-type tables.
 

@@ -9,6 +9,45 @@ export const REPLAN_PROPOSAL_SCHEMA = 'hg_plot_cognition_replan_proposal_v1';
 export const REPLAN_EVALUATION_SCHEMA = 'hg_plot_cognition_replan_eval_v1';
 export const PRIOR_OPERATIVE_COGNITION_SCHEMA = 'hg_plot_cognition_prior_operative_cognition_v1';
 
+function plotCognitionUpdateEnvelopeSemantics() {
+  return [
+    'Execution-envelope semantics (#61 — do not confuse strategic revision with package revision):',
+    '- replan_required (on update_proposal): true when authoritative developments materially invalidate',
+    '  prior_operative_cognition and a replacement/restructured plan is required.',
+    '- update_evaluation.overall_result=accept: the generated update package itself is internally complete',
+    '  and acceptable for commit. This MAY coexist with replan_required=true.',
+    '- When replan_required=true, the SAME response must include complete replan_proposal and',
+    '  replan_evaluation per existing schemas, with replan_evaluation.overall_result=accept for commit.',
+    '- update_evaluation.overall_result=revise: ONLY when this generated JSON package is incomplete or',
+    '  needs another correction pass before commit. It does NOT mean the old strategy should be revised.',
+    '  If you recognize invalidation and have produced a complete valid update + replan package, use accept.',
+    '- update_evaluation.overall_result=reject: reject this generated package (existing contract meaning).',
+    '- update_evaluation.overall_result=no_change: no cognition alteration warranted; replan_required',
+    '  must be false (incompatible with required replanning).',
+  ];
+}
+
+function plotCognitionUpdateEnvelopeCorrectionGuidance(structuralError) {
+  const error = String(structuralError ?? '').trim();
+  if (!error) return [];
+  const lines = [
+    'Envelope correction (structural contract only — preserve your semantic judgment unless',
+    'satisfying the contract logically requires otherwise):',
+  ];
+  if (error === 'replan_required_without_accept') {
+    lines.push(
+      '- replan_required was true but the replan envelope is not commit-ready.',
+      '- Include complete replan_proposal and replan_evaluation in the same top-level response.',
+      '- Set replan_evaluation.overall_result to accept when the replan package is complete.',
+      '- If the update + replan package is complete, set update_evaluation.overall_result to accept,',
+      '  not revise. revise means this JSON output needs correction, not that strategy must change.',
+      '- Do not flip replan_required unless your preserved judgment requires it.',
+      '- Do not omit replan objects while leaving replan_required true.',
+    );
+  }
+  return lines;
+}
+
 export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
   const snapshot = prepareResponse?.source_snapshot ?? {};
   const scopeId = snapshot.plot_cognition_scope_id ?? '';
@@ -33,8 +72,11 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
     '  adjustments with overall_result accept.',
     '- invalidation replan: new authoritative developments materially invalidate assumptions,',
     '  trajectories, targets, or strategic direction such that prior cognition is no longer adequate;',
-    '  set replan_required true and include replan_proposal and replan_evaluation.',
+    '  set replan_required true, set update_evaluation.overall_result to accept when the package is',
+    '  complete, and include complete replan_proposal and replan_evaluation with accepted replan.',
     'Base these judgments on semantic comparison — not keyword lists, event types, or pattern rules.',
+    '',
+    ...plotCognitionUpdateEnvelopeSemantics(),
     '',
     `Return ONLY one JSON object (no markdown fences, no commentary) with top-level schema ${PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA}.`,
     'Required top-level fields: schema, update_proposal, update_evaluation.',
@@ -46,8 +88,9 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
     `Copy source_snapshot_fingerprint verbatim: "${fingerprint}".`,
     `source_snapshot_id: "${snapshotId}". prior_store_revision: ${priorRevision}.`,
     'update_evaluation.overall_result must be one of: accept, revise, reject, no_change.',
-    'When overall_result is no_change, include no_change_rationale.',
-    'When replan_required is true, include replan_proposal and replan_evaluation with accepted replan.',
+    'When overall_result is no_change, include no_change_rationale and set replan_required false.',
+    'When replan_required is true, include complete replan_proposal and replan_evaluation in the',
+    'same response; replan_evaluation.overall_result must be accept for commit.',
     'Do NOT omit the top-level schema field.',
     'Do NOT use alternate wrapper names or synonym fields.',
     'Serialization shape reference only (not a decision default):',
@@ -76,6 +119,7 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
 export function buildPlotCognitionUpdateCorrectionPrompt({ priorRaw, structuralError, context }) {
   const prior = typeof priorRaw === 'string' ? priorRaw : JSON.stringify(priorRaw ?? {});
   const contractPrompt = buildPlotCognitionUpdatePrompt(context);
+  const envelopeGuidance = plotCognitionUpdateEnvelopeCorrectionGuidance(structuralError);
   return [
     'CONTRACT CORRECTION: Your previous response did not satisfy the required machine contract.',
     'Preserve the semantic judgment from that response unless satisfying the contract logically requires otherwise.',
@@ -84,6 +128,7 @@ export function buildPlotCognitionUpdateCorrectionPrompt({ priorRaw, structuralE
     `Previous response:\n${prior}`,
     '',
     `Structural validation error: ${structuralError}`,
+    ...(envelopeGuidance.length > 0 ? ['', ...envelopeGuidance] : []),
     '',
     'Required contract:',
     contractPrompt,
