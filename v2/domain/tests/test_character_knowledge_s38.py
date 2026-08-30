@@ -21,6 +21,13 @@ from domain_api.character_epistemic import (  # noqa: E402
     character_may_know_candidate,
 )
 from domain_api.character_knowledge_validity import build_character_knowledge_reuse_key  # noqa: E402
+from domain_api.character_service import CharacterKnowledgeService  # noqa: E402
+from domain_api.librarian_contract import (  # noqa: E402
+    InformationNeed,
+    KnowledgeAccessRequest,
+    VisibilityEnvelope,
+    validate_knowledge_access_request,
+)
 from domain_api.librarian_packaging_mapper import map_librarian_bundle_to_contributions  # noqa: E402
 from domain_api.librarian_packaging_policy import policy_for_consumer  # noqa: E402
 from domain_api.librarian_packaging_validity import PackagingBindingContext  # noqa: E402
@@ -31,6 +38,7 @@ from domain_api.retrieval_contract import (  # noqa: E402
     RetrievalCandidatePayload,
 )
 from domain_api.retrieval_service import _hard_access_allows  # noqa: E402
+from domain_api.session_state import RoundFixture, initialize_live_session  # noqa: E402
 from domain.tests.test_librarian_packaging_s2b import _bundle  # noqa: E402
 
 
@@ -237,6 +245,74 @@ class CharacterKnowledgeS38Tests(unittest.TestCase):
         self.assertNotIn("authored_character_knowledge", prepare_block)
         adapter_path = Path(__file__).resolve().parents[2] / "domain_api" / "character_retrieval_adapter.py"
         self.assertFalse(adapter_path.exists())
+
+
+class CharacterKnowledgeServiceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.service = CharacterKnowledgeService()
+
+    def _fixture(self):
+        fixture = initialize_live_session(cast=["Alice", "Bob"])
+        fixture.setup_snapshot = {
+            "scene_template_id": "test_template",
+            "character_cards": {"alice": {"lore_facts": ["Alice knows the hidden passage."]}},
+        }
+        fixture.memory_scope_id = "scope-test"
+        fixture.character_file_ids = {"Alice": "alice", "Bob": "bob"}
+        fixture.rounds.append(
+            RoundFixture(
+                hg_round_id="round-1",
+                hg_scene_id=fixture.hg_scene_id,
+                turn_index=0,
+            )
+        )
+        return fixture
+
+    def test_finalize_orientation_produces_character_kar(self) -> None:
+        fixture = self._fixture()
+        rnd = fixture.rounds[-1]
+        finalized = self.service.finalize_orientation(
+            fixture,
+            rnd,
+            inference_id="inf-1",
+            character_id="Alice",
+            turn_index=0,
+            orientation_result=_valid_orientation(hg_round_id=rnd.hg_round_id),
+            upstream_fingerprint="upstream-fp-test",
+            director_decision=None,
+            correction_context=None,
+        )
+        self.assertTrue(finalized["accepted"])
+        self.assertEqual(finalized["reason"], "ok")
+        orientation = finalized["orientation"]
+        self.assertEqual(orientation["character_id"], "Alice")
+        self.assertEqual(orientation["orientation_id"], "char-orient-1")
+        kar = finalized["knowledge_access_request"]
+        assert kar is not None
+        self.assertEqual(kar["consumer_role"], "character")
+        self.assertEqual(kar["consumer_instance_id"], "Alice")
+        self.assertEqual(kar["pipeline_stage"], "character")
+        validate_knowledge_access_request(
+            KnowledgeAccessRequest(
+                request_id=kar["request_id"],
+                consumer_role=kar["consumer_role"],
+                audit_reason=kar["audit_reason"],
+                hg_scene_id=fixture.hg_scene_id,
+                hg_round_id=kar["hg_round_id"],
+                turn_index=kar["turn_index"],
+                pipeline_stage=kar["pipeline_stage"],
+                visibility_envelope=VisibilityEnvelope(
+                    viewer_role=kar["visibility_envelope"]["viewer_role"],
+                    authority_ceiling_enforced=kar["visibility_envelope"]["authority_ceiling_enforced"],
+                    session_template_id=kar["visibility_envelope"].get("session_template_id"),
+                ),
+                information_need=InformationNeed(
+                    focus_questions=tuple(kar["information_need"]["focus_questions"]),
+                    recall_breadth_preference=kar["information_need"]["recall_breadth_preference"],
+                ),
+                host_allowed_information_classes=frozenset(kar["host_allowed_information_classes"]),
+            )
+        )
 
 
 if __name__ == "__main__":
