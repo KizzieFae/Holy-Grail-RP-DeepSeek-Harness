@@ -116,7 +116,11 @@ Historical pilot artifact map (closed runbook): [governance/records/operational-
 
 `structured_eval` profiles and investigation recall hooks live in the domain library (`semantic_eval_profiles.py`, `response_validation_investigation_recall.py`). Domain tests cover profile shape and manifest-linked expectations.
 
-When a live harness returns, metrics JSON should be written under `data/investigation_runs/` or another gitignored path—not the repository root.
+When a live harness returns, metrics JSON should be written to a **gitignored** path—not the repository root.
+
+**Storyteller certification harnesses** (`v2/rp_runtime/scripts/run-phase-d.mjs`, `run-tranche{1,2,3}.mjs`) default aggregate report output to `v2/rp_runtime/tmp/` (local, gitignored). Where supported, pass an explicit output path argument to write elsewhere—for example `data/investigation_runs/<label>.json` when an operator wants a long-lived local archival copy. Durable validation conclusions belong on the governing GitHub Issue.
+
+**Other harnesses / comparators:** prefer `data/investigation_runs/` or another gitignored directory under `data/`.
 
 ---
 

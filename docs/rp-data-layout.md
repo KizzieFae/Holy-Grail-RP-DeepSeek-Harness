@@ -25,6 +25,21 @@ Local investigation output: `data/investigation_runs/` (gitignored).
 
 ---
 
+## Local artifact classes (repository hygiene)
+
+Operators should distinguish four classes of local artifacts. This table records **repository treatment** only; it does not redefine forensic or audit semantics (see [audit-workflows.md](./audit-workflows.md) and upstream **Holy_Grail_RP #86** for `rp_audits/` retention).
+
+| Class | Typical location | Git | Durable record |
+|-------|------------------|-----|----------------|
+| **Disposable workflow drafts** | `/tmp/` (Issue body/comment staging), `.github/issue_drafts/`, `.tmp_*` | Ignored | None — delete when done |
+| **Reproducible harness summaries** | `v2/rp_runtime/tmp/` (Storyteller harness default); optional `data/investigation_runs/` via CLI path | Ignored | Governing GitHub Issue validation comment |
+| **Final validation decisions** | Governing GitHub Issue thread | N/A (Issue) | Issue closure / validation record |
+| **Raw campaign / runtime / forensic evidence** | `data/storyteller_tier1_campaign/`, `data/execution_evidence/`, `data/plot_cognition_forensics/`, `data/sessions/`, `data/rp_audits/` | Ignored (`data/*` with fixture whitelists) | On-disk trees under existing `data/*` policies |
+
+**Agreed treatment (#69):** `/tmp/` is local disposable workflow staging (ignored). `v2/rp_runtime/tmp/` holds reproducible harness aggregate JSON (ignored; superseded copies may be deleted locally). Authoritative validation conclusions belong on the governing Issue, not in tracked repository files.
+
+---
+
 ## Character cards
 
 **Path:** `data/characters/*.json`

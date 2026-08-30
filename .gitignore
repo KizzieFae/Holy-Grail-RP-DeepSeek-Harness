@@ -78,6 +78,10 @@ _tmp_prog_issues/
 .tmp_*
 governance/rp-app/_issue_bodies/
 
+# Local workflow / harness scratch (not canonical repo content)
+/tmp/
+/v2/rp_runtime/tmp/
+
 # Local vendor / IDE export (not canonical repo content)
 deepseek_v4_overview.rtf
 

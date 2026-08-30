@@ -44,7 +44,7 @@ cd v2/rp_runtime
 node scripts/run-phase-d.mjs
 ```
 
-Report: `v2/rp_runtime/tmp/phase-d-report.json`
+Report (local, gitignored): `v2/rp_runtime/tmp/phase-d-report.json` — default harness output; optional CLI path override. Durable validation conclusions (PASS/FAIL, SHA, campaign path, key metrics) belong on the governing GitHub Issue.
 
 ## Posture
 
