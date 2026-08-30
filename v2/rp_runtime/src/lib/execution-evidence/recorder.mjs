@@ -185,6 +185,61 @@ export class ExecutionEvidenceRecorder {
   }
 
   /**
+   * Record a Narrator-phase failure that occurred before a normal inference attempt
+   * could be retained (e.g. context prepare throw, inference-boundary throw).
+   */
+  recordNarratorPhaseFailure({
+    hgSessionId,
+    hgSceneId,
+    hgRoundId,
+    characterId,
+    inferenceId,
+    attemptIndex = 0,
+    domainCommitId = null,
+    continuityTurnIndex = null,
+    manifestId = null,
+    failureClass,
+    boundary,
+    stage,
+    patch,
+  }) {
+    if (!this.enabled || !hgSessionId) return null;
+    const evidenceId = crypto.randomUUID();
+    const attempt = {
+      evidence_id: evidenceId,
+      correlation: {
+        evidence_id: evidenceId,
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId ?? hgSessionId,
+        hg_round_id: hgRoundId ?? null,
+        role: 'narrator',
+        character_id: characterId ?? null,
+        inference_id: inferenceId ?? null,
+        attempt_index: Number(attemptIndex ?? 0),
+        manifest_id: manifestId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+      },
+      request: null,
+      response: null,
+      decision: {
+        ...(patch?.decision ?? {}),
+        forensic_attribution: {
+          failure_class: failureClass,
+          boundary,
+          stage,
+          pre_inference_record: true,
+        },
+      },
+      associations: {
+        ...(patch?.associations ?? {}),
+      },
+    };
+    this.store.writeAttempt(attempt);
+    return evidenceId;
+  }
+
+  /**
    * @param {string|null} evidenceId
    * @param {string} hgSessionId
    * @param {object} patch

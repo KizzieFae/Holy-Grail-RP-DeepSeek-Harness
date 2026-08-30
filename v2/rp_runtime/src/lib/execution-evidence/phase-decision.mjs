@@ -210,6 +210,7 @@ export function narratorDecisionPatch({
   semanticQa = null,
   residualSoftConcerns = null,
   environmentCognition = null,
+  forensicAttribution = null,
 }) {
   const patch = {
     decision: {
@@ -242,6 +243,9 @@ export function narratorDecisionPatch({
   }
   if (environmentCognition) {
     patch.decision.environment_cognition = environmentCognition;
+  }
+  if (forensicAttribution) {
+    patch.decision.forensic_attribution = forensicAttribution;
   }
   return patch;
 }

@@ -1,4 +1,9 @@
 import { runLibrarianMediation } from './librarian-mediation-substrate.mjs';
+import {
+  ENV_COGNITION_STAGES,
+  FORENSIC_BOUNDARIES,
+  runEnvironmentCognitionStage,
+} from './narrator-forensic-attribution.mjs';
 
 const COGNITION_SCHEMA = {
   type: 'object',
@@ -79,6 +84,7 @@ function manifestFromPrepareResponse(prepareResponse) {
 export async function runNarratorEnvironmentCognition({
   api,
   runEphemeralInference,
+  hgSessionId,
   hgSceneId,
   hgRoundId,
   inferenceId,
@@ -89,41 +95,55 @@ export async function runNarratorEnvironmentCognition({
   mockCognitionResponse = null,
   allowDeterministicFallback = true,
 }) {
-  const prepare = await api.prepareNarratorEnvironmentCognitionContext({
-    hg_scene_id: hgSceneId,
-    hg_round_id: hgRoundId,
-    inference_id: inferenceId,
-    character_id: characterId,
-    domain_commit_id: domainCommitId,
-    continuity_turn_index: continuityTurnIndex,
-  });
+  const evidenceContextBase = {
+    hgSessionId,
+    hgSceneId,
+    hgRoundId,
+    role: 'narrator',
+    characterId,
+  };
+
+  const prepare = await runEnvironmentCognitionStage(
+    ENV_COGNITION_STAGES.PREPARE,
+    FORENSIC_BOUNDARIES.DOMAIN_API,
+    () => api.prepareNarratorEnvironmentCognitionContext({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      inference_id: inferenceId,
+      character_id: characterId,
+      domain_commit_id: domainCommitId,
+      continuity_turn_index: continuityTurnIndex,
+    }),
+  );
 
   const cognitionInferenceId = `${inferenceId}-narrator-env-cog`;
   const manifest = manifestFromPrepareResponse(prepare);
 
   let cognitionRaw = mockCognitionResponse;
   if (!cognitionRaw) {
-    const run = await runEphemeralInference({
-      inferenceId: cognitionInferenceId,
-      prompt: buildCognitionPrompt(),
-      manifest,
-      mockResponses: [],
-      modelProfile,
-      evidenceContext: {
-        hgSceneId,
-        hgRoundId,
-        role: 'narrator',
-        characterId,
+    const run = await runEnvironmentCognitionStage(
+      ENV_COGNITION_STAGES.INFERENCE,
+      FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
+      () => runEphemeralInference({
         inferenceId: cognitionInferenceId,
-        inferenceKind: 'narrator_environment_cognition',
-      },
-    });
+        prompt: buildCognitionPrompt(),
+        manifest,
+        mockResponses: [],
+        modelProfile,
+        evidenceContext: {
+          ...evidenceContextBase,
+          inferenceId: cognitionInferenceId,
+          inferenceKind: 'narrator_environment_cognition',
+        },
+      }),
+    );
     if (run.failed) {
       if (!allowDeterministicFallback) {
         return {
           ok: false,
-          stage: 'cognition_inference',
-          failureReason: run.failure?.reason ?? 'cognition_inference_failed',
+          stage: ENV_COGNITION_STAGES.INFERENCE,
+          boundary: FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
+          failureReason: run.failure?.reason ?? run.failure?.message ?? 'cognition_inference_failed',
           audit: null,
           prepare,
         };
@@ -149,36 +169,42 @@ export async function runNarratorEnvironmentCognition({
       assessment_notes: 'parse_fallback_baseline_sufficient',
     };
 
-  const karResponse = await api.buildNarratorEnvironmentKnowledgeRequests({
-    hg_scene_id: hgSceneId,
-    hg_round_id: hgRoundId,
-    inference_id: inferenceId,
-    character_id: characterId,
-    domain_commit_id: domainCommitId,
-    continuity_turn_index: continuityTurnIndex,
-    n1_result: cognitionResult,
-  });
+  const karResponse = await runEnvironmentCognitionStage(
+    ENV_COGNITION_STAGES.KAR_BUILD,
+    FORENSIC_BOUNDARIES.DOMAIN_API,
+    () => api.buildNarratorEnvironmentKnowledgeRequests({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      inference_id: inferenceId,
+      character_id: characterId,
+      domain_commit_id: domainCommitId,
+      continuity_turn_index: continuityTurnIndex,
+      n1_result: cognitionResult,
+    }),
+  );
 
   const librarianOutcomes = [];
   const requests = karResponse?.knowledge_access_requests ?? [];
   for (const [index, kar] of requests.entries()) {
     const needId = cognitionResult.information_needs?.[index]?.need_id ?? `need-${index + 1}`;
-    const mediation = await runLibrarianMediation({
-      domainApi: api,
-      hgSceneId,
-      inferenceId: `${cognitionInferenceId}-lib-${index}`,
-      knowledgeAccessRequest: kar,
-      runEphemeralInference,
-      allowDeterministicFallback,
-      modelProfile,
-      evidenceContextBase: {
+    const mediation = await runEnvironmentCognitionStage(
+      ENV_COGNITION_STAGES.LIBRARIAN_MEDIATION,
+      FORENSIC_BOUNDARIES.DOMAIN_API,
+      () => runLibrarianMediation({
+        domainApi: api,
         hgSceneId,
-        hgRoundId,
-        role: 'narrator',
-        characterId,
-        inferenceId: cognitionInferenceId,
-      },
-    });
+        hgSessionId,
+        inferenceId: `${cognitionInferenceId}-lib-${index}`,
+        knowledgeAccessRequest: kar,
+        runEphemeralInference,
+        allowDeterministicFallback,
+        modelProfile,
+        evidenceContextBase: {
+          ...evidenceContextBase,
+          inferenceId: cognitionInferenceId,
+        },
+      }),
+    );
     librarianOutcomes.push({
       need_id: needId,
       mediation_outcome: mediation?.bundle?.mediation_outcome ?? 'mediation_failure',
@@ -190,16 +216,20 @@ export async function runNarratorEnvironmentCognition({
     }
   }
 
-  const finalize = await api.finalizeNarratorEnvironmentCognition({
-    hg_scene_id: hgSceneId,
-    hg_round_id: hgRoundId,
-    inference_id: inferenceId,
-    character_id: characterId,
-    domain_commit_id: domainCommitId,
-    continuity_turn_index: continuityTurnIndex,
-    cognition_result: cognitionResult,
-    librarian_outcomes: librarianOutcomes,
-  });
+  const finalize = await runEnvironmentCognitionStage(
+    ENV_COGNITION_STAGES.FINALIZE,
+    FORENSIC_BOUNDARIES.DOMAIN_API,
+    () => api.finalizeNarratorEnvironmentCognition({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      inference_id: inferenceId,
+      character_id: characterId,
+      domain_commit_id: domainCommitId,
+      continuity_turn_index: continuityTurnIndex,
+      cognition_result: cognitionResult,
+      librarian_outcomes: librarianOutcomes,
+    }),
+  );
 
   return {
     ok: Boolean(finalize?.accepted),

@@ -78,7 +78,9 @@ domain_commit_id + continuity_turn_index
   → semantic QA nar_environmental_* findings (if evaluated)
 ```
 
-**Cognition failure path:** When `cognition_failed=true`, audit records `failure_stage` / `failure_reason`; Narrator may still render via fallback policy but no B2 establishment authority is created.
+**Cognition failure path:** When `cognition_failed=true`, audit records `failure_stage` / `failure_reason` (and, post-#70, optional `failure_boundary` when attributed by DSH); Narrator may still render via fallback policy but no B2 establishment authority is created.
+
+**Narrator forensic attribution (#70):** Execution-evidence Narrator attempts may include `decision.forensic_attribution` with structured `failure_class`, `boundary`, and `stage` when inference failed before or without a normal assembled request/response record (`pre_inference_record: true`). Environmental-cognition inference attempts require `hgSessionId` in evidence context to be retained under `inference_kind: narrator_environment_cognition`.
 
 ### V2 human audit-tag workflow
 

@@ -99,6 +99,7 @@ test('baseline sufficient skips Librarian mediation', async () => {
       information_needs: [],
       resolutions: [],
     }) }),
+    hgSessionId: 'scene-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
     inferenceId: 'inf-1',
@@ -133,6 +134,7 @@ test('information need invokes Librarian mediation', async () => {
           }],
         }),
     }),
+    hgSessionId: 'scene-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
     inferenceId: 'inf-2',
@@ -183,6 +185,7 @@ test('match mediation outcome forwarded to finalize without duplicate B2 persist
           }],
         }),
     }),
+    hgSessionId: 'scene-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
     inferenceId: 'inf-match',
@@ -199,6 +202,7 @@ test('cognition inference failure returns auditable failure when fallback disabl
   const result = await runNarratorEnvironmentCognition({
     api,
     runEphemeralInference: async () => ({ failed: true, failure: { reason: 'provider_error' } }),
+    hgSessionId: 'scene-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
     inferenceId: 'inf-fail',
@@ -209,6 +213,7 @@ test('cognition inference failure returns auditable failure when fallback disabl
   });
   assert.equal(result.ok, false);
   assert.equal(result.stage, 'cognition_inference');
+  assert.equal(result.boundary, 'inference_provider');
   assert.match(result.failureReason, /provider_error/);
 });
 

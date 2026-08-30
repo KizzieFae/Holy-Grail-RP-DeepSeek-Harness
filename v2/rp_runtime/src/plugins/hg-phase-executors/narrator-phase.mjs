@@ -14,6 +14,13 @@ import {
   runNarratorSemanticEvaluation,
 } from './narrator-semantic-qa.mjs';
 import { runNarratorEnvironmentCognition } from '../../lib/narrator-environment-cognition-substrate.mjs';
+import {
+  buildForensicAttribution,
+  classifyFailureBoundary,
+  extractEnvironmentCognitionFailure,
+  FORENSIC_BOUNDARIES,
+  NARRATOR_FAILURE_CLASSES,
+} from '../../lib/narrator-forensic-attribution.mjs';
 
 const MAX_NARRATOR_ATTEMPTS = 2;
 const EVAL_INFRA_RETRIES = 1;
@@ -28,6 +35,7 @@ function recordAttemptEvidence({
   hgSessionId,
   patch,
   environmentCognition = undefined,
+  forensicContext = null,
 }) {
   const merged = environmentCognition
     ? {
@@ -38,7 +46,18 @@ function recordAttemptEvidence({
         },
       }
     : patch;
-  recorder?.patchDecision(evidenceId ?? null, hgSessionId, merged);
+  if (evidenceId && hgSessionId) {
+    recorder?.patchDecision(evidenceId, hgSessionId, merged);
+    return evidenceId;
+  }
+  if (recorder?.isEnabled?.() && hgSessionId && forensicContext) {
+    return recorder.recordNarratorPhaseFailure({
+      hgSessionId,
+      patch: merged,
+      ...forensicContext,
+    });
+  }
+  return null;
 }
 
 function acceptNarratorPresentation({
@@ -164,6 +183,7 @@ export async function runNarratorPhase({
     const envCognition = await runNarratorEnvironmentCognition({
       api,
       runEphemeralInference,
+      hgSessionId,
       hgSceneId,
       hgRoundId,
       inferenceId: narratorInferenceId,
@@ -178,6 +198,7 @@ export async function runNarratorPhase({
       environmentCognitionAudit = {
         cognition_failed: true,
         failure_stage: envCognition.stage ?? 'cognition_failed',
+        failure_boundary: envCognition.boundary ?? null,
         failure_reason: envCognition.failureReason ?? 'environment_cognition_unavailable',
         cognition_id: envCognition.audit?.cognition_id ?? null,
         domain_commit_id: domainCommitId,
@@ -192,18 +213,21 @@ export async function runNarratorPhase({
       };
     }
   } catch (error) {
-    const reason = String(error?.message ?? error);
+    const attribution = extractEnvironmentCognitionFailure(error);
     environmentCognitionAudit = {
       cognition_failed: true,
-      failure_stage: 'substrate_exception',
-      failure_reason: reason,
+      failure_stage: attribution.stage,
+      failure_boundary: attribution.boundary,
+      failure_reason: attribution.reason,
       cognition_id: null,
       domain_commit_id: domainCommitId,
     };
     environmentCognitionEvidence = environmentCognitionAudit;
     trace.emit(sceneAgent.session, 'hg/narrator-environment-cognition-failed', scope, {
       inference_id: narratorInferenceId,
-      reason,
+      reason: attribution.reason,
+      failure_stage: attribution.stage,
+      failure_boundary: attribution.boundary,
     });
   }
 
@@ -254,7 +278,26 @@ export async function runNarratorPhase({
           retryable: false,
           retryDecision: 'terminal_fallback',
           terminalDisposition: 'committed_fallback',
+          forensicAttribution: buildForensicAttribution({
+            failureClass: NARRATOR_FAILURE_CLASSES.CONTEXT_PREPARE,
+            boundary: classifyFailureBoundary(error, FORENSIC_BOUNDARIES.DOMAIN_API),
+            stage: 'prepare_narrator_context',
+            failureReason: lastFailureReason,
+          }),
         }),
+        forensicContext: {
+          hgSceneId,
+          hgRoundId,
+          characterId,
+          inferenceId: narratorInferenceId,
+          attemptIndex,
+          domainCommitId,
+          continuityTurnIndex,
+          manifestId,
+          failureClass: NARRATOR_FAILURE_CLASSES.CONTEXT_PREPARE,
+          boundary: classifyFailureBoundary(error, FORENSIC_BOUNDARIES.DOMAIN_API),
+          stage: 'prepare_narrator_context',
+        },
       });
       return {
         presentation_rendered: false,
@@ -331,6 +374,12 @@ export async function runNarratorPhase({
             retryDecision: retry.retryDecision,
             terminalDisposition:
               retry.retryDecision === 'terminal_fallback' ? 'committed_fallback' : null,
+            forensicAttribution: buildForensicAttribution({
+              failureClass: NARRATOR_FAILURE_CLASSES.INFERENCE_RETURNED_FAILURE,
+              boundary: FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
+              stage: 'run_ephemeral_inference',
+              failureReason: failureMessage,
+            }),
           }),
         });
         if (retry.retryDecision === 'retry') {
@@ -697,6 +746,10 @@ export async function runNarratorPhase({
       });
       lastFailureReason = failureMessage;
       lastInferenceOutcome = classifyNarratorFailureOutcome(failureMessage);
+      const inferenceBoundary = classifyFailureBoundary(
+        error,
+        FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
+      );
       recordAttemptEvidence({
         recorder,
         evidenceId: narratorRun?.evidenceId ?? null,
@@ -716,7 +769,28 @@ export async function runNarratorPhase({
           rejectedPresentationText,
           terminalDisposition:
             retry.retryDecision === 'terminal_fallback' ? 'committed_fallback' : null,
+          forensicAttribution: buildForensicAttribution({
+            failureClass: NARRATOR_FAILURE_CLASSES.INFERENCE_BOUNDARY_THROW,
+            boundary: inferenceBoundary,
+            stage: 'run_ephemeral_inference',
+            failureReason: failureMessage,
+          }),
         }),
+        forensicContext: narratorRun?.evidenceId
+          ? null
+          : {
+            hgSceneId,
+            hgRoundId,
+            characterId,
+            inferenceId: narratorInferenceId,
+            attemptIndex,
+            domainCommitId,
+            continuityTurnIndex,
+            manifestId,
+            failureClass: NARRATOR_FAILURE_CLASSES.INFERENCE_BOUNDARY_THROW,
+            boundary: inferenceBoundary,
+            stage: 'run_ephemeral_inference',
+          },
       });
       if (retry.retryDecision === 'retry') {
         responseIndex += 1;

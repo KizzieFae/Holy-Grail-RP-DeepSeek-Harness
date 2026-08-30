@@ -155,7 +155,11 @@ test('full round writes execution evidence with request, response, and correlati
 
   const directorAttempt = attempts.find((entry) => entry.correlation.role === 'director');
   const characterAttempt = findCharacterMoveAttempt(attempts);
-  const narratorAttempt = attempts.find((entry) => entry.correlation.role === 'narrator');
+  const narratorAttempt = attempts.find(
+    (entry) => entry.correlation.role === 'narrator'
+      && entry.correlation.inference_kind !== 'narrator_environment_cognition'
+      && entry.request?.schema === 'hg_assembled_request_v1',
+  );
 
   assert.ok(directorAttempt);
   assert.equal(directorAttempt.request.schema, 'hg_assembled_request_v1');
