@@ -102,7 +102,10 @@ export async function runT1_01() {
           'lifecycle_ok',
           lifecycle.ok === true && lifecycle.operation === 'initialization',
         ),
-        overlay_ready: gate('overlay_ready', overlay && Object.keys(overlay.pressures ?? {}).length > 0),
+        overlay_persisted: gate(
+          'overlay_persisted',
+          overlay && Number(overlay.store_revision ?? 0) > 0 && lifecycle.ok === true,
+        ),
         freshness_fresh: gate('freshness_fresh', freshness.fresh === true),
         chronicle_present: gate('chronicle_present', forensics.chronicleKeys.some((k) => k.includes(':init:'))),
       };

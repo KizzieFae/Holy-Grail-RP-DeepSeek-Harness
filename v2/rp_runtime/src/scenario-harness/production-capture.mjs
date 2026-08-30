@@ -72,7 +72,11 @@ export function recordPlotInferenceCapture(capture, {
       prior_store_revision: prepareResponse.prior_store_revision ?? null,
     };
     const body = prepareResponse.source_snapshot?.canonical_body ?? {};
-    capture.manifest_material = boundText(JSON.stringify(body), MANIFEST_BOUND);
+    const excerpts = prepareResponse.source_snapshot?.semantic_authority_excerpts ?? {};
+    capture.manifest_material = boundText(
+      JSON.stringify({ authority_projection: body, semantic_authority_excerpts: excerpts }),
+      MANIFEST_BOUND,
+    );
   }
   if (inferRun) {
     capture.raw_model_response = boundText(inferRun.raw);
@@ -146,6 +150,155 @@ export function overlayHasPressureText(overlay, pressureText) {
   const needle = String(pressureText ?? '').trim().toLowerCase();
   if (!needle) return false;
   return overlayPressureTexts(overlay).some((text) => text.toLowerCase().includes(needle));
+}
+
+export function initializationSourceRichness(truth = {}) {
+  return String(truth.source_richness ?? 'minimal').trim().toLowerCase();
+}
+
+export function overlayHasSemanticRichness(overlay, truth = {}) {
+  const pressureNeedles = (truth.expected_pressure_material ?? truth.unresolved_pressures ?? [])
+    .map((item) => String(item ?? '').trim().toLowerCase())
+    .filter(Boolean);
+  const goalNeedles = (truth.expected_goal_material ?? [])
+    .map((item) => String(item ?? '').trim().toLowerCase())
+    .filter(Boolean);
+  const pressureTexts = overlayPressureTexts(overlay).map((text) => text.toLowerCase());
+  const goalTexts = Object.values(overlay?.goals ?? {})
+    .map((goal) => String(goal?.intended_direction ?? '').trim().toLowerCase())
+    .filter(Boolean);
+  const pressureOk = pressureNeedles.length === 0
+    || pressureNeedles.some((needle) => pressureTexts.some((text) => text.includes(needle)));
+  const goalOk = goalNeedles.length === 0
+    || goalNeedles.some((needle) => goalTexts.some((text) => text.includes(needle)));
+  return pressureOk && goalOk;
+}
+
+export function buildInitializationObjectiveGates({
+  truth,
+  plan,
+  lifecycle,
+  overlay,
+  overlayRevisionBefore = 0,
+  scopeId = null,
+  forensics = {},
+  initRaw = null,
+}) {
+  const richness = initializationSourceRichness(truth);
+  const gates = {
+    plan_initialization: {
+      name: 'plan_initialization',
+      pass: plan?.operation === 'initialization',
+      detail: plan?.operation ?? null,
+    },
+    lifecycle_ok: {
+      name: 'lifecycle_ok',
+      pass: lifecycle?.ok === true,
+      detail: lifecycle?.stage ?? null,
+    },
+    init_raw_captured: {
+      name: 'init_raw_captured',
+      pass: Boolean(initRaw?.raw),
+      detail: initRaw ? 'captured' : 'missing',
+    },
+    overlay_persisted: {
+      name: 'overlay_persisted',
+      pass: Boolean(
+        overlay
+        && Number(overlay.store_revision ?? 0) > Number(overlayRevisionBefore ?? 0)
+        && lifecycle?.initFinalize?.accepted === true,
+      ),
+      detail: overlay?.store_revision ?? null,
+    },
+    initialization_scope_bound: {
+      name: 'initialization_scope_bound',
+      pass: Boolean(scopeId && overlay?.plot_cognition_scope_id === scopeId),
+      detail: overlay?.plot_cognition_scope_id ?? null,
+    },
+    chronicle_present: {
+      name: 'chronicle_present',
+      pass: (forensics.chronicleKeys ?? []).some((key) => key.includes(':init:')),
+      detail: (forensics.chronicleKeys ?? []).length,
+    },
+  };
+  if (richness === 'sufficient') {
+    gates.initialization_semantic_richness = {
+      name: 'initialization_semantic_richness',
+      pass: overlayHasSemanticRichness(overlay, truth),
+      detail: richness,
+    };
+  }
+  return gates;
+}
+
+export function readableSemanticAuthorityTexts(prepareResponse) {
+  const excerpts = prepareResponse?.source_snapshot?.semantic_authority_excerpts ?? {};
+  const texts = [];
+  for (const event of excerpts.public_events ?? []) {
+    const summary = String(event?.summary ?? '').trim();
+    if (summary) texts.push(summary);
+  }
+  for (const issue of excerpts.issues ?? []) {
+    for (const field of ['description', 'blocked_what', 'required_next_step']) {
+      const value = String(issue?.[field] ?? '').trim();
+      if (value) texts.push(value);
+    }
+  }
+  for (const fact of excerpts.scene_grounding_facts ?? []) {
+    const statement = String(fact?.statement ?? '').trim();
+    if (statement) texts.push(statement);
+  }
+  for (const move of excerpts.committed_moves ?? []) {
+    const excerpt = String(move?.bounded_excerpt ?? '').trim();
+    if (excerpt) texts.push(excerpt);
+  }
+  return texts;
+}
+
+export function assertSemanticAuthorityInPrepare(prepareResponse) {
+  const texts = readableSemanticAuthorityTexts(prepareResponse);
+  const excerpts = prepareResponse?.source_snapshot?.semantic_authority_excerpts ?? {};
+  return {
+    ok: texts.length > 0,
+    readable_text_count: texts.length,
+    readable_texts: texts,
+    semantic_authority_excerpts: excerpts,
+    manifest_material: boundText(
+      JSON.stringify({
+        authority_projection: prepareResponse?.source_snapshot?.canonical_body ?? {},
+        semantic_authority_excerpts: excerpts,
+      }),
+      MANIFEST_BOUND,
+    ),
+  };
+}
+
+export function evaluateSafeTranslationAchieved({
+  truth,
+  capture,
+  storytellerCount,
+  admittedTexts = [],
+  targetCharacter = null,
+}) {
+  const character = targetCharacter ?? truth?.target_character ?? 'Alice';
+  const deliveredTexts = admittedDeliveryTexts(capture, admittedTexts);
+  const combinedFinal = deliveredTexts.join('\n').trim();
+  const finalLeaks = detectForbiddenLeaks(combinedFinal, truth, character);
+  const firstVerdict = capture.layer_b.first?.verdict ?? null;
+  const secondVerdict = capture.layer_b.second?.verdict ?? null;
+  const finalVerdict = capture.layer_b.second?.verdict ? secondVerdict : firstVerdict;
+  const deliveryObserved = storytellerCount > 0 && combinedFinal.length > 0;
+  const layerBPermits = finalVerdict === 'pass';
+  return {
+    pass: deliveryObserved && layerBPermits && finalLeaks.length === 0,
+    delivery_observed: deliveryObserved,
+    layer_b_permits_delivery: layerBPermits,
+    final_delivery_safe: finalLeaks.length === 0,
+    final_verdict: finalVerdict,
+    detail: deliveryObserved
+      ? (layerBPermits ? (finalLeaks.length === 0 ? 'safe_delivery' : 'forbidden_leak') : 'layer_b_blocked')
+      : 'no_useful_delivery',
+  };
 }
 
 export function assertInvalidationInPrepareContext(prepareResponse, baseline = {}) {
@@ -464,10 +617,35 @@ export function buildCharacterSemanticGates({
     };
   }
   if (challenge === 'safe_translation') {
-    gates.delivery_or_explicit_withhold = {
-      name: 'delivery_or_explicit_withhold',
-      pass: storytellerCount > 0 || capture.layer_b.first?.verdict === 'withhold',
-      detail: capture.layer_b.first?.verdict ?? null,
+    if (truth.required_domain_seeding) {
+      gates.observable_context_materialized = {
+        name: 'observable_context_materialized',
+        pass: capture.observable_context_seed?.committed === true,
+        detail: capture.observable_context_seed ?? null,
+      };
+    }
+    const safeTranslation = evaluateSafeTranslationAchieved({
+      truth,
+      capture,
+      storytellerCount,
+      admittedTexts,
+      targetCharacter,
+    });
+    capture.safe_translation_result = safeTranslation;
+    gates.delivery_observed = {
+      name: 'delivery_observed',
+      pass: safeTranslation.delivery_observed === true,
+      detail: safeTranslation.detail,
+    };
+    gates.safe_translation_achieved = {
+      name: 'safe_translation_achieved',
+      pass: safeTranslation.pass === true,
+      detail: safeTranslation.detail,
+    };
+    gates.epistemic_isolation = {
+      name: 'epistemic_isolation',
+      pass: safeTranslation.final_delivery_safe !== false,
+      detail: safeTranslation.final_delivery_safe ? 'no_forbidden_leaks' : 'forbidden_leak',
     };
   }
   if (challenge === 'regeneration_chain') {

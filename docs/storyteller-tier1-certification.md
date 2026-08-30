@@ -30,7 +30,7 @@ PlotGoal usefulness, Director strategic value, Character advisory naturalness, r
 
 | ID | Proof |
 |----|-------|
-| T1-01 | New-scope initialization + overlay READY + Chronicle |
+| T1-01 | New-scope initialization + overlay READY + Chronicle (minimal source: correctness without invented pressures) |
 | T1-02 | Post-commit update / no replan |
 | T1-03 | Semantic replan distinct from ordinary update |
 | T1-04 | Fresh Director overlay projection vs stale withhold |
@@ -125,6 +125,15 @@ node scripts/run-contract-smoke.mjs
 4 scenarios (init, update, safe Layer-B, unsafe Layer-B), max **12** live calls.
 
 Tests: `tests/contract-conformance.test.mjs`
+
+### Initialization correctness vs semantic richness (#65)
+
+- **Minimal source** (`source_richness: minimal`): certify initialization lifecycle, overlay persistence, scope binding, and Chronicle without requiring pressures/goals.
+- **Sufficient source** (`source_richness: sufficient`): additionally evaluate `initialization_semantic_richness` when fixture supplies `expected_pressure_material` / `expected_goal_material`.
+
+### Safe translation (T1-06 safe variant)
+
+C6 requires useful safe Character-facing delivery when independently supportable committed context exists. Fail-closed withholding remains epistemically safe but does **not** certify safe translation. Harness seeds observable committed facts through production Domain rounds before Layer-B evaluation.
 
 ## Phase C handoff
 

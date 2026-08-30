@@ -78,6 +78,11 @@ export function buildPlotCognitionUpdateCorrectionPrompt({ priorRaw, structuralE
 export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
   const snapshot = prepareResponse?.source_snapshot ?? {};
   const body = snapshot.canonical_body ?? {};
+  const excerpts = snapshot.semantic_authority_excerpts ?? {};
+  const payload = {
+    authority_projection: body,
+    semantic_authority_excerpts: excerpts,
+  };
   const contributions = [
     {
       contribution_id: `${prepareResponse.manifest_id}-authority`,
@@ -85,7 +90,7 @@ export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
       authority_class: 'derived',
       knowledge_ids: ['plot_cognition:authority_projection'],
       priority: 10,
-      content: JSON.stringify(body).slice(0, 12000),
+      content: JSON.stringify(payload).slice(0, 12000),
       provenance: {
         snapshot_id: snapshot.snapshot_id ?? null,
         authority_source_fingerprint: prepareResponse.authority_source_fingerprint ?? null,

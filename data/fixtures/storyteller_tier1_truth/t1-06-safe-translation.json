@@ -3,6 +3,7 @@
   "scenario_id": "T1-06",
   "challenge": "safe_translation",
   "variant": "safe",
+  "required_domain_seeding": "observable_anxiety",
   "target_character": "Alice",
   "characters": ["Alice", "Bob"],
   "committed_facts": ["Bob appears anxious about vault security.", "Alice has noticed Bob's tension."],

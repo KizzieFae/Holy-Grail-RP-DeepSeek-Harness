@@ -97,6 +97,11 @@ from domain_api.plot_cognition_update_sources import (  # noqa: E402
     compute_authority_source_fingerprint,
     gather_update_source_snapshot,
 )
+from domain_api.plot_cognition_semantic_authority import (  # noqa: E402
+    DEFAULT_MAX_EVENT_SUMMARY_CHARS,
+    build_semantic_authority_excerpts,
+    extract_bounded_move_excerpt,
+)
 from domain_api.session_history import append_history_entry  # noqa: E402
 from domain_api.session_state import (  # noqa: E402
     CharacterTurnRecord,
@@ -489,6 +494,86 @@ class PlotCognitionAuthorityProjectionTests(unittest.TestCase):
         body_copy["_audit_correlation_id"] = "should-not-be-in-canonical"
         second = compute_authority_source_fingerprint(body)
         self.assertEqual(first, second)
+
+
+class PlotCognitionSemanticAuthorityTests(unittest.TestCase):
+    def test_public_event_summary_in_semantic_excerpts(self) -> None:
+        fixture = _session()
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-treaty",
+                timestamp=datetime.now(timezone.utc),
+                event_type="dialogue",
+                participants=["Alice"],
+                summary="The treaty is finished. Everyone here saw what happened.",
+                turn_index=1,
+            )
+        )
+        excerpts = build_semantic_authority_excerpts(fixture, through_domain_commit_id=None)
+        self.assertEqual(len(excerpts["public_events"]), 1)
+        self.assertIn("treaty", excerpts["public_events"][0]["summary"].lower())
+        body = build_plot_cognition_authority_projection(fixture, [], None)
+        self.assertIn("summary_digest", body["continuity"]["public_events"][0])
+        self.assertNotIn("summary", body["continuity"]["public_events"][0])
+
+    def test_semantic_excerpts_bounded(self) -> None:
+        fixture = _session()
+        long_summary = "x" * (DEFAULT_MAX_EVENT_SUMMARY_CHARS + 50)
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-long",
+                timestamp=datetime.now(timezone.utc),
+                event_type="dialogue",
+                participants=["Alice"],
+                summary=long_summary,
+                turn_index=1,
+            )
+        )
+        excerpts = build_semantic_authority_excerpts(fixture, through_domain_commit_id=None)
+        self.assertLessEqual(len(excerpts["public_events"][0]["summary"]), DEFAULT_MAX_EVENT_SUMMARY_CHARS)
+
+    def test_snapshot_includes_semantic_excerpts_without_changing_fingerprint(self) -> None:
+        fixture = _session()
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-1",
+                timestamp=datetime.now(timezone.utc),
+                event_type="dialogue",
+                participants=["Alice"],
+                summary="A committed public event occurred.",
+                turn_index=1,
+            )
+        )
+        store = empty_store(fixture.plot_cognition_scope_id)
+        store.store_revision = 1
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        self.assertIn("semantic_authority_excerpts", snapshot.to_dict())
+        self.assertTrue(snapshot.semantic_authority_excerpts["public_events"])
+        fingerprint_from_body = compute_authority_source_fingerprint(snapshot.canonical_body)
+        self.assertEqual(snapshot.authority_source_fingerprint, fingerprint_from_body)
+
+    def test_issue_description_in_semantic_excerpts(self) -> None:
+        fixture = _session()
+        issue = IssueState(
+            issue_id="issue-1",
+            description="The vault door remains sealed.",
+            participants=["Alice"],
+            status=IssueStatus.ACTIVE,
+            pressure_kind="obstacle",
+            created_at=datetime.now(timezone.utc),
+        )
+        fixture.manager.issues["issue-1"] = issue
+        fixture.manager.scene_state.active_issue_ids = ["issue-1"]
+        excerpts = build_semantic_authority_excerpts(fixture, through_domain_commit_id=None)
+        self.assertEqual(excerpts["issues"][0]["description"], "The vault door remains sealed.")
+
+    def test_committed_move_excerpt_when_no_public_event(self) -> None:
+        move = {
+            "move_schema_version": 2,
+            "beats": [{"type": "dialogue", "dialogue": "The treaty is finished."}],
+        }
+        excerpt = extract_bounded_move_excerpt(move)
+        self.assertIn("treaty", excerpt.lower())
 
 
 class PlotCognitionUpdateServiceTests(unittest.TestCase):

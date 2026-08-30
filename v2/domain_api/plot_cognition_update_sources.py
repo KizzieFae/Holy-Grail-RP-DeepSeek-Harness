@@ -21,6 +21,7 @@ from continuity_scene_pressure_projection import (  # noqa: E402
 )
 from scene_grounding import rebuild_scene_grounding_from_continuity  # noqa: E402
 
+from .plot_cognition_semantic_authority import build_semantic_authority_excerpts
 from .plot_cognition_overlay_store import (
     AssimilatedAuthority,
     AssimilatedSessionAuthority,
@@ -402,6 +403,10 @@ def gather_update_source_snapshot(
         through_commit,
     )
     fingerprint = compute_authority_source_fingerprint(canonical_body)
+    semantic_authority_excerpts = build_semantic_authority_excerpts(
+        fixture,
+        through_domain_commit_id=through_commit,
+    )
     contributor_bodies: list[dict[str, Any]] = []
     for scene_id in contributors:
         if scene_id != fixture.hg_scene_id:
@@ -442,6 +447,7 @@ def gather_update_source_snapshot(
         evidence_gap=evidence_gap,
         evidence_gap_detail=evidence_gap_detail,
         canonical_body=canonical_body,
+        semantic_authority_excerpts=semantic_authority_excerpts,
     )
 
 

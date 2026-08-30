@@ -44,9 +44,11 @@ Never conflate objective authority unchanged with semantic no-change.
 - Committed move lineage through applicable `through_domain_commit_id`
 - Host-accepted #49 B2 `environmental_descriptor` derived story knowledge only
 
-Excluded: presentation-only history, skip/audit metadata, rejected B2, K2 occurrence duplicates of already-represented public events.
+Digest fields (`summary_digest`, `move_digest`, etc.) establish deterministic identity for `authority_source_fingerprint`.
 
-Fingerprint: stable JSON serialization → SHA-256 (same pattern as #60).
+**Runtime semantic inference** additionally receives `semantic_authority_excerpts` on the update source snapshot: bounded verbatim text from existing authoritative Continuity/Domain state (`PublicEvent.summary`, issue descriptions, scene-grounding statements, committed-move excerpts when no public-event summary exists). This parallel transport is **not** included in the fingerprint; it supplies readable context for Storyteller update/replan reasoning without digest interpretation or Chronicle runtime reads.
+
+Excluded from authority projection: presentation-only history, skip/audit metadata, rejected B2, K2 occurrence duplicates of already-represented public events.
 
 ---
 

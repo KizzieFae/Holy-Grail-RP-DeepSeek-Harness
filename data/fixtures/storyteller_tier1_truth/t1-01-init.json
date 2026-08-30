@@ -2,6 +2,7 @@
   "fixture_id": "t1-01-init",
   "scenario_id": "T1-01",
   "challenge": "initialization",
+  "source_richness": "minimal",
   "characters": ["Alice", "Bob"],
   "committed_facts": [],
   "private_facts": [],

@@ -4,20 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
+from .plot_cognition_semantic_authority import (
+    DEFAULT_MAX_EVENT_SUMMARY_CHARS,
+    DEFAULT_MAX_ISSUE_FIELD_CHARS,
+    bounded_text,
+    build_semantic_authority_excerpts,
+)
 from .plot_cognition_update_sources import build_plot_cognition_authority_projection
 from .session_state import LiveSession
 from .story_knowledge_contract import StoryKnowledgeRecord
 
-DEFAULT_MAX_EVENT_SUMMARY_CHARS = 500
-DEFAULT_MAX_ISSUE_FIELD_CHARS = 400
 DEFAULT_MAX_CANDIDATE_CHARS = 4000
-
-
-def _bounded_text(value: str | None, *, max_chars: int) -> str:
-    text = str(value or "").strip()
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 3] + "..."
 
 
 def capture_authority_projection_verbatim(
@@ -34,58 +31,18 @@ def capture_authority_projection_verbatim(
         story_records,
         through_domain_commit_id,
     )
-    public_events: list[dict[str, Any]] = []
-    mgr = fixture.manager
-    through_turn = None
-    if through_domain_commit_id:
-        from .plot_cognition_update_sources import _through_continuity_turn_index
-
-        through_turn = _through_continuity_turn_index(fixture, through_domain_commit_id)
-    for event in getattr(mgr, "public_events", []) or []:
-        turn_index = getattr(event, "turn_index", None)
-        if through_turn is not None and turn_index is not None and int(turn_index) > through_turn:
-            continue
-        public_events.append(
-            {
-                "event_id": str(getattr(event, "event_id", "") or ""),
-                "turn_index": turn_index,
-                "event_type": str(getattr(event, "event_type", "") or ""),
-                "summary": _bounded_text(
-                    str(getattr(event, "summary", "") or getattr(event, "description", "") or ""),
-                    max_chars=max_event_summary_chars,
-                ),
-            }
-        )
-    issues: list[dict[str, Any]] = []
-    issue_map = getattr(mgr, "issues", {}) or {}
-    active_ids = list(getattr(mgr.scene_state, "active_issue_ids", None) or [])
-    for issue_id in sorted(active_ids):
-        issue = issue_map.get(issue_id)
-        if issue is None:
-            continue
-        issues.append(
-            {
-                "issue_id": str(issue.issue_id),
-                "status": str(getattr(issue.status, "value", issue.status)),
-                "description": _bounded_text(
-                    str(getattr(issue, "description", "") or ""),
-                    max_chars=max_issue_field_chars,
-                ),
-                "blocked_what": _bounded_text(
-                    str(getattr(issue, "blocked_what", "") or ""),
-                    max_chars=max_issue_field_chars,
-                ),
-                "required_next_step": _bounded_text(
-                    str(getattr(issue, "required_next_step", "") or ""),
-                    max_chars=max_issue_field_chars,
-                ),
-            }
-        )
+    excerpts = build_semantic_authority_excerpts(
+        fixture,
+        through_domain_commit_id=through_domain_commit_id,
+        max_event_summary_chars=max_event_summary_chars,
+        max_issue_field_chars=max_issue_field_chars,
+    )
     return {
         "canonical_projection": canonical,
-        "public_events_verbatim": public_events,
-        "issues_verbatim": issues,
-        "truncation_policy": {
+        "public_events_verbatim": excerpts.get("public_events") or [],
+        "issues_verbatim": excerpts.get("issues") or [],
+        "semantic_authority_excerpts": excerpts,
+        "truncation_policy": excerpts.get("truncation_policy") or {
             "max_event_summary_chars": max_event_summary_chars,
             "max_issue_field_chars": max_issue_field_chars,
         },
@@ -109,7 +66,7 @@ def bounded_overlay_snapshot(store_dict: dict[str, Any] | None) -> dict[str, Any
             goals.append(
                 {
                     "goal_id": goal.get("goal_id"),
-                    "intended_direction": _bounded_text(
+                    "intended_direction": bounded_text(
                         str(goal.get("intended_direction", "")),
                         max_chars=DEFAULT_MAX_CANDIDATE_CHARS,
                     ),
@@ -122,7 +79,7 @@ def bounded_overlay_snapshot(store_dict: dict[str, Any] | None) -> dict[str, Any
             pressures.append(
                 {
                     "pressure_id": pressure.get("pressure_id"),
-                    "observation": _bounded_text(
+                    "observation": bounded_text(
                         str(pressure.get("observation", "")),
                         max_chars=DEFAULT_MAX_CANDIDATE_CHARS,
                     ),
@@ -134,7 +91,7 @@ def bounded_overlay_snapshot(store_dict: dict[str, Any] | None) -> dict[str, Any
     if isinstance(frame, dict):
         frame_snapshot = {
             "frame_id": frame.get("frame_id"),
-            "ensemble_context": _bounded_text(
+            "ensemble_context": bounded_text(
                 str(frame.get("ensemble_context", "")),
                 max_chars=DEFAULT_MAX_CANDIDATE_CHARS,
             ),

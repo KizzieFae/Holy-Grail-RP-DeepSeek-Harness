@@ -37,8 +37,10 @@ import { buildCampaignReport } from './campaign-report.mjs';
 import { runCharacterProjectionLifecycleCaptured } from './character-projection-capture.mjs';
 import {
   assertInvalidationInPrepareContext,
+  assertSemanticAuthorityInPrepare,
   buildCharacterCertificationSubject,
   buildCharacterSemanticGates,
+  buildInitializationObjectiveGates,
   buildPlotInitCertificationSubject,
   buildPlotUpdateCertificationSubject,
   createCharacterProjectionCapture,
@@ -60,6 +62,18 @@ export const TREATY_BREACH_CHARACTER_MOVE = {
     goal: 'acknowledge breach',
     tactic: 'public statement',
     emotional_driver: 'resolved',
+    risk_level: 'low',
+  },
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+export const BOB_ANXIETY_CHARACTER_MOVE = {
+  move_schema_version: 2,
+  beats: [{ type: 'dialogue', dialogue: "I can't stop thinking about the vault. Something feels wrong, and I'm on edge." }],
+  motivation: {
+    goal: 'express anxiety',
+    tactic: 'visible tension',
+    emotional_driver: 'anxious',
     risk_level: 'low',
   },
   semantic_evaluation: { decision: 'no_covered_change' },
@@ -293,16 +307,22 @@ export async function runC1_T1_01_live(campaignLimits, campaignDataDir) {
     capture.chronicle_keys = forensics.chronicleKeys;
     capture.evidence_ids = forensics.evidenceIds;
 
-    const gates = {
-      plan_initialization: gate('plan_initialization', plan.operation === 'initialization'),
-      lifecycle_ok: gate('lifecycle_ok', lifecycle.ok === true),
-      overlay_ready: gate('overlay_ready', overlay && Object.keys(overlay.pressures ?? {}).length > 0),
-      chronicle_present: gate('chronicle_present', forensics.chronicleKeys.some((k) => k.includes(':init:'))),
-      init_raw_captured: gate('init_raw_captured', Boolean(initRaw?.raw)),
-    };
+    const gates = buildInitializationObjectiveGates({
+      truth,
+      plan,
+      lifecycle,
+      overlay,
+      overlayRevisionBefore: capture.overlay_revision_before,
+      scopeId,
+      forensics,
+      initRaw,
+    });
+    const objectiveGates = Object.fromEntries(
+      Object.values(gates).map((entry) => [entry.name, gate(entry.name, entry.pass, entry.detail)]),
+    );
     const base = finalizeScenarioResult(createScenarioResult('T1-01', {
       fixtureId: truth.fixture_id,
-      objectiveGates: gates,
+      objectiveGates,
       operationSequence: ['plan_initialization', 'live_init_inference', 'init_finalize'],
       evidenceIds: forensics.evidenceIds,
       chronicleKeys: forensics.chronicleKeys,
@@ -475,7 +495,7 @@ export async function runC3_T1_03_live(campaignLimits, campaignDataDir) {
       skipStorytellerCognition: true,
       skipPlotCognitionOrchestration: true,
       mockDirectorResponses: [directorFor('Alice')],
-      mockCharacterTurnResponses: [[JSON.stringify(VALID_CHARACTER_MOVE)]],
+      mockCharacterTurnResponses: [[JSON.stringify(TREATY_BREACH_CHARACTER_MOVE)]],
       mockNarratorTurnResponses: [[TREATY_BREACH_NARRATOR_PROSE]],
     });
     if (breachRound.committed !== true) {
@@ -491,11 +511,16 @@ export async function runC3_T1_03_live(campaignLimits, campaignDataDir) {
       manifest_id: `manifest-post-breach-${crypto.randomUUID()}`,
     });
     const invalidationProof = assertInvalidationInPrepareContext(prepareAfterBreach, baseline);
+    const semanticProof = assertSemanticAuthorityInPrepare(prepareAfterBreach);
     capture.invalidation_proof = invalidationProof;
+    capture.semantic_authority_proof = semanticProof;
     if (!invalidationProof.ok) {
       throw new Error('c3_invalidation_not_in_authority');
     }
-    capture.manifest_material = invalidationProof.manifest_material;
+    if (!semanticProof.ok) {
+      throw new Error('c3_semantic_authority_missing_from_prepare');
+    }
+    capture.manifest_material = semanticProof.manifest_material;
 
     const updateResult = await runPlotCognitionUpdateGeneration({
       domainApi: ctx.api,
@@ -532,6 +557,7 @@ export async function runC3_T1_03_live(campaignLimits, campaignDataDir) {
     const replanKeys = forensics.chronicleKeys.filter((k) => k.includes(':replan:'));
     const gates = {
       invalidation_in_authority: gate('invalidation_in_authority', invalidationProof.ok === true),
+      semantic_authority_present: gate('semantic_authority_present', semanticProof.ok === true),
       update_ok: gate('update_ok', updateResult.ok === true),
       replan_recorded: gate(
         'replan_recorded',
@@ -591,6 +617,7 @@ async function runCharacterLiveCase({
   campaignDataDir,
   requireChronicle = false,
   requireUnsafeProof = false,
+  beforeProjection = null,
 }) {
   campaignLimits.assertCanRun();
   campaignLimits.recordRun();
@@ -609,6 +636,9 @@ async function runCharacterLiveCase({
       characterId: targetCharacter,
       direction,
     });
+    if (beforeProjection) {
+      await beforeProjection(ctx, ctxSession, capture);
+    }
     const instrumentedApi = instrumentProjectionApi(attachCharacterCognitionApiStubs(ctx.api));
     const { projection, capture: filledCapture } = await runCharacterProjectionLifecycleCaptured({
       api: instrumentedApi,
@@ -769,6 +799,28 @@ export function runC6_T1_06_safe_live(campaignLimits, campaignDataDir) {
     campaignLimits,
     campaignDataDir,
     requireChronicle: true,
+    beforeProjection: async (ctx, ctxSession, capture) => {
+      const seedRound = await ctx.orchestrator.runRound({
+        domainApi: ctx.api,
+        session: { mode: 'open', hg_session_id: ctxSession.session.hg_session_id },
+        skipStorytellerCognition: true,
+        skipPlotCognitionOrchestration: true,
+        mockDirectorResponses: [directorFor('Bob')],
+        mockCharacterTurnResponses: [[JSON.stringify(BOB_ANXIETY_CHARACTER_MOVE)]],
+        mockNarratorTurnResponses: [[NARRATOR_PROSE]],
+      });
+      capture.observable_context_seed = {
+        committed: seedRound.committed === true,
+        character_id: 'Bob',
+        hg_round_id: seedRound.hg_round_id ?? null,
+      };
+      if (seedRound.committed !== true) {
+        throw new Error('c6_observable_context_seed_failed');
+      }
+      const nextRound = await ctx.api.startRound({ hg_scene_id: ctxSession.hgSceneId });
+      ctxSession.hgRoundId = nextRound.hg_round_id;
+      ctxSession.turnIndex = Number(nextRound.turn_index ?? ctxSession.turnIndex + 1);
+    },
   });
 }
 
@@ -803,6 +855,64 @@ export const TRANCHE2_CASES = [
  * Total = 27
  */
 export const TRANCHE3_INFERENCE_CEILING = 27;
+
+/**
+ * Targeted unresolved-case revalidation (#65 remediation).
+ * C1 skipped when gate-only; C3 + C6 live.
+ */
+export const TARGETED_REVALIDATION_CASES = [
+  { id: 'C3', run: runC3_T1_03_live },
+  { id: 'C6', run: runC6_T1_06_safe_live },
+];
+
+/** C3: update + correction + cert (3); C6: eval + correction + regen + eval + cert (6) */
+export const TARGETED_REVALIDATION_CEILING = 9;
+
+export async function runTargetedRevalidationCampaign(options = {}) {
+  const limits = options.limits ?? new CampaignLimits({
+    maxRuns: TARGETED_REVALIDATION_CASES.length,
+    maxInferences: TARGETED_REVALIDATION_CEILING,
+  });
+  const trancheNumber = options.tranche ?? 4;
+  const campaignDataDir = options.campaignDataDir
+    ?? path.join(campaignDataRoot(trancheNumber), `run-${crypto.randomUUID()}`);
+  const results = [];
+  const hardBlockers = [];
+  for (const entry of TARGETED_REVALIDATION_CASES) {
+    if (limits.stopped) break;
+    try {
+      const { result, blockerAnalysis, durableCheck } = await entry.run(limits, campaignDataDir);
+      results.push({
+        case_id: entry.id,
+        result,
+        blockerAnalysis,
+        durable_check: durableCheck,
+      });
+      if (blockerAnalysis.has_blocker) {
+        hardBlockers.push(...blockerAnalysis.blockers.map((b) => ({ case_id: entry.id, ...b })));
+        limits.stop(`hard_blocker:${entry.id}`);
+        break;
+      }
+    } catch (error) {
+      results.push({ case_id: entry.id, error: String(error?.message ?? error) });
+      if (String(error?.message ?? error).includes('campaign_')) {
+        limits.stop(String(error.message));
+        break;
+      }
+      throw error;
+    }
+  }
+  return {
+    ...buildCampaignReport({
+      results,
+      limits,
+      hardBlockers,
+      tranche: trancheNumber,
+      schema: options.reportSchema ?? 'hg_storyteller_targeted_revalidation_report_v1',
+    }),
+    campaign_data_dir: campaignDataDir,
+  };
+}
 
 export async function runTranche3Campaign(options = {}) {
   return runTranche2Campaign({

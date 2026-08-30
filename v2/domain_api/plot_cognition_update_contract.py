@@ -115,6 +115,7 @@ class CognitionUpdateSourceSnapshot:
     evidence_gap: bool
     evidence_gap_detail: str | None
     canonical_body: dict[str, Any]
+    semantic_authority_excerpts: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -134,6 +135,7 @@ class CognitionUpdateSourceSnapshot:
             "evidence_gap": self.evidence_gap,
             "evidence_gap_detail": self.evidence_gap_detail,
             "canonical_body": self.canonical_body,
+            "semantic_authority_excerpts": self.semantic_authority_excerpts,
         }
 
     @classmethod
@@ -163,6 +165,7 @@ class CognitionUpdateSourceSnapshot:
             evidence_gap=bool(data.get("evidence_gap")),
             evidence_gap_detail=data.get("evidence_gap_detail"),
             canonical_body=dict(data.get("canonical_body") or {}),
+            semantic_authority_excerpts=dict(data.get("semantic_authority_excerpts") or {}),
         )
 
     def contributor_authority_targets(self) -> tuple[ContributorAuthoritySnapshot, ...]:
