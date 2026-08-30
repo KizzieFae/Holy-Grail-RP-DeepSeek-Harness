@@ -1,0 +1,19 @@
+{
+  "fixture_id": "t2-d1-director-projection",
+  "scenario_id": "T2-D1",
+  "characterization_class": "director_projection",
+  "replan_expectation": "defensible_no_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Escalate tension around the vault while keeping Alice and Bob in productive conflict.",
+  "overlay_pressures": ["Maintain productive conflict without resolving the vault mystery too early."],
+  "committed_facts": [
+    "Alice and Bob remain present in the workshop.",
+    "Overlay holds an active strategic direction for the Director."
+  ],
+  "character_knowledge": {
+    "Alice": ["Workshop scene continues."],
+    "Bob": ["Workshop scene continues."]
+  },
+  "semantic_focus": ["director_usefulness", "strategic_coherence"],
+  "notes": "Director overlay projection should be strategically useful without dominating scene authority."
+}

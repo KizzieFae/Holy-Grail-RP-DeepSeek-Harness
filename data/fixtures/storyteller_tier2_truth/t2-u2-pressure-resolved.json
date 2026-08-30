@@ -1,0 +1,20 @@
+{
+  "fixture_id": "t2-u2-pressure-resolved",
+  "scenario_id": "T2-U2",
+  "characterization_class": "update_quality",
+  "replan_expectation": "defensible_no_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Find the key quietly while avoiding the patrolling guards.",
+  "overlay_pressures": ["Avoid the patrolling guards while searching."],
+  "committed_facts": [
+    "The guards left the corridor for the night.",
+    "The immediate patrol pressure has eased."
+  ],
+  "character_knowledge": {
+    "Alice": ["Guards departed."],
+    "Bob": ["Guards departed."]
+  },
+  "replan_classification": "incremental_update",
+  "semantic_focus": ["resolved_pressure", "update_without_replan"],
+  "notes": "Resolved pressure should assimilate without replan."
+}

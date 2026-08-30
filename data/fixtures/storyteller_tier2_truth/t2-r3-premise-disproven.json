@@ -1,0 +1,19 @@
+{
+  "fixture_id": "t2-r3-premise-disproven",
+  "scenario_id": "T2-R3",
+  "characterization_class": "replan_sensitivity",
+  "replan_expectation": "likely_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Search the north wall panel for the hidden key compartment.",
+  "committed_facts": [
+    "Alice opened the north wall panel and found it empty.",
+    "The hidden key is not behind the north wall panel."
+  ],
+  "character_knowledge": {
+    "Alice": ["North panel search failed.", "Prior location premise is false."],
+    "Bob": ["Alice reported empty panel."]
+  },
+  "replan_classification": "clear_replan",
+  "semantic_focus": ["replan_detection", "premise_disproven"],
+  "notes": "Authoritative evidence disproves the strategic premise underlying current cognition."
+}

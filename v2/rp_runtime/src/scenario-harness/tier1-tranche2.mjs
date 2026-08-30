@@ -1106,3 +1106,10 @@ export function manifestMaterialFromPrepare(prepareResponse) {
   const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
   return manifest.contributions?.[0]?.content ?? null;
 }
+
+export {
+  withLiveHarness,
+  evaluateAndFinalize,
+  createFreshOverlaySession,
+  durableEvidenceRef,
+};

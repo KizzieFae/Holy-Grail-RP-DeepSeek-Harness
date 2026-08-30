@@ -1,0 +1,19 @@
+{
+  "fixture_id": "t2-r2-target-sealed",
+  "scenario_id": "T2-R2",
+  "characterization_class": "replan_sensitivity",
+  "replan_expectation": "likely_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Reach the vault and secure the hidden key before rivals arrive.",
+  "committed_facts": [
+    "Authorities permanently sealed the vault entrance with reinforced bars.",
+    "Direct vault access is no longer possible."
+  ],
+  "character_knowledge": {
+    "Alice": ["Vault is sealed.", "Prior vault-entry plan is blocked."],
+    "Bob": ["Vault is sealed."]
+  },
+  "replan_classification": "clear_replan",
+  "semantic_focus": ["replan_detection", "target_unavailable"],
+  "notes": "Target becomes permanently inaccessible; pursuit goal should be replanned."
+}

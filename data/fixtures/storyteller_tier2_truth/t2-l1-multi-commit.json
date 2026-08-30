@@ -1,0 +1,19 @@
+{
+  "fixture_id": "t2-l1-multi-commit",
+  "scenario_id": "T2-L1",
+  "characterization_class": "freshness_lifecycle",
+  "replan_expectation": "defensible_no_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Find the key quietly without alerting others.",
+  "overlay_pressures": ["Locate the key without alerting others."],
+  "committed_facts": [
+    "Bob committed an observable action in round one.",
+    "Alice committed a follow-up action in round two."
+  ],
+  "character_knowledge": {
+    "Alice": ["Bob acted first.", "Alice responded."],
+    "Bob": ["Both characters have acted."]
+  },
+  "semantic_focus": ["pending_lifecycle", "overlay_freshness"],
+  "notes": "Two consecutive commits should leave pending work until normal lifecycle runs."
+}

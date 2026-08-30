@@ -1,0 +1,19 @@
+{
+  "fixture_id": "t2-r1-treaty-breach",
+  "scenario_id": "T2-R1",
+  "characterization_class": "replan_sensitivity",
+  "replan_expectation": "likely_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Restore diplomatic reconciliation with Bob and rebuild the broken accord.",
+  "committed_facts": [
+    "Bob publicly renounced the reconciliation treaty before witnesses.",
+    "Reconciliation through the prior accord is no longer viable."
+  ],
+  "character_knowledge": {
+    "Alice": ["Treaty breach is public.", "Prior reconciliation strategy is invalidated."],
+    "Bob": ["Treaty breach is public."]
+  },
+  "replan_classification": "clear_replan",
+  "semantic_focus": ["replan_detection", "strategy_invalidation"],
+  "notes": "Explicit treaty destruction should invalidate reconciliation-focused cognition."
+}

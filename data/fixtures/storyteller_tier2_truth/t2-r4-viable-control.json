@@ -1,0 +1,20 @@
+{
+  "fixture_id": "t2-r4-viable-control",
+  "scenario_id": "T2-R4",
+  "characterization_class": "replan_sensitivity",
+  "replan_expectation": "defensible_no_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Find the key quietly without alerting others.",
+  "overlay_pressures": ["Locate the key without alerting others."],
+  "committed_facts": [
+    "A distant door slammed, briefly startling Alice.",
+    "No new obstacles block the search; the key remains findable."
+  ],
+  "character_knowledge": {
+    "Alice": ["Search can continue quietly."],
+    "Bob": ["Alice is still searching."]
+  },
+  "replan_classification": "clear_no_replan",
+  "semantic_focus": ["unnecessary_replan", "update_without_replan"],
+  "notes": "Significant but non-invalidating event; current strategy should remain viable."
+}

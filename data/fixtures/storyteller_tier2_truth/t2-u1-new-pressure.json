@@ -1,0 +1,20 @@
+{
+  "fixture_id": "t2-u1-new-pressure",
+  "scenario_id": "T2-U1",
+  "characterization_class": "update_quality",
+  "replan_expectation": "defensible_no_replan",
+  "characters": ["Alice", "Bob"],
+  "overlay_direction": "Find the key quietly without alerting others.",
+  "overlay_pressures": ["Locate the key without alerting others."],
+  "committed_facts": [
+    "Guards now patrol the corridor near the workshop.",
+    "The search must stay even quieter than before."
+  ],
+  "character_knowledge": {
+    "Alice": ["Guards patrol nearby."],
+    "Bob": ["Guards patrol nearby."]
+  },
+  "replan_classification": "incremental_update",
+  "semantic_focus": ["new_pressure", "update_without_replan"],
+  "notes": "New pressure should update cognition without full replan."
+}
