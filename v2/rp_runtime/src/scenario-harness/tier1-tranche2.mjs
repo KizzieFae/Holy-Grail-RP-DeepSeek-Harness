@@ -57,7 +57,10 @@ export const TREATY_BREACH_NARRATOR_PROSE = 'Before the gathered witnesses, Bob 
 
 export const TREATY_BREACH_CHARACTER_MOVE = {
   move_schema_version: 2,
-  beats: [{ type: 'dialogue', dialogue: 'The treaty is finished. Everyone here saw what happened.' }],
+  beats: [{
+    type: 'action',
+    action: 'publicly renounces the reconciliation treaty before the gathered witnesses',
+  }],
   motivation: {
     goal: 'acknowledge breach',
     tactic: 'public statement',
@@ -69,7 +72,10 @@ export const TREATY_BREACH_CHARACTER_MOVE = {
 
 export const BOB_ANXIETY_CHARACTER_MOVE = {
   move_schema_version: 2,
-  beats: [{ type: 'dialogue', dialogue: "I can't stop thinking about the vault. Something feels wrong, and I'm on edge." }],
+  beats: [{
+    type: 'action',
+    action: 'fidgets nervously and admits he cannot stop thinking about the vault',
+  }],
   motivation: {
     goal: 'express anxiety',
     tactic: 'visible tension',
