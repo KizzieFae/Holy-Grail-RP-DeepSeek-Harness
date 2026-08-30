@@ -81,6 +81,19 @@ test('update prompt contains exact schema contract and enums', () => {
   assert.ok(prompt.includes(PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA));
   assert.ok(prompt.includes('accept, revise, reject, no_change'));
   assert.ok(prompt.includes('scope-authoritative-1'));
+  assert.ok(prompt.includes('prior_operative_cognition'));
+  assert.ok(prompt.includes('no_change'));
+  assert.ok(prompt.includes('replan_required'));
+  assert.ok(prompt.includes('invalidation replan'));
+  assert.ok(prompt.includes('not keyword lists'));
+});
+
+test('update prompt does not prescribe deterministic trigger mechanisms', () => {
+  const prompt = buildPlotCognitionUpdatePrompt(UPDATE_PREPARE);
+  assert.ok(!/\bregex\b/i.test(prompt));
+  assert.ok(!/\bkeyword trigger\b/i.test(prompt));
+  assert.ok(!prompt.includes('treaty'));
+  assert.ok(!prompt.includes('T2-R'));
 });
 
 test('Layer-B prompt contains exact verdict contract', () => {

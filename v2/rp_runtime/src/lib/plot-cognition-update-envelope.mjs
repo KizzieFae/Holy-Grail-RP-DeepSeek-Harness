@@ -7,6 +7,7 @@ export const UPDATE_PROPOSAL_SCHEMA = 'hg_plot_cognition_update_proposal_v1';
 export const UPDATE_EVALUATION_SCHEMA = 'hg_plot_cognition_update_eval_v1';
 export const REPLAN_PROPOSAL_SCHEMA = 'hg_plot_cognition_replan_proposal_v1';
 export const REPLAN_EVALUATION_SCHEMA = 'hg_plot_cognition_replan_eval_v1';
+export const PRIOR_OPERATIVE_COGNITION_SCHEMA = 'hg_plot_cognition_prior_operative_cognition_v1';
 
 export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
   const snapshot = prepareResponse?.source_snapshot ?? {};
@@ -19,6 +20,22 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
 
   return [
     'You are the Plot Cognition update/replan semantic producer.',
+    'Compare new authoritative semantic evidence (authority_projection and semantic_authority_excerpts)',
+    'against prior_operative_cognition supplied in the manifest.',
+    'prior_operative_cognition is advisory comparison context only — not authoritative evidence.',
+    'Authoritative Continuity-derived excerpts override prior Storyteller cognition when they conflict.',
+    '',
+    'Semantic decision criteria (#61):',
+    '- no_change: authoritative change does not materially require cognition alteration;',
+    '  set update_evaluation.overall_result to no_change with no_change_rationale and replan_required false.',
+    '- assimilable update: new authority changes relevant cognition but the operative strategic',
+    '  direction remains viable; set replan_required false and propose incremental goal/pressure/frame',
+    '  adjustments with overall_result accept.',
+    '- invalidation replan: new authoritative developments materially invalidate assumptions,',
+    '  trajectories, targets, or strategic direction such that prior cognition is no longer adequate;',
+    '  set replan_required true and include replan_proposal and replan_evaluation.',
+    'Base these judgments on semantic comparison — not keyword lists, event types, or pattern rules.',
+    '',
     `Return ONLY one JSON object (no markdown fences, no commentary) with top-level schema ${PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA}.`,
     'Required top-level fields: schema, update_proposal, update_evaluation.',
     `update_proposal.schema must be "${UPDATE_PROPOSAL_SCHEMA}".`,
@@ -33,24 +50,24 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
     'When replan_required is true, include replan_proposal and replan_evaluation with accepted replan.',
     'Do NOT omit the top-level schema field.',
     'Do NOT use alternate wrapper names or synonym fields.',
-    `Minimal no_change example (serialization only): ${JSON.stringify({
+    'Serialization shape reference only (not a decision default):',
+    `  ${JSON.stringify({
       schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
       update_proposal: {
         schema: UPDATE_PROPOSAL_SCHEMA,
-        proposal_id: 'hg-plot-update-proposal-example',
+        proposal_id: '<proposal_id>',
         source_snapshot_id: snapshotId,
         source_snapshot_fingerprint: fingerprint,
         plot_cognition_scope_id: scopeId,
         prior_store_revision: priorRevision,
-        assimilation_rationale: 'Assimilate authoritative post-commit delta.',
-        replan_required: false,
+        assimilation_rationale: '<comparison of authority vs prior cognition>',
+        replan_required: '<boolean per semantic comparison>',
       },
       update_evaluation: {
         schema: UPDATE_EVALUATION_SCHEMA,
-        evaluation_id: 'hg-plot-update-eval-example',
-        proposal_id: 'hg-plot-update-proposal-example',
-        overall_result: 'no_change',
-        no_change_rationale: 'No cognition adjustment warranted.',
+        evaluation_id: '<evaluation_id>',
+        proposal_id: '<proposal_id>',
+        overall_result: '<accept|revise|reject|no_change>',
       },
     })}`,
   ].join('\n');
@@ -79,9 +96,11 @@ export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
   const snapshot = prepareResponse?.source_snapshot ?? {};
   const body = snapshot.canonical_body ?? {};
   const excerpts = snapshot.semantic_authority_excerpts ?? {};
+  const priorOperativeCognition = snapshot.prior_operative_cognition ?? {};
   const payload = {
     authority_projection: body,
     semantic_authority_excerpts: excerpts,
+    prior_operative_cognition: priorOperativeCognition,
   };
   const contributions = [
     {
@@ -97,6 +116,20 @@ export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
       },
     },
   ];
+  if (priorOperativeCognition && Object.keys(priorOperativeCognition).length > 0) {
+    contributions.push({
+      contribution_id: `${prepareResponse.manifest_id}-prior-operative-cognition`,
+      source_kind: 'advisory_context',
+      authority_class: 'advisory',
+      knowledge_ids: ['plot_cognition:prior_operative_cognition'],
+      priority: 20,
+      content: JSON.stringify(priorOperativeCognition).slice(0, 8000),
+      provenance: {
+        snapshot_id: snapshot.snapshot_id ?? null,
+        store_revision: priorOperativeCognition.store_revision ?? snapshot.prior_store_revision ?? null,
+      },
+    });
+  }
   return { contributions };
 }
 

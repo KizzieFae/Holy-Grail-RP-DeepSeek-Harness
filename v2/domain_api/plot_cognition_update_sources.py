@@ -407,6 +407,9 @@ def gather_update_source_snapshot(
         fixture,
         through_domain_commit_id=through_commit,
     )
+    from .plot_cognition_forensics_capture import bounded_prior_operative_cognition
+
+    prior_operative_cognition = bounded_prior_operative_cognition(store)
     contributor_bodies: list[dict[str, Any]] = []
     for scene_id in contributors:
         if scene_id != fixture.hg_scene_id:
@@ -448,6 +451,7 @@ def gather_update_source_snapshot(
         evidence_gap_detail=evidence_gap_detail,
         canonical_body=canonical_body,
         semantic_authority_excerpts=semantic_authority_excerpts,
+        prior_operative_cognition=prior_operative_cognition,
     )
 
 

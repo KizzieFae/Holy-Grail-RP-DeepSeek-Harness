@@ -36,6 +36,7 @@ UPDATE_EVALUATION_SCHEMA = "hg_plot_cognition_update_eval_v1"
 REPLAN_PROPOSAL_SCHEMA = "hg_plot_cognition_replan_proposal_v1"
 REPLAN_EVALUATION_SCHEMA = "hg_plot_cognition_replan_eval_v1"
 UPDATE_FORENSIC_HANDOFF_SCHEMA = "hg_plot_cognition_update_forensic_handoff_v1"
+PRIOR_OPERATIVE_COGNITION_SCHEMA = "hg_plot_cognition_prior_operative_cognition_v1"
 
 CatchUpMode = Literal["sequential", "endpoint_reconciliation"]
 UpdateEvaluationResult = Literal["accept", "revise", "reject", "no_change"]
@@ -116,6 +117,7 @@ class CognitionUpdateSourceSnapshot:
     evidence_gap_detail: str | None
     canonical_body: dict[str, Any]
     semantic_authority_excerpts: dict[str, Any] = field(default_factory=dict)
+    prior_operative_cognition: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -136,6 +138,7 @@ class CognitionUpdateSourceSnapshot:
             "evidence_gap_detail": self.evidence_gap_detail,
             "canonical_body": self.canonical_body,
             "semantic_authority_excerpts": self.semantic_authority_excerpts,
+            "prior_operative_cognition": self.prior_operative_cognition,
         }
 
     @classmethod
@@ -166,6 +169,7 @@ class CognitionUpdateSourceSnapshot:
             evidence_gap_detail=data.get("evidence_gap_detail"),
             canonical_body=dict(data.get("canonical_body") or {}),
             semantic_authority_excerpts=dict(data.get("semantic_authority_excerpts") or {}),
+            prior_operative_cognition=dict(data.get("prior_operative_cognition") or {}),
         )
 
     def contributor_authority_targets(self) -> tuple[ContributorAuthoritySnapshot, ...]:

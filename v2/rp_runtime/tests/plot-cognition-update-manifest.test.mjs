@@ -28,13 +28,34 @@ test('update manifest includes readable semantic authority excerpts', () => {
           summary: 'The treaty is finished. Everyone here saw what happened.',
         }],
       },
+      prior_operative_cognition: {
+        schema: 'hg_plot_cognition_prior_operative_cognition_v1',
+        store_revision: 2,
+        goals: [{
+          goal_id: 'goal-1',
+          intended_direction: 'Pursue reconciliation with the northern houses.',
+          planning_horizon: 'MEDIUM',
+          grounding: 'Established at scene open.',
+          applicability: { applicability_kind: 'global', primary_character_id: null, involved_character_ids: [] },
+        }],
+        pressures: [],
+        global_plot_frame: null,
+      },
     },
   };
   const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
-  const content = manifest.contributions[0].content;
-  assert.ok(content.includes('semantic_authority_excerpts'));
-  assert.ok(content.includes('The treaty is finished'));
-  assert.ok(content.includes('summary_digest'));
+  const authorityContent = manifest.contributions[0].content;
+  assert.ok(authorityContent.includes('semantic_authority_excerpts'));
+  assert.ok(authorityContent.includes('prior_operative_cognition'));
+  assert.ok(authorityContent.includes('The treaty is finished'));
+  assert.ok(authorityContent.includes('summary_digest'));
+  assert.ok(authorityContent.includes('Pursue reconciliation'));
+  const priorContribution = manifest.contributions.find(
+    (item) => item.contribution_id === 'manifest-test-prior-operative-cognition',
+  );
+  assert.ok(priorContribution);
+  assert.equal(priorContribution.authority_class, 'advisory');
+  assert.ok(priorContribution.content.includes('goal-1'));
 });
 
 test('assertSemanticAuthorityInPrepare detects readable treaty semantics', () => {

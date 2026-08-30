@@ -47,12 +47,14 @@ from domain_api.plot_cognition_overlay_contract import (  # noqa: E402
     GoalLineage,
     PlotGoal,
     UnresolvedNarrativePressure,
+    global_plot_frame_from_dict,
     global_plot_frame_to_dict,
     new_frame_id,
     new_goal_id,
     new_pressure_id,
     plot_goal_from_dict,
     plot_goal_to_dict,
+    unresolved_narrative_pressure_from_dict,
     unresolved_narrative_pressure_to_dict,
 )
 from domain_api.plot_cognition_overlay_repository import PlotCognitionOverlayRepository  # noqa: E402
@@ -96,6 +98,11 @@ from domain_api.plot_cognition_update_sources import (  # noqa: E402
     build_plot_cognition_authority_projection,
     compute_authority_source_fingerprint,
     gather_update_source_snapshot,
+)
+from domain_api.plot_cognition_forensics_capture import (  # noqa: E402
+    PRIOR_OPERATIVE_COGNITION_SCHEMA,
+    bounded_overlay_snapshot,
+    bounded_prior_operative_cognition,
 )
 from domain_api.plot_cognition_semantic_authority import (  # noqa: E402
     DEFAULT_MAX_EVENT_SUMMARY_CHARS,
@@ -566,6 +573,81 @@ class PlotCognitionSemanticAuthorityTests(unittest.TestCase):
         fixture.manager.scene_state.active_issue_ids = ["issue-1"]
         excerpts = build_semantic_authority_excerpts(fixture, through_domain_commit_id=None)
         self.assertEqual(excerpts["issues"][0]["description"], "The vault door remains sealed.")
+
+    def test_snapshot_includes_bounded_prior_operative_cognition(self) -> None:
+        fixture = _session()
+        store = empty_store(fixture.plot_cognition_scope_id)
+        store.store_revision = 3
+        active_goal = plot_goal_from_dict(_goal_draft(goal_id="goal-active", direction="Pursue reconciliation."))
+        inactive_goal = plot_goal_from_dict(
+            _goal_draft(goal_id="goal-inactive", state="inactive", direction="Retired direction.")
+        )
+        store.goals[active_goal.goal_id] = active_goal
+        store.goals[inactive_goal.goal_id] = inactive_goal
+        active_pressure = unresolved_narrative_pressure_from_dict(_pressure_draft(pressure_id="pressure-active"))
+        inactive_pressure = unresolved_narrative_pressure_from_dict(
+            _pressure_draft(pressure_id="pressure-inactive", state="inactive")
+        )
+        store.pressures[active_pressure.pressure_id] = active_pressure
+        store.pressures[inactive_pressure.pressure_id] = inactive_pressure
+        store.active_frame = global_plot_frame_from_dict(_frame_draft(frame_id="frame-active"))
+
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        prior = snapshot.prior_operative_cognition
+        self.assertEqual(prior["schema"], PRIOR_OPERATIVE_COGNITION_SCHEMA)
+        self.assertEqual(prior["store_revision"], 3)
+        self.assertEqual(len(prior["goals"]), 1)
+        self.assertEqual(prior["goals"][0]["goal_id"], "goal-active")
+        self.assertEqual(prior["goals"][0]["intended_direction"], "Pursue reconciliation.")
+        self.assertEqual(prior["goals"][0]["planning_horizon"], "MEDIUM")
+        self.assertEqual(prior["goals"][0]["grounding"], "Authored context.")
+        self.assertEqual(prior["goals"][0]["applicability"]["primary_character_id"], "Alice")
+        self.assertEqual(len(prior["pressures"]), 1)
+        self.assertEqual(prior["pressures"][0]["pressure_id"], "pressure-active")
+        self.assertEqual(prior["pressures"][0]["pressure_text"], "The key remains missing.")
+        self.assertIsNotNone(prior["global_plot_frame"])
+        self.assertEqual(prior["global_plot_frame"]["frame_id"], "frame-active")
+        self.assertIn("Slow-burn", prior["global_plot_frame"]["ensemble_context"])
+
+    def test_prior_operative_cognition_excluded_from_authority_fingerprint(self) -> None:
+        fixture = _session()
+        store = empty_store(fixture.plot_cognition_scope_id)
+        store.store_revision = 1
+        store.goals[plot_goal_from_dict(_goal_draft()).goal_id] = plot_goal_from_dict(_goal_draft())
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        body_fingerprint = compute_authority_source_fingerprint(snapshot.canonical_body)
+        self.assertEqual(snapshot.authority_source_fingerprint, body_fingerprint)
+        snapshot_dict = snapshot.to_dict()
+        self.assertIn("prior_operative_cognition", snapshot_dict)
+        self.assertTrue(snapshot_dict["prior_operative_cognition"]["goals"])
+
+    def test_bounded_overlay_snapshot_active_only_and_pressure_text(self) -> None:
+        store = empty_store("scope-forensic")
+        store.store_revision = 2
+        store.goals["g-active"] = plot_goal_from_dict(_goal_draft(goal_id="g-active"))
+        store.goals["g-inactive"] = plot_goal_from_dict(_goal_draft(goal_id="g-inactive", state="inactive"))
+        store.pressures["p-active"] = unresolved_narrative_pressure_from_dict(
+            _pressure_draft(pressure_id="p-active")
+        )
+        store.pressures["p-inactive"] = unresolved_narrative_pressure_from_dict(
+            _pressure_draft(pressure_id="p-inactive", state="inactive")
+        )
+        store.active_frame = global_plot_frame_from_dict(_frame_draft(frame_id="frame-1"))
+        snapshot = bounded_overlay_snapshot(store.to_dict())
+        self.assertEqual(len(snapshot["goals"]), 1)
+        self.assertEqual(snapshot["goals"][0]["goal_id"], "g-active")
+        self.assertEqual(len(snapshot["pressures"]), 1)
+        self.assertIn("pressure_text", snapshot["pressures"][0])
+        self.assertEqual(snapshot["pressures"][0]["pressure_text"], "The key remains missing.")
+        self.assertNotIn("observation", snapshot["pressures"][0])
+
+    def test_bounded_prior_operative_cognition_helper_matches_snapshot_field(self) -> None:
+        store = empty_store("scope-helper")
+        store.goals[plot_goal_from_dict(_goal_draft()).goal_id] = plot_goal_from_dict(_goal_draft())
+        direct = bounded_prior_operative_cognition(store)
+        fixture = _session(scope_id="scope-helper")
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        self.assertEqual(direct, snapshot.prior_operative_cognition)
 
     def test_committed_move_excerpt_when_no_public_event(self) -> None:
         move = {

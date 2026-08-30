@@ -48,6 +48,8 @@ Digest fields (`summary_digest`, `move_digest`, etc.) establish deterministic id
 
 **Runtime semantic inference** additionally receives `semantic_authority_excerpts` on the update source snapshot: bounded verbatim text from existing authoritative Continuity/Domain state (`PublicEvent.summary`, issue descriptions, scene-grounding statements, committed-move excerpts when no public-event summary exists). This parallel transport is **not** included in the fingerprint; it supplies readable context for Storyteller update/replan reasoning without digest interpretation or Chronicle runtime reads.
 
+**Prior operative cognition** (`prior_operative_cognition`, schema `hg_plot_cognition_prior_operative_cognition_v1`) is also supplied on the update source snapshot and production inference manifest. It is a bounded, active-only projection of the operative Plot Cognition overlay (active goals with `goal_id`, `intended_direction`, `planning_horizon`, `grounding`, and applicability scope; active pressures with `pressure_id` and `pressure_text`; operative global frame with `frame_id` and `ensemble_context` when present). It is **advisory comparison context only** — not authoritative evidence and **not** included in `authority_source_fingerprint`. Authoritative Continuity-derived excerpts remain authoritative over prior Storyteller cognition.
+
 Excluded from authority projection: presentation-only history, skip/audit metadata, rejected B2, K2 occurrence duplicates of already-represented public events.
 
 ---
@@ -76,6 +78,16 @@ Existing stores without `assimilated_authority` remain `READY` with **freshness 
 
 **Replan** changes what Storyteller wants the story to pursue. An update may set `replan_required`; replan is a separate proposal/evaluation stage.
 
+At update inference time, the production prompt requires semantic comparison of new authoritative evidence against `prior_operative_cognition`:
+
+| Judgment | Meaning | Typical signals |
+|----------|---------|-----------------|
+| `no_change` | Authoritative change does not materially require cognition alteration | `overall_result=no_change`, `replan_required=false` |
+| Assimilable update | New authority changes relevant cognition but operative strategic direction remains viable | `replan_required=false`, incremental goal/pressure/frame adjustments |
+| Invalidation replan | New authority materially invalidates assumptions, trajectories, targets, or strategic direction | `replan_required=true` plus replan proposal/evaluation |
+
+These distinctions are semantic — not keyword triggers, regex classifiers, or event-type tables.
+
 Identity is preserved when pursuit remains semantically the same. Lineage fields record supersede/parent relationships without becoming an execution graph.
 
 ---
@@ -88,7 +100,7 @@ Identity is preserved when pursuit remains semantically the same. Lineage fields
 
 ## Source snapshot
 
-`CognitionUpdateSourceSnapshot` captures scope, contributors, prior revision, prior authority vector, current lineage targets, continuity versions, fingerprints, committed-move refs, and catch-up mode.
+`CognitionUpdateSourceSnapshot` captures scope, contributors, prior revision, prior authority vector, current lineage targets, continuity versions, fingerprints, committed-move refs, catch-up mode, `semantic_authority_excerpts`, and bounded `prior_operative_cognition`.
 
 Catch-up modes:
 
