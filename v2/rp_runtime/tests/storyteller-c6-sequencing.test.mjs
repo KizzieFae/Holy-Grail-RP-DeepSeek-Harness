@@ -47,8 +47,7 @@ async function setupC6Session(api, sessionsDir) {
 
 test('C6 sequencing: Bob seed records pending work then lifecycle restores freshness', async (t) => {
   const sessionsDir = makeTempSessionsDir();
-  const port = 51765 + Math.floor(Math.random() * 1000);
-  const host = await startDomainApi(port, { sessionsDir });
+  const host = await startDomainApi(undefined, { sessionsDir });
   const { baseUrl } = host;
   t.after(() => host.stop());
 
@@ -116,8 +115,7 @@ test('seedC6ObservableContext helper enforces pending clearance and support rete
   const dataDir = path.join(path.dirname(sessionsDir), 'c6-data');
   const forensicsDir = path.join(dataDir, 'plot_cognition_forensics');
   fs.mkdirSync(forensicsDir, { recursive: true });
-  const port = 52765 + Math.floor(Math.random() * 1000);
-  const host = await startDomainApi(port, {
+  const host = await startDomainApi(undefined, {
     sessionsDir,
     hostEnv: {
       HG_DATA_DIR: dataDir,
