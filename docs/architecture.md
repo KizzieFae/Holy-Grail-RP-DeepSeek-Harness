@@ -93,6 +93,7 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 - Continuity manager updates durable scene and issue state.
 - Validation and enforcement remain separate from prompt styling.
 - **`perception_audibility.py`** gates who may see dialogue and narrator render for others' beats.
+- **NarrativeVisibilityRecord (#81):** Human/UI transcript and Character `recent_scene_transcript` are distinct projections of the same `rp_history`. Narrator/opening prose is persisted in full for humans; `metadata.narrative_visibility` stores semantic units (`observable_scene`, `observable_event`, `speech`, `internal`, `presentation_only`) with recipient scopes. Character cognition assembles eligible rich prose fragments deterministically per viewer; structured move audibility/audience narrows `speech` units. Missing/invalid NVR fails closed (structured observable fallback when a linked move exists; otherwise exclude). Template/authored openers: after `createSession`, DSH runs one opening-segmentation inference and attaches validated NVR to the opening history entry (`runOpeningSegmentation` in application client). Generated openers produce prose + NVR in a single inference. Short-term perceptual detail stays in NVR; durable canon remains with continuity, scene grounding, premise, and role-private knowledge.
 
 ### Protected intent
 

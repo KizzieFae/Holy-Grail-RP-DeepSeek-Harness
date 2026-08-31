@@ -7,6 +7,7 @@ import { runDirectorPhase } from './director-phase.mjs';
 import { createInferenceSubstrate } from './inference-substrate.mjs';
 import { runNarratorPhase } from './narrator-phase.mjs';
 import { runOpeningPhase } from './opening-phase.mjs';
+import { runOpeningSegmentationPhase } from './opening-segmentation-phase.mjs';
 
 /**
  * Coherent RP phase execution capability: Director, Character, and Narrator
@@ -60,6 +61,13 @@ export default class HgPhaseExecutors extends Service {
 
   runOpening(params) {
     return runOpeningPhase({
+      ...this._phaseDeps(),
+      ...params,
+    });
+  }
+
+  runOpeningSegmentation(params) {
+    return runOpeningSegmentationPhase({
       ...this._phaseDeps(),
       ...params,
     });

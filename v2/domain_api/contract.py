@@ -359,6 +359,27 @@ class OpeningPersistRequest:
     presentation_text: str
     presentation_failed: bool = False
     manifest_id: str | None = None
+    narrative_visibility: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class OpeningNarrativeVisibilityAttachRequest:
+    hg_session_id: str
+    narrative_visibility: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class NarrativeVisibilityValidateRequest:
+    hg_session_id: str | None = None
+    narrative_visibility: dict[str, Any] | None = None
+    domain_commit_id: str | None = None
+    character_id: str | None = None
+
+
+@dataclass(frozen=True)
+class OpeningSegmentationContextPrepareRequest:
+    hg_session_id: str
+    inference_id: str
 
 
 @dataclass(frozen=True)
@@ -463,6 +484,7 @@ class PresentationRecordRequest:
     presentation_text: str | None = None
     presentation_failed: bool = False
     inference_outcome: str | None = None
+    narrative_visibility: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

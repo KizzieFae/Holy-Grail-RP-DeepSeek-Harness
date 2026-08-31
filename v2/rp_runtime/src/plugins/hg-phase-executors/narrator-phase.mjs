@@ -1,3 +1,4 @@
+import { parseNarratorVisibilityEnvelope } from '../../lib/narrative-visibility-parse.mjs';
 import {
   classifyNarratorFailureOutcome,
   inferenceOutcomeFromNormalizedKind,
@@ -62,6 +63,7 @@ function recordAttemptEvidence({
 
 function acceptNarratorPresentation({
   presentationText,
+  narrativeVisibility = null,
   attemptIndex,
   finishKindRaw,
   finishKindNormalized,
@@ -128,6 +130,7 @@ function acceptNarratorPresentation({
   return {
     presentation_rendered: true,
     presentation_text: presentationText,
+    narrative_visibility: narrativeVisibility,
     presentation_failed: false,
     inference_outcome: inferenceOutcome,
     narrator_inference_session_id: narratorRun.inferenceSessionId,
@@ -391,7 +394,22 @@ export async function runNarratorPhase({
 
       finishKindRaw = narratorRun.trace?.finish?.kind ?? null;
       finishKindNormalized = normalizeFinishKind(finishKindRaw, { failed: false });
-      const presentationText = String(narratorRun.raw ?? '').trim();
+      const parsedEnvelope = parseNarratorVisibilityEnvelope(narratorRun.raw ?? '');
+      let presentationText = String(parsedEnvelope.presentationText ?? '').trim();
+      let narrativeVisibility = parsedEnvelope.narrativeVisibility;
+      if (narrativeVisibility?.units?.length) {
+        const nvrValidation = await api.validateNarrativeVisibility({
+          hg_session_id: hgSessionId,
+          domain_commit_id: domainCommitId,
+          character_id: characterId,
+          narrative_visibility: narrativeVisibility,
+        });
+        if (nvrValidation.accepted && nvrValidation.record) {
+          narrativeVisibility = nvrValidation.record;
+        } else {
+          narrativeVisibility = null;
+        }
+      }
       const emptyOutput = !presentationText;
       rejectedPresentationText = emptyOutput ? null : presentationText;
 
@@ -487,6 +505,7 @@ export async function runNarratorPhase({
       if (!narratorSemanticQaEnabled) {
         return acceptNarratorPresentation({
           presentationText,
+          narrativeVisibility,
           attemptIndex,
           finishKindRaw,
           finishKindNormalized,
@@ -661,6 +680,7 @@ export async function runNarratorPhase({
       if (policy.action === 'pass') {
         return acceptNarratorPresentation({
           presentationText,
+          narrativeVisibility,
           attemptIndex,
           finishKindRaw,
           finishKindNormalized,
@@ -692,6 +712,7 @@ export async function runNarratorPhase({
       if (policy.action === 'accept_with_residuals') {
         return acceptNarratorPresentation({
           presentationText,
+          narrativeVisibility,
           attemptIndex,
           finishKindRaw,
           finishKindNormalized,

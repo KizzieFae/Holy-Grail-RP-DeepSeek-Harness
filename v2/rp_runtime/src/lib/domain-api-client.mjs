@@ -448,8 +448,35 @@ export function createDomainApiClient(baseUrl) {
         'validateNarratorPresentation',
       );
     },
+    validateNarrativeVisibility(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/narrative-visibility/validate',
+        body,
+        'validateNarrativeVisibility',
+      );
+    },
+    attachOpeningNarrativeVisibility(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/opening/narrative-visibility',
+        body,
+        'attachOpeningNarrativeVisibility',
+      );
+    },
     prepareOpeningContext(body) {
       return postJson(metrics, baseUrl, '/v1/opening/context/prepare', body, 'prepareOpeningContext');
+    },
+    prepareOpeningSegmentationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/opening/segmentation/context/prepare',
+        body,
+        'prepareOpeningSegmentationContext',
+      );
     },
     persistOpening(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/opening/persist', body, 'persistOpening');

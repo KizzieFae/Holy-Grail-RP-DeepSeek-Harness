@@ -1,4 +1,5 @@
 import { openingDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
+import { parseNarratorVisibilityEnvelope } from '../../lib/narrative-visibility-parse.mjs';
 
 const OPENING_PROMPT =
   'Write the scene opening prose following the authoritative context and instructions.';
@@ -70,7 +71,20 @@ export async function runOpeningPhase({
         throw new Error(openingRun.failure?.message ?? 'opening provider inference failed');
       }
 
-      const presentationText = openingRun.raw.trim();
+      const parsedEnvelope = parseNarratorVisibilityEnvelope(openingRun.raw ?? '');
+      const presentationText = String(parsedEnvelope.presentationText ?? '').trim();
+      let narrativeVisibility = parsedEnvelope.narrativeVisibility;
+      if (narrativeVisibility?.units?.length) {
+        const nvrValidation = await api.validateNarrativeVisibility({
+          hg_session_id: hgSessionId,
+          narrative_visibility: narrativeVisibility,
+        });
+        if (nvrValidation.accepted && nvrValidation.record) {
+          narrativeVisibility = nvrValidation.record;
+        } else {
+          narrativeVisibility = null;
+        }
+      }
       if (!presentationText) {
         throw new Error('opening produced empty presentation output');
       }
@@ -100,6 +114,7 @@ export async function runOpeningPhase({
       return {
         presentation_rendered: true,
         presentation_text: presentationText,
+        narrative_visibility: narrativeVisibility,
         presentation_failed: false,
         opening_inference_session_id: openingRun.inferenceSessionId,
         opening_manifest_id: manifestId,

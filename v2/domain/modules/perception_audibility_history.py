@@ -91,8 +91,13 @@ def build_recent_dialogue_history_for_viewer(
         )
         content = str(message.get("content", "") or "")
 
-        if actor is None:
+        if message.get("nvr_assembled"):
             history.append({"role": role, "speaker": speaker_label, "content": content})
+            continue
+
+        if actor is None:
+            if viewer_character_name is None:
+                history.append({"role": role, "speaker": speaker_label, "content": content})
             continue
 
         move_norm = normalize_move_audibility(dict(move), actor, present)

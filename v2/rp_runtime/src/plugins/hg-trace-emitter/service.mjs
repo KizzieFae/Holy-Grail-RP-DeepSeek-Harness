@@ -38,6 +38,9 @@ export const HG_EVENT_TYPES = [
   'hg/opening-started',
   'hg/opening-completed',
   'hg/opening-failed',
+  'hg/opening-segmentation-started',
+  'hg/opening-segmentation-completed',
+  'hg/opening-segmentation-failed',
   'hg/round-completed',
 ];
 

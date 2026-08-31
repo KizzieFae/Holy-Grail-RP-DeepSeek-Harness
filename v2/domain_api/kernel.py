@@ -48,6 +48,9 @@ from .contract import (  # noqa: E402
     EligibleActorEntry,
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
+    OpeningNarrativeVisibilityAttachRequest,
+    OpeningSegmentationContextPrepareRequest,
+    NarrativeVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
     NarratorEnvironmentCognitionPrepareRequest,
@@ -91,6 +94,13 @@ from .narrator_semantic_qa_context import (  # noqa: E402
     prepare_narrator_semantic_qa_context,
 )
 from .opening_context import prepare_opening_context as build_opening_context  # noqa: E402
+from .opening_segmentation_context import (  # noqa: E402
+    prepare_opening_segmentation_context as build_opening_segmentation_context,
+)
+from .narrative_visibility_service import (  # noqa: E402
+    attach_narrative_visibility_to_entry_metadata,
+    validate_and_build_narrative_visibility,
+)
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
 from .semantic_evaluation_context import (  # noqa: E402
@@ -420,6 +430,27 @@ class DomainKernel:
             )
         else:
             inference_outcome = req.inference_outcome or INFERENCE_OUTCOME_SUCCEEDED
+        metadata: dict[str, Any] = {
+            "renderer": "narrator",
+            "presentation_source": presentation_source,
+            "presentation_degraded": presentation_degraded,
+            "inference_outcome": inference_outcome,
+        }
+        nvr_units = None
+        if isinstance(req.narrative_visibility, dict):
+            nvr_units = req.narrative_visibility.get("units")
+        if nvr_units:
+            record, nvr_audit = validate_and_build_narrative_visibility(
+                units_raw=list(nvr_units) if isinstance(nvr_units, list) else [],
+                structured_move=structured_move,
+                acting_character=character_name,
+                generation={"source": "narrator_generation"},
+            )
+            metadata = attach_narrative_visibility_to_entry_metadata(
+                metadata,
+                record,
+                validation_audit=nvr_audit,
+            )
         entry = append_history_entry(
             fixture.rp_history,
             kind="presentation",
@@ -428,12 +459,7 @@ class DomainKernel:
             domain_commit_id=req.domain_commit_id,
             actor_id=req.character_id,
             presentation_status=status,
-            metadata={
-                "renderer": "narrator",
-                "presentation_source": presentation_source,
-                "presentation_degraded": presentation_degraded,
-                "inference_outcome": inference_outcome,
-            },
+            metadata=metadata,
         )
         if isinstance(self.store, SessionRepository):
             self.store.persist(fixture)
@@ -1374,6 +1400,12 @@ class DomainKernel:
         fixture = self.store.require(req.hg_session_id)
         return build_opening_context(fixture, req)
 
+    def prepare_opening_segmentation_context(
+        self, req: OpeningSegmentationContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_session_id)
+        return build_opening_segmentation_context(fixture, req)
+
     def persist_opening_presentation(self, req: OpeningPersistRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
         entry_id = f"opening-{req.hg_session_id}"
@@ -1397,17 +1429,97 @@ class DomainKernel:
                 "manifest_id": req.manifest_id,
             }
         )
+        metadata: dict[str, Any] = {"opening": True, **opening_meta}
+        nvr_units = None
+        if isinstance(req.narrative_visibility, dict):
+            nvr_units = req.narrative_visibility.get("units")
+        if nvr_units:
+            record, nvr_audit = validate_and_build_narrative_visibility(
+                units_raw=list(nvr_units) if isinstance(nvr_units, list) else [],
+                generation={"source": "opening_generation"},
+            )
+            metadata = attach_narrative_visibility_to_entry_metadata(
+                metadata,
+                record,
+                validation_audit=nvr_audit,
+            )
         entry = append_history_entry(
             fixture.rp_history,
             kind="opening",
             content=content,
             entry_id=entry_id,
             presentation_status="failed" if req.presentation_failed else "rendered",
-            metadata={"opening": True, **opening_meta},
+            metadata=metadata,
         )
         if isinstance(self.store, SessionRepository):
             self.store.persist(fixture)
         return entry
+
+    def attach_opening_narrative_visibility(
+        self, req: OpeningNarrativeVisibilityAttachRequest
+    ) -> dict[str, Any]:
+        fixture = self.store.require(req.hg_session_id)
+        entry_id = f"opening-{req.hg_session_id}"
+        entry = next(
+            (item for item in fixture.rp_history if item.get("entry_id") == entry_id),
+            None,
+        )
+        if entry is None:
+            raise ValueError("opening history entry not found")
+        units_raw = []
+        if isinstance(req.narrative_visibility, dict):
+            units_raw = req.narrative_visibility.get("units") or []
+        record, nvr_audit = validate_and_build_narrative_visibility(
+            units_raw=list(units_raw) if isinstance(units_raw, list) else [],
+            generation={"source": "opening_segmentation"},
+        )
+        if record is None:
+            raise ValueError(nvr_audit.get("reason") or "invalid narrative visibility")
+        metadata = attach_narrative_visibility_to_entry_metadata(
+            dict(entry.get("metadata") or {}),
+            record,
+            validation_audit=nvr_audit,
+        )
+        entry["metadata"] = metadata
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return dict(entry)
+
+    def validate_narrative_visibility(
+        self, req: NarrativeVisibilityValidateRequest
+    ) -> dict[str, Any]:
+        structured_move: dict[str, Any] | None = None
+        acting_character: str | None = req.character_id
+        if req.hg_session_id and req.domain_commit_id:
+            fixture = self.store.require(req.hg_session_id)
+            committed = next(
+                (
+                    item
+                    for item in reversed(fixture.rp_history)
+                    if item.get("kind") == "committed_turn"
+                    and item.get("domain_commit_id") == req.domain_commit_id
+                ),
+                None,
+            )
+            if committed is not None:
+                move = (committed.get("metadata") or {}).get("structured_move")
+                if isinstance(move, dict):
+                    structured_move = move
+                acting_character = str(committed.get("actor_id") or acting_character or "Character")
+        units_raw = []
+        if isinstance(req.narrative_visibility, dict):
+            units_raw = req.narrative_visibility.get("units") or []
+        record, audit = validate_and_build_narrative_visibility(
+            units_raw=list(units_raw) if isinstance(units_raw, list) else [],
+            structured_move=structured_move,
+            acting_character=acting_character,
+        )
+        return {
+            "accepted": audit.get("accepted", False),
+            "reason": audit.get("reason", ""),
+            "validation_notes": audit.get("validation_notes", []),
+            "record": record.to_dict() if record is not None else None,
+        }
 
     def prepare_narrator_environment_cognition_context(
         self, req: NarratorEnvironmentCognitionPrepareRequest

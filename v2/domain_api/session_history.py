@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+from narrative_visibility_projection import (
+    assemble_history_entry_for_viewer,
+    build_narrative_visibility_audit_metadata,
+)
+
 HistoryKind = Literal["user", "committed_turn", "presentation", "opening", "player_skip"]
 
 PLAYER_SKIP_KIND = "player_skip"
@@ -260,13 +265,23 @@ def project_history_to_character_context_chat(
 
     for entry in entries:
         if entry.kind == "opening":
-            chat.append(
-                {
-                    "role": "assistant",
-                    "content": entry.content,
-                    "speaker": "Narrator",
-                }
+            assembly = assemble_history_entry_for_viewer(
+                entry.to_dict(),
+                viewer_character=character_id,
+                present_characters=present_characters,
             )
+            if assembly.content:
+                chat.append(
+                    {
+                        "role": "assistant",
+                        "content": assembly.content,
+                        "speaker": "Narrator",
+                        "nvr_assembled": True,
+                        "narrative_visibility_projection": build_narrative_visibility_audit_metadata(
+                            assembly
+                        ).get("narrative_visibility_projection"),
+                    }
+                )
             continue
 
         if entry.kind == "user":
@@ -285,14 +300,47 @@ def project_history_to_character_context_chat(
         if entry.kind == "presentation":
             commit_id = entry.domain_commit_id
             committed = committed_by_commit.get(commit_id) if commit_id else None
+            structured_move = None
+            acting_character = None
+            if committed is not None:
+                move = (committed.metadata or {}).get("structured_move")
+                if isinstance(move, dict):
+                    structured_move = move
+                acting_character = str(committed.actor_id or "Character")
+
             if presentation_uses_narrator_prose_for_character(entry):
-                chat.append(
-                    {
-                        "role": "assistant",
-                        "content": entry.content,
-                        "speaker": entry.actor_id or "Narrator",
-                    }
+                assembly = assemble_history_entry_for_viewer(
+                    entry.to_dict(),
+                    viewer_character=character_id,
+                    present_characters=present_characters,
+                    structured_move=structured_move,
+                    acting_character=acting_character,
+                    committed_observable_fallback_fn=(
+                        lambda: committed_observable_content_for_character(
+                            committed,
+                            character_id=character_id,
+                            character_names=character_names,
+                            present_characters=present_characters,
+                            get_character_display_name_fn=get_character_display_name_fn,
+                        )
+                        if committed is not None
+                        else None
+                    ),
                 )
+                if assembly.content:
+                    chat.append(
+                        {
+                            "role": "assistant",
+                            "content": assembly.content,
+                            "speaker": entry.actor_id or "Narrator",
+                            "nvr_assembled": assembly.fallback_path != "structured_observable",
+                            "move": structured_move if structured_move else None,
+                            "actor": acting_character,
+                            "narrative_visibility_projection": build_narrative_visibility_audit_metadata(
+                                assembly
+                            ).get("narrative_visibility_projection"),
+                        }
+                    )
             elif committed is not None:
                 chat.append(
                     {
@@ -305,14 +353,8 @@ def project_history_to_character_context_chat(
                             get_character_display_name_fn=get_character_display_name_fn,
                         ),
                         "speaker": committed.actor_id or "Character",
-                    }
-                )
-            else:
-                chat.append(
-                    {
-                        "role": "assistant",
-                        "content": entry.content,
-                        "speaker": entry.actor_id or "Narrator",
+                        "move": structured_move,
+                        "actor": acting_character,
                     }
                 )
             continue
@@ -336,6 +378,8 @@ def project_history_to_character_context_chat(
                         get_character_display_name_fn=get_character_display_name_fn,
                     ),
                     "speaker": entry.actor_id or "Character",
+                    "move": (entry.metadata or {}).get("structured_move"),
+                    "actor": entry.actor_id,
                 }
             )
 

@@ -20,6 +20,7 @@ from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     OpeningContextPrepareRequest,
+    OpeningNarrativeVisibilityAttachRequest,
     RoundStartRequest,
 )
 from domain_api.continuity_context_projector import (  # noqa: E402
@@ -60,6 +61,32 @@ class Issue78ScenePremiseProjectionTests(unittest.TestCase):
         self.assertTrue(premise)
         self.assertTrue(opener)
         self.assertNotEqual(premise, opener)
+        protector_name = fixture.setup_snapshot["names_by_file"]["willow"]
+        demi_name = fixture.setup_snapshot["names_by_file"]["kizzie"]
+        self.kernel.attach_opening_narrative_visibility(
+            OpeningNarrativeVisibilityAttachRequest(
+                hg_session_id=info.hg_session_id,
+                narrative_visibility={
+                    "units": [
+                        {
+                            "unit_id": "public_opener",
+                            "kind": "observable_scene",
+                            "text": (
+                                "Walking out of one of her boss's hotels, Celina was immediately hit "
+                                "with wind-driven rain splashing directly into her face."
+                            ),
+                            "recipients": {"scope": "public"},
+                        },
+                        {
+                            "unit_id": "protector_internal",
+                            "kind": "internal",
+                            "text": "For a moment, Celina considered walking on. Not her problem.",
+                            "recipients": {"scope": "private", "characters": [protector_name]},
+                        },
+                    ]
+                },
+            )
+        )
         return info.hg_session_id, premise, opener
 
     def test_scene_setup_uses_premise_not_opener(self) -> None:

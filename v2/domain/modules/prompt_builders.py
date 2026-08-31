@@ -452,6 +452,9 @@ OUTPUT RULES:
 """
 
 
+from narrative_visibility_prompt import NARRATOR_VISIBILITY_OUTPUT_INSTRUCTION
+
+
 def build_narrator_render_prompt(
     *,
     char_name: str,
@@ -499,7 +502,7 @@ RULES:
 7. Be concise but not sterile — roughly 2-8 sentences when environmental response is materially relevant.
 8. Write in third person past tense.
 
-OUTPUT ONLY the rendered narration (no preface, no JSON)."""
+{NARRATOR_VISIBILITY_OUTPUT_INSTRUCTION}"""
 
     if dialogue:
         return f"""Render the following character action and dialogue into scene narration.

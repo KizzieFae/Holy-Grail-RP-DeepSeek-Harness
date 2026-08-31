@@ -259,7 +259,9 @@ def test_output_limit_terminal_failure_uses_committed_fallback_for_ui(
     assert "for Bob only" in bob_transcript
 
 
-def test_legacy_rendered_without_metadata_uses_narrator_prose(kernel: DomainKernel) -> None:
+def test_legacy_rendered_without_metadata_excludes_narrator_prose_without_nvr(
+    kernel: DomainKernel,
+) -> None:
     created = kernel.create_session(cast=["Alice"])
     session_id = created.hg_session_id
     fixture = kernel.store.require(session_id)
@@ -277,7 +279,7 @@ def test_legacy_rendered_without_metadata_uses_narrator_prose(kernel: DomainKern
         present_characters=["Alice"],
         get_character_display_name_fn=lambda x: x,
     )
-    assert chat[0]["content"] == "Legacy narrator line."
+    assert chat == []
 
 
 def test_legacy_failed_without_structured_move_uses_committed_content(kernel: DomainKernel) -> None:

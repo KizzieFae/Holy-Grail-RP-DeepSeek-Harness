@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from narrative_visibility_prompt import OPENING_VISIBILITY_OUTPUT_INSTRUCTION
+
 
 def build_opening_generation_instruction(
     *,
@@ -17,7 +19,7 @@ def build_opening_generation_instruction(
         "- Do not invent new canonical world facts, locations, props, or events.\n"
         "- Do not resolve future player choices or speak for the player character.\n"
         "- Present tense, immersive prose, ending on a natural hook for the player's first reply.\n"
-        "- Output plain prose only (no JSON, no headings, no meta commentary).\n"
         f"\nScene premise (authoritative): {premise_block}\n"
         f"Present characters: {cast_label}\n"
+        f"\n{OPENING_VISIBILITY_OUTPUT_INSTRUCTION}\n"
     )

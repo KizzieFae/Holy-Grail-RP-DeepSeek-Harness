@@ -117,3 +117,38 @@ def use_full_narrator_content_for_recipient(
         names = [str(a).strip() for a in audience if str(a).strip()]
         return viewer_character in names
     return False
+
+
+def resolve_recipient_scope(recipients: dict[str, Any]) -> str:
+    """Normalize NVR recipient scope label."""
+    if not isinstance(recipients, dict):
+        return "public"
+    scope = str(recipients.get("scope", "") or "public").strip().lower()
+    return scope or "public"
+
+
+def character_in_recipient_scope(
+    viewer_character: str,
+    scope: str,
+    *,
+    present_characters: list[str],
+    recipients: dict[str, Any] | None = None,
+) -> bool:
+    """Whether ``viewer_character`` is eligible for an NVR unit recipient scope."""
+    viewer = str(viewer_character or "").strip()
+    if not viewer:
+        return False
+    present = [str(name).strip() for name in present_characters if str(name or "").strip()]
+    recipients = recipients if isinstance(recipients, dict) else {}
+    scoped_characters = [
+        str(name).strip()
+        for name in (recipients.get("characters") or [])
+        if str(name).strip()
+    ]
+    normalized_scope = str(scope or "public").strip().lower() or "public"
+
+    if normalized_scope in ("public", "present", "environmental"):
+        return viewer in present
+    if normalized_scope in ("directed", "private", "role_private"):
+        return viewer in scoped_characters
+    return False

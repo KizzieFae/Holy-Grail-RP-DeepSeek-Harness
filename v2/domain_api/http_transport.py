@@ -18,6 +18,9 @@ from .contract import (
     EligibleActorsRequest,
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
+    OpeningNarrativeVisibilityAttachRequest,
+    OpeningSegmentationContextPrepareRequest,
+    NarrativeVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
     NarratorEnvironmentCognitionPrepareRequest,
@@ -649,8 +652,25 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     presentation_text=data.get("presentation_text"),
                     presentation_failed=bool(data.get("presentation_failed", False)),
                     inference_outcome=data.get("inference_outcome"),
+                    narrative_visibility=data.get("narrative_visibility"),
                 )
                 self._send_json(201, self.kernel.record_presentation(req))
+                return
+            if path == "/v1/narrative-visibility/validate":
+                req = NarrativeVisibilityValidateRequest(
+                    hg_session_id=data.get("hg_session_id"),
+                    narrative_visibility=data.get("narrative_visibility"),
+                    domain_commit_id=data.get("domain_commit_id"),
+                    character_id=data.get("character_id"),
+                )
+                self._send_json(200, self.kernel.validate_narrative_visibility(req))
+                return
+            if path == "/v1/sessions/opening/narrative-visibility":
+                req = OpeningNarrativeVisibilityAttachRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    narrative_visibility=dict(data.get("narrative_visibility") or {}),
+                )
+                self._send_json(200, self.kernel.attach_opening_narrative_visibility(req))
                 return
             if path == "/v1/opening/context/prepare":
                 req = OpeningContextPrepareRequest(
@@ -659,6 +679,13 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.prepare_opening_context(req))
                 return
+            if path == "/v1/opening/segmentation/context/prepare":
+                req = OpeningSegmentationContextPrepareRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    inference_id=str(data["inference_id"]),
+                )
+                self._send_json(200, self.kernel.prepare_opening_segmentation_context(req))
+                return
             if path == "/v1/sessions/opening/persist":
                 req = OpeningPersistRequest(
                     hg_session_id=str(data["hg_session_id"]),
@@ -666,6 +693,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     presentation_text=str(data.get("presentation_text", "")),
                     presentation_failed=bool(data.get("presentation_failed", False)),
                     manifest_id=data.get("manifest_id"),
+                    narrative_visibility=data.get("narrative_visibility"),
                 )
                 self._send_json(201, self.kernel.persist_opening_presentation(req))
                 return

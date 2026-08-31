@@ -1,4 +1,5 @@
 import { detectForcedSpeaker } from './detect-forced-speaker.mjs';
+import crypto from 'node:crypto';
 import {
   buildInferenceOptions,
   defaultRuntimeSettings,
@@ -142,6 +143,11 @@ export class HolyGrailApplicationClient {
       await this._generateAndPersistOpening({
         ...input,
         mockOpeningResponses: input.mockOpeningResponses,
+      });
+    } else if (openingMode === 'template') {
+      await this._segmentTemplateOpening({
+        ...input,
+        mockOpeningSegmentationResponses: input.mockOpeningSegmentationResponses,
       });
     }
     await this._refreshTranscript();
@@ -374,6 +380,7 @@ export class HolyGrailApplicationClient {
           presentation_text: turn.presentation_text,
           presentation_failed: Boolean(turn.presentation_failed),
           inference_outcome: turn.inference_outcome,
+          narrative_visibility: turn.narrative_visibility ?? null,
         });
       }
       return;
@@ -387,6 +394,7 @@ export class HolyGrailApplicationClient {
         presentation_text: roundResult.presentation_text,
         presentation_failed: Boolean(roundResult.presentation_failed),
         inference_outcome: roundResult.inference_outcome,
+        narrative_visibility: roundResult.narrative_visibility ?? null,
       });
     }
   }
@@ -443,11 +451,61 @@ export class HolyGrailApplicationClient {
         presentation_text: openingResult.presentation_text,
         presentation_failed: false,
         manifest_id: openingResult.opening_manifest_id,
+        narrative_visibility: openingResult.narrative_visibility ?? null,
       });
       await this._refreshTranscript();
     }
 
     return openingResult;
+  }
+
+  async _segmentTemplateOpening(input = {}) {
+    const api = this.orchestrator._domainClient();
+    const history = await api.getSessionHistory(this.activeSessionId);
+    const openingEntry = (history.entries ?? []).find((entry) => entry.kind === 'opening');
+    if (!openingEntry) {
+      return { segmented: false, skipped: true, reason: 'no template opening entry' };
+    }
+    if (openingEntry.metadata?.narrative_visibility?.units?.length) {
+      return { segmented: true, skipped: true, reason: 'narrative visibility already present' };
+    }
+
+    const phaseExecutors = this.supervisor.runtime?.phaseExecutors;
+    const trace = this.supervisor.runtime?.traceEmitter;
+    if (!phaseExecutors || !trace) {
+      throw new Error('template opening segmentation requires DSH phase executors');
+    }
+
+    const hgSessionId = this.activeSessionId;
+    const hgSceneId = hgSessionId;
+    const segmentationInferenceId = `opening-segmentation-${crypto.randomUUID()}`;
+    const sceneSessionId = SessionId(`hg-opening-segmentation-${crypto.randomUUID()}`);
+    const sceneAgent = this.supervisor.runtime.ctx.agentLoop.create(
+      sceneSessionId,
+      agentOptionsFromProfile(mockInferenceProfile()),
+    );
+
+    const inference = buildInferenceOptions(
+      { ...this.runtimeSettings, ...input },
+      { inferenceMode: this.options.inferenceMode },
+    );
+    const modelProfile =
+      input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
+        ? mockInferenceProfile()
+        : inference.roleProfiles.opening;
+
+    return phaseExecutors.runOpeningSegmentation({
+      api,
+      trace,
+      sceneAgent,
+      sceneSessionId,
+      hgSessionId,
+      hgSceneId,
+      segmentationInferenceId,
+      mockOpeningSegmentationResponses: input.mockOpeningSegmentationResponses,
+      modelProfile,
+      maxAttempts: Number(input.openingSegmentationMaxAttempts ?? 2),
+    });
   }
 
   _resolveInferenceOptions(input) {

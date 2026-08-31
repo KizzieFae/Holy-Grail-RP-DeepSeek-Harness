@@ -20,6 +20,7 @@ ensure_domain_paths()
 from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
+    OpeningNarrativeVisibilityAttachRequest,
     RoundStartRequest,
 )
 from domain_api.kernel import DomainKernel  # noqa: E402
@@ -67,6 +68,43 @@ class Issue79AyameHouseholdAuthoredTests(unittest.TestCase):
         fixture = self.repo.require(info.hg_session_id)
         host_name = fixture.setup_snapshot["names_by_file"][host_file]
         applicant_name = fixture.setup_snapshot["names_by_file"][applicant_file]
+        self.kernel.attach_opening_narrative_visibility(
+            OpeningNarrativeVisibilityAttachRequest(
+                hg_session_id=info.hg_session_id,
+                narrative_visibility={
+                    "units": [
+                        {
+                            "unit_id": "public_mansion",
+                            "kind": "observable_scene",
+                            "text": (
+                                "The interview had been scheduled almost at once. Now you stood at the entrance "
+                                "to a mansion that looked too polished, too quiet, and too expensive to belong to your life. "
+                                "Somewhere inside, Ayame Suzuki waited to conduct what was supposed to be an ordinary household interview."
+                            ),
+                            "recipients": {"scope": "public"},
+                        },
+                        {
+                            "unit_id": "applicant_internal",
+                            "kind": "internal",
+                            "text": (
+                                "It had been a horrible week. You had lost your job, then your apartment, "
+                                "and desperation was starting to feel like a second skin."
+                            ),
+                            "recipients": {"scope": "private", "characters": [applicant_name]},
+                        },
+                        {
+                            "unit_id": "applicant_closer",
+                            "kind": "internal",
+                            "text": (
+                                "You lifted your hand toward the door, still telling yourself your streak of misfortune "
+                                "had been nothing but bad luck."
+                            ),
+                            "recipients": {"scope": "private", "characters": [applicant_name]},
+                        },
+                    ]
+                },
+            )
+        )
         return info.hg_session_id, host_name, applicant_name
 
     def _character_manifest(self, session_id: str, *, character_id: str):
