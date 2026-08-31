@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import net from 'node:net';
 import test from 'node:test';
 
 import { DOMAIN_HOST_SERVICE_ID } from '../src/lib/runtime-config.mjs';
 import {
   getDomainHostDiagnostics,
-  isDomainHostPortAvailable,
   reserveLocalPort,
   startDomainHost,
   stopDomainHostProcess,
+  waitForDomainHostPortAvailable,
   waitForHealthyDomainHost,
 } from '../src/runtime-supervisor/domain-host-process.mjs';
 import { HolyGrailRuntimeSupervisor } from '../src/runtime-supervisor/supervisor.mjs';
@@ -77,7 +78,7 @@ test('supervisor: shutdown stops Domain Host child', async (t) => {
   assert.ok(stopResult?.diagnostics?.stopped ?? hasConfirmedExit(proc));
   assert.equal(supervisor.state, 'stopped');
   assert.equal(ready.dsh_runtime, 'ready');
-  assert.equal(await isDomainHostPortAvailable('127.0.0.1', port), true);
+  await waitForDomainHostPortAvailable('127.0.0.1', port);
 });
 
 test('supervisor: invalid python executable fails clearly', async () => {
@@ -106,7 +107,7 @@ test('supervisor: stop is idempotent and confirms exit', async (t) => {
   const diagnostics = getDomainHostDiagnostics(host.proc);
   assert.equal(diagnostics.alive, false);
   assert.equal(diagnostics.stopped, true);
-  assert.equal(await isDomainHostPortAvailable('127.0.0.1', port), true);
+  await waitForDomainHostPortAvailable('127.0.0.1', port);
 });
 
 test('supervisor: startup failure cleans up owned Host', async () => {
@@ -115,7 +116,7 @@ test('supervisor: startup failure cleans up owned Host', async () => {
     () => startDomainHost({ port, timeoutMs: 1 }),
     /Domain Host lifecycle:/,
   );
-  assert.equal(await isDomainHostPortAvailable('127.0.0.1', port), true);
+  await waitForDomainHostPortAvailable('127.0.0.1', port);
 });
 
 test('supervisor: repeated start/stop cycles leave no owned Host on port', async () => {
@@ -124,8 +125,25 @@ test('supervisor: repeated start/stop cycles leave no owned Host on port', async
     const host = await startDomainHost({ port });
     await stopDomainHostProcess(host.proc);
     assert.ok(hasConfirmedExit(host.proc));
-    assert.equal(await isDomainHostPortAvailable('127.0.0.1', port), true);
+    await waitForDomainHostPortAvailable('127.0.0.1', port);
   }
+});
+
+test('supervisor: waitForDomainHostPortAvailable rejects persistently accepting endpoint', async (t) => {
+  const port = await reserveLocalPort();
+  const server = net.createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', resolve);
+  });
+  t.after(() => new Promise((resolve, reject) => {
+    server.close((err) => (err ? reject(err) : resolve()));
+  }));
+
+  await assert.rejects(
+    () => waitForDomainHostPortAvailable('127.0.0.1', port, { timeoutMs: 200, intervalMs: 50 }),
+    /still accepting TCP connections after 200ms/,
+  );
 });
 
 test('supervisor: startDomainApi registers teardown on failure paths', async (t) => {

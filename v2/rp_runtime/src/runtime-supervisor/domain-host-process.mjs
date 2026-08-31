@@ -94,6 +94,26 @@ export async function isDomainHostPortAvailable(host, port) {
   });
 }
 
+/**
+ * Poll until isDomainHostPortAvailable() reports the endpoint is no longer accepting
+ * TCP connections (connection refused). Does not test OS bind() reuse.
+ */
+export async function waitForDomainHostPortAvailable(host, port, options = {}) {
+  const timeoutMs = Number(options.timeoutMs ?? 5_000);
+  const intervalMs = Number(options.intervalMs ?? 150);
+  const started = Date.now();
+
+  while (Date.now() - started < timeoutMs) {
+    if (await isDomainHostPortAvailable(host, port)) {
+      return;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  throw new Error(
+    `endpoint ${host}:${port} still accepting TCP connections after ${timeoutMs}ms`,
+  );
+}
+
 export function spawnDomainHostProcess(options = {}) {
   const host = options.host ?? '127.0.0.1';
   const port = Number(options.port);
