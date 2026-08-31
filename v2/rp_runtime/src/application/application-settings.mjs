@@ -165,6 +165,7 @@ export function resolveApplicationRoleProfiles(settings = {}, options = {}) {
       narrator: mock,
       opening: mock,
       semantic_evaluator: mock,
+      storyteller: mock,
     };
   }
 
@@ -174,6 +175,7 @@ export function resolveApplicationRoleProfiles(settings = {}, options = {}) {
     narrator: liveProfileForRole('narrator', settings, options),
     opening: liveProfileForRole('opening', settings, options),
     semantic_evaluator: liveProfileForRole('semantic_evaluator', settings, options),
+    storyteller: liveProfileForRole('storyteller', settings, options),
   };
 }
 

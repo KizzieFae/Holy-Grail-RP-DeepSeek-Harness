@@ -7,7 +7,7 @@ import {
   validateRuntimeSettings,
   validateSessionSetup,
 } from '../src/application/application-settings.mjs';
-import { HG_DEEPSEEK_DEFAULT_MODEL } from '../src/lib/inference-profile.mjs';
+import { HG_DEEPSEEK_DEFAULT_MODEL, resolveRoleProfiles } from '../src/lib/inference-profile.mjs';
 
 test('application settings: validate session setup rejects invalid player file', () => {
   const result = validateSessionSetup({
@@ -68,6 +68,36 @@ test('application settings: buildInferenceOptions honors mock mode from options'
   const options = buildInferenceOptions({}, { inferenceMode: 'mock' });
   assert.equal(options.inferenceMode, 'mock');
   assert.equal(options.roleProfiles.director.kind, 'mock');
+  assert.equal(options.roleProfiles.storyteller.kind, 'mock');
+  assert.equal(options.roleProfiles.storyteller.provider, 'hg-mock');
+});
+
+test('application settings: live role profiles include explicit non-mock storyteller', () => {
+  const profiles = resolveApplicationRoleProfiles({
+    inferenceMode: 'live',
+    roleRouting: 'simple',
+    model: HG_DEEPSEEK_DEFAULT_MODEL,
+  });
+  assert.ok('storyteller' in profiles);
+  assert.equal(profiles.storyteller.kind, 'dsh');
+  assert.equal(profiles.storyteller.provider, 'deepseek-official');
+  assert.notEqual(profiles.storyteller.provider, 'hg-mock');
+  assert.equal(profiles.storyteller.reasoningEffort, 'low');
+  assert.equal(profiles.storyteller.maxTokens, 4096);
+});
+
+test('application settings: buildInferenceOptions carries live storyteller profile', () => {
+  const options = buildInferenceOptions({ inferenceMode: 'live' });
+  assert.equal(options.roleProfiles.storyteller.kind, 'dsh');
+  assert.equal(options.roleProfiles.storyteller.provider, 'deepseek-official');
+});
+
+test('application settings: runtime resolution preserves live storyteller from application profiles', () => {
+  const appProfiles = buildInferenceOptions({ inferenceMode: 'live' }).roleProfiles;
+  const resolved = resolveRoleProfiles({ roleProfiles: appProfiles }, {});
+  assert.equal(resolved.storyteller.kind, 'dsh');
+  assert.equal(resolved.storyteller.provider, 'deepseek-official');
+  assert.notEqual(resolved.storyteller.provider, 'hg-mock');
 });
 
 test('application settings: validate runtime settings bounds', () => {
