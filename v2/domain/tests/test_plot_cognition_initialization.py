@@ -9,6 +9,7 @@ import threading
 import unittest
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
 _ROOT = Path(__file__).resolve().parents[3]
 _V2 = _ROOT / "v2"
@@ -58,7 +59,9 @@ from domain_api.plot_cognition_overlay_repository import PlotCognitionOverlayRep
 from domain_api.plot_cognition_overlay_service import PlotCognitionOverlayService  # noqa: E402
 from domain_api.plot_cognition_overlay_store import (  # noqa: E402
     BoundednessPolicy,
+    IntegrityReport,
     LoadStatus,
+    ReplaceResult,
     empty_store,
 )
 from domain_api.plot_cognition_scope_lock import PlotCognitionScopeLockRegistry  # noqa: E402
@@ -515,6 +518,150 @@ class PlotCognitionInitializationServiceTests(unittest.TestCase):
         already = [result for result in results if result.code == "already_initialized"]
         self.assertEqual(len(successes), 1)
         self.assertEqual(len(already), 1)
+
+    def test_failed_persistence_error_normalizes_when_authoritative_ready(self) -> None:
+        fixture = _session_with_opening()
+        proposal = _proposal_from_fixture(fixture, goals=[], pressures=[_pressure_draft()])
+        winner_store, validation = materialize_initial_overlay(
+            proposal,
+            plot_cognition_scope_id=fixture.plot_cognition_scope_id,
+        )
+        assert winner_store is not None
+        self.assertTrue(validation.ok)
+
+        def simulate_concurrent_winner_failure(
+            plot_cognition_scope_id: str,
+            store: object,
+            *,
+            expected_revision: int,
+            policy: BoundednessPolicy,
+        ) -> ReplaceResult:
+            self.repo.save_raw(
+                plot_cognition_scope_id,
+                winner_store.to_dict(),
+                expected_revision=expected_revision,
+            )
+            return ReplaceResult(
+                success=False,
+                prior_revision=expected_revision,
+                new_revision=None,
+                integrity=IntegrityReport(ok=True, violations=()),
+                error_code="persistence_error",
+                error_message="simulated persistence failure after concurrent winner",
+            )
+
+        with patch.object(
+            self.overlay,
+            "replace_snapshot",
+            side_effect=simulate_concurrent_winner_failure,
+        ):
+            result = self.service.commit_initial_overlay_if_absent(
+                fixture,
+                proposal,
+                policy=TEST_POLICY,
+            )
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.code, "already_initialized")
+        loaded = self.overlay.load(fixture.plot_cognition_scope_id, policy=TEST_POLICY)
+        self.assertEqual(loaded.status, LoadStatus.READY)
+
+    def test_failed_persistence_error_preserved_when_still_absent(self) -> None:
+        fixture = _session_with_opening()
+        proposal = _proposal_from_fixture(fixture, goals=[], pressures=[_pressure_draft()])
+
+        with patch.object(
+            self.overlay,
+            "replace_snapshot",
+            return_value=ReplaceResult(
+                success=False,
+                prior_revision=0,
+                new_revision=None,
+                integrity=IntegrityReport(ok=True, violations=()),
+                error_code="persistence_error",
+                error_message="genuine persistence failure",
+            ),
+        ):
+            result = self.service.commit_initial_overlay_if_absent(
+                fixture,
+                proposal,
+                policy=TEST_POLICY,
+            )
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.code, "persistence_failed")
+        loaded = self.overlay.load(fixture.plot_cognition_scope_id, policy=TEST_POLICY)
+        self.assertEqual(loaded.status, LoadStatus.ABSENT)
+
+    def test_failed_revision_conflict_preserved_when_still_absent(self) -> None:
+        fixture = _session_with_opening()
+        proposal = _proposal_from_fixture(fixture, goals=[], pressures=[_pressure_draft()])
+
+        with patch.object(
+            self.overlay,
+            "replace_snapshot",
+            return_value=ReplaceResult(
+                success=False,
+                prior_revision=0,
+                new_revision=None,
+                integrity=IntegrityReport(ok=True, violations=()),
+                error_code="revision_conflict",
+                error_message="revision conflict without established initialization",
+            ),
+        ):
+            result = self.service.commit_initial_overlay_if_absent(
+                fixture,
+                proposal,
+                policy=TEST_POLICY,
+            )
+
+        self.assertFalse(result.success)
+        self.assertEqual(result.code, "revision_conflict")
+        loaded = self.overlay.load(fixture.plot_cognition_scope_id, policy=TEST_POLICY)
+        self.assertEqual(loaded.status, LoadStatus.ABSENT)
+
+    def test_concurrent_barrier_stress_first_writer_wins(self) -> None:
+        fixture = _session_with_opening()
+        barrier = threading.Barrier(2)
+        results: list = []
+
+        def commit(proposal: PlotCognitionInitializationProposal) -> None:
+            barrier.wait(timeout=2)
+            results.append(
+                self.service.commit_initial_overlay_if_absent(
+                    fixture,
+                    proposal,
+                    policy=TEST_POLICY,
+                )
+            )
+
+        for _ in range(100):
+            results.clear()
+            proposal_a = _proposal_from_fixture(fixture, goals=[], pressures=[_pressure_draft()])
+            proposal_b = _proposal_from_fixture(fixture, goals=[], pressures=[_pressure_draft()])
+            threads = [
+                threading.Thread(target=commit, args=(proposal_a,)),
+                threading.Thread(target=commit, args=(proposal_b,)),
+            ]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
+            successes = [result for result in results if result.success]
+            already = [result for result in results if result.code == "already_initialized"]
+            failed = [
+                result
+                for result in results
+                if not result.success and result.code != "already_initialized"
+            ]
+            self.assertEqual(len(successes), 1, msg=f"unexpected failures: {failed}")
+            self.assertEqual(len(already), 1, msg=f"unexpected failures: {failed}")
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
+            self._tmpdir = tempfile.mkdtemp()
+            self.repo = PlotCognitionOverlayRepository(self._tmpdir)
+            self.overlay = PlotCognitionOverlayService(self.repo, scope_locks=self.locks)
+            self.service = PlotCognitionInitializationService(self.overlay)
 
     def test_fully_empty_commit_persists_ready(self) -> None:
         fixture = _session_with_opening()

@@ -155,17 +155,18 @@ class PlotCognitionInitializationService:
             }
 
         if not replace_result.success:
+            reloaded = self._overlay.load(scope_id, policy=policy)
+            if reloaded.status == LoadStatus.READY:
+                return InitializationCommitResult(
+                    success=False,
+                    code="already_initialized",
+                    message="plot cognition overlay initialized by concurrent writer",
+                    store_revision=reloaded.store.store_revision if reloaded.store else None,
+                    load_status=reloaded.status.value,
+                )
+
             code = replace_result.error_code or "persistence_failed"
             if code == "revision_conflict":
-                reloaded = self._overlay.load(scope_id, policy=policy)
-                if reloaded.status == LoadStatus.READY:
-                    return InitializationCommitResult(
-                        success=False,
-                        code="already_initialized",
-                        message="plot cognition overlay initialized by concurrent writer",
-                        store_revision=reloaded.store.store_revision if reloaded.store else None,
-                        load_status=reloaded.status.value,
-                    )
                 mapped = "revision_conflict"
             elif code == "budget_exceeded":
                 mapped = "budget_exceeded"
