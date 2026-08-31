@@ -4,23 +4,53 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+import time
 import urllib.error
 import urllib.request
+import uuid
 
 import streamlit as st
 
 API_BASE = os.environ.get("HG_APP_API_URL", "http://127.0.0.1:8765").rstrip("/")
+TURN_SUBMIT_WAIT_SEC = int(os.environ.get("HG_TURN_SUBMIT_WAIT_SEC", "180"))
+API_READ_TIMEOUT_SEC = int(os.environ.get("HG_API_READ_TIMEOUT_SEC", "30"))
+RECOVERY_POLL_INTERVAL_SEC = float(os.environ.get("HG_TURN_RECOVERY_POLL_SEC", "2"))
+RECOVERY_PRESENTATION_BUDGET_SEC = int(os.environ.get("HG_TURN_RECOVERY_BUDGET_SEC", "600"))
 
 
-def api_request(method: str, path: str, payload: dict | None = None) -> dict:
+class ApiResponseWaitExpired(Exception):
+    """Client synchronous response wait expired — not authoritative round failure."""
+
+
+class ApiConnectivityError(Exception):
+    """Could not reach application API — not authoritative round failure."""
+
+
+class ApiAuthoritativeFailure(Exception):
+    """Server/application reported terminal round failure."""
+
+    def __init__(self, failure: object) -> None:
+        self.failure = failure
+        super().__init__(str(failure))
+
+
+def api_request(
+    method: str,
+    path: str,
+    payload: dict | None = None,
+    *,
+    timeout: float | None = None,
+) -> dict:
     url = f"{API_BASE}{path}"
     data = None
     headers = {"Content-Type": "application/json"}
     if payload is not None:
         data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    read_timeout = timeout if timeout is not None else API_READ_TIMEOUT_SEC
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=read_timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8")
@@ -28,7 +58,50 @@ def api_request(method: str, path: str, payload: dict | None = None) -> dict:
             parsed = json.loads(body)
         except json.JSONDecodeError:
             parsed = {"error": body}
+        if exc.code == 502:
+            raise ApiAuthoritativeFailure(parsed.get("error", parsed)) from exc
+        if exc.code == 409:
+            raise RuntimeError(parsed.get("error", parsed)) from exc
         raise RuntimeError(parsed.get("error", parsed)) from exc
+    except urllib.error.URLError as exc:
+        reason = exc.reason
+        if isinstance(reason, TimeoutError) or (
+            isinstance(reason, socket.timeout)
+        ):
+            if method == "POST" and path == "/api/turns/submit":
+                raise ApiResponseWaitExpired(str(exc)) from exc
+            raise ApiConnectivityError(str(exc)) from exc
+        if "timed out" in str(exc).lower():
+            if method == "POST" and path == "/api/turns/submit":
+                raise ApiResponseWaitExpired(str(exc)) from exc
+            raise ApiConnectivityError(str(exc)) from exc
+        raise ApiConnectivityError(str(exc)) from exc
+
+
+def record_recovery_milestone(
+    milestone: str,
+    *,
+    operation_id: str | None,
+    details: dict | None = None,
+) -> None:
+    if not st.session_state.hg_session_id:
+        return
+    try:
+        api_request(
+            "POST",
+            "/api/application/recovery-milestone",
+            {
+                "hg_session_id": st.session_state.hg_session_id,
+                "client_operation_id": operation_id,
+                "milestone": milestone,
+                "details": {
+                    **(details or {}),
+                    "response_wait_sec": TURN_SUBMIT_WAIT_SEC,
+                },
+            },
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def init_state() -> None:
@@ -56,6 +129,203 @@ def init_state() -> None:
         st.session_state.role_routing = "simple"
     if "audit_tags_by_entry" not in st.session_state:
         st.session_state.audit_tags_by_entry = {}
+    if "turn_submission_locked" not in st.session_state:
+        st.session_state.turn_submission_locked = False
+    if "turn_recovery_active" not in st.session_state:
+        st.session_state.turn_recovery_active = False
+    if "pending_operation_id" not in st.session_state:
+        st.session_state.pending_operation_id = None
+    if "recovery_started_at" not in st.session_state:
+        st.session_state.recovery_started_at = None
+    if "recovery_status_message" not in st.session_state:
+        st.session_state.recovery_status_message = None
+
+
+def submission_controls_locked() -> bool:
+    return bool(
+        st.session_state.turn_submission_locked
+        or st.session_state.turn_recovery_active
+        or st.session_state.runtime_status == "round_in_progress"
+    )
+
+
+def clear_turn_recovery(*, unlock: bool = True) -> None:
+    st.session_state.turn_recovery_active = False
+    st.session_state.pending_operation_id = None
+    st.session_state.recovery_started_at = None
+    st.session_state.recovery_status_message = None
+    if unlock:
+        st.session_state.turn_submission_locked = False
+
+
+def apply_status_payload(status: dict) -> None:
+    health = status.get("health", {})
+    st.session_state.runtime_status = health.get("application_status", "ready")
+    if status.get("active_session_id"):
+        st.session_state.hg_session_id = status["active_session_id"]
+    if status.get("transcript"):
+        st.session_state.transcript = status["transcript"]
+
+
+def refresh_status() -> None:
+    try:
+        status = api_request("GET", "/api/status")
+        apply_status_payload(status)
+    except ApiConnectivityError as exc:
+        st.session_state.runtime_status = f"unavailable: {exc}"
+    except Exception as exc:  # noqa: BLE001
+        st.session_state.runtime_status = f"unavailable: {exc}"
+
+
+def recovery_poll_once() -> str:
+    """Return recovery phase: processing | success | failure | unknown | connectivity."""
+    operation_id = st.session_state.pending_operation_id
+    try:
+        status = api_request("GET", "/api/status")
+        apply_status_payload(status)
+    except ApiConnectivityError:
+        return "connectivity"
+
+    health = status.get("health", {})
+    app_status = health.get("application_status")
+    if app_status == "round_in_progress":
+        return "processing"
+
+    terminal = health.get("last_round_terminal") or {}
+    if terminal.get("operation_id") == operation_id:
+        if terminal.get("outcome") == "succeeded":
+            return "success"
+        if terminal.get("outcome") == "failed":
+            return "failure"
+
+    if app_status == "error" and health.get("last_error"):
+        if terminal.get("operation_id") == operation_id:
+            return "failure"
+
+    if app_status in {"ready", "error"}:
+        return "processing"
+
+    return "unknown"
+
+
+def handle_turn_recovery() -> None:
+    started_at = st.session_state.recovery_started_at or time.time()
+    elapsed = time.time() - started_at
+    phase = recovery_poll_once()
+
+    if phase == "processing":
+        st.session_state.recovery_status_message = (
+            "Round still processing on the server. Waiting for authoritative completion…"
+        )
+        st.info(st.session_state.recovery_status_message)
+        if elapsed >= RECOVERY_PRESENTATION_BUDGET_SEC:
+            record_recovery_milestone(
+                "recovery_terminal",
+                operation_id=st.session_state.pending_operation_id,
+                details={"result": "polling_exhausted"},
+            )
+            clear_turn_recovery(unlock=True)
+            st.warning(
+                "Unable to determine current round outcome after automatic recovery polling. "
+                "Use Refresh status or resume the session transcript when connectivity returns."
+            )
+            return
+        time.sleep(RECOVERY_POLL_INTERVAL_SEC)
+        st.rerun()
+        return
+
+    if phase == "success":
+        record_recovery_milestone(
+            "recovery_terminal",
+            operation_id=st.session_state.pending_operation_id,
+            details={"result": "success_recovered"},
+        )
+        clear_turn_recovery(unlock=True)
+        st.success("Recovered authoritative round completion.")
+        st.rerun()
+        return
+
+    if phase == "failure":
+        record_recovery_milestone(
+            "recovery_terminal",
+            operation_id=st.session_state.pending_operation_id,
+            details={"result": "failure_recovered"},
+        )
+        clear_turn_recovery(unlock=True)
+        st.error("Round failed on the server (authoritative application failure).")
+        st.rerun()
+        return
+
+    if phase == "connectivity":
+        st.session_state.recovery_status_message = (
+            "Unable to reach the application server to determine round status."
+        )
+        st.warning(st.session_state.recovery_status_message)
+        if elapsed >= RECOVERY_PRESENTATION_BUDGET_SEC:
+            record_recovery_milestone(
+                "recovery_terminal",
+                operation_id=st.session_state.pending_operation_id,
+                details={"result": "status_unknown"},
+            )
+            clear_turn_recovery(unlock=True)
+            st.warning("Unable to determine current round outcome.")
+        else:
+            time.sleep(RECOVERY_POLL_INTERVAL_SEC)
+            st.rerun()
+        return
+
+    st.session_state.recovery_status_message = (
+        "Unable to determine current round status from the application."
+    )
+    st.warning(st.session_state.recovery_status_message)
+    if elapsed >= RECOVERY_PRESENTATION_BUDGET_SEC:
+        record_recovery_milestone(
+            "recovery_terminal",
+            operation_id=st.session_state.pending_operation_id,
+            details={"result": "status_unknown"},
+        )
+        clear_turn_recovery(unlock=True)
+    else:
+        time.sleep(RECOVERY_POLL_INTERVAL_SEC)
+        st.rerun()
+
+
+def begin_turn_submission() -> str:
+    operation_id = str(uuid.uuid4())
+    st.session_state.turn_submission_locked = True
+    st.session_state.pending_operation_id = operation_id
+    st.session_state.turn_recovery_active = False
+    st.session_state.recovery_started_at = None
+    st.session_state.recovery_status_message = None
+    return operation_id
+
+
+def start_turn_recovery_from_wait_expiry(operation_id: str) -> None:
+    st.session_state.turn_recovery_active = True
+    st.session_state.recovery_started_at = time.time()
+    record_recovery_milestone(
+        "client_wait_expired",
+        operation_id=operation_id,
+        details={"response_wait_sec": TURN_SUBMIT_WAIT_SEC},
+    )
+    record_recovery_milestone(
+        "recovery_started",
+        operation_id=operation_id,
+        details={},
+    )
+
+
+def submit_user_turn(user_message: str, user_name: str, operation_id: str) -> None:
+    api_request(
+        "POST",
+        "/api/turns/submit",
+        {
+            "userMessage": user_message,
+            "userName": user_name,
+            "client_operation_id": operation_id,
+        },
+        timeout=TURN_SUBMIT_WAIT_SEC,
+    )
 
 
 def load_audit_tags() -> None:
@@ -73,20 +343,6 @@ def load_audit_tags() -> None:
         }
     except Exception:  # noqa: BLE001
         st.session_state.audit_tags_by_entry = {}
-
-
-def refresh_status() -> None:
-    try:
-        status = api_request("GET", "/api/status")
-        st.session_state.runtime_status = status.get("health", {}).get(
-            "application_status", "ready"
-        )
-        if status.get("active_session_id"):
-            st.session_state.hg_session_id = status["active_session_id"]
-        if status.get("transcript"):
-            st.session_state.transcript = status["transcript"]
-    except Exception as exc:  # noqa: BLE001
-        st.session_state.runtime_status = f"unavailable: {exc}"
 
 
 def load_catalogs() -> None:
@@ -328,6 +584,10 @@ def render_sidebar() -> None:
         load_audit_tags()
         st.sidebar.success(f"Opened {st.session_state.hg_session_id}")
 
+    if st.sidebar.button("Refresh status"):
+        refresh_status()
+        st.sidebar.success(f"Runtime: {st.session_state.runtime_status}")
+
     if st.session_state.setup_provenance or st.session_state.memory_scope_id:
         st.sidebar.subheader("Active session")
         if st.session_state.memory_scope_id:
@@ -436,6 +696,9 @@ def render_chat() -> None:
     if st.session_state.hg_session_id:
         load_audit_tags()
 
+    if st.session_state.turn_recovery_active:
+        handle_turn_recovery()
+
     for entry in st.session_state.transcript:
         speaker = entry.get("speaker") or entry.get("role", "unknown")
         if entry.get("player_skip"):
@@ -451,23 +714,37 @@ def render_chat() -> None:
         st.info("Create or open a durable HG session to begin.")
         return
 
-    round_busy = st.session_state.runtime_status == "round_in_progress"
-    if st.button("Skip turn", disabled=round_busy, type="secondary"):
+    controls_locked = submission_controls_locked()
+    if st.button("Skip turn", disabled=controls_locked, type="secondary"):
+        operation_id = begin_turn_submission()
         try:
             result = api_request(
                 "POST",
                 "/api/turns/skip",
-                {"userName": st.session_state.user_persona_id},
+                {
+                    "userName": st.session_state.user_persona_id,
+                    "client_operation_id": operation_id,
+                },
+                timeout=TURN_SUBMIT_WAIT_SEC,
             )
             st.session_state.transcript = result.get("transcript", st.session_state.transcript)
+            clear_turn_recovery(unlock=True)
             st.rerun()
+        except ApiResponseWaitExpired:
+            start_turn_recovery_from_wait_expiry(operation_id)
+            st.rerun()
+        except ApiAuthoritativeFailure as exc:
+            clear_turn_recovery(unlock=True)
+            st.error(f"Skip turn failed on server: {exc.failure}")
         except Exception as exc:  # noqa: BLE001
+            clear_turn_recovery(unlock=True)
             st.error(f"Skip turn failed: {exc}")
 
-    prompt = st.chat_input("Your message", disabled=round_busy)
+    prompt = st.chat_input("Your message", disabled=controls_locked)
     if not prompt:
         return
 
+    operation_id = begin_turn_submission()
     try:
         result = api_request(
             "POST",
@@ -475,18 +752,29 @@ def render_chat() -> None:
             {
                 "userMessage": prompt,
                 "userName": st.session_state.user_persona_id,
+                "client_operation_id": operation_id,
             },
+            timeout=TURN_SUBMIT_WAIT_SEC,
         )
         st.session_state.transcript = result.get("transcript", st.session_state.transcript)
+        clear_turn_recovery(unlock=True)
         st.rerun()
+    except ApiResponseWaitExpired:
+        start_turn_recovery_from_wait_expiry(operation_id)
+        st.rerun()
+    except ApiAuthoritativeFailure as exc:
+        clear_turn_recovery(unlock=True)
+        st.error(f"Round failed on server (authoritative application failure): {exc.failure}")
     except Exception as exc:  # noqa: BLE001
-        st.error(f"Turn failed: {exc}")
+        clear_turn_recovery(unlock=True)
+        st.error(f"Submission error: {exc}")
 
 
 def main() -> None:
     st.set_page_config(page_title="Holy Grail V2", page_icon="⚔️", layout="wide")
     init_state()
-    refresh_status()
+    if not st.session_state.turn_recovery_active:
+        refresh_status()
     render_sidebar()
     render_chat()
 

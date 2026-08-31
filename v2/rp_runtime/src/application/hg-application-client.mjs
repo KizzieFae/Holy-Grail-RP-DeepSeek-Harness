@@ -1,6 +1,13 @@
 import { detectForcedSpeaker } from './detect-forced-speaker.mjs';
 import crypto from 'node:crypto';
 import {
+  buildApplicationHealthView,
+  buildTerminalOutcome,
+  createConcurrentRoundError,
+  createOperationId,
+  LIFECYCLE_MILESTONES,
+} from './application-turn-lifecycle.mjs';
+import {
   buildInferenceOptions,
   defaultRuntimeSettings,
   settingsView,
@@ -62,6 +69,8 @@ export class HolyGrailApplicationClient {
     this.status = 'idle';
     this.lastError = null;
     this.roundInProgress = false;
+    this.activeRoundOperation = null;
+    this.lastRoundTerminal = null;
     this.auditTags = new AuditTagService({ env: options.env });
   }
 
@@ -74,13 +83,38 @@ export class HolyGrailApplicationClient {
   }
 
   getHealth() {
-    if (this.roundInProgress) {
-      return { ...this.supervisor.getReadyState(), application_status: 'round_in_progress' };
+    return buildApplicationHealthView(this);
+  }
+
+  getStatusView() {
+    return {
+      health: this.getHealth(),
+      active_session_id: this.activeSessionId,
+      transcript: this.getTranscript(),
+    };
+  }
+
+  recordClientRecoveryMilestone(input = {}) {
+    this._requireReady();
+    const milestone = input.milestone ?? input.event;
+    if (!milestone) {
+      throw new Error('milestone required');
     }
-    if (this.lastError) {
-      return { ...this.supervisor.getReadyState(), application_status: 'error', last_error: this.lastError };
+    const hgSessionId = input.hgSessionId ?? input.hg_session_id ?? this.activeSessionId;
+    if (!hgSessionId) {
+      throw new Error('hg_session_id required');
     }
-    return { ...this.supervisor.getReadyState(), application_status: this.status };
+    const operationId = input.clientOperationId ?? input.client_operation_id ?? null;
+    const hgRoundId = input.hgRoundId ?? input.hg_round_id
+      ?? this.activeRoundOperation?.hg_round_id
+      ?? this.lastRoundTerminal?.hg_round_id
+      ?? null;
+    return this._recordLifecycleMilestone(milestone, {
+      operationId,
+      hgRoundId,
+      hgSessionId,
+      details: input.details ?? {},
+    });
   }
 
   async start() {
@@ -230,66 +264,111 @@ export class HolyGrailApplicationClient {
   async submitUserTurn(input = {}) {
     this._requireReady();
     this._requireActiveSession();
+    this._assertRoundAvailable('user_turn');
 
     const userMessage = String(input.userMessage ?? input.user_message ?? '').trim();
     if (!userMessage) {
       throw new Error('userMessage is required');
     }
 
-    const state = await this.getSessionState();
-    const cast = [...(state.present_characters ?? this.activeCast)];
-    let forcedDesignation = input.forcedDesignation ?? input.forced_designation ?? null;
-    if (!forcedDesignation) {
-      forcedDesignation = detectForcedSpeaker(userMessage, {
-        participantNames: cast,
-        previousParticipantSpeaker: this.lastSpeaker,
-        characterFileIds: this.characterFileIds,
+    const operationId = createOperationId(input);
+    this._beginRoundOperation(operationId, 'user_turn');
+
+    try {
+      const state = await this.getSessionState();
+      const cast = [...(state.present_characters ?? this.activeCast)];
+      let forcedDesignation = input.forcedDesignation ?? input.forced_designation ?? null;
+      if (!forcedDesignation) {
+        forcedDesignation = detectForcedSpeaker(userMessage, {
+          participantNames: cast,
+          previousParticipantSpeaker: this.lastSpeaker,
+          characterFileIds: this.characterFileIds,
+        });
+      }
+
+      const api = this.orchestrator._domainClient();
+      await api.recordUserTurn({
+        hg_session_id: this.activeSessionId,
+        content: userMessage,
+        speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
+        forced_designation: forcedDesignation,
       });
+
+      return await this._runActiveRound({
+        forcedDesignation,
+        inferenceInput: input,
+        operationId,
+      });
+    } catch (err) {
+      if (!err.httpStatus) {
+        this._abortRoundOperation(err);
+      }
+      throw err;
     }
-
-    const api = this.orchestrator._domainClient();
-    await api.recordUserTurn({
-      hg_session_id: this.activeSessionId,
-      content: userMessage,
-      speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
-      forced_designation: forcedDesignation,
-    });
-
-    return this._runActiveRound({
-      forcedDesignation,
-      inferenceInput: input,
-    });
   }
 
   async submitSkipTurn(input = {}) {
     this._requireReady();
     this._requireActiveSession();
+    this._assertRoundAvailable('skip_turn');
 
-    const api = this.orchestrator._domainClient();
-    await api.recordPlayerSkip({
-      hg_session_id: this.activeSessionId,
-      speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
-    });
-
-    return this._runActiveRound({
-      forcedDesignation: null,
-      inferenceInput: input,
-    });
-  }
-
-  async _runActiveRound({ forcedDesignation, inferenceInput = {} }) {
-    const api = this.orchestrator._domainClient();
-    this.roundInProgress = true;
-    this.lastError = null;
-    this.status = 'round_in_progress';
+    const operationId = createOperationId(input);
+    this._beginRoundOperation(operationId, 'skip_turn');
 
     try {
+      const api = this.orchestrator._domainClient();
+      await api.recordPlayerSkip({
+        hg_session_id: this.activeSessionId,
+        speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
+      });
+
+      return await this._runActiveRound({
+        forcedDesignation: null,
+        inferenceInput: input,
+        operationId,
+      });
+    } catch (err) {
+      if (!err.httpStatus) {
+        this._abortRoundOperation(err);
+      }
+      throw err;
+    }
+  }
+
+  async _runActiveRound({ forcedDesignation, inferenceInput = {}, operationId }) {
+    const api = this.orchestrator._domainClient();
+    const resolvedOperationId = operationId ?? this.activeRoundOperation?.operation_id;
+    this.lastError = null;
+
+    try {
+      this._recordLifecycleMilestone(LIFECYCLE_MILESTONES.ROUND_BEGAN, {
+        operationId: resolvedOperationId,
+        details: { kind: this.activeRoundOperation?.kind ?? null },
+      });
+
       const roundOptions = {
         session: { mode: 'open', hg_session_id: this.activeSessionId },
         forcedDesignation,
         ...this._resolveInferenceOptions(inferenceInput),
+        testRoundDelayMs: inferenceInput.testRoundDelayMs,
       };
+      if (inferenceInput.testRoundDelayMs) {
+        await new Promise((resolve) => {
+          setTimeout(resolve, Number(inferenceInput.testRoundDelayMs));
+        });
+      }
+      if (
+        inferenceInput.forceRoundFailure
+        && (this.options.inferenceMode === 'mock' || inferenceInput.inferenceMode === 'mock')
+      ) {
+        throw Object.assign(new Error('forced test round failure'), {
+          failure: { category: 'round_failure', message: 'forced test round failure' },
+        });
+      }
       const roundResult = await this.orchestrator.runRound(roundOptions);
+      if (this.activeRoundOperation && roundResult.hg_round_id) {
+        this.activeRoundOperation.hg_round_id = roundResult.hg_round_id;
+      }
       await this._recordRoundPresentations(api, roundResult);
       await this._refreshTranscript();
       const presentation = presentationFromRound(roundResult);
@@ -298,6 +377,15 @@ export class HolyGrailApplicationClient {
         this.lastSpeaker = roundResult.selected_character_id;
       }
 
+      this.lastRoundTerminal = buildTerminalOutcome({
+        operationId: resolvedOperationId,
+        outcome: 'succeeded',
+        hgRoundId: roundResult.hg_round_id,
+      });
+      this._recordLifecycleMilestone(LIFECYCLE_MILESTONES.ROUND_TERMINAL_SUCCEEDED, {
+        operationId: resolvedOperationId,
+        hgRoundId: roundResult.hg_round_id,
+      });
       this.status = 'ready';
       return {
         session: await this.getSessionState(),
@@ -305,14 +393,27 @@ export class HolyGrailApplicationClient {
         presentation,
         transcript: this.getTranscript(),
         forced_designation: forcedDesignation,
+        client_operation_id: resolvedOperationId,
       };
     } catch (err) {
-      const failure = classifyFailure(err);
+      const failure = err.failure ?? classifyFailure(err);
       this.lastError = failure;
+      this.lastRoundTerminal = buildTerminalOutcome({
+        operationId: resolvedOperationId,
+        outcome: 'failed',
+        hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
+        failure,
+      });
+      this._recordLifecycleMilestone(LIFECYCLE_MILESTONES.ROUND_TERMINAL_FAILED, {
+        operationId: resolvedOperationId,
+        hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
+        details: { failure_category: failure.category },
+      });
       this.status = 'ready';
       throw Object.assign(err instanceof Error ? err : new Error(String(err)), { failure });
     } finally {
       this.roundInProgress = false;
+      this.activeRoundOperation = null;
     }
   }
 
@@ -350,6 +451,61 @@ export class HolyGrailApplicationClient {
     if (!this.activeSessionId) {
       throw new Error('no active hg_session_id — create or open a session first');
     }
+  }
+
+  _executionEvidenceRecorder() {
+    return this.supervisor.runtime?.phaseExecutors?.executionEvidenceRecorder ?? null;
+  }
+
+  _recordLifecycleMilestone(milestone, {
+    operationId = null,
+    hgRoundId = null,
+    hgSessionId = this.activeSessionId,
+    details = {},
+  } = {}) {
+    const recorder = this._executionEvidenceRecorder();
+    if (!recorder?.isEnabled?.() || !hgSessionId) return null;
+    return recorder.recordApplicationLifecycleMilestone({
+      hgSessionId,
+      hgRoundId,
+      operationId,
+      milestone,
+      details,
+    });
+  }
+
+  _assertRoundAvailable(kind) {
+    if (this.roundInProgress) {
+      const err = createConcurrentRoundError(kind);
+      this._recordLifecycleMilestone(LIFECYCLE_MILESTONES.CONCURRENT_SUBMIT_REJECTED, {
+        operationId: null,
+        details: {
+          rejected_kind: kind,
+          active_operation_id: this.activeRoundOperation?.operation_id ?? null,
+        },
+      });
+      throw err;
+    }
+  }
+
+  _beginRoundOperation(operationId, kind) {
+    this.roundInProgress = true;
+    this.lastError = null;
+    this.lastRoundTerminal = null;
+    this.status = 'round_in_progress';
+    this.activeRoundOperation = {
+      operation_id: operationId,
+      kind,
+      started_at: new Date().toISOString(),
+      hg_round_id: null,
+    };
+  }
+
+  _abortRoundOperation(err) {
+    this.roundInProgress = false;
+    this.activeRoundOperation = null;
+    this.status = 'ready';
+    this.lastError = classifyFailure(err);
   }
 
   async _refreshTranscript() {

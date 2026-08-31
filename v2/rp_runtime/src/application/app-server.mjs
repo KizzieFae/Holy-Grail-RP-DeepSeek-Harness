@@ -31,11 +31,7 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
       }
 
       if (req.method === 'GET' && path === '/api/status') {
-        return sendJson(res, 200, {
-          health: applicationClient.getHealth(),
-          active_session_id: applicationClient.activeSessionId,
-          transcript: applicationClient.getTranscript(),
-        });
+        return sendJson(res, 200, applicationClient.getStatusView());
       }
 
       if (req.method === 'GET' && path === '/api/characters') {
@@ -117,6 +113,9 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
           const result = await applicationClient.submitUserTurn(body);
           return sendJson(res, 200, result);
         } catch (err) {
+          if (err.httpStatus === 409) {
+            return sendJson(res, 409, { error: err.failure ?? { category: 'concurrent_round', message: String(err) } });
+          }
           const failure = err.failure ?? { category: 'round_failure', message: String(err) };
           return sendJson(res, 502, { error: failure, transcript: applicationClient.getTranscript() });
         }
@@ -128,8 +127,22 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
           const result = await applicationClient.submitSkipTurn(body);
           return sendJson(res, 200, result);
         } catch (err) {
+          if (err.httpStatus === 409) {
+            return sendJson(res, 409, { error: err.failure ?? { category: 'concurrent_round', message: String(err) } });
+          }
           const failure = err.failure ?? { category: 'round_failure', message: String(err) };
           return sendJson(res, 502, { error: failure, transcript: applicationClient.getTranscript() });
+        }
+      }
+
+      if (req.method === 'POST' && path === '/api/application/recovery-milestone') {
+        const body = await readJson(req);
+        try {
+          const evidenceId = applicationClient.recordClientRecoveryMilestone(body);
+          return sendJson(res, 200, { recorded: Boolean(evidenceId), evidence_id: evidenceId });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return sendJson(res, 400, { error: message });
         }
       }
 

@@ -136,6 +136,9 @@ Implementation-tree detail: [v2/README.md](./v2/README.md).
 | `HG_SKIP_STREAMLIT` | Set to `1` to skip spawning Streamlit |
 | `HG_STREAMLIT_PORT` | Streamlit UI port (default: `8510`) |
 | `HG_APP_PORT` | Application API listen port (default: ephemeral) |
+| `HG_TURN_SUBMIT_WAIT_SEC` | Streamlit synchronous **response-wait** for `POST /api/turns/submit` and skip (default: `180`). Controls when the UI stops waiting for the original HTTP response and enters recovery — **not** a maximum valid server round duration. |
+| `HG_API_READ_TIMEOUT_SEC` | Streamlit read timeout for routine GET/status polling (default: `30`) |
+| `HG_TURN_RECOVERY_BUDGET_SEC` | Streamlit automatic recovery polling presentation budget (default: `600` / ~10 minutes). Not a server execution deadline. |
 
 ---
 

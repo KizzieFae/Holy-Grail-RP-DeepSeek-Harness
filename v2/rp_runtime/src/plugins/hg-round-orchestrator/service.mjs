@@ -89,6 +89,12 @@ export default class HgRoundOrchestrator extends Service {
     });
     const roleProfiles = resolveRoleProfiles(options, this.config.inference);
     const liveMaxAttempts = Number(options.liveMaxAttempts ?? 3);
+    const testRoundDelayMs = Number(options.testRoundDelayMs ?? 0);
+    if (testRoundDelayMs > 0) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, testRoundDelayMs);
+      });
+    }
     const livePrompts = options.livePrompts ?? {};
     const roundStartedAt = Date.now();
     const roleTimings = {

@@ -188,6 +188,47 @@ export class ExecutionEvidenceRecorder {
    * Record a Narrator-phase failure that occurred before a normal inference attempt
    * could be retained (e.g. context prepare throw, inference-boundary throw).
    */
+  /**
+   * Application/turn lifecycle milestone (#86). Observational only.
+   */
+  recordApplicationLifecycleMilestone({
+    hgSessionId,
+    hgRoundId = null,
+    operationId = null,
+    milestone,
+    details = {},
+  }) {
+    if (!this.enabled || !hgSessionId || !milestone) return null;
+    const evidenceId = crypto.randomUUID();
+    const attempt = {
+      evidence_id: evidenceId,
+      correlation: {
+        evidence_id: evidenceId,
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSessionId,
+        hg_round_id: hgRoundId,
+        role: 'application_lifecycle',
+        operation_id: operationId,
+        milestone,
+        attempt_index: 0,
+      },
+      request: null,
+      response: null,
+      decision: {
+        milestone,
+        operation_id: operationId,
+        hg_round_id: hgRoundId,
+        ...details,
+      },
+      associations: {
+        operation_id: operationId,
+        hg_round_id: hgRoundId,
+      },
+    };
+    this.store.writeAttempt(attempt);
+    return evidenceId;
+  }
+
   recordNarratorPhaseFailure({
     hgSessionId,
     hgSceneId,
