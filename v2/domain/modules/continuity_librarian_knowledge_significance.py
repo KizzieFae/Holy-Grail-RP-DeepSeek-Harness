@@ -85,10 +85,14 @@ def _build_annotation(
     level: str,
     note: str | None,
 ) -> dict[str, Any]:
-    return {
+    payload = dict(proposal.proposed_payload or {})
+    scope = str(payload.get("interpretation_scope", "") or "").strip()
+    refs = payload.get("proposition_authority_refs")
+    annotation: dict[str, Any] = {
         "revelation_significance_level": level,
         "annotation_note": note,
         "subject_character": subject,
+        "interpretation_scope": scope,
         "proposal_id": proposal.proposal_id,
         "proposal_batch_id": proposal.proposal_batch_id,
         "domain_commit_id": proposal.commit_binding.domain_commit_id,
@@ -96,6 +100,11 @@ def _build_annotation(
         "derivation_summary": proposal.derivation_summary,
         "confidence": proposal.confidence,
     }
+    if isinstance(refs, list) and refs:
+        annotation["proposition_authority_refs"] = [
+            str(item).strip() for item in refs if str(item).strip()
+        ]
+    return annotation
 
 
 def apply_knowledge_revelation_significance(

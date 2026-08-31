@@ -113,6 +113,7 @@ def _s4b_proposal_result(
         "event_ref": event_id,
         "subject_character": subject_character,
         "revelation_significance_level": level,
+        "interpretation_scope": "utterance_occurrence",
         "annotation_note": note,
     }
     if grant_knowledge:
@@ -171,6 +172,7 @@ def _apply_pair(
                 "event_ref": event.event_id,
                 "subject_character": first_subject,
                 "revelation_significance_level": first_level,
+                "interpretation_scope": "utterance_occurrence",
             },
             commit_binding=ProposalCommitBinding(
                 domain_commit_id="commit-s4b-1",
@@ -199,6 +201,7 @@ def _apply_pair(
                 "event_ref": event.event_id,
                 "subject_character": second_subject,
                 "revelation_significance_level": second_level,
+                "interpretation_scope": "utterance_occurrence",
             },
             commit_binding=ProposalCommitBinding(
                 domain_commit_id="commit-s4b-1",
@@ -229,6 +232,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "event_ref": "evt-revelation-1",
                 "subject_character": "Alice",
                 "revelation_significance_level": "major",
+                "interpretation_scope": "utterance_occurrence",
             },
         )
         self.assertTrue(ok)
@@ -329,6 +333,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "event_ref": "evt-1",
                 "subject_character": "Alice",
                 "revelation_significance_level": "major",
+                "interpretation_scope": "utterance_occurrence",
                 "grant_knowledge": True,
             },
         )
@@ -405,6 +410,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                     "event_ref": event.event_id,
                     "subject_character": "Alice",
                     "revelation_significance_level": "major",
+                    "interpretation_scope": "utterance_occurrence",
                     "annotation_note": "original note",
                 },
                 commit_binding=ProposalCommitBinding(
@@ -434,6 +440,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                     "event_ref": event.event_id,
                     "subject_character": "Alice",
                     "revelation_significance_level": "major",
+                    "interpretation_scope": "utterance_occurrence",
                     "annotation_note": "different note should not apply",
                 },
                 commit_binding=ProposalCommitBinding(
@@ -524,6 +531,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "event_ref": event.event_id,
                 "subject_character": "Bob",
                 "revelation_significance_level": "pivotal",
+                "interpretation_scope": "utterance_occurrence",
             },
             commit_binding=ProposalCommitBinding(
                 domain_commit_id="commit-s4b-1",
@@ -589,6 +597,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "event_ref": "evt-missing",
                 "subject_character": "Alice",
                 "revelation_significance_level": "major",
+                "interpretation_scope": "utterance_occurrence",
             },
             commit_binding=ProposalCommitBinding(
                 domain_commit_id="commit-s4b-1",
@@ -625,6 +634,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "event_ref": event.event_id,
                 "subject_character": "Alice",
                 "revelation_significance_level": "major",
+                "interpretation_scope": "utterance_occurrence",
             },
             commit_binding=ProposalCommitBinding(
                 domain_commit_id="commit-s4b-1",

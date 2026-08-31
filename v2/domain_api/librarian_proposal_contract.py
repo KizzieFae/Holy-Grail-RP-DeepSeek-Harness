@@ -36,6 +36,13 @@ EvidenceKind = Literal[
     "knowledge_record",
     "bundle_entry",
     "continuity_issue",
+    "scenario_premise",
+    "authored_role_private",
+    "derived_story_record",
+]
+InterpretationScope = Literal[
+    "utterance_occurrence",
+    "referenced_authoritative_proposition",
 ]
 ProposalConfidence = Literal["confirmed", "likely", "speculative"]
 ProposalValidationOutcome = Literal["accept", "reject"]
@@ -276,9 +283,17 @@ def validate_proposal_payload_schema(
             return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
         return True, "", ()
     if proposal_kind == "knowledge_revelation_significance":
+        from .librarian_proposal_epistemic import (
+            INTERPRETATION_SCOPE_REFERENCED_AUTHORITATIVE,
+            INTERPRETATION_SCOPE_UTTERANCE_OCCURRENCE,
+            VALID_INTERPRETATION_SCOPES,
+            proposition_authority_refs_from_payload,
+        )
+
         event_ref = str(payload.get("event_ref", "") or "").strip()
         subject = str(payload.get("subject_character", "") or "").strip()
         level = str(payload.get("revelation_significance_level", "") or "").strip()
+        scope = str(payload.get("interpretation_scope", "") or "").strip()
         if (
             not event_ref
             or not subject
@@ -289,6 +304,27 @@ def validate_proposal_payload_schema(
                 "knowledge_revelation_significance requires event_ref, subject_character, and legal revelation_significance_level",
                 ("invalid_payload_schema",),
             )
+        if scope not in VALID_INTERPRETATION_SCOPES:
+            return (
+                False,
+                f"invalid_interpretation_scope:{scope or '<missing>'}",
+                ("invalid_interpretation_scope",),
+            )
+        if scope == INTERPRETATION_SCOPE_REFERENCED_AUTHORITATIVE:
+            if not proposition_authority_refs_from_payload(payload):
+                return (
+                    False,
+                    "missing_proposition_authority_refs",
+                    ("missing_proposition_authority",),
+                )
+        if scope == INTERPRETATION_SCOPE_UTTERANCE_OCCURRENCE:
+            refs = proposition_authority_refs_from_payload(payload)
+            if refs:
+                return (
+                    False,
+                    "utterance_occurrence_must_not_include_proposition_authority_refs",
+                    ("invalid_payload_schema",),
+                )
         if payload.get("authority_class") == "authoritative":
             return False, "authority_elevation_attempt", ("authority_elevation_attempt",)
         if payload.get("grant_knowledge") or payload.get("add_to_known_by"):

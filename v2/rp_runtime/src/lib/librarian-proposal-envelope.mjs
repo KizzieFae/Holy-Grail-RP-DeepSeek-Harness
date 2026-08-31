@@ -22,6 +22,7 @@ const CONSEQUENCE_TAGS = [
 ];
 
 const SALIENCE_LEVELS = ['minor', 'major', 'pivotal'];
+const INTERPRETATION_SCOPES = ['utterance_occurrence', 'referenced_authoritative_proposition'];
 
 const FORBIDDEN_PROPOSAL_FIELD_ALIASES = [
   'change_kind',
@@ -66,7 +67,7 @@ export function buildLibrarianProposalContractSpec({
     payload_by_kind: {
       consequence_meaning: `{ tags: non-empty string[] from ${CONSEQUENCE_TAGS.join('|')} }`,
       information_salience: `{ subject_ref: string, salience_level: ${SALIENCE_LEVELS.join('|')} }`,
-      knowledge_revelation_significance: `{ event_ref, subject_character, revelation_significance_level: ${SALIENCE_LEVELS.join('|')} }`,
+      knowledge_revelation_significance: `{ event_ref, subject_character, revelation_significance_level: ${SALIENCE_LEVELS.join('|')}, interpretation_scope: ${INTERPRETATION_SCOPES.join('|')}, proposition_authority_refs?: string[] (required when interpretation_scope=referenced_authoritative_proposition; must cite world_truth_eligible catalog anchors) }`,
       issue_tension_pressure: '{ issue_ref, semantic_unmet_condition, stakes_summary? }',
     },
     forbidden: [
@@ -135,6 +136,11 @@ export function buildLibrarianProposalPrompt(context = {}) {
     'Propose grounded information-level persistence/change candidates ONLY from evidence catalog anchor_id values.',
     'Do NOT invent facts, authority, or continuity commits.',
     'Do NOT use Storyteller PreservationSignal or attention refs as evidence.',
+    'Occurrence truth ≠ proposition truth: public_event and committed_move anchors prove what occurred or was said; they do NOT establish objective world truth of claims inside dialogue.',
+    'For knowledge_revelation_significance:',
+    '- interpretation_scope utterance_occurrence: mark significance of what the Character said/claimed/expressed without endorsing the proposition as world truth. derivation_summary must frame significance of the utterance/claim, not objective ontology.',
+    '- interpretation_scope referenced_authoritative_proposition: connect the occurrence to a proposition that already has independent world authority; cite proposition_authority_refs to catalog anchors with world_truth_eligible metadata (e.g. scenario_premise).',
+    '- authored_role_private anchors support private epistemic alignment only; they cannot be the sole world-truth authority.',
     'Return ONLY one JSON object (no markdown fences, no commentary).',
     '',
     ...librarianProposalContractPromptLines(context),

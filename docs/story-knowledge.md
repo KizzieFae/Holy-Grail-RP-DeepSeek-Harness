@@ -162,6 +162,24 @@ InformationNeed (Librarian)
 
 ---
 
+## 7.1 Librarian S4b significance annotations (#80)
+
+`knowledge_revelation_significance` (S4b) writes **per-knower significance annotations** on grounded `PublicEvent` records (`revelation_significance_by_character`). These annotations:
+
+- **Do not** establish proposition/world truth.
+- **Do not** mutate `known_by` or substitute for `submit_derived_record`.
+- **Require** explicit machine-readable **`interpretation_scope`** (one of two valid values):
+  - **`utterance_occurrence`** — significance of what was said/claimed/expressed; occurrence evidence suffices; does **not** endorse the utterance's proposition.
+  - **`referenced_authoritative_proposition`** — links the occurrence to a proposition that **already** has independent world authority via **`proposition_authority_refs`** to catalog anchors with `world_truth_eligible` metadata (e.g. `scenario_premise`).
+- Missing or invalid `interpretation_scope` is **invalid** for active semantic processing (proposals are rejected; unscoped stored annotations are **excluded** from Librarian proposal catalog input).
+- Treat **`derivation_summary`** as an interpretation/significance note only — **not** proposition authority. It is never re-exported as catalog semantic input.
+
+**Historical records:** Pre-#80 persisted annotations may lack `interpretation_scope` on disk. They remain forensic evidence unchanged; there is **no** compatibility interpretation, migration, or synthetic scope assignment for new-run processing.
+
+**Private epistemic alignment:** `authored_role_private` catalog anchors (#79 delivery path) support that a role/Character was authored to possess private scenario information; they **do not** alone satisfy world-proposition authority.
+
+---
+
 ## 8. Semantic backend (current selection)
 
 | Aspect | Choice |

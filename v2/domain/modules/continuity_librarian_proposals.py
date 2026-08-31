@@ -32,6 +32,9 @@ REASON_UNKNOWN_EVENT = "unknown_event_reference"
 REASON_UNKNOWN_ISSUE = "unknown_issue_reference"
 REASON_ISSUE_NOT_PROJECTABLE = "issue_not_projectable"
 REASON_SUBJECT_NOT_KNOWER = "subject_not_in_known_by"
+REASON_MISSING_PROPOSITION_AUTHORITY = "missing_proposition_authority"
+REASON_PROPOSITION_TRUTH_UNSUPPORTED = "proposition_truth_unsupported"
+REASON_INVALID_INTERPRETATION_SCOPE = "invalid_interpretation_scope"
 
 
 @dataclass(frozen=True)
@@ -205,6 +208,22 @@ def _validate_knowledge_revelation_significance_legality(
             outcome="reject",
             reason_code=REASON_INVALID_PAYLOAD,
             reason_detail="missing_subject_character",
+            durable_mutation_applied=False,
+        )
+
+    from domain_api.librarian_proposal_epistemic import validate_revelation_significance_epistemic
+
+    epistemic_ok, epistemic_detail, epistemic_codes = validate_revelation_significance_epistemic(
+        payload,
+        catalog=catalog,
+    )
+    if not epistemic_ok:
+        reason = epistemic_codes[0] if epistemic_codes else REASON_INVALID_PAYLOAD
+        return ContinuityProposalItemDecision(
+            proposal_id=proposal.proposal_id,
+            outcome="reject",
+            reason_code=reason,
+            reason_detail=epistemic_detail,
             durable_mutation_applied=False,
         )
     return None

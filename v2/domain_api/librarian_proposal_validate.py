@@ -18,6 +18,7 @@ from .librarian_proposal_contract import (
     new_proposal_id,
     validate_proposal_payload_schema,
 )
+from .librarian_proposal_epistemic import validate_revelation_significance_epistemic
 
 _VALID_CONFIDENCE = frozenset({"confirmed", "likely", "speculative"})
 _PRESERVATION_SIGNAL_PREFIXES = (
@@ -189,6 +190,12 @@ def validate_host_proposal_item(
                     break
             if not matched:
                 codes.append("unknown_event_reference")
+        epistemic_ok, _detail, epistemic_codes = validate_revelation_significance_epistemic(
+            proposal.proposed_payload,
+            catalog=catalog,
+        )
+        if not epistemic_ok:
+            codes.extend(epistemic_codes)
     deduped = tuple(dict.fromkeys(codes))
     accepted = not deduped
     return HostProposalItemValidation(
