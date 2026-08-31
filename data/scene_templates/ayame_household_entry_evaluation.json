@@ -2,7 +2,10 @@
   "template_id": "ayame_household_entry_evaluation",
   "cohesion_policy": "anchor_only",
   "anchor_role_name": "applicant",
-  "premise": "A newcomer is brought into a controlled household space for evaluation while the host and at least one established presence remain actively involved.",
+  "premise": "A desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear.",
+  "role_private_knowledge": {
+    "host": "The host privately engineered the chain of events that cost the applicant her job and apartment, placed the household-help advertisement, and expedited the interview invitation. The host knows the sequence was deliberate: vulnerability and dependence were created, then the applicant was steered toward live-in domestic employment under the host's control."
+  },
   "location_entry_slots": [
     "foyer",
     "evaluation_room",

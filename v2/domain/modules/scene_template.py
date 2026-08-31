@@ -96,6 +96,7 @@ class SceneTemplate:
     initial_messages: list[TemplateInitialMessage] = field(default_factory=list)
     sleeping_surface_slots: list[str] = field(default_factory=list)
     location_entry_slots: list[str] = field(default_factory=list)
+    role_private_knowledge: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -109,6 +110,8 @@ class SceneTemplate:
             "sleeping_surface_slots": list(self.sleeping_surface_slots),
             "location_entry_slots": list(self.location_entry_slots),
         }
+        if self.role_private_knowledge:
+            out["role_private_knowledge"] = dict(self.role_private_knowledge)
         return out
 
     def get_role_slot(self, role_name: str) -> SceneRoleSlot | None:
@@ -151,6 +154,14 @@ class SceneTemplate:
             for item in data.get("location_entry_slots", [])
             if str(item or "").strip()
         ]
+        role_private_knowledge: dict[str, str] = {}
+        raw_role_private = data.get("role_private_knowledge")
+        if isinstance(raw_role_private, dict):
+            for role_name, knowledge in raw_role_private.items():
+                role_key = str(role_name or "").strip()
+                knowledge_text = str(knowledge or "").strip()
+                if role_key and knowledge_text:
+                    role_private_knowledge[role_key] = knowledge_text
         anchor_raw = str(data.get("anchor_role_name", "") or "").strip()
         if not anchor_raw:
             raise ValueError(
@@ -176,6 +187,7 @@ class SceneTemplate:
             initial_messages=initial_messages,
             sleeping_surface_slots=sleeping_surface_slots,
             location_entry_slots=location_entry_slots,
+            role_private_knowledge=role_private_knowledge,
         )
         validate_template_cohesion(template)
         return template

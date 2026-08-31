@@ -109,6 +109,7 @@ These are the **only** canonical **authored** (designer-written, versionable) **
 - `role_slots`
 - `sleeping_surface_slots`
 - `location_entry_slots`
+- Optional `role_private_knowledge` — map of `role_slots[].role_name` → authoritative scenario-private text for whichever Character is assigned that role at bootstrap (delivered via existing `character_private_secrets` / `character_private` projection; not globally shared premise)
 - Optional **legacy compatibility** only: `opening_text` (fallback; not the primary opener model)
 
 **Exclude**:

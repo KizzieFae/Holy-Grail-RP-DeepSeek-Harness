@@ -61,6 +61,29 @@ def create_character_state_from_card(card: dict[str, Any]) -> CharacterState:
     )
 
 
+def _merge_character_private_secret(existing: str, scenario: str) -> str:
+    parts = [part.strip() for part in (existing, scenario) if str(part or "").strip()]
+    return "\n\n".join(parts)
+
+
+def _materialize_role_private_secrets(
+    *,
+    role_private_knowledge: dict[str, str],
+    role_assignments_by_file: dict[str, str],
+    names_by_file: dict[str, str],
+    secrets: dict[str, str],
+) -> None:
+    if not role_private_knowledge:
+        return
+    for char_file, role_name in normalize_role_assignments(role_assignments_by_file).items():
+        knowledge = str(role_private_knowledge.get(role_name, "") or "").strip()
+        if not knowledge:
+            continue
+        display_name = names_by_file.get(char_file, char_file)
+        existing = str(secrets.get(display_name, "") or "").strip()
+        secrets[display_name] = _merge_character_private_secret(existing, knowledge)
+
+
 def _resolve_scene_setup(
     *,
     template_id: str | None,
@@ -111,6 +134,7 @@ def _resolve_scene_setup(
         "character_authority_labels": character_authority_labels,
         "sleeping_surface_slots": list(template.sleeping_surface_slots),
         "location_entry_slots": list(template.location_entry_slots),
+        "role_private_knowledge": dict(template.role_private_knowledge),
     }, ""
 
 
@@ -203,6 +227,14 @@ def create_live_session_from_setup(
     )
     if setup_error:
         raise ValueError(setup_error)
+
+    if scene_setup:
+        _materialize_role_private_secrets(
+            role_private_knowledge=dict(scene_setup.get("role_private_knowledge") or {}),
+            role_assignments_by_file=dict(role_assignments or {}),
+            names_by_file=names_by_file,
+            secrets=secrets,
+        )
 
     opening_text, opening_metadata = _resolve_opening_text(
         opening=opening,

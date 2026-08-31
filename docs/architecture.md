@@ -82,6 +82,8 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 
 **Persistent premise vs opener:** at scene start, template `premise` is written to continuity as `scene_state.scene_premise` and projected authoritatively through the shared `scene_setup` lane (including Character `scene_context`). The selected opener (or minimal/custom/generated opening text) is stored separately as `opening_description` and reaches ongoing Character cognition through `rp_history` / `recent_scene_transcript` — it must not substitute for the persistent scenario premise in `scene_setup`.
 
+**Role-private scenario knowledge:** optional template `role_private_knowledge` is authored on the scenario/template object, keyed by role name. At bootstrap, assigned Characters receive their role's text through the existing `character_private_secrets` → `character_private` pipeline (character-only; not Librarian retrieval).
+
 ### Core responsibilities
 
 - Character agents produce self-only structured moves.
