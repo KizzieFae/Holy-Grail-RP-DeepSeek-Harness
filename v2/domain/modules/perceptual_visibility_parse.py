@@ -1,4 +1,4 @@
-"""Parse combined narrator/opening JSON envelopes with narrative_visibility (#81)."""
+"""Parse combined narrator/opening JSON envelopes with perceptual_visibility (#90)."""
 
 from __future__ import annotations
 
@@ -15,8 +15,10 @@ def _strip_code_fence(raw: str) -> str:
     return text.strip()
 
 
-def parse_narrator_visibility_envelope(raw: str) -> tuple[str | None, dict[str, Any] | None, str | None]:
-    """Return (presentation_text, narrative_visibility_dict, error)."""
+def parse_perceptual_visibility_envelope(
+    raw: str,
+) -> tuple[str | None, dict[str, Any] | None, str | None]:
+    """Return (presentation_text, perceptual_visibility_dict, error)."""
     if not raw or not str(raw).strip():
         return None, None, "empty output"
 
@@ -39,12 +41,12 @@ def parse_narrator_visibility_envelope(raw: str) -> tuple[str | None, dict[str, 
         presentation = payload.get("text")
 
     presentation_text = str(presentation or "").strip() or None
-    nvr = payload.get("narrative_visibility")
-    if nvr is not None and not isinstance(nvr, dict):
-        return presentation_text, None, "narrative_visibility not an object"
+    pvr = payload.get("perceptual_visibility")
+    if pvr is not None and not isinstance(pvr, dict):
+        return presentation_text, None, "perceptual_visibility not an object"
 
-    units = nvr.get("units") if isinstance(nvr, dict) else None
+    units = pvr.get("units") if isinstance(pvr, dict) else None
     if units is not None and not isinstance(units, list):
-        return presentation_text, None, "narrative_visibility.units not a list"
+        return presentation_text, None, "perceptual_visibility.units not a list"
 
-    return presentation_text, (nvr if isinstance(nvr, dict) else None), None
+    return presentation_text, (pvr if isinstance(pvr, dict) else None), None

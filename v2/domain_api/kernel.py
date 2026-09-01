@@ -48,9 +48,9 @@ from .contract import (  # noqa: E402
     EligibleActorEntry,
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
-    OpeningNarrativeVisibilityAttachRequest,
+    OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
-    NarrativeVisibilityValidateRequest,
+    PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
     NarratorEnvironmentCognitionPrepareRequest,
@@ -97,9 +97,10 @@ from .opening_context import prepare_opening_context as build_opening_context  #
 from .opening_segmentation_context import (  # noqa: E402
     prepare_opening_segmentation_context as build_opening_segmentation_context,
 )
-from .narrative_visibility_service import (  # noqa: E402
-    attach_narrative_visibility_to_entry_metadata,
-    validate_and_build_narrative_visibility,
+from perceptual_visibility_validation import ValidationProfile  # noqa: E402
+from .perceptual_visibility_service import (  # noqa: E402
+    attach_perceptual_visibility_to_entry_metadata,
+    validate_and_build_perceptual_visibility,
 )
 from .fixture_store import FixtureStore  # noqa: E402
 from .participation_policy import evaluate_participation_policy  # noqa: E402
@@ -436,20 +437,22 @@ class DomainKernel:
             "presentation_degraded": presentation_degraded,
             "inference_outcome": inference_outcome,
         }
-        nvr_units = None
-        if isinstance(req.narrative_visibility, dict):
-            nvr_units = req.narrative_visibility.get("units")
-        if nvr_units:
-            record, nvr_audit = validate_and_build_narrative_visibility(
-                units_raw=list(nvr_units) if isinstance(nvr_units, list) else [],
+        pvr_units = None
+        if isinstance(req.perceptual_visibility, dict):
+            pvr_units = req.perceptual_visibility.get("units")
+        if pvr_units:
+            record, pvr_audit = validate_and_build_perceptual_visibility(
+                units_raw=list(pvr_units) if isinstance(pvr_units, list) else [],
+                profile=ValidationProfile.NARRATOR_PRESENTATION,
                 structured_move=structured_move,
                 acting_character=character_name,
+                source_kind="narrator",
                 generation={"source": "narrator_generation"},
             )
-            metadata = attach_narrative_visibility_to_entry_metadata(
+            metadata = attach_perceptual_visibility_to_entry_metadata(
                 metadata,
                 record,
-                validation_audit=nvr_audit,
+                validation_audit=pvr_audit,
             )
         entry = append_history_entry(
             fixture.rp_history,
@@ -1430,18 +1433,20 @@ class DomainKernel:
             }
         )
         metadata: dict[str, Any] = {"opening": True, **opening_meta}
-        nvr_units = None
-        if isinstance(req.narrative_visibility, dict):
-            nvr_units = req.narrative_visibility.get("units")
-        if nvr_units:
-            record, nvr_audit = validate_and_build_narrative_visibility(
-                units_raw=list(nvr_units) if isinstance(nvr_units, list) else [],
+        pvr_units = None
+        if isinstance(req.perceptual_visibility, dict):
+            pvr_units = req.perceptual_visibility.get("units")
+        if pvr_units:
+            record, pvr_audit = validate_and_build_perceptual_visibility(
+                units_raw=list(pvr_units) if isinstance(pvr_units, list) else [],
+                profile=ValidationProfile.OPENING,
+                source_kind="opening",
                 generation={"source": "opening_generation"},
             )
-            metadata = attach_narrative_visibility_to_entry_metadata(
+            metadata = attach_perceptual_visibility_to_entry_metadata(
                 metadata,
                 record,
-                validation_audit=nvr_audit,
+                validation_audit=pvr_audit,
             )
         entry = append_history_entry(
             fixture.rp_history,
@@ -1455,8 +1460,8 @@ class DomainKernel:
             self.store.persist(fixture)
         return entry
 
-    def attach_opening_narrative_visibility(
-        self, req: OpeningNarrativeVisibilityAttachRequest
+    def attach_opening_perceptual_visibility(
+        self, req: OpeningPerceptualVisibilityAttachRequest
     ) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)
         entry_id = f"opening-{req.hg_session_id}"
@@ -1467,26 +1472,28 @@ class DomainKernel:
         if entry is None:
             raise ValueError("opening history entry not found")
         units_raw = []
-        if isinstance(req.narrative_visibility, dict):
-            units_raw = req.narrative_visibility.get("units") or []
-        record, nvr_audit = validate_and_build_narrative_visibility(
+        if isinstance(req.perceptual_visibility, dict):
+            units_raw = req.perceptual_visibility.get("units") or []
+        record, pvr_audit = validate_and_build_perceptual_visibility(
             units_raw=list(units_raw) if isinstance(units_raw, list) else [],
+            profile=ValidationProfile.OPENING,
+            source_kind="opening",
             generation={"source": "opening_segmentation"},
         )
         if record is None:
-            raise ValueError(nvr_audit.get("reason") or "invalid narrative visibility")
-        metadata = attach_narrative_visibility_to_entry_metadata(
+            raise ValueError(pvr_audit.get("reason") or "invalid perceptual visibility")
+        metadata = attach_perceptual_visibility_to_entry_metadata(
             dict(entry.get("metadata") or {}),
             record,
-            validation_audit=nvr_audit,
+            validation_audit=pvr_audit,
         )
         entry["metadata"] = metadata
         if isinstance(self.store, SessionRepository):
             self.store.persist(fixture)
         return dict(entry)
 
-    def validate_narrative_visibility(
-        self, req: NarrativeVisibilityValidateRequest
+    def validate_perceptual_visibility(
+        self, req: PerceptualVisibilityValidateRequest
     ) -> dict[str, Any]:
         structured_move: dict[str, Any] | None = None
         acting_character: str | None = req.character_id
@@ -1507,17 +1514,26 @@ class DomainKernel:
                     structured_move = move
                 acting_character = str(committed.get("actor_id") or acting_character or "Character")
         units_raw = []
-        if isinstance(req.narrative_visibility, dict):
-            units_raw = req.narrative_visibility.get("units") or []
-        record, audit = validate_and_build_narrative_visibility(
+        profile = ValidationProfile.OPENING
+        source_kind = "opening"
+        if isinstance(req.perceptual_visibility, dict):
+            units_raw = req.perceptual_visibility.get("units") or []
+        if structured_move is not None:
+            profile = ValidationProfile.NARRATOR_PRESENTATION
+            source_kind = "narrator"
+        record, audit = validate_and_build_perceptual_visibility(
             units_raw=list(units_raw) if isinstance(units_raw, list) else [],
+            profile=profile,
             structured_move=structured_move,
             acting_character=acting_character,
+            source_kind=source_kind,
         )
         return {
             "accepted": audit.get("accepted", False),
             "reason": audit.get("reason", ""),
             "validation_notes": audit.get("validation_notes", []),
+            "validation_profile": audit.get("validation_profile", profile.value),
+            "source_kind": audit.get("source_kind", source_kind),
             "record": record.to_dict() if record is not None else None,
         }
 

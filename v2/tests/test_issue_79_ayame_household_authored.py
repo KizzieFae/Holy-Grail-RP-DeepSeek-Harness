@@ -20,7 +20,7 @@ ensure_domain_paths()
 from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
-    OpeningNarrativeVisibilityAttachRequest,
+    OpeningPerceptualVisibilityAttachRequest,
     RoundStartRequest,
 )
 from domain_api.kernel import DomainKernel  # noqa: E402
@@ -68,10 +68,10 @@ class Issue79AyameHouseholdAuthoredTests(unittest.TestCase):
         fixture = self.repo.require(info.hg_session_id)
         host_name = fixture.setup_snapshot["names_by_file"][host_file]
         applicant_name = fixture.setup_snapshot["names_by_file"][applicant_file]
-        self.kernel.attach_opening_narrative_visibility(
-            OpeningNarrativeVisibilityAttachRequest(
+        self.kernel.attach_opening_perceptual_visibility(
+            OpeningPerceptualVisibilityAttachRequest(
                 hg_session_id=info.hg_session_id,
-                narrative_visibility={
+                perceptual_visibility={
                     "units": [
                         {
                             "unit_id": "public_mansion",

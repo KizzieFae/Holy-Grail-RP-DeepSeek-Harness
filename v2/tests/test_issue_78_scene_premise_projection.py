@@ -20,7 +20,7 @@ from domain_api.contract import (  # noqa: E402
     ContextPrepareRequest,
     DirectorContextPrepareRequest,
     OpeningContextPrepareRequest,
-    OpeningNarrativeVisibilityAttachRequest,
+    OpeningPerceptualVisibilityAttachRequest,
     RoundStartRequest,
 )
 from domain_api.continuity_context_projector import (  # noqa: E402
@@ -63,10 +63,10 @@ class Issue78ScenePremiseProjectionTests(unittest.TestCase):
         self.assertNotEqual(premise, opener)
         protector_name = fixture.setup_snapshot["names_by_file"]["willow"]
         demi_name = fixture.setup_snapshot["names_by_file"]["kizzie"]
-        self.kernel.attach_opening_narrative_visibility(
-            OpeningNarrativeVisibilityAttachRequest(
+        self.kernel.attach_opening_perceptual_visibility(
+            OpeningPerceptualVisibilityAttachRequest(
                 hg_session_id=info.hg_session_id,
-                narrative_visibility={
+                perceptual_visibility={
                     "units": [
                         {
                             "unit_id": "public_opener",

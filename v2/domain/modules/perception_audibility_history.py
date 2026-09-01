@@ -91,7 +91,7 @@ def build_recent_dialogue_history_for_viewer(
         )
         content = str(message.get("content", "") or "")
 
-        if message.get("nvr_assembled"):
+        if message.get("perceptual_assembled") or message.get("nvr_assembled"):
             history.append({"role": role, "speaker": speaker_label, "content": content})
             continue
 

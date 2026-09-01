@@ -39,6 +39,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Model / provider routing | DSH `src/lib/inference-profile.mjs`, `src/lib/mount-deepseek-provider.mjs`; settings surface `src/application/application-settings.mjs` |
 | Stale issues / events / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
 | Whisper / private line known to the wrong character | `perception_audibility.py`, then Host projector / `prompt_builders.py`, `continuity_manager.py` |
+| Narrator/opening Character-facing perception / perceptual visibility / degraded recovery / projection audit | `perceptual_visibility_contract.py`, `perceptual_visibility_validation.py`, `perceptual_visibility_projection.py`, `perceptual_visibility_legacy.py`; Host `perceptual_visibility_service.py`, `session_history.py` (`project_history_to_character_context_chat`); DSH `perceptual-visibility-parse.mjs`, narrator/opening phase executors; API `/v1/perceptual-visibility/validate`, `/v1/sessions/opening/perceptual-visibility` |
 | Settled facts / binding constraints in prompts | `scene_grounding.py`, Host `continuity_context_projector.py`, `prompt_builders.py` |
 | Episodic “memories” block | `memory_layer/retrieval.py`; Host `memory_service.py` / `memory_retrieval.py` |
 | Authored retrieval / lore in prompts | Host `retrieval_selection.py`, `authored_knowledge.py`, `compiled_index_provider.py`, `retrieval_service.py` (#31) |

@@ -18,9 +18,9 @@ from .contract import (
     EligibleActorsRequest,
     OpeningContextPrepareRequest,
     OpeningPersistRequest,
-    OpeningNarrativeVisibilityAttachRequest,
+    OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
-    NarrativeVisibilityValidateRequest,
+    PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
     NarratorEnvironmentCognitionPrepareRequest,
@@ -652,25 +652,25 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     presentation_text=data.get("presentation_text"),
                     presentation_failed=bool(data.get("presentation_failed", False)),
                     inference_outcome=data.get("inference_outcome"),
-                    narrative_visibility=data.get("narrative_visibility"),
+                    perceptual_visibility=data.get("perceptual_visibility"),
                 )
                 self._send_json(201, self.kernel.record_presentation(req))
                 return
-            if path == "/v1/narrative-visibility/validate":
-                req = NarrativeVisibilityValidateRequest(
+            if path == "/v1/perceptual-visibility/validate":
+                req = PerceptualVisibilityValidateRequest(
                     hg_session_id=data.get("hg_session_id"),
-                    narrative_visibility=data.get("narrative_visibility"),
+                    perceptual_visibility=data.get("perceptual_visibility"),
                     domain_commit_id=data.get("domain_commit_id"),
                     character_id=data.get("character_id"),
                 )
-                self._send_json(200, self.kernel.validate_narrative_visibility(req))
+                self._send_json(200, self.kernel.validate_perceptual_visibility(req))
                 return
-            if path == "/v1/sessions/opening/narrative-visibility":
-                req = OpeningNarrativeVisibilityAttachRequest(
+            if path == "/v1/sessions/opening/perceptual-visibility":
+                req = OpeningPerceptualVisibilityAttachRequest(
                     hg_session_id=str(data["hg_session_id"]),
-                    narrative_visibility=dict(data.get("narrative_visibility") or {}),
+                    perceptual_visibility=dict(data.get("perceptual_visibility") or {}),
                 )
-                self._send_json(200, self.kernel.attach_opening_narrative_visibility(req))
+                self._send_json(200, self.kernel.attach_opening_perceptual_visibility(req))
                 return
             if path == "/v1/opening/context/prepare":
                 req = OpeningContextPrepareRequest(
@@ -693,7 +693,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     presentation_text=str(data.get("presentation_text", "")),
                     presentation_failed=bool(data.get("presentation_failed", False)),
                     manifest_id=data.get("manifest_id"),
-                    narrative_visibility=data.get("narrative_visibility"),
+                    perceptual_visibility=data.get("perceptual_visibility"),
                 )
                 self._send_json(201, self.kernel.persist_opening_presentation(req))
                 return

@@ -1,4 +1,4 @@
-"""Prompt fragments for NarrativeVisibilityRecord generation (#81)."""
+"""Prompt fragments for perceptual visibility generation (#90 / #81 lineage)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ NARRATOR_VISIBILITY_OUTPUT_INSTRUCTION = f"""
 OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 {{
   "presentation_text": "<full human-facing narration in third person past tense>",
-  "narrative_visibility": {{
+  "perceptual_visibility": {{
     "units": [
       {{
         "unit_id": "u1",
@@ -50,7 +50,7 @@ OPENING_VISIBILITY_OUTPUT_INSTRUCTION = f"""
 OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 {{
   "presentation_text": "<full opening narration>",
-  "narrative_visibility": {{
+  "perceptual_visibility": {{
     "units": [
       {{
         "unit_id": "u1",
@@ -76,7 +76,7 @@ Private interior thoughts or knowledge not perceptible to others must be interna
 OPENING_SEGMENTATION_OUTPUT_INSTRUCTION = f"""
 OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 {{
-  "narrative_visibility": {{
+  "perceptual_visibility": {{
     "units": [
       {{
         "unit_id": "u1",

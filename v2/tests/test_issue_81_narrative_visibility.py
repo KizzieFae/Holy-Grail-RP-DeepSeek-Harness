@@ -20,7 +20,7 @@ ensure_domain_paths()
 from domain_api.contract import (  # noqa: E402
     CommitRequest,
     ContextPrepareRequest,
-    OpeningNarrativeVisibilityAttachRequest,
+    OpeningPerceptualVisibilityAttachRequest,
     PresentationRecordRequest,
     RoundStartRequest,
 )
@@ -191,10 +191,10 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
         fixture = self.repo.require(info.hg_session_id)
         host_name = fixture.setup_snapshot["names_by_file"]["ayame"]
         applicant_name = fixture.setup_snapshot["names_by_file"]["kizzie"]
-        self.kernel.attach_opening_narrative_visibility(
-            OpeningNarrativeVisibilityAttachRequest(
+        self.kernel.attach_opening_perceptual_visibility(
+            OpeningPerceptualVisibilityAttachRequest(
                 hg_session_id=info.hg_session_id,
-                narrative_visibility=_ayame_opener_nvr(
+                perceptual_visibility=_ayame_opener_nvr(
                     host_name=host_name,
                     applicant_name=applicant_name,
                 ),
@@ -239,7 +239,7 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
                 hg_round_id=round_id,
                 character_id="Alice",
                 presentation_text=presentation,
-                narrative_visibility=_mixed_narrator_nvr(),
+                perceptual_visibility=_mixed_narrator_nvr(),
             )
         )
         fixture = self.repo.require(session_id)
@@ -284,10 +284,10 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
         fixture = self.repo.require(info.hg_session_id)
         celina = fixture.setup_snapshot["names_by_file"]["celina"]
         demi = fixture.setup_snapshot["names_by_file"]["kizzie"]
-        self.kernel.attach_opening_narrative_visibility(
-            OpeningNarrativeVisibilityAttachRequest(
+        self.kernel.attach_opening_perceptual_visibility(
+            OpeningPerceptualVisibilityAttachRequest(
                 hg_session_id=info.hg_session_id,
-                narrative_visibility=_celina_opener_nvr(celina_name=celina, demi_name=demi),
+                perceptual_visibility=_celina_opener_nvr(celina_name=celina, demi_name=demi),
             )
         )
         demi_transcript = self._manifest_transcript(info.hg_session_id, character_id=demi)
@@ -305,10 +305,10 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
         fixture = self.repo.require(info.hg_session_id)
         yukiko = fixture.setup_snapshot["names_by_file"]["yukiko"]
         traveler = fixture.setup_snapshot["names_by_file"]["kizzie"]
-        self.kernel.attach_opening_narrative_visibility(
-            OpeningNarrativeVisibilityAttachRequest(
+        self.kernel.attach_opening_perceptual_visibility(
+            OpeningPerceptualVisibilityAttachRequest(
                 hg_session_id=info.hg_session_id,
-                narrative_visibility=_yukiko_public_opener_nvr(),
+                perceptual_visibility=_yukiko_public_opener_nvr(),
             )
         )
         for character_id in (yukiko, traveler):
@@ -364,7 +364,7 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
             present_characters=list(fixture.cast),
             get_character_display_name_fn=lambda name: name,
         )
-        projection = chat[0].get("narrative_visibility_projection")
+        projection = chat[0].get("perceptual_visibility_projection")
         self.assertIsInstance(projection, dict)
         self.assertIn("included_unit_ids", projection)
         self.assertIn("excluded_unit_ids", projection)
@@ -393,7 +393,7 @@ class Issue81NarrativeVisibilityTests(unittest.TestCase):
                 hg_round_id=round_id,
                 character_id="Alice",
                 presentation_text="Brown walls and plush carpet lined the hall.",
-                narrative_visibility={
+                perceptual_visibility={
                     "units": [
                         {
                             "unit_id": "scene",

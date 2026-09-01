@@ -133,11 +133,11 @@ test('live narrator combined envelope smoke: JSON envelope parses and prose stay
   assert.equal(narratorResult.presentation_rendered, true, narratorResult.presentation_failure_reason);
   assert.ok(narratorResult.presentation_text);
   assert.doesNotMatch(narratorResult.presentation_text, /^\s*\{/);
-  assert.doesNotMatch(narratorResult.presentation_text, /narrative_visibility/);
+  assert.doesNotMatch(narratorResult.presentation_text, /perceptual_visibility/);
 
-  if (narratorResult.narrative_visibility?.units?.length) {
-    assert.ok(Array.isArray(narratorResult.narrative_visibility.units));
-    const kinds = new Set(narratorResult.narrative_visibility.units.map((unit) => unit.kind));
+  if (narratorResult.perceptual_visibility?.units?.length) {
+    assert.ok(Array.isArray(narratorResult.perceptual_visibility.units));
+    const kinds = new Set(narratorResult.perceptual_visibility.units.map((unit) => unit.kind));
     assert.ok(kinds.size > 0);
   }
 
@@ -148,14 +148,14 @@ test('live narrator combined envelope smoke: JSON envelope parses and prose stay
     character_id: 'Alice',
     presentation_text: narratorResult.presentation_text,
     presentation_failed: false,
-    narrative_visibility: narratorResult.narrative_visibility ?? null,
+    perceptual_visibility: narratorResult.perceptual_visibility ?? null,
   });
 
   const history = await api.getSessionHistory(sessionId);
   const presentation = history.entries.find((entry) => entry.kind === 'presentation');
   assert.ok(presentation);
   assert.equal(presentation.content, narratorResult.presentation_text);
-  if (narratorResult.narrative_visibility) {
-    assert.ok(presentation.metadata?.narrative_visibility?.units?.length);
+  if (narratorResult.perceptual_visibility) {
+    assert.ok(presentation.metadata?.perceptual_visibility?.units?.length);
   }
 });

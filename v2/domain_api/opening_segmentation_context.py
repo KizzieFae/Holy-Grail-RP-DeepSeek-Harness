@@ -1,10 +1,9 @@
-"""Opening narrative-visibility segmentation context for template/authored openers (#81)."""
+"""Opening perceptual-visibility segmentation context for template/authored openers (#90)."""
 
 from __future__ import annotations
 
 from narrative_visibility_prompt import OPENING_SEGMENTATION_OUTPUT_INSTRUCTION
-
-from narrative_visibility_contract import narrative_visibility_from_metadata
+from perceptual_visibility_legacy import perceptual_visibility_record_from_entry_metadata
 
 from .context_substrate import auth_projections_to_contributions
 from .continuity_context_projector import project_authoritative_context
@@ -28,8 +27,8 @@ def prepare_opening_segmentation_context(
         raise ValueError("opening history entry not found")
 
     metadata = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
-    if narrative_visibility_from_metadata(metadata) is not None:
-        raise ValueError("opening narrative visibility already materialized")
+    if perceptual_visibility_record_from_entry_metadata(metadata)[0] is not None:
+        raise ValueError("opening perceptual visibility already materialized")
 
     opener_text = str(entry.get("content", "") or "").strip()
     if not opener_text:
@@ -82,7 +81,7 @@ def prepare_opening_segmentation_context(
             knowledge_ids=(f"inference:{req.inference_id}",),
             priority=30,
             content=(
-                "Segment the authoritative opening prose into narrative visibility units.\n"
+                "Segment the authoritative opening prose into perceptual visibility units.\n"
                 "Do NOT rewrite, paraphrase, or omit opening prose in unit text fragments.\n"
                 "Use exact substrings from the opening where possible.\n"
                 f"\n{OPENING_SEGMENTATION_OUTPUT_INSTRUCTION}\n"

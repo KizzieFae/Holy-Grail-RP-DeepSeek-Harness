@@ -536,7 +536,7 @@ export class HolyGrailApplicationClient {
           presentation_text: turn.presentation_text,
           presentation_failed: Boolean(turn.presentation_failed),
           inference_outcome: turn.inference_outcome,
-          narrative_visibility: turn.narrative_visibility ?? null,
+          perceptual_visibility: turn.perceptual_visibility ?? null,
         });
       }
       return;
@@ -550,7 +550,7 @@ export class HolyGrailApplicationClient {
         presentation_text: roundResult.presentation_text,
         presentation_failed: Boolean(roundResult.presentation_failed),
         inference_outcome: roundResult.inference_outcome,
-        narrative_visibility: roundResult.narrative_visibility ?? null,
+        perceptual_visibility: roundResult.perceptual_visibility ?? null,
       });
     }
   }
@@ -607,7 +607,7 @@ export class HolyGrailApplicationClient {
         presentation_text: openingResult.presentation_text,
         presentation_failed: false,
         manifest_id: openingResult.opening_manifest_id,
-        narrative_visibility: openingResult.narrative_visibility ?? null,
+        perceptual_visibility: openingResult.perceptual_visibility ?? null,
       });
       await this._refreshTranscript();
     }
@@ -622,7 +622,7 @@ export class HolyGrailApplicationClient {
     if (!openingEntry) {
       return { segmented: false, skipped: true, reason: 'no template opening entry' };
     }
-    if (openingEntry.metadata?.narrative_visibility?.units?.length) {
+    if (openingEntry.metadata?.perceptual_visibility?.units?.length) {
       return { segmented: true, skipped: true, reason: 'narrative visibility already present' };
     }
 

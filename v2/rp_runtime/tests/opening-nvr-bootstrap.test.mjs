@@ -8,7 +8,7 @@ import { makeTempSessionsDir } from './helpers/domain-api.mjs';
 
 function ayameSegmentationMock() {
   return JSON.stringify({
-    narrative_visibility: {
+    perceptual_visibility: {
       units: [
         {
           unit_id: 'public_mansion',
@@ -38,7 +38,7 @@ function ayameSegmentationMock() {
 
 function celinaSegmentationMock() {
   return JSON.stringify({
-    narrative_visibility: {
+    perceptual_visibility: {
       units: [
         {
           unit_id: 'public_storm',
@@ -108,7 +108,7 @@ test('production template bootstrap: auto-segments NVR without manual attach (Ay
   const history = await api.getSessionHistory(created.hg_session_id);
   const opening = history.entries.find((entry) => entry.kind === 'opening');
   assert.ok(opening);
-  assert.ok(opening.metadata?.narrative_visibility?.units?.length > 0);
+  assert.ok(opening.metadata?.perceptual_visibility?.units?.length > 0);
 
   const humanTranscript = client.getTranscript();
   assert.match(humanTranscript[0].content, /horrible week/);
@@ -167,7 +167,7 @@ test('production generated opener: combined envelope persists NVR', async (t) =>
 
   const combined = JSON.stringify({
     presentation_text: 'Morning light filters through the vermillion torii as the shrine awakens.',
-    narrative_visibility: {
+    perceptual_visibility: {
       units: [
         {
           unit_id: 'public_shrine',
@@ -190,12 +190,12 @@ test('production generated opener: combined envelope persists NVR', async (t) =>
   const api = createDomainApiClient(client.supervisor.domainHostUrl);
   const history = await api.getSessionHistory(created.hg_session_id);
   const opening = history.entries.find((entry) => entry.kind === 'opening');
-  assert.ok(opening?.metadata?.narrative_visibility?.units?.length);
+  assert.ok(opening?.metadata?.perceptual_visibility?.units?.length);
   assert.equal(
     client.getTranscript()[0].content,
     'Morning light filters through the vermillion torii as the shrine awakens.',
   );
-  assert.doesNotMatch(client.getTranscript()[0].content, /narrative_visibility/);
+  assert.doesNotMatch(client.getTranscript()[0].content, /perceptual_visibility/);
 });
 
 test('production template bootstrap: segmentation failure fails closed for characters', async (t) => {
@@ -219,7 +219,7 @@ test('production template bootstrap: segmentation failure fails closed for chara
     opening: { mode: 'template', opener_id: openers[0].opener_id },
     mockOpeningSegmentationResponses: [
       JSON.stringify({
-        narrative_visibility: {
+        perceptual_visibility: {
           units: [
             {
               unit_id: 'bad_internal',
@@ -237,7 +237,7 @@ test('production template bootstrap: segmentation failure fails closed for chara
   const history = await api.getSessionHistory(created.hg_session_id);
   const opening = history.entries.find((entry) => entry.kind === 'opening');
   assert.ok(opening);
-  assert.equal(opening.metadata?.narrative_visibility, undefined);
+  assert.equal(opening.metadata?.perceptual_visibility, undefined);
   assert.match(client.getTranscript()[0].content, /horrible week/);
 
   const ayameTranscript = await characterTranscript(api, created.hg_session_id, 'Ayame');

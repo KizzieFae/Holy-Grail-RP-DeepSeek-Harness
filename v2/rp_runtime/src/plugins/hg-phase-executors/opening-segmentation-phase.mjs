@@ -1,5 +1,5 @@
 import { openingDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
-import { parseNarratorVisibilityEnvelope } from '../../lib/narrative-visibility-parse.mjs';
+import { parsePerceptualVisibilityEnvelope } from '../../lib/perceptual-visibility-parse.mjs';
 
 const OPENING_SEGMENTATION_PROMPT =
   'Segment the authoritative opening prose into narrative visibility units per the instructions.';
@@ -30,7 +30,7 @@ export async function runOpeningSegmentationPhase({
   if (!openingEntry) {
     return { segmented: false, skipped: true, reason: 'no opening entry' };
   }
-  const existingNvr = openingEntry.metadata?.narrative_visibility;
+  const existingNvr = openingEntry.metadata?.perceptual_visibility;
   if (existingNvr?.units?.length) {
     return { segmented: true, skipped: true, reason: 'narrative visibility already present' };
   }
@@ -59,7 +59,7 @@ export async function runOpeningSegmentationPhase({
         modelProfile?.kind === 'mock'
           ? [
               JSON.stringify({
-                narrative_visibility: {
+                perceptual_visibility: {
                   units: [
                     {
                       unit_id: 'u1',
@@ -95,24 +95,24 @@ export async function runOpeningSegmentationPhase({
         throw new Error(segmentationRun.failure?.message ?? 'opening segmentation inference failed');
       }
 
-      const parsedEnvelope = parseNarratorVisibilityEnvelope(segmentationRun.raw ?? '');
-      let narrativeVisibility = parsedEnvelope.narrativeVisibility;
-      if (!narrativeVisibility?.units?.length) {
+      const parsedEnvelope = parsePerceptualVisibilityEnvelope(segmentationRun.raw ?? '');
+      let perceptualVisibility = parsedEnvelope.perceptualVisibility;
+      if (!perceptualVisibility?.units?.length) {
         throw new Error('opening segmentation produced no narrative visibility units');
       }
 
-      const nvrValidation = await api.validateNarrativeVisibility({
+      const nvrValidation = await api.validatePerceptualVisibility({
         hg_session_id: hgSessionId,
-        narrative_visibility: narrativeVisibility,
+        perceptual_visibility: perceptualVisibility,
       });
       if (!nvrValidation.accepted || !nvrValidation.record) {
         throw new Error(nvrValidation.reason || 'opening narrative visibility validation failed');
       }
-      narrativeVisibility = nvrValidation.record;
+      perceptualVisibility = nvrValidation.record;
 
-      await api.attachOpeningNarrativeVisibility({
+      await api.attachOpeningPerceptualVisibility({
         hg_session_id: hgSessionId,
-        narrative_visibility: narrativeVisibility,
+        perceptual_visibility: perceptualVisibility,
       });
 
       recorder?.patchDecision(
@@ -132,7 +132,7 @@ export async function runOpeningSegmentationPhase({
         opening_segmentation_inference_session_id: segmentationRun.inferenceSessionId,
         role: 'opening_segmentation',
         manifest_id: manifestId,
-        unit_count: narrativeVisibility.units?.length ?? 0,
+        unit_count: perceptualVisibility.units?.length ?? 0,
         attempt_index: attempt,
         inference_trace: segmentationRun.trace,
       });
@@ -140,7 +140,7 @@ export async function runOpeningSegmentationPhase({
       return {
         segmented: true,
         skipped: false,
-        narrative_visibility: narrativeVisibility,
+        perceptual_visibility: perceptualVisibility,
         opening_segmentation_inference_session_id: segmentationRun.inferenceSessionId,
         opening_segmentation_manifest_id: manifestId,
         inference_id: inferenceId,
