@@ -19,6 +19,13 @@ import {
   LIVE_NARRATOR_PROMPT,
 } from '../../lib/live-inference-prompts.mjs';
 import {
+  buildCharacterSummary,
+  buildDirectorBypassSummary,
+  buildDirectorInferenceSummary,
+  buildNarratorSummary,
+  finalizeRoleInferenceSummary,
+} from '../../lib/role-inference-summary.mjs';
+import {
   classifyRoundCompletion,
   eligibilityTrace,
   participationDirectorDecision,
@@ -104,11 +111,9 @@ export default class HgRoundOrchestrator extends Service {
       librarian_ms: [],
       plot_cognition_ms: [],
     };
-    const roleTraces = {
-      director: null,
-      character: null,
-      narrator: null,
-    };
+    let directorSummary = null;
+    let characterSummary = null;
+    let narratorSummary = null;
 
     const sessionInfo = await resolveRoundSession(api, options);
     const hgSessionId = sessionInfo.hgSessionId;
@@ -333,6 +338,7 @@ export default class HgRoundOrchestrator extends Service {
           directorResponseIndex,
           participationDirect: true,
         };
+        directorSummary = buildDirectorBypassSummary();
       } else {
         const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
         const directorStartedAt = Date.now();
@@ -369,7 +375,7 @@ export default class HgRoundOrchestrator extends Service {
             : null,
         });
         roleTimings.director_ms.push(Date.now() - directorStartedAt);
-        roleTraces.director = directorPhase.directorInferenceTrace ?? null;
+        directorSummary = buildDirectorInferenceSummary(directorPhase);
         directorPhase.participationDirect = false;
       }
       directorAttemptSeed = directorPhase.directorAttempt;
@@ -434,7 +440,7 @@ export default class HgRoundOrchestrator extends Service {
         mockCharacterMediationResponse: mockCharacterMediationResponses[characterTurnIndex] ?? null,
       });
       roleTimings.character_ms.push(Date.now() - characterStartedAt);
-      roleTraces.character = characterTurn.characterInferenceTrace ?? null;
+      characterSummary = buildCharacterSummary(characterTurn);
 
       if (!characterTurn.committed) {
         completionReason = 'character_failure';
@@ -586,7 +592,7 @@ export default class HgRoundOrchestrator extends Service {
 
       const narratorResult = await narratorPromise;
       roleTimings.narrator_ms.push(Date.now() - narratorStartedAt);
-      roleTraces.narrator = narratorResult.narrator_inference_trace ?? null;
+      narratorSummary = buildNarratorSummary(narratorResult);
 
       const librarianResult = await librarianJoinPromise;
       roleTimings.librarian_ms.push(Date.now() - librarianStartedAt);
@@ -711,7 +717,11 @@ export default class HgRoundOrchestrator extends Service {
       scene_events: [...sceneAgent.session.events],
       boundary_metrics: api.metrics,
       role_profiles: roleProfiles,
-      role_inference_traces: roleTraces,
+      role_inference_summary: finalizeRoleInferenceSummary(
+        directorSummary,
+        characterSummary,
+        narratorSummary,
+      ),
       round_timing_ms: {
         total: Date.now() - roundStartedAt,
         director: roleTimings.director_ms,

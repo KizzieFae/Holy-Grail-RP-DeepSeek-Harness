@@ -29,10 +29,10 @@ test('application client: live DeepSeek user turn', {
 
   assert.equal(turn.round.committed, true);
   assert.ok(turn.presentation);
-  const traces = turn.round.role_inference_traces ?? {};
+  const summary = turn.round.role_inference_summary ?? {};
   const roleProfiles = turn.round.role_profiles ?? {};
   const usedLive = ['director', 'character', 'narrator']
-    .some((role) => traces[role]?.provider === 'deepseek-official');
+    .some((role) => summary[role]?.inference_trace?.provider === 'deepseek-official');
   assert.equal(usedLive, true);
   assert.equal(roleProfiles.storyteller?.kind, 'dsh');
   assert.equal(roleProfiles.storyteller?.provider, 'deepseek-official');

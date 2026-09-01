@@ -30,6 +30,31 @@ For runtime behavior and guardrails, see [docs/architecture.md](./docs/architect
 
 ---
 
+## DSH round result — `role_inference_summary` (#94)
+
+**Authority:** Ephemeral **round-result projection** returned by `hg-round-orchestrator` (`runRound`). **Not** durable forensic evidence. Full attempt chains, semantic QA passes, rejected candidates, and participation-direct records remain authoritative in `data/execution_evidence/` (see [docs/rp-data-layout.md](./docs/rp-data-layout.md)).
+
+Replaces the former nullable `role_inference_traces` trace-or-null map, which conflated intentional bypass, degraded fallback, and failure-before-inference.
+
+### Per-role entry (`director` | `character` | `narrator`)
+
+| Field | Meaning |
+|-------|---------|
+| `inference_execution` | Provider inference only: `not_executed` \| `attempted` \| `completed`. `completed` means a normally completed provider inference result — downstream validation/selection/commit/presentation may still fail. |
+| `phase_outcome` | Orchestration resolution only: `not_reached` \| `bypassed` \| `succeeded` \| `degraded` \| `failed`. |
+| `inference_trace` | Bounded `extractInferenceTrace` result for the **last inference attempt**, or `null` when `inference_execution === not_executed`. |
+| `inference_session_id` | DSH session id for that same last attempt, or `null`. |
+| `evidence_id` | Last attempt durable evidence id when enabled, or `null`. |
+
+**Rules**
+
+- Do **not** treat a non-null `inference_trace` as proof of phase success.
+- Participation-direct Director: `not_executed` + `bypassed` + null trace/session (#28 durable `role: participation` remains authoritative).
+- Narrator terminal fallback: `degraded`; if inference ran, last attempt trace/session/evidence are populated; if failure occurred before inference, `not_executed` with null trace.
+- Roles whose phase never ran in the round: `not_reached`.
+
+---
+
 ## Knowledge mediation architecture (#33 — target vs current)
 
 Parent program **#33** closed with accepted child architecture on **#31** Retrieval, **#34** Librarian, and **#32** Storyteller. **#31**, **#34**, and **#32** core seams are implemented and validated in production runtime. **#38** retired the legacy Character **`KnowledgeService.project_context`** manifest lane; Character knowledge is Librarian-mediated under per-character epistemic boundaries.

@@ -204,6 +204,10 @@ Query via `python tools/investigation/list_execution_evidence.py <hg_session_id>
 
 Plot Cognition chronicle (scope-keyed, not session-keyed): `python tools/investigation/trace_plot_cognition_forensics.py <plot_cognition_scope_id> timeline` — see [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md).
 
+### Ephemeral round summary (`role_inference_summary`, #94)
+
+`hg-round-orchestrator` `runRound` returns a bounded per-role summary (`director`, `character`, `narrator`) separating **provider inference execution** from **phase orchestration outcome**. This projection answers whether inference ran, how the phase resolved, and which last attempt (if any) to follow into durable evidence. It is **not** stored under `execution_evidence/` and does **not** replace attempt chains or participation records. Contract: [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) → **DSH round result — `role_inference_summary`**.
+
 Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
 
 **Default:** enabled for normal RP operation. Opt out with `HG_EXECUTION_EVIDENCE=off` (diagnostic loss). Override root with `HG_EXECUTION_EVIDENCE_DIR`.
