@@ -97,7 +97,11 @@ def perceptual_visibility_record_from_entry_metadata(
             )
 
     # Only projectable statuses reach the projector.
-    if record.validation_status not in ("valid", "invalid_fallback_structured"):
+    if record.validation_status not in (
+        "valid",
+        "invalid_fallback_structured",
+        "historical_partial",
+    ):
         if not (
             record.source_kind == "player"
             and record.validation_status == "invalid_excluded"

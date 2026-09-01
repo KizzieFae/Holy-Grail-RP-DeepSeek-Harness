@@ -213,38 +213,46 @@ def presentation_uses_narrator_prose_for_character(entry: RpHistoryEntry) -> boo
     return True
 
 
-def committed_observable_content_for_character(
-    committed_entry: RpHistoryEntry,
-    *,
-    character_id: str,
-    character_names: list[str],
-    present_characters: list[str],
-    get_character_display_name_fn: Any,
-) -> str:
-    """Perception-filtered observable line from durable committed-turn metadata."""
-    meta = _presentation_metadata(committed_entry)
-    speaker = str(committed_entry.actor_id or "Character")
-    move = meta.get("structured_move")
-    if isinstance(move, dict) and move.get("beats"):
-        from character_move_adapters import is_canonical_v2_move
-        from perception_audibility_formatting import format_observable_v2_turn_for_viewer
-        from perception_audibility_normalize import normalize_move_audibility
 
-        move_norm = normalize_move_audibility(dict(move), speaker, present_characters)
-        if is_canonical_v2_move(move_norm):
-            return format_observable_v2_turn_for_viewer(
-                speaker_label=speaker,
-                move_norm=move_norm,
-                acting_character=speaker,
-                viewer_character_name=character_id,
-                present_characters=present_characters,
-                get_character_display_name_fn=get_character_display_name_fn,
-            )
-    content = str(committed_entry.content or "").strip()
-    if content:
-        prefix = f"{speaker}: "
-        return content if content.startswith(prefix) else f"{prefix}{content}"
-    return f"{speaker}: [beat]"
+def _append_character_committed_chat_message(
+    chat: list[dict[str, Any]],
+    *,
+    entry: RpHistoryEntry,
+    character_id: str,
+    present_characters: list[str],
+) -> None:
+    structured_move = (entry.metadata or {}).get("structured_move")
+    move = structured_move if isinstance(structured_move, dict) else None
+    acting_character = str(entry.actor_id or "Character")
+    assembly = assemble_perceptual_history_entry_for_viewer(
+        entry.to_dict(),
+        viewer_character=character_id,
+        present_characters=present_characters,
+        structured_move=move,
+        acting_character=acting_character,
+        source_kind="character",
+    )
+    record, _ = perceptual_visibility_record_from_entry_metadata(
+        entry.metadata if isinstance(entry.metadata, dict) else {},
+        structured_move=move,
+        acting_character=acting_character,
+    )
+    if not assembly.content:
+        return
+    chat.append(
+        {
+            "role": "assistant",
+            "content": assembly.content,
+            "speaker": acting_character,
+            "perceptual_assembled": True,
+            "move": move,
+            "actor": acting_character,
+            "perceptual_visibility_projection": build_perceptual_visibility_audit_metadata(
+                assembly,
+                record=record,
+            ).get("perceptual_visibility_projection"),
+        }
+    )
 
 
 def project_history_to_character_context_chat(
@@ -256,6 +264,8 @@ def project_history_to_character_context_chat(
     get_character_display_name_fn: Any,
 ) -> list[dict[str, Any]]:
     """Build perception-oriented chat history for character manifest transcript projection."""
+    _ = character_names
+    _ = get_character_display_name_fn
     entries = history_entries(history)
     committed_by_commit = {
         entry.domain_commit_id: entry
@@ -359,20 +369,11 @@ def project_history_to_character_context_chat(
                         }
                     )
             elif committed is not None:
-                chat.append(
-                    {
-                        "role": "assistant",
-                        "content": committed_observable_content_for_character(
-                            committed,
-                            character_id=character_id,
-                            character_names=character_names,
-                            present_characters=present_characters,
-                            get_character_display_name_fn=get_character_display_name_fn,
-                        ),
-                        "speaker": committed.actor_id or "Character",
-                        "move": structured_move,
-                        "actor": acting_character,
-                    }
+                _append_character_committed_chat_message(
+                    chat,
+                    entry=committed,
+                    character_id=character_id,
+                    present_characters=present_characters,
                 )
             continue
 
@@ -384,20 +385,11 @@ def project_history_to_character_context_chat(
                 )
                 if has_presentation:
                     continue
-            chat.append(
-                {
-                    "role": "assistant",
-                    "content": committed_observable_content_for_character(
-                        entry,
-                        character_id=character_id,
-                        character_names=character_names,
-                        present_characters=present_characters,
-                        get_character_display_name_fn=get_character_display_name_fn,
-                    ),
-                    "speaker": entry.actor_id or "Character",
-                    "move": (entry.metadata or {}).get("structured_move"),
-                    "actor": entry.actor_id,
-                }
+            _append_character_committed_chat_message(
+                chat,
+                entry=entry,
+                character_id=character_id,
+                present_characters=present_characters,
             )
 
     return chat

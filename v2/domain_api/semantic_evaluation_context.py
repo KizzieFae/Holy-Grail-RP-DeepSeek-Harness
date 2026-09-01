@@ -108,6 +108,19 @@ def build_authority_references(
                 "text": statement,
             }
         )
+    refs.append(
+        {
+            "ref_id": "perception_fact:character_action_recipients",
+            "kind": "perception_fact",
+            "label": "Character action recipient contract",
+            "text": (
+                "Physical action beats use optional recipients.scope (default present). "
+                "Concealed or restricted physical action must use restrictive recipients "
+                "(directed/private with named characters), not default present. "
+                "Speech beats use audibility and audience only."
+            ),
+        }
+    )
     _ = hg_round_id
     return refs
 

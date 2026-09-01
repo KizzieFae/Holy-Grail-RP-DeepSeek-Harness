@@ -79,6 +79,7 @@ def apply_character_turn_memory(
     acting_character: str,
     move: dict[str, Any],
     director_decision: dict[str, Any],
+    perceptual_record: Any | None = None,
 ) -> None:
     """Write session-local memory after an authoritative character commit."""
     manager = _manager_for_session(fixture)
@@ -105,6 +106,7 @@ def apply_character_turn_memory(
         present_characters=present,
         build_memory_fact_summary_fn=_memory_fact_summary,
         display_name_for_key=None,
+        perceptual_record=perceptual_record,
     )
 
 

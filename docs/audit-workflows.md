@@ -102,6 +102,23 @@ rp_history user entry (full content preserved)
 
 **Historical boundary:** user entries without `metadata.perceptual_visibility` classify as `historical_missing_player_decomposition` and are omitted from Character transcript (not retroactively decomposed). **Current failure boundary:** `decomposition_failed` uses neutral transcript marker only; Character trigger omitted; player-interaction memory skipped. Director/orchestration trigger remains full unredacted `content`.
 
+### Issue #92 Character perceptual derivation join recipe
+
+Reconstruct one Character committed turn's viewer-specific perception:
+
+```text
+structured_move (authoritative beats + action recipients / speech audibility)
+  → validate_move: derive_character_perceptual_record (character_move profile)
+  → commit_move_transaction: re-verify PVR before continuity mutation
+  → committed_turn.metadata.perceptual_visibility (canonical PVR)
+  → committed_turn.metadata.perceptual_visibility_validation
+  → projector hg.perceptual_visibility.v1 assembly
+  → perceptual_visibility_projection audit on transcript/memory lines
+  → downstream consumer (recent_scene_transcript / observer memory / semantic QA)
+```
+
+**Historical boundary:** committed turns without PVR use `historical_partial` recovery from `structured_move` only (speech from audibility/audience; action beats conservative actor-private). **Authority firewall:** projection does not mutate `known_by`, Continuity truth, or Director canonical history.
+
 ### V2 human audit-tag workflow
 
 During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.

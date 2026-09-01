@@ -221,7 +221,6 @@ def test_failed_presentation_character_context_uses_structured_move_not_fallback
     assert prov["transcript_message_count"] == 1
     assert "for everyone" in carol_transcript
     assert "for Bob only" not in carol_transcript
-    assert REDACTED_SPEECH_STUB in carol_transcript
 
 
 def test_output_limit_terminal_failure_uses_committed_fallback_for_ui(
@@ -282,7 +281,7 @@ def test_legacy_rendered_without_metadata_excludes_narrator_prose_without_nvr(
     assert chat == []
 
 
-def test_legacy_failed_without_structured_move_uses_committed_content(kernel: DomainKernel) -> None:
+def test_legacy_failed_without_structured_move_projects_nothing(kernel: DomainKernel) -> None:
     created = kernel.create_session(cast=["Alice"])
     session_id = created.hg_session_id
     fixture = kernel.store.require(session_id)
@@ -309,7 +308,7 @@ def test_legacy_failed_without_structured_move_uses_committed_content(kernel: Do
         present_characters=["Alice"],
         get_character_display_name_fn=lambda x: x,
     )
-    assert chat[0]["content"] == "Alice: nods thoughtfully"
+    assert chat == []
 
 
 def test_inference_error_outcome_on_failed_presentation(kernel: DomainKernel) -> None:

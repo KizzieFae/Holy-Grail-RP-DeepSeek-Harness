@@ -138,6 +138,7 @@ def _write_character_memory(
     acting_character: str,
     move: dict[str, Any],
     director_decision: dict[str, Any],
+    perceptual_record: Any,
 ) -> None:
     if deps.memory_service is not None:
         deps.memory_service.write_character_turn_memory(
@@ -145,6 +146,7 @@ def _write_character_memory(
             acting_character=acting_character,
             move=move,
             director_decision=director_decision,
+            perceptual_record=perceptual_record,
         )
     else:
         apply_character_turn_memory(
@@ -152,6 +154,7 @@ def _write_character_memory(
             acting_character=acting_character,
             move=move,
             director_decision=director_decision,
+            perceptual_record=perceptual_record,
         )
 
 
@@ -200,6 +203,32 @@ def execute_commit_move(
         validated_move=dict(req.validated_move),
         director_decision=dict(req.director_decision),
     )
+
+    from character_perceptual_service import (
+        attach_character_perceptual_metadata,
+        build_character_validation_audit,
+        derive_character_perceptual_record,
+    )
+
+    perceptual_derivation = derive_character_perceptual_record(
+        move,
+        acting_character=req.character_id,
+    )
+    if not perceptual_derivation.accepted or perceptual_derivation.record is None:
+        return CommitResponse(
+            committed=False,
+            continuity_turn_index=None,
+            domain_commit_id=None,
+            hg_scene_id=req.hg_scene_id,
+            inference_id=req.inference_id,
+            reason=(
+                perceptual_derivation.reason
+                or "character perceptual visibility derivation failed before commit"
+            ),
+        )
+
+    perceptual_record = perceptual_derivation.record
+    perceptual_audit = build_character_validation_audit(perceptual_derivation)
     snapshots = _capture_snapshots(fixture, rnd, deps, dedup_key=dedup_key)
 
     others = [c for c in fixture.cast if c != req.character_id]
@@ -220,6 +249,7 @@ def execute_commit_move(
         acting_character=req.character_id,
         move=move,
         director_decision=director_decision,
+        perceptual_record=perceptual_record,
     )
     after_turn = mgr.turn_counter
     commit_id = f"hg-commit-{uuid.uuid4()}"
@@ -251,10 +281,14 @@ def execute_commit_move(
             hg_round_id=req.hg_round_id,
             domain_commit_id=commit_id,
             actor_id=req.character_id,
-            metadata={
-                "continuity_turn_index": after_turn,
-                "structured_move": dict(req.validated_move),
-            },
+            metadata=attach_character_perceptual_metadata(
+                {
+                    "continuity_turn_index": after_turn,
+                    "structured_move": dict(req.validated_move),
+                },
+                record=perceptual_record,
+                validation_audit=perceptual_audit,
+            ),
         )
 
     storyteller_invalidation_reason = peek_storyteller_invalidation_reason_for_round(

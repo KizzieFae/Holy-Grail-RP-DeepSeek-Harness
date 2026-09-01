@@ -13,6 +13,7 @@ from perception_audibility import (
     event_knowledge_recipients,
     normalize_move_audibility,
 )
+from perceptual_visibility_projection import assemble_perceptual_visibility_for_viewer
 from response_validation_selection import eligible_agent_keys_for_present_characters
 
 from . import storage
@@ -98,6 +99,7 @@ def commit_character_turn_memory(
     present_characters: list[str],
     build_memory_fact_summary_fn: Callable[[str, dict[str, Any]], str],
     display_name_for_key: Callable[[str], str] | None = None,
+    perceptual_record: Any | None = None,
 ) -> None:
     if not state_manager or not acting_character:
         return
@@ -118,6 +120,26 @@ def commit_character_turn_memory(
         event_summary=event_summary,
         interpretation=interpretation,
     )
+
+    if perceptual_record is not None:
+        for name in character_names:
+            if not name or name == acting_character:
+                continue
+            assembly = assemble_perceptual_visibility_for_viewer(
+                perceptual_record,
+                viewer_character=name,
+                present_characters=present_characters,
+                acting_character=acting_character,
+            )
+            perceived = str(assembly.content or "").strip()
+            if not perceived:
+                continue
+            storage.append_observer_episodic(
+                state_manager,
+                name,
+                observed_line=f"Observed: {perceived}",
+            )
+        return
 
     recipients_raw = set(
         event_knowledge_recipients(

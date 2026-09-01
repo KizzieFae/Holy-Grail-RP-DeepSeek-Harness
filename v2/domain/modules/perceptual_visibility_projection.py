@@ -7,6 +7,7 @@ from typing import Any
 
 from perceptual_visibility_authority import speech_authority_allows_viewer
 from perceptual_visibility_contract import (
+    CHARACTER_SOURCE_KIND,
     PLAYER_PERCEPT_UNAVAILABLE_MARKER,
     PLAYER_SOURCE_KIND,
     PerceptualVisibilityRecord,
@@ -73,6 +74,22 @@ def _player_internal_ineligible(unit: Any, *, record: PerceptualVisibilityRecord
     return record.source_kind == PLAYER_SOURCE_KIND and unit.kind == "internal"
 
 
+def _character_actor_entitled_to_unit(
+    unit: Any,
+    *,
+    record: PerceptualVisibilityRecord,
+    viewer_character: str,
+    acting_character: str | None,
+) -> bool:
+    if record.source_kind != CHARACTER_SOURCE_KIND:
+        return False
+    actor = str(acting_character or "").strip()
+    viewer = str(viewer_character or "").strip()
+    if not actor or viewer != actor:
+        return False
+    return unit.kind in ("observable_event", "speech")
+
+
 def assemble_perceptual_visibility_for_viewer(
     record: PerceptualVisibilityRecord,
     *,
@@ -81,6 +98,7 @@ def assemble_perceptual_visibility_for_viewer(
     source_entry_id: str | None = None,
     historical_normalization: bool = False,
     legacy_metadata_key: str | None = None,
+    acting_character: str | None = None,
 ) -> PerceptualVisibilityAssemblyResult:
     included: list[str] = []
     excluded: list[str] = []
@@ -116,6 +134,15 @@ def assemble_perceptual_visibility_for_viewer(
         if _player_internal_ineligible(unit, record=record):
             excluded.append(unit.unit_id)
             reasons[unit.unit_id] = "player_internal_ineligible"
+            continue
+        if _character_actor_entitled_to_unit(
+            unit,
+            record=record,
+            viewer_character=viewer_character,
+            acting_character=acting_character,
+        ):
+            included.append(unit.unit_id)
+            fragments.append(unit.text.strip())
             continue
         if not _unit_eligible_for_viewer(
             unit,
@@ -198,7 +225,27 @@ def assemble_perceptual_history_entry_for_viewer(
         }
 
     if record is None:
-        if source_kind == PLAYER_SOURCE_KIND:
+        if source_kind == "character":
+            move = structured_move
+            if move is None and isinstance(metadata, dict):
+                move = metadata.get("structured_move")
+            actor = str(entry.get("actor_id") or acting_character or "").strip()
+            if isinstance(move, dict) and actor:
+                from character_perceptual_service import (
+                    build_historical_partial_character_record,
+                )
+
+                record = build_historical_partial_character_record(
+                    move,
+                    acting_character=actor,
+                )
+                if record is not None:
+                    load_provenance = {
+                        "historical_normalization": True,
+                        "legacy_metadata_key": None,
+                        "historical_partial": True,
+                    }
+        if record is None and source_kind == PLAYER_SOURCE_KIND:
             return PerceptualVisibilityAssemblyResult(
                 content=None,
                 degraded_path="historical_missing_player_decomposition",
@@ -207,14 +254,15 @@ def assemble_perceptual_history_entry_for_viewer(
                 record_validation_status=None,
                 source_kind=source_kind,
             )
-        return PerceptualVisibilityAssemblyResult(
-            content=None,
-            degraded_path="invalid_excluded",
-            source_entry_id=entry_id,
-            viewer_character=viewer_character,
-            record_validation_status="invalid_excluded",
-            source_kind=source_kind,
-        )
+        if record is None:
+            return PerceptualVisibilityAssemblyResult(
+                content=None,
+                degraded_path="invalid_excluded",
+                source_entry_id=entry_id,
+                viewer_character=viewer_character,
+                record_validation_status="invalid_excluded",
+                source_kind=source_kind,
+            )
 
     result = assemble_perceptual_visibility_for_viewer(
         record,
@@ -223,6 +271,7 @@ def assemble_perceptual_history_entry_for_viewer(
         source_entry_id=entry_id,
         historical_normalization=bool(load_provenance.get("historical_normalization")),
         legacy_metadata_key=load_provenance.get("legacy_metadata_key"),
+        acting_character=acting_character or str(entry.get("actor_id") or "").strip() or None,
     )
     if load_provenance.get("degraded_recovery"):
         result.degraded_path = "invalid_fallback_structured"

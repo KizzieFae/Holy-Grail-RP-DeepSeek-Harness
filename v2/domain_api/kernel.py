@@ -1370,12 +1370,28 @@ class DomainKernel:
                 normalized_move=move_dict,
             )
 
+        from character_perceptual_service import derive_character_perceptual_record
+
+        perceptual_derivation = derive_character_perceptual_record(
+            move_dict,
+            acting_character=req.character_id,
+        )
+        if not perceptual_derivation.accepted or perceptual_derivation.record is None:
+            return ValidationResponse(
+                accepted=False,
+                validation_class="domain_rule",
+                reason=perceptual_derivation.reason or "character perceptual derivation failed",
+                retryable=True,
+                normalized_move=move_dict,
+            )
+
         return ValidationResponse(
             accepted=True,
             validation_class="accepted",
             reason="",
             retryable=False,
             normalized_move=move_dict,
+            perceptual_visibility=perceptual_derivation.record.to_dict(),
         )
 
     def commit_move(self, req: CommitRequest) -> CommitResponse:

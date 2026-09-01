@@ -24,6 +24,7 @@ class ValidationProfile(str, Enum):
     NARRATOR_PRESENTATION = "narrator_presentation"
     OPENING = "opening"
     PLAYER_SUBMIT = "player_submit"
+    CHARACTER_MOVE = "character_move"
 
 
 @dataclass
@@ -157,7 +158,10 @@ def validate_perceptual_visibility_record(
                     accepted=False,
                     reason=f"speech unit {unit.unit_id} missing beat_index",
                 )
-            if profile == ValidationProfile.NARRATOR_PRESENTATION:
+            if profile in (
+                ValidationProfile.NARRATOR_PRESENTATION,
+                ValidationProfile.CHARACTER_MOVE,
+            ):
                 if not isinstance(structured_move, dict) or not is_canonical_v2_move(structured_move):
                     return PerceptualVisibilityValidationResult(
                         accepted=False,

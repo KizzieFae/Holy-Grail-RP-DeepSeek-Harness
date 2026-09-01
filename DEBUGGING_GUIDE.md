@@ -121,6 +121,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 ### Knowledge leaks / wrong “who knows what”
 
 - **Prompt assembly first** — `perception_audibility.py`, Host projector, `prompt_builders.py`
+- **Character committed turns (#92)** — confirm `committed_turn.metadata.perceptual_visibility` exists post-commit; trace `character_perceptual_service.py` → `perceptual_visibility_projection.py` (`hg.perceptual_visibility.v1`) → `session_history.project_history_to_character_context_chat` / `memory_layer/writes.py`; check `perceptual_visibility_projection` audit for included/excluded unit IDs. Pre-#92 entries classify `historical_partial` / `historical_missing_character_perceptual_derivation`.
 - **Continuity propagation** — `continuity_knowledge_helpers.py`, `continuity_manager.py`
 
 ### Persistence / reload issues

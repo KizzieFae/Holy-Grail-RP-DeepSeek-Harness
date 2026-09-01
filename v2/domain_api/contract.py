@@ -277,6 +277,7 @@ class ValidationResponse:
     reason: str
     retryable: bool
     normalized_move: dict[str, Any] | None = None
+    perceptual_visibility: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

@@ -56,12 +56,14 @@ class MemoryService:
         acting_character: str,
         move: dict[str, Any],
         director_decision: dict[str, Any],
+        perceptual_record: Any | None = None,
     ) -> None:
         apply_character_turn_memory(
             fixture,
             acting_character=acting_character,
             move=move,
             director_decision=director_decision,
+            perceptual_record=perceptual_record,
         )
 
     def relationship_history_snapshot(

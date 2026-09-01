@@ -38,6 +38,9 @@ V2_ROOT_ALLOWLIST = frozenset(
 )
 
 V2_SPEECH_AUDIBILITY = frozenset({"public", "directed", "private"})
+V2_ACTION_RECIPIENT_SCOPES = frozenset(
+    {"public", "present", "directed", "private", "environmental"}
+)
 V2_PROPOSAL_KINDS = frozenset({"off_focal", "reentry", "excursion_lifecycle"})
 V2_EXCURSION_OPERATIONS = frozenset({"open", "update", "close"})
 V2_PROPOSAL_ITEM_KEYS = frozenset({"kind", "character", "operation"})
@@ -196,6 +199,24 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
             s = str(b.get("action", "") or "").strip()
             if not s:
                 return "action beat requires non-empty action"
+            recipients = b.get("recipients")
+            if recipients is not None:
+                if not isinstance(recipients, dict):
+                    return "action beat recipients must be an object"
+                scope = str(recipients.get("scope", "") or "").strip().lower()
+                if scope not in V2_ACTION_RECIPIENT_SCOPES:
+                    return f"invalid action recipients scope: {scope!r}"
+                chars = recipients.get("characters", [])
+                if not isinstance(chars, list):
+                    return "action beat recipients.characters must be an array"
+                named = [str(name).strip() for name in chars if str(name).strip()]
+                if scope in ("directed", "private") and not named:
+                    return f"{scope} action requires non-empty recipients.characters"
+                if scope in ("public", "present", "environmental") and named:
+                    return f"{scope} action must not include non-empty recipients.characters"
+                for name in chars:
+                    if not isinstance(name, str):
+                        return "recipients.characters must be a JSON array of strings"
         elif bt == "speech":
             s = str(b.get("dialogue", "") or "").strip()
             if not s:
@@ -230,7 +251,7 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
 
 def _beat_allowed_keys(bt: Any) -> set[str]:
     if bt == "action":
-        return {"type", "action"}
+        return {"type", "action", "recipients"}
     if bt == "speech":
         return {"type", "dialogue", "audibility", "audience"}
     return set()

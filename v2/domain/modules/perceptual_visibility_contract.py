@@ -21,6 +21,7 @@ ValidationStatus = Literal[
     "valid",
     "invalid_fallback_structured",
     "invalid_excluded",
+    "historical_partial",
 ]
 
 # Runaway protection — derived from narrator 8192-token ceiling (~20k chars typical prose).
@@ -43,6 +44,7 @@ LEGACY_METADATA_KEY = "narrative_visibility"
 VALIDATION_AUDIT_KEY = "perceptual_visibility_validation"
 
 PLAYER_SOURCE_KIND = "player"
+CHARACTER_SOURCE_KIND = "character"
 PLAYER_PERCEPT_UNAVAILABLE_MARKER = (
     "[Player turn — perceptual detail unavailable to this character]"
 )
