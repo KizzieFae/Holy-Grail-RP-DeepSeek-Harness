@@ -218,7 +218,7 @@ Distinguish **Narrator proposal**, **Host establishment decision**, **persisted 
 
 **Cognition failure:** When DSH environmental cognition fails before finalize, `narrator_environment_audit.cognition_failed=true` (via `prepareNarratorContext` failure payload) and `decision.environment_cognition` on the Narrator attempt record the failure without granting invention authority.
 
-Investigator procedure: [audit-workflows.md](./audit-workflows.md).
+**Narrator F1 fidelity retry (#93):** Bounded two-attempt fidelity retry preserves per-attempt request/response, `decision.fidelity_correction` (intended correction), next-attempt `semantic_correction` contribution (consumed correction), and post-persistence `decision.terminal_presentation` join. Investigator procedure: [audit-workflows.md](./audit-workflows.md) → Narrator F1 fidelity retry.
 
 Investigator procedure and CLI helpers: `docs/audit-workflows.md`, `tools/investigation/README.md`.
 

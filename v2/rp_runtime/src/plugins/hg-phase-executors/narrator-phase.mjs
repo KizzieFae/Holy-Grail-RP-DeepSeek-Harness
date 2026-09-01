@@ -16,6 +16,12 @@ import {
 } from './narrator-semantic-qa.mjs';
 import { runNarratorEnvironmentCognition } from '../../lib/narrator-environment-cognition-substrate.mjs';
 import {
+  buildCorrectionContextFromPresentationValidation,
+  extractStructuredMoveFromManifest,
+  isEligibleFidelityValidationFailure,
+  requiredSpeechDialoguesFromStructuredMove,
+} from '../../lib/narrator-fidelity-correction.mjs';
+import {
   buildForensicAttribution,
   classifyFailureBoundary,
   extractEnvironmentCognitionFailure,
@@ -119,6 +125,7 @@ function acceptNarratorPresentation({
       validationReason: validation.reason ?? '',
       retryable: false,
       retryDecision: 'accept',
+      candidatePresentationText: presentationText,
       terminalDisposition,
       semanticQa,
       residualSoftConcerns,
@@ -136,6 +143,7 @@ function acceptNarratorPresentation({
     narrator_inference_session_id: narratorRun.inferenceSessionId,
     narrator_manifest_id: manifestId,
     narrator_inference_trace: narratorRun.trace,
+    narrator_evidence_id: narratorRun.evidenceId ?? null,
     terminal_disposition: terminalDisposition,
   };
 }
@@ -309,6 +317,7 @@ export async function runNarratorPhase({
         inference_outcome: lastInferenceOutcome,
         presentation_failure_reason: lastFailureReason,
         narrator_manifest_id: manifestId,
+        narrator_evidence_id: null,
         terminal_disposition: 'committed_fallback',
       };
     }
@@ -471,6 +480,17 @@ export async function runNarratorPhase({
         });
         lastFailureReason = validation.reason || 'narrator presentation failed fidelity validation';
         lastInferenceOutcome = 'inference_error';
+        const structuredMove = extractStructuredMoveFromManifest(manifest);
+        const requiredSpeechDialogues = requiredSpeechDialoguesFromStructuredMove(structuredMove);
+        const fidelityCorrection = retry.retryDecision === 'retry'
+          && isEligibleFidelityValidationFailure(validation.validation_class, validation.retryable)
+          ? buildCorrectionContextFromPresentationValidation(validation, {
+            attemptIndex,
+            narratorInferenceId,
+            domainCommitId,
+            requiredSpeechDialogues,
+          })
+          : null;
         recordAttemptEvidence({
           recorder,
           evidenceId: narratorRun.evidenceId,
@@ -491,11 +511,14 @@ export async function runNarratorPhase({
             retryable: retry.retryable,
             retryDecision: retry.retryDecision,
             rejectedPresentationText: presentationText,
+            candidatePresentationText: presentationText,
+            fidelityCorrection,
             terminalDisposition:
               retry.retryDecision === 'terminal_fallback' ? 'committed_fallback' : null,
           }),
         });
         if (retry.retryDecision === 'retry') {
+          correctionContext = fidelityCorrection;
           responseIndex += 1;
           continue;
         }
@@ -839,6 +862,7 @@ export async function runNarratorPhase({
     presentation_failed: true,
     inference_outcome: lastInferenceOutcome,
     presentation_failure_reason: lastFailureReason,
+    narrator_evidence_id: lastEvidenceId,
     terminal_disposition: 'committed_fallback',
   };
 }

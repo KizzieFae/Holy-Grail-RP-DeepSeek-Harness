@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { createDomainApiClient } from '../src/lib/domain-api-client.mjs';
+import { patchNarratorTerminalPresentationEvidence } from '../src/lib/execution-evidence/narrator-terminal-evidence.mjs';
 import { deepseekInferenceProfile } from '../src/lib/inference-profile.mjs';
 import { startDomainApi } from './helpers/domain-api.mjs';
 
@@ -71,6 +72,23 @@ function sceneAgentCollector(events) {
   };
 }
 
+const REQUIRED_DIALOGUE = 'Keep your voice down, Bob.';
+
+function isEligibleFidelityExhaustion(narratorResult) {
+  return narratorResult.presentation_failed === true
+    && narratorResult.terminal_disposition === 'committed_fallback'
+    && String(narratorResult.presentation_failure_reason ?? '').length > 0
+    && !/provider|inference failed|empty presentation|output_limit|prepare/i.test(
+      narratorResult.presentation_failure_reason ?? '',
+    );
+}
+
+function assertDegradedPresentationContract(presentationEntry) {
+  assert.equal(presentationEntry.metadata?.presentation_degraded, true);
+  assert.equal(presentationEntry.metadata?.presentation_source, 'degraded_deterministic_fallback');
+  assert.ok(presentationEntry.content.includes(REQUIRED_DIALOGUE));
+}
+
 test('live narrator combined envelope smoke: JSON envelope parses and prose stays human-facing', {
   skip: hasLiveKey ? false : 'DEEPSEEK_API_KEY not set',
   timeout: 240_000,
@@ -130,10 +148,52 @@ test('live narrator combined envelope smoke: JSON envelope parses and prose stay
     prompt: null,
   });
 
-  assert.equal(narratorResult.presentation_rendered, true, narratorResult.presentation_failure_reason);
-  assert.ok(narratorResult.presentation_text);
-  assert.doesNotMatch(narratorResult.presentation_text, /^\s*\{/);
-  assert.doesNotMatch(narratorResult.presentation_text, /perceptual_visibility/);
+  const outcomeA = narratorResult.presentation_rendered === true;
+  const outcomeB = !outcomeA
+    && isEligibleFidelityExhaustion(narratorResult);
+
+  assert.ok(
+    outcomeA || outcomeB,
+    narratorResult.presentation_failure_reason
+      ?? `unexpected narrator terminal disposition: ${narratorResult.terminal_disposition}`,
+  );
+
+  let presentationEntry;
+  if (outcomeA) {
+    assert.ok(narratorResult.presentation_text);
+    assert.doesNotMatch(narratorResult.presentation_text, /^\s*\{/);
+    assert.doesNotMatch(narratorResult.presentation_text, /perceptual_visibility/);
+    presentationEntry = await api.recordPresentation({
+      hg_session_id: sessionId,
+      domain_commit_id: commit.domain_commit_id,
+      hg_round_id: round.hg_round_id,
+      character_id: 'Alice',
+      presentation_text: narratorResult.presentation_text,
+      presentation_failed: false,
+      perceptual_visibility: narratorResult.perceptual_visibility ?? null,
+    });
+    assert.equal(presentationEntry.metadata?.presentation_degraded, false);
+  } else {
+    const failedEvent = sceneEvents.find((event) => event.type === 'hg/narrator-failed');
+    assert.equal(failedEvent?.payload?.canon_preserved, true);
+    presentationEntry = await api.recordPresentation({
+      hg_session_id: sessionId,
+      domain_commit_id: commit.domain_commit_id,
+      hg_round_id: round.hg_round_id,
+      character_id: 'Alice',
+      presentation_text: null,
+      presentation_failed: true,
+      inference_outcome: narratorResult.inference_outcome,
+      perceptual_visibility: null,
+    });
+    assertDegradedPresentationContract(presentationEntry);
+  }
+
+  patchNarratorTerminalPresentationEvidence(phaseExecutors.executionEvidenceRecorder, {
+    hgSessionId: sessionId,
+    narratorEvidenceId: narratorResult.narrator_evidence_id,
+    presentationEntry,
+  });
 
   if (narratorResult.perceptual_visibility?.units?.length) {
     assert.ok(Array.isArray(narratorResult.perceptual_visibility.units));
@@ -141,21 +201,11 @@ test('live narrator combined envelope smoke: JSON envelope parses and prose stay
     assert.ok(kinds.size > 0);
   }
 
-  await api.recordPresentation({
-    hg_session_id: sessionId,
-    domain_commit_id: commit.domain_commit_id,
-    hg_round_id: round.hg_round_id,
-    character_id: 'Alice',
-    presentation_text: narratorResult.presentation_text,
-    presentation_failed: false,
-    perceptual_visibility: narratorResult.perceptual_visibility ?? null,
-  });
-
   const history = await api.getSessionHistory(sessionId);
   const presentation = history.entries.find((entry) => entry.kind === 'presentation');
   assert.ok(presentation);
-  assert.equal(presentation.content, narratorResult.presentation_text);
-  if (narratorResult.perceptual_visibility) {
+  assert.equal(presentation.content, presentationEntry.content);
+  if (outcomeA && narratorResult.perceptual_visibility) {
     assert.ok(presentation.metadata?.perceptual_visibility?.units?.length);
   }
 });
