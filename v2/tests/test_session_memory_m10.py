@@ -40,12 +40,13 @@ def _private_whisper_move() -> dict:
             {
                 "type": "action",
                 "action": "whispers to Bob",
+                "recipients": {"scope": "directed", "characters": ["Bob"]},
             },
             {
                 "type": "speech",
                 "dialogue": "Meet me at midnight.",
                 "audibility": "private",
-                "audience": [],
+                "audience": ["Bob"],
             },
         ],
         "motivation": {
