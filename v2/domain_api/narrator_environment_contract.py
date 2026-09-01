@@ -206,6 +206,7 @@ class NarratorEnvironmentResolution:
     establishment_record_id: str | None = None
     supersedes: str | None = None
     reasoning_summary: str = ""
+    response_sufficient: bool | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -214,6 +215,8 @@ class NarratorEnvironmentResolution:
             "detail": self.detail,
             "reasoning_summary": self.reasoning_summary,
         }
+        if self.response_sufficient is not None:
+            payload["response_sufficient"] = self.response_sufficient
         if self.property_key:
             payload["property_key"] = self.property_key
         if self.value:
@@ -229,6 +232,72 @@ class NarratorEnvironmentResolution:
         return payload
 
 
+@dataclass(frozen=True)
+class EnvironmentalResponseSufficiency:
+    """Post-mediation semantic sufficiency evaluation (#89)."""
+
+    need_id: str | None
+    response_sufficient: bool
+    mediation_outcome: MediationOutcomeKind | None
+    composed_grounding: str
+    sufficiency_state: Literal[
+        "sufficient", "insufficient", "failure", "forbidden", "unresolved"
+    ]
+    reconciliation_notes: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "need_id": self.need_id,
+            "response_sufficient": self.response_sufficient,
+            "mediation_outcome": self.mediation_outcome,
+            "composed_grounding": self.composed_grounding,
+            "sufficiency_state": self.sufficiency_state,
+            "reconciliation_notes": self.reconciliation_notes,
+        }
+
+
+@dataclass(frozen=True)
+class EnvironmentalResponseObligation:
+    """Structured presentation obligation for Narrator rendering (#89)."""
+
+    obligation_id: str
+    need_id: str | None
+    rendering_question: str
+    render_behavior: Literal[
+        "communicate_grounded", "bounded_refusal", "no_material_obligation"
+    ]
+    grounded_material: tuple[str, ...]
+    resolution_category: EnvironmentalDetailCategory
+    response_sufficient: bool
+    mediation_outcome: MediationOutcomeKind | None
+    sufficiency_state: Literal[
+        "sufficient", "insufficient", "failure", "forbidden", "unresolved"
+    ]
+    established_b2_property_key: str | None = None
+    established_b2_value: str | None = None
+    refusal_reason: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "obligation_id": self.obligation_id,
+            "need_id": self.need_id,
+            "rendering_question": self.rendering_question,
+            "render_behavior": self.render_behavior,
+            "grounded_material": list(self.grounded_material),
+            "resolution_category": self.resolution_category,
+            "response_sufficient": self.response_sufficient,
+            "mediation_outcome": self.mediation_outcome,
+            "sufficiency_state": self.sufficiency_state,
+        }
+        if self.established_b2_property_key:
+            payload["established_b2_property_key"] = self.established_b2_property_key
+        if self.established_b2_value:
+            payload["established_b2_value"] = self.established_b2_value
+        if self.refusal_reason:
+            payload["refusal_reason"] = self.refusal_reason
+        return payload
+
+
 @dataclass
 class NarratorEnvironmentCognitionAudit:
     """Forensic audit record for one Narrator environmental cognition cycle."""
@@ -239,6 +308,12 @@ class NarratorEnvironmentCognitionAudit:
     librarian_queries: list[dict[str, Any]] = field(default_factory=list)
     n2_resolutions: list[NarratorEnvironmentResolution] = field(default_factory=list)
     establishment_decisions: list[dict[str, Any]] = field(default_factory=list)
+    sufficiency_evaluations: list[EnvironmentalResponseSufficiency] = field(
+        default_factory=list
+    )
+    environmental_response_obligations: list[EnvironmentalResponseObligation] = field(
+        default_factory=list
+    )
     immediate_user_turn: dict[str, Any] | None = None
     triggering_user: dict[str, Any] | None = None
     domain_commit_id: str | None = None
@@ -251,6 +326,12 @@ class NarratorEnvironmentCognitionAudit:
             "librarian_queries": list(self.librarian_queries),
             "n2_resolutions": [item.to_dict() for item in self.n2_resolutions],
             "establishment_decisions": list(self.establishment_decisions),
+            "sufficiency_evaluations": [
+                item.to_dict() for item in self.sufficiency_evaluations
+            ],
+            "environmental_response_obligations": [
+                item.to_dict() for item in self.environmental_response_obligations
+            ],
             "immediate_user_turn": (
                 dict(self.immediate_user_turn) if self.immediate_user_turn else None
             ),

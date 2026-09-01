@@ -376,6 +376,7 @@ class CognitionMediationTests(unittest.TestCase):
         self.assertEqual(n1.information_needs, [])
 
     def test_mediation_outcomes(self) -> None:
+        self.assertTrue(mediation_allows_bounded_composition("match"))
         self.assertTrue(mediation_allows_bounded_composition("no_match"))
         self.assertFalse(mediation_allows_bounded_composition("ambiguous"))
         self.assertTrue(mediation_blocks_invention("ambiguous"))
@@ -504,7 +505,7 @@ class B2EstablishmentTests(unittest.TestCase):
                     property_key="wall_color",
                     value="teal",
                     stable_refs=(loc,),
-                    mediation_outcome="match",
+                    mediation_outcome="retrieval_failure",
                 )
             )
             self.assertFalse(rejected.authorized)
@@ -525,7 +526,7 @@ class B2EstablishmentTests(unittest.TestCase):
 
 
 class B2AuthorityMediationTests(unittest.TestCase):
-    def test_match_blocks_b2_origination(self) -> None:
+    def test_match_may_authorize_b2_when_insufficient(self) -> None:
         fixture = initialize_live_session(cast=["Alice"], location="Workshop")
         fixture.memory_scope_id = "scope-match"
         tmpdir = tempfile.mkdtemp()
@@ -540,15 +541,18 @@ class B2AuthorityMediationTests(unittest.TestCase):
             )
             from domain_api.narrator_environment_cognition import apply_n2_establishment_decisions
 
+            loc = bind_location_stable_ref("Workshop").stable_ref
             n2 = parse_n2_cognition_results(
                 {
                     "resolutions": [
                         {
                             "category": "B2",
-                            "detail": "teal walls",
-                            "property_key": "wall_color",
-                            "value": "teal",
+                            "detail": "bounded size detail",
+                            "property_key": "parcel_size",
+                            "value": "forearm-length",
+                            "stable_refs": [loc],
                             "mediation_outcome": "match",
+                            "response_sufficient": False,
                         }
                     ]
                 }
@@ -556,9 +560,8 @@ class B2AuthorityMediationTests(unittest.TestCase):
             decisions = apply_n2_establishment_decisions(
                 fixture, service, resolutions=n2, turn_record=turn, cognition_id="cog-match"
             )
-            self.assertFalse(decisions[0]["accepted"])
-            self.assertEqual(decisions[0]["reason"], "origination_requires_no_match")
-            self.assertEqual(service.list_records("scope-match"), [])
+            self.assertTrue(decisions[0]["accepted"])
+            self.assertEqual(len(service.list_records("scope-match")), 1)
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 

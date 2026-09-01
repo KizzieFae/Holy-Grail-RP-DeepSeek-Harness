@@ -12,6 +12,7 @@ from .context_substrate import auth_projections_to_contributions, semantic_corre
 from .continuity_context_projector import project_authoritative_context
 from .contract import NarratorContextPrepareRequest, PromptContribution, PromptContributionManifest
 from .narrator_environment_cognition import build_cognition_context_payload
+from .narrator_environment_sufficiency import format_environmental_response_obligations
 from .narrator_environment_context import (
     immediate_user_turn_contribution,
     triggering_user_contribution,
@@ -68,6 +69,41 @@ def prepare_narrator_context(
             f"Continuity turn counter after commit: {turn_record.continuity_turn_index}."
         ),
     )
+    cognition_audit = environment_cognition_audit
+    obligation_text = ""
+    if isinstance(cognition_audit, dict):
+        raw_obligations = cognition_audit.get("environmental_response_obligations")
+        if isinstance(raw_obligations, list) and raw_obligations:
+            from domain_api.narrator_environment_contract import EnvironmentalResponseObligation
+
+            obligations = [
+                EnvironmentalResponseObligation(
+                    obligation_id=str(item.get("obligation_id") or ""),
+                    need_id=str(item.get("need_id") or "") or None,
+                    rendering_question=str(item.get("rendering_question") or ""),
+                    render_behavior=item.get("render_behavior", "bounded_refusal"),  # type: ignore[arg-type]
+                    grounded_material=tuple(
+                        str(part)
+                        for part in list(item.get("grounded_material") or [])
+                        if str(part).strip()
+                    ),
+                    resolution_category=item.get("resolution_category", "cannot_safely_resolve"),  # type: ignore[arg-type]
+                    response_sufficient=bool(item.get("response_sufficient")),
+                    mediation_outcome=item.get("mediation_outcome"),  # type: ignore[arg-type]
+                    sufficiency_state=item.get("sufficiency_state", "unresolved"),  # type: ignore[arg-type]
+                    established_b2_property_key=str(
+                        item.get("established_b2_property_key") or ""
+                    )
+                    or None,
+                    established_b2_value=str(item.get("established_b2_value") or "") or None,
+                    refusal_reason=str(item.get("refusal_reason") or "") or None,
+                )
+                for item in raw_obligations
+                if isinstance(item, dict)
+            ]
+            obligation_text = format_environmental_response_obligations(obligations)
+        elif isinstance(cognition_audit.get("environmental_response_obligations_text"), str):
+            obligation_text = str(cognition_audit["environmental_response_obligations_text"])
     render_instruction = build_narrator_render_prompt(
         char_name=req.character_id,
         action="",
@@ -76,6 +112,7 @@ def prepare_narrator_context(
         scene_context=scene_context,
         structured_move=narrate_move,
         environmental_baseline=env_packet.render_summary(),
+        environmental_response_obligations=obligation_text or None,
     )
     committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
     contributions: list[PromptContribution] = list(
@@ -166,7 +203,27 @@ def prepare_narrator_context(
         ]
     )
     contributions.extend(narrator_contributions)
-    cognition_audit = environment_cognition_audit
+    if obligation_text:
+        contributions.insert(
+            -1,
+            PromptContribution(
+                contribution_id=f"{manifest_id}-environmental-response-obligation",
+                source_kind="environmental_response_obligation",
+                authority_class="derived",
+                knowledge_ids=(
+                    str(
+                        (cognition_audit or {}).get("cognition_id")
+                        or req.inference_id
+                    ),
+                ),
+                priority=27,
+                content=obligation_text,
+                provenance={
+                    "inference_id": req.inference_id,
+                    "visibility": "presentation",
+                },
+            ),
+        )
     if isinstance(cognition_audit, dict) and cognition_audit:
         contributions.insert(
             -1,

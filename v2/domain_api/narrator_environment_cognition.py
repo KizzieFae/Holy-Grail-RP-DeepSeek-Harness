@@ -35,6 +35,11 @@ from domain_api.narrator_environment_establishment import (
 )
 from domain_api.narrator_environment_projection import build_environmental_current_view
 from domain_api.narrator_environment_packet import assemble_narrator_environment_packet
+from domain_api.narrator_environment_sufficiency import (
+    format_environmental_response_obligations,
+    reconcile_post_mediation_environmental_resolutions,
+    refresh_obligations_after_b2,
+)
 from domain_api.story_knowledge_service import StoryKnowledgeService
 from .session_history import project_immediate_user_turn_context
 
@@ -149,6 +154,9 @@ def parse_n2_cognition_results(raw: dict[str, Any]) -> list[NarratorEnvironmentR
             "mediation_failure",
         }:
             mediation = None
+        response_sufficient = item.get("response_sufficient")
+        if response_sufficient is not None:
+            response_sufficient = bool(response_sufficient)
         resolutions.append(
             NarratorEnvironmentResolution(
                 need_id=str(item.get("need_id", "") or "") or None,
@@ -161,6 +169,7 @@ def parse_n2_cognition_results(raw: dict[str, Any]) -> list[NarratorEnvironmentR
                 establishment_record_id=str(item.get("establishment_record_id", "") or "") or None,
                 supersedes=str(item.get("supersedes", "") or "") or None,
                 reasoning_summary=str(item.get("reasoning_summary", "") or ""),
+                response_sufficient=response_sufficient,
             )
         )
     return resolutions
@@ -286,6 +295,7 @@ def apply_n2_establishment_decisions(
                 supersedes=resolution.supersedes,
             )
             result["authority_decision"] = decision_audit
+            result["resolution_need_id"] = resolution.need_id
             if result.get("accepted"):
                 resolution.establishment_record_id = result.get("story_record_id")
                 story_records = service.list_records(str(fixture.memory_scope_id or ""))
@@ -346,12 +356,20 @@ def finalize_narrator_environment_cognition(
     cognition_id = cognition_id or f"nar-env-cog-{uuid.uuid4().hex[:12]}"
     n1 = parse_n1_cognition_result(n1_raw)
     n2 = parse_n2_cognition_results(n2_raw)
+    n2_raw_items = [
+        item for item in list(n2_raw.get("resolutions") or []) if isinstance(item, dict)
+    ]
 
-    for resolution in n2:
-        if resolution.mediation_outcome is None and librarian_outcomes:
-            for outcome in librarian_outcomes:
-                if outcome.get("need_id") == resolution.need_id:
-                    resolution.mediation_outcome = outcome.get("mediation_outcome")  # type: ignore[assignment]
+    story_records = story_service.list_records(str(fixture.memory_scope_id or ""))
+    current_view = build_environmental_current_view(fixture, story_records=story_records)
+
+    n2, sufficiency_evaluations, obligations = reconcile_post_mediation_environmental_resolutions(
+        n1=n1,
+        resolutions=n2,
+        librarian_outcomes=librarian_outcomes,
+        n2_raw_items=n2_raw_items,
+        current_view=current_view,
+    )
 
     decisions = apply_n2_establishment_decisions(
         fixture,
@@ -359,6 +377,12 @@ def finalize_narrator_environment_cognition(
         resolutions=n2,
         turn_record=turn_record,
         cognition_id=cognition_id,
+    )
+
+    obligations = refresh_obligations_after_b2(
+        obligations,
+        resolutions=n2,
+        establishment_decisions=decisions,
     )
 
     _, view = assemble_narrator_environment_packet(
@@ -373,6 +397,8 @@ def finalize_narrator_environment_cognition(
         librarian_queries=list(librarian_outcomes or []),
         n2_resolutions=n2,
         establishment_decisions=decisions,
+        sufficiency_evaluations=sufficiency_evaluations,
+        environmental_response_obligations=obligations,
         immediate_user_turn=project_immediate_user_turn_context(fixture.rp_history),
         triggering_user=extract_triggering_user_context(fixture, turn_record),
         domain_commit_id=turn_record.domain_commit_id,
@@ -389,6 +415,10 @@ def finalize_narrator_environment_cognition(
         "cognition_id": cognition_id,
         "audit": audit.to_dict(),
         "establishment_decisions": decisions,
+        "environmental_response_obligations": [item.to_dict() for item in obligations],
+        "environmental_response_obligations_text": format_environmental_response_obligations(
+            obligations
+        ),
         "updated_environmental_view": view.to_dict(),
     }
 
@@ -439,6 +469,12 @@ NARRATOR_ENVIRONMENT_COGNITION_RUBRIC = (
     "- category B2: continuity-bearing persistent property — requires property_key, value, stable_refs.\n"
     "- category C: material story fact — mark only; Host establishes separately.\n"
     "- cannot_safely_resolve: when ambiguity/forbidden/retrieval_failure/mediation_failure.\n"
-    "Only legitimate no_match permits bounded B1/B2 origination. Never invent on failure.\n"
-    "Output JSON: {baseline_sufficient, information_needs[], resolutions[], assessment_notes}."
+    "Post-mediation sufficiency (#89): Librarian match means relevant knowledge was found, "
+    "NOT that the rendering need is sufficient. Set response_sufficient per need.\n"
+    "When response_sufficient is true, prefer category A using matched grounded detail.\n"
+    "When response_sufficient is false and bounded detail is needed, propose minimum B2 "
+    "compatible with existing truth (match does NOT prohibit B2).\n"
+    "Never invent on retrieval/mediation failure. Never reinterpret match as no_match.\n"
+    "Output JSON: {baseline_sufficient, information_needs[], resolutions[], assessment_notes}.\n"
+    "Each resolution may include response_sufficient (boolean)."
 )

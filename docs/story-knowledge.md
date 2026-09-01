@@ -158,7 +158,9 @@ InformationNeed (Librarian)
 
 #50 does **not** grant Narrator, Director, Character, Storyteller, Librarian, or any other agent authority to **establish new story truth**. Agent-specific establishment remains governed separately.
 
-**#49 (implemented):** Narrator may **propose** **B2** continuity-bearing environmental descriptors; **Host deterministic validation** (`host_environmental_b2_validation`) must accept before `submit_derived_record` with `event_type=environmental_descriptor`. **B1** ephemeral texture is presentation-only (no JSONL record). **C** material facts require stronger governed establishment outside Narrator rendering. B2 origination requires Librarian `no_match`; `match` uses category A without duplicate persistence.
+**#49 (implemented; #89 sufficiency refinement):** Narrator may **propose** **B2** continuity-bearing environmental descriptors; **Host deterministic validation** (`host_environmental_b2_validation`) must accept before `submit_derived_record` with `event_type=environmental_descriptor`. **B1** ephemeral texture is presentation-only (no JSONL record). **C** material facts require stronger governed establishment outside Narrator rendering.
+
+**Match ≠ sufficiency (#89):** Librarian **`match`** means relevant established knowledge was found — **not** that the current environmental/perceptual rendering need is sufficiently grounded. Environmental cognition evaluates **response sufficiency** after composing baseline + Librarian material. When insufficient, cognition may propose **minimum-necessary bounded B2** detail compatible with existing truth; **`match` does not prohibit B2**. Host validates structure/authority only (schema, stable refs, safe mediation state, forbidden mutations) — **not** semantic heuristics such as numeric definitions for qualitative terms. Successful **`match`** material composes into category **A** grounded response when sufficient. **`environmental_response_obligations`** project resolved perceptual obligations to Narrator; Narrator renders non-authoritatively and does not substitute inferred purpose for requested observable detail.
 
 ---
 

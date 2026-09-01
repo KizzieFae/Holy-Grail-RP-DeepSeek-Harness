@@ -76,8 +76,9 @@ function createMockApi({
       calls.librarianFinalize += 1;
       return {
         mediation_outcome: mediationOutcome,
-        bundle: { mediation_outcome: mediationOutcome },
-        audit: { host_validation: { accepted: true } },
+        entries: mediationOutcome === 'match'
+          ? [{ content: 'matched authored detail' }]
+          : [],
       };
     },
   };
@@ -148,12 +149,12 @@ test('information need invokes Librarian mediation', async () => {
   assert.equal(result.ok, true);
 });
 
-test('match mediation outcome forwarded to finalize without duplicate B2 persistence', async () => {
+test('match mediation with insufficiency may persist B2 at finalize', async () => {
   const api = createMockApi({
     mediationOutcome: 'match',
     finalizeResult: {
       accepted: true,
-      establishment_decisions: [{ accepted: false, reason: 'origination_requires_no_match' }],
+      establishment_decisions: [{ accepted: true, reason: 'host_accepted' }],
     },
   });
   let finalizeBody = null;
@@ -175,13 +176,15 @@ test('match mediation outcome forwarded to finalize without duplicate B2 persist
         })
         : JSON.stringify({
           baseline_sufficient: false,
-          information_needs: [{ need_id: 'need-1', question: 'Wall color?' }],
+          information_needs: [{ need_id: 'need-1', question: 'How big is the parcel?' }],
           resolutions: [{
             need_id: 'need-1',
             category: 'B2',
-            detail: 'teal walls',
-            property_key: 'wall_color',
-            value: 'teal',
+            response_sufficient: false,
+            detail: 'small and heavy but dimensions needed',
+            property_key: 'parcel_size',
+            value: 'forearm-length',
+            stable_refs: ['location:workshop'],
           }],
         }),
     }),
@@ -195,6 +198,7 @@ test('match mediation outcome forwarded to finalize without duplicate B2 persist
   });
   assert.equal(finalizeBody.librarian_outcomes[0].mediation_outcome, 'match');
   assert.equal(finalizeBody.cognition_result.resolutions[0].mediation_outcome, 'match');
+  assert.match(finalizeBody.librarian_outcomes[0].composed_grounding ?? '', /matched authored detail/);
 });
 
 test('cognition inference failure returns auditable failure when fallback disabled', async () => {
@@ -217,7 +221,9 @@ test('cognition inference failure returns auditable failure when fallback disabl
   assert.match(result.failureReason, /provider_error/);
 });
 
-test('buildCognitionPrompt mentions no_match origination rule', () => {
+test('buildCognitionPrompt mentions sufficiency not no_match gate', () => {
   const prompt = buildCognitionPrompt();
-  assert.match(prompt, /no_match/i);
+  assert.match(prompt, /response_sufficient/i);
+  assert.match(prompt, /match means relevant knowledge/i);
+  assert.doesNotMatch(prompt, /Only no_match mediation permits bounded origination/i);
 });

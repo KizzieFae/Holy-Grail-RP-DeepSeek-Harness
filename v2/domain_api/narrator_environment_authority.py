@@ -33,7 +33,8 @@ def validate_b2_proposal(
 
 
 def mediation_allows_bounded_composition(outcome: str | None) -> bool:
-    return outcome == "no_match"
+    """Safe mediation states that may accompany bounded B2 when cognition finds insufficiency."""
+    return outcome in {"match", "no_match"}
 
 
 def mediation_blocks_invention(outcome: str | None) -> bool:
@@ -129,10 +130,10 @@ def evaluate_host_environmental_b2_establishment(
         return EnvironmentalB2EstablishmentDecision(
             decision_id=decision_id,
             authorized=False,
-            reason_code="origination_requires_no_match",
+            reason_code="unsafe_mediation_for_establishment",
             reason_detail=(
-                "B2 origination requires no_match mediation; "
-                "match uses category A without new persistence"
+                "Bounded B2 requires safe mediation state (match or no_match); "
+                f"got {proposal.mediation_outcome or 'missing'}"
             ),
             proposal=proposal,
         )

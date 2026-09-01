@@ -36,6 +36,7 @@ const COGNITION_SCHEMA = {
           value: { type: 'string' },
           stable_refs: { type: 'array', items: { type: 'string' } },
           mediation_outcome: { type: 'string' },
+          response_sufficient: { type: 'boolean' },
           reasoning_summary: { type: 'string' },
         },
         required: ['category', 'detail'],
@@ -48,13 +49,34 @@ const COGNITION_SCHEMA = {
 
 function buildCognitionPrompt() {
   return [
-    'Perform Narrator environmental cognition (#49).',
+    'Perform Narrator environmental cognition (#49 / #89 sufficiency).',
     'Return JSON only matching the provided schema.',
     'Assess whether the environmental baseline suffices; if not, list semantic information needs.',
     'Resolve each need into category A, B1, B2, C, or cannot_safely_resolve.',
-    'Only no_match mediation permits bounded origination.',
+    'Librarian match means relevant knowledge was found — NOT render sufficiency.',
+    'Set response_sufficient per resolution. When insufficient, minimum B2 may follow Host validation.',
+    'Never reinterpret match as no_match. Never invent on retrieval/mediation failure.',
     JSON.stringify(COGNITION_SCHEMA, null, 2),
   ].join('\n');
+}
+
+function extractComposedGrounding(mediation) {
+  const bundle = mediation?.bundle;
+  if (!bundle || typeof bundle !== 'object') {
+    return '';
+  }
+  const parts = [];
+  for (const entry of bundle.entries ?? []) {
+    const text = entry?.content ?? entry?.text ?? '';
+    if (text) {
+      parts.push(String(text).trim());
+    }
+  }
+  const synthesis = bundle.synthesis_summary ?? bundle.synthesis ?? mediation?.parsed?.rationale;
+  if (synthesis) {
+    parts.push(String(synthesis).trim());
+  }
+  return parts.filter(Boolean).join('; ');
 }
 
 function parseCognitionResult(raw) {
@@ -209,6 +231,11 @@ export async function runNarratorEnvironmentCognition({
       need_id: needId,
       mediation_outcome: mediation?.bundle?.mediation_outcome ?? 'mediation_failure',
       request_id: kar?.request_id ?? null,
+      composed_grounding: extractComposedGrounding(mediation),
+      rationale: mediation?.parsed?.rationale ?? null,
+      entries: (mediation?.bundle?.entries ?? []).map((entry) => ({
+        content: entry?.content ?? entry?.text ?? '',
+      })),
     });
     const resolution = (cognitionResult.resolutions ?? []).find((item) => item.need_id === needId);
     if (resolution && !resolution.mediation_outcome) {
