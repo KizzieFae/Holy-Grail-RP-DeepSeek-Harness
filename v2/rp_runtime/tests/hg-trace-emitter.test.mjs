@@ -53,7 +53,7 @@ test('HgTraceEmitter: rejects unknown event types', async (t) => {
     }),
     /unknown Holy Grail event type/,
   );
-  assert.equal(HG_EVENT_TYPES.length, 40);
+  assert.equal(HG_EVENT_TYPES.length, 43);
   assert.ok(HG_EVENT_TYPES.includes('hg/character-knowledge-cognition'));
   assert.ok(HG_EVENT_TYPES.includes('hg/character-projection-lifecycle'));
   assert.ok(HG_EVENT_TYPES.includes('hg/director-semantic-qa'));
@@ -63,4 +63,7 @@ test('HgTraceEmitter: rejects unknown event types', async (t) => {
   assert.ok(HG_EVENT_TYPES.includes('hg/opening-segmentation-started'));
   assert.ok(HG_EVENT_TYPES.includes('hg/opening-segmentation-completed'));
   assert.ok(HG_EVENT_TYPES.includes('hg/opening-segmentation-failed'));
+  assert.ok(HG_EVENT_TYPES.includes('hg/player-decomposition-started'));
+  assert.ok(HG_EVENT_TYPES.includes('hg/player-decomposition-completed'));
+  assert.ok(HG_EVENT_TYPES.includes('hg/player-decomposition-failed'));
 });

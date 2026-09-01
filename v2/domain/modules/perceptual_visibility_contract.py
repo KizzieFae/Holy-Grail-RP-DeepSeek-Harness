@@ -42,6 +42,11 @@ METADATA_KEY = "perceptual_visibility"
 LEGACY_METADATA_KEY = "narrative_visibility"
 VALIDATION_AUDIT_KEY = "perceptual_visibility_validation"
 
+PLAYER_SOURCE_KIND = "player"
+PLAYER_PERCEPT_UNAVAILABLE_MARKER = (
+    "[Player turn — perceptual detail unavailable to this character]"
+)
+
 
 @dataclass
 class PerceptualVisibilityUnit:
@@ -136,18 +141,26 @@ class PerceptualVisibilityRecord:
             unit = PerceptualVisibilityUnit.from_dict(item)
             if unit is not None:
                 units.append(unit)
+        validation_status = str(data.get("validation_status", "valid") or "valid")
+        recovery = dict(data.get("recovery") or {})
+        source_kind = str(data.get("source_kind", "unknown") or "unknown")
         if not units:
-            return None
+            if not (
+                source_kind == PLAYER_SOURCE_KIND
+                and validation_status == "invalid_excluded"
+                and recovery.get("failure_class")
+            ):
+                return None
         return cls(
             schema_version=int(data.get("schema_version", PERCEPTUAL_VISIBILITY_SCHEMA_VERSION)),
             record_id=str(data.get("record_id", "") or f"pvr-{uuid.uuid4()}"),
-            source_kind=str(data.get("source_kind", "unknown") or "unknown"),
+            source_kind=source_kind,
             units=units,
-            validation_status=str(data.get("validation_status", "valid") or "valid"),
+            validation_status=validation_status,
             validation_profile=str(data.get("validation_profile", "") or ""),
             validation_notes=[
                 str(note) for note in list(data.get("validation_notes") or []) if str(note).strip()
             ],
             generation=dict(data.get("generation") or {}),
-            recovery=dict(data.get("recovery") or {}),
+            recovery=recovery,
         )

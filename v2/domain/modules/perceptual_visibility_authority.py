@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from perception_audibility_constants import AUDIBILITY_PUBLIC
+from perception_audibility_constants import (
+    AUDIBILITY_DIRECTED,
+    AUDIBILITY_PRIVATE,
+    AUDIBILITY_PUBLIC,
+)
 from perception_audibility_visibility import speech_beat_viewer_may_perceive
 
 
@@ -24,6 +28,32 @@ def speech_authority_from_beat(
         "kind": "speech_audibility",
         "acting_character": str(acting_character or "").strip(),
         "audibility": aud,
+        "audience": audience,
+    }
+
+
+def speech_authority_from_player_recipients(
+    recipients: dict[str, Any],
+    *,
+    acting_character: str,
+) -> dict[str, Any]:
+    scope = str(recipients.get("scope", "") or "public").strip().lower() or "public"
+    if scope in ("public", "present", "environmental"):
+        audibility = AUDIBILITY_PUBLIC
+    elif scope == "directed":
+        audibility = AUDIBILITY_DIRECTED
+    else:
+        audibility = AUDIBILITY_PRIVATE
+    audience_raw = recipients.get("characters")
+    audience = (
+        [str(name).strip() for name in audience_raw if str(name).strip()]
+        if isinstance(audience_raw, list)
+        else []
+    )
+    return {
+        "kind": "speech_audibility",
+        "acting_character": str(acting_character or "").strip(),
+        "audibility": audibility,
         "audience": audience,
     }
 

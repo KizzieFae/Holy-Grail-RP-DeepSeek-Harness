@@ -48,7 +48,6 @@ from perception_audibility_normalize import (
     normalize_move_audibility,
     normalize_speech_beat_audibility,
 )
-from perception_audibility_player import player_text_for_character_viewer
 from perception_audibility_quote_policy import observer_may_quote_dialogue_in_interpretation
 from perception_audibility_structured import (
     filter_structured_move_for_viewer,
@@ -75,7 +74,6 @@ __all__ = [
     "normalize_move_audibility",
     "normalize_speech_beat_audibility",
     "observer_may_quote_dialogue_in_interpretation",
-    "player_text_for_character_viewer",
     "public_event_extraction",
     "public_safe_event_summary",
     "redact_structured_move_for_orchestration",

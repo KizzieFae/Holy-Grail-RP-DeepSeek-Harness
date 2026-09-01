@@ -15,12 +15,15 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 ensure_domain_paths()
 
 from memory_layer.writes import resolve_present_characters  # noqa: E402
-from perception_audibility_constants import REDACTED_PLAYER_TEXT_CONTENT  # noqa: E402
 from perception_audibility_history import (  # noqa: E402
     RECENT_SCENE_TRANSCRIPT_WINDOW,
     build_recent_dialogue_history_for_viewer,
 )
-from perception_audibility_player import player_text_for_character_viewer  # noqa: E402
+from perceptual_visibility_legacy import perceptual_visibility_record_from_entry_metadata  # noqa: E402
+from perceptual_visibility_projection import (  # noqa: E402
+    build_perceptual_visibility_audit_metadata,
+)
+from player_perceptual_projection import assemble_player_user_entry_for_viewer  # noqa: E402
 
 from .session_history import (  # noqa: E402
     substantive_user_entry_for_trigger,
@@ -114,23 +117,30 @@ def project_character_conversation_for_manifest(
     trigger_content: str | None = None
     latest_user = _latest_user_history_entry(history)
     if latest_user is not None and character_id in present:
-        raw_content = str(latest_user.get("content") or "")
-        metadata = latest_user.get("metadata") if isinstance(latest_user.get("metadata"), dict) else {}
-        speaker = str(latest_user.get("actor_id") or metadata.get("speaker") or "Player")
-        if raw_content.strip():
-            perceived = player_text_for_character_viewer(
-                raw_text=raw_content,
-                viewer_character_name=character_id,
-                present_characters=present,
-                user_display_name=speaker,
-                get_character_display_name_fn=_character_display_name,
+        speaker = str(
+            latest_user.get("actor_id")
+            or (latest_user.get("metadata") or {}).get("speaker")
+            or "Player"
+        )
+        assembly = assemble_player_user_entry_for_viewer(
+            latest_user,
+            viewer_character=character_id,
+            present_characters=present,
+        )
+        if assembly.content and assembly.degraded_path != "decomposition_failed":
+            trigger_content = _format_trigger_content(str(assembly.content))
+            entry_id = latest_user.get("entry_id")
+            if entry_id:
+                provenance["trigger_entry_id"] = str(entry_id)
+            provenance["trigger_redacted"] = False
+            metadata = (
+                latest_user.get("metadata")
+                if isinstance(latest_user.get("metadata"), dict)
+                else {}
             )
-            if perceived and str(perceived).strip():
-                trigger_content = _format_trigger_content(str(perceived))
-                entry_id = latest_user.get("entry_id")
-                if entry_id:
-                    provenance["trigger_entry_id"] = str(entry_id)
-                if perceived == REDACTED_PLAYER_TEXT_CONTENT:
-                    provenance["trigger_redacted"] = True
+            record, _ = perceptual_visibility_record_from_entry_metadata(metadata)
+            provenance.update(
+                build_perceptual_visibility_audit_metadata(assembly, record=record)
+            )
 
     return transcript_content, trigger_content, provenance

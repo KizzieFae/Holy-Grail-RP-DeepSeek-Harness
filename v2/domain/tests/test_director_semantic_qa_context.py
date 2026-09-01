@@ -41,7 +41,7 @@ def _kernel_scene_round() -> tuple[DomainKernel, str, str]:
 def test_director_semantic_qa_response_includes_rubric_and_candidate() -> None:
     kernel, scene_id, round_id = _kernel_scene_round()
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content="Bob, what do you think?",
             speaker="Player",
@@ -82,7 +82,7 @@ def test_director_semantic_qa_response_includes_rubric_and_candidate() -> None:
 def test_director_semantic_qa_reuses_same_scene_evidence_as_prepare() -> None:
     kernel, scene_id, round_id = _kernel_scene_round()
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content="Bob, respond.",
             speaker="Player",

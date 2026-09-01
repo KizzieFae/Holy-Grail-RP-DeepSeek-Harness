@@ -45,7 +45,7 @@ def _commit_after_user(kernel: DomainKernel, *, user_content: str) -> tuple[str,
     rnd = kernel.start_round(RoundStartRequest(hg_scene_id=scene_id))
     round_id = rnd.hg_round_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content=user_content,
             speaker="Player",
@@ -145,7 +145,7 @@ def test_player_skip_suppresses_immediate_user_turn() -> None:
     created = kernel.create_session(cast=["Alice"])
     scene_id = created.hg_scene_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content="Look at the door number.",
             speaker="Player",

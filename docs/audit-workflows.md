@@ -85,6 +85,23 @@ domain_commit_id + continuity_turn_index
 
 **Narrator forensic attribution (#70):** Execution-evidence Narrator attempts may include `decision.forensic_attribution` with structured `failure_class`, `boundary`, and `stage` when inference failed before or without a normal assembled request/response record (`pre_inference_record: true`). Environmental-cognition inference attempts require `hgSessionId` in evidence context to be retained under `inference_kind: narrator_environment_cognition`.
 
+### Issue #91 player perceptual decomposition join recipe
+
+Reconstruct one player turn's Character-facing perception:
+
+```text
+rp_history user entry (full content preserved)
+  → execution_evidence player_decomposition attempt(s) (inference_id, attempt_index)
+  → metadata.perceptual_visibility (canonical PVR or explicit failure record)
+  → metadata.perceptual_visibility_validation (accepted/rejected, failure_class)
+  → generation.source_accounting (normalized length/hash, segments, segment↔unit linkage)
+  → projector hg.perceptual_visibility.v1 assembly
+  → perceptual_visibility_projection audit on transcript/trigger lines
+  → downstream consumer (recent_scene_transcript / user_turn_trigger / memory)
+```
+
+**Historical boundary:** user entries without `metadata.perceptual_visibility` classify as `historical_missing_player_decomposition` and are omitted from Character transcript (not retroactively decomposed). **Current failure boundary:** `decomposition_failed` uses neutral transcript marker only; Character trigger omitted; player-interaction memory skipped. Director/orchestration trigger remains full unredacted `content`.
+
 ### V2 human audit-tag workflow
 
 During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.

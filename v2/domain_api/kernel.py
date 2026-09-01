@@ -297,6 +297,11 @@ class DomainKernel:
         return self._session_info(session)
 
     def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
+        from player_perceptual_service import (
+            attach_player_perceptual_metadata,
+            validate_player_perceptual_decomposition,
+        )
+
         fixture = self.store.require(req.hg_session_id)
         memory_service = self._memory_service()
         char_snapshot = (
@@ -309,25 +314,36 @@ class DomainKernel:
             if memory_service is not None
             else {}
         )
-        if memory_service is not None:
-            memory_service.write_user_turn_memory(
-                fixture, user_name=req.speaker, content=req.content
-            )
-        else:
-            apply_user_turn_memory(
-                fixture, user_name=req.speaker, content=req.content
-            )
+
+        record, validation_audit = validate_player_perceptual_decomposition(
+            content=req.content,
+            speaker=req.speaker,
+            decomposition=req.player_decomposition,
+        )
+        metadata = attach_player_perceptual_metadata(
+            {
+                "forced_designation": req.forced_designation,
+                "speaker": req.speaker,
+            },
+            record=record,
+            validation_audit=validation_audit,
+        )
         entry = append_history_entry(
             fixture.rp_history,
             kind="user",
             content=req.content,
             actor_id=req.speaker,
             hg_round_id=req.hg_round_id,
-            metadata={
-                "forced_designation": req.forced_designation,
-                "speaker": req.speaker,
-            },
+            metadata=metadata,
         )
+        if memory_service is not None:
+            memory_service.write_user_turn_memory(
+                fixture, user_name=req.speaker, user_entry=entry
+            )
+        else:
+            apply_user_turn_memory(
+                fixture, user_name=req.speaker, user_entry=entry
+            )
         projection_records = []
         if memory_service is not None:
             projection_records = memory_service.build_user_relationship_projection(

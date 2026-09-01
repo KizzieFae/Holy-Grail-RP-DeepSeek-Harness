@@ -297,7 +297,7 @@ def test_kernel_prepare_director_context_extended_response() -> None:
     scene_id = kernel.create_scene().hg_scene_id
     round_id = kernel.start_round(RoundStartRequest(hg_scene_id=scene_id)).hg_round_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content="Bob, respond.",
             speaker="Player",

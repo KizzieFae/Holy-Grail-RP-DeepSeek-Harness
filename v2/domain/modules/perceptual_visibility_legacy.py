@@ -98,6 +98,12 @@ def perceptual_visibility_record_from_entry_metadata(
 
     # Only projectable statuses reach the projector.
     if record.validation_status not in ("valid", "invalid_fallback_structured"):
-        return None, provenance
+        if not (
+            record.source_kind == "player"
+            and record.validation_status == "invalid_excluded"
+            and isinstance(record.recovery, dict)
+            and record.recovery.get("failure_class")
+        ):
+            return None, provenance
 
     return record, provenance

@@ -37,7 +37,11 @@ from domain_api.kernel import (  # noqa: E402
     DomainKernel,
 )
 from domain_api.session_history import append_history_entry  # noqa: E402
-from perception_audibility_constants import REDACTED_PLAYER_TEXT_CONTENT  # noqa: E402
+from player_decomposition_fixtures import build_player_decomposition_for_content  # noqa: E402
+from player_perceptual_service import (  # noqa: E402
+    attach_player_perceptual_metadata,
+    validate_player_perceptual_decomposition,
+)
 
 
 def _invalid_move() -> dict:
@@ -467,7 +471,7 @@ def test_prepare_context_includes_transcript_and_trigger_after_user_turn(kernel:
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
     question = "Why is the baseball bat on your shoulder?"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=hg_scene_id,
             content=question,
             speaker="Traveler",
@@ -510,12 +514,18 @@ def test_prepare_context_transcript_perception_negative(kernel: DomainKernel) ->
     hg_scene_id = info.hg_scene_id
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
     secret = "NEVER_LEAK_THIS_USER_SECRET"
+    whisper_content = f"Whisper to Bob only: {secret}"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=hg_scene_id,
-            content=f"Whisper to Bob only: {secret}",
+            content=whisper_content,
             speaker="Traveler",
             hg_round_id=hg_round_id,
+            player_decomposition=build_player_decomposition_for_content(
+                whisper_content,
+                scope="directed",
+                characters=["Bob"],
+            ),
         )
     )
     bob_manifest = _character_manifest(
@@ -534,22 +544,34 @@ def test_prepare_context_transcript_perception_negative(kernel: DomainKernel) ->
         c for c in bob_manifest.contributions if c.source_kind == "user_turn_trigger"
     )
     carol_trigger = next(
-        c for c in carol_manifest.contributions if c.source_kind == "user_turn_trigger"
+        (c for c in carol_manifest.contributions if c.source_kind == "user_turn_trigger"),
+        None,
     )
     assert secret in bob_trigger.content
-    assert secret not in carol_trigger.content
-    assert REDACTED_PLAYER_TEXT_CONTENT in carol_trigger.content
+    assert carol_trigger is None or secret not in carol_trigger.content
 
 
 def test_prepare_context_transcript_bounded_at_sixteen(kernel: DomainKernel) -> None:
     hg_scene_id, hg_round_id = _scene_and_round(kernel)
     fixture = kernel.store.require(hg_scene_id)
     for index in range(20):
+        content = f"User line {index}"
+        record, audit = validate_player_perceptual_decomposition(
+            content=content,
+            speaker="Traveler",
+            decomposition=build_player_decomposition_for_content(content),
+        )
+        metadata = attach_player_perceptual_metadata(
+            {"speaker": "Traveler"},
+            record=record,
+            validation_audit=audit,
+        )
         append_history_entry(
             fixture.rp_history,
             kind="user",
-            content=f"User line {index}",
+            content=content,
             actor_id="Traveler",
+            metadata=metadata,
         )
     manifest = _character_manifest(
         kernel,
@@ -593,7 +615,7 @@ def test_prepare_context_continuity_summary_unaffected(kernel: DomainKernel) -> 
         )
     )
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=hg_scene_id,
             content="Follow-up question about the blueprint.",
             speaker="Traveler",
@@ -652,7 +674,7 @@ def test_http_character_context_serializes_transcript_contributions(kernel: Doma
     hg_scene_id = info.hg_scene_id
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=hg_scene_id,
             content="Can you hear me?",
             speaker="Traveler",

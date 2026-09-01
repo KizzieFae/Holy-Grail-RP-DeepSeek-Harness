@@ -28,8 +28,7 @@ from memory_layer.writes import (  # noqa: E402
     commit_user_message_memory,
     resolve_present_characters,
 )
-from perception_audibility_constants import REDACTED_PLAYER_TEXT_CONTENT  # noqa: E402
-from perception_audibility_player import player_text_for_character_viewer  # noqa: E402
+from player_perceptual_projection import assemble_player_user_entry_for_viewer  # noqa: E402
 
 from .session_state import LiveSession  # noqa: E402
 
@@ -113,9 +112,9 @@ def apply_user_turn_memory(
     fixture: LiveSession,
     *,
     user_name: str,
-    content: str,
+    user_entry: dict[str, Any],
 ) -> None:
-    """Remember user interaction only for present characters who can perceive the line."""
+    """Remember user interaction from projector-governed player perception."""
     present = resolve_present_characters(
         continuity_manager=fixture.manager,
         char_names=list(fixture.cast),
@@ -124,15 +123,15 @@ def apply_user_turn_memory(
         return
 
     for character_name in present:
-        perceived = player_text_for_character_viewer(
-            raw_text=content,
-            viewer_character_name=character_name,
+        assembly = assemble_player_user_entry_for_viewer(
+            user_entry,
+            viewer_character=character_name,
             present_characters=present,
-            user_display_name=user_name,
         )
-        if not str(perceived or "").strip():
+        if assembly.degraded_path == "decomposition_failed":
             continue
-        if perceived == REDACTED_PLAYER_TEXT_CONTENT:
+        perceived = str(assembly.content or "").strip()
+        if not perceived:
             continue
         summary = summarize_user_message(user_name, perceived)
         state = fixture.character_states.get(character_name)

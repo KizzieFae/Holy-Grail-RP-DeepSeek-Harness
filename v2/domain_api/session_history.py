@@ -291,13 +291,28 @@ def project_history_to_character_context_chat(
             continue
 
         if entry.kind == "user":
-            chat.append(
-                {
-                    "role": "user",
-                    "content": entry.content,
-                    "speaker": entry.actor_id or entry.metadata.get("speaker", "Player"),
-                }
+            assembly = assemble_perceptual_history_entry_for_viewer(
+                entry.to_dict(),
+                viewer_character=character_id,
+                present_characters=present_characters,
+                source_kind="player",
             )
+            record, _ = perceptual_visibility_record_from_entry_metadata(
+                entry.metadata if isinstance(entry.metadata, dict) else {}
+            )
+            if assembly.content:
+                chat.append(
+                    {
+                        "role": "user",
+                        "content": assembly.content,
+                        "speaker": entry.actor_id or entry.metadata.get("speaker", "Player"),
+                        "perceptual_assembled": True,
+                        "perceptual_visibility_projection": build_perceptual_visibility_audit_metadata(
+                            assembly,
+                            record=record,
+                        ).get("perceptual_visibility_projection"),
+                    }
+                )
             continue
 
         if entry.kind == PLAYER_SKIP_KIND:

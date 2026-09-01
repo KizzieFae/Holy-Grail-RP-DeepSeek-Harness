@@ -33,7 +33,7 @@ from domain_api.kernel import (  # noqa: E402
     DomainKernel,
 )
 from domain_api.knowledge_write_policy import upsert_canon_anchor_for_test  # noqa: E402
-from perception_audibility_constants import REDACTED_PLAYER_TEXT_CONTENT  # noqa: E402
+from player_decomposition_fixtures import build_player_decomposition_for_content  # noqa: E402
 
 
 @pytest.fixture
@@ -303,12 +303,18 @@ def test_perception_filtering_remains_intact(kernel: DomainKernel) -> None:
     hg_scene_id = info.hg_scene_id
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=hg_scene_id)).hg_round_id
     secret = "NEVER_LEAK_THIS_USER_SECRET"
+    whisper_content = f"Whisper to Bob only: {secret}"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=hg_scene_id,
-            content=f"Whisper to Bob only: {secret}",
+            content=whisper_content,
             speaker="Traveler",
             hg_round_id=hg_round_id,
+            player_decomposition=build_player_decomposition_for_content(
+                whisper_content,
+                scope="directed",
+                characters=["Bob"],
+            ),
         )
     )
     bob_manifest = kernel.prepare_context(
@@ -334,10 +340,12 @@ def test_perception_filtering_remains_intact(kernel: DomainKernel) -> None:
         )
     )
     bob_trigger = next(c for c in bob_manifest.contributions if c.source_kind == "user_turn_trigger")
-    carol_trigger = next(c for c in carol_manifest.contributions if c.source_kind == "user_turn_trigger")
+    carol_trigger = next(
+        (c for c in carol_manifest.contributions if c.source_kind == "user_turn_trigger"),
+        None,
+    )
     assert secret in bob_trigger.content
-    assert secret not in carol_trigger.content
-    assert REDACTED_PLAYER_TEXT_CONTENT in carol_trigger.content
+    assert carol_trigger is None or secret not in carol_trigger.content
 
 
 def test_committed_round_moves_remain_in_character_manifest(kernel: DomainKernel) -> None:

@@ -169,7 +169,7 @@ def test_director_gets_unredacted_trigger_and_committed_environment() -> None:
     kernel, scene_id, round_id = _kernel_scene_round()
     secret = "Whisper to Alice only: OPEN THE RED DOOR"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content=secret,
             speaker="Player",
@@ -203,7 +203,7 @@ def test_director_gets_unredacted_trigger_and_committed_environment() -> None:
 def test_director_trigger_is_skip_aware() -> None:
     kernel, scene_id, round_id = _kernel_scene_round()
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content="Open the door.",
             hg_round_id=round_id,
@@ -333,7 +333,7 @@ def test_scenario_grade_director_hardening(
         RoundStartRequest(hg_scene_id=scene_id)
     ).hg_round_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content=str(scenario["trigger_text"]),
             hg_round_id=round_id,

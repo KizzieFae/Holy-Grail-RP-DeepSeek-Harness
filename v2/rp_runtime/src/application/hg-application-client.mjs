@@ -287,11 +287,48 @@ export class HolyGrailApplicationClient {
       }
 
       const api = this.orchestrator._domainClient();
+      let playerDecomposition = input.playerDecomposition ?? input.player_decomposition ?? null;
+      if (!playerDecomposition) {
+        const phaseExecutors = this.supervisor.runtime?.phaseExecutors;
+        const trace = this.supervisor.runtime?.traceEmitter;
+        if (phaseExecutors && trace) {
+          const inference = buildInferenceOptions(
+            { ...this.runtimeSettings, ...input },
+            { inferenceMode: this.options.inferenceMode },
+          );
+          const modelProfile =
+            input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
+              ? mockInferenceProfile()
+              : inference.roleProfiles.character;
+          const decompositionInferenceId = `player-decomposition-${crypto.randomUUID()}`;
+          const sceneSessionId = SessionId(`hg-player-decomp-${crypto.randomUUID()}`);
+          const sceneAgent = this.supervisor.runtime.ctx.agentLoop.create(
+            sceneSessionId,
+            agentOptionsFromProfile(mockInferenceProfile()),
+          );
+          const decompositionResult = await phaseExecutors.runPlayerDecomposition({
+            api,
+            trace,
+            sceneAgent,
+            hgSessionId: this.activeSessionId,
+            hgSceneId: this.activeSessionId,
+            hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
+            inferenceId: decompositionInferenceId,
+            playerContent: userMessage,
+            manifest: {},
+            mockResponses: input.mockPlayerDecompositionResponses,
+            modelProfile,
+          });
+          playerDecomposition = decompositionResult.playerDecomposition;
+        }
+      }
+
       await api.recordUserTurn({
         hg_session_id: this.activeSessionId,
         content: userMessage,
         speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
         forced_designation: forcedDesignation,
+        player_decomposition: playerDecomposition,
       });
 
       return await this._runActiveRound({

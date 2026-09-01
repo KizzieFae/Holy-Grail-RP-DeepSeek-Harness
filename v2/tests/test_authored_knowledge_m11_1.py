@@ -170,7 +170,7 @@ class AuthoredKnowledgeM111Tests(unittest.TestCase):
             fixture.character_states["Kizzie"].character_memory_summary
         )
         self.kernel.record_user_turn(
-            UserTurnRecordRequest(
+            UserTurnRecordRequest.from_content(
                 hg_session_id=session_id,
                 content="Kizzie, remember this conversation.",
                 speaker="Traveler",

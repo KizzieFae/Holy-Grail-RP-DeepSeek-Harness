@@ -101,6 +101,52 @@ Use exact character display names from the cast list in recipients.characters.
 """
 
 
+PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION = f"""
+OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
+{{
+  "perceptual_visibility": {{
+    "units": [
+      {{
+        "unit_id": "u1",
+        "kind": "observable_scene|observable_event|speech|internal",
+        "text": "<verbatim prose fragment for this semantic unit>",
+        "recipients": {{
+          "scope": "public|present|directed|private|role_private|environmental",
+          "characters": ["<optional character ids>"],
+          "roles": ["<optional role names>"]
+        }},
+        "source_provenance": {{
+          "segment_ids": ["s1"],
+          "order_index": 0
+        }}
+      }}
+    ]
+  }},
+  "source_accounting": {{
+    "segments": [
+      {{
+        "segment_id": "s1",
+        "char_start": 0,
+        "char_end": 42,
+        "disposition": "projects|non_projects",
+        "unit_ids": ["u1"]
+      }}
+    ]
+  }}
+}}
+
+RULES:
+- Account for every character position in the player source using half-open [char_start, char_end) segments.
+- Use disposition non_projects only for source spans that produce no perceptual unit.
+- Do not use presentation_only.
+- Hidden physical actions: observable_event with restrictive recipient scope.
+- Unexpressed cognition: internal (never public scope).
+- Spoken communication/claims: speech.
+- Each unit must reference segment_ids and order_index.
+- Segment unit_ids must reciprocally reference units.
+"""
+
+
 def narrator_visibility_schema_hint(structured_move: dict | None = None) -> str:
     speech_indices: list[int] = []
     if isinstance(structured_move, dict):

@@ -16,7 +16,6 @@ from perception_audibility_formatting import (
     format_observable_v2_turn_for_viewer,
 )
 from perception_audibility_normalize import normalize_move_audibility
-from perception_audibility_player import player_text_for_character_viewer
 from perception_audibility_visibility import use_full_narrator_content_for_recipient
 
 
@@ -51,6 +50,9 @@ def build_recent_dialogue_history_for_viewer(
 
     ``viewer_character_name`` ``None`` => Director / orchestration: full **rendered**
     lines and unredacted structured semantics for transcript assembly (Issue #138).
+
+    Player user lines must arrive pre-projected via
+    :func:`project_history_to_character_context_chat` (#91).
     """
     history: list[dict[str, str]] = []
     present = [str(n).strip() for n in character_names if str(n or "").strip()]
@@ -64,13 +66,9 @@ def build_recent_dialogue_history_for_viewer(
             if viewer_character_name is None:
                 safe_content = content
             else:
-                safe_content = player_text_for_character_viewer(
-                    raw_text=content,
-                    viewer_character_name=viewer_character_name,
-                    present_characters=present,
-                    user_display_name=speaker,
-                    get_character_display_name_fn=get_character_display_name_fn,
-                )
+                safe_content = content
+            if not safe_content.strip():
+                continue
             history.append(
                 {
                     "role": role,
@@ -92,6 +90,8 @@ def build_recent_dialogue_history_for_viewer(
         content = str(message.get("content", "") or "")
 
         if message.get("perceptual_assembled") or message.get("nvr_assembled"):
+            if not content.strip():
+                continue
             history.append({"role": role, "speaker": speaker_label, "content": content})
             continue
 
@@ -124,6 +124,8 @@ def build_recent_dialogue_history_for_viewer(
                 acting_character=actor,
             )
 
+        if not str(content or "").strip():
+            continue
         history.append({"role": role, "speaker": speaker_label, "content": content})
 
     return history

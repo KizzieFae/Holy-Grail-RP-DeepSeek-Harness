@@ -23,6 +23,7 @@ from text_comparison_profiles import canonicalize_for_presentation_verbatim
 class ValidationProfile(str, Enum):
     NARRATOR_PRESENTATION = "narrator_presentation"
     OPENING = "opening"
+    PLAYER_SUBMIT = "player_submit"
 
 
 @dataclass

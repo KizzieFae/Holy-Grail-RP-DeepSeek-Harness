@@ -56,7 +56,7 @@ class MemoryScopeM102Tests(unittest.TestCase):
 
     def _record_user_message(self, session_id: str, content: str) -> None:
         self.kernel.record_user_turn(
-            UserTurnRecordRequest(
+            UserTurnRecordRequest.from_content(
                 hg_session_id=session_id,
                 content=content,
                 speaker="Traveler",

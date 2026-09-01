@@ -123,7 +123,7 @@ class SessionMemoryM10Tests(unittest.TestCase):
         self.repo.persist(fixture)
 
         self.kernel.record_user_turn(
-            UserTurnRecordRequest(
+            UserTurnRecordRequest.from_content(
                 hg_session_id=session_id,
                 content="Bob, meet me at midnight.",
                 speaker="Traveler",

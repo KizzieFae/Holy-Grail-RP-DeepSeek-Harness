@@ -74,9 +74,9 @@ class MemoryService:
         fixture: LiveSession,
         *,
         user_name: str,
-        content: str,
+        user_entry: dict[str, Any],
     ) -> None:
-        apply_user_turn_memory(fixture, user_name=user_name, content=content)
+        apply_user_turn_memory(fixture, user_name=user_name, user_entry=user_entry)
 
     def build_user_relationship_projection(
         self,

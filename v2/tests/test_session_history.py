@@ -124,7 +124,7 @@ def test_user_turn_and_presentation_survive_restart(kernel: DomainKernel, reposi
     created = kernel.create_session(cast=["Alice"])
     session_id = created.hg_session_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=session_id,
             content="Alice, please respond.",
             speaker="Player",

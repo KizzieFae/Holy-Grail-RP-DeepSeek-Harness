@@ -151,7 +151,7 @@ def test_scenario_grade_narrator_hardening(scenario_id: str) -> None:
     fixture.manager.scene_state.opening_description = str(scenario["opening_description"])
     round_id = kernel.start_round(RoundStartRequest(hg_scene_id=scene_id)).hg_round_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=scene_id,
             content=str(scenario["trigger_text"]),
             hg_round_id=round_id,

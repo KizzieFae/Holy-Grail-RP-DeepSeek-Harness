@@ -459,6 +459,30 @@ class UserTurnRecordRequest:
     speaker: str = "Player"
     forced_designation: str | None = None
     hg_round_id: str | None = None
+    player_decomposition: dict[str, Any] | None = None
+
+    @classmethod
+    def from_content(
+        cls,
+        *,
+        hg_session_id: str,
+        content: str,
+        speaker: str = "Player",
+        **kwargs: Any,
+    ) -> "UserTurnRecordRequest":
+        if kwargs.get("player_decomposition") is None:
+            from player_decomposition_fixtures import build_player_decomposition_for_content
+
+            kwargs = {
+                **kwargs,
+                "player_decomposition": build_player_decomposition_for_content(content),
+            }
+        return cls(
+            hg_session_id=hg_session_id,
+            content=content,
+            speaker=speaker,
+            **kwargs,
+        )
 
 
 @dataclass(frozen=True)

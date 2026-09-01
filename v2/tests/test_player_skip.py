@@ -92,7 +92,7 @@ def test_substantive_user_trigger_suppressed_after_skip(kernel: DomainKernel) ->
     created = kernel.create_session(cast=["Alice", "Bob"])
     sid = created.hg_session_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content="Why is the bat on your shoulder?",
             speaker="Traveler",
@@ -106,7 +106,7 @@ def test_substantive_user_trigger_restored_after_later_user_turn(kernel: DomainK
     created = kernel.create_session(cast=["Alice", "Bob"])
     sid = created.hg_session_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content="First question",
             speaker="Traveler",
@@ -114,7 +114,7 @@ def test_substantive_user_trigger_restored_after_later_user_turn(kernel: DomainK
     )
     kernel.record_player_skip(PlayerSkipRecordRequest(hg_session_id=sid, speaker="Traveler"))
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content="Second question",
             speaker="Traveler",
@@ -129,7 +129,7 @@ def test_double_skip_keeps_trigger_suppressed(kernel: DomainKernel) -> None:
     created = kernel.create_session(cast=["Alice", "Bob"])
     sid = created.hg_session_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content="Old question",
             speaker="Traveler",
@@ -144,7 +144,7 @@ def test_skip_not_in_character_context_chat(kernel: DomainKernel) -> None:
     created = kernel.create_session(cast=["Alice", "Bob"])
     sid = created.hg_session_id
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content="Hello everyone",
             speaker="Traveler",
@@ -180,7 +180,7 @@ def test_user_turn_trigger_omitted_after_skip(kernel: DomainKernel) -> None:
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=sid)).hg_round_id
     old_question = "Why is the bat on your shoulder?"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content=old_question,
             speaker="Traveler",
@@ -238,7 +238,7 @@ def test_normal_user_turn_still_yields_trigger(kernel: DomainKernel) -> None:
     hg_round_id = kernel.start_round(RoundStartRequest(hg_scene_id=sid)).hg_round_id
     question = "What do you think?"
     kernel.record_user_turn(
-        UserTurnRecordRequest(
+        UserTurnRecordRequest.from_content(
             hg_session_id=sid,
             content=question,
             speaker="Traveler",

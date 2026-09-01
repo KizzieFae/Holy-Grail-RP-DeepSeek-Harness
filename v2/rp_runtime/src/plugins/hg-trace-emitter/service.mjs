@@ -41,6 +41,9 @@ export const HG_EVENT_TYPES = [
   'hg/opening-segmentation-started',
   'hg/opening-segmentation-completed',
   'hg/opening-segmentation-failed',
+  'hg/player-decomposition-started',
+  'hg/player-decomposition-completed',
+  'hg/player-decomposition-failed',
   'hg/round-completed',
 ];
 

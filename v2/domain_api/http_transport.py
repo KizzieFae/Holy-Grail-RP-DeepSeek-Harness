@@ -624,6 +624,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     speaker=str(data.get("speaker", "Player")),
                     forced_designation=data.get("forced_designation"),
                     hg_round_id=data.get("hg_round_id"),
+                    player_decomposition=data.get("player_decomposition"),
                 )
                 self._send_json(201, self.kernel.record_user_turn(req))
                 return
