@@ -163,6 +163,17 @@ Use `--summary` for human-readable blocks and `--cite <evidence_id>` to resolve 
 
 **Director/Narrator semantic QA on attempts:** read `decision.semantic_qa` (includes `policy_action`). Follow `evaluator_evidence_id` for evaluation-time authority-reference snapshots.
 
+**Narrator F1 fidelity retry (#93):** For post-#93 sessions, walk Narrator attempts in `attempt_index` order (or follow `correlation.prior_attempt_id`):
+
+1. `attempts/<evidence_id>.request` — assembled model input for attempt N
+2. `response.assistant_text` — raw model output; `decision.candidate_presentation_text` — parsed presentation candidate
+3. `decision.validation_class` / `validation_reason` / `retry_decision` — Host F1/F2 outcome
+4. `decision.fidelity_correction` — correction **intended** after rejecting attempt N (when retry selected)
+5. Next attempt `request.contributions[source_kind=semantic_correction]` — correction **actually supplied** to attempt N+1
+6. `associations.presentation_entry_id` + `decision.terminal_presentation` — observational join to persisted `rp_history` presentation after `record_presentation` (degraded or normal)
+
+Start from `--chain narrator --round <hg_round_id> --summary`, then drill individual attempt ids with `--attempt <evidence_id>`.
+
 **Participation-direct:** read `correlation.role = participation` records before inferring Director chains. No Director or semantic-evaluator attempts should exist for that selection.
 
 **Retention:** Local forensic store only. Default-on capture; opt out with `HG_EXECUTION_EVIDENCE=off`. No streaming-chunk or mandatory reasoning capture. Reasoning is optional when the provider supplies it. Manual evidence deletion is supported; there is no automatic pruning and no production session-delete hook that removes evidence trees.

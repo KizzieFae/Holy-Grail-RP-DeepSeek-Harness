@@ -15,6 +15,7 @@ import {
   validateSessionSetup,
 } from './application-settings.mjs';
 import { AuditTagService } from '../lib/audit-tags/service.mjs';
+import { patchNarratorTerminalPresentationEvidence } from '../lib/execution-evidence/narrator-terminal-evidence.mjs';
 import { agentOptionsFromProfile, mockInferenceProfile } from '../lib/inference-profile.mjs';
 import { HolyGrailRuntimeSupervisor } from '../runtime-supervisor/supervisor.mjs';
 import { SessionId } from '@deepseek-ai/dsh-session';
@@ -562,10 +563,11 @@ export class HolyGrailApplicationClient {
 
   async _recordRoundPresentations(api, roundResult) {
     const turns = roundResult.character_turns ?? [];
+    const recorder = this._executionEvidenceRecorder();
     if (turns.length) {
       for (const turn of turns) {
         if (!turn.domain_commit_id) continue;
-        await api.recordPresentation({
+        const presentationEntry = await api.recordPresentation({
           hg_session_id: this.activeSessionId,
           domain_commit_id: turn.domain_commit_id,
           hg_round_id: roundResult.hg_round_id,
@@ -575,11 +577,16 @@ export class HolyGrailApplicationClient {
           inference_outcome: turn.inference_outcome,
           perceptual_visibility: turn.perceptual_visibility ?? null,
         });
+        patchNarratorTerminalPresentationEvidence(recorder, {
+          hgSessionId: this.activeSessionId,
+          narratorEvidenceId: turn.narrator_evidence_id,
+          presentationEntry,
+        });
       }
       return;
     }
     if (roundResult.domain_commit_id) {
-      await api.recordPresentation({
+      const presentationEntry = await api.recordPresentation({
         hg_session_id: this.activeSessionId,
         domain_commit_id: roundResult.domain_commit_id,
         hg_round_id: roundResult.hg_round_id,
@@ -588,6 +595,11 @@ export class HolyGrailApplicationClient {
         presentation_failed: Boolean(roundResult.presentation_failed),
         inference_outcome: roundResult.inference_outcome,
         perceptual_visibility: roundResult.perceptual_visibility ?? null,
+      });
+      patchNarratorTerminalPresentationEvidence(recorder, {
+        hgSessionId: this.activeSessionId,
+        narratorEvidenceId: roundResult.narrator_evidence_id,
+        presentationEntry,
       });
     }
   }
