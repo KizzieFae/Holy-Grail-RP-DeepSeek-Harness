@@ -86,6 +86,25 @@ class StreamlitTurnRecoveryTests(unittest.TestCase):
         err = self.ui.ApiResponseWaitExpired("timed out")
         self.assertNotIn("Turn failed", str(err))
 
+    def test_session_create_uses_extended_wait_budget(self):
+        with patch.object(self.ui.urllib.request, "urlopen") as mock_urlopen:
+            mock_resp = mock_urlopen.return_value.__enter__.return_value
+            mock_resp.read.return_value = b'{"session": {"hg_session_id": "hg-session-test"}}'
+            self.ui.api_request(
+                "POST",
+                "/api/sessions/create",
+                {"cast": ["Alice"]},
+                timeout=self.ui.SESSION_CREATE_WAIT_SEC,
+            )
+            request = mock_urlopen.call_args[0][0]
+            self.assertEqual(request.full_url, f"{self.ui.API_BASE}/api/sessions/create")
+            self.assertEqual(mock_urlopen.call_args[1]["timeout"], 180)
+
+    def test_bare_timeout_error_maps_to_connectivity_error_for_session_create(self):
+        with patch.object(self.ui.urllib.request, "urlopen", side_effect=TimeoutError("timed out")):
+            with self.assertRaises(self.ui.ApiConnectivityError):
+                self.ui.api_request("POST", "/api/sessions/create", {"cast": ["Alice"]}, timeout=30)
+
 
 if __name__ == "__main__":
     unittest.main()

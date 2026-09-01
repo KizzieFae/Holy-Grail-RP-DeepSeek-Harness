@@ -14,6 +14,7 @@ import streamlit as st
 
 API_BASE = os.environ.get("HG_APP_API_URL", "http://127.0.0.1:8765").rstrip("/")
 TURN_SUBMIT_WAIT_SEC = int(os.environ.get("HG_TURN_SUBMIT_WAIT_SEC", "180"))
+SESSION_CREATE_WAIT_SEC = int(os.environ.get("HG_SESSION_CREATE_WAIT_SEC", "180"))
 API_READ_TIMEOUT_SEC = int(os.environ.get("HG_API_READ_TIMEOUT_SEC", "30"))
 RECOVERY_POLL_INTERVAL_SEC = float(os.environ.get("HG_TURN_RECOVERY_POLL_SEC", "2"))
 RECOVERY_PRESENTATION_BUDGET_SEC = int(os.environ.get("HG_TURN_RECOVERY_BUDGET_SEC", "600"))
@@ -52,6 +53,10 @@ def api_request(
     try:
         with urllib.request.urlopen(req, timeout=read_timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
+    except TimeoutError as exc:
+        if method == "POST" and path == "/api/turns/submit":
+            raise ApiResponseWaitExpired(str(exc)) from exc
+        raise ApiConnectivityError(str(exc)) from exc
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8")
         try:
@@ -554,7 +559,23 @@ def render_sidebar() -> None:
             payload["player_character_file_id"] = st.session_state.player_character_file_id
 
         save_runtime_settings()
-        result = api_request("POST", "/api/sessions/create", payload)
+        try:
+            result = api_request(
+                "POST",
+                "/api/sessions/create",
+                payload,
+                timeout=SESSION_CREATE_WAIT_SEC,
+            )
+        except ApiConnectivityError as exc:
+            st.sidebar.error(
+                "Session create timed out or could not reach the application API. "
+                f"Generated openings use live inference and may need up to "
+                f"{SESSION_CREATE_WAIT_SEC}s. ({exc})"
+            )
+            return
+        except Exception as exc:  # noqa: BLE001
+            st.sidebar.error(str(exc))
+            return
         session = result["session"]
         st.session_state.hg_session_id = session["hg_session_id"]
         st.session_state.setup_provenance = session.get("setup_provenance")
