@@ -6,7 +6,8 @@
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full (`docs/issue-bootstrap-profiles.md`)  
 **Remediation authorization this cycle:** NONE  
-**Report commit:** *(set at commit — see audit PR)*
+**Report commit:** `10289f8d8eb0959005b2f6332dc4f8e5e315aeeb` (initial); refined per GF-1 — see audit PR #99 head  
+**External review:** PR [#99](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99); Greptile GF-1 accepted by Governance (see §External review disposition)
 
 ---
 
@@ -60,7 +61,7 @@
 ### Explicit gaps
 
 - **Live multi-turn scenario replay** at audit anchor — not executed; static/test reachability only.
-- **Greptile PR review** — pending after report PR creation; not incorporated in this report.
+- **Greptile PR review** — GF-1 incorporated (Governance-accepted correction to A3); see §External review disposition. Other audit conclusions unchanged by external review.
 - **Full DSH/Cordis upstream capability inventory** — compared architectural roles, not exhaustive semver feature matrix of `@deepseek-ai/cordis` packages.
 - **Every config literal** — sampled retry/reasoning fragmentation; not exhaustive grep of all duplicated constants.
 - **Node application API** (`v2/rp_runtime` application layer beyond orchestrator) — surveyed for session lifecycle overlap only.
@@ -73,11 +74,11 @@
 |----|-------|----------------|--------------|------------|
 | A1 | Post-commit Librarian S4 as bounded second continuity mutation seam | architectural debt | high | high |
 | A2 | Dead `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` guard constant | worthwhile refinement | low | high |
-| A3 | Narrator render retains `prompt_builders` alongside manifest pipeline | architectural debt | moderate | high |
+| A3 | Narrator render-instruction formatter ownership remains in `prompt_builders` despite manifest-first assembly | worthwhile refinement | low–moderate | high |
 | A4 | Multi-channel forensic reconstruction cost | architectural debt | moderate | moderate |
 | A5 | Phase-local retry/reasoning policy fragmentation (drift risk) | worthwhile refinement | moderate | moderate |
 
-**Total material findings:** 5 (0 `actual defect`, 0 `correct as-is` as primary finding class)
+**Total material findings:** 5 — `architectural debt`: 2 (A1, A4); `worthwhile refinement`: 3 (A2, A3, A5); `actual defect`: 0
 
 ---
 
@@ -131,27 +132,28 @@
 
 ---
 
-### A3 — Narrator render retains `prompt_builders` alongside manifest pipeline
+### A3 — Narrator render-instruction formatter ownership remains in `prompt_builders` despite manifest-first assembly
 
 | Field | Value |
 |-------|-------|
-| **Classification** | architectural debt |
-| **Severity / architectural significance** | moderate |
+| **Classification** | worthwhile refinement |
+| **Severity / architectural significance** | low–moderate — organizational indirection, not duplicate context authority |
 | **Confidence** | high |
-| **Responsibility** | context packaging / prompt assembly |
-| **Components** | `v2/domain_api/narrator_context.py` (`build_narrator_render_prompt` import); `v2/domain/modules/prompt_builders.py`; contrast: `character_context.py`, `director_context.py` use `continuity_context_projector` + contribution manifests |
-| **Execution/data-flow** | `prepare_narrator_context` builds `PromptContributionManifest` **and** calls `build_narrator_render_prompt` for render text assembly. Character/Director paths delegate lane assembly to projector + role modules without `prompt_builders` for manifest composition. |
-| **Overlap evidence** | Dual assembly styles in Host context layer — manifest-first (V2) vs legacy string builder (Narrator render). `docs/architecture.md` line 180 states `prompt_builders` "formats prompt text" without re-reading memory — accurate but leaves Narrator on a parallel formatting path. `scene-grounding-layer.md` still references `prompt_builders.build_character_turn_prompt` for binding constraints — character path may also touch prompt_builders indirectly via docs/historical references; live Character manifest uses `character_context_projector`. |
-| **Architectural authority** | `architecture-overview.md` — Packaging = Host `kernel.prepare_*`; `docs/architecture.md` — role modules compose manifests. |
-| **Legitimate reason** | Narrator render prose formatting may predate full manifest migration; `prompt_builders` is tested and stable for narrator render shape. |
-| **Counterargument assessment** | Moderate — not duplicate authority (read-only assembly), but **split-brain maintenance** when adding new narrator lanes. |
-| **Likely authoritative owner** | `narrator_context.py` for narrator manifest; `prompt_builders` as formatting helper. |
-| **Candidate consolidation surface** | Migrate `build_narrator_render_prompt` output into `PromptContribution` lanes consistent with Character/Director. |
-| **Efficiency impact** | Moderate — two patterns for prompt evolution. |
-| **Stability/auditability impact** | Low-moderate — manifest fingerprinting may not capture all narrator render text sources uniformly. |
-| **Scalability/maintenance impact** | Moderate. |
-| **Recommended disposition** | `investigate further` — bounded refactor candidate, not urgent. |
-| **Evidence** | `narrator_context.py:9` import; `grep prompt_builders` in `v2/` — production use essentially `narrator_context.py` only (+ tests). |
+| **Responsibility** | context packaging / render-instruction formatting |
+| **Components** | `v2/domain_api/narrator_context.py` (`prepare_narrator_context`); `v2/domain/modules/prompt_builders.py` (`build_narrator_render_prompt`); `narrative_visibility_prompt.py` (visibility output instruction consumed by formatter) |
+| **Execution/data-flow** | `prepare_narrator_context` is manifest-first: it calls `project_authoritative_context`, assembles multiple `PromptContribution` lanes (environmental baseline, committed move, director decision, storyteller lanes, etc.), and **always** incorporates `build_narrator_render_prompt` output as an `inference_instruction` contribution (`source_kind="inference_instruction"`, `priority=30`) before returning `PromptContributionManifest` (`narrator_context.py:107–116`, `194–202`, `256–266`). Narrator **does participate** in the manifest-first context architecture; the formatter is a delegated string builder inside that path. |
+| **Overlap evidence** | **Not** duplicate assembly authority. The remaining concern is **formatter module ownership**: `prompt_builders.py` hosts `build_narrator_render_prompt` (and other legacy formatters such as `build_character_turn_prompt`, `build_director_selection_prompt` with **no** active `v2/` production callers at audit anchor) while `narrator_context.py` owns manifest composition. This is residual shared-module indirection, not a parallel context pipeline. |
+| **Architectural authority** | `architecture-overview.md` — Packaging = Host `kernel.prepare_*`; `docs/architecture.md` line 180 — `prompt_builders` formats prompt text without re-reading memory or owning round sequencing. |
+| **Legitimate reason** | `build_narrator_render_prompt` encodes live contracts: v2 `beats[]` verbatim-dialogue rules, environmental baseline/obligation blocks (#49/#89), `NARRATOR_VISIBILITY_OUTPUT_INSTRUCTION`, and legacy dialogue-path fallback. Centralizing these rules in a tested formatter provides a stable formatting boundary. |
+| **Counterargument assessment** | **GF-1 accepted (Governance):** initial audit incorrectly claimed manifest migration was still required. Formatter ownership may remain appropriate; moving it is organizational cleanup only unless contracts change. **Not** independently executing duplicate authority. |
+| **Likely authoritative owner** | Manifest composition: `narrator_context.py`. Render-instruction formatting: `prompt_builders.build_narrator_render_prompt` (delegated helper). |
+| **Candidate consolidation/review surface** | **Investigation only (not pre-authorized):** (a) retain formatter in `prompt_builders`; (b) colocate formatter nearer `narrator_context.py`; (c) otherwise simplify indirection. Any future change must preserve: v2 beat-order and verbatim-dialogue rules; environmental baseline/obligation integration; narrator visibility output instruction; manifest `inference_instruction` contribution shape and provenance; dialogue/visibility contracts enforced by `redact_structured_move_for_orchestration` upstream. |
+| **Efficiency impact** | Low — minor navigation cost when evolving narrator render rules across module boundary. |
+| **Stability/auditability impact** | Low — render instruction is captured in manifest contribution content; fingerprinting includes this lane. |
+| **Scalability/maintenance impact** | Low–moderate — `prompt_builders.py` also contains unused-at-anchor legacy formatters that may confuse auditors. |
+| **Recommended disposition** | `investigate further` / `no action` — optional ownership cleanup after Governance review; not urgent. |
+| **Evidence** | `narrator_context.py:107–116, 194–202, 256–266`; `grep build_narrator_render_prompt` — production caller `narrator_context.py` only (+ tests); `grep prompt_builders` in `v2/` — sole production import is narrator_context. |
+| **External review** | Greptile GF-1 (P2, PR #99 @ `10289f8...`) — **accepted by Governance**; corrected manifest-migration mischaracterization. |
 
 ---
 
@@ -320,10 +322,10 @@
 | Dialogue privacy | perception_audibility | `filter_structured_move_for_viewer`, PVR | 2 layers | none | history projections | PVR metadata in rp_history | Investigated — different objects | J2 |
 | Retrieval eligibility | Retrieval #31 | `retrieval_service.py`, `character_epistemic.py` | 1 | scope/story append (post-commit promotion) | candidates | story knowledge | No | J2 |
 | Semantic mediation | Librarian #34 | `librarian_service.py`, packaging mapper | 1 | proposal apply (S4) | bundles | librarian audit log | S4 write seam | A1 |
-| Context packaging | Host `prepare_*` | role context modules, projector | 4 pipelines / 1 projector | none | manifests | manifest fingerprints in traces | No | J7, A3 |
+| Context packaging | Host `prepare_*` | role context modules, projector | 4 pipelines / 1 projector | none | manifests | manifest fingerprints in traces | No | J7 |
 | Scene grounding | Continuity (source) | `scene_grounding.py` rebuild | 1 | none (rebuild) | prompt lanes | — | No | J4 |
 | Character context | `character_context.py` | upstream + Librarian mapper | 1 path | none | manifest | — | No | J7 |
-| Narrator context | `narrator_context.py` | projector + `prompt_builders` | 1 (+ legacy formatter) | none | manifest + render string | — | Partial split-brain | A3 |
+| Narrator context | `narrator_context.py` | projector + delegated `prompt_builders` formatter | 1 manifest path | none | manifest (incl. `inference_instruction`) | — | Formatter ownership only (A3) | A3 |
 | Director context | `director_context.py` | projector + digests | 1 | none | manifest | — | No | J7 |
 | Story progression advice | progression advisory | `progression_advisory` modules | 1 | advisory only | prompts | — | No | architecture-overview |
 | Validation (deterministic) | Host validators | `response_validation_*`, `kernel.validate_*` | 3 stages | none | annotations | — | No | J3 |
@@ -343,9 +345,10 @@
 
 ### Strongest confirmed architectural inefficiencies
 
-1. **A1** — Second continuity mutation seam (Librarian S4) increases audit cognitive load despite intentional design.
-2. **A3** — Narrator `prompt_builders` parallel to manifest-first V2 context assembly.
-3. **A4** — Forensic fragmentation imposes reconstruction cost on operators (mitigated partially by investigation tooling).
+1. **A1** — Second continuity mutation seam (Librarian S4) increases audit cognitive load despite intentional design (unchallenged by external review).
+2. **A4** — Forensic fragmentation imposes reconstruction cost on operators (mitigated partially by investigation tooling; unchallenged by external review).
+
+**Note:** Initial A3 characterization overstated Narrator as a parallel assembly path; corrected per GF-1. Formatter ownership (A3) is a lower-significance refinement, not a primary inefficiency.
 
 ### Highest-risk ownership/authority overlaps
 
@@ -359,7 +362,7 @@
 | v1 character move ingress | Removed (#143) |
 | `perceptual_visibility_legacy` | Active read adapter (J9) |
 | `character_move_adapters` | Active read projection |
-| `prompt_builders` | Partially active (Narrator + docs references) |
+| `prompt_builders` | Active formatter module — `build_narrator_render_prompt` called from `narrator_context.py`; output wrapped in manifest `inference_instruction` (A3). Other formatters in module have no `v2/` production callers at anchor. |
 | `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` | Dead code (A2) |
 | `FixtureStore` | Test-only |
 | `validate_bot_response_for_scenario` | Tests/offline only |
@@ -386,7 +389,7 @@
 
 ### Context/mediation health
 
-**Mostly healthy** — shared projector (J7); **exception** Narrator `prompt_builders` split (A3).
+**Healthy** — shared projector (J7); Narrator is manifest-first with delegated formatter ownership in `prompt_builders` (A3, worthwhile refinement; GF-1 corrected initial mischaracterization).
 
 ### DSH/Cordis/native-utilization health
 
@@ -402,7 +405,7 @@
 
 ### Overall architectural efficiency
 
-The system exhibits **substantial intentional layering** from incremental Issue-driven delivery (#31–#55, Librarian S4, forensic standard). **True redundant authority is rare** at `main`; the dominant costs are **audit surface area** (forensic channels, S4 mutation seam) and **partial migration residue** (`prompt_builders`, dead legacy constant).
+The system exhibits **substantial intentional layering** from incremental Issue-driven delivery (#31–#55, Librarian S4, forensic standard). **True redundant authority is rare** at `main`; the dominant costs are **audit surface area** (forensic channels, S4 mutation seam) and **residual module indirection** (`prompt_builders` formatter ownership, dead legacy constant A2).
 
 ### Aggregate accidental complexity
 
@@ -418,8 +421,23 @@ Incremental additions (validation depth, forensic surfaces, S4 post-commit join,
 
 1. **Doc/tooling:** Operator guide correlating forensic surfaces per turn (addresses A4).
 2. **Cleanup:** Wire or remove `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` (A2).
-3. **Refactor (future):** Narrator manifest migration off `prompt_builders` (A3).
+3. **Optional review:** Narrator render-instruction formatter ownership — retain in `prompt_builders` vs colocate nearer `narrator_context.py`; must preserve live dialogue, visibility, and manifest contracts (A3; not pre-authorized).
 4. **Architecture record:** Formal S4-vs-process_turn mutation matrix on audit parent or architecture doc (A1).
+
+---
+
+## External review disposition
+
+| Field | Value |
+|-------|-------|
+| **PR** | [#99](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99) |
+| **Greptile review head (GF-1)** | `10289f8d8eb0959005b2f6332dc4f8e5e315aeeb` |
+| **Finding** | GF-1 (P2) — Narrator migration mischaracterized |
+| **Governance disposition** | **Accepted** |
+| **Nature of correction** | A3 incorrectly claimed Narrator used a parallel assembly path and still required migration into `PromptContribution` lanes. Evidence shows `prepare_narrator_context` already wraps `build_narrator_render_prompt` output as `inference_instruction` in the returned manifest. |
+| **A3 reclassification** | `architectural debt` → `worthwhile refinement`; reframed as formatter ownership/indirection, not manifest migration. |
+| **Remediation performed** | None — audit report documentation correction only. |
+| **Authority note** | Greptile supplied independent review evidence; Governance determined disposition. Absence of Greptile comments on other findings is **not** external validation of those conclusions. |
 
 ---
 
@@ -428,21 +446,25 @@ Incremental additions (validation depth, forensic surfaces, S4 post-commit join,
 | Check | Result |
 |-------|--------|
 | Cited files exist at anchor | Pass — spot-checked paths at `ba54016` |
-| Callers/execution paths supported | Pass — `process_turn` production caller verified; narrator import verified |
+| Callers/execution paths supported | Pass — `process_turn` production caller verified; narrator manifest integration verified |
+| A3 accurately represents execution flow | Pass — Narrator manifest-first; formatter delegated (GF-1 correction applied) |
 | Writers actually write | Pass — S4 apply and `process_turn` traced |
 | Authority matches docs | Pass — matches architecture-overview with A1 documented exception |
 | Counterarguments evaluated | Pass — 9 justified separations documented |
 | Consolidation labeled candidate | Pass — no pre-authorized fixes |
-| Classifications supported | Pass |
+| Classifications supported | Pass — A3 reclassified per evidence |
+| Dependent summaries consistent | Pass — counts and whole-system assessment updated |
 | Recommendations non-authorizing | Pass |
 
-**Factual uncertainties:** Greptile review pending; live scenario replay not executed at audit anchor.
+**GF-1 revalidation:** PASS (2026-09-01 refinement cycle).
+
+**Factual uncertainties:** Live scenario replay not executed at audit anchor. Greptile re-review on refined head pending at commit time.
 
 ---
 
 ## No-remediation attestation
 
-This audit cycle performed **investigation and documentation only**. No production code, tests, configuration, or dependencies were modified during evidence gathering. No remediation Issues were created. No architectural remediation is bundled in the audit report commit. Remediation requires separate Governance authorization and tracked Issues reaching `consensus_reached`.
+This audit cycle performed **investigation and documentation only**. No production code, tests, configuration, or dependencies were modified. GF-1 refinement modified **audit report documentation only**. No remediation Issues were created. No architectural remediation is bundled in audit PR commits. Remediation requires separate Governance authorization and tracked Issues reaching `consensus_reached`.
 
 ---
 
