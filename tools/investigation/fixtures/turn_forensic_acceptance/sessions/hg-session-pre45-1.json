@@ -1,0 +1,16 @@
+{
+  "session_id": "hg-session-pre45-1",
+  "metadata": {
+    "continuity_state": {
+      "turn_metadata_by_index": {},
+      "public_events": []
+    },
+    "v2_host_state": {
+      "commit_ids": [],
+      "memory_scope_id": "scope-pre45",
+      "plot_cognition_scope_id": "scope-pre45",
+      "rp_history": [],
+      "librarian_proposal_audit_log": []
+    }
+  }
+}

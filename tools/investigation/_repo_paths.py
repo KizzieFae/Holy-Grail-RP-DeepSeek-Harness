@@ -23,6 +23,8 @@ fixture_path = _mod.fixture_path
 resolve_data_path = _mod.resolve_data_path
 resolve_rp_audits_dir = _mod.resolve_rp_audits_dir
 EXECUTION_EVIDENCE_DIR = _mod.EXECUTION_EVIDENCE_DIR
+AUDIT_TAGS_DIR = _mod.AUDIT_TAGS_DIR
+PLOT_COGNITION_FORENSICS_DIR = _mod.PLOT_COGNITION_FORENSICS_DIR
 
 __all__ = [
     "DATA_DIR",
@@ -36,4 +38,7 @@ __all__ = [
     "fixture_path",
     "resolve_data_path",
     "resolve_rp_audits_dir",
+    "EXECUTION_EVIDENCE_DIR",
+    "AUDIT_TAGS_DIR",
+    "PLOT_COGNITION_FORENSICS_DIR",
 ]

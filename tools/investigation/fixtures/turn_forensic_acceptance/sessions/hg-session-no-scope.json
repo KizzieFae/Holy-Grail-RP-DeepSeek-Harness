@@ -1,0 +1,33 @@
+{
+  "session_id": "hg-session-no-scope",
+  "metadata": {
+    "continuity_state": {
+      "turn_metadata_by_index": {
+        "1": {}
+      },
+      "public_events": []
+    },
+    "v2_host_state": {
+      "commit_ids": ["commit-no-scope-1"],
+      "rp_history": [
+        {
+          "entry_id": "entry-user-no-scope",
+          "kind": "user",
+          "content": "Operator question",
+          "hg_round_id": "round-no-scope",
+          "sequence_index": 1
+        },
+        {
+          "entry_id": "entry-commit-no-scope",
+          "kind": "committed_turn",
+          "content": "Committed turn",
+          "hg_round_id": "round-no-scope",
+          "domain_commit_id": "commit-no-scope-1",
+          "sequence_index": 2,
+          "metadata": { "continuity_turn_index": 1 }
+        }
+      ],
+      "librarian_proposal_audit_log": []
+    }
+  }
+}

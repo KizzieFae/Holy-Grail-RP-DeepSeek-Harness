@@ -1,0 +1,15 @@
+{
+  "schema": "hg_plot_cognition_forensics_index_v1",
+  "plot_cognition_scope_id": "scope-ni-acc-1",
+  "record_ids": ["rec-pc-1"],
+  "by_commit": {
+    "commit-ni-1": ["rec-pc-1"]
+  },
+  "by_idempotency_key": {},
+  "by_session": {
+    "hg-session-ni-acc-1": ["rec-pc-1"]
+  },
+  "by_cognition_item": {},
+  "by_candidate": {},
+  "by_inference_evidence": {}
+}

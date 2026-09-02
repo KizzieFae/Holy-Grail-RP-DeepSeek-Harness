@@ -1,0 +1,24 @@
+{
+  "schema": "hg_execution_evidence_index_v1",
+  "hg_session_id": "hg-session-multi-1",
+  "attempt_ids": ["ev-multi-dir-1"],
+  "rounds": {
+    "round-multi": ["ev-multi-dir-1"]
+  },
+  "participation_by_round": {},
+  "semantic": {
+    "evaluation_chains": {},
+    "qa_pass_chains": {},
+    "qa_by_target_role": {}
+  },
+  "ni": {
+    "evidence_contract": "hg_ni_forensics_v1",
+    "by_round": {},
+    "by_commit": {},
+    "by_tag": {}
+  },
+  "plot_cognition": {
+    "by_round": {},
+    "by_commit": {}
+  }
+}

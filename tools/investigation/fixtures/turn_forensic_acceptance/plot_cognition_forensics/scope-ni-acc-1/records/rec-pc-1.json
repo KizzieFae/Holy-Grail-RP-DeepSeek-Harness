@@ -1,0 +1,16 @@
+{
+  "record_id": "rec-pc-1",
+  "record_class": "mutation",
+  "operation_kind": "update",
+  "integrity_status": "complete",
+  "recorded_at_ms": 1,
+  "correlation": {
+    "hg_session_id": "hg-session-ni-acc-1",
+    "hg_round_id": "round-1",
+    "domain_commit_id": "commit-ni-1",
+    "batch_id": "batch-pc-1"
+  },
+  "payload": {
+    "statement": "Plot cognition update accepted"
+  }
+}

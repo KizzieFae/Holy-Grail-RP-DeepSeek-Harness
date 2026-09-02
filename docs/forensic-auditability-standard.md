@@ -31,7 +31,7 @@ This standard is **not** a new forensic architecture proposal. It codifies behav
 
 **Sequencing exception (#31–#42):** Some auditability work was **deliberately deferred** while unusually interdependent narrative-intelligence architecture (#31 Retrieval, #32 Storyteller, #34 Librarian, and related programs) was stabilized. That deferral was a **conscious sequencing exception**, not the default development pattern. The #31–#42 period did **not** fully meet the completed standard before **#45**/**#46** remediation; do not read history as if forensic parity existed before those Issues closed.
 
-**Artifact contracts (operational detail, not redefined here):** post-#28 forensic completeness and post-#45 NI contracts in `docs/rp-data-layout.md`. Investigator reading order in `docs/audit-workflows.md`.
+**Artifact contracts (operational detail, not redefined here):** post-#28 forensic completeness and post-#45 NI contracts in `docs/rp-data-layout.md`. Investigator reading order in `docs/audit-workflows.md` (including unified turn navigator quick start, #101).
 
 ---
 
