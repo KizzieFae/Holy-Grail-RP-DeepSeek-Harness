@@ -6,8 +6,8 @@
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full (`docs/issue-bootstrap-profiles.md`)  
 **Remediation authorization this cycle:** NONE  
-**Report commit:** `10289f8d8eb0959005b2f6332dc4f8e5e315aeeb` (initial); refined per GF-1 — see audit PR #99 head  
-**External review:** PR [#99](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99); Greptile GF-1 accepted by Governance (see §External review disposition)
+**Report commit:** `10289f8d8eb0959005b2f6332dc4f8e5e315aeeb` (initial); consolidated refinement per external verification — see audit PR #99 head  
+**External review:** PR [#99](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99); Greptile conversational challenges incorporated by Governance (see §External verification)
 
 ---
 
@@ -61,7 +61,7 @@
 ### Explicit gaps
 
 - **Live multi-turn scenario replay** at audit anchor — not executed; static/test reachability only.
-- **Greptile PR review** — GF-1 incorporated (Governance-accepted correction to A3); see §External review disposition. Other audit conclusions unchanged by external review.
+- **Greptile conversational verification** — full challenge cycle incorporated (Governance-accepted dispositions); see §External verification. External review is evidence, not governance authority; absence of an additional Greptile finding is not proof of absence.
 - **Full DSH/Cordis upstream capability inventory** — compared architectural roles, not exhaustive semver feature matrix of `@deepseek-ai/cordis` packages.
 - **Every config literal** — sampled retry/reasoning fragmentation; not exhaustive grep of all duplicated constants.
 - **Node application API** (`v2/rp_runtime` application layer beyond orchestrator) — surveyed for session lifecycle overlap only.
@@ -75,7 +75,7 @@
 | A1 | Post-commit Librarian S4 as bounded second continuity mutation seam | architectural debt | high | high |
 | A2 | Dead `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` guard constant | worthwhile refinement | low | high |
 | A3 | Narrator render-instruction formatter ownership remains in `prompt_builders` despite manifest-first assembly | worthwhile refinement | low–moderate | high |
-| A4 | Multi-channel forensic reconstruction cost | architectural debt | moderate | moderate |
+| A4 | Multi-contract forensic reconstruction and tooling burden | architectural debt | moderate | moderate |
 | A5 | Phase-local retry/reasoning policy fragmentation (drift risk) | worthwhile refinement | moderate | moderate |
 
 **Total material findings:** 5 — `architectural debt`: 2 (A1, A4); `worthwhile refinement`: 3 (A2, A3, A5); `actual defect`: 0
@@ -84,20 +84,22 @@
 
 ## Material findings (detail)
 
-### A1 — Post-commit Librarian S4 as bounded second continuity mutation seam
+### A1 — Post-commit Librarian S4 as bounded separately persisted Continuity mutation seam
 
 | Field | Value |
 |-------|-------|
 | **Classification** | architectural debt |
 | **Severity / architectural significance** | high — affects continuity authority model and audit reconstruction |
 | **Confidence** | high |
-| **Responsibility** | continuity state mutation |
+| **Responsibility** | continuity state mutation (bounded post-commit derived state) |
 | **Components** | `v2/domain_api/commit_move_transaction.py` (`process_turn`); `v2/domain_api/librarian_proposal_service.py` (`finalize_proposals`); `v2/domain/modules/continuity_librarian_issue_pressure.py` (`apply_accepted_librarian_proposals`); `v2/domain/modules/continuity_librarian_knowledge_significance.py` (`apply_knowledge_revelation_significance`) |
-| **Execution/data-flow** | Production turn commit: DSH → Host `commit_move` → `execute_commit_move` → `ContinuityManager.process_turn` (sole turn-commit path; production caller grep confirms only `commit_move_transaction.py:237`). **Separately**, post-commit S4: DSH orchestrator joins Librarian proposal batch → Host `finalize_proposals` → `apply_accepted_librarian_proposals` mutates manager state for accepted `knowledge_revelation_significance` and issue-pressure overlays **outside** `process_turn`. |
+| **Execution/data-flow** | **Normal turn commitment** remains owned by `ContinuityManager.process_turn`: DSH → Host `commit_move` → `execute_commit_move` → `process_turn` (sole normal turn-commit path; production caller grep confirms only `commit_move_transaction.py:237`). **Separately**, post-commit S4: DSH orchestrator joins Librarian proposal batch → Host `finalize_proposals` → `apply_accepted_librarian_proposals` mutates manager-owned **derived** continuity state for accepted `knowledge_revelation_significance` and issue-pressure overlays **outside** the normal `process_turn` transaction, with results persisted via `SessionRepository.persist` in `librarian_proposal_audit_log`. |
+| **Authority scope (critical)** | This is **not** a second unrestricted/full Continuity turn-commit authority. S4 does **not** create a normal committed turn, does **not** increment the normal turn counter, does **not** independently reopen broad `known_by` authority, and does **not** constitute unrestricted competing narrative-truth authority. It **is** a real production mutation with durable persistence outside the normal `process_turn` transaction, bounded to specific derived overlays. |
 | **Overlap evidence** | Two durable mutation entry points on `ContinuityManager` for committed narrative state within one round lifecycle. S4b explicitly does **not** mutate `known_by` (module header in `continuity_librarian_knowledge_significance.py`). |
 | **Architectural authority** | `governance/sources/architecture-overview.md` — `process_turn` sole turn-commit authority; Librarian S4 documented as post-commit bounded apply (#39, #34). `docs/architecture.md` — bounded commit transaction; Librarian audit log persisted in session. |
 | **Legitimate reason** | Post-commit semantic interpretation must not block turn commit; proposal evaluate→apply→audit chain is anchor-bound; revelation significance is annotation overlay, not full turn replay. |
-| **Counterargument assessment** | **Partially stronger than redundancy case** — separation is intentional for latency and commit atomicity. **Debt remains** because operators auditing continuity must know two mutation seams exist and which forensic surfaces record each (`librarian_proposal_audit_log` vs `process_turn` audit origin). |
+| **Counterargument assessment** | **Partially stronger than redundancy case** — separation is intentional for latency and commit atomicity. **Debt remains** because the second persistence/mutation seam complicates the otherwise strong single-authority model; operators auditing continuity must know two mutation seams exist and which forensic surfaces record each (`librarian_proposal_audit_log` vs `process_turn` audit origin). |
+| **External verification** | Greptile (PR #99 thread [r3910104177](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910104177)) — **supported with authority-scope qualification**: bounded second manager-state mutation seam, not second full turn-commit authority. |
 | **Likely authoritative owner** | Turn commits: `ContinuityManager.process_turn`. Post-commit proposals: `librarian_proposal_service` + `continuity_librarian_*` apply modules. |
 | **Candidate consolidation surface** | Document-only in short term; any future consolidation must preserve post-commit join semantics and at-most-once apply — not a simple merge into `process_turn`. |
 | **Efficiency impact** | Moderate maintenance — new proposal kinds must route through evaluate→apply→audit; risk of ad-hoc manager mutation if pattern is copied. |
@@ -117,7 +119,8 @@
 | **Confidence** | high |
 | **Responsibility** | context packaging / legacy source-kind enforcement |
 | **Components** | `v2/domain_api/character_upstream_context.py` lines 20–27 |
-| **Execution/data-flow** | Constant defined; **zero references** in repository (grep sole hit is definition). `assemble_character_upstream_contributions` does not consult it. |
+| **Execution/data-flow** | Constant defined; **zero references** in static repository tracing (grep sole hit is definition). `assemble_character_upstream_contributions` does not consult it; active completeness uses `has_continuity_summary`, `has_transcript`, `has_trigger`, `has_private`, and `memory_lane_count`. |
+| **Static-reachability qualification** | No live V2 production reader was found in static implementation tracing. This is **not** mathematical proof that dynamic/generated access is impossible. |
 | **Overlap evidence** | Appears intended as migration guard against legacy knowledge source kinds leaking into Character manifests; never wired. |
 | **Architectural authority** | `architecture-overview.md` — Packaging assembles per-consumer runtime context; Retrieval/Librarian own candidate access. |
 | **Legitimate reason** | Placeholder for future completeness enforcement during Character adapter retirement. |
@@ -129,6 +132,7 @@
 | **Scalability/maintenance impact** | Low. |
 | **Recommended disposition** | `create Issue` (small cleanup) after Governance review — recommendation only. |
 | **Evidence** | `grep LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` — single file, definition only. |
+| **External verification** | Greptile (PR #99 thread [r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) — **supported** as dead residue / low-severity cleanup, subject to static-reachability qualification. |
 
 ---
 
@@ -153,55 +157,60 @@
 | **Scalability/maintenance impact** | Low–moderate — `prompt_builders.py` also contains unused-at-anchor legacy formatters that may confuse auditors. |
 | **Recommended disposition** | `investigate further` / `no action` — optional ownership cleanup after Governance review; not urgent. |
 | **Evidence** | `narrator_context.py:107–116, 194–202, 256–266`; `grep build_narrator_render_prompt` — production caller `narrator_context.py` only (+ tests); `grep prompt_builders` in `v2/` — sole production import is narrator_context. |
-| **External review** | Greptile GF-1 (P2, PR #99 @ `10289f8...`) — **accepted by Governance**; corrected manifest-migration mischaracterization. |
+| **External review** | Greptile GF-1 (P2, PR #99 [r3909996072](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3909996072)) — **accepted by Governance**; corrected manifest-migration mischaracterization. Greptile follow-up ([r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) — **supported** corrected framing: formatter is live, not removable without behavior change; concern is organizational ownership/navigation only. |
 
 ---
 
-### A4 — Multi-channel forensic reconstruction cost
+### A4 — Multi-contract forensic reconstruction and tooling burden
 
 | Field | Value |
 |-------|-------|
 | **Classification** | architectural debt |
-| **Severity / architectural significance** | moderate |
+| **Severity / architectural significance** | moderate — operational/tooling burden, not evidence-store redundancy |
 | **Confidence** | moderate |
-| **Responsibility** | evidence recording / forensic reconstruction |
-| **Components** | `v2/rp_runtime/src/lib/execution-evidence/`; `hg-trace-emitter/service.mjs`; `v2/domain_api/session_history.py`; session `librarian_proposal_audit_log`; `plot_cognition_forensics_repository`; `audit-tags/service.mjs`; `continuity_audit_origin` / occurrence evidence (#51) |
-| **Execution/data-flow** | Per character turn, observational writes may occur across 6+ stores. Correlation mitigated by shared IDs (`domain_commit_id`, `evidence_id`, `inference_id`, `rp_history_entry_id`) per `docs/forensic-auditability-standard.md` intent. |
-| **Overlap evidence** | Similar *events* appear in trace + execution evidence + rp_history; not duplicate *authority* — different retention/query purposes. |
+| **Responsibility** | forensic reconstruction / correlation across durable contracts |
+| **Defensible finding** | Complete forensic reconstruction spans several independently justified **durable contracts** without a unified durable turn-level view, creating correlation and tooling cost despite shared identifiers and existing investigation tooling. This is **not** equivalent to “six independent durable writes required for every character turn.” |
+| **Evidence taxonomy** | Surfaces differ by contract class: **canonical** (session JSON — `continuity_state`, `rp_history`, commit metadata); **forensic** (execution-evidence attempt files/indexes); **mediated** (session `librarian_proposal_audit_log` — Host mediation and bounded S4 apply results); **derived** (story knowledge searchable projection; memory/context projections); **conditional** (Plot Cognition overlay/chronicle; human audit tags); **transient/ephemeral** (DSH `HgTraceEmitter` `hg/*` events; `role_inference_summary` consumer projection); **legacy** (V1 `data/rp_audits/session_*` — historical/off-path for V2 save/resume); **rebuildable** (execution-evidence, semantic, Plot Cognition, and audit-tag indexes/manifests — navigation/recovery metadata, not independent semantic records). |
+| **Components** | `v2/rp_runtime/src/lib/execution-evidence/`; `hg-trace-emitter/service.mjs`; `v2/domain_api/session_history.py`; session `librarian_proposal_audit_log`; `plot_cognition_forensics_repository`; `audit-tags/service.mjs`; `continuity_audit_origin` / occurrence evidence (#51); `tools/investigation/*` |
+| **Execution/data-flow** | A normal round/turn forensic reconstruction generally joins durable session JSON, execution-evidence files/indexes, and often persisted Librarian audit; conditional/derived surfaces apply when relevant. Correlation mitigated by shared IDs (`domain_commit_id`, `hg_round_id`, `continuity_turn_index`, `entry_id`, `event_id`, `evidence_id`, `inference_id`, evaluator IDs, Plot Cognition identifiers) per `docs/forensic-auditability-standard.md` intent and investigation tooling (e.g. `tools/investigation/list_execution_evidence.py`). |
+| **Overlap evidence** | Similar *events* or IDs/text may appear across trace, execution evidence, and `rp_history`; this is often deliberate denormalization across authority boundaries, retention policies, and query lifecycles — not duplicate forensic *authority*. |
 | **Architectural authority** | `docs/forensic-auditability-standard.md`, `docs/rp-data-layout.md`, `docs/audit-workflows.md`. |
-| **Legitimate reason** | Restart-durable session history vs ephemeral inference evidence vs human audit tags serve distinct consumers (operator UI, investigator CLI, Greptile/audit). |
-| **Counterargument assessment** | **Strong for retention** — not redundant records. **Debt** is aggregate operator burden reconstructing one turn without a single indexed view (investigation tools partially compensate: `tools/investigation/list_execution_evidence.py`). |
+| **Legitimate reason** | Distinct consumers (resume, investigator CLI, human audit, runtime tooling) require distinct retention, provenance, and query contracts. |
+| **Counterargument assessment** | **Strong for retention** — stores are not redundant authorities. **Debt** is multi-contract join burden and absence of a unified durable turn-level view; shared IDs and investigation tooling **mitigate** but do not eliminate operator/investigator correlation work. Human-auditor burden varies by reconstruction depth and is **not uniformly high** for all tasks. |
 | **Likely authoritative owner** | Per-surface owners; no single forensic aggregator at `main`. |
-| **Candidate consolidation surface** | Investigation tooling / correlation index (not merge stores). |
-| **Efficiency impact** | High for human auditors; low for runtime. |
+| **Candidate consolidation surface** | Investigation tooling / correlation navigation (not merge legitimate stores). |
+| **Efficiency impact** | Moderate for deep forensic reconstruction; low for runtime. |
 | **Stability/auditability impact** | Moderate risk if correlation IDs drift between surfaces. |
-| **Scalability/maintenance impact** | Moderate — each new phase adds trace types. |
-| **Recommended disposition** | `monitor` / `investigate further` for unified turn-reconstruction CLI — recommendation only. |
+| **Scalability/maintenance impact** | Moderate — each new phase or forensic surface adds correlation surface area. |
+| **Recommended disposition** | `monitor` / `investigate further` for improved forensic correlation/navigation tooling — recommendation only. |
 | **Evidence** | `MODULE_INDEX.md` forensic routing; `execution-evidence/recorder.mjs` observational comment; `docs/rp-data-layout.md` artifact classes table. |
+| **External verification** | Greptile (PR #99 thread [r3910199780](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910199780)) — **supported with reconstruction/taxonomy/severity qualification**: real multi-contract burden; original per-turn durable store cardinality framing too broad. |
 
 ---
 
-### A5 — Phase-local retry/reasoning policy fragmentation (drift risk)
+### A5 — Phase-local retry/candidate policy fragmentation (drift risk)
 
 | Field | Value |
 |-------|-------|
 | **Classification** | worthwhile refinement |
 | **Severity / architectural significance** | moderate |
 | **Confidence** | moderate |
-| **Responsibility** | retry/correction; provider invocation defaults |
-| **Components** | `narrator-phase.mjs` (`narratorRetryDecision`, fidelity retry loops); `character-phase.mjs`; `director-phase.mjs`; `reasoning-provider-options.mjs`; `assembled-request.mjs` |
-| **Execution/data-flow** | Each phase executor implements retry/regen policy locally with shared substrates for inference but **not** a single retry budget registry. Reasoning effort mapped in `assembled-request.mjs` from profile fields with multiple key aliases (`reasoningEffort` / `reasoning_effort`). |
-| **Overlap evidence** | Repeated retry decision patterns across phases — similar structure, independent constants/thresholds. |
-| **Architectural authority** | `docs/architecture.md` — DSH owns semantic QA judgment; no central retry policy doc located. |
-| **Legitimate reason** | Phase-specific failure modes (narrator fidelity vs character move validity) warrant different retry semantics. |
-| **Counterargument assessment** | Partial — semantic differences justify separation; **drift risk** remains for shared limits (max attempts, reasoning ceilings). |
-| **Likely authoritative owner** | DSH phase executors collectively; no documented single owner. |
-| **Candidate consolidation surface** | Shared `retry-policy.mjs` registry with phase-specific profiles (not single global retry). |
-| **Efficiency impact** | Low today; higher when tuning provider behavior globally. |
-| **Stability/auditability impact** | Moderate — inconsistent retry caps could confuse forensic replay. |
+| **Responsibility** | phase-local retry/correction budgets and candidate ceilings |
+| **Already centralized (not A5 scope)** | Core inference/reasoning infrastructure is substantially centralized: `application-settings.mjs` (role reasoning defaults, token ceilings, `liveMaxAttempts`, role profiles); `inference-profile.mjs` (provider/model/reasoning/temperature/token resolution per role); `reasoning-provider-options.mjs` (reasoning level mapping); `inference-substrate.mjs` (ephemeral DSH agent creation, provider invocation, execution evidence); `semantic-qa-substrate.mjs` and `contract-correction-substrate.mjs` (semantic evaluation and bounded structural correction). **A5 does not claim** provider invocation, reasoning mapping, or all inference settings are independently duplicated. |
+| **Independently maintained (A5 scope)** | Phase-local policy that can drift: infrastructure retry counts (`EVAL_INFRA_RETRIES`, `CHAR_INFRA_RETRIES` across `narrator-phase.mjs`, `character-phase.mjs`, `director-phase.mjs`); candidate ceilings (`character-candidate-budget.mjs`, `director-candidate-budget.mjs` — both use ceiling `3` in separate modules); semantic correction/regeneration budgets and terminal disposition per phase; opening/segmentation/decomposition attempt caps (`opening-phase.mjs`, `opening-segmentation-phase.mjs`, `player-decomposition-phase.mjs`); `liveMaxAttempts` vs Narrator fixed `MAX_NARRATOR_ATTEMPTS` and public opening/segmentation controls in `hg-application-client.mjs`. |
+| **Execution/data-flow** | Each phase executor implements role-specific retry/regen semantics locally. Shared substrates centralize inference invocation but **not** governing retry/candidate policy loops; `inferenceAttemptLimit(...)` exists but live phase loops do not consistently use it as governing policy. |
+| **Overlap evidence** | Repeated policy dimensions (e.g. `EVAL_INFRA_RETRIES = 1`, candidate ceiling `3`) independently defined in multiple phase files/modules. |
+| **Architectural authority** | `docs/architecture.md` — DSH owns semantic QA judgment; no central phase retry-policy registry documented. |
+| **Legitimate reason** | Phase-specific failure modes (Character move validity vs Director selection/regeneration vs Narrator presentation fidelity vs auxiliary opening/decomposition contracts) warrant different semantic retry behavior. A single generic retry loop would risk erasing trust/authority distinctions. |
+| **Counterargument assessment** | Semantic differences justify separation; **structural drift risk** remains for repeated numeric policy dimensions maintained in multiple executing locations. **No observed production policy divergence** was independently evidenced at audit anchor — risk is maintenance/structural, not proven runtime mismatch. |
+| **Likely authoritative owner** | DSH phase executors collectively; partial centralization in `application-settings.mjs` for shared defaults only. |
+| **Candidate consolidation surface** | Shared retry/candidate policy primitives with phase-specific profiles (preserve intentional role semantics; do not collapse into one global loop). |
+| **Efficiency impact** | Low today; higher when tuning retry/candidate behavior globally. |
+| **Stability/auditability impact** | Moderate — inconsistent retry caps could confuse forensic replay if drift occurs. |
 | **Scalability/maintenance impact** | Moderate. |
-| **Recommended disposition** | `investigate further` — config centralization audit — recommendation only. |
-| **Evidence** | `narrator-phase.mjs` multiple `narratorRetryDecision` call sites; `assembled-request.mjs:39-46` reasoning field aliasing. |
+| **Recommended disposition** | `investigate further` — evaluate shared policy primitives for repeated dimensions — recommendation only. |
+| **Evidence** | `narrator-phase.mjs`, `character-phase.mjs`, `director-phase.mjs`, budget modules, `application-settings.mjs`, `inference-substrate.mjs`. |
+| **External verification** | Greptile (PR #99 thread [r3910282152](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910282152)) — **supported narrowly**: worthwhile configuration/policy centralization refinement with real drift risk; not material duplicated execution policy or authority. |
 
 ---
 
@@ -225,13 +234,15 @@
 | Field | Detail |
 |-------|--------|
 | **Responsibility** | knowledge authorization / privacy |
-| **Apparent overlap** | `perception_audibility`, `PublicEvent.known_by`, `character_may_know_candidate`, Librarian bundle validity, PVR |
+| **Apparent overlap** | `perception_audibility`, `PublicEvent.known_by`, `character_may_know_candidate`, Librarian mediation, Packaging/PVR |
 | **Why redundant-looking** | Multiple "can character X know Y?" checks |
-| **Traced relationship** | Audibility filters **verbatim dialogue** in structured moves; `known_by` gates **event knowledge** at continuity; retrieval gates **candidate provenance** before Librarian mediation; PVR filters **history projection** |
-| **Distinct boundary** | Different objects (dialogue vs event vs candidate vs transcript view) |
+| **Traced relationship** | Audibility/perception filters **verbatim dialogue** in structured moves; durable `known_by` gates **event knowledge** at continuity; retrieval gates **candidate provenance** before Librarian mediation; Librarian mediation selects among already-eligible catalog material; Packaging/PVR enforce consumer-boundary and recipient-specific projection |
+| **Distinct boundary** | Different objects, representations, and trust boundaries (dialogue vs event vs candidate vs mediated bundle vs transcript view) |
+| **Consistency surface** | Shared audibility primitives and repeated defensive checks at boundaries create a maintenance/consistency surface, but do **not** constitute materially duplicated privacy **authority** |
 | **Counterevidence** | `perception_audibility.py` module contract; `architecture-overview.md` #33 decomposition |
-| **Conclusion** | Justified — not redundant enforcement of one rule |
+| **Conclusion** | Justified intentional separation — not redundant enforcement of one rule |
 | **Disposition** | `retain as intentional` |
+| **External verification** | Greptile (PR #99 [r3910150099](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910150099)) — **supported with boundary/primitive-overlap qualification**. |
 
 ### J3 — Deterministic validation vs semantic QA
 
@@ -240,10 +251,12 @@
 | **Responsibility** | validation / semantic QA |
 | **Apparent overlap** | `validate_move`, `validate_bot_response_for_runtime`, character semantic evaluation, director/narrator semantic QA |
 | **Traced relationship** | Ingress → parse → runtime rules → Host validate (deterministic) → DSH semantic eval (LLM judgment for deferred rules per `response_validation_content.py` header) |
-| **Distinct boundary** | Deterministic rejects illegal shapes; semantic QA handles interpretive rules (#19) |
-| **Counterevidence** | `response_validation_content.py` documents R02b/R11–R15 deferral to semantic evaluation |
-| **Conclusion** | Justified pipeline, not duplicate contract |
+| **Distinct boundary** | Deterministic validators enforce machine-checkable contracts (shape, recipients, transitions, PVR correspondence, verbatim speech order); semantic QA evaluates meaning, contradiction, attribution, framing, agency, and related interpretive properties |
+| **Structural rechecks** | Some structural invariants are deliberately rechecked after normalization or at representation boundaries (e.g. PVR derivation then PVR validation; semantic envelope parsing). These are boundary checks, not materially duplicated semantic authority |
+| **Counterevidence** | `response_validation_content.py` documents R02b/R11–R15 deferral to semantic evaluation; Narrator semantic QA explicitly avoids duplicating deterministic F1/F2 verbatim/order checks |
+| **Conclusion** | Justified staged separation, not duplicate contract |
 | **Disposition** | `retain as intentional` |
+| **External verification** | Greptile (PR #99 [r3910150099](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910150099)) — **supported with structural-recheck qualification**. |
 
 ### J4 — Scene Grounding vs Continuity truth
 
@@ -261,11 +274,13 @@
 | Field | Detail |
 |-------|--------|
 | **Responsibility** | forensic evidence |
-| **Apparent overlap** | Six+ stores per turn |
-| **Traced relationship** | rp_history = durable transcript; execution evidence = per-inference payloads; trace = event bus for tooling; audit tags = human anchors |
-| **Distinct boundary** | Retention scope, restart durability, query consumers differ |
-| **Conclusion** | Justified multi-surface architecture; cost is operational (see A4), not authority duplication |
-| **Disposition** | `accepted` |
+| **Apparent overlap** | Multiple evidence surfaces per round |
+| **Traced relationship** | Session JSON = **canonical** resumable state/history; execution evidence = **forensic** per-inference payloads; Librarian audit = **mediated** post-commit forensic record; story knowledge = **derived** searchable projection; Plot Cognition overlay/chronicle = **conditional** operational/append-only records; audit tags = **conditional** human anchors; DSH trace / `role_inference_summary` = **transient/ephemeral**; V1 `rp_audits` = **legacy/off-path**; indexes/manifests = **rebuildable** navigation metadata |
+| **Distinct boundary** | Retention scope, durability, provenance, and query consumers differ; repeated IDs/text are often deliberate denormalization for provenance, auditability, and consumer isolation — not redundant forensic authority |
+| **Low-unique-value categories** | Rebuildable indexes have navigation/performance value, not independent semantic authority; legacy V1 audit artifacts are historical/off-path for current V2 reconstruction; transient traces/summaries are not additional durable forensic authorities |
+| **Conclusion** | Justified multi-contract architecture; operational cost is reconstruction/tooling burden (A4), not store redundancy |
+| **Disposition** | `retain as intentional` |
+| **External verification** | Greptile (PR #99 [r3910199780](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910199780)) — **supported with evidence-taxonomy qualification**. |
 
 ### J6 — DSH custom orchestration over Cordis
 
@@ -273,10 +288,12 @@
 |-------|--------|
 | **Responsibility** | runtime orchestration |
 | **Apparent overlap** | Cordis `Service` lifecycle vs `HgRoundOrchestrator` |
-| **Traced relationship** | Cordis provides plugin mounting, inference sessions; HG custom provides domain round state machine, phase executors, Host HTTP client |
-| **Distinct boundary** | Framework vs Holy Grail domain semantics; Python never calls DSH |
-| **Conclusion** | Required custom layer — native Cordis does not encode participation policy, Librarian S4 join, or Host contract |
+| **Traced relationship** | Cordis/DSH provide plugin mounting, `agentLoop.create`, system-prompt context, provider adapter, session events, and fiber lifecycle; HG custom layers implement domain round state machine, phase executors, Host HTTP client, participation/Director/Librarian S4 joins, and evidence instrumentation |
+| **Distinct boundary** | Framework lifecycle/provider primitives vs Holy Grail domain semantics and necessary integration boundaries (Node → HTTP → Python Host) |
+| **Scope qualification** | No **material duplication of DSH/Cordis responsibilities visible in the inspected production integration** was found; custom layers predominantly implement Holy-Grail-specific semantics or required boundaries. This is **not** an exhaustive claim about every capability in upstream `@deepseek-ai/cordis` packages (see Explicit gaps). |
+| **Conclusion** | Required custom domain layer — not framework reinvention in inspected paths |
 | **Disposition** | `retain as intentional` |
+| **External verification** | Greptile (PR #99 [r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) — **supported within inspected integration scope**. |
 
 ### J7 — Shared `continuity_context_projector` across role prepare paths
 
@@ -333,11 +350,11 @@
 | Retry/correction | DSH phases | phase executors, retry helpers | 3+ independent | none | retry metadata | execution evidence | Drift risk | A5 |
 | Persistence (session) | SessionRepository | `session_manager.py` | 1 gate | `persist` | — | `data/sessions/` | No | — |
 | Derived knowledge | story/scope repos | `knowledge_write_policy`, story pipeline | 2 | append-only | retrieval | JSONL | No | — |
-| Evidence recording | multiple | execution-evidence, trace, rp_history, audit tags | 6+ | observational | — | multiple gitignored dirs | Operational cost | A4, J5 |
-| Forensic reconstruction | investigation tools | `tools/investigation/*` | N projections | none | reports | — | Tooling gap | A4 |
+| Evidence recording | multiple contracts | execution-evidence, trace, rp_history, audit tags, librarian audit, conditional Plot Cognition | multi-contract (taxonomy-dependent) | observational | — | canonical + forensic + mediated + conditional + transient + rebuildable | Reconstruction/tooling cost (A4) | A4, J5 |
+| Forensic reconstruction | investigation tools | `tools/investigation/*` | N projections | none | reports | — | Tooling gap (no unified durable turn view) | A4 |
 | Session/round identity | Host + DSH | `session_state.py`, round orchestrator | 2 (coordination) | round bookkeeping on commit | — | session + evidence | No | — |
 | Provider invocation | DSH + Cordis | `assembled-request.mjs`, provider mount | 1 | none | profiles | execution evidence | No | — |
-| Runtime defaults/config | split | phase executors, env, bindings | many | — | — | — | Drift risk | A5 |
+| Runtime defaults/config | split | `application-settings.mjs` (centralized) + phase-local retry/candidate policy | partial centralization | — | — | — | Phase-local drift risk (A5) | A5 |
 
 ---
 
@@ -345,27 +362,33 @@
 
 ### Strongest confirmed architectural inefficiencies
 
-1. **A1** — Second continuity mutation seam (Librarian S4) increases audit cognitive load despite intentional design (unchallenged by external review).
-2. **A4** — Forensic fragmentation imposes reconstruction cost on operators (mitigated partially by investigation tooling; unchallenged by external review).
+1. **A1** — Bounded separately persisted post-commit Continuity mutation seam increases audit cognitive load despite intentional design.
+2. **A4** — Multi-contract forensic reconstruction/tooling burden without a unified durable turn-level view (mitigated partially by shared IDs and investigation tooling).
 
-**Note:** Initial A3 characterization overstated Narrator as a parallel assembly path; corrected per GF-1. Formatter ownership (A3) is a lower-significance refinement, not a primary inefficiency.
+**Note:** A3 was reclassified per GF-1 and external verification — formatter ownership is a lower-significance worthwhile refinement, not a primary inefficiency.
 
 ### Highest-risk ownership/authority overlaps
 
 - **Continuity mutation (A1)** — highest authority risk; currently bounded and audited, but expansion of S4 proposal classes without discipline would compound debt.
 - **No confirmed duplicate continuity truth writers** beyond documented S4 seam at `main`.
 
-### Legacy/superseded residue
+### Legacy/superseded residue and minor external-review observations
 
 | Item | Status |
 |------|--------|
 | v1 character move ingress | Removed (#143) |
 | `perceptual_visibility_legacy` | Active read adapter (J9) |
 | `character_move_adapters` | Active read projection |
-| `prompt_builders` | Active formatter module — `build_narrator_render_prompt` called from `narrator_context.py`; output wrapped in manifest `inference_instruction` (A3). Other formatters in module have no `v2/` production callers at anchor. |
+| `prompt_builders` | Active formatter module — `build_narrator_render_prompt` called from `narrator_context.py`; output wrapped in manifest `inference_instruction` (A3). Other formatters in module have no `v2/` production callers at anchor (possible off-path/migration residue; caller evidence incomplete). |
 | `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` | Dead code (A2) |
 | `FixtureStore` | Test-only |
 | `validate_bot_response_for_scenario` | Tests/offline only |
+| `character-inference-slice.mjs` | Unconfirmed secondary execution surface — exported via `HgPhaseExecutors.runCharacterInference`; **no active application caller established** in external review (not promoted to material finding) |
+| `SessionRepository.create_scene` | Transitional compatibility alias for prototype `/v1/scenes` |
+| `project-history.mjs` | Non-authoritative Node-side presentation/transcript projection |
+| V1 `data/rp_audits/session_*` | Legacy/historical — off-path for V2 save/resume reconstruction |
+| Rebuildable evidence indexes/manifests | Navigation/recovery metadata, not independent semantic authorities |
+| DSH trace / `role_inference_summary` | Transient/ephemeral — not additional durable forensic authorities |
 
 ### Areas found architecturally healthy
 
@@ -393,19 +416,21 @@
 
 ### DSH/Cordis/native-utilization health
 
-**Appropriate** — custom orchestration encodes domain rules absent from Cordis primitives (J6). No spurious reimplementation of Cordis Service lifecycle.
+**Appropriate within inspected integration scope** — custom orchestration encodes domain rules and necessary boundaries; no material DSH/Cordis duplication found in production integration paths reviewed (J6). Exhaustive upstream framework comparison remains out of scope.
 
 ### Forensic/evidence architecture health
 
-**Functionally sound**, **operationally heavy** (A4). Correlation IDs exist; unified turn view is tooling gap not authority bug.
+**Functionally sound**, **operationally moderate burden** for deep reconstruction (A4). Distinct evidence contracts are justified (J5); correlation IDs and investigation tooling mitigate join cost; unified durable turn-level view remains a tooling gap, not evidence-store redundancy.
 
 ### Configuration/contract centralization health
 
-**Moderate drift risk** (A5) for retry/reasoning across phases; packet contracts centralized in `PACKET_CONTRACTS.md`.
+**Partial centralization** — core inference/reasoning infrastructure centralized; **phase-local retry/candidate policy drift risk** remains (A5). Packet contracts centralized in `PACKET_CONTRACTS.md`.
 
 ### Overall architectural efficiency
 
-The system exhibits **substantial intentional layering** from incremental Issue-driven delivery (#31–#55, Librarian S4, forensic standard). **True redundant authority is rare** at `main`; the dominant costs are **audit surface area** (forensic channels, S4 mutation seam) and **residual module indirection** (`prompt_builders` formatter ownership, dead legacy constant A2).
+Widespread accidental duplication of architectural **responsibility** was **not** found. Most apparent overlaps resolve into intentional separation of authority, projection, validation stage, forensic contract, compatibility, or framework/domain responsibility. **True redundant authority is rare** at `main`; the strongest remaining inefficiencies are **bounded and specific** (A1 mutation seam, A4 reconstruction/tooling burden). **No actual defect** was established. External challenge found **no additional confirmed material architectural redundancy** beyond the discussed findings — this is **not** proof that no redundancy exists anywhere.
+
+The system exhibits substantial intentional layering from incremental Issue-driven delivery (#31–#55, Librarian S4, forensic standard). Dominant costs are audit surface area (forensic correlation, S4 mutation seam), phase-local policy maintenance (A5), and residual module indirection (A3 formatter ownership, dead legacy constant A2).
 
 ### Aggregate accidental complexity
 
@@ -419,25 +444,43 @@ Incremental additions (validation depth, forensic surfaces, S4 post-commit join,
 
 ### Candidate successor Issue packages (recommendations only — NOT authorized)
 
-1. **Doc/tooling:** Operator guide correlating forensic surfaces per turn (addresses A4).
-2. **Cleanup:** Wire or remove `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` (A2).
-3. **Optional review:** Narrator render-instruction formatter ownership — retain in `prompt_builders` vs colocate nearer `narrator_context.py`; must preserve live dialogue, visibility, and manifest contracts (A3; not pre-authorized).
-4. **Architecture record:** Formal S4-vs-process_turn mutation matrix on audit parent or architecture doc (A1).
+1. **Documentation:** Formalize A1 bounded mutation authority (S4 vs `process_turn` matrix) for operators/auditors.
+2. **Tooling:** Improve forensic correlation/navigation across durable contracts — **not** merge legitimate evidence stores (A4).
+3. **Cleanup:** Remove or wire `LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS` if prioritized (A2).
+4. **Optional review:** Narrator render-instruction formatter ownership — colocate vs retain in `prompt_builders` only if navigation/maintenance value warrants it; **not** manifest migration (A3).
+5. **Policy primitives:** Evaluate shared retry/candidate policy primitives for repeated dimensions while preserving intentional role-specific semantics (A5).
+6. **Reachability check:** Investigate `character-inference-slice.mjs` callers only if secondary surface merits follow-up (minor external-review observation; not a material finding).
 
 ---
 
-## External review disposition
+## External verification
 
-| Field | Value |
-|-------|-------|
-| **PR** | [#99](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99) |
-| **Greptile review head (GF-1)** | `10289f8d8eb0959005b2f6332dc4f8e5e315aeeb` |
-| **Finding** | GF-1 (P2) — Narrator migration mischaracterized |
-| **Governance disposition** | **Accepted** |
-| **Nature of correction** | A3 incorrectly claimed Narrator used a parallel assembly path and still required migration into `PromptContribution` lanes. Evidence shows `prepare_narrator_context` already wraps `build_narrator_render_prompt` output as `inference_instruction` in the returned manifest. |
-| **A3 reclassification** | `architectural debt` → `worthwhile refinement`; reframed as formatter ownership/indirection, not manifest migration. |
-| **Remediation performed** | None — audit report documentation correction only. |
-| **Authority note** | Greptile supplied independent review evidence; Governance determined disposition. Absence of Greptile comments on other findings is **not** external validation of those conclusions. |
+Greptile was used as an **external implementation-aware reviewer** after the initial audit report, via conversational challenges in the PR #99 review thread rooted at [discussion_r3909996072](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3909996072). Greptile supplied independent challenge evidence; **Governance determined dispositions**. External review is evidence, not governance authority. Absence of an additional Greptile finding is **not** proof of absence.
+
+### Disposition summary
+
+| Topic | Greptile disposition | Governance action |
+|-------|---------------------|-------------------|
+| **A1** | Supported with authority-scope qualification | Narrow wording — bounded post-commit seam, not second full turn-commit authority ([r3910104177](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910104177)) |
+| **A2** | Supported | Retain worthwhile refinement; add static-reachability qualification ([r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) |
+| **A3 (corrected)** | Supported after GF-1 reclassification | Retain worthwhile refinement; GF-1 caused original correction ([r3909996072](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3909996072), [r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) |
+| **A4** | Supported with reconstruction/taxonomy/severity qualification | Adopt evidence taxonomy; moderate cardinality/severity framing ([r3910199780](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910199780)) |
+| **A5** | Supported narrowly | Clarify centralized vs phase-local policy; retain worthwhile refinement ([r3910282152](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910282152)) |
+| **J2** | Supported with boundary-overlap qualification | Acknowledge consistency surface without duplicate authority ([r3910150099](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910150099)) |
+| **J3** | Supported with structural-recheck qualification | Acknowledge representation-boundary rechecks ([r3910150099](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910150099)) |
+| **J5** | Supported with evidence-taxonomy qualification | Adopt taxonomy in J5 ([r3910199780](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910199780)) |
+| **J6** | Supported within inspected integration scope | Retain scoped wording; no exhaustive upstream claim ([r3910240568](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910240568)) |
+| **Global missed-redundancy search** | No additional **confirmed material** architectural redundancy | Record qualified negative finding ([r3910282152](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/99#discussion_r3910282152)) |
+
+### Material changes from external verification
+
+- **A3** materially changed: GF-1 reclassified from architectural debt to worthwhile refinement (formatter ownership, not parallel manifest assembly).
+- **A1, A4, A5, J2, J3, J5, J6** sharpened with qualifications; classifications largely retained with refined wording.
+- **No new material findings** promoted from global search; `character-inference-slice.mjs` noted as unconfirmed secondary surface only.
+
+### Remediation performed
+
+None — audit report documentation refinement only.
 
 ---
 
@@ -447,24 +490,28 @@ Incremental additions (validation depth, forensic surfaces, S4 post-commit join,
 |-------|--------|
 | Cited files exist at anchor | Pass — spot-checked paths at `ba54016` |
 | Callers/execution paths supported | Pass — `process_turn` production caller verified; narrator manifest integration verified |
-| A3 accurately represents execution flow | Pass — Narrator manifest-first; formatter delegated (GF-1 correction applied) |
+| A1 does not imply second unrestricted turn authority | Pass — bounded post-commit seam language applied |
+| A3 accurately represents execution flow | Pass — manifest-first; formatter delegated; worthwhile refinement (GF-1 + external verification) |
+| A4 uses reconstruction-contract framing | Pass — evidence taxonomy; no mandatory “6+ durable writes per turn” claim |
+| A5 distinguishes centralized inference from phase-local policy | Pass |
 | Writers actually write | Pass — S4 apply and `process_turn` traced |
 | Authority matches docs | Pass — matches architecture-overview with A1 documented exception |
 | Counterarguments evaluated | Pass — 9 justified separations documented |
+| External verification incorporated | Pass — §External verification; dispositions recorded |
 | Consolidation labeled candidate | Pass — no pre-authorized fixes |
-| Classifications supported | Pass — A3 reclassified per evidence |
-| Dependent summaries consistent | Pass — counts and whole-system assessment updated |
+| Classifications/counts consistent | Pass — 2 architectural debt (A1, A4); 3 worthwhile refinement (A2, A3, A5); 0 actual defect |
 | Recommendations non-authorizing | Pass |
+| Greptile described as external evidence only | Pass |
 
-**GF-1 revalidation:** PASS (2026-09-01 refinement cycle).
+**Consolidated refinement revalidation:** PASS (2026-09-02).
 
-**Factual uncertainties:** Live scenario replay not executed at audit anchor. Greptile re-review on refined head pending at commit time.
+**Factual uncertainties:** Live scenario replay not executed at audit anchor. Greptile global negative finding is qualified (“no additional **confirmed material** redundancy”).
 
 ---
 
 ## No-remediation attestation
 
-This audit cycle performed **investigation and documentation only**. No production code, tests, configuration, or dependencies were modified. GF-1 refinement modified **audit report documentation only**. No remediation Issues were created. No architectural remediation is bundled in audit PR commits. Remediation requires separate Governance authorization and tracked Issues reaching `consensus_reached`.
+This audit cycle performed **investigation and documentation only**. No production code, tests, configuration, or dependencies were modified. Consolidated refinement modified **audit report documentation only**. No remediation Issues were created. No architectural remediation is bundled in audit PR commits. Remediation requires separate Governance authorization and tracked Issues reaching `consensus_reached`.
 
 ---
 
