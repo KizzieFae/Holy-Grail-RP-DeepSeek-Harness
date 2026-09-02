@@ -1,0 +1,38 @@
+{
+  "session_id": "hg-session-multi-seq",
+  "metadata": {
+    "continuity_state": {
+      "turn_metadata_by_index": {
+        "1": {},
+        "2": {}
+      },
+      "public_events": []
+    },
+    "v2_host_state": {
+      "commit_ids": ["commit-zzz", "commit-aaa"],
+      "memory_scope_id": "scope-multi-1",
+      "plot_cognition_scope_id": "scope-multi-1",
+      "rp_history": [
+        {
+          "entry_id": "entry-commit-zzz",
+          "kind": "committed_turn",
+          "content": "First move",
+          "hg_round_id": "round-seq",
+          "domain_commit_id": "commit-zzz",
+          "sequence_index": 1,
+          "metadata": { "continuity_turn_index": 1 }
+        },
+        {
+          "entry_id": "entry-commit-aaa",
+          "kind": "committed_turn",
+          "content": "Second move",
+          "hg_round_id": "round-seq",
+          "domain_commit_id": "commit-aaa",
+          "sequence_index": 2,
+          "metadata": { "continuity_turn_index": 2 }
+        }
+      ],
+      "librarian_proposal_audit_log": []
+    }
+  }
+}

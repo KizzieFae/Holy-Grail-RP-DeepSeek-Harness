@@ -270,6 +270,110 @@ def test_multi_commit_round():
     assert director[0]["correlation"]["domain_commit_id"] is None
 
 
+def _ee_surfaces(envelope: dict) -> list[dict]:
+    return [surface for surface in envelope["surfaces"] if surface["contract"] == "execution_evidence"]
+
+
+def test_commit_view_excludes_foreign_commit_evidence():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="domain_commit_id",
+        anchor_value="commit-multi-1",
+    )
+    foreign = [
+        surface
+        for surface in _ee_surfaces(envelope)
+        if (surface.get("correlation") or {}).get("domain_commit_id") == "commit-multi-2"
+    ]
+    assert foreign == []
+
+
+def test_commit_view_retains_direct_commit_evidence():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="domain_commit_id",
+        anchor_value="commit-multi-1",
+    )
+    evidence_ids = {
+        (surface.get("correlation") or {}).get("evidence_id")
+        for surface in _ee_surfaces(envelope)
+    }
+    assert {"ev-multi-char-1", "ev-multi-narr-1", "ev-multi-lib-1"} <= evidence_ids
+
+
+def test_commit_view_foreign_narrator_conflict_isolation():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="domain_commit_id",
+        anchor_value="commit-multi-1",
+    )
+    assert envelope["conflicts"] == []
+
+
+def test_round_view_includes_both_commits_evidence():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-multi",
+    )
+    by_commit = {
+        (surface.get("correlation") or {}).get("domain_commit_id")
+        for surface in _ee_surfaces(envelope)
+        if (surface.get("correlation") or {}).get("domain_commit_id")
+    }
+    assert {"commit-multi-1", "commit-multi-2"} <= by_commit
+
+
+def test_domain_commit_ids_preserve_sequence_order():
+    envelope = open_session("hg-session-multi-seq", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-seq",
+    )
+    assert envelope["resolved"]["domain_commit_ids"] == ["commit-zzz", "commit-aaa"]
+
+
+def test_round_plot_cognition_handoffs_per_commit_in_sequence():
+    envelope = open_session("hg-session-multi-seq", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-seq",
+    )
+    pc_commands = [
+        item["command"]
+        for item in envelope["handoffs"]
+        if item["tool"] == "trace_plot_cognition_forensics.py"
+    ]
+    assert pc_commands == [
+        "python tools/investigation/trace_plot_cognition_forensics.py scope-multi-1 commit commit-zzz",
+        "python tools/investigation/trace_plot_cognition_forensics.py scope-multi-1 commit commit-aaa",
+    ]
+
+
+def test_round_plot_cognition_handoff_completeness():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-multi",
+    )
+    pc_commands = [
+        item["command"]
+        for item in envelope["handoffs"]
+        if item["tool"] == "trace_plot_cognition_forensics.py"
+    ]
+    assert len(pc_commands) == 2
+    assert "commit commit-multi-1" in pc_commands[0]
+    assert "commit commit-multi-2" in pc_commands[1]
+
+
+def test_single_commit_plot_cognition_handoff_regression():
+    envelope = open_session("hg-session-ni-acc-1").investigate(
+        anchor_type="domain_commit_id",
+        anchor_value="commit-ni-1",
+    )
+    pc_commands = [
+        item["command"]
+        for item in envelope["handoffs"]
+        if item["tool"] == "trace_plot_cognition_forensics.py"
+    ]
+    assert pc_commands == [
+        "python tools/investigation/trace_plot_cognition_forensics.py scope-ni-acc-1 commit commit-ni-1"
+    ]
+
+
 def test_turn_anchor_resolves_to_commit():
     envelope = open_session("hg-session-ni-acc-1").investigate(
         anchor_type="continuity_turn_index",

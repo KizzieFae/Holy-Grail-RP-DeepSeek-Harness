@@ -45,9 +45,9 @@ python tools/investigation/trace_turn_forensics.py <hg_session_id> entry <entry_
 python tools/investigation/trace_turn_forensics.py <hg_session_id> tag <tag_id> [--json]
 ```
 
-**Commit view** (`commit`): what durable evidence belongs to or derives from one committed Character turn (`domain_commit_id`).
+**Commit view** (`commit`): what durable evidence belongs to or derives from one committed Character turn (`domain_commit_id`). Execution-evidence attempts explicitly correlated to another commit in the same round are excluded. Genuinely uncommitted round evidence belongs in **round view**, not commit view.
 
-**Round view** (`round`): what happened throughout one orchestration round (`hg_round_id`), including pre-commit Director/participation attempts that may lack a `domain_commit_id`.
+**Round view** (`round`): what happened throughout one orchestration round (`hg_round_id`), including pre-commit Director/participation attempts that may lack a `domain_commit_id`. Multi-commit rounds preserve committed-turn sequence in `resolved.domain_commit_ids`, and Plot Cognition specialist handoffs expose one `commit <domain_commit_id>` command per resolved commit in that order.
 
 The CLI emits `hg_turn_investigator_v1` JSON with authority-labelled `surfaces[]`, `limitations[]`, `conflicts[]`, and specialist `handoffs[]`. It does **not** create durable artifacts or arbitrate between authorities.
 

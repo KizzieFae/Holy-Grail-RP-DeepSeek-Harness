@@ -11,7 +11,7 @@ Offline utilities that operate on **current** repository paths (`data/`, audit J
 | `audit_episodic_issue_mismatch_scan.py` | Read-only scan of character audit `*_full.json` files |
 | `list_execution_evidence.py` | List V2 execution evidence for a session (`data/execution_evidence/`) |
 | `list_audit_tags.py` | List V2 human audit tags for a session (`data/audit_tags/`) |
-| `trace_turn_forensics.py` | Unified read-only turn/commit forensic navigator (`hg_turn_investigator_v1`, #101) |
+| `trace_turn_forensics.py` | Unified read-only turn/commit forensic navigator (`hg_turn_investigator_v1`, #101). Commit view excludes EE explicitly tied to another commit; round view preserves multi-commit sequence and per-commit Plot Cognition handoffs. |
 | `_turn_forensics.py` | Shared turn/commit correlation library (not invoked directly) |
 | `trace_ni_forensics.py` | Read-only NI forensic investigator over `hg_ni_forensics_v1` (#46 Package B) |
 | `_ni_forensics.py` | Shared NI traversal/reconstruction library (not invoked directly) |

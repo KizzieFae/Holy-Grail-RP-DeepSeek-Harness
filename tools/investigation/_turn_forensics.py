@@ -40,6 +40,18 @@ def _sorted_unique_str(values: list[str]) -> list[str]:
     return sorted({str(item) for item in values if str(item or "").strip()})
 
 
+def _unique_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for raw in values:
+        value = str(raw or "").strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        ordered.append(value)
+    return ordered
+
+
 def _sorted_unique_int(values: list[int]) -> list[int]:
     return sorted({int(item) for item in values})
 
@@ -215,7 +227,7 @@ class TurnForensicsSession:
             seq = int(entry.get("sequence_index") or 0)
             commits.append((seq, commit_id))
         commits.sort(key=lambda item: item[0])
-        return _sorted_unique_str([commit_id for _, commit_id in commits])
+        return _unique_preserve_order([commit_id for _, commit_id in commits])
 
     def resolve_commit_anchor(self, domain_commit_id: str) -> tuple[ResolvedAnchors, list[dict[str, Any]], ViewKind]:
         commit_id = str(domain_commit_id).strip()
@@ -570,9 +582,10 @@ class TurnForensicsSession:
                     or ""
                 )
                 role = correlation.get("role")
-                if assoc_commit and assoc_commit != commit_id and role not in {"narrator", "librarian"}:
-                    continue
-                if not assoc_commit and role not in {"narrator", "librarian"} and role != "character":
+                if assoc_commit:
+                    if assoc_commit != commit_id:
+                        continue
+                elif role not in {"narrator", "librarian"} and role != "character":
                     continue
                 decision = attempt.get("decision") or {}
                 surfaces.append(
@@ -934,18 +947,21 @@ class TurnForensicsSession:
                         "purpose": "NI S4 chain for this commit",
                     }
                 )
+        plot_cognition_handoffs: list[dict[str, Any]] = []
         if resolved.plot_cognition_scope_id and resolved.domain_commit_ids:
-            handoffs.append(
-                {
-                    "tool": "trace_plot_cognition_forensics.py",
-                    "command": (
-                        "python tools/investigation/trace_plot_cognition_forensics.py "
-                        f"{resolved.plot_cognition_scope_id} commit {resolved.domain_commit_ids[0]}"
-                    ),
-                    "purpose": "Detailed Plot Cognition chronicle commit effects",
-                }
-            )
+            for commit_id in resolved.domain_commit_ids:
+                plot_cognition_handoffs.append(
+                    {
+                        "tool": "trace_plot_cognition_forensics.py",
+                        "command": (
+                            "python tools/investigation/trace_plot_cognition_forensics.py "
+                            f"{resolved.plot_cognition_scope_id} commit {commit_id}"
+                        ),
+                        "purpose": "Detailed Plot Cognition chronicle commit effects",
+                    }
+                )
         handoffs.sort(key=lambda item: (str(item.get("tool") or ""), str(item.get("command") or "")))
+        handoffs.extend(plot_cognition_handoffs)
         return handoffs
 
     def investigate(

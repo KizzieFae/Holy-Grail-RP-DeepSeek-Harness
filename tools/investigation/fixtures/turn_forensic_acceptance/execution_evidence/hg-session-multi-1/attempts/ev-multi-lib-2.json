@@ -1,0 +1,13 @@
+{
+  "evidence_id": "ev-multi-lib-2",
+  "correlation": {
+    "hg_session_id": "hg-session-multi-1",
+    "hg_round_id": "round-multi",
+    "role": "librarian",
+    "domain_commit_id": "commit-multi-2",
+    "inference_id": "inf-multi-lib-2"
+  },
+  "decision": {
+    "outcome": "accepted"
+  }
+}

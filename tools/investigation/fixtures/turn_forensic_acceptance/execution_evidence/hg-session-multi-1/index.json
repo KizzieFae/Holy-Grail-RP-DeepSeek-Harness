@@ -1,9 +1,25 @@
 {
   "schema": "hg_execution_evidence_index_v1",
   "hg_session_id": "hg-session-multi-1",
-  "attempt_ids": ["ev-multi-dir-1"],
+  "attempt_ids": [
+    "ev-multi-dir-1",
+    "ev-multi-char-1",
+    "ev-multi-char-2",
+    "ev-multi-narr-1",
+    "ev-multi-narr-2",
+    "ev-multi-lib-1",
+    "ev-multi-lib-2"
+  ],
   "rounds": {
-    "round-multi": ["ev-multi-dir-1"]
+    "round-multi": [
+      "ev-multi-dir-1",
+      "ev-multi-char-1",
+      "ev-multi-char-2",
+      "ev-multi-narr-1",
+      "ev-multi-narr-2",
+      "ev-multi-lib-1",
+      "ev-multi-lib-2"
+    ]
   },
   "participation_by_round": {},
   "semantic": {

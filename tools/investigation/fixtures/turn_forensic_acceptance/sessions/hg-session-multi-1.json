@@ -30,13 +30,31 @@
           "metadata": { "continuity_turn_index": 1 }
         },
         {
+          "entry_id": "entry-presentation-m1",
+          "kind": "presentation",
+          "content": "Alice placed the blueprint on the table.",
+          "hg_round_id": "round-multi",
+          "domain_commit_id": "commit-multi-1",
+          "sequence_index": 3,
+          "speaker": "Narrator"
+        },
+        {
           "entry_id": "entry-commit-m2",
           "kind": "committed_turn",
           "content": "Bob second move",
           "hg_round_id": "round-multi",
           "domain_commit_id": "commit-multi-2",
-          "sequence_index": 3,
+          "sequence_index": 4,
           "metadata": { "continuity_turn_index": 2 }
+        },
+        {
+          "entry_id": "entry-presentation-m2",
+          "kind": "presentation",
+          "content": "Bob examined the blueprint Alice had left behind.",
+          "hg_round_id": "round-multi",
+          "domain_commit_id": "commit-multi-2",
+          "sequence_index": 5,
+          "speaker": "Narrator"
         }
       ],
       "librarian_proposal_audit_log": []

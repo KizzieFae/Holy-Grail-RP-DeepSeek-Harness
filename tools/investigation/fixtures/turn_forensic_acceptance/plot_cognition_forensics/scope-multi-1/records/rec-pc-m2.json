@@ -1,0 +1,10 @@
+{
+  "record_id": "rec-pc-m2",
+  "record_class": "effect",
+  "operation_kind": "apply",
+  "integrity_status": "verified",
+  "correlation": {
+    "domain_commit_id": "commit-multi-2",
+    "hg_round_id": "round-multi"
+  }
+}
