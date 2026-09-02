@@ -307,6 +307,99 @@ def test_commit_view_foreign_narrator_conflict_isolation():
     assert envelope["conflicts"] == []
 
 
+def test_commit_view_excludes_commitless_narrator_evidence():
+    for commit_id in ("commit-multi-1", "commit-multi-2"):
+        envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+            anchor_type="domain_commit_id",
+            anchor_value=commit_id,
+        )
+        assert "ev-multi-narr-none" not in {
+            (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(envelope)
+        }
+
+
+def test_commit_view_excludes_commitless_character_evidence():
+    for commit_id in ("commit-multi-1", "commit-multi-2"):
+        envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+            anchor_type="domain_commit_id",
+            anchor_value=commit_id,
+        )
+        assert "ev-multi-char-none" not in {
+            (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(envelope)
+        }
+
+
+def test_commit_view_excludes_commitless_librarian_evidence():
+    for commit_id in ("commit-multi-1", "commit-multi-2"):
+        envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+            anchor_type="domain_commit_id",
+            anchor_value=commit_id,
+        )
+        assert "ev-multi-lib-none" not in {
+            (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(envelope)
+        }
+
+
+def test_round_view_retains_commitless_evidence():
+    envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-multi",
+    )
+    evidence_ids = {
+        (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(envelope)
+    }
+    assert {"ev-multi-narr-none", "ev-multi-char-none", "ev-multi-lib-none"} <= evidence_ids
+
+
+def test_commit_view_commitless_narrator_no_false_conflicts():
+    for commit_id in ("commit-multi-1", "commit-multi-2"):
+        envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
+            anchor_type="domain_commit_id",
+            anchor_value=commit_id,
+        )
+        assert envelope["conflicts"] == []
+
+
+def test_single_commit_round_excludes_commitless_evidence(tmp_path: Path):
+    evidence_root = tmp_path / "execution_evidence"
+    session_dir = evidence_root / "hg-session-ni-acc-1"
+    attempts_dir = session_dir / "attempts"
+    attempts_dir.mkdir(parents=True)
+    index = json.loads((EVIDENCE_ROOT / "hg-session-ni-acc-1" / "index.json").read_text(encoding="utf-8"))
+    for evidence_id in index["attempt_ids"]:
+        src = EVIDENCE_ROOT / "hg-session-ni-acc-1" / "attempts" / f"{evidence_id}.json"
+        (attempts_dir / f"{evidence_id}.json").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    commitless = {
+        "evidence_id": "ev-narrator-commitless-1",
+        "correlation": {
+            "hg_session_id": "hg-session-ni-acc-1",
+            "hg_round_id": "round-1",
+            "role": "narrator",
+        },
+        "decision": {"candidate_presentation_text": "Would conflict if attributed to commit."},
+    }
+    (attempts_dir / "ev-narrator-commitless-1.json").write_text(json.dumps(commitless), encoding="utf-8")
+    index["attempt_ids"].append("ev-narrator-commitless-1")
+    index["rounds"]["round-1"].append("ev-narrator-commitless-1")
+    (session_dir / "index.json").write_text(json.dumps(index), encoding="utf-8")
+
+    commit_env = open_session("hg-session-ni-acc-1", evidence_root=evidence_root).investigate(
+        anchor_type="domain_commit_id",
+        anchor_value="commit-ni-1",
+    )
+    round_env = open_session("hg-session-ni-acc-1", evidence_root=evidence_root).investigate(
+        anchor_type="hg_round_id",
+        anchor_value="round-1",
+    )
+    assert "ev-narrator-commitless-1" not in {
+        (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(commit_env)
+    }
+    assert "ev-narrator-commitless-1" in {
+        (surface.get("correlation") or {}).get("evidence_id") for surface in _ee_surfaces(round_env)
+    }
+    assert commit_env["conflicts"] == []
+
+
 def test_round_view_includes_both_commits_evidence():
     envelope = open_session("hg-session-multi-1", evidence_root=TURN_EVIDENCE_ROOT).investigate(
         anchor_type="hg_round_id",

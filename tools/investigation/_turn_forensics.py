@@ -582,10 +582,7 @@ class TurnForensicsSession:
                     or ""
                 )
                 role = correlation.get("role")
-                if assoc_commit:
-                    if assoc_commit != commit_id:
-                        continue
-                elif role not in {"narrator", "librarian"} and role != "character":
+                if not assoc_commit or assoc_commit != commit_id:
                     continue
                 decision = attempt.get("decision") or {}
                 surfaces.append(
@@ -601,7 +598,7 @@ class TurnForensicsSession:
                             "role": role,
                             "inference_kind": correlation.get("inference_kind"),
                         },
-                        establishes="Inference/decision forensic attempt relevant to this commit or round presentation",
+                        establishes="Inference/decision forensic attempt explicitly correlated to this commit",
                         summary={
                             "outcome": decision.get("outcome"),
                             "terminal_disposition": decision.get("terminal_disposition"),
