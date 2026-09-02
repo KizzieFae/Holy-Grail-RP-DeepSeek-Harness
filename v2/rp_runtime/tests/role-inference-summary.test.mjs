@@ -53,6 +53,21 @@ test('buildNarratorSummary marks prepare failure before inference', () => {
   assert.equal(summary.inference_trace, null);
 });
 
+test('buildNarratorSummary marks boundary throw attempted without trace', () => {
+  const summary = buildNarratorSummary({
+    presentation_rendered: false,
+    presentation_failed: true,
+    narrator_inference_trace: null,
+    narrator_inference_session_id: null,
+    narrator_evidence_id: 'ev-final-throw',
+  });
+  assert.equal(summary.phase_outcome, 'degraded');
+  assert.equal(summary.inference_execution, 'attempted');
+  assert.equal(summary.inference_trace, null);
+  assert.equal(summary.inference_session_id, null);
+  assert.equal(summary.evidence_id, 'ev-final-throw');
+});
+
 test('finalizeRoleInferenceSummary fills not_reached roles', () => {
   const finalized = finalizeRoleInferenceSummary(
     buildDirectorInferenceSummary({

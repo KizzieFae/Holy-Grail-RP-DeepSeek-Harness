@@ -802,7 +802,8 @@ export async function runNarratorPhase({
         error,
         FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
       );
-      recordAttemptEvidence({
+      const boundaryThrowBeforeInference = !narratorRun;
+      const recordedEvidenceId = recordAttemptEvidence({
         recorder,
         evidenceId: narratorRun?.evidenceId ?? null,
         hgSessionId,
@@ -844,6 +845,13 @@ export async function runNarratorPhase({
             stage: 'run_ephemeral_inference',
           },
       });
+      if (boundaryThrowBeforeInference) {
+        lastInferenceTrace = null;
+        lastInferenceSessionId = null;
+        lastEvidenceId = recordedEvidenceId ?? null;
+      } else if (recordedEvidenceId) {
+        lastEvidenceId = recordedEvidenceId;
+      }
       if (retry.retryDecision === 'retry') {
         responseIndex += 1;
         continue;

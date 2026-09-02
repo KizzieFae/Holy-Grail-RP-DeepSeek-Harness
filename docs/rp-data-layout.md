@@ -206,7 +206,7 @@ Plot Cognition chronicle (scope-keyed, not session-keyed): `python tools/investi
 
 ### Ephemeral round summary (`role_inference_summary`, #94)
 
-`hg-round-orchestrator` `runRound` returns a bounded per-role summary (`director`, `character`, `narrator`) separating **provider inference execution** from **phase orchestration outcome**. This projection answers whether inference ran, how the phase resolved, and which last attempt (if any) to follow into durable evidence. It is **not** stored under `execution_evidence/` and does **not** replace attempt chains or participation records. Contract: [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) → **DSH round result — `role_inference_summary`**.
+`hg-round-orchestrator` `runRound` returns a bounded per-role summary (`director`, `character`, `narrator`) separating **provider inference execution** from **phase orchestration outcome**. Each entry is scoped to the **most recent role activity in the round**, not whole-round aggregate history; earlier activity remains in `scene_events` and durable execution evidence. The legacy `director_inference_session_id` round field may retain the last observed Director inference session even when the summary's latest Director activity was a bypass. Contract: [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md) → **DSH round result — `role_inference_summary`**.
 
 Session JSON may include a lightweight pointer under `metadata.execution_evidence` when a store exists for that session.
 

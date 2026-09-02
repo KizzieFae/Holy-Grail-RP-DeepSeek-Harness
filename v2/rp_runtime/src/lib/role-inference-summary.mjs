@@ -114,7 +114,9 @@ export function buildNarratorSummary(narratorResult) {
 
   let inference_execution = 'not_executed';
   if (inferenceRan) {
-    inference_execution = trace ? classifyInferenceExecution(trace) : 'completed';
+    inference_execution = trace
+      ? classifyInferenceExecution(trace)
+      : 'attempted';
   }
 
   return buildInferenceSummary({
