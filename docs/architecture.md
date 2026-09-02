@@ -54,7 +54,7 @@ Character knowledge (#38): DSH **`runCharacterKnowledgeCognition`** → orientat
 
 **Live post-commit S4 (#39, authority contract #100):** on every successful Character commit, DSH runs Narrator presentation and Librarian **`runLibrarianProposalGeneration`** in parallel from the same commit, then **joins** the Librarian branch (finalize + persist + terminal audit) before the next **`getEligibleActors`** / Director cycle—including multi-commit rounds (per-commit join, not round-end only). Host finalize paths persist session state and **`librarian_proposal_audit_log`** under per-session locks; this is a **second persistence seam** after normal `commit_move`, not a second unrestricted turn-commit authority.
 
-**S4 durable mutation allowlist** (normative detail: [architecture-overview.md](../governance/sources/architecture-overview.md) → Continuity mutation authority seams; machine-readable: `S4_DURABLE_MUTATION_SURFACES` / `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
+**S4 durable mutation allowlist** (normative detail: [architecture-overview.md](../governance/sources/architecture-overview.md) → Continuity mutation authority seams; machine-readable: `S4_DURABLE_MUTATION_SURFACES_BY_KIND`, `S4_DURABLE_MUTATION_SURFACES`, and `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
 
 | Surface | Proposal kind |
 |---------|---------------|

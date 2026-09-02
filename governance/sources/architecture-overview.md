@@ -117,7 +117,7 @@ Three distinct Continuity mutation authority seams exist:
 | **Scene setup / initialization** | `initialize_scene`, `finalize_continuity_setup_seam`, session bootstrap | Legitimate pre-turn bootstrap; not turn-commit; not S4 |
 | **S4 post-commit derived-state** | `finalize_librarian_proposals` → `apply_accepted_librarian_proposals` | Bounded derived annotations/overlays after successful normal commit; **not** a second unrestricted turn-commit authority |
 
-**Positive S4 durable mutation allowlist** (machine-readable: `S4_DURABLE_MUTATION_SURFACES` and `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
+**Positive S4 durable mutation allowlist** (machine-readable: `S4_DURABLE_MUTATION_SURFACES_BY_KIND`, `S4_DURABLE_MUTATION_SURFACES`, and `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
 
 1. `PublicEvent.revelation_significance_by_character` — proposal kind `knowledge_revelation_significance`
 2. `ContinuityManager.issue_pressure_semantic_overlays` — proposal kind `issue_tension_pressure`

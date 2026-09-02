@@ -71,14 +71,22 @@ S4B_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
     }
 )
 
-# Issue #100 — positive S4 durable mutation allowlist (contract/test declaration).
+# Issue #100 — proposal-kind → durable mutation surface mapping (contract/test declaration).
 # S4 may durably mutate only these Continuity-derived surfaces unless Governance
 # explicitly expands the envelope. Not consumed by runtime apply paths in #100.
+S4_DURABLE_MUTATION_SURFACES_BY_KIND: dict[str, frozenset[str]] = {
+    "knowledge_revelation_significance": frozenset(
+        {"public_event.revelation_significance_by_character"}
+    ),
+    "issue_tension_pressure": frozenset(
+        {"manager.issue_pressure_semantic_overlays"}
+    ),
+}
+
 S4_DURABLE_MUTATION_SURFACES: frozenset[str] = frozenset(
-    {
-        "public_event.revelation_significance_by_character",
-        "manager.issue_pressure_semantic_overlays",
-    }
+    surface
+    for surfaces in S4_DURABLE_MUTATION_SURFACES_BY_KIND.values()
+    for surface in surfaces
 )
 
 _CONSEQUENCE_TAGS = frozenset(
