@@ -1,0 +1,16 @@
+{
+  "evidence_id": "ev-multi-char-none",
+  "correlation": {
+    "hg_session_id": "hg-session-multi-1",
+    "hg_round_id": "round-multi",
+    "role": "character",
+    "inference_id": "inf-multi-char-none"
+  },
+  "decision": {
+    "outcome": "accepted",
+    "commit": {
+      "committed": false,
+      "reason": "validation_failed"
+    }
+  }
+}

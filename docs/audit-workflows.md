@@ -33,6 +33,35 @@ Use this workflow for:
 
 **Normative standard:** Investigators apply the forward forensic auditability standard when judging whether retained evidence is sufficient for reconstruction — [`forensic-auditability-standard.md`](./forensic-auditability-standard.md). When evidence is missing or pre-contract, report **honest incompleteness**; do not infer `did not happen` from `not observable`.
 
+### Turn reconstruction quick start (#101)
+
+Use the unified read-only navigator when you know the session id and one durable anchor:
+
+```sh
+python tools/investigation/trace_turn_forensics.py <hg_session_id> commit <domain_commit_id> [--json]
+python tools/investigation/trace_turn_forensics.py <hg_session_id> round <hg_round_id> [--json]
+python tools/investigation/trace_turn_forensics.py <hg_session_id> turn <continuity_turn_index> [--json]
+python tools/investigation/trace_turn_forensics.py <hg_session_id> entry <entry_id> [--json]
+python tools/investigation/trace_turn_forensics.py <hg_session_id> tag <tag_id> [--json]
+```
+
+**Commit view** (`commit`): what durable evidence belongs to or derives from one committed Character turn (`domain_commit_id`). Execution-evidence attempts explicitly correlated to another commit in the same round are excluded. Commit view includes execution evidence explicitly correlated to the queried commit; execution evidence without a commit correlation remains available through round view and is not attributed to a commit by inference.
+
+**Round view** (`round`): what happened throughout one orchestration round (`hg_round_id`), including pre-commit Director/participation attempts and execution evidence that lacks a `domain_commit_id`. Multi-commit rounds preserve committed-turn sequence in `resolved.domain_commit_ids`, and Plot Cognition specialist handoffs expose one `commit <domain_commit_id>` command per resolved commit in that order.
+
+The CLI emits `hg_turn_investigator_v1` JSON with authority-labelled `surfaces[]`, `limitations[]`, `conflicts[]`, and specialist `handoffs[]`. It does **not** create durable artifacts or arbitrate between authorities.
+
+**Specialist follow-up (delegate detail, do not replace):**
+
+| Need | Tool |
+|------|------|
+| NI / S4 / mediation lineage | `trace_ni_forensics.py` |
+| Execution-evidence role chains / citations | `list_execution_evidence.py` |
+| Plot Cognition chronicle detail | `trace_plot_cognition_forensics.py` |
+| Human audit tag drill-down | `list_audit_tags.py --tag <id> --trace` |
+
+Durable round reconstruction uses persisted `rp_history` and execution-evidence indexes — not transient `LiveSession.rounds[]` runtime bookkeeping.
+
 ### Issue #51 committed-occurrence evidence join recipe
 
 Reconstruct promoted occurrence semantics without a duplicate #51 audit log:

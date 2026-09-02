@@ -56,7 +56,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Storyteller live round integration (#32 S3c, Model A) | `hg-round-orchestrator/service.mjs` round-start cognition; Host bind + Director/Character S3b injection; commit invalidates before Narrator (no live Narrator Storyteller lanes) |
 | Commit / continuity not updating | Host `commit_move_transaction.py` (`execute_commit_move`); `kernel.py` façade; `continuity_manager.py` (`process_turn`), `continuity_mutation_pipeline.py` |
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
-| Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
+| Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/trace_turn_forensics.py` (unified navigator, #101); `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
 | Scenario validation | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); `progression_simulation_scenarios.py`; `v2/domain/tests/`; `v2/rp_runtime/tests/` |
 | Prompt wording only (after ruling out state) | `prompt_builders.py` |
 

@@ -1,0 +1,30 @@
+{
+  "session_id": "hg-session-no-evidence",
+  "metadata": {
+    "continuity_state": {
+      "turn_metadata_by_index": {
+        "1": {}
+      },
+      "public_events": []
+    },
+    "v2_host_state": {
+      "commit_ids": ["commit-no-ev-1"],
+      "memory_scope_id": "scope-missing",
+      "plot_cognition_scope_id": "scope-missing",
+      "rp_history": [
+        {
+          "entry_id": "entry-committed-no-ev",
+          "kind": "committed_turn",
+          "content": "Committed without evidence store.",
+          "hg_round_id": "round-no-ev",
+          "domain_commit_id": "commit-no-ev-1",
+          "sequence_index": 1,
+          "metadata": {
+            "continuity_turn_index": 1
+          }
+        }
+      ],
+      "librarian_proposal_audit_log": []
+    }
+  }
+}
