@@ -52,7 +52,16 @@ Parent program **#33** is closed; accepted architecture is authoritative on chil
 
 Character knowledge (#38): DSH **`runCharacterKnowledgeCognition`** → orientation → Character KAR → Librarian **`contextual_semantic`** → **`librarian_*`** manifest lanes via **`map_librarian_bundle_to_contributions`**. Character orientation sees full pre-Librarian upstream context; epistemic boundaries (`bound_character_id`, `known_by` hard access, viewer/subject binding) prevent hidden-knowledge leakage; **`deterministic_fallback`** is packaging-ineligible for Character. Director receives authoritative continuity projections/digests plus Storyteller advisory while the round-local package is valid. Character receives bounded Storyteller advisory (scoped) plus identity/scene/relationship lanes while valid. Authoritative Character commit invalidates the Storyteller package; Narrator then renders from committed move and authoritative scene context **without** Storyteller lanes in the normal flow. Librarian bundles also reach live rounds through the Storyteller cognition path (#32 S3c).
 
-**Live post-commit S4 (#39):** on every successful Character commit, DSH runs Narrator presentation and Librarian **`runLibrarianProposalGeneration`** in parallel from the same commit, then **joins** the Librarian branch (finalize + persist + terminal audit) before the next **`getEligibleActors`** / Director cycle—including multi-commit rounds (per-commit join, not round-end only). Host finalize paths persist authoritative session state and **`librarian_proposal_audit_log`** under per-session locks. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md).
+**Live post-commit S4 (#39, authority contract #100):** on every successful Character commit, DSH runs Narrator presentation and Librarian **`runLibrarianProposalGeneration`** in parallel from the same commit, then **joins** the Librarian branch (finalize + persist + terminal audit) before the next **`getEligibleActors`** / Director cycle—including multi-commit rounds (per-commit join, not round-end only). Host finalize paths persist session state and **`librarian_proposal_audit_log`** under per-session locks; this is a **second persistence seam** after normal `commit_move`, not a second unrestricted turn-commit authority.
+
+**S4 durable mutation allowlist** (normative detail: [architecture-overview.md](../governance/sources/architecture-overview.md) → Continuity mutation authority seams; machine-readable: `S4_DURABLE_MUTATION_SURFACES_BY_KIND`, `S4_DURABLE_MUTATION_SURFACES`, and `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
+
+| Surface | Proposal kind |
+|---------|---------------|
+| `PublicEvent.revelation_significance_by_character` | `knowledge_revelation_significance` |
+| `ContinuityManager.issue_pressure_semantic_overlays` | `issue_tension_pressure` |
+
+S4 **must not** modify `turn_counter`, authoritative `IssueState`, or `known_by`. `consequence_meaning` and `information_salience` remain accepted audit-only kinds without durable Continuity mutation. At-most-once: terminal audit per `domain_commit_id` via `find_terminal_audit_for_commit`. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md).
 
 **Future option (not implemented):** bounded post-commit Storyteller refresh (`material_commit_refresh`) could later activate the validated S3b Narrator mapper; not required for #32 completion.
 
