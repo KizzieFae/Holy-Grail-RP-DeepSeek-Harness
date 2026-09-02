@@ -71,6 +71,16 @@ S4B_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
     }
 )
 
+# Issue #100 — positive S4 durable mutation allowlist (contract/test declaration).
+# S4 may durably mutate only these Continuity-derived surfaces unless Governance
+# explicitly expands the envelope. Not consumed by runtime apply paths in #100.
+S4_DURABLE_MUTATION_SURFACES: frozenset[str] = frozenset(
+    {
+        "public_event.revelation_significance_by_character",
+        "manager.issue_pressure_semantic_overlays",
+    }
+)
+
 _CONSEQUENCE_TAGS = frozenset(
     {
         "advancement",

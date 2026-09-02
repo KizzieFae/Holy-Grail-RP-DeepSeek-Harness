@@ -1,7 +1,11 @@
 """Continuity validation boundary for Librarian semantic proposals (#34 S4a).
 
-Non-fatal accept/reject decisions. S4a proves the proposal seam without migrating
-existing heuristic-driven Continuity behavior or applying durable mutations.
+Non-fatal accept/reject decisions at the Continuity validation boundary.
+``evaluate_librarian_proposal_batch`` accepts or rejects proposals; durable
+derived-state mutations for sanctioned kinds are delegated to
+``continuity_librarian_knowledge_significance`` and
+``continuity_librarian_issue_pressure`` via ``apply_accepted_librarian_proposals``
+(see ``S4B_MUTATING_PROPOSAL_KINDS`` in ``librarian_proposal_contract``).
 """
 
 from __future__ import annotations
