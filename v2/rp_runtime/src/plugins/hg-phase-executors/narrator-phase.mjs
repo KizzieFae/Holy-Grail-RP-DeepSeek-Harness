@@ -175,6 +175,8 @@ export async function runNarratorPhase({
   let lastFailureReason = 'narrator presentation failed';
   let lastInferenceOutcome = 'inference_error';
   let lastEvidenceId = null;
+  let lastInferenceTrace = null;
+  let lastInferenceSessionId = null;
   let correctionContext = null;
   let semanticEvalPassIndex = 0;
   let responseIndex = 0;
@@ -353,6 +355,12 @@ export async function runNarratorPhase({
         },
       });
       lastEvidenceId = narratorRun.evidenceId ?? lastEvidenceId;
+      if (narratorRun.trace) {
+        lastInferenceTrace = narratorRun.trace;
+      }
+      if (narratorRun.inferenceSessionId) {
+        lastInferenceSessionId = narratorRun.inferenceSessionId;
+      }
 
       if (narratorRun.failed) {
         finishKindRaw = narratorRun.trace?.finish?.kind ?? null;
@@ -794,7 +802,8 @@ export async function runNarratorPhase({
         error,
         FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
       );
-      recordAttemptEvidence({
+      const boundaryThrowBeforeInference = !narratorRun;
+      const recordedEvidenceId = recordAttemptEvidence({
         recorder,
         evidenceId: narratorRun?.evidenceId ?? null,
         hgSessionId,
@@ -836,6 +845,13 @@ export async function runNarratorPhase({
             stage: 'run_ephemeral_inference',
           },
       });
+      if (boundaryThrowBeforeInference) {
+        lastInferenceTrace = null;
+        lastInferenceSessionId = null;
+        lastEvidenceId = recordedEvidenceId ?? null;
+      } else if (recordedEvidenceId) {
+        lastEvidenceId = recordedEvidenceId;
+      }
       if (retry.retryDecision === 'retry') {
         responseIndex += 1;
         continue;
@@ -862,6 +878,8 @@ export async function runNarratorPhase({
     presentation_failed: true,
     inference_outcome: lastInferenceOutcome,
     presentation_failure_reason: lastFailureReason,
+    narrator_inference_trace: lastInferenceTrace,
+    narrator_inference_session_id: lastInferenceSessionId,
     narrator_evidence_id: lastEvidenceId,
     terminal_disposition: 'committed_fallback',
   };

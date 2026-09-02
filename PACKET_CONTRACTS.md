@@ -30,6 +30,38 @@ For runtime behavior and guardrails, see [docs/architecture.md](./docs/architect
 
 ---
 
+## DSH round result — `role_inference_summary` (#94)
+
+**Authority:** Ephemeral **round-result projection** returned by `hg-round-orchestrator` (`runRound`). **Not** durable forensic evidence. Full attempt chains, semantic QA passes, rejected candidates, and participation-direct records remain authoritative in `data/execution_evidence/` (see [docs/rp-data-layout.md](./docs/rp-data-layout.md)).
+
+Replaces the former nullable `role_inference_traces` trace-or-null map, which conflated intentional bypass, degraded fallback, and failure-before-inference.
+
+### Scope (most recent role activity)
+
+Each scalar `role_inference_summary.<role>` entry describes the **most recent invocation/activity of that role within the round** — not a whole-round aggregate history. When the same role acts multiple times in one round (for example Director inference on an earlier turn followed by participation-direct on a later turn), the summary reflects **only the latest activity**. Earlier inference for that role remains reconstructable from durable execution evidence and relevant `scene_events` (`hg/director-*`, `hg/participation-decision`, etc.).
+
+The legacy top-level round field `director_inference_session_id` retains the **last Director inference session id observed during the round** when provider inference ran. It is **not** guaranteed to match `role_inference_summary.director.inference_session_id`, which belongs to the most recent Director activity represented by the summary (null when the latest activity was a bypass).
+
+### Per-role entry (`director` | `character` | `narrator`)
+
+| Field | Meaning |
+|-------|---------|
+| `inference_execution` | Provider inference only: `not_executed` \| `attempted` \| `completed`. `not_executed` = no provider invocation for the summarized activity. `attempted` = invocation occurred but did not produce a normally completed inference result (trace may be null on inference-boundary throws). `completed` = normally completed provider inference result — downstream validation/selection/commit/presentation may still fail. |
+| `phase_outcome` | Orchestration resolution only: `not_reached` \| `bypassed` \| `succeeded` \| `degraded` \| `failed`. |
+| `inference_trace` | Bounded `extractInferenceTrace` result for the **final inference attempt of the summarized activity**, or `null` when `inference_execution === not_executed` or when no truthful trace object exists for an `attempted` boundary throw. |
+| `inference_session_id` | DSH session id for that same final attempt, or `null`. |
+| `evidence_id` | Final-attempt durable evidence id when enabled, or `null`. When present, must identify the attempt represented by the summary — never a superseded earlier attempt. |
+
+**Rules**
+
+- Do **not** treat a non-null `inference_trace` as proof of phase success.
+- Participation-direct Director (most recent activity): `not_executed` + `bypassed` + null trace/session (#28 durable `role: participation` remains authoritative).
+- Narrator terminal fallback: `degraded`; when the final provider invocation completed normally, populate last-attempt trace/session/evidence; when the final invocation threw before trace assembly, use `attempted` with null trace/session and final-attempt `evidence_id` when durable evidence exists; when failure occurred before any provider invocation, `not_executed` with null trace.
+- Never carry a prior attempt's trace/session/evidence forward when the summary describes a later final attempt.
+- Roles whose phase never ran in the round: `not_reached`.
+
+---
+
 ## Knowledge mediation architecture (#33 — target vs current)
 
 Parent program **#33** closed with accepted child architecture on **#31** Retrieval, **#34** Librarian, and **#32** Storyteller. **#31**, **#34**, and **#32** core seams are implemented and validated in production runtime. **#38** retired the legacy Character **`KnowledgeService.project_context`** manifest lane; Character knowledge is Librarian-mediated under per-character epistemic boundaries.

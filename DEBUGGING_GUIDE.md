@@ -116,7 +116,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 - **Production authority** — bounded Character semantic evaluation (#19): `character-semantic-evaluation.mjs`, DSH `character-phase.mjs` (soft finding, max one challenge; residual soft does not block)
 - **Not a deterministic hard gate** — `response_validation_content.py` / `validate_bot_response_for_runtime` enforces objective contracts only (#18)
 - **Retry behavior** — DSH character phase attempt loop (unified candidate budget) + Host `validate_move` for objective failures
-- **Evidence** — execution evidence; Character: `list_execution_evidence.py --dimension R11`; Director/Narrator QA: `--chain director|narrator --round <id> --summary`; Narrator F1 fidelity retry drill-down: [docs/audit-workflows.md](./docs/audit-workflows.md) → Narrator F1 fidelity retry; participation-direct: `--chain participation --round <id>`
+- **Evidence** — execution evidence; Character: `list_execution_evidence.py --dimension R11`; Director/Narrator QA: `--chain director|narrator --round <id> --summary`; Narrator F1 fidelity retry drill-down: [docs/audit-workflows.md](./docs/audit-workflows.md) → Narrator F1 fidelity retry; participation-direct: `--chain participation --round <id>`; ephemeral round summary: `role_inference_summary` on `runRound` result (see [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md) — null inference data means inference did not run, not merely that the phase degraded)
 
 ### Knowledge leaks / wrong “who knows what”
 

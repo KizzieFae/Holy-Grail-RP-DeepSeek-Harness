@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createTestSession, fetchSessionState, startDomainApi } from './helpers/domain-api.mjs';
+import { startDomainApi } from './helpers/domain-api.mjs';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { deepseekInferenceProfile } from '../src/lib/inference-profile.mjs';
@@ -20,6 +20,17 @@ const EVALUATOR_PROFILE = deepseekInferenceProfile({
 
 function findEvent(events, type) {
   return events.find((event) => event.type === type) ?? null;
+}
+
+function assertProviderWhenTracePresent(roleSummary) {
+  if (roleSummary.inference_trace) {
+    assert.equal(roleSummary.inference_trace.provider, 'deepseek-official');
+    assert.ok(roleSummary.inference_trace.manifest_id);
+    assert.ok(roleSummary.inference_session_id);
+  } else {
+    assert.equal(roleSummary.inference_execution, 'not_executed');
+    assert.equal(roleSummary.inference_session_id, null);
+  }
 }
 
 test('real full round: Director → Character → commit → Narrator on DSH DeepSeek', {
@@ -70,17 +81,39 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
     assert.ok(result.presentation_rendered || result.presentation_text);
   }
 
-  const traces = result.role_inference_traces;
-  assert.equal(traces.director?.provider, 'deepseek-official');
-  assert.equal(traces.character?.provider, 'deepseek-official');
-  assert.equal(traces.narrator?.provider, 'deepseek-official');
-  assert.ok(traces.director?.manifest_id);
-  assert.ok(traces.character?.manifest_id);
-  assert.ok(traces.narrator?.manifest_id);
+  const summary = result.role_inference_summary;
+  const participation = findEvent(events, 'hg/participation-decision');
+
+  if (participation?.data?.participation?.selection_mode === 'direct') {
+    assert.equal(summary.director.phase_outcome, 'bypassed');
+    assert.equal(summary.director.inference_execution, 'not_executed');
+    assert.equal(summary.director.inference_trace, null);
+    assert.equal(summary.director.inference_session_id, null);
+  } else {
+    assert.equal(summary.director.phase_outcome, 'succeeded');
+    assert.notEqual(summary.director.inference_execution, 'not_executed');
+    assertProviderWhenTracePresent(summary.director);
+    assert.ok(findEvent(events, 'hg/director-accepted') || findEvent(events, 'hg/director-proposed'));
+  }
+
+  assert.equal(summary.character.phase_outcome, 'succeeded');
+  assert.notEqual(summary.character.inference_execution, 'not_executed');
+  assertProviderWhenTracePresent(summary.character);
+
+  if (narratorCompleted) {
+    assert.equal(summary.narrator.phase_outcome, 'succeeded');
+    assert.notEqual(summary.narrator.inference_execution, 'not_executed');
+    assertProviderWhenTracePresent(summary.narrator);
+  } else {
+    assert.equal(summary.narrator.phase_outcome, 'degraded');
+    assertProviderWhenTracePresent(summary.narrator);
+    if (summary.narrator.inference_execution === 'not_executed') {
+      assert.equal(summary.narrator.inference_trace, null);
+    }
+  }
 
   assert.ok(findEvent(events, 'hg/round-started'));
-  assert.ok(findEvent(events, 'hg/participation-decision'));
-  assert.ok(findEvent(events, 'hg/director-accepted') || findEvent(events, 'hg/director-proposed'));
+  assert.ok(participation);
   assert.ok(findEvent(events, 'hg/move-committed'));
   assert.ok(findEvent(events, 'hg/round-completed'));
 
@@ -95,11 +128,12 @@ test('real full round: Director → Character → commit → Narrator on DSH Dee
   assert.ok(result.round_timing_ms.total > 0);
   assert.equal(result.boundary_metrics.calls.length > 0, true);
 
-  const inferenceSessions = new Set([
-    result.director_inference_session_id,
-    result.character_inference_session_id,
-    result.narrator_inference_session_id,
-  ].filter(Boolean));
-  assert.equal(inferenceSessions.size, 3, 'expected three distinct inference sessions');
-  assert.notEqual(result.dsh_scene_session_id, result.director_inference_session_id);
+  const inferenceSessions = [
+    summary.director.inference_session_id,
+    summary.character.inference_session_id,
+    summary.narrator.inference_session_id,
+  ].filter(Boolean);
+  assert.equal(new Set(inferenceSessions).size, inferenceSessions.length);
+  assert.ok(inferenceSessions.length >= 2, 'expected at least character and narrator inference sessions');
+  assert.notEqual(result.dsh_scene_session_id, summary.director.inference_session_id);
 });
