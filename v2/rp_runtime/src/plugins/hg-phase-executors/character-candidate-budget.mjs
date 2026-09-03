@@ -1,13 +1,14 @@
 /** Unified Character candidate budget (#19). */
 
-export const CHARACTER_CANDIDATE_CEILING = 3;
+import {
+  LIVE_CANDIDATE_CEILING,
+  clampLiveCandidateLimit,
+} from '../../lib/phase-execution-policy.mjs';
+
+export const CHARACTER_CANDIDATE_CEILING = LIVE_CANDIDATE_CEILING;
 
 export function characterCandidateLimit(liveMaxAttempts = 3) {
-  const configured = Number(liveMaxAttempts ?? CHARACTER_CANDIDATE_CEILING);
-  if (!Number.isFinite(configured) || configured < 1) {
-    return 1;
-  }
-  return Math.min(configured, CHARACTER_CANDIDATE_CEILING);
+  return clampLiveCandidateLimit(liveMaxAttempts);
 }
 
 export function createCandidateBudgetState(liveMaxAttempts = 3) {

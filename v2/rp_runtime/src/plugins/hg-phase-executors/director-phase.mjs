@@ -16,8 +16,7 @@ import {
 import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
-
-const EVAL_INFRA_RETRIES = 1;
+import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
 
 function buildCandidateSnapshot({
   proposed,
@@ -317,7 +316,7 @@ export async function runDirectorPhase({
       const evaluationPassId = `${directorInferenceId}-qa-${semanticEvalPassIndex}`;
       semanticEvalPassIndex += 1;
       let evalOutcome = null;
-      for (let evalInfra = 0; evalInfra <= EVAL_INFRA_RETRIES; evalInfra += 1) {
+      for (let evalInfra = 0; evalInfra <= SEMANTIC_EVAL_INFRA_RETRIES; evalInfra += 1) {
         evalOutcome = await runDirectorSemanticEvaluation({
           api,
           runEphemeralInference,

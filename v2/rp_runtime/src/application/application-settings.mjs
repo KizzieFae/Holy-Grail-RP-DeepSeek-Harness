@@ -35,6 +35,8 @@ export const DEFAULT_RUNTIME_SETTINGS = {
   inferenceMode: 'live',
   roleRouting: 'simple',
   model: HG_DEEPSEEK_DEFAULT_MODEL,
+  // Upper-bound input for live Character/Director candidate generation. Those phases
+  // apply a shared effective ceiling of 3; values above 3 do not increase candidate budgets.
   liveMaxAttempts: 5,
 };
 

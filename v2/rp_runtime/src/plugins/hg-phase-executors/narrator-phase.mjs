@@ -28,9 +28,9 @@ import {
   FORENSIC_BOUNDARIES,
   NARRATOR_FAILURE_CLASSES,
 } from '../../lib/narrator-forensic-attribution.mjs';
+import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
 
 const MAX_NARRATOR_ATTEMPTS = 2;
-const EVAL_INFRA_RETRIES = 1;
 
 function attemptInferenceId(baseId, attemptIndex) {
   return attemptIndex === 0 ? baseId : `${baseId}-retry-${attemptIndex}`;
@@ -560,7 +560,7 @@ export async function runNarratorPhase({
       const evaluationPassId = `${narratorInferenceId}-qa-${semanticEvalPassIndex}`;
       semanticEvalPassIndex += 1;
       let evalOutcome = null;
-      for (let evalInfra = 0; evalInfra <= EVAL_INFRA_RETRIES; evalInfra += 1) {
+      for (let evalInfra = 0; evalInfra <= SEMANTIC_EVAL_INFRA_RETRIES; evalInfra += 1) {
         evalOutcome = await runNarratorSemanticEvaluation({
           api,
           runEphemeralInference,
