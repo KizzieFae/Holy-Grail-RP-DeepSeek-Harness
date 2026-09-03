@@ -19,7 +19,7 @@ ensure_domain_paths()
 
 from domain.modules.continuity_state_public_event import PublicEvent  # noqa: E402
 from domain.modules.continuity_state_scene import ScenePhase  # noqa: E402
-from domain.modules.prompt_builders import build_narrator_render_prompt  # noqa: E402
+from domain.modules.narrator_render_instruction import build_narrator_render_prompt  # noqa: E402
 from domain_api.contract import (  # noqa: E402
     CommitRequest,
     ContextPrepareRequest,
