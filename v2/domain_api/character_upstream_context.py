@@ -17,16 +17,6 @@ from .session_state import LiveSession, RoundFixture
 from .storyteller_round_packaging import storyteller_contributions_for_consumer
 
 
-LEGACY_CHARACTER_KNOWLEDGE_SOURCE_KINDS = frozenset(
-    {
-        "authored_character_knowledge",
-        "scene_reference",
-        "learned_world_knowledge",
-        "user_profile",
-    }
-)
-
-
 @dataclass(frozen=True)
 class CharacterUpstreamContext:
     contributions: tuple[PromptContribution, ...]

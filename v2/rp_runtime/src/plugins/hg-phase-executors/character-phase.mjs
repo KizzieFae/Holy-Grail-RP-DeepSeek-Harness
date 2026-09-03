@@ -19,10 +19,10 @@ import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
 import { runCharacterProjectionLifecycle } from './plot-cognition-character-projection.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
+import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
 const CHAR_INFRA_RETRIES = 1;
-const EVAL_INFRA_RETRIES = 1;
 
 async function runCharacterInferenceWithInfraRetry({
   api,
@@ -349,7 +349,7 @@ export async function runCharacterPhase({
       const evaluationPassId = `${characterInferenceId}-eval-${semanticEvalPassIndex}`;
       semanticEvalPassIndex += 1;
       let evalOutcome = null;
-      for (let evalInfra = 0; evalInfra <= EVAL_INFRA_RETRIES; evalInfra += 1) {
+      for (let evalInfra = 0; evalInfra <= SEMANTIC_EVAL_INFRA_RETRIES; evalInfra += 1) {
         evalOutcome = await runSemanticEvaluation({
           api,
           runEphemeralInference,

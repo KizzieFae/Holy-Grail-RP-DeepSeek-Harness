@@ -1,13 +1,14 @@
 /** Director selection attempt budget (#26). */
 
-export const DIRECTOR_SELECTION_CEILING = 3;
+import {
+  LIVE_CANDIDATE_CEILING,
+  clampLiveCandidateLimit,
+} from '../../lib/phase-execution-policy.mjs';
+
+export const DIRECTOR_SELECTION_CEILING = LIVE_CANDIDATE_CEILING;
 
 export function directorSelectionLimit(liveMaxAttempts = 3) {
-  const configured = Number(liveMaxAttempts ?? DIRECTOR_SELECTION_CEILING);
-  if (!Number.isFinite(configured) || configured < 1) {
-    return 1;
-  }
-  return Math.min(configured, DIRECTOR_SELECTION_CEILING);
+  return clampLiveCandidateLimit(liveMaxAttempts);
 }
 
 export function createDirectorSelectionBudget(liveMaxAttempts = 3) {
