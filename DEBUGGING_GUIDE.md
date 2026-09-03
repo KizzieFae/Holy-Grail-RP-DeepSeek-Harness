@@ -26,7 +26,7 @@ Aligned with `docs/architecture.md` and `docs/audit-workflows.md`:
 7. **Validation boundaries** — Parsing, presence, drift, selection (`response_validation_*.py`); Host `validate_move` / `validate_director_decision`
 8. **Memory layer (prompt read path)** — Episodic sections: `memory_layer/retrieval.py` and Host memory services
 9. **Director** — Selection policy and prompts when evidence points here (Host prepare + DSH director phase + `prompt_builders.py`)
-10. **Narrator** — Prose polish; dialogue must stay verbatim (DSH `narrator-phase.mjs`, `prompt_builders.py`)
+10. **Narrator** — Prose polish; dialogue must stay verbatim (DSH `narrator-phase.mjs`, `narrator_context.py` manifest assembly, `narrator_render_instruction.py` render-instruction formatting)
 
 ---
 
@@ -73,7 +73,7 @@ Use [MODULE_INDEX.md](./MODULE_INDEX.md) for file-level routing. **Orchestration
 | `grounding` | SETTLED SCENE FACTS / BINDING CONSTRAINTS wrong vs continuity | `scene_grounding.py`, `continuity_context_projector.py`, `prompt_builders.py` |
 | `perception` | Wrong knowledge boundary in prompts | `perception_audibility.py`, Host projector, `prompt_builders.py` |
 | `memory` | Episodic or retrieved bundle wrong given continuity | `memory_layer/`, Host `memory_service.py` / `retrieval_selection.py` — see also **Narrative intelligence routing** below for #31–#34 semantic paths |
-| `rendering` | Prose garble, dialogue not verbatim in presented output | DSH `narrator-phase.mjs`, `prompt_builders.py` |
+| `rendering` | Prose garble, dialogue not verbatim in presented output | DSH `narrator-phase.mjs`, `narrator_context.py`, `narrator_render_instruction.py` |
 | `audit_simulation` | Wrong or missing traces, harness, metrics | DSH `hg-trace-emitter`; Host `session_history.py`; `v2/rp_runtime/tests/`; [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | `application_infrastructure` | Encoding, UI shell, session I/O, loader/path mechanics | `v2/ui/streamlit_app.py`, Host `session_repository.py` / `session_setup.py`, `session_manager.py`, env/paths |
 | `other` | Only per **§F** | [governance/sources/issue-tracking-workflow.md](./governance/sources/issue-tracking-workflow.md) **§F** |

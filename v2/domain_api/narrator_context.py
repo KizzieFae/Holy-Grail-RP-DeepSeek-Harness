@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from perception_audibility_structured import redact_structured_move_for_orchestration
-from prompt_builders import build_narrator_render_prompt
+from narrator_render_instruction import build_narrator_render_prompt
 
 from .context_substrate import auth_projections_to_contributions, semantic_correction_contribution
 from .continuity_context_projector import project_authoritative_context

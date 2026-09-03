@@ -35,7 +35,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Character move parse / unresolved placeholders / move-shape | domain `response_validation_parsing.py`, `response_validation_content.py` (`validate_bot_response_for_runtime`); Host `kernel.py` (`validate_move`); DSH `character-phase.mjs` |
 | Presence / exit / `must_remain` | `response_validation_presence.py` (`get_must_remain_characters`), `scene_template.py`, `scene_template_cohesion.py` |
 | Voice / drift / semantic prose quality (pre-publication) | DSH `character-phase.mjs`, `character-semantic-evaluation.mjs`; Host `semantic_evaluation_context.py`, `kernel.prepare_semantic_evaluation_context`; domain anchors in `character_state_model.py`, cards in `data/characters/` |
-| Wrong prompt / missing context | Host `continuity_context_projector.py`, role context modules (`director_context.py`, `character_context.py`, `narrator_context.py`, `opening_context.py`, `narrator_environment_context.py`, `context_substrate.py`, `storyteller_round_packaging.py`), `kernel.py` (`prepare_*` façades); Character Librarian path: `character_upstream_context.py`, `character_service.py`, `character-cognition-substrate.mjs`; domain `prompt_builders.py`; DSH `src/plugins/hg-context-bridge/` (transport only) |
+| Wrong prompt / missing context | Host `continuity_context_projector.py`, role context modules (`director_context.py`, `character_context.py`, `narrator_context.py`, `opening_context.py`, `narrator_environment_context.py`, `context_substrate.py`, `storyteller_round_packaging.py`), `kernel.py` (`prepare_*` façades); Character Librarian path: `character_upstream_context.py`, `character_service.py`, `character-cognition-substrate.mjs`; legacy Character/Director prompt text in `prompt_builders.py`; Narrator render-instruction formatting in `narrator_render_instruction.py`; DSH `src/plugins/hg-context-bridge/` (transport only) |
 | Model / provider routing | DSH `src/lib/inference-profile.mjs`, `src/lib/mount-deepseek-provider.mjs`; settings surface `src/application/application-settings.mjs` |
 | Stale issues / events / knowledge boundaries | `continuity_manager.py`, `continuity_issue_helpers.py`, `continuity_knowledge_helpers.py`, `perception_audibility.py` |
 | Whisper / private line known to the wrong character | `perception_audibility.py` (Character structured-move path), `perceptual_visibility_projection.py`, `player_perceptual_service.py`, Host `session_history.py` / `character_conversation_projection.py` |
@@ -58,7 +58,7 @@ Node calls the Domain Host over HTTP. Python does not call DSH. `HgContextBridge
 | Audit / trace missing | DSH `src/plugins/hg-trace-emitter/`; Host `session_history.py`; procedure [docs/audit-workflows.md](./docs/audit-workflows.md) |
 | Forensic execution evidence / actor selection / semantic QA chain | `tools/investigation/trace_turn_forensics.py` (unified navigator, #101); `tools/investigation/list_execution_evidence.py`; `v2/rp_runtime/src/lib/execution-evidence/`; [docs/rp-data-layout.md](./docs/rp-data-layout.md) (#28) |
 | Scenario validation | [SCENARIO_VALIDATION_FRAMEWORK.md](./SCENARIO_VALIDATION_FRAMEWORK.md); `progression_simulation_scenarios.py`; `v2/domain/tests/`; `v2/rp_runtime/tests/` |
-| Prompt wording only (after ruling out state) | `prompt_builders.py` |
+| Prompt wording only (after ruling out state) | Character/Director legacy text: `prompt_builders.py`; Narrator live manifest assembly: `narrator_context.py`; Narrator render-instruction formatting: `narrator_render_instruction.py` |
 
 ---
 
@@ -134,7 +134,8 @@ Validators **reject or annotate**. They do not replace Director selection or con
 | `character_state_model.py` | Per-character state schema / identity prompt text | |
 | `character_state_manager.py` | Update goals, emotions, relationships | |
 | `session_manager.py` | Save/load JSON sessions, `_session_index.json` | Used by Host `SessionRepository`; not a Streamlit lifecycle module |
-| `prompt_builders.py` | Structured prompt **text** for Director / character / Narrator | Inputs assembled by Host projector |
+| `prompt_builders.py` | Legacy structured prompt **text** for Director / character (reference paths) | Live Character/Director manifests use Host context modules |
+| `narrator_render_instruction.py` | Narrator `inference_instruction` render text from prepared inputs | Called from `narrator_context.py`; visibility schema from `narrative_visibility_prompt.py` |
 | `narrator_presentation_validation.py` | Deterministic Narrator F1/F2 speech fidelity | Host `validate_narrator_presentation`; runtime acceptance gate (#24) |
 
 ---
