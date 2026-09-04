@@ -5,6 +5,7 @@ import {
   manifestFromPlotCognitionUpdatePrepare,
   parsePlotCognitionUpdateInference,
 } from './plot-cognition-update-envelope.mjs';
+import { modelProfileForInferenceKind } from '../application/application-settings.mjs';
 import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
 
 /**
@@ -48,6 +49,11 @@ export async function runPlotCognitionUpdateGeneration({
   const updateInferenceId = `${inferenceId}-plot-update`;
   const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
 
+  const resolvedModelProfile = modelProfileForInferenceKind(
+    modelProfile,
+    'plot_cognition_update',
+  );
+
   const inference = await runInferenceWithContractCorrection({
     runEphemeralInference,
     primaryInferenceId: updateInferenceId,
@@ -59,7 +65,7 @@ export async function runPlotCognitionUpdateGeneration({
     parseContext: prepareResponse,
     manifest,
     mockResponses: mockList,
-    modelProfile,
+    modelProfile: resolvedModelProfile,
     evidenceContextBase: {
       ...evidenceContextBase,
       schema: PLOT_COGNITION_UPDATE_INFERENCE_SCHEMA,
