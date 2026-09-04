@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "ec33c95a-8c01-4f78-8cfa-b42299795f67",
+  "correlation": {
+    "evidence_id": "ec33c95a-8c01-4f78-8cfa-b42299795f67",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-ae49f9d3-d8c5-4a2b-9b01-864b5f7e9c45",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-ae49f9d3-d8c5-4a2b-9b01-864b5f7e9c45",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie smiled and set her cup down. \"I would be disappointed if you had not offered, Ayame-sama.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the player-authored turn decomposed into semantic perceptual units, with each unit mapped back to its exact source text.\n\n**Player Turn Source:**  \n`Kizzie smiled and set her cup down. \"I would be disappointed if you had not offered, Ayame-sama.\"`\n\n---\n\n### Unit 1: Non-Verbal Expression (Facial Cue)\n- **Semantic Content:** Kizzie exhibits a smile, indicating positive emotion, amusement, or approval. This is a visual cue perceptible to the other character.\n- **Source String:** `Kizzie smiled`\n\n---\n\n### Unit 2: Physical Action (Object Manipulation)\n- **Semantic Content:** Kizzie places her cup down onto a surface (likely a table). This is a physical movement, potentially accompanied by a tactile or auditory cue (e.g., the clink of the cup) perceptible to the other character.\n- **Source String:** `set her cup down`\n\n---\n\n### Unit 3: Verbal Utterance (Dialogue)\n- **Semantic Content:** Kizzie speaks directly to Ayame, expressing a conditional sentiment—that she would have felt let down if Ayame had refrained from making the offer in question. The use of the honorific `Ayame-sama` indicates formal or respectful address.\n- **Source String:** `\"I would be disappointed if you had not offered, Ayame-sama.\"`\n\n---\n\n**Source Accounting Note:**  \nThe connective words `and` (linking units 1 and 2) and the terminal period `.` (ending the first sentence) serve as syntactic connectors/punctuation with no independent sensory or perceptual data, and thus are accounted for structurally within the context of the overall turn rather than as standalone semantic percepts.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 70,
+      "outputTokens": 1653,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1292
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:20:12.377Z"
+}

@@ -1,0 +1,156 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+  "correlation": {
+    "evidence_id": "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "hg-round-f11d0e56-296d-4ec0-a96b-3a3799305217",
+    "role": "librarian",
+    "character_id": null,
+    "inference_id": "inf-librarian-0-232604ab-495f-4d74-8e0f-bc8b4dd2a9fa-librarian-proposal-contract-correction",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-inf-librarian-0-232604ab-495f-4d74-8e0f-bc8b4dd2a9fa-librarian-proposal-contract-correction",
+    "manifest_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63",
+    "contribution_ids": [
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-request",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-epistemic",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-envelope",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-catalog"
+    ],
+    "domain_commit_id": "hg-commit-109ce631-5984-4a58-aced-227584cbffe4",
+    "rp_history_entry_id": null,
+    "continuity_turn_index": 10,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": 0,
+    "inference_kind": "librarian_proposal_contract_correction",
+    "parent_inference_id": "inf-librarian-0-232604ab-495f-4d74-8e0f-bc8b4dd2a9fa-librarian-proposal"
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [
+      {
+        "contribution_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-request",
+        "source_kind": "inference_instruction",
+        "authority_class": "derived",
+        "priority": 10,
+        "content": "Post-commit Librarian proposal request (information interpretation only):\n{\n  \"request_id\": \"lpr-1e6489f2-c255-4684-9f51-f67df12a4e63\",\n  \"domain_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n  \"hg_round_id\": \"hg-round-f11d0e56-296d-4ec0-a96b-3a3799305217\",\n  \"turn_index\": 10,\n  \"pipeline_stage\": \"post_commit\",\n  \"audit_reason\": \"post_commit_semantic_interpretation\"\n}"
+      },
+      {
+        "contribution_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-epistemic",
+        "source_kind": "active_constraints",
+        "authority_class": "authoritative",
+        "priority": 10,
+        "content": "Occurrence truth ≠ proposition truth (docs/story-knowledge.md §2). Occurrence/public_event/committed_move anchors prove what was said or occurred; they do NOT establish objective world truth of claims inside dialogue. For knowledge_revelation_significance: set interpretation_scope to utterance_occurrence when marking significance of a claim/utterance without endorsing its proposition; use referenced_authoritative_proposition only when citing proposition_authority_refs to anchors with world_truth_eligible metadata (e.g. scenario_premise). authored_role_private anchors prove private role knowledge alignment only — not sole world truth. derivation_summary is an interpretation note, not proposition authority."
+      },
+      {
+        "contribution_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-envelope",
+        "source_kind": "active_constraints",
+        "authority_class": "authoritative",
+        "priority": 11,
+        "content": "Host visibility/authority envelope (must not be widened):\n{\n  \"viewer_role\": \"host_internal\",\n  \"authority_ceiling_enforced\": \"derived\",\n  \"viewer_character_id\": null,\n  \"subject_character_id\": null,\n  \"session_template_id\": null\n}"
+      },
+      {
+        "contribution_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-catalog",
+        "source_kind": "librarian_knowledge",
+        "authority_class": "derived",
+        "priority": 12,
+        "content": "Bounded post-commit evidence catalog. Proposals MUST cite anchor_id values from this catalog only. Do NOT invent facts or use Storyteller PreservationSignal attention refs as evidence.\n[\n  {\n    \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"evidence_kind\": \"committed_move\",\n    \"stable_ref\": \"commit:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": \"/\",\n    \"content\": \"{\\\"beats\\\": [{\\\"action\\\": \\\"Rises fluidly from her seat, rounds the low table, and stops beside Kizzie, close enough that the edge of her silk robe brushes Kizzie's arm. She looks down at her with a calm, appraising smile.\\\", \\\"type\\\": \\\"action\\\"}, {\\\"dialogue\\\": \\\"Your answer reassures me. But words are a woman's costume—actions are her substance. So before this conversation continues, a small boundary to test your steadiness: from this moment, you will address me as 'Ma'am,' and you will keep your eyes lowered until I bid you look at me. If that unsettles you, say so now, and we will know you are not yet ready for this household.\\\", \\\"type\\\": \\\"speech\\\"}], \\\"motivation\\\": {\\\"emotional_driver\\\": \\\"Anticipation of bending her to a small but concrete token of discipline.\\\", \\\"goal\\\": \\\"Assess whether Kizzie will accept visible submission in the form of address and downcast eyes.\\\", \\\"risk_level\\\": \\\"low\\\", \\\"tactic\\\": \\\"Establish a simple, reversible rule about address and eye contact, giving her a chance to either comply or resist openly.\\\"}, \\\"move_schema_version\\\": 2, \\\"semantic_evaluation\\\": {\\\"decision\\\": \\\"no_covered_change\\\"}}\",\n    \"provenance\": {\n      \"character_id\": \"Ayame\",\n      \"turn_index\": 10,\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n    \"evidence_kind\": \"public_event\",\n    \"stable_ref\": \"event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": \"/public_events/evt_2026-09-04T02:40:30.086922+00:00_8\",\n    \"content\": \"{\\\"event_id\\\": \\\"evt_2026-09-04T02:40:30.086922+00:00_8\\\", \\\"event_type\\\": \\\"decision\\\", \\\"known_by\\\": [\\\"Kizzie\\\", \\\"Ayame\\\"], \\\"observed_by\\\": [\\\"Kizzie\\\", \\\"Ayame\\\"], \\\"revelation_significance_by_character\\\": null, \\\"significance\\\": \\\"pivotal\\\", \\\"summary\\\": \\\"Ayame Rises fluidly from her seat, rounds the low table, and stops beside Kizzie, close enough that the edge of her silk robe brushes Kizzie's arm. She looks down at her with a calm, appraising smile.; said: \\\\\\\"Your answer reassures me. But words are a woman's costume—actions are her substance. So before this conversation continues, a small boundary to test your steadiness: from this moment, you will address me as 'Ma'am,' and you will keep your eyes lowered until I bid you look at me. If that un…\\\", \\\"turn_index\\\": 10}\",\n    \"provenance\": {\n      \"event_id\": \"evt_2026-09-04T02:40:30.086922+00:00_8\",\n      \"turn_index\": 10,\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"scenario_premise:ayame_household_entry_evaluation\",\n    \"evidence_kind\": \"scenario_premise\",\n    \"stable_ref\": \"scenario_premise:ayame_household_entry_evaluation\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": \"/scene_setup/premise\",\n    \"content\": \"{\\\"premise_excerpt\\\": \\\"A desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear.\\\", \\\"template_id\\\": \\\"ayame_household_entry_evaluation\\\"}\",\n    \"provenance\": {\n      \"template_id\": \"ayame_household_entry_evaluation\",\n      \"source\": \"scene_premise\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"scenario_premise\",\n        \"world_truth_eligible\": true,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"scenario_premise\",\n      \"world_truth_eligible\": true,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"authored_role_private:Ayame\",\n    \"evidence_kind\": \"authored_role_private\",\n    \"stable_ref\": \"role_private:Ayame\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"orchestration_only\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": \"/role_private/Ayame\",\n    \"content\": \"{\\\"character_id\\\": \\\"Ayame\\\", \\\"private_knowledge_excerpt\\\": \\\"The host privately engineered the chain of events that cost the applicant her job and apartment, placed the household-help advertisement, and expedited the interview invitation. The host knows the sequence was deliberate: vulnerability and dependence were created, then the applicant was steered toward live-in domestic employment under the host's control.\\\", \\\"role_name\\\": \\\"host\\\"}\",\n    \"provenance\": {\n      \"character_id\": \"Ayame\",\n      \"role_name\": \"host\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"authored_role_private\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"orchestration_only\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"authored_role_private\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"orchestration_only\"\n    }\n  },\n  {\n    \"anchor_id\": \"scene_state:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"evidence_kind\": \"scene_state\",\n    \"stable_ref\": \"scene_state:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"scene_orchestration\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": null,\n    \"content\": \"{\\\"location_id\\\": null, \\\"phase\\\": \\\"rising\\\", \\\"present_characters\\\": [\\\"Ayame\\\", \\\"Kizzie\\\"]}\",\n    \"provenance\": {\n      \"snapshot\": \"post_commit\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"scene_orchestration\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"scene_orchestration\"\n    }\n  },\n  {\n    \"anchor_id\": \"continuity_state:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"evidence_kind\": \"continuity_state\",\n    \"stable_ref\": \"continuity_state:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"orchestration_only\",\n    \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n    \"anchor_path\": null,\n    \"content\": \"{\\\"active_issues\\\": [], \\\"turn_index\\\": 10}\",\n    \"provenance\": {\n      \"snapshot\": \"post_commit\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"orchestration_only\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"orchestration_only\"\n    }\n  }\n]"
+      }
+    ],
+    "user_instruction": {
+      "text": "CONTRACT CORRECTION: Your previous response did not satisfy the required Librarian proposal machine contract.\nPreserve the intended proposal meaning and cited evidence from that response unless satisfying the contract logically requires otherwise.\nCorrect ONLY representation/serialization. Do NOT invent new evidence, anchors, or unrelated proposals.\nOutput JSON only — no markdown, no commentary.\n\nPrevious response:\n{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_kind\": \"consequence_meaning\",\n      \"derivation_summary\": \"Ayame imposes a concrete, reversible rule about address and eye contact, framing it as a test of Kizzie's steadiness; this adds a complication to the interview and escalates tension by forcing an immediate decision about submission.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"tags\": [\"complication\", \"tension_escalation\", \"relationship_shift\"]\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"The directive establishes that Kizzie's willingness to adopt deferential behavior is now central to the evaluation, giving this turn pivotal salience for the outcome of the household entry interview.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"subject_ref\": \"Kizzie\",\n        \"salience_level\": \"pivotal\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"knowledge_revelation_significance\",\n      \"derivation_summary\": \"Ayame's utterance reveals her method of assessing applicants by demanding a visible token of submission, signaling that the household's expectations may differ from ordinary employment terms; the significance is in the challenge presented to Kizzie, not any objective claim about the household.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"event_ref\": \"event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n        \"subject_character\": \"Ayame\",\n        \"revelation_significance_level\": \"major\",\n        \"interpretation_scope\": \"utterance_occurrence\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"issue_tension_pressure\",\n      \"derivation_summary\": \"By imposing a compliance boundary, Ayame creates an immediate unmet condition for Kizzie—she must publicly accept deference—which pressures Kizzie to choose compliance or refusal and thereby shapes the evaluation outcome.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"issue_ref\": \"household_entry_compliance_test\",\n        \"semantic_unmet_condition\": \"Kizzie must agree to the imposed rules of address and eye contact to continue the evaluation.\",\n        \"stakes_summary\": \"Kizzie's acceptance as live-in household help depends on demonstrating submission to the boundary.\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"scenario_premise:ayame_household_entry_evaluation\",\n          \"evidence\n\nStructural validation error: Expected ',' or ']' after array element in JSON at position 4276 (line 87 column 10)\n\nRequired contract:\nYou are the Holy Grail Librarian post-commit semantic interpreter.\nPropose grounded information-level persistence/change candidates ONLY from evidence catalog anchor_id values.\nDo NOT invent facts, authority, or continuity commits.\nDo NOT use Storyteller PreservationSignal or attention refs as evidence.\nOccurrence truth ≠ proposition truth: public_event and committed_move anchors prove what occurred or was said; they do NOT establish objective world truth of claims inside dialogue.\nFor knowledge_revelation_significance:\n- interpretation_scope utterance_occurrence: mark significance of what the Character said/claimed/expressed without endorsing the proposition as world truth. derivation_summary must frame significance of the utterance/claim, not objective ontology.\n- interpretation_scope referenced_authoritative_proposition: connect the occurrence to a proposition that already has independent world authority; cite proposition_authority_refs to catalog anchors with world_truth_eligible metadata (e.g. scenario_premise).\n- authored_role_private anchors support private epistemic alignment only; they cannot be the sole world-truth authority.\nReturn ONLY one JSON object (no markdown fences, no commentary).\n\nRequired top-level JSON object:\n- schema: \"hg_librarian_proposal_result_v1\"\n- proposals: array\n\nEach proposal object MUST include:\n- proposal_kind: one of consequence_meaning | information_salience | knowledge_revelation_significance | issue_tension_pressure\n- derivation_summary: non-empty string\n- confidence: one of confirmed | likely | speculative\n- proposed_payload: object matching proposal_kind (see below)\n- evidence_anchors: non-empty array of objects with anchor_id and evidence_kind from the catalog only\n\nproposed_payload by proposal_kind:\n- consequence_meaning: { tags: non-empty string[] from advancement|complication|revelation|resolution_candidate|relationship_shift|tension_escalation|tension_release }\n- information_salience: { subject_ref: string, salience_level: minor|major|pivotal }\n- knowledge_revelation_significance: { event_ref, subject_character, revelation_significance_level: minor|major|pivotal, interpretation_scope: utterance_occurrence|referenced_authoritative_proposition, proposition_authority_refs?: string[] (required when interpretation_scope=referenced_authoritative_proposition; must cite world_truth_eligible catalog anchors) }\n- issue_tension_pressure: { issue_ref, semantic_unmet_condition, stakes_summary? }\n\nForbidden:\n- Do NOT use field aliases: change_kind, target, type, candidate_id, info_kind — use proposal_kind and proposed_payload.\n- Do NOT use string entries in evidence_anchors — each anchor must be an object.\n- Do NOT omit the top-level schema field.\n- Do NOT use preservation_signal anchors.\n- Do NOT invent anchor_id values outside the evidence catalog.\n\nMinimal example (replace anchor_id with a catalog value such as \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"):\n{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_id\": \"prop-example-1\",\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"Committed move advances scene salience.\",\n      \"confidence\": \"likely\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"subject_ref\": \"commit:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n        \"salience_level\": \"major\"\n      }\n    }\n  ]\n}\n\nRe-emit the result using exactly the required JSON contract."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63",
+    "contribution_ids": [
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-request",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-epistemic",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-envelope",
+      "manifest-lpr-1e6489f2-c255-4684-9f51-f67df12a4e63-catalog"
+    ]
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_kind\": \"consequence_meaning\",\n      \"derivation_summary\": \"Ayame imposes a concrete, reversible rule about address and eye contact, framing it as a test of Kizzie's steadiness; this adds a complication to the interview and escalates tension by forcing an immediate decision about submission.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"tags\": [\"complication\", \"tension_escalation\", \"relationship_shift\"]\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"The directive establishes that Kizzie's willingness to adopt deferential behavior is now central to the evaluation, giving this turn pivotal salience for the outcome of the household entry interview.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"subject_ref\": \"Kizzie\",\n        \"salience_level\": \"pivotal\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"knowledge_revelation_significance\",\n      \"derivation_summary\": \"Ayame's utterance reveals her method of assessing applicants by demanding a visible token of submission, signaling that the household's expectations may differ from ordinary employment terms; the significance is in the challenge presented to Kizzie, not any objective claim about the household.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"event_ref\": \"event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n        \"subject_character\": \"Ayame\",\n        \"revelation_significance_level\": \"major\",\n        \"interpretation_scope\": \"utterance_occurrence\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    },\n    {\n      \"proposal_kind\": \"issue_tension_pressure\",\n      \"derivation_summary\": \"By imposing a compliance boundary, Ayame creates an immediate unmet condition for Kizzie—she must publicly accept deference—which pressures Kizzie to choose compliance or refusal and thereby shapes the evaluation outcome.\",\n      \"confidence\": \"likely\",\n      \"proposed_payload\": {\n        \"issue_ref\": \"household_entry_compliance_test\",\n        \"semantic_unmet_condition\": \"Kizzie must agree to the imposed rules of address and eye contact to continue the evaluation.\",\n        \"stakes_summary\": \"Kizzie's acceptance as live-in household help depends on demonstrating submission to the boundary.\"\n      },\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-109ce631-5984-4a58-aced-227584cbffe4\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T02:40:30.086922+00:00_8\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        },\n        {\n          \"anchor_id\": \"scenario_premise:ayame_household_entry_evaluation\",\n          \"evidence_kind\": \"scenario_premise\",\n          \"anchor_commit_id\": \"hg-commit-109ce631-5984-4a58-aced-227584cbffe4\"\n        }\n      ]\n    }\n  ]\n}",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 4981,
+      "outputTokens": 3661,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 2370
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": {
+    "librarian_proposal": {
+      "batch_id": "hg-librarian-prop-batch-c5c69324-2194-4114-a6b3-07b22c16fb5e",
+      "host_accepted": true,
+      "host_rejection_codes": [],
+      "orchestration_status": "finalized",
+      "continuity_accepted_count": 3,
+      "continuity_rejected_count": 1,
+      "durable_mutation_applied": false,
+      "item_dispositions": [
+        {
+          "proposal_id": "hg-librarian-prop-44741b69-59cc-4e4b-a7b4-d99d9d67ff05",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        },
+        {
+          "proposal_id": "hg-librarian-prop-57fe6785-ad6e-4dfe-82eb-11497db49e7c",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        },
+        {
+          "proposal_id": "hg-librarian-prop-1251dee1-3259-4f82-86be-c69138367d8e",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        },
+        {
+          "proposal_id": "hg-librarian-prop-e722551f-3df8-40c5-946c-784836f27040",
+          "outcome": "reject",
+          "reason_code": "unknown_issue_reference"
+        }
+      ],
+      "proposal_content_hash": "ab5c3fa21a430a57b41438db5029a6ad9bdf627bce99d3e4d033968a1c0ee3c4",
+      "proposal_generation_failure": null,
+      "structural_parse_error": null,
+      "proposal_generation_stage": "contract_correction",
+      "contract_correction_used": true,
+      "contract_lineage": {
+        "correction_used": true,
+        "primary_inference_id": "inf-librarian-0-232604ab-495f-4d74-8e0f-bc8b4dd2a9fa-librarian-proposal",
+        "primary_evidence_id": "2f2d2fc8-e99a-440f-9a7a-4b69276f1fbb",
+        "primary_parse_error": "Expected ',' or ']' after array element in JSON at position 4276 (line 87 column 10)",
+        "correction_inference_id": "inf-librarian-0-232604ab-495f-4d74-8e0f-bc8b4dd2a9fa-librarian-proposal-contract-correction",
+        "correction_evidence_id": "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+        "correction_parse_error": null
+      }
+    }
+  },
+  "associations": {
+    "domain_commit_id": "hg-commit-109ce631-5984-4a58-aced-227584cbffe4",
+    "character_move_evidence_id": "564c8d4a-628b-4a78-b355-52da3e42cfdc"
+  },
+  "evidence_contract": "hg_ni_forensics_v1",
+  "recorded_at": "2026-09-04T02:41:23.135Z",
+  "updated_at": "2026-09-04T02:41:27.744Z"
+}

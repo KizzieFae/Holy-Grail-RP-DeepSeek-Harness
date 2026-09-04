@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "bb94c1bf-d677-4fb3-9f34-e631a626ffb5",
+  "correlation": {
+    "evidence_id": "bb94c1bf-d677-4fb3-9f34-e631a626ffb5",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-4b9633cf-a6b9-4e06-92a0-5cb81943123c-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-4b9633cf-a6b9-4e06-92a0-5cb81943123c-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "596fa261-d661-4db5-a6e5-094202aeff1b",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie looked up to double check the house number and then squared her shoulder to knock on the door."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Based on the player's source text, the turn can be decomposed into the following sequential semantic perceptual units. Each unit captures a distinct action, intention, or perception, with the exact source text cited for complete accounting.\n\n**Unit 1: Visual Target Acquisition (Gaze Elevation)**\n- **Semantic Content:** The character raises her gaze away from her current field of vision, directing it upward to a higher visual target (presumably the building façade).\n- **Source Excerpt:** `\"Kizzie looked up\"`\n\n**Unit 2: Cognitive Verification (Address Confirmation)**\n- **Semantic Content:** The character performs a deliberate mental check against a known or expected parameter (the house number), processing the visual stimulus to confirm she is at the correct location.\n- **Source Excerpt:** `\"to double check the house number\"`\n\n**Unit 3: Postural Realignment (Readiness Adjustment)**\n- **Semantic Content:** The character alters her physical posture by squaring her shoulders. This is a preparatory action, shifting her body into a more aligned, confident, or formal stance.\n- **Source Excerpt:** `\"squared her shoulder\"`\n\n**Unit 4: Tactile Action Initiation (Door Contact)**\n- **Semantic Content:** The character executes a motor action—raising her hand to knock—initiating physical contact with the door surface, with the implied external consequence of producing a sound to announce her presence.\n- **Source Excerpt:** `\"to knock on the door\"`\n\n---\n\n**Temporal/Logical Relations Accounting:**\n\n- **Sequencing (U1 → U3):** The connector `\"and then\"` explicitly links the visual verification block (U1 + U2) to the postural adjustment (U3), indicating strict chronological order.\n- **Purposive Structure (U1 ← U2):** U2 (checking) is the cognitive goal of U1 (looking up); the verbal marker `\"to\"` establishes this instrumental relationship.\n- **Purposive Structure (U3 ← U4):** U4 (knocking) is the intended goal of U3 (squaring shoulders); the verbal marker `\"to\"` establishes this instrumental relationship, suggesting the posture adjustment is performed *in order to* execute the knock.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 66,
+      "outputTokens": 1367,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 897
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T01:31:42.301Z"
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "1d95d906-a4b9-4acb-9a47-40db185a787e",
+  "correlation": {
+    "evidence_id": "1d95d906-a4b9-4acb-9a47-40db185a787e",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-7f91da47-316d-4d0f-b0ba-e07d5489b735-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-7f91da47-316d-4d0f-b0ba-e07d5489b735-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "a33ae087-5836-4ae7-8ed8-25e3ec891f4f",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe looked up. \"I do not know,\" she answered honestly. \"And I imagine that each new challenge is a new question as well. I would like to ay that my steadiness would hold, but the truth it, is probably would not- at first. But I could -learn- to hold. That is what I offer, a willingness to push myself... to achieve. I would be lying if I tried to say that I would get it right the first time.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the player-authored turn decomposed into semantic perceptual units. The source text is segmented into distinct cognitive, verbal, and physical events, with **exact source quotes** provided for complete, zero-loss accounting.\n\n### Decomposition of Player Turn\n\n| Unit ID | Exact Source Quote | Perceptual Modality | Semantic Function |\n| :--- | :--- | :--- | :--- |\n| **U1** | `She looked up.` | **Kinesthetic / Visual** | **Physical engagement cue.** Elevating her gaze establishes direct visual contact (or readiness to engage) with the interlocutor, shifting from an internal or downward focus to an attentive, interactive state. |\n| **U2** | `\"I do not know,\"` | **Verbal / Epistemic** | **Explicit admission of ignorance.** Delivers a direct denial of possessing knowledge, establishing baseline humility and honesty regarding the specific \"challenge\" presented. |\n| **U3** | `she answered honestly.` | **Meta-Communicative / Delivery** | **Attribution of authenticity.** Qualifies the preceding utterance by explicitly signaling that the response is truthful and unvarnished, reinforcing the speaker's intent to avoid evasion or flattery. |\n| **U4** | `\"And I imagine that each new challenge is a new question as well.` | **Cognitive / Abstract Reasoning** | **Philosophical extrapolation.** Correlates the concept of \"challenge\" with \"question\", framing each obstacle not as a simple task but as an epistemological unknown requiring a unique answer. |\n| **U5** | `I would like to ay that my steadiness would hold,` | **Cognitive / Volitional (Conditional)** | **Idealized self-assessment.** Expresses a momentary wish (with a typo: `ay` instead of `say`) to claim an unshakable stability, revealing an aspirational version of herself. |\n| **U6** | `but the truth it, is probably would not- at first.` | **Cognitive / Reality-Check** | **Admission of fallibility.** Immediately corrects her idealized stance by conceding that, in reality, her steadiness *would not* hold—particularly in the initial confrontation with the challenge. |\n| **U7** | `But I could -learn- to hold.` | **Cognitive / Adaptive Potential** | **Emphasis on growth.** Shifts from static present state to dynamic potentiality, highlighting her capacity for learning. The hyphenation around `learn` (`-learn-`) serves as a metalinguistic emphasis on the process of adaptation. |\n| **U8** | `That is what I offer, a willingness to push myself... to achieve.` | **Explicit Declaration / Intentional** | **Core value proposition.** Clearly defines her primary asset: not innate perfection, but a deliberate, persistent will to exert effort and strive toward achievement. The ellipsis introduces a pause for emphasis on the goal. |\n| **U9** | `I would be lying if I tried to say that I would get it right the first time.\"` | **Verbal / Ethical Commitment** | **Predictive honesty.** Foreshadows inevitable future errors while using the metaphor of \"lying\" to underscore her commitment to authentic self-representation over performative confidence. |\n\n---\n\n### Complete Source Accounting (Concatenation Check)\n\nAll source characters are accounted for. The sequential combination of the exact quotes reproduces the original text verbatim (including typos and formatting):\n\n`She looked up. ` + `\"I do not know,\" ` + `she answered honestly. ` + `\"And I imagine that each new challenge is a new question as well. ` + `I would like to ay that my steadiness would hold, ` + `but the truth it, is probably would not- at first. ` + `But I could -learn- to hold. ` + `That is what I offer, a willingness to push myself... to achieve. ` + `I would be lying if I tried to say that I would get it right the first time.\"`\n\n> **Note on Imperfections:** The source contains grammatical and typographical errors (e.g., `ay` for `say`, `truth it` for `truth is`, `probably would not` for `would probably not`). These are preserved verbatim in this decomposition and represent potential *semantic noise* in the player's intended meaning, but the core perceptual logic remains intact.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 13,
+      "outputTokens": 3457,
+      "cacheReadTokens": 128,
+      "reasoningTokens": 2525
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:39:07.836Z"
+}

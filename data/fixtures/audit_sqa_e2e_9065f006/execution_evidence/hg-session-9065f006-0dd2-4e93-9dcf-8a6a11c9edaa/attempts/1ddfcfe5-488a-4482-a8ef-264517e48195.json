@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "1ddfcfe5-488a-4482-a8ef-264517e48195",
+  "correlation": {
+    "evidence_id": "1ddfcfe5-488a-4482-a8ef-264517e48195",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-5b8e8edd-27f5-465f-a24e-ca444a545eee",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-5b8e8edd-27f5-465f-a24e-ca444a545eee",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe hummed thoughtfully. \"That is a difficult question to answer. Hai, stability would be nice, but honesty requires me to say that I would be a little disappointed. I really do wish to reinvent myself, to be challenged and to learn and grow. That may be asking more than what you offer, but if one reaches for the moon, even if they fall short, they may still achieve great height.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "# Semantic Perceptual Unit Decomposition\n\n## Source Text\n> \"She hummed thoughtfully. \"That is a difficult question to answer. Hai, stability would be nice, but honesty requires me to say that I would be a little disappointed. I really do wish to reinvent myself, to be challenged and to learn and grow. That may be asking more than what you offer, but if one reaches for the moon, even if they fall short, they may still achieve great height.\"\"\n\n---\n\n## Unit Breakdown\n\n### SPU-1: Auditory/Visceral Processing Cue\n- **Source quote:** `She hummed thoughtfully.`\n- **Type:** Physical behavioral action (non-verbal affect display)\n- **Function:** Signals active cognitive deliberation; indicates the response that follows is weighed, not impulsive.\n- **Perceptual channel:** Visual/auditory (reader perceives the gesture)\n\n---\n\n### SPU-2: Meta-Response Framing\n- **Source quote:** `\"That is a difficult question to answer.\"`\n- **Type:** Direct rhetorical evaluation of the question itself\n- **Function:** Legitimizes a potentially ambivalent or dissatisfying answer by pre-framing the question's complexity; creates expectation of nuance.\n- **Perceptual channel:** Auditory (dialogue)\n\n---\n\n### SPU-3: Conditional Endorsement of Stability\n- **Source quote:** `Hai, stability would be nice,`\n- **Type:** Concessive acknowledgment\n- **Function:** Validates the interlocutor's offering (stability) as not *unwelcome* — establishes good faith before delivering the more complex truth. The word \"Hai\" (Japanese: \"yes\") serves as an authenticating cultural-linguistic marker.\n- **Perceptual channel:** Auditory (dialogue)\n\n---\n\n### SPU-4: Honesty-Clause + Disappointment Admission\n- **Source quote:** `but honesty requires me to say that I would be a little disappointed.`\n- **Type:** Contrastive qualifier with affective disclosure\n- **Function:** Pitches the counter-argument. The moral stricture (\"honesty requires\") elevates the disclosure from mere preference to ethical obligation — she frames not-speaking-as-required as being impossible for her. The minimization (\"a little\") softens the blow while still landing the emotional truth.\n- **Perceptual channel:** Auditory (dialogue) + inferential emotional layer\n\n---\n\n### SPU-5: Core Desideratum Articulation (Triadic)\n- **Source quote:** `I really do wish to reinvent myself, to be challenged and to learn and grow.`\n- **Type:** Declared core motivation (three-fold desire cluster)\n- **Function:** The central thesis. Three desires — **(a) reinvention**, **(b) challenge**, **(c) learning/growth** — are concatenated into a single aspiration vector. \"Really do wish\" intensifies sincerity beyond mere preference.\n- **Perceptual channel:** Auditory (dialogue)\n- **Sub-semantics:** Note the asymmetry with SPU-3: stability (single item) vs. three aspirational drives. Quantity encodes priority. (This is a computation the perceiver may or may not register consciously.)\n\n---\n\n### SPU-6: Expectation-Setting Re: Interlocutor's Offer\n- **Source quote:** `That may be asking more than what you offer,`\n- **Type:** Realistic appraisal / pre-emptive disclaiming\n- **Function:** Acknowledges the possibility of an offer/need mismatch. Prevents the interlocutor from overpromising → protects both parties from future disappointment. Demonstrates social awareness and consideration for the other's limits.\n- **Perceptual channel:** Auditory (dialogue)\n\n---\n\n### SPU-7: Aspirational Metaphor (Proverbial Close)\n- **Source quote:** `but if one reaches for the moon, even if they fall short, they may still achieve great height.`\n- **Type:** Axiological proverb / guiding-life-philosophy encapsulation\n- **Function:** Concessively re-frames the *gap* (from SPU-6) as *acceptable by design*. The metaphor defuses the tension between realism (SPU-6) and ambition (SPU-5) by declaring the attempt itself worthwhile regardless of outcome. The shift from first-person (\"I\") to impersonal \"one\" universalizes the principle — she is not stating *her* choice so much as *a truth she lives by*.\n- **Perceptual channel:** Auditory (dialogue) + conceptual/figurative inference layer\n\n---\n\n## Structural Summary\n\n| Unit | Segment | Role |\n|------|---------|------|\n| SPU-1 | Humming | Behavioral preface (processing cue) |\n| SPU-2 | Difficulty framing | Meta-framing |\n| SPU-3 | \"Hai, stability would be nice\" | Concession / good faith |\n| SPU-4 | Honesty → disappointment | Contrast / affective truth-telling |\n| SPU-5 | Reinvent/challenge/grow | Core desire (thesis) |\n| SPU-6 | \"Asking more than you offer\" | Realism clause |\n| SPU-7 | Moon metaphor | Philosophical resolution / universalized principle |\n\n---\n\n## Cross-Unit Relations\n- **SPU-3 ↔ SPU-4:** Concessive opposition (stability yes / but not enough)\n- **SPU-4 ↔ SPU-5:** Justification chain (disappointment *because* of aspirational drives)\n- **SPU-5 ↔ SPU-6:** Desire vs. offered capacity (tension)\n- **SPU-6 ↔ SPU-7:** Concessive reversal — gap acknowledged, then reframed via proverb\n- **SPU-1 → all speech units:** Emotional charge is delivered through a composed, deliberated frame (humming) — suggesting this honesty costs something and is being offered carefully.\n\n---\n\n## Reading-Surface Notes\n- **Voice register:** Feminine, polite, literary (metaphor usage), measured.\n- **Tone valence over arc:** Neutral → mildly positive → dip (disappointment) → peak intensity (desire list) → realistic dip → uplifting/aspirational close.\n- **Entire speech unit could be treated, at a higher level, as a single persuasive plea** — but the decomposition above preserves the rhythmic sub-moves a perceptive character would register in real-time.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 127,
+      "outputTokens": 1586,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 247
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:12:26.296Z"
+}

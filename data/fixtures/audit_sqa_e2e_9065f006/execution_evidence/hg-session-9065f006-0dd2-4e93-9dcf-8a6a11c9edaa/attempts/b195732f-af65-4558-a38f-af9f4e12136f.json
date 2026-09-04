@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "b195732f-af65-4558-a38f-af9f4e12136f",
+  "correlation": {
+    "evidence_id": "b195732f-af65-4558-a38f-af9f4e12136f",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-1b9c3c76-38b1-4ec8-a7b6-fffa63e78a39-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-1b9c3c76-38b1-4ec8-a7b6-fffa63e78a39-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "240642b1-68dc-44df-862c-ed382171ffb6",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe nodded. \"Hai. Yes, yes, I want this,\" she admitted, suddenly uncaring about the wage, the room, the stability. Ayame had offered her something higher, something that went as deep as her own core."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units, with complete source accounting for each unit.\n\n---\n\n### Semantic Perceptual Units\n\n**1. Motor Action (Physical Movement)**\n- **Unit:** The player character performs a physical gesture of affirmative assent by nodding.\n- **Source Text:** `\"She nodded.\"`\n\n**2. Vocalized Speech (Verbal Utterance)**\n- **Unit:** The player character verbally expresses strong affirmation and desire through a mix of languages (Japanese and English), underscoring impulsivity and urgency.\n- **Source Text:** `\"Hai. Yes, yes, I want this,\"`\n\n**3. Cognitive-Emotional Modifier (Speech Adverbial / Meta-Awareness)**\n- **Unit:** The player character attaches a qualifier to her speech, framing it as a confession or realization that she is willingly surrendering her prior reservations.\n- **Source Text:** `\"she admitted,\"`\n\n**4. Internal State Shift (Emotional/Cognitive Rescindment)**\n- **Unit:** The player character experiences a sudden, instantaneous dismissal of practical, extrinsic concerns (financial compensation, lodging, and long-term security), indicating a state of acute emotional prioritization.\n- **Source Text:** `\"suddenly uncaring about the wage, the room, the stability.\"`\n\n**5. Cognitive Reflection on External Agency (NPC Attribution)**\n- **Unit:** The player character internally reflects on the nature of the offer made by Ayame, categorizing it as transcending material or practical value.\n- **Source Text:** `\"Ayame had offered her something higher,\"`\n\n**6. Conceptual Metaphor / Deep Self-Referential Assessment (Introspective Cognition)**\n- **Unit:** The player character cognitively frames the essence of the offer as penetrating to her most fundamental identity and existential core, implying a profound spiritual or psychological resonance.\n- **Source Text:** `\"something that went as deep as her own core.\"`\n\n---\n\n### Summary Matrix (Source Accounting)\n\n| # | Semantic Perceptual Unit | Source Text (Exact Span) |\n|---|--------------------------|---------------------------|\n| 1 | Motor Action (Nod) | `She nodded.` |\n| 2 | Speech Act (Verbal Affirmation) | `\"Hai. Yes, yes, I want this,\"` |\n| 3 | Speech Modifier (Admission) | `she admitted,` |\n| 4 | Internal State Shift (Rescindment of Practicality) | `suddenly uncaring about the wage, the room, the stability.` |\n| 5 | Cognitive Reflection (Attribution of Offer's Quality) | `Ayame had offered her something higher,` |\n| 6 | Introspective Cognition (Depth of Resonance) | `something that went as deep as her own core.` |",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 93,
+      "outputTokens": 1333,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 750
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:03:36.017Z"
+}

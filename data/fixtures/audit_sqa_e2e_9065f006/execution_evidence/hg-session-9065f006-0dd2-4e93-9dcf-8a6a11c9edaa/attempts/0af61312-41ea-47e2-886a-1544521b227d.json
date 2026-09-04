@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "0af61312-41ea-47e2-886a-1544521b227d",
+  "correlation": {
+    "evidence_id": "0af61312-41ea-47e2-886a-1544521b227d",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-79e3582e-7b40-46ce-be0b-66379586a8af",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-79e3582e-7b40-46ce-be0b-66379586a8af",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\n\"The potential to grow, to reinvent myself to....if this is not too forward, to put myself in your hands, to learn and to become what you need.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the semantic decomposition of the player-authored turn into distinct perceptual units, with exact source accounting for the Holy Grail RP runtime. Each segment is defined by its linguistic boundaries (pauses, clause shifts, and specific rhetorical intent), and mapped to how the receiving character should perceive it.\n\n---\n\n### [PERCEPTUAL UNIT 1: Self-Reflective Declaration]\n- **Source Quote:** `The potential to grow, to reinvent myself to....`\n- **Semantic Interpretation:** The character is speaking almost introspectively or aloud to themselves, presenting an internal drive before shifting to the listener. This signals deep self-awareness and a stated desire for change. The trailing off (`to....`) denotes hesitation and vulnerability, indicating the thought is unfinished and emotionally loaded.\n\n---\n\n### [PERCEPTUAL UNIT 2: Anxious Meta-Compliance]\n- **Source Quote:** `if this is not too forward,`\n- **Semantic Interpretation:** This is a lexical pause for boundary-checking. The character is socially anxious about overstepping, nervously gauging the listener's tolerance. It establishes a power dynamic where the speaker actively defers to the listener's comfort and approval, pre-emptively seeking permission.\n\n---\n\n### [PERCEPTUAL UNIT 3: Surrender & Offering of Trust]\n- **Source Quote:** `to put myself in your hands,`\n- **Semantic Interpretation:** This is the core transactional offer. The character explicitly relinquishes autonomy and control, framing themselves as an object to be handled, guided, or shaped. It projects total trust and submission, positioning the listener in a dominant or authoritative role.\n\n---\n\n### [PERCEPTUAL UNIT 4: Active Yielding & Purpose]\n- **Source Quote:** `to learn and to become what you need.`\n- **Semantic Interpretation:** This finalize the intent by framing submission as a constructive path. The character expresses a commitment to active learning, morphing their identity entirely around the listener's desires. The phrasing \"what you need\" (rather than \"who you want\") implies servitude and utilitarian devotion—transforming into a tool or resource tailored to the listener's requirements.\n\n---\n\n**Runtime Synthesis Note:** When parsing these units in the RP manager, the visual processing should trigger sequential emotional reads: (1) Introspective fragility, (2) Apprehensive politeness, (3) Uninhibited surrender, and (4) Complete, adaptive devotion. Ensure the response acknowledges the emotional arc—starting with the speaker's own uncertainty and ending with a blank slate for the other character to define.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 77,
+      "outputTokens": 1750,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1228
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:16:53.448Z"
+}

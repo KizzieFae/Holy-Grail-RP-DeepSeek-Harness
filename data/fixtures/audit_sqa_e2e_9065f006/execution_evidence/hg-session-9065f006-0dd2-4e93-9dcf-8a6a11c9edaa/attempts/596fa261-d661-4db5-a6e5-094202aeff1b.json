@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "596fa261-d661-4db5-a6e5-094202aeff1b",
+  "correlation": {
+    "evidence_id": "596fa261-d661-4db5-a6e5-094202aeff1b",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-4b9633cf-a6b9-4e06-92a0-5cb81943123c",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-4b9633cf-a6b9-4e06-92a0-5cb81943123c",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie looked up to double check the house number and then squared her shoulder to knock on the door."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, with complete source accounting for each. Each unit is derived directly from the character's physical, cognitive, and intentional cues as written.\n\n### Semantic Perceptual Decomposition\n\n**Unit 1: Upward Gaze Shift**\n- **Semantic Tag:** Visual Action (Vertical Orientation)\n- **Source String:** \"Kizzie looked up...\"\n- **Player Implication:** Kizzie's head and eyes move from their previous horizontal plane to an upward angle, actively scanning an elevated target.\n- **GM/World Perceivable:** The character physically tilts her head, eyes focusing above her natural sightline.\n\n**Unit 2: Cognitive Verification Protocol**\n- **Semantic Tag:** Intent/Purpose (Double-Checking)\n- **Source String:** \"...to double check...\"\n- **Player Implication:** Kizzie holds a degree of uncertainty or cautiousness regarding her current location. She is engaging in a deliberate mental correction/confirmation before progressing.\n- **GM/World Perceivable:** An internal state expressed through the deliberate, slow nature of the gaze—pausing to confirm rather than merely glancing.\n\n**Unit 3: Target Object Identification**\n- **Semantic Tag:** Target/Object of Focus\n- **Source String:** \"...the house number...\"\n- **Player Implication:** The specific architectural feature (the address placard/number) is the focal point of her gaze. The outcome of this check will determine whether she stays or leaves.\n- **GM/World Perceivable:** The existence of a clearly readable house number in the environment that the character is interacting with via sight.\n\n**Unit 4: Semantic Temporal Pivot**\n- **Semantic Tag:** Sequencing/Transition\n- **Source String:** \"...and then...\"\n- **Player Implication:** The visual verification phase is concluded. A logical and temporal break occurs, signaling a shift from cognitive/data-gathering to physical action.\n- **GM/World Perceivable:** A micro-pause in the narrative rhythm; the conclusion of one action phase initiates the next.\n\n**Unit 5: Postural Commitment/Readiness**\n- **Semantic Tag:** Physical Adjustment (Biomechanical)\n- **Source String:** \"...squared her shoulder...\"\n- **Player Implication:** Kizzie re-aligns her spine and shoulder girdle. This is a micro-expression of resolve, bracing, or final commitment—a non-verbal \"taking a breath\" before an interaction.\n- **GM/World Perceivable:** Visible stiffening/straightening of her posture; a shift in bodily tension visible to onlookers, indicating a psychological state of readiness or apprehension.\n\n**Unit 6: Imminent Action Intent (Knocking)**\n- **Semantic Tag:** Action Anticipation / Objective Target\n- **Source String:** \"...to knock on the door.\"\n- **Player Implication:** The postural adjustment is explicitly laced to the *intention* to strike the door. *Note: The physical act of knocking (raising the hand, impacting the surface) is NOT yet performed* — the text only states the intent alongside the adjustment. The player is telegraphing the immediate next action.\n- **GM/World Perceivable:** The physical proximity to the door is established. The GM can anticipate the upcoming auditory/mechanical event (the knock) but should wait for the player to explicitly initiate the hand movement if strict verisimilitude is required.\n\n---\n\n### Source Accounting Visual Map\n```\n\"Kizzie [Actor] looked up [U1] to double check [U2] the house number [U3] \n     and then [U4] squared her shoulder [U5] to knock on the door [U6].\"\n```",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 66,
+      "outputTokens": 2314,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1541
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T01:31:30.195Z"
+}

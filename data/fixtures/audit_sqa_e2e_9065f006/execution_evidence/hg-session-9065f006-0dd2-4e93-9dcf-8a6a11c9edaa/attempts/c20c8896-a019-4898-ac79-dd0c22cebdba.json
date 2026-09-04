@@ -1,0 +1,210 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "c20c8896-a019-4898-ac79-dd0c22cebdba",
+  "correlation": {
+    "evidence_id": "c20c8896-a019-4898-ac79-dd0c22cebdba",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "hg-round-dd96e92c-518c-4fd1-bd6f-f6b17fbef045",
+    "role": "director",
+    "character_id": null,
+    "inference_id": "inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0",
+    "manifest_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0",
+    "contribution_ids": [
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_setup",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_state",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_progression",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-user-turn-source",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-director-scratch",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-instruction"
+    ],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null,
+    "inference_kind": "director_decision",
+    "parent_inference_id": "inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016"
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_setup",
+        "source_kind": "scene_setup",
+        "authority_class": "authoritative",
+        "priority": 9,
+        "content": "Persistent scenario premise (authored at scene start; not the current scene position after committed progression):\nA desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_state",
+        "source_kind": "scene_state",
+        "authority_class": "authoritative",
+        "priority": 10,
+        "content": "Scene location: Scene. Present characters: Ayame, Kizzie. Continuity turn counter: 0. Actors already used this round: none. Eligible actors: Ayame."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_progression",
+        "source_kind": "scene_progression",
+        "authority_class": "authoritative",
+        "priority": 11,
+        "content": "Scene progression (authoritative committed continuity; current scene position):\n- No committed public events yet.\nScene phase: opening\nCurrent tension level: low"
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-user-turn-source",
+        "source_kind": "user_turn_source",
+        "authority_class": "authoritative",
+        "priority": 15,
+        "content": "USER TURN (committed):\nKizzie looked up to double check the house number and then squared her shoulder to knock on the door."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-director-scratch",
+        "source_kind": "director_scratch",
+        "authority_class": "derived",
+        "priority": 20,
+        "content": "Director scratch: weigh participation balance and select the next actor. Do not assume character-private knowledge."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-instruction",
+        "source_kind": "inference_instruction",
+        "authority_class": "derived",
+        "priority": 30,
+        "content": "Output only JSON with next_actor, end_round, reason, environment_event, tension_shift. tension_shift must be escalate, soften, or steady. environment_event is optional; use an empty string rather than repeating a recent accepted environment development."
+      }
+    ],
+    "user_instruction": {
+      "text": "Respond with ONLY one JSON object. No markdown, no commentary. Required keys: next_actor (string), end_round (boolean), reason (string), environment_event (string), tension_shift (string). Set tension_shift to exactly escalate, soften, or steady. environment_event is optional; use an empty string instead of repeating a recent accepted environment development. Select next_actor from the eligible cast in context. Set end_round false unless the scene should stop."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0",
+    "contribution_ids": [
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_setup",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_state",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-scene_progression",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-user-turn-source",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-director-scratch",
+      "manifest-director-inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-0-instruction"
+    ]
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "{\n  \"next_actor\": \"Ayame\",\n  \"end_round\": false,\n  \"reason\": \"Kizzie knocked on the door; Ayame should respond to the arrival.\",\n  \"environment_event\": \"\",\n  \"tension_shift\": \"steady\"\n}",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 163,
+      "outputTokens": 224,
+      "cacheReadTokens": 256,
+      "reasoningTokens": 166
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": {
+    "role": "director",
+    "outcome": "accepted",
+    "parse": {
+      "proposed": {
+        "next_actor": "Ayame",
+        "end_round": false,
+        "reason": "Kizzie knocked on the door; Ayame should respond to the arrival.",
+        "environment_event": "",
+        "tension_shift": "steady"
+      },
+      "parse_error": null
+    },
+    "validation": {
+      "accepted": true,
+      "validation_class": "accepted",
+      "reason": "",
+      "retryable": false
+    },
+    "director": {
+      "eligibility": {
+        "eligibility_snapshot_id": "hg-round-dd96e92c-518c-4fd1-bd6f-f6b17fbef045:0",
+        "eligible_actors": [
+          "Ayame"
+        ],
+        "present_characters": [
+          "Ayame",
+          "Kizzie"
+        ],
+        "offstage_characters": [],
+        "absent_but_relevant": [],
+        "director_constraint_actor": null,
+        "continuation_c2_skip": false,
+        "actors_used_this_round": []
+      },
+      "normalized_decision": {
+        "next_actor": "Ayame",
+        "environment_event": "",
+        "tension_shift": "steady",
+        "reason": "Kizzie knocked on the door; Ayame should respond to the arrival.",
+        "end_round": false,
+        "director_model_reason": "Kizzie knocked on the door; Ayame should respond to the arrival."
+      },
+      "selected_character_id": "Ayame",
+      "end_round": false,
+      "constraints": {
+        "eligibility_snapshot_id": "hg-round-dd96e92c-518c-4fd1-bd6f-f6b17fbef045:0",
+        "director_constraint_actor": null,
+        "continuation_c2_skip": false,
+        "actors_used_this_round": []
+      }
+    },
+    "semantic_qa": {
+      "evaluation_pass_id": "inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-qa-0",
+      "evaluation_target_role": "director",
+      "evaluator_evidence_id": "4f5e5c3e-7ff5-4e28-9dd1-2e68116ce064",
+      "policy_action": "pass",
+      "infrastructure_failure": false,
+      "result": {
+        "schema": "hg_semantic_qa_result_v1",
+        "evaluation_target_role": "director",
+        "evaluation_pass_id": "inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-qa-0",
+        "overall_result": "pass",
+        "findings": [],
+        "evaluator_summary": null,
+        "residual_soft_concerns": []
+      },
+      "raw_evaluator_output": "{\"schema\":\"hg_semantic_qa_result_v1\",\"evaluation_target_role\":\"director\",\"evaluation_pass_id\":\"inf-director-0-e448d35f-fb4d-4b46-8720-dc5022c8e016-qa-0\",\"overall_result\":\"pass\",\"findings\":[]}",
+      "citation_validations": [],
+      "parse_warnings": []
+    },
+    "residual_soft_concerns": [],
+    "terminal_disposition": "accepted"
+  },
+  "associations": {
+    "librarian_mediation_evidence_id": null,
+    "storyteller_assessment_evidence_id": null,
+    "packaging_disposition": {
+      "bundle_id": null,
+      "package_id": null,
+      "entries_considered": 0,
+      "entries_mapped": 0,
+      "mapped_entry_ids": [],
+      "mapped_contribution_ids": [],
+      "omitted_reason": "no_storyteller_contributions"
+    }
+  },
+  "evidence_contract": "hg_ni_forensics_v1",
+  "recorded_at": "2026-09-04T01:32:06.549Z",
+  "updated_at": "2026-09-04T01:32:07.959Z"
+}

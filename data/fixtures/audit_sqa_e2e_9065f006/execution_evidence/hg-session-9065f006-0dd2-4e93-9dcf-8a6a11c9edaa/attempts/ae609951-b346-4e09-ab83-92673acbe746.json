@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "ae609951-b346-4e09-ab83-92673acbe746",
+  "correlation": {
+    "evidence_id": "ae609951-b346-4e09-ab83-92673acbe746",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-30c4b178-5514-4a43-b8b1-c8d3cfafed12",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-30c4b178-5514-4a43-b8b1-c8d3cfafed12",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie rose, preparing to follow. \"Thank you, ma'am.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, with explicit source accounting for each.\n\n**Input Source String:** \n`Kizzie rose, preparing to follow. \"Thank you, ma'am.\"`\n\n---\n\n### Semantic Perceptual Units\n\n**Unit 01: Postural Transition**  \n- **Source Text:** `Kizzie rose`  \n- **Interpretation:** The character named Kizzie physically changes state from a seated or reclined position to a standing one. This is a discrete, self-contained motor action initiated by the player character.\n\n**Unit 02: Preparatory Intent**  \n- **Source Text:** `preparing to follow`  \n- **Interpretation:** This denotes an immediate, forward-looking intention. The character is aligning her body or positioning herself to move in tandem with another party (the addressed \"ma'am\"). It signals a readiness for locomotion rather than the locomotion itself.\n\n**Unit 03: Verbal Gratitude (Dialogue)**  \n- **Source Text:** `\"Thank you, ma'am.\"`  \n- **Interpretation:** A distinct speech act expressing polite acknowledgment and appreciation directed toward the specific addressed individual (addressed as \"ma'am\"). This is an externalized vocalization separate from the physical actions described.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 60,
+      "outputTokens": 676,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 418
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:21:26.004Z"
+}

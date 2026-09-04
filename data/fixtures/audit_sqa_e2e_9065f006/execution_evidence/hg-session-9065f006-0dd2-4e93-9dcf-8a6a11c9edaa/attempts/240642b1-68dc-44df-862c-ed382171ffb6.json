@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "240642b1-68dc-44df-862c-ed382171ffb6",
+  "correlation": {
+    "evidence_id": "240642b1-68dc-44df-862c-ed382171ffb6",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-1b9c3c76-38b1-4ec8-a7b6-fffa63e78a39",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-1b9c3c76-38b1-4ec8-a7b6-fffa63e78a39",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe nodded. \"Hai. Yes, yes, I want this,\" she admitted, suddenly uncaring about the wage, the room, the stability. Ayame had offered her something higher, something that went as deep as her own core."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into distinct semantic perceptual units, with complete source accounting for each chunk.\n\n### Semantic Perceptual Units\n\n**1. Physical Affirmation (Non-Verbal Action)**  \n*Semantic content:* An immediate, physical gesture of agreement preceding verbalization. The nod serves as a reflexive signal of acceptance before language catches up.  \n*Source text:* `\"She nodded.\"`\n\n**2. Bilingual Expression (Spoken Dialogue – Part 1)**  \n*Semantic content:* The utterance of the Japanese word \"Hai\" indicates a slip into her native tongue, revealing an instinctive, unfiltered acceptance. The subsequent repetition of \"Yes, yes\" intensifies the certainty and eagerness.  \n*Source text:* `\"Hai. Yes, yes, I want this,\"`\n\n**3. Vocal Attribution & Emotional Disclosure (Spoken Dialogue – Part 2)**  \n*Semantic content:* The word \"admitted\" frames her speech as a reluctant confession, yet it is paradoxically delivered with sudden decisiveness, indicating she is surrendering to her feelings.  \n*Source text:* `\"she admitted,\"`\n\n**4. Cognitive Shift (Mental State Transition)**  \n*Semantic content:* A radical internal reprioritization. She dismisses previously important external securities—financial (wage), physical (room), and existential (stability)—demonstrating that practical concerns have become irrelevant in the face of this new desire.  \n*Source text:* `\"suddenly uncaring about the wage, the room, the stability.\"`\n\n**5. External Attribution of Meaning (Perceptual Realization)**  \n*Semantic content:* She perceives that Ayame's proposal transcends a simple transactional offer, assigning it an abstract, elevated quality (\"something higher\") that lifts it above mundane commerce.  \n*Source text:* `\"Ayame had offered her something higher,\"`\n\n**6. Metaphorical Internal Resonance (Deep Emotional Alignment)**  \n*Semantic content:* The final unit quantifies the depth of this connection. The offer is not just appealing on the surface; it resonates at the very foundation of her identity and personal truth (\"as deep as her own core\"), signifying an intrinsic alignment.  \n*Source text:* `\"something that went as deep as her own core.\"`",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 93,
+      "outputTokens": 1441,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 968
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:03:25.420Z"
+}

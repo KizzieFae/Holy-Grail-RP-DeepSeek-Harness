@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "a53a15cb-31ba-40da-8a6b-a253309ba0ba",
+  "correlation": {
+    "evidence_id": "a53a15cb-31ba-40da-8a6b-a253309ba0ba",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-79e3582e-7b40-46ce-be0b-66379586a8af-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-79e3582e-7b40-46ce-be0b-66379586a8af-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "0af61312-41ea-47e2-886a-1544521b227d",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\n\"The potential to grow, to reinvent myself to....if this is not too forward, to put myself in your hands, to learn and to become what you need.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into distinct semantic perceptual units, with complete source accounting (exact substrings quoted verbatim).\n\n---\n\n**1. Aspirational Growth**  \n- **Source substring:** `\"The potential to grow, \"`  \n- **Semantics:** The player states a foundational capability or internal resource—the capacity for self-improvement and forward motion.\n\n**2. Transformative Reinvention (with Hesitation)**  \n- **Source substring:** `\"to reinvent myself to....\"`  \n- **Semantics:** The player voices a desire for complete metamorphosis or a shift in identity. The extended ellipsis (`....`) followed by no space before the next clause denotes a trailing thought, an incomplete directive, or a bracing pause before a potentially vulnerable proposition.\n\n**3. Relational Caution / Modesty Marker**  \n- **Source substring:** `\"if this is not too forward, \"`  \n- **Semantics:** This serves as a prospective apology or social safeguard. The player acknowledges the gravity of their request, framing their own vulnerability as potentially intrusive or presumptuous.\n\n**4. Surrender of Autonomy / Transference**  \n- **Source substring:** `\"to put myself in your hands, \"`  \n- **Semantics:** The core act of relinquishing control and offering complete trust. The player expresses a desire to place their will and agency beneath the directive of the other party. It implies a power dynamic of willing submission.\n\n**5. Receptivity / Apprenticeship**  \n- **Source substring:** `\"to learn \"`  \n- **Semantics:** A declarative intention to absorb knowledge, instruction, or guidance. Signals a posture of openness.\n\n**6. Adaptive Fulfillment (Instrumentality)**  \n- **Source substring:** `\"and to become what you need.\"`  \n- **Semantics:** The terminal and ultimate goal. The player does not seek self-defined goals but offers to become a mutable instrument—an object or being reshaped to meet the other’s specific requirements, completing the arc of submission and utility.\n\n---\n\n**Summary of the overall semantic flow:**  \nThe turn progresses from a stated inward capacity (*growth*) → an ambitious, hesitant *goal* (*reinvention*) → a permission-seeking *apology* → a *sacrificial surrender* of agency → an *open learning state* → and culminates in *complete instrumentalization* (*becoming what you need*). The entire sequence reads as a courtship of dependency blended with a servile transformative pledge.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 77,
+      "outputTokens": 1639,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1113
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:17:06.105Z"
+}

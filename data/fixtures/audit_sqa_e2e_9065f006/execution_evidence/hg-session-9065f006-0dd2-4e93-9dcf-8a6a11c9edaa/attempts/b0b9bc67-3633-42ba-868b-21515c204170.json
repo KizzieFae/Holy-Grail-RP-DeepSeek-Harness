@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "b0b9bc67-3633-42ba-868b-21515c204170",
+  "correlation": {
+    "evidence_id": "b0b9bc67-3633-42ba-868b-21515c204170",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-ca0dfd05-6cd5-4f68-aee3-e67d0d0080b4-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-ca0dfd05-6cd5-4f68-aee3-e67d0d0080b4-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "9e0c2456-108d-49bc-967e-727f7ce11552",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie nodded. \"Hai,\" she agreed, restarting. This time, she took more care, watching the pot as it heated, waiting until just the tiniest of bubbles appeared on the bottom- marking the temperature that was perfect for green tea. This time, when she poured, it was almost as if she were willing the water out of the pot rather than relying on gravity, and she raised the pot up a little to influence the stream. A half spoon of honey was added and stirred. Once more, she offered with two hands. \"I hope this is more to your liking, ayame-sama. I have never been taught to make tea, nor any parts of  service, but I am willing and eager to learn.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "# Decomposition of Player Turn into Semantic Perceptual Units\n\n## Units Identified\n\n**UNIT 1 — Physical Gesture (acknowledgment nod)**\n- Source: «Kizzie nodded»\n- Facet: Kinesthetic action; receptive acknowledgment, implying she received a prior instruction or correction.\n\n**UNIT 2 — Verbal Agreement (single token consent)**\n- Source: «\"Hai,\" she agreed»\n- Facet: Spoken confirmation in Japanese; consent to restart the procedure. Emphasizes linguistic register shift (honorific-adjacent context).\n\n**UNIT 3 — Procedural Reset (initiate fresh attempt)**\n- Source: «restarting»\n- Facet: Meta-procedural action; indicates a re-execution of the full tea-preparation sequence from step zero.\n\n**UNIT 4 — Intentional Focus (deliberate carefulness)**\n- Source: «This time, she took more care»\n- Facet: Internal cognitive state — deliberate attention modulation, corrective to prior perceived failure.\n\n**UNIT 5 — Visual Observation 1 (heating of pot)**\n- Source: «watching the pot as it heated»\n- Facet: Sensory — visual tracking of thermal progression in vessel.\n\n**UNIT 6 — Visual Observation 2 (micro-bubble threshold)**\n- Source: «waiting until just the tiniest of bubbles appeared on the bottom»\n- Facet: Sensory acumen; precise identification of a temperature cue (formation of pinhead bubbles on vessel interior surface).\n\n**UNIT 7 — Judgment Call (temperature qualification)**\n- Source: «marking the temperature that was perfect for green tea»\n- Facet: Embodied knowledge application — tacit understanding of the ideal steep temperature (approx. 70–80°C, sub-boil). Note the untaught (claimed later) but practiced nature of this knowledge.\n\n**UNIT 8 — Physical Action (second pour)**\n- Source: «This time, when she poured»\n- Facet: Repetitive action marker; signals the pour event within the restarted sequence.\n\n**UNIT 9 — Control Intent (kinetic will over physics)**\n- Source: «it was almost as if she were willing the water out of the pot rather than relying on gravity»\n- Facet: Qualia of deliberate micro-control — player character projects heightened psychomotor intention onto the stream; metaphorical framing (\"as if\") keeps it within mundane physical reality.\n\n**UNIT 10 — Postural/Fine Motor Adjustment (vessel elevation)**\n- Source: «she raised the pot up a little to influence the stream»\n- Facet: Biomechanical adjustment; changing pour angle/height to manipulate flow rate and aeration (a known factor in proper green tea brewing).\n\n**UNIT 11 — Precise Ingredient Handling (honey dose)**\n- Source: «A half spoon of honey was added and stirred»\n- Facet: Object manipulation with exact measurement (&#189; spoon — a specific, repeatable dose); incorporation of ingredient into liquid solution.\n\n**UNIT 12 — Ritual Serving (two-handed offer)**\n- Source: «Once more, she offered with two hands»\n- Facet: Culturally codified gesture (Japanese etiquette: *ryōte* — two-handed presentation indicates respect, humility toward the recipient); repetition marker \"once more\" ties to her previous (failed) offer.\n\n**UNIT 13 — Spoken Dialogue, Part A (hope for acceptance)**\n- Source: «\"I hope this is more to your liking, ayame-sama.\"»\n- Facet: Verbal output containing: (a) expressed desire for approval —, (b) comparative \"more\" referencing the initial failure, (c) honorific address \"ayame-sama\" establishing social hierarchy acknowledgment.\n\n**UNIT 14 — Spoken Dialogue, Part B (declaration of inexperience)**\n- Source: «I have never been taught to make tea, nor any parts of service»\n- Facet: Explicit statement of limited formal training across two domains: (a) tea ceremony specifically, (b) generalized \"service\" (encompassing maidservant/host duties). Self-deprecatory transparency.\n\n**UNIT 15 — Spoken Dialogue, Part C (commitment to growth)**\n- Source: «but I am willing and eager to learn.»\n- Facet: Counter-facing attitude — frames deficit as opportunity; performative stance of proactive apprenticeship; contrastive conjunction \"but\" pivots from admission to declaration.\n\n---\n\n## Unit Categorization Summary\n\n| Type | Units | Count |\n|------|-------|-------|\n| Physical/kinetic action | 1, 3, 8, 10 | 4 |\n| Verbal/spoken | 2, 13, 14, 15 | 4 |\n| Sensory observation | 5, 6 | 2 |\n| Cognitive/judgment | 4, 7 | 2 |\n| Fine motor/object manipulation | 11 | 1 |\n| Ritualized gesture | 12 | 1 |\n\n**Temporal flow:** recognition → agreement → reset → focused attention → observation (pot) → observation (bubble threshold) → thermal judgment → pour initiation → intentional control of stream → altitude adjustment → honey addition + stir → two-handed offering → dialogue (address) → dialogue (admission) → dialogue (commitment).\n\nAll 15 semantic units trace directly and completely to the player-authored source with no extraneous inference beyond what the text linguistically encodes.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 69,
+      "outputTokens": 1625,
+      "cacheReadTokens": 128,
+      "reasoningTokens": 484
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:32:43.092Z"
+}

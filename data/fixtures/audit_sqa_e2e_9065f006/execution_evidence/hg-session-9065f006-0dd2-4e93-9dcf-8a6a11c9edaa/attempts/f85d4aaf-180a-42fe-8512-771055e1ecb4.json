@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "f85d4aaf-180a-42fe-8512-771055e1ecb4",
+  "correlation": {
+    "evidence_id": "f85d4aaf-180a-42fe-8512-771055e1ecb4",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-5caa6713-7fef-473c-9c14-8ee88c0de383",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-5caa6713-7fef-473c-9c14-8ee88c0de383",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie's expression brightened warm and her tail lifted instinctually. \"Does that mean I have the job?\" she asked in a hopeful tone."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units, with an exact string accounting for each unit.\n\n**Unit 1: Visual Facial Expression (Affective Change)**\n- **Semantic Type:** Visual Cue / Facial Affect\n- **Interpretation:** An observable shift in Kizzie's face indicating positive emotion (warmth/brightening).\n- **Source String (Exact):** `Kizzie's expression brightened warm`\n\n**Unit 2: Visual Body Language / Involuntary Motor Action**\n- **Semantic Type:** Visual Cue / Physical Gesture (Tail)\n- **Interpretation:** A physical lift of the tail, tagged as instinctual (autonomic response to excitement or hope).\n- **Source String (Exact):** `her tail lifted instinctually`\n*(Note: The conjunction \"and\" at the beginning of this segmentation acts as a syntactic coordinator linking Unit 1 and Unit 2, not a separate perceptual unit itself.)*\n\n**Unit 3: Verbal Utterance (Interrogative Speech Act)**\n- **Semantic Type:** Dialogic Content\n- **Interpretation:** The exact spoken words requesting confirmation of employment.\n- **Source String (Exact):** `\"Does that mean I have the job?\"`\n\n**Unit 4: Speech Act Framing (Dialogue Tag)**\n- **Semantic Type:** Narration / Verb of Saying\n- **Interpretation:** The narrative attribution indicating that the preceding dialogue was spoken in the manner of asking a question.\n- **Source String (Exact):** `she asked`\n\n**Unit 5: Paralinguistic Prosody Modifier (Affective Vocal Tone)**\n- **Semantic Type:** Auditory Paralinguistic Cue\n- **Interpretation:** The vocal quality and emotional register accompanying the speech (hopefulness), modifying how the utterance is perceived by the recipient.\n- **Source String (Exact):** `in a hopeful tone`\n\n---\n**Complete Source Coverage Check:**\n`Kizzie's expression brightened warm | and | her tail lifted instinctually | \"Does that mean I have the job?\" | she asked | in a hopeful tone.`\nEvery lexical token from the source is accounted for across the five units (with the conjunction \"and\" and the terminal period serving as grammatical connectors, subsumed into the adjacent unit boundaries if strictly character-counting, but not carrying independent perceptual meaning).",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 75,
+      "outputTokens": 2213,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1711
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:58:22.734Z"
+}

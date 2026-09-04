@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "62bc5504-3a8f-46b2-807d-22a058326236",
+  "correlation": {
+    "evidence_id": "62bc5504-3a8f-46b2-807d-22a058326236",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-78c25497-f42e-44ea-b86c-66a36db4ce3f-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-78c25497-f42e-44ea-b86c-66a36db4ce3f-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "0cc72110-384f-4922-8b02-b05b81d3c1b3",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\n\"Not in my head, ma'am, but in my heart I do.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the player turn decomposed into semantic perceptual units, with complete source accounting (character offsets and exact substrings) tied to each unit's perceptual modality and discursive function.\n\n**Source String:**  \n`\"Not in my head, ma'am, but in my heart I do.\"`  \n**Length:** 44 characters (0-indexed, excluding the outer quotes).\n\n---\n\n### Semantic Perceptual Units\n\n| # | Source Span (chars) | Exact Substring | Semantic Role | Perceptual Modality | Rationale |\n|---|---|---|---|---|---|\n| 1 | 0–2 | `Not` | Negation operator | **Cognitive** (logical override) | Inverts the truth value of the preceding proposition (implied by the interlocutor's question, e.g., \"Do you believe it in your head?\"). Signals an explicit denial of the cognitive domain. |\n| 2 | 4–13 | `in my head` | Locative prepositional phrase (excluded domain) | **Cognitive / Mental** | Specifies the anatomical/spatial locus of the proposition being denied. Functions as an anchor for the negation—the belief is **not** situated in rational thought. |\n| 3 | 16–20 | `ma'am` | Vocative / address term | **Social / Interactional** | Directly indexes the addressee, conveying deference and relational awareness. Modulates the discourse register, softening the contrast that follows. |\n| 4 | 23–25 | `but` | Contrastive discourse marker | **Pragmatic / Structural** | Marks a pivot from the negated cognitive clause to the affirmatively asserted emotional clause. Establishes a disjunctive relationship between mind and heart. |\n| 5 | 27–36 | `in my heart` | Locative prepositional phrase (affirmed domain) | **Emotional / Somatic / Intuitive** | Specifies the anatomical/spatial locus of the true affirmation. Contrasts with Unit 2, mapping the belief/commitment to the affective, visceral self rather than rational processes. |\n| 6 | 39–41 | `I do` | Subject + anaphoric verb phrase | **Epistemic / Commitment** | Serves as an elliptical anaphora referencing the interlocutor's original predicate (e.g., \"Do you believe...?\"). The verb \"do\" substitutes for the full action/state, asserting full commitment and existential sincerity. |\n\n---\n\n### Composite Perceptual Mapping\n\n- **Cognitive channel:** Negated (Unit 1 + 2) — the statement explicitly rejects the mind as the seat of the belief.\n- **Affective channel:** Affirmed (Unit 5) — the heart is claimed as the true locus.\n- **Interpersonal channel:** Present (Unit 3) — vocative marker sustains the respectful address.\n- **Commitment channel:** Complete (Unit 6) — anaphoric \"I do\" resolves the ellipsis and seals the assertion.\n- **Structural channel:** (Unit 4) — \"but\" provides the logical-emotional hinge.\n\nAll characters from the source are accounted for. Punctuation (`,`, `,`, `.`) serves as boundary delimiters and contributes to prosodic rhythm but carries no independent semantic unit; they are implicitly contained within the spans or act as separators (spaces at 3, 14, 15, 21, 22, 26, 37, 38 are syntactic glue).",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 60,
+      "outputTokens": 2177,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1460
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:12:55.309Z"
+}

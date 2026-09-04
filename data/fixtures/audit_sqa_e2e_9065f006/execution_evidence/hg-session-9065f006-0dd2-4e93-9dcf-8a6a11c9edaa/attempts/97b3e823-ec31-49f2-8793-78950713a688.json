@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "97b3e823-ec31-49f2-8793-78950713a688",
+  "correlation": {
+    "evidence_id": "97b3e823-ec31-49f2-8793-78950713a688",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-5caa6713-7fef-473c-9c14-8ee88c0de383-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-5caa6713-7fef-473c-9c14-8ee88c0de383-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "f85d4aaf-180a-42fe-8512-771055e1ecb4",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie's expression brightened warm and her tail lifted instinctually. \"Does that mean I have the job?\" she asked in a hopeful tone."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, followed by a complete source accounting to ensure 100% coverage.\n\n---\n\n### Semantic Perceptual Units\n\n**Unit 1: Positive Facial Change**\n- **Type:** Non-verbal Visual Cue\n- **Semantic Meaning:** Kizzie's facial expression alters into a warmer, brighter appearance, indicating positive emotional intake and optimism.\n- **Source Text (S1):** `Kizzie's expression brightened warm`\n\n**Unit 2: Instinctive Tail Action**\n- **Type:** Non-verbal Kinesthetic Action\n- **Semantic Meaning:** A reflexive, uncalculated movement of the tail lashing or raising upward, typically indicating excitement or emotional arousal in anthropomorphic characters.\n- **Source Text (S3):** `her tail lifted instinctually`\n\n**Unit 3: Direct Speech Act (Interrogative)**\n- **Type:** Verbal Dialogue\n- **Semantic Meaning:** A literal spoken question requesting confirmation about the status of her employment.\n- **Source Text (S5):** `Does that mean I have the job?`\n\n**Unit 4: Paralinguistic Delivery (Tone)**\n- **Type:** Vocal Quality / Emotional Frame\n- **Semantic Meaning:** The narrative descriptor applied to the speech act, conveying that the delivery is characterized by expectation, desire for a positive outcome, and emotional vulnerability.\n- **Source Text (S7):** `she asked in a hopeful tone`\n\n---\n\n### Complete Source Accounting\n\nTo prove full coverage (no missing characters), the raw text is reconstructed via the concatenation of the source fragments and explicit grammatical connectors/framing:\n\n- **S1:** `Kizzie's expression brightened warm`\n- **C1 (Connector):** ` and `\n- **S3:** `her tail lifted instinctually`\n- **C2 (Punctuation/Frame):** `. \"`\n- **S5:** `Does that mean I have the job?`\n- **C3 (Punctuation/Frame):** `\" `\n- **S7:** `she asked in a hopeful tone`\n- **C4 (Terminator):** `.`\n\n**Verification:**\n`[S1] + [C1] + [S3] + [C2] + [S5] + [C3] + [S7] + [C4]` yields exactly:\n`Kizzie's expression brightened warm and her tail lifted instinctually. \"Does that mean I have the job?\" she asked in a hopeful tone.`\n\nThus, the four semantic units (S1, S3, S5, S7) fully account for the perceptual content, while the connectors/punctuation (C1–C4) account for the grammatical structure and framing with 0% omission and 0% duplication.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 75,
+      "outputTokens": 2196,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1608
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:58:38.020Z"
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "1e68fc37-35cf-49fb-9d91-7feb0dfd616c",
+  "correlation": {
+    "evidence_id": "1e68fc37-35cf-49fb-9d91-7feb0dfd616c",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-fa4df573-02fc-45ad-b3a8-f4836a851b55-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-fa4df573-02fc-45ad-b3a8-f4836a851b55-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "cd977a92-4877-4596-903d-034646088222",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie squeaked, though she kept her eyes low. \"You...how did you....know?\" she asked, awe tinting her words."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units, with complete source accounting for each fragment.\n\n---\n\n**Unit 1: Auditory - Involuntary Vocalization**  \n**Source excerpt:** `Kizzie squeaked,`  \n**Semantics:** A high-pitched, involuntary, startled or nervous sound. This establishes an immediate physical and auditory reaction to whatever context preceded it, indicating surprise, shyness, or alarm. This is a non-verbal auditory cue.\n\n**Unit 2: Visual - Posture/Gaze (Avoidance)**  \n**Source excerpt:** `though she kept her eyes low.`  \n**Semantics:** A visual action descriptor indicating that Kizzie is avoiding eye contact. This implies submission, embarrassment, or extreme shyness. It reinforces the nervousness introduced by the squeak and sets the physical stance of the character during the dialogue.\n\n**Unit 3: Dialogue - Verbalization (Stammered Interrogative)**  \n**Source excerpt:** `\"You...how did you....know?\"`  \n**Semantics:** The direct speech itself. The stammering (marked by ellipses and extra periods) indicates hesitancy and difficulty articulating. The content is a direct question asking for the source of the interlocutor's knowledge. This requests information and furthers the conversational exchange.\n\n**Unit 4: Meta-annotation - Speech Act (Identification)**  \n**Source excerpt:** `she asked,`  \n**Semantics:** The narrative tag explicitly identifies the speech act as a question, confirming the intent of the dialogue and attributing it to the character, Kizzie.\n\n**Unit 5: Auditory/Prosodic - Emotional Tone**  \n**Source excerpt:** `awe tinting her words.`  \n**Semantics:** A description of the vocal prosody—the emotional coloring applied to the speech. \"Awe\" indicates wonder, reverence, or intense admiration mixed with amazement. This modifies the interpretation of the question (Unit 3), suggesting that the stammering is due to profound shock and admiration regarding the interlocutor's perceptiveness, rather than pure fear or confusion.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 75,
+      "outputTokens": 920,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 485
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:50:21.941Z"
+}

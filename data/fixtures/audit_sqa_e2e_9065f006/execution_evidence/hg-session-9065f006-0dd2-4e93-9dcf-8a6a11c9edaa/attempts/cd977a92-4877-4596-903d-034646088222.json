@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "cd977a92-4877-4596-903d-034646088222",
+  "correlation": {
+    "evidence_id": "cd977a92-4877-4596-903d-034646088222",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-fa4df573-02fc-45ad-b3a8-f4836a851b55",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-fa4df573-02fc-45ad-b3a8-f4836a851b55",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie squeaked, though she kept her eyes low. \"You...how did you....know?\" she asked, awe tinting her words."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the semantic decomposition of the player-authored turn, segmented into discrete perceptual units. Each unit is mapped verbatim to its exact source text, ensuring complete and factual source accounting (every word, pause, and punctuation mark from the original string is accounted for).\n\n### Semantic Perceptual Decomposition\n\n**Unit 1: Paralinguistic Vocalization (Squeak)**  \n- **Source Text**: `Kizzie squeaked`  \n- **Perceptual Modality**: Auditory (non-verbal sound quality)  \n- **Semantic Value**: An involuntary, high-pitched vocal burst (a squeak) indicating sudden surprise, nervousness, or shyness. It establishes the character’s physical reaction before any verbal communication occurs.\n\n**Unit 2: Visual Kinesic Action (Downcast Gaze)**  \n- **Source Text**: `though she kept her eyes low`  \n- **Perceptual Modality**: Visual (body language/posture)  \n- **Semantic Value**: A submissive or self-conscious positional cue. The \"kept low\" gaze signals avoidance of direct eye contact, reinforcing shyness or deference. The conjunction `though` contrasts this controlled posture with her otherwise startled vocalization.\n\n**Unit 3: Verbal Utterance (Direct Speech)**  \n- **Source Text**: `\"You...how did you....know?\"`  \n- **Perceptual Modality**: Auditory (linguistic content) + Temporal (phonetic pacing)  \n- **Semantic Value**: The exact spoken words in the form of a question. The irregular ellipses (`...` and `....`) encode stammering, hesitation, or breathlessness in the delivery. The semantic content is a direct query about the source of the other party's knowledge, tinged with disbelief.\n\n**Unit 4: Quotative Speech Frame (Ask)**  \n- **Source Text**: `she asked`  \n- **Perceptual Modality**: Narrative/Structural frame  \n- **Semantic Value**: A meta-narrative marker that classifies the preceding direct speech (Unit 3) as an interrogative speech act. It explicitly identifies the intent as seeking information, rather than casual statement or command.\n\n**Unit 5: Affective Prosody Modifier (Awe)**  \n- **Source Text**: `awe tinting her words`  \n- **Perceptual Modality**: Auditory (paralinguistic tone) + Emotive inference  \n- **Semantic Value**: A modifier overlay describing the tonal quality of the voice. The word `tinting` suggests a subtle yet pervasive emotional coloration—specifically *awe* (wonder, reverence, admiration, or shock)—that physically alters how the utterance (Unit 3) is sounded and perceived.\n\n---\n\n### Complete Source Accounting (Verbatim Track)\n\nTo ensure transparency, here is the exact substring alignment to the original source string: \n\n**Original**: `Kizzie squeaked, though she kept her eyes low. \"You...how did you....know?\" she asked, awe tinting her words.`\n\n| Unit | Exact Text Citation | Punctuation Connector |\n| :--- | :--- | :--- |\n| 1 | `Kizzie squeaked` | `,` (separator) |\n| 2 | `though she kept her eyes low` | `.` (terminal) |\n| 3 | `\"You...how did you....know?\"` | none (self-contained) |\n| 4 | `she asked` | `,` (separator) |\n| 5 | `awe tinting her words` | `.` (terminal) |\n\nAll five semantic units are explicit, non-overlapping, and fully capture the action, dialogue, body language, and vocal inflection present in the original turn.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 75,
+      "outputTokens": 3408,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 2633
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:50:14.014Z"
+}

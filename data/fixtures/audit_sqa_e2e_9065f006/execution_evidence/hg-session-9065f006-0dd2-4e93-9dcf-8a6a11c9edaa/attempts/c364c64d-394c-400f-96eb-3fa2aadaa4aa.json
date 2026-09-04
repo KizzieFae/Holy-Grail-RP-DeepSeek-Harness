@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "c364c64d-394c-400f-96eb-3fa2aadaa4aa",
+  "correlation": {
+    "evidence_id": "c364c64d-394c-400f-96eb-3fa2aadaa4aa",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-e76e85d9-08e7-4d34-b7e6-5f76e4c976d5-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-e76e85d9-08e7-4d34-b7e6-5f76e4c976d5-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "edea8780-0f63-4086-b405-cf870228e6f3",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie followed dutifully, her stockinged feet making no sound on the wooden floor. \"It was, uneventful. My uber driver was quite chatty. I considered bringing a suitcase, but I thought showing up with one would be presumptuous.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "## Semantic Perceptual Decomposition\n\n| # | Source Span | Semantic Unit | Modality / Type | Perceptual Content & Function |\n|---|---|---|---|---|\n| 1 | `Kizzie followed dutifully` | **Motion / spatial tracking** | Kinesthetic, motor intention; implied visual tracking of leader | Kizzie moves in obedience or politeness after someone. Communicate submission or compliance. |\n| 2 | `her stockinged feet making no sound` | **Silence / acoustic absence** | Auditory (positive: perceived quiet) + proprioceptive awareness of own steps | She notices or exhibits a stealthy, deliberate quietness — indicates care about noise level, vulnerability (unshod), or practiced discretion. |\n| 3 | `on the wooden floor` | **Surface material context** | Tactile-kinesthetic (expected sound cue) / environmental knowledge | Defines the acoustic environment — wood would normally creak; her silence is therefore meaningful. Places scene indoors. |\n| 4 | `'It was, uneventful.'` | **Verbal report (past recollection)** | Speech act; episodic memory retelling with graphic pause (comma) | Delivers a summary of a prior trip, but the pause suggests hedging; non-committal tone. |\n| 5 | `My uber driver was quite chatty.` | **Verbal report (social/auditory memory)** | Episodic memory; recalled auditory speech experience | Implies she endured unwanted conversation — indirect politeness, passive discontent. |\n| 6 | `I considered bringing a suitcase` | **Internal consideration (counterfactual action)** | Cognitive deliberation; mental simulation | Reveals she planned for a stay longer than a single visit, but vacated the plan. |\n| 7 | `but I thought showing up with one would be presumptuous.` | **Social meta-perception / judgment** | Theory-of-mind reasoning; normative anxiety | Anticipates how other(s) would perceive luggage as overstepping hospitality; signals social caution, self-monitoring, and possibly fear of rejection. |\n\n## Complete Source Accounting\n\n- **All narrative clauses covered:** 1–3 (movement + acoustic + environment)  \n- **All spoken content covered:** 4, 5, 7 (speech acts)  \n- **All internal mental content covered:** 6 (deliberation)  \n- Note: the comma in `'It was, uneventful.'` is treated as prosodic filler indicating hesitation — absorbed into Unit 4.  \n- No text left unallocated.  \n\n## Optional Synthesis (for GM reference)\n\nKizzie presents herself as *physically unobtrusive* (silent steps), *verbally guarded* (hesitant report), *socially anxious* (fearing presumption), yet *open enough to disclose her filtering process*. The turn layers three actor states: **motion** (complying), **dialogue** (withholding detail), **cognition** (self-censorship). Any NPC might perceive: her quietude, her choosy wording, and the subtext that she almost brought luggage — i.e., she anticipated an extended stay but withdrew that expectation.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 99,
+      "outputTokens": 1694,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1029
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T01:51:25.283Z"
+}
