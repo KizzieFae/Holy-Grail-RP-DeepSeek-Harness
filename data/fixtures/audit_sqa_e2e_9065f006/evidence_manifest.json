@@ -2,7 +2,7 @@
   "schema": "hg_audit_evidence_manifest_v0",
   "session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
   "audit_anchor_sha": "211e8888edeac58e451cb7ddc9355ab2ec29808c",
-  "export_timestamp_utc": "2026-09-04T03:50:33Z",
+  "export_timestamp_utc": "2026-09-04T04:04:46Z",
   "source_paths": {
     "session_json": "data/sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json",
     "execution_evidence_root": "data/execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
@@ -18,19 +18,25 @@
     "sanitization_operations": [
       "Removed response.reasoning_text from published execution-evidence attempt copies where present.",
       "Redacted character_private contribution payloads in published attempt copies (lane metadata retained).",
+      "Redacted character_memory contribution payloads in published attempt copies (lane metadata retained).",
       "Trimmed execution-evidence index lists only published attempt_ids (not full 341-attempt source index)."
     ],
     "sanitization_stats": {
-      "reasoning_text_stripped": 51,
-      "character_private_redacted": 5
+      "reasoning_text_stripped": 69,
+      "character_private_redacted": 5,
+      "character_memory_redacted": 4,
+      "other_private_redacted": 0
     },
-    "character_private_redaction_note": "[REDACTED — character-private payload omitted from published audit fixture; source_kind character_private retained for lane verification]"
+    "character_private_redaction_note": "[REDACTED — character-private payload omitted from published audit fixture; source_kind character_private retained for lane verification]",
+    "character_memory_redaction_note": "[REDACTED — character-memory payload omitted from published audit fixture; source_kind character_memory retained for lane verification]"
   },
   "published_attempt_ids": [
     "03d8cd87-3e69-422d-9f1b-3e654485ff4c",
     "08cac05b-661d-497b-99e4-863c967616e6",
     "0af61312-41ea-47e2-886a-1544521b227d",
     "0cc72110-384f-4922-8b02-b05b81d3c1b3",
+    "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+    "0fc878bc-6b96-416f-8980-9ced4d7db623",
     "10a0046a-1266-4369-addf-fdc4b77168ac",
     "110d4ef2-db2d-4c1b-9767-e575dadff48a",
     "11fedd23-1f35-4c61-8be2-935a140d86ed",
@@ -44,24 +50,36 @@
     "24cc619d-533b-4373-86ab-51d6577e9fb4",
     "24d19740-0adb-4df5-a9f9-dde458bacbc9",
     "32fae694-0bdc-4d9a-82cc-5048c0cb1fd4",
+    "3a5c50aa-9ad2-4af3-8f30-ab50940fd374",
+    "3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71",
     "45936195-d150-4987-9f99-df492d2295df",
     "4e5fb643-87d1-44ba-8d82-d037c682cc1c",
     "51cac6a4-2097-44a5-ba29-4b5124ea0ee5",
     "58dbbf6c-2451-4bc1-99fe-011c8dfcfaa4",
     "596fa261-d661-4db5-a6e5-094202aeff1b",
+    "5b8bd9af-0370-44ee-b3de-4b5cd35cf619",
     "62bc5504-3a8f-46b2-807d-22a058326236",
+    "6bb3c820-6019-4530-a7ef-b47ce03d8fd4",
+    "6c506d9f-a29b-4ad8-aa70-369068c5b191",
     "704fc820-f68c-45fb-a534-b46daafe5794",
     "73912bd4-7ade-40ce-8466-343b5c0d432f",
     "7ec040d8-cdd7-460f-ba1c-0008700af4df",
+    "80c2be6a-93eb-4530-bb15-27c1eef481e9",
+    "87b33d84-325d-4ab6-b94e-2503aaa5ab55",
     "92debfbc-fb9d-4d41-b0ff-df9f01c9ffc0",
+    "948aae07-3ee4-4cba-b2f2-752fa268c7b5",
     "95c27073-3b8e-4cc9-9a11-4e16c00907ca",
     "97b3e823-ec31-49f2-8793-78950713a688",
+    "99044a6b-d161-4b1d-8951-33b77c0f8823",
+    "9a354613-f076-4a85-b26c-b8afbba004b1",
     "9e0c2456-108d-49bc-967e-727f7ce11552",
     "9f5fdff7-d921-4448-8841-58b356984133",
+    "a1e07c63-3463-48bb-927b-d25682d3eef4",
     "a33ae087-5836-4ae7-8ed8-25e3ec891f4f",
     "a4e9fa29-fd93-4a4c-918a-f9da772a47f0",
     "a53a15cb-31ba-40da-8a6b-a253309ba0ba",
     "a5c9f08a-10e6-4b88-bb6f-e6c78a04386c",
+    "aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29",
     "ae609951-b346-4e09-ab83-92673acbe746",
     "b0b9bc67-3633-42ba-868b-21515c204170",
     "b195732f-af65-4558-a38f-af9f4e12136f",
@@ -72,6 +90,10 @@
     "c364c64d-394c-400f-96eb-3fa2aadaa4aa",
     "cd977a92-4877-4596-903d-034646088222",
     "d1b06ec5-39c6-49e7-bfee-0c27d3fd0790",
+    "d9b906ed-8c54-4d51-bd86-4b2356c45180",
+    "dad983a0-d794-48b8-bdaf-8be8ef81a737",
+    "dc41e93f-c9b6-4bae-bd19-f3d820c77616",
+    "e47e718d-7564-4436-9d76-8849a34a2980",
     "ea6da952-858b-4299-9c63-a88552ca5cee",
     "ec33c95a-8c01-4f78-8cfa-b42299795f67",
     "edea8780-0f63-4086-b405-cf870228e6f3",
@@ -81,7 +103,7 @@
     "f9148fb0-3d77-4aa6-aaef-68096a70d442"
   ],
   "original_mechanical_counts": {
-    "note": "Counts below derived from full local runtime source at export; not all reproducible from published subset alone.",
+    "note": "Player-PVR and opening counts remain export-derived from full source; plot/Librarian contract-correction count and token total are directly reproducible from published SQA-04b evidence.",
     "player_pvr_total": 18,
     "player_pvr_invalid_excluded": 18,
     "player_decomposition_attempts": 36,
@@ -91,7 +113,7 @@
     "opening_segmentation_reported_tokens": 17092,
     "plot_librarian_contract_correction_reported_tokens": 213335,
     "complete_execution_evidence_attempt_count": 341,
-    "published_execution_evidence_attempt_count": 52
+    "published_execution_evidence_attempt_count": 70
   },
   "finding_evidence_mapping": {
     "SQA-01": {
@@ -180,15 +202,62 @@
       }
     },
     "SQA-04b": {
-      "summary": "Plot/Librarian contract-correction friction (~20 corrections / ~213k tokens).",
+      "summary": "Plot/Librarian contract-correction friction (20 corrections / 213,335 reported tokens).",
       "evidence": {
-        "representative_correction_attempts": [
+        "complete_contract_correction_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0fc51415-c5c9-4fcf-be04-aa8ac944213e.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0fc878bc-6b96-416f-8980-9ced4d7db623.json",
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/24d19740-0adb-4df5-a9f9-dde458bacbc9.json",
-          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/32fae694-0bdc-4d9a-82cc-5048c0cb1fd4.json"
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/32fae694-0bdc-4d9a-82cc-5048c0cb1fd4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/3a5c50aa-9ad2-4af3-8f30-ab50940fd374.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/5b8bd9af-0370-44ee-b3de-4b5cd35cf619.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/6bb3c820-6019-4530-a7ef-b47ce03d8fd4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/6c506d9f-a29b-4ad8-aa70-369068c5b191.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/80c2be6a-93eb-4530-bb15-27c1eef481e9.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/87b33d84-325d-4ab6-b94e-2503aaa5ab55.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/948aae07-3ee4-4cba-b2f2-752fa268c7b5.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/99044a6b-d161-4b1d-8951-33b77c0f8823.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/9a354613-f076-4a85-b26c-b8afbba004b1.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a1e07c63-3463-48bb-927b-d25682d3eef4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/d9b906ed-8c54-4d51-bd86-4b2356c45180.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/dad983a0-d794-48b8-bdaf-8be8ef81a737.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/dc41e93f-c9b6-4bae-bd19-f3d820c77616.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/e47e718d-7564-4436-9d76-8849a34a2980.json"
         ],
-        "following_corrected_results": [
+        "optional_lifecycle_followups": [
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/110d4ef2-db2d-4c1b-9767-e575dadff48a.json",
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/73912bd4-7ade-40ce-8466-343b5c0d432f.json"
+        ]
+      },
+      "reproducibility": {
+        "population_rule": "Include every execution-evidence attempt for this session where correlation.inference_kind contains plot_cognition_update_contract_correction.",
+        "count_derivation": "len(complete_contract_correction_attempts) == 20",
+        "token_derivation": "For each attempt in complete_contract_correction_attempts, read response.usage; token_total = usage.total_tokens if present else inputTokens + outputTokens + (reasoningTokens or 0); sum across all 20 attempts.",
+        "reproduced_correction_count": 20,
+        "reproduced_token_total": 213335,
+        "population_attempt_ids": [
+          "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+          "0fc878bc-6b96-416f-8980-9ced4d7db623",
+          "24d19740-0adb-4df5-a9f9-dde458bacbc9",
+          "32fae694-0bdc-4d9a-82cc-5048c0cb1fd4",
+          "3a5c50aa-9ad2-4af3-8f30-ab50940fd374",
+          "3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71",
+          "5b8bd9af-0370-44ee-b3de-4b5cd35cf619",
+          "6bb3c820-6019-4530-a7ef-b47ce03d8fd4",
+          "6c506d9f-a29b-4ad8-aa70-369068c5b191",
+          "80c2be6a-93eb-4530-bb15-27c1eef481e9",
+          "87b33d84-325d-4ab6-b94e-2503aaa5ab55",
+          "948aae07-3ee4-4cba-b2f2-752fa268c7b5",
+          "99044a6b-d161-4b1d-8951-33b77c0f8823",
+          "9a354613-f076-4a85-b26c-b8afbba004b1",
+          "a1e07c63-3463-48bb-927b-d25682d3eef4",
+          "aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29",
+          "d9b906ed-8c54-4d51-bd86-4b2356c45180",
+          "dad983a0-d794-48b8-bdaf-8be8ef81a737",
+          "dc41e93f-c9b6-4bae-bd19-f3d820c77616",
+          "e47e718d-7564-4436-9d76-8849a34a2980"
         ]
       }
     },

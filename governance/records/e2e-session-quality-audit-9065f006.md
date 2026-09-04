@@ -168,7 +168,7 @@ Turn 1 Character manifest shows neutral PVR marker in `recent_scene_transcript` 
 
 This is **not** a claim that the entire NI stack is wasteful — only that correction-loop volume is materially high.
 
-**Fixture evidence:** representative correction attempts `24d19740-…`, `32fae694-…` plus following corrected results `110d4ef2-…`, `73912bd4-…` — manifest `SQA-04b`. Full 472-file Plot Cognition forensic tree intentionally excluded.
+**Fixture evidence:** complete population of 20 `plot_cognition_update_contract_correction` attempts (token total 213,335 reproducible from published records) — manifest `SQA-04b`. Full 472-file Plot Cognition forensic tree intentionally excluded.
 
 ---
 
@@ -252,7 +252,7 @@ Narrator attempts generally rendered committed Character moves without fidelity 
 | Opening segmentation failures | 2 |
 | Plot/Librarian contract corrections | 20 |
 | Complete execution-evidence attempts (source) | 341 |
-| Published fixture attempts | 52 |
+| Published fixture attempts | 70 |
 
 ---
 
@@ -265,7 +265,7 @@ Curated fixture: [`data/fixtures/audit_sqa_e2e_9065f006/`](../../data/fixtures/a
 - Source session SHA-256: `079931022290eb28dc4646492bc72c30a185d24a7ecf4fdb46510e95d6945104`
 - Complete index SHA-256: `dff687535b6caadce2dfd64f5768d1502f880f104b32483fc5f10374b48b5ebf`
 
-Published copies: `reasoning_text` stripped; `character_private` payloads redacted where not required for verification. Runtime originals unchanged.
+Published copies: `reasoning_text` stripped; `character_private` and `character_memory` contribution payloads redacted where not required for verification. Runtime originals unchanged. SQA-04b correction count and token aggregate are directly reproducible from the published correction population (see manifest `SQA-04b.reproducibility`).
 
 ---
 

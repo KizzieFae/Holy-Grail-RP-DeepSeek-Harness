@@ -34,8 +34,8 @@ Normal session and execution-evidence trees stay gitignored per `docs/rp-data-la
 | Player decomposition (SQA-01) | All **36** bounded decomposition attempts |
 | Opening segmentation (SQA-02a/02b) | Both failed attempts (`45936195-…`, `f5ec556e-…`) |
 | Information-flow turn chains (SQA-03) | Director / Character / Narrator chains for turns 1, 7, 11, 12 |
-| Plot/Librarian corrections (SQA-04b) | Representative correction attempts + following corrected results |
-| Trimmed execution-evidence index | `execution_evidence/.../index.json` — **52 published attempts only** |
+| Plot/Librarian corrections (SQA-04b) | **Complete population of 20** `plot_cognition_update_contract_correction` attempts |
+| Trimmed execution-evidence index | `execution_evidence/.../index.json` — **70 published attempts** (not 341) |
 
 ## What is intentionally excluded
 
@@ -50,12 +50,22 @@ Normal session and execution-evidence trees stay gitignored per `docs/rp-data-la
 Published execution-evidence copies are **curated forensic evidence**, not byte-identical archival copies. Operations performed on **copies only** (runtime originals never altered):
 
 1. **`response.reasoning_text` removed** where present (hidden chain-of-thought not required for verification).
-2. **`character_private` contribution payloads redacted** where not needed to verify an information-flow claim; lane `source_kind` and contribution structure retained.
-3. **Trimmed `index.json`** documents itself as non-complete (see `publication_note`).
+2. **`character_private` contribution payloads redacted** — lane `source_kind`, contribution IDs, authority/visibility metadata retained.
+3. **`character_memory` contribution payloads redacted** — same structural retention; private interpretation/motivation/tactic content omitted.
+4. **Other Character-private lane kinds** (`character_secret`, `private_knowledge`, etc.) redacted if present, with lane metadata retained.
+5. **Trimmed `index.json`** documents itself as non-complete (see `publication_note`).
 
 Details and counts: `evidence_manifest.json` → `publication`.
 
 The canonical session JSON is included **without transformation** — it is the user-visible RP and PVR primary record.
+
+## SQA-04b reproducibility (published subset)
+
+From `evidence_manifest.json` → `finding_evidence_mapping.SQA-04b.reproducibility`:
+
+- **Population:** every published attempt where `correlation.inference_kind` contains `plot_cognition_update_contract_correction` (20 records).
+- **Count:** `len(complete_contract_correction_attempts) == 20`
+- **Token total:** for each attempt, `response.usage.total_tokens` if present, else `inputTokens + outputTokens + (reasoningTokens or 0)`; sum = **213,335**.
 
 ## Finding → evidence map
 
@@ -67,7 +77,7 @@ See `evidence_manifest.json` → `finding_evidence_mapping` for machine-readable
 | **SQA-02a** | Opening segmentation attempts + session opening canon |
 | **SQA-02b** | Same opening attempts + session continuation after degradation |
 | **SQA-03** | Turn 1 / 7 / 11 / 12 execution-evidence chains (see manifest) |
-| **SQA-04b** | Representative `plot_cognition_update_contract_correction` attempts + corrected follow-ups |
+| **SQA-04b** | All 20 contract-correction attempts (complete population) |
 | **SQA-06** | Session JSON (semantic validation / retry metadata) |
 
 **SQA-04a is not a separate finding** — failed decomposition/segmentation token costs are impact evidence for SQA-01 and SQA-02a.
@@ -91,8 +101,9 @@ python tools/investigation/list_execution_evidence.py \
 
 ## Limitations
 
-- Mechanical counts in the manifest marked as derived from the **full local runtime source at export** cannot all be reproduced from the published subset alone.
-- Published attempt copies omit `reasoning_text` and some `character_private` payloads.
+- Player-PVR and opening mechanical counts remain export-derived from the full runtime source; see manifest `original_mechanical_counts.note`.
+- Plot/Librarian contract-correction **count and token total are reproducible** from the published SQA-04b population.
+- Published attempt copies omit `reasoning_text` and redact Character-private/memory contribution payloads where not required for verification.
 - This packet does not establish a generalized audit-evidence publication standard.
 
 ## Source checksums (original runtime, at export)

@@ -1,0 +1,151 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "0fc878bc-6b96-416f-8980-9ced4d7db623",
+  "correlation": {
+    "evidence_id": "0fc878bc-6b96-416f-8980-9ced4d7db623",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "hg-round-76c37238-be9f-42ce-bb9b-6168b0c1baa9",
+    "role": "librarian",
+    "character_id": null,
+    "inference_id": "inf-librarian-0-66da1545-dd70-4352-85b3-1c87f524e451-librarian-proposal-contract-correction",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-inf-librarian-0-66da1545-dd70-4352-85b3-1c87f524e451-librarian-proposal-contract-correction",
+    "manifest_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94",
+    "contribution_ids": [
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-request",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-epistemic",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-envelope",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-catalog"
+    ],
+    "domain_commit_id": "hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036",
+    "rp_history_entry_id": null,
+    "continuity_turn_index": 17,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": 0,
+    "inference_kind": "librarian_proposal_contract_correction",
+    "parent_inference_id": "inf-librarian-0-66da1545-dd70-4352-85b3-1c87f524e451-librarian-proposal"
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [
+      {
+        "contribution_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-request",
+        "source_kind": "inference_instruction",
+        "authority_class": "derived",
+        "priority": 10,
+        "content": "Post-commit Librarian proposal request (information interpretation only):\n{\n  \"request_id\": \"lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94\",\n  \"domain_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n  \"hg_round_id\": \"hg-round-76c37238-be9f-42ce-bb9b-6168b0c1baa9\",\n  \"turn_index\": 17,\n  \"pipeline_stage\": \"post_commit\",\n  \"audit_reason\": \"post_commit_semantic_interpretation\"\n}"
+      },
+      {
+        "contribution_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-epistemic",
+        "source_kind": "active_constraints",
+        "authority_class": "authoritative",
+        "priority": 10,
+        "content": "Occurrence truth ≠ proposition truth (docs/story-knowledge.md §2). Occurrence/public_event/committed_move anchors prove what was said or occurred; they do NOT establish objective world truth of claims inside dialogue. For knowledge_revelation_significance: set interpretation_scope to utterance_occurrence when marking significance of a claim/utterance without endorsing its proposition; use referenced_authoritative_proposition only when citing proposition_authority_refs to anchors with world_truth_eligible metadata (e.g. scenario_premise). authored_role_private anchors prove private role knowledge alignment only — not sole world truth. derivation_summary is an interpretation note, not proposition authority."
+      },
+      {
+        "contribution_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-envelope",
+        "source_kind": "active_constraints",
+        "authority_class": "authoritative",
+        "priority": 11,
+        "content": "Host visibility/authority envelope (must not be widened):\n{\n  \"viewer_role\": \"host_internal\",\n  \"authority_ceiling_enforced\": \"derived\",\n  \"viewer_character_id\": null,\n  \"subject_character_id\": null,\n  \"session_template_id\": null\n}"
+      },
+      {
+        "contribution_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-catalog",
+        "source_kind": "librarian_knowledge",
+        "authority_class": "derived",
+        "priority": 12,
+        "content": "Bounded post-commit evidence catalog. Proposals MUST cite anchor_id values from this catalog only. Do NOT invent facts or use Storyteller PreservationSignal attention refs as evidence.\n[\n  {\n    \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"evidence_kind\": \"committed_move\",\n    \"stable_ref\": \"commit:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": \"/\",\n    \"content\": \"{\\\"beats\\\": [{\\\"action\\\": \\\"She holds Kizzie's gaze a moment longer, then releases her hands and steps back, a decisive smile settling on her lips.\\\", \\\"type\\\": \\\"action\\\"}, {\\\"dialogue\\\": \\\"Your hands have answered for you. Tonight you will dine at my table, and tomorrow your true training begins—as mine, not as a servant. Rise now, and I will show you to your room.\\\", \\\"type\\\": \\\"speech\\\"}], \\\"motivation\\\": {\\\"emotional_driver\\\": \\\"Quiet triumph and gentle certainty; the choice is made and now simply needs to be lived.\\\", \\\"goal\\\": \\\"Seal the moment of surrender by moving forward with the household arrangement without demanding further verbal consent.\\\", \\\"risk_level\\\": \\\"low\\\", \\\"tactic\\\": \\\"Accept the offered hands as binding and transition concretely to the next step—supper and then the room—to make the new order tangible.\\\"}, \\\"move_schema_version\\\": 2, \\\"semantic_evaluation\\\": {\\\"decision\\\": \\\"no_covered_change\\\"}}\",\n    \"provenance\": {\n      \"character_id\": \"Ayame\",\n      \"turn_index\": 17,\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n    \"evidence_kind\": \"public_event\",\n    \"stable_ref\": \"event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": \"/public_events/evt_2026-09-04T03:14:52.013561+00:00_15\",\n    \"content\": \"{\\\"event_id\\\": \\\"evt_2026-09-04T03:14:52.013561+00:00_15\\\", \\\"event_type\\\": \\\"action\\\", \\\"known_by\\\": [\\\"Kizzie\\\", \\\"Ayame\\\"], \\\"observed_by\\\": [\\\"Kizzie\\\", \\\"Ayame\\\"], \\\"revelation_significance_by_character\\\": null, \\\"significance\\\": \\\"major\\\", \\\"summary\\\": \\\"Ayame She holds Kizzie's gaze a moment longer, then releases her hands and steps back, a decisive smile settling on her lips.; said: \\\\\\\"Your hands have answered for you. Tonight you will dine at my table, and tomorrow your true training begins—as mine, not as a servant. Rise now, and I will show you to your room.\\\\\\\"\\\", \\\"turn_index\\\": 17}\",\n    \"provenance\": {\n      \"event_id\": \"evt_2026-09-04T03:14:52.013561+00:00_15\",\n      \"turn_index\": 17,\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"scenario_premise:ayame_household_entry_evaluation\",\n    \"evidence_kind\": \"scenario_premise\",\n    \"stable_ref\": \"scenario_premise:ayame_household_entry_evaluation\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"public\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": \"/scene_setup/premise\",\n    \"content\": \"{\\\"premise_excerpt\\\": \\\"A desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear.\\\", \\\"template_id\\\": \\\"ayame_household_entry_evaluation\\\"}\",\n    \"provenance\": {\n      \"template_id\": \"ayame_household_entry_evaluation\",\n      \"source\": \"scene_premise\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"scenario_premise\",\n        \"world_truth_eligible\": true,\n        \"visibility_scope\": \"public\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"scenario_premise\",\n      \"world_truth_eligible\": true,\n      \"visibility_scope\": \"public\"\n    }\n  },\n  {\n    \"anchor_id\": \"authored_role_private:Ayame\",\n    \"evidence_kind\": \"authored_role_private\",\n    \"stable_ref\": \"role_private:Ayame\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"orchestration_only\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": \"/role_private/Ayame\",\n    \"content\": \"{\\\"character_id\\\": \\\"Ayame\\\", \\\"private_knowledge_excerpt\\\": \\\"The host privately engineered the chain of events that cost the applicant her job and apartment, placed the household-help advertisement, and expedited the interview invitation. The host knows the sequence was deliberate: vulnerability and dependence were created, then the applicant was steered toward live-in domestic employment under the host's control.\\\", \\\"role_name\\\": \\\"host\\\"}\",\n    \"provenance\": {\n      \"character_id\": \"Ayame\",\n      \"role_name\": \"host\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"authored_role_private\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"orchestration_only\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"authored_role_private\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"orchestration_only\"\n    }\n  },\n  {\n    \"anchor_id\": \"scene_state:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"evidence_kind\": \"scene_state\",\n    \"stable_ref\": \"scene_state:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"scene_orchestration\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": null,\n    \"content\": \"{\\\"location_id\\\": null, \\\"phase\\\": \\\"falling\\\", \\\"present_characters\\\": [\\\"Ayame\\\", \\\"Kizzie\\\"]}\",\n    \"provenance\": {\n      \"snapshot\": \"post_commit\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"scene_orchestration\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"scene_orchestration\"\n    }\n  },\n  {\n    \"anchor_id\": \"continuity_state:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"evidence_kind\": \"continuity_state\",\n    \"stable_ref\": \"continuity_state:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"orchestration_only\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": null,\n    \"content\": \"{\\\"active_issues\\\": [], \\\"turn_index\\\": 17}\",\n    \"provenance\": {\n      \"snapshot\": \"post_commit\",\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"orchestration_only\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"orchestration_only\"\n    }\n  },\n  {\n    \"anchor_id\": \"continuity_issue:issue_2026-09-04T02:46:48.740363+00:00_3\",\n    \"evidence_kind\": \"continuity_issue\",\n    \"stable_ref\": \"issue:issue_2026-09-04T02:46:48.740363+00:00_3\",\n    \"authority_class\": \"authoritative\",\n    \"visibility_scope\": \"scene_orchestration\",\n    \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n    \"anchor_path\": \"/issues/issue_2026-09-04T02:46:48.740363+00:00_3\",\n    \"content\": \"{\\\"blocked_what\\\": \\\"Stable presence or positioning in the scene\\\", \\\"description\\\": \\\"Stable presence or positioning in the scene. Required next move: Tension is increasing; pressure mounts on all parties.\\\", \\\"issue_id\\\": \\\"issue_2026-09-04T02:46:48.740363+00:00_3\\\", \\\"last_change\\\": \\\"Ayame repositioned physically in contested space.\\\", \\\"participants\\\": [\\\"Ayame\\\", \\\"Kizzie\\\"], \\\"pressure_kind\\\": \\\"presence_conflict\\\", \\\"required_next_step\\\": \\\"The cast must settle who can remain, move, or take space.\\\", \\\"status\\\": \\\"active\\\"}\",\n    \"provenance\": {\n      \"issue_id\": \"issue_2026-09-04T02:46:48.740363+00:00_3\",\n      \"status\": \"active\",\n      \"turn_index\": 17,\n      \"authority_metadata\": {\n        \"proposition_authority_class\": \"occurrence_only\",\n        \"world_truth_eligible\": false,\n        \"visibility_scope\": \"scene_orchestration\"\n      }\n    },\n    \"authority_metadata\": {\n      \"proposition_authority_class\": \"occurrence_only\",\n      \"world_truth_eligible\": false,\n      \"visibility_scope\": \"scene_orchestration\"\n    }\n  }\n]"
+      }
+    ],
+    "user_instruction": {
+      "text": "CONTRACT CORRECTION: Your previous response did not satisfy the required Librarian proposal machine contract.\nPreserve the intended proposal meaning and cited evidence from that response unless satisfying the contract logically requires otherwise.\nCorrect ONLY representation/serialization. Do NOT invent new evidence, anchors, or unrelated proposals.\nOutput JSON only — no markdown, no commentary.\n\nPrevious response:\n{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-1\",\n      \"proposal_kind\": \"consequence_meaning\",\n      \"derivation_summary\": \"Ayame's committed move receives Kizzie's offered hands as binding and reframes the arrangement from household applicant to personal training under Ayame's authority, explicitly declaring that Kizzie will dine at her table and 'true training begins—as mine, not as a servant.' This advances the plot by transitioning from evaluation to an established role shift, and offers a candidate resolution to the lingering question of Kizzie's place in the household.\",\n      \"confidence\": \"confirmed\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"tags\": [\n          \"advancement\",\n          \"relationship_shift\",\n          \"resolution_candidate\"\n        ]\n      }\n    },\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-2\",\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"The utterance 'as mine, not as a servant' redefines the core premise of the relationship, pivoting the scene from ambiguous servitude to a concrete mentor-pupil dynamic. This semantic shift is pivotal because it alters the contract under which Kizzie will remain in the household and frames Ayame's authority over her future trajectory.\",\n      \"confidence\": \"confirmed\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"subject_ref\": \"commit:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n        \"salience_level\": \"pivotal\"\n      }\n    },\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-3\",\n      \"proposal_kind\": \"knowledge_revelation_significance\",\n      \"derivation_summary\": \"Ayame states that Kizzie will begin 'true training—as mine, not as a servant,' an utterance that\n\nStructural validation error: Expected ',' or ']' after array element in JSON at position 2482 (line 50 column 6)\n\nRequired contract:\nYou are the Holy Grail Librarian post-commit semantic interpreter.\nPropose grounded information-level persistence/change candidates ONLY from evidence catalog anchor_id values.\nDo NOT invent facts, authority, or continuity commits.\nDo NOT use Storyteller PreservationSignal or attention refs as evidence.\nOccurrence truth ≠ proposition truth: public_event and committed_move anchors prove what occurred or was said; they do NOT establish objective world truth of claims inside dialogue.\nFor knowledge_revelation_significance:\n- interpretation_scope utterance_occurrence: mark significance of what the Character said/claimed/expressed without endorsing the proposition as world truth. derivation_summary must frame significance of the utterance/claim, not objective ontology.\n- interpretation_scope referenced_authoritative_proposition: connect the occurrence to a proposition that already has independent world authority; cite proposition_authority_refs to catalog anchors with world_truth_eligible metadata (e.g. scenario_premise).\n- authored_role_private anchors support private epistemic alignment only; they cannot be the sole world-truth authority.\nReturn ONLY one JSON object (no markdown fences, no commentary).\n\nRequired top-level JSON object:\n- schema: \"hg_librarian_proposal_result_v1\"\n- proposals: array\n\nEach proposal object MUST include:\n- proposal_kind: one of consequence_meaning | information_salience | knowledge_revelation_significance | issue_tension_pressure\n- derivation_summary: non-empty string\n- confidence: one of confirmed | likely | speculative\n- proposed_payload: object matching proposal_kind (see below)\n- evidence_anchors: non-empty array of objects with anchor_id and evidence_kind from the catalog only\n\nproposed_payload by proposal_kind:\n- consequence_meaning: { tags: non-empty string[] from advancement|complication|revelation|resolution_candidate|relationship_shift|tension_escalation|tension_release }\n- information_salience: { subject_ref: string, salience_level: minor|major|pivotal }\n- knowledge_revelation_significance: { event_ref, subject_character, revelation_significance_level: minor|major|pivotal, interpretation_scope: utterance_occurrence|referenced_authoritative_proposition, proposition_authority_refs?: string[] (required when interpretation_scope=referenced_authoritative_proposition; must cite world_truth_eligible catalog anchors) }\n- issue_tension_pressure: { issue_ref, semantic_unmet_condition, stakes_summary? }\n\nForbidden:\n- Do NOT use field aliases: change_kind, target, type, candidate_id, info_kind — use proposal_kind and proposed_payload.\n- Do NOT use string entries in evidence_anchors — each anchor must be an object.\n- Do NOT omit the top-level schema field.\n- Do NOT use preservation_signal anchors.\n- Do NOT invent anchor_id values outside the evidence catalog.\n\nMinimal example (replace anchor_id with a catalog value such as \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"):\n{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_id\": \"prop-example-1\",\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"Committed move advances scene salience.\",\n      \"confidence\": \"likely\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"subject_ref\": \"commit:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n        \"salience_level\": \"major\"\n      }\n    }\n  ]\n}\n\nRe-emit the result using exactly the required JSON contract."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94",
+    "contribution_ids": [
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-request",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-epistemic",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-envelope",
+      "manifest-lpr-85ba0f4e-1f3e-496b-8b2e-cd55084bde94-catalog"
+    ]
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "{\n  \"schema\": \"hg_librarian_proposal_result_v1\",\n  \"proposals\": [\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-1\",\n      \"proposal_kind\": \"consequence_meaning\",\n      \"derivation_summary\": \"Ayame's committed move receives Kizzie's offered hands as binding and reframes the arrangement from household applicant to personal training under Ayame's authority, explicitly declaring that Kizzie will dine at her table and 'true training begins—as mine, not as a servant.' This advances the plot by transitioning from evaluation to an established role shift, and offers a candidate resolution to the lingering question of Kizzie's place in the household.\",\n      \"confidence\": \"confirmed\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"tags\": [\n          \"advancement\",\n          \"relationship_shift\",\n          \"resolution_candidate\"\n        ]\n      }\n    },\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-2\",\n      \"proposal_kind\": \"information_salience\",\n      \"derivation_summary\": \"The utterance 'as mine, not as a servant' redefines the core premise of the relationship, pivoting the scene from ambiguous servitude to a concrete mentor-pupil dynamic. This semantic shift is pivotal because it alters the contract under which Kizzie will remain in the household and frames Ayame's authority over her future trajectory.\",\n      \"confidence\": \"confirmed\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"subject_ref\": \"commit:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n        \"salience_level\": \"pivotal\"\n      }\n    },\n    {\n      \"proposal_id\": \"prop-lpr-85ba0f4e-3\",\n      \"proposal_kind\": \"knowledge_revelation_significance\",\n      \"derivation_summary\": \"Ayame states that Kizzie will begin 'true training—as mine, not as a servant,' an utterance that marks a pivotal redefinition of Kizzie's role from servant to personal trainee under Ayame's authority, revealing a significant shift in the relationship's terms.\",\n      \"confidence\": \"confirmed\",\n      \"evidence_anchors\": [\n        {\n          \"anchor_id\": \"committed_move:hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\",\n          \"evidence_kind\": \"committed_move\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        },\n        {\n          \"anchor_id\": \"public_event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n          \"evidence_kind\": \"public_event\",\n          \"anchor_commit_id\": \"hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036\"\n        }\n      ],\n      \"proposed_payload\": {\n        \"event_ref\": \"event:evt_2026-09-04T03:14:52.013561+00:00_15\",\n        \"subject_character\": \"Ayame\",\n        \"revelation_significance_level\": \"pivotal\",\n        \"interpretation_scope\": \"utterance_occurrence\"\n      }\n    }\n  ]\n}",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 5035,
+      "outputTokens": 3705,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 2574
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": {
+    "librarian_proposal": {
+      "batch_id": "hg-librarian-prop-batch-37e46a2f-bb4e-422f-a34e-9b2007e03475",
+      "host_accepted": true,
+      "host_rejection_codes": [],
+      "orchestration_status": "finalized",
+      "continuity_accepted_count": 3,
+      "continuity_rejected_count": 0,
+      "durable_mutation_applied": false,
+      "item_dispositions": [
+        {
+          "proposal_id": "prop-lpr-85ba0f4e-1",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        },
+        {
+          "proposal_id": "prop-lpr-85ba0f4e-2",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        },
+        {
+          "proposal_id": "prop-lpr-85ba0f4e-3",
+          "outcome": "accept",
+          "reason_code": "accepted"
+        }
+      ],
+      "proposal_content_hash": "7fe49d3d1e45e6e68ee829513dd20b53e76f5f8290dc9a1770e88b4595fa8a6e",
+      "proposal_generation_failure": null,
+      "structural_parse_error": null,
+      "proposal_generation_stage": "contract_correction",
+      "contract_correction_used": true,
+      "contract_lineage": {
+        "correction_used": true,
+        "primary_inference_id": "inf-librarian-0-66da1545-dd70-4352-85b3-1c87f524e451-librarian-proposal",
+        "primary_evidence_id": "f4487c8d-1125-404a-90dc-7b40d146a119",
+        "primary_parse_error": "Expected ',' or ']' after array element in JSON at position 2482 (line 50 column 6)",
+        "correction_inference_id": "inf-librarian-0-66da1545-dd70-4352-85b3-1c87f524e451-librarian-proposal-contract-correction",
+        "correction_evidence_id": "0fc878bc-6b96-416f-8980-9ced4d7db623",
+        "correction_parse_error": null
+      }
+    }
+  },
+  "associations": {
+    "domain_commit_id": "hg-commit-3b7457a0-a4b2-400f-90a7-556029f0a036",
+    "character_move_evidence_id": "7e496719-7d11-4efc-bb40-d7e154114909"
+  },
+  "evidence_contract": "hg_ni_forensics_v1",
+  "recorded_at": "2026-09-04T03:15:50.114Z",
+  "updated_at": "2026-09-04T03:15:54.449Z"
+}
