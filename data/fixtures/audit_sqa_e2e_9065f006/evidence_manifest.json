@@ -2,7 +2,7 @@
   "schema": "hg_audit_evidence_manifest_v0",
   "session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
   "audit_anchor_sha": "211e8888edeac58e451cb7ddc9355ab2ec29808c",
-  "export_timestamp_utc": "2026-09-04T04:04:46Z",
+  "export_timestamp_utc": "2026-09-04T04:15:39Z",
   "source_paths": {
     "session_json": "data/sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json",
     "execution_evidence_root": "data/execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
@@ -15,20 +15,36 @@
   "publication": {
     "curated_and_sanitized": true,
     "not_byte_identical_to_runtime_source": true,
+    "publication_policy": {
+      "summary": "Runtime RP visibility restrictions enforce in-story information boundaries only; they do not by themselves classify fictional RP content as confidential repository material for this audit packet.",
+      "fictional_rp_content_preserved": true,
+      "preserved_examples": [
+        "character_private",
+        "character_memory",
+        "authored_role_private",
+        "orchestration_only story knowledge",
+        "role-private fictional secrets"
+      ],
+      "reasoning_text_omitted": true,
+      "prohibited_in_repository_publication": [
+        "credentials",
+        "API keys",
+        "authentication/session tokens",
+        "secrets granting access to external systems",
+        "unrelated real-world PII",
+        "unrelated private user data"
+      ],
+      "greptile_grt03_disposition": "Observation correct (orchestration-only fictional content is visible in published evidence); not a repository publication defect under explicit project publication policy for this packet."
+    },
     "sanitization_operations": [
       "Removed response.reasoning_text from published execution-evidence attempt copies where present.",
-      "Redacted character_private contribution payloads in published attempt copies (lane metadata retained).",
-      "Redacted character_memory contribution payloads in published attempt copies (lane metadata retained).",
+      "Preserved full-fidelity fictional RP forensic content (character_private, character_memory, authored_role_private, orchestration_only knowledge, etc.) per explicit audit publication policy.",
       "Trimmed execution-evidence index lists only published attempt_ids (not full 341-attempt source index)."
     ],
     "sanitization_stats": {
       "reasoning_text_stripped": 69,
-      "character_private_redacted": 5,
-      "character_memory_redacted": 4,
-      "other_private_redacted": 0
-    },
-    "character_private_redaction_note": "[REDACTED — character-private payload omitted from published audit fixture; source_kind character_private retained for lane verification]",
-    "character_memory_redaction_note": "[REDACTED — character-memory payload omitted from published audit fixture; source_kind character_memory retained for lane verification]"
+      "rp_redactions_reversed": 5
+    }
   },
   "published_attempt_ids": [
     "03d8cd87-3e69-422d-9f1b-3e654485ff4c",
@@ -103,15 +119,17 @@
     "f9148fb0-3d77-4aa6-aaef-68096a70d442"
   ],
   "original_mechanical_counts": {
-    "note": "Player-PVR and opening counts remain export-derived from full source; plot/Librarian contract-correction count and token total are directly reproducible from published SQA-04b evidence.",
+    "note": "Player-PVR and opening counts remain export-derived from full source. SQA-04b Plot/Librarian contract-correction subtotals and combined total are directly reproducible from published evidence using the documented predicate.",
     "player_pvr_total": 18,
     "player_pvr_invalid_excluded": 18,
     "player_decomposition_attempts": 36,
     "opening_segmentation_failures": 2,
-    "plot_librarian_contract_corrections": 20,
-    "player_decomposition_reported_tokens": 112113,
-    "opening_segmentation_reported_tokens": 17092,
-    "plot_librarian_contract_correction_reported_tokens": 213335,
+    "plot_librarian_contract_corrections_combined": 20,
+    "plot_cognition_contract_corrections": 17,
+    "librarian_proposal_contract_corrections": 3,
+    "plot_cognition_contract_correction_reported_tokens": 183006,
+    "librarian_proposal_contract_correction_reported_tokens": 30329,
+    "plot_librarian_contract_correction_reported_tokens_combined": 213335,
     "complete_execution_evidence_attempt_count": 341,
     "published_execution_evidence_attempt_count": 70
   },
@@ -202,7 +220,7 @@
       }
     },
     "SQA-04b": {
-      "summary": "Plot/Librarian contract-correction friction (20 corrections / 213,335 reported tokens).",
+      "summary": "Plot/Librarian contract-correction friction (17 Plot + 3 Librarian = 20 combined; 213,335 tokens combined).",
       "evidence": {
         "complete_contract_correction_attempts": [
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0fc51415-c5c9-4fcf-be04-aa8ac944213e.json",
@@ -226,39 +244,83 @@
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/dc41e93f-c9b6-4bae-bd19-f3d820c77616.json",
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/e47e718d-7564-4436-9d76-8849a34a2980.json"
         ],
+        "plot_cognition_contract_correction_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/24d19740-0adb-4df5-a9f9-dde458bacbc9.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/32fae694-0bdc-4d9a-82cc-5048c0cb1fd4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/3a5c50aa-9ad2-4af3-8f30-ab50940fd374.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/5b8bd9af-0370-44ee-b3de-4b5cd35cf619.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/6bb3c820-6019-4530-a7ef-b47ce03d8fd4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/6c506d9f-a29b-4ad8-aa70-369068c5b191.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/80c2be6a-93eb-4530-bb15-27c1eef481e9.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/87b33d84-325d-4ab6-b94e-2503aaa5ab55.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/948aae07-3ee4-4cba-b2f2-752fa268c7b5.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/99044a6b-d161-4b1d-8951-33b77c0f8823.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/9a354613-f076-4a85-b26c-b8afbba004b1.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a1e07c63-3463-48bb-927b-d25682d3eef4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/dad983a0-d794-48b8-bdaf-8be8ef81a737.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/dc41e93f-c9b6-4bae-bd19-f3d820c77616.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/e47e718d-7564-4436-9d76-8849a34a2980.json"
+        ],
+        "librarian_proposal_contract_correction_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0fc51415-c5c9-4fcf-be04-aa8ac944213e.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0fc878bc-6b96-416f-8980-9ced4d7db623.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/d9b906ed-8c54-4d51-bd86-4b2356c45180.json"
+        ],
         "optional_lifecycle_followups": [
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/110d4ef2-db2d-4c1b-9767-e575dadff48a.json",
           "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/73912bd4-7ade-40ce-8466-343b5c0d432f.json"
         ]
       },
       "reproducibility": {
-        "population_rule": "Include every execution-evidence attempt for this session where correlation.inference_kind contains plot_cognition_update_contract_correction.",
-        "count_derivation": "len(complete_contract_correction_attempts) == 20",
-        "token_derivation": "For each attempt in complete_contract_correction_attempts, read response.usage; token_total = usage.total_tokens if present else inputTokens + outputTokens + (reasoningTokens or 0); sum across all 20 attempts.",
-        "reproduced_correction_count": 20,
-        "reproduced_token_total": 213335,
-        "population_attempt_ids": [
-          "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
-          "0fc878bc-6b96-416f-8980-9ced4d7db623",
-          "24d19740-0adb-4df5-a9f9-dde458bacbc9",
-          "32fae694-0bdc-4d9a-82cc-5048c0cb1fd4",
-          "3a5c50aa-9ad2-4af3-8f30-ab50940fd374",
-          "3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71",
-          "5b8bd9af-0370-44ee-b3de-4b5cd35cf619",
-          "6bb3c820-6019-4530-a7ef-b47ce03d8fd4",
-          "6c506d9f-a29b-4ad8-aa70-369068c5b191",
-          "80c2be6a-93eb-4530-bb15-27c1eef481e9",
-          "87b33d84-325d-4ab6-b94e-2503aaa5ab55",
-          "948aae07-3ee4-4cba-b2f2-752fa268c7b5",
-          "99044a6b-d161-4b1d-8951-33b77c0f8823",
-          "9a354613-f076-4a85-b26c-b8afbba004b1",
-          "a1e07c63-3463-48bb-927b-d25682d3eef4",
-          "aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29",
-          "d9b906ed-8c54-4d51-bd86-4b2356c45180",
-          "dad983a0-d794-48b8-bdaf-8be8ef81a737",
-          "dc41e93f-c9b6-4bae-bd19-f3d820c77616",
-          "e47e718d-7564-4436-9d76-8849a34a2980"
-        ]
+        "population_predicate": {
+          "field": "correlation.inference_kind",
+          "operator": "in",
+          "values": [
+            "plot_cognition_update_contract_correction",
+            "librarian_proposal_contract_correction"
+          ]
+        },
+        "plot_subpopulation": {
+          "inference_kind": "plot_cognition_update_contract_correction",
+          "expected_count": 17,
+          "expected_token_total": 183006,
+          "attempt_ids": [
+            "24d19740-0adb-4df5-a9f9-dde458bacbc9",
+            "32fae694-0bdc-4d9a-82cc-5048c0cb1fd4",
+            "3a5c50aa-9ad2-4af3-8f30-ab50940fd374",
+            "3c3cf4da-1cf4-4c11-b7e0-5cb39ec1ad71",
+            "5b8bd9af-0370-44ee-b3de-4b5cd35cf619",
+            "6bb3c820-6019-4530-a7ef-b47ce03d8fd4",
+            "6c506d9f-a29b-4ad8-aa70-369068c5b191",
+            "80c2be6a-93eb-4530-bb15-27c1eef481e9",
+            "87b33d84-325d-4ab6-b94e-2503aaa5ab55",
+            "948aae07-3ee4-4cba-b2f2-752fa268c7b5",
+            "99044a6b-d161-4b1d-8951-33b77c0f8823",
+            "9a354613-f076-4a85-b26c-b8afbba004b1",
+            "a1e07c63-3463-48bb-927b-d25682d3eef4",
+            "aae37b9a-8d9c-46d7-b7e2-ca02c28d9e29",
+            "dad983a0-d794-48b8-bdaf-8be8ef81a737",
+            "dc41e93f-c9b6-4bae-bd19-f3d820c77616",
+            "e47e718d-7564-4436-9d76-8849a34a2980"
+          ]
+        },
+        "librarian_subpopulation": {
+          "inference_kind": "librarian_proposal_contract_correction",
+          "expected_count": 3,
+          "expected_token_total": 30329,
+          "attempt_ids": [
+            "0fc51415-c5c9-4fcf-be04-aa8ac944213e",
+            "0fc878bc-6b96-416f-8980-9ced4d7db623",
+            "d9b906ed-8c54-4d51-bd86-4b2356c45180"
+          ]
+        },
+        "combined": {
+          "expected_count": 20,
+          "expected_token_total": 213335
+        },
+        "token_derivation": "For each attempt, read response.usage; token_total = usage.total_tokens if present else inputTokens + outputTokens + (reasoningTokens or 0); sum per subpopulation."
       }
     },
     "SQA-06": {

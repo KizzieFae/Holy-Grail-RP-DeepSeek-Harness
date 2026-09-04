@@ -22,6 +22,20 @@ primary fixture artifact (this directory)
 tracked implementation / architecture contract (docs/, v2/)
 ```
 
+## Publication policy (this packet only)
+
+This evidence packet follows an **explicit audit publication policy** scoped to this fixture:
+
+1. **Runtime visibility restrictions** (`character_private`, `character_memory`, `authored_role_private`, `orchestration_only`, role-private story knowledge, etc.) enforce **in-story information boundaries** during execution.
+2. Those restrictions do **not** by themselves classify fictional RP content as confidential repository material for this audit packet.
+3. Selected forensic evidence **intentionally preserves full-fidelity fictional RP content** so reviewers can independently verify information-flow and audit claims.
+4. **`response.reasoning_text` remains omitted** from published execution-evidence copies (hidden model reasoning is not required for RP forensic review).
+5. **Prohibited in repository publication:** credentials, API keys, authentication/session tokens, secrets granting access to external systems, unrelated real-world PII, and unrelated private user data.
+
+**Greptile GRT-03 disposition:** Greptile correctly observed that orchestration-only / authored-role-private fictional content is visible in published correction evidence. Under this policy, that observation is **not** a repository publication defect.
+
+This policy applies to **this evidence packet only** — it does not create a generalized repository-wide governance authority.
+
 ## Why runtime originals remain ignored
 
 Normal session and execution-evidence trees stay gitignored per `docs/rp-data-layout.md`. This PR **deliberately promotes a bounded copy** of selected primary evidence into the already tracked `data/fixtures/` surface. The local runtime originals are unchanged.
@@ -34,7 +48,7 @@ Normal session and execution-evidence trees stay gitignored per `docs/rp-data-la
 | Player decomposition (SQA-01) | All **36** bounded decomposition attempts |
 | Opening segmentation (SQA-02a/02b) | Both failed attempts (`45936195-…`, `f5ec556e-…`) |
 | Information-flow turn chains (SQA-03) | Director / Character / Narrator chains for turns 1, 7, 11, 12 |
-| Plot/Librarian corrections (SQA-04b) | **Complete population of 20** `plot_cognition_update_contract_correction` attempts |
+| Plot/Librarian corrections (SQA-04b) | **Complete population of 20** contract-correction attempts (17 Plot + 3 Librarian) |
 | Trimmed execution-evidence index | `execution_evidence/.../index.json` — **70 published attempts** (not 341) |
 
 ## What is intentionally excluded
@@ -44,32 +58,40 @@ Normal session and execution-evidence trees stay gitignored per `docs/rp-data-la
 - Story knowledge overlays not required for accepted findings
 - Character semantic-rejection attempt files (SQA-06 supported via session JSON metadata)
 - Export tooling, generalized audit-evidence policy, or remediation artifacts
+- `response.reasoning_text` in published execution-evidence copies
 
-## Sanitization and redaction policy
+## Sanitization policy
 
-Published execution-evidence copies are **curated forensic evidence**, not byte-identical archival copies. Operations performed on **copies only** (runtime originals never altered):
+Published execution-evidence copies are **curated forensic evidence**, not byte-identical archival copies. Operations on **copies only** (runtime originals never altered):
 
-1. **`response.reasoning_text` removed** where present (hidden chain-of-thought not required for verification).
-2. **`character_private` contribution payloads redacted** — lane `source_kind`, contribution IDs, authority/visibility metadata retained.
-3. **`character_memory` contribution payloads redacted** — same structural retention; private interpretation/motivation/tactic content omitted.
-4. **Other Character-private lane kinds** (`character_secret`, `private_knowledge`, etc.) redacted if present, with lane metadata retained.
-5. **Trimmed `index.json`** documents itself as non-complete (see `publication_note`).
+1. **`response.reasoning_text` removed** where present.
+2. **Fictional RP forensic content preserved** at full fidelity (`character_private`, `character_memory`, `authored_role_private`, `orchestration_only` knowledge, etc.).
+3. **Trimmed `index.json`** documents itself as non-complete (see `publication_note`).
 
-Details and counts: `evidence_manifest.json` → `publication`.
+Details: `evidence_manifest.json` → `publication`.
 
-The canonical session JSON is included **without transformation** — it is the user-visible RP and PVR primary record.
+The canonical session JSON is included **without transformation**.
 
 ## SQA-04b reproducibility (published subset)
 
-From `evidence_manifest.json` → `finding_evidence_mapping.SQA-04b.reproducibility`:
+Population predicate (`evidence_manifest.json` → `finding_evidence_mapping.SQA-04b.reproducibility`):
 
-- **Population:** every published attempt where `correlation.inference_kind` contains `plot_cognition_update_contract_correction` (20 records).
-- **Count:** `len(complete_contract_correction_attempts) == 20`
-- **Token total:** for each attempt, `response.usage.total_tokens` if present, else `inputTokens + outputTokens + (reasoningTokens or 0)`; sum = **213,335**.
+```text
+correlation.inference_kind in {
+  "plot_cognition_update_contract_correction",
+  "librarian_proposal_contract_correction"
+}
+```
+
+| Subpopulation | Count | Token total |
+|---------------|-------|-------------|
+| Plot (`plot_cognition_update_contract_correction`) | 17 | 183,006 |
+| Librarian (`librarian_proposal_contract_correction`) | 3 | 30,329 |
+| **Combined** | **20** | **213,335** |
+
+Token derivation: for each attempt, `response.usage.total_tokens` if present, else `inputTokens + outputTokens + (reasoningTokens or 0)`; sum per subpopulation.
 
 ## Finding → evidence map
-
-See `evidence_manifest.json` → `finding_evidence_mapping` for machine-readable paths.
 
 | Finding | Primary artifacts |
 |---------|-------------------|
@@ -77,14 +99,12 @@ See `evidence_manifest.json` → `finding_evidence_mapping` for machine-readable
 | **SQA-02a** | Opening segmentation attempts + session opening canon |
 | **SQA-02b** | Same opening attempts + session continuation after degradation |
 | **SQA-03** | Turn 1 / 7 / 11 / 12 execution-evidence chains (see manifest) |
-| **SQA-04b** | All 20 contract-correction attempts (complete population) |
+| **SQA-04b** | All 20 contract-correction attempts (17 Plot + 3 Librarian) |
 | **SQA-06** | Session JSON (semantic validation / retry metadata) |
 
 **SQA-04a is not a separate finding** — failed decomposition/segmentation token costs are impact evidence for SQA-01 and SQA-02a.
 
 ## Investigation tools
-
-Where supported, override data roots to point at this fixture:
 
 ```sh
 python tools/investigation/trace_turn_forensics.py \
@@ -98,13 +118,6 @@ python tools/investigation/list_execution_evidence.py \
   hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa \
   --evidence-root data/fixtures/audit_sqa_e2e_9065f006/execution_evidence
 ```
-
-## Limitations
-
-- Player-PVR and opening mechanical counts remain export-derived from the full runtime source; see manifest `original_mechanical_counts.note`.
-- Plot/Librarian contract-correction **count and token total are reproducible** from the published SQA-04b population.
-- Published attempt copies omit `reasoning_text` and redact Character-private/memory contribution payloads where not required for verification.
-- This packet does not establish a generalized audit-evidence publication standard.
 
 ## Source checksums (original runtime, at export)
 

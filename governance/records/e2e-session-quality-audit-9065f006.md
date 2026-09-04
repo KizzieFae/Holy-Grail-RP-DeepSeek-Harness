@@ -164,11 +164,17 @@ Turn 1 Character manifest shows neutral PVR marker in `recent_scene_transcript` 
 | **Classification** | `architectural debt` |
 | **Recommended disposition** | `deferred` |
 
-~20 `plot_cognition_update_contract_correction` passes consumed ~213,335 reported tokens in this session. This indicates schema/contract friction between Plot cognition output and Librarian acceptance worth investigation.
+**20 contract-correction passes** consumed **213,335 reported tokens** in this session, comprising:
 
-This is **not** a claim that the entire NI stack is wasteful — only that correction-loop volume is materially high.
+| Subpopulation | Inference kind | Count | Tokens |
+|---------------|----------------|-------|--------|
+| Plot cognition | `plot_cognition_update_contract_correction` | 17 | 183,006 |
+| Librarian proposal | `librarian_proposal_contract_correction` | 3 | 30,329 |
+| **Combined** | — | **20** | **213,335** |
 
-**Fixture evidence:** complete population of 20 `plot_cognition_update_contract_correction` attempts (token total 213,335 reproducible from published records) — manifest `SQA-04b`. Full 472-file Plot Cognition forensic tree intentionally excluded.
+This indicates schema/contract friction in the Plot/Librarian correction loop worth investigation. It is **not** a claim that the entire NI stack is wasteful — only that correction-loop volume is materially high.
+
+**Fixture evidence:** complete population of all 20 contract-correction attempts — manifest `SQA-04b`. Full 472-file Plot Cognition forensic tree intentionally excluded.
 
 ---
 
@@ -250,7 +256,9 @@ Narrator attempts generally rendered committed Character moves without fidelity 
 | Player PVR `invalid_excluded` | 18 |
 | Player decomposition attempts | 36 |
 | Opening segmentation failures | 2 |
-| Plot/Librarian contract corrections | 20 |
+| Plot/Librarian contract corrections (combined) | 20 |
+| Plot cognition contract corrections | 17 |
+| Librarian proposal contract corrections | 3 |
 | Complete execution-evidence attempts (source) | 341 |
 | Published fixture attempts | 70 |
 
@@ -265,7 +273,7 @@ Curated fixture: [`data/fixtures/audit_sqa_e2e_9065f006/`](../../data/fixtures/a
 - Source session SHA-256: `079931022290eb28dc4646492bc72c30a185d24a7ecf4fdb46510e95d6945104`
 - Complete index SHA-256: `dff687535b6caadce2dfd64f5768d1502f880f104b32483fc5f10374b48b5ebf`
 
-Published copies: `reasoning_text` stripped; `character_private` and `character_memory` contribution payloads redacted where not required for verification. Runtime originals unchanged. SQA-04b correction count and token aggregate are directly reproducible from the published correction population (see manifest `SQA-04b.reproducibility`).
+Published copies: `reasoning_text` stripped only. Fictional RP forensic content (`character_private`, `character_memory`, `authored_role_private`, `orchestration_only` knowledge, etc.) is preserved at full fidelity per explicit audit publication policy — runtime in-story visibility restrictions do not impose repository confidentiality on this packet. SQA-04b Plot/Librarian subtotals and combined token aggregate are directly reproducible from the published correction population (see manifest `SQA-04b.reproducibility`).
 
 ---
 
