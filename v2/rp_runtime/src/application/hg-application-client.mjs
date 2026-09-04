@@ -316,7 +316,6 @@ export class HolyGrailApplicationClient {
             hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
             inferenceId: decompositionInferenceId,
             playerContent: userMessage,
-            manifest: {},
             mockResponses: input.mockPlayerDecompositionResponses,
             modelProfile,
           });
