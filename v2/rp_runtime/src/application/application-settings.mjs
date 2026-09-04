@@ -28,6 +28,20 @@ export const PRODUCTION_TOKEN_CEILINGS = {
   semantic_evaluator: 2048,
 };
 
+/** Holy Grail API validation cap for explicit output overrides. */
+export const PRODUCTION_MAX_TOKEN_CEILING = 8192;
+
+/**
+ * Operation-specific output headroom (#111).
+ * Headroom bounds — not target consumption. Role-level ceilings remain unchanged.
+ */
+export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
+  plot_cognition_update: PRODUCTION_MAX_TOKEN_CEILING,
+  plot_cognition_update_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
+  librarian_proposal: PRODUCTION_MAX_TOKEN_CEILING,
+  librarian_proposal_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
+};
+
 /** Bounded diagnostic ceiling for calibration runs (not production). */
 export const DIAGNOSTIC_TOKEN_CEILING = 4096;
 
@@ -79,6 +93,26 @@ export function tokenCeilingForRole(role, settings = {}, options = {}) {
     return Number(legacyKey);
   }
   return PRODUCTION_TOKEN_CEILINGS[role] ?? PRODUCTION_TOKEN_CEILINGS.character;
+}
+
+export function tokenCeilingForInferenceKind(inferenceKind, settings = {}, options = {}) {
+  if (calibrationModeEnabled(settings, options)) {
+    return DIAGNOSTIC_TOKEN_CEILING;
+  }
+  const ceiling = PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS[inferenceKind];
+  return Number.isFinite(ceiling) ? ceiling : null;
+}
+
+/** Apply operation-specific output headroom without changing role defaults. */
+export function modelProfileForInferenceKind(modelProfile, inferenceKind, settings = {}, options = {}) {
+  if (!modelProfile || !inferenceKind) {
+    return modelProfile;
+  }
+  const ceiling = tokenCeilingForInferenceKind(inferenceKind, settings, options);
+  if (!Number.isFinite(ceiling)) {
+    return modelProfile;
+  }
+  return { ...modelProfile, maxTokens: ceiling };
 }
 
 function liveProfileForRole(role, settings = {}, options = {}) {

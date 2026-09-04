@@ -3,7 +3,10 @@ import test from 'node:test';
 
 import {
   buildInferenceOptions,
+  modelProfileForInferenceKind,
+  PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS,
   resolveApplicationRoleProfiles,
+  tokenCeilingForInferenceKind,
   validateRuntimeSettings,
   validateSessionSetup,
 } from '../src/application/application-settings.mjs';
@@ -104,4 +107,24 @@ test('application settings: validate runtime settings bounds', () => {
   assert.equal(validateRuntimeSettings({ reasoningEffort: 'low' }).valid, true);
   assert.equal(validateRuntimeSettings({ reasoningEffort: 'turbo' }).valid, false);
   assert.equal(validateRuntimeSettings({ maxTokens: 32 }).valid, false);
+});
+
+test('application settings: operation-specific inference kind ceilings apply headroom only', () => {
+  const storyteller = resolveApplicationRoleProfiles({
+    inferenceMode: 'live',
+    roleRouting: 'simple',
+    model: HG_DEEPSEEK_DEFAULT_MODEL,
+  }).storyteller;
+  assert.equal(storyteller.maxTokens, 4096);
+  assert.equal(tokenCeilingForInferenceKind('plot_cognition_update'), 8192);
+  assert.equal(tokenCeilingForInferenceKind('librarian_proposal'), 8192);
+  assert.equal(tokenCeilingForInferenceKind('director'), null);
+  const plotProfile = modelProfileForInferenceKind(storyteller, 'plot_cognition_update');
+  assert.equal(plotProfile.maxTokens, PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS.plot_cognition_update);
+  assert.equal(plotProfile.reasoningEffort, 'low');
+  const librarianProfile = modelProfileForInferenceKind(
+    { ...storyteller, maxTokens: 4096 },
+    'librarian_proposal',
+  );
+  assert.equal(librarianProfile.maxTokens, 8192);
 });

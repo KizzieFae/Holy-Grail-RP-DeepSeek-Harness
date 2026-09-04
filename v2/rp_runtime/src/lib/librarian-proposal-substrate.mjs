@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import { modelProfileForInferenceKind } from '../application/application-settings.mjs';
 import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
 import {
   LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
@@ -92,6 +93,11 @@ export async function runLibrarianProposalGeneration({
     ? (Array.isArray(mockResponse) ? mockResponse : [mockResponse])
     : [];
 
+  const resolvedModelProfile = modelProfileForInferenceKind(
+    modelProfile,
+    'librarian_proposal',
+  );
+
   const inference = await runInferenceWithContractCorrection({
     runEphemeralInference,
     primaryInferenceId: proposalInferenceId,
@@ -103,7 +109,7 @@ export async function runLibrarianProposalGeneration({
     parseContext,
     manifest,
     mockResponses: mockList,
-    modelProfile,
+    modelProfile: resolvedModelProfile,
     evidenceContextBase: {
       ...evidenceContextBase,
       role: 'librarian',
