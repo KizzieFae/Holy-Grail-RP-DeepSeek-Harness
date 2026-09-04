@@ -38,9 +38,14 @@ export function buildAssembledRequest({
     inference_profile: (() => {
       const requested = profile?.reasoningEffort ?? profile?.reasoning_effort ?? null;
       const effective = mapReasoningEffortToProviderOptions(requested);
+      const maxTokens = profile?.maxTokens ?? profile?.max_tokens;
+      const configuredMaxTokens = Number.isFinite(Number(maxTokens)) && Number(maxTokens) > 0
+        ? Number(maxTokens)
+        : null;
       return {
         provider: profile?.provider ?? null,
         model: profile?.model ?? null,
+        max_tokens: configuredMaxTokens,
         reasoning_effort: requested,
         effective_thinking: effective.thinking,
         effective_reasoning_effort: effective.reasoningEffort,

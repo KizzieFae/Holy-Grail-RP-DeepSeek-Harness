@@ -70,14 +70,29 @@ def summarize_attempt(attempt: dict) -> str:
     decision = attempt.get("decision") or {}
     semantic_qa = decision.get("semantic_qa") or {}
     semantic_eval = decision.get("semantic_evaluation") or {}
+    health = attempt.get("inference_health") or {}
     lines = [
         f"evidence_id: {attempt.get('evidence_id')}",
         f"role: {correlation.get('role')}",
+        f"inference_kind: {correlation.get('inference_kind')}",
         f"inference_id: {correlation.get('inference_id')}",
         f"prior_attempt_id: {correlation.get('prior_attempt_id')}",
         f"outcome: {decision.get('outcome')}",
         f"terminal_disposition: {decision.get('terminal_disposition')}",
     ]
+    if health:
+        recovery = health.get("recovery") or {}
+        lines.extend(
+            [
+                f"health.finish_class: {health.get('finish_class')}",
+                f"health.hard_exhaustion: {health.get('hard_exhaustion')}",
+                f"health.provider_failed: {health.get('provider_failed')}",
+                f"health.structural_valid: {health.get('structural_valid')}",
+                f"health.configured_max_tokens: {health.get('configured_max_tokens')}",
+                f"health.utilization: {health.get('utilization')}",
+                f"health.recovery: {recovery.get('state')}",
+            ]
+        )
     policy = semantic_qa.get("policy_action")
     if policy:
         lines.append(f"policy_action: {policy}")
@@ -278,6 +293,11 @@ def main() -> int:
     parser.add_argument("--evaluator-failure", action="store_true")
     parser.add_argument("--residual-soft", action="store_true")
     parser.add_argument("--exhausted-hard", action="store_true")
+    parser.add_argument(
+        "--inference-health",
+        action="store_true",
+        help="Print Level-2 inference-health aggregates from index.json (rebuildable observational summary)",
+    )
     args = parser.parse_args()
 
     if args.ni:
@@ -344,6 +364,60 @@ def main() -> int:
     if args.exhausted_hard:
         for inference_id in semantic.get("exhausted_hard_loops") or []:
             print(inference_id)
+        return 0
+
+    if args.inference_health:
+        health = index.get("inference_health")
+        if health is None:
+            print(
+                "inference_health: not_observable "
+                "(index lacks inference_health; rebuild via ExecutionEvidenceStore."
+                "rebuildSemanticNavigationIndexes or record new attempts under #114+)",
+                file=sys.stderr,
+            )
+            return 1
+        if args.json:
+            print(json.dumps(health, indent=2, ensure_ascii=False))
+        else:
+            totals = health.get("totals") or {}
+            obs = health.get("observability") or {}
+            print(f"repo: {REPO_ROOT}")
+            print(f"session: {args.hg_session_id}")
+            print(f"schema: {health.get('schema')}")
+            print(f"inference_attempt_count: {obs.get('inference_attempt_count')}")
+            print(f"attempts_with_ceiling: {obs.get('attempts_with_ceiling')}")
+            print(f"attempts_without_ceiling: {obs.get('attempts_without_ceiling')}")
+            print(f"totals.attempt_count: {totals.get('attempt_count')}")
+            print(f"totals.correction_attempt_count: {totals.get('correction_attempt_count')}")
+            print(f"totals.correction_attempt_rate: {totals.get('correction_attempt_rate')}")
+            print(
+                "totals.recovered_primary_failure_count: "
+                f"{totals.get('recovered_primary_failure_count')}"
+            )
+            print(
+                "totals.recovered_primary_failure_rate: "
+                f"{totals.get('recovered_primary_failure_rate')}"
+            )
+            print(f"totals.hard_exhaustion_count: {totals.get('hard_exhaustion_count')}")
+            print(f"totals.hard_exhaustion_rate: {totals.get('hard_exhaustion_rate')}")
+            print(f"totals.provider_failure_count: {totals.get('provider_failure_count')}")
+            print(f"totals.provider_failure_rate: {totals.get('provider_failure_rate')}")
+            util = totals.get("utilization") or {}
+            print(
+                "totals.utilization: "
+                f"samples={util.get('sample_count')} mean={util.get('mean')} "
+                f"min={util.get('min')} max={util.get('max')}"
+                + (f" note={util.get('note')}" if util.get("note") else "")
+            )
+            print("by_group:")
+            for group_key, bucket in sorted((health.get("by_group") or {}).items()):
+                print(
+                    f"  - {group_key}: attempts={bucket.get('attempt_count')} "
+                    f"corrections={bucket.get('correction_attempt_count')} "
+                    f"recovered_primary={bucket.get('recovered_primary_failure_count')} "
+                    f"hard_exhaustion={bucket.get('hard_exhaustion_count')} "
+                    f"provider_fail={bucket.get('provider_failure_count')}"
+                )
         return 0
 
     if args.participation:

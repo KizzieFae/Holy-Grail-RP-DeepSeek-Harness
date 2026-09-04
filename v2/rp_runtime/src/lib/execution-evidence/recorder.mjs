@@ -6,6 +6,7 @@ import {
   NI_FORENSICS_CONTRACT,
 } from './config.mjs';
 import { buildAssembledRequest } from './assembled-request.mjs';
+import { buildInferenceHealth } from './inference-health.mjs';
 import { buildModelResponse } from './model-response.mjs';
 import { participationDecisionPatch } from './participation-decision.mjs';
 import { ExecutionEvidenceStore } from './store.mjs';
@@ -86,20 +87,32 @@ export class ExecutionEvidenceRecorder {
     );
     correlation.evidence_id = evidenceId;
 
+    const request = buildAssembledRequest({
+      manifest,
+      userInstruction: prompt,
+      systemPersona: this.systemPersona,
+      profile,
+      manifestId: contextRegistration?.manifestId,
+      contributionIds: contextRegistration?.contributionIds,
+    });
+    const response = buildModelResponse({ trace, assistantText });
     const attempt = {
       evidence_id: evidenceId,
       correlation,
-      request: buildAssembledRequest({
-        manifest,
-        userInstruction: prompt,
-        systemPersona: this.systemPersona,
-        profile,
-        manifestId: contextRegistration?.manifestId,
-        contributionIds: contextRegistration?.contributionIds,
-      }),
-      response: buildModelResponse({ trace, assistantText }),
+      request,
+      response,
       decision: evidenceContext?.initialDecision ?? null,
       associations: evidenceContext?.associations ?? {},
+      inference_health: buildInferenceHealth({
+        profile,
+        requestProfile: request.inference_profile,
+        trace,
+        response,
+        assistantText,
+        evidenceContext,
+        correlation,
+        decision: evidenceContext?.initialDecision ?? null,
+      }),
     };
     if (evidenceContext?.inferenceKind || evidenceContext?.niForensics) {
       attempt.evidence_contract = NI_FORENSICS_CONTRACT;

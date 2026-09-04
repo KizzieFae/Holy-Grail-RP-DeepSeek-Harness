@@ -348,6 +348,7 @@ export async function runNarratorPhase({
           role: 'narrator',
           characterId,
           inferenceId,
+          inferenceKind: 'narrator_presentation',
           attemptIndex,
           priorAttemptId: lastEvidenceId,
           domainCommitId,

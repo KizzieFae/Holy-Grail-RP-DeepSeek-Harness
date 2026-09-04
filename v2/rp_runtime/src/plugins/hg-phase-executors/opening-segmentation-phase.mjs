@@ -86,6 +86,7 @@ export async function runOpeningSegmentationPhase({
           hgRoundId: 'opening-segmentation',
           role: 'opening_segmentation',
           inferenceId,
+          inferenceKind: 'opening_segmentation',
           attemptIndex: attempt,
           priorAttemptId: priorEvidenceId,
         },

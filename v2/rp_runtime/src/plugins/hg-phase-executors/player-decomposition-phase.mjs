@@ -136,6 +136,7 @@ export async function runPlayerDecompositionPhase({
           hgRoundId,
           role: 'player_decomposition',
           inferenceId: attemptInferenceId,
+          inferenceKind: 'player_decomposition',
           attemptIndex: attempt,
           priorAttemptId: priorEvidenceId,
         },

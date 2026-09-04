@@ -169,7 +169,7 @@ into:
 
 `did not happen`.
 
-Examples: `HG_EXECUTION_EVIDENCE=off`; pre-#28 or pre-#45 session trees; NI views reporting `ni_contract_unavailable`; tag valid without execution evidence.
+Examples: `HG_EXECUTION_EVIDENCE=off`; pre-#28 or pre-#45 session trees; NI views reporting `ni_contract_unavailable`; tag valid without execution evidence; pre-#114 attempts lacking configured `max_tokens` / `inference_health` (utilization and some recovery classifications are **not observable**, not “healthy”).
 
 ---
 
