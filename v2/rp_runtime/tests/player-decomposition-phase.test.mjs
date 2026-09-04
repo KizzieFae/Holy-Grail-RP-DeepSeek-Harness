@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
   PLAYER_DECOMPOSITION_RETRY_HEADER,
   buildPlayerDecompositionUserPrompt,
   runPlayerDecompositionPhase,
@@ -169,6 +170,76 @@ test('player decomposition retry adds bounded failure feedback without replaying
   assert.equal(calls[1].evidenceContext.attemptIndex, 1);
   assert.equal(calls[1].evidenceContext.priorAttemptId, 'evidence-1');
   assert.equal(result.playerDecomposition.perceptual_visibility.units.length, 1);
+});
+
+test('player decomposition context prepare failure is attributed before inference', async () => {
+  const prepareCalls = [];
+  const api = {
+    preparePlayerDecompositionContext(body) {
+      prepareCalls.push(body);
+      return Promise.reject(new Error('domain host unavailable'));
+    },
+  };
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_DECOMPOSITION]);
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-prepare-fail',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.equal(prepareCalls.length, 1);
+  assert.equal(calls.length, 0);
+  assert.equal(
+    result.playerDecomposition.failure_class,
+    PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
+  );
+  assert.equal(result.playerDecomposition.reason, 'domain host unavailable');
+  assert.equal(result.playerDecomposition.generation.attempt_index, 0);
+  assert.equal(result.evidenceId, null);
+  assert.equal(result.playerDecomposition.perceptual_visibility, undefined);
+});
+
+test('player decomposition context prepare failure on retry attempt stays attributed', async () => {
+  const { api, prepareCalls } = createTrackingApi();
+  const prose = 'Still prose.';
+  const { runEphemeralInference, calls } = createInferenceRecorder([prose]);
+  const originalPrepare = api.preparePlayerDecompositionContext.bind(api);
+  let prepareAttempts = 0;
+  api.preparePlayerDecompositionContext = async (body) => {
+    prepareAttempts += 1;
+    if (body.attempt_index === 1) {
+      throw new Error('domain host unavailable on retry');
+    }
+    return originalPrepare(body);
+  };
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-prepare-retry-fail',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.equal(prepareAttempts, 2);
+  assert.equal(prepareCalls.length, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(
+    result.playerDecomposition.failure_class,
+    PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
+  );
+  assert.equal(result.playerDecomposition.reason, 'domain host unavailable on retry');
+  assert.equal(result.playerDecomposition.generation.attempt_index, 1);
+  assert.equal(result.evidenceId, null);
 });
 
 test('player decomposition malformed output fails closed after two attempts', async () => {

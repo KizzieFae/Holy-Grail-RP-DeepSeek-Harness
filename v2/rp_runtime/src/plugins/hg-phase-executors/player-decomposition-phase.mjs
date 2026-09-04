@@ -2,6 +2,9 @@ import { parsePlayerDecompositionEnvelope } from '../../lib/perceptual-visibilit
 
 const MAX_PLAYER_DECOMPOSITION_ATTEMPTS = 2;
 
+/** Domain Host context-preparation boundary (matches narrator `context_prepare` convention). */
+export const PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE = 'context_prepare';
+
 export const PLAYER_DECOMPOSITION_TASK_PROMPT =
   'Decompose the player-authored turn into semantic perceptual units with complete source accounting.';
 
@@ -93,13 +96,26 @@ export async function runPlayerDecompositionPhase({
   for (let attempt = 0; attempt < MAX_PLAYER_DECOMPOSITION_ATTEMPTS; attempt += 1) {
     const attemptInferenceId =
       attempt === 0 ? inferenceId : `${inferenceId}-retry-${attempt}`;
+    let manifest;
     try {
-      const manifest = await api.preparePlayerDecompositionContext({
+      manifest = await api.preparePlayerDecompositionContext({
         hg_session_id: hgSessionId,
         inference_id: attemptInferenceId,
         hg_round_id: hgRoundId,
         attempt_index: attempt,
       });
+    } catch (err) {
+      return {
+        playerDecomposition: {
+          failure_class: PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
+          reason: err instanceof Error ? err.message : String(err),
+          generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+        },
+        evidenceId: null,
+      };
+    }
+
+    try {
       const mockFallback =
         modelProfile?.kind === 'mock'
           ? [
