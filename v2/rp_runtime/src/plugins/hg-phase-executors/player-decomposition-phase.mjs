@@ -2,8 +2,26 @@ import { parsePlayerDecompositionEnvelope } from '../../lib/perceptual-visibilit
 
 const MAX_PLAYER_DECOMPOSITION_ATTEMPTS = 2;
 
-const PLAYER_DECOMPOSITION_PROMPT =
+/** Domain Host context-preparation boundary (matches narrator `context_prepare` convention). */
+export const PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE = 'context_prepare';
+
+export const PLAYER_DECOMPOSITION_TASK_PROMPT =
   'Decompose the player-authored turn into semantic perceptual units with complete source accounting.';
+
+export const PLAYER_DECOMPOSITION_RETRY_HEADER = 'ATTEMPT_2_OUTPUT_RETRY:';
+
+export function buildPlayerDecompositionUserPrompt(playerContent, { priorFailureCode = null } = {}) {
+  let prompt = `${PLAYER_DECOMPOSITION_TASK_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`;
+  if (priorFailureCode) {
+    prompt += (
+      `\n\n${PLAYER_DECOMPOSITION_RETRY_HEADER}\n` +
+      `Prior attempt failed output contract (${priorFailureCode}).\n` +
+      'Respond with ONLY a single JSON object matching the OUTPUT FORMAT in context.\n' +
+      'No markdown fences, headings, or explanatory prose.'
+    );
+  }
+  return prompt;
+}
 
 function normalizeForIndexing(content) {
   return String(content ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -51,13 +69,13 @@ export async function runPlayerDecompositionPhase({
   runEphemeralInference,
   recorder,
   trace,
+  api,
   sceneAgent,
   hgSessionId,
   hgSceneId,
   hgRoundId,
   inferenceId,
   playerContent,
-  manifest,
   mockResponses,
   modelProfile,
 }) {
@@ -74,9 +92,29 @@ export async function runPlayerDecompositionPhase({
   });
 
   let priorEvidenceId = null;
+  let priorFailureCode = null;
   for (let attempt = 0; attempt < MAX_PLAYER_DECOMPOSITION_ATTEMPTS; attempt += 1) {
     const attemptInferenceId =
       attempt === 0 ? inferenceId : `${inferenceId}-retry-${attempt}`;
+    let manifest;
+    try {
+      manifest = await api.preparePlayerDecompositionContext({
+        hg_session_id: hgSessionId,
+        inference_id: attemptInferenceId,
+        hg_round_id: hgRoundId,
+        attempt_index: attempt,
+      });
+    } catch (err) {
+      return {
+        playerDecomposition: {
+          failure_class: PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
+          reason: err instanceof Error ? err.message : String(err),
+          generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+        },
+        evidenceId: null,
+      };
+    }
+
     try {
       const mockFallback =
         modelProfile?.kind === 'mock'
@@ -86,7 +124,9 @@ export async function runPlayerDecompositionPhase({
           : [];
       const inferRun = await runEphemeralInference({
         inferenceId: attemptInferenceId,
-        prompt: `${PLAYER_DECOMPOSITION_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`,
+        prompt: buildPlayerDecompositionUserPrompt(playerContent, {
+          priorFailureCode: attempt > 0 ? priorFailureCode : null,
+        }),
         manifest,
         mockResponses: mockResponses?.length ? mockResponses : mockFallback,
         modelProfile,
@@ -102,6 +142,7 @@ export async function runPlayerDecompositionPhase({
       });
 
       if (inferRun.failed) {
+        priorFailureCode = 'inference_unavailable';
         priorEvidenceId = inferRun.evidenceId;
         if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
           return {
@@ -118,6 +159,7 @@ export async function runPlayerDecompositionPhase({
 
       const parsed = parsePlayerDecompositionEnvelope(inferRun.raw ?? '');
       if (parsed.parseError) {
+        priorFailureCode = parsed.parseError;
         priorEvidenceId = inferRun.evidenceId;
         if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
           return {
@@ -146,6 +188,7 @@ export async function runPlayerDecompositionPhase({
         evidenceId: inferRun.evidenceId,
       };
     } catch (err) {
+      priorFailureCode = 'inference_unavailable';
       if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
         return {
           playerDecomposition: {

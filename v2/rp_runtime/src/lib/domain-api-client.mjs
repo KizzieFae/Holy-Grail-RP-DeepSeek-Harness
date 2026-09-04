@@ -478,6 +478,15 @@ export function createDomainApiClient(baseUrl) {
         'prepareOpeningSegmentationContext',
       );
     },
+    preparePlayerDecompositionContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/player-decomposition/context/prepare',
+        body,
+        'preparePlayerDecompositionContext',
+      );
+    },
     persistOpening(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/opening/persist', body, 'persistOpening');
     },

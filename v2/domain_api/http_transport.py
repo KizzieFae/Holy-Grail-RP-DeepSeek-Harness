@@ -20,6 +20,7 @@ from .contract import (
     OpeningPersistRequest,
     OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
+    PlayerDecompositionContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
@@ -686,6 +687,20 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     inference_id=str(data["inference_id"]),
                 )
                 self._send_json(200, self.kernel.prepare_opening_segmentation_context(req))
+                return
+            if path == "/v1/sessions/player-decomposition/context/prepare":
+                req = PlayerDecompositionContextPrepareRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    inference_id=str(data["inference_id"]),
+                    hg_round_id=(
+                        str(data["hg_round_id"])
+                        if data.get("hg_round_id") is not None
+                        else None
+                    ),
+                    turn_index=int(data.get("turn_index", 0)),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                )
+                self._send_json(200, self.kernel.prepare_player_decomposition_context(req))
                 return
             if path == "/v1/sessions/opening/persist":
                 req = OpeningPersistRequest(
