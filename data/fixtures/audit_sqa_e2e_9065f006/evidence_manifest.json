@@ -1,0 +1,207 @@
+{
+  "schema": "hg_audit_evidence_manifest_v0",
+  "session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+  "audit_anchor_sha": "211e8888edeac58e451cb7ddc9355ab2ec29808c",
+  "export_timestamp_utc": "2026-09-04T03:50:33Z",
+  "source_paths": {
+    "session_json": "data/sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json",
+    "execution_evidence_root": "data/execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "execution_evidence_index": "data/execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/index.json"
+  },
+  "source_checksums_sha256": {
+    "session_json": "079931022290eb28dc4646492bc72c30a185d24a7ecf4fdb46510e95d6945104",
+    "complete_execution_evidence_index": "dff687535b6caadce2dfd64f5768d1502f880f104b32483fc5f10374b48b5ebf"
+  },
+  "publication": {
+    "curated_and_sanitized": true,
+    "not_byte_identical_to_runtime_source": true,
+    "sanitization_operations": [
+      "Removed response.reasoning_text from published execution-evidence attempt copies where present.",
+      "Redacted character_private contribution payloads in published attempt copies (lane metadata retained).",
+      "Trimmed execution-evidence index lists only published attempt_ids (not full 341-attempt source index)."
+    ],
+    "sanitization_stats": {
+      "reasoning_text_stripped": 51,
+      "character_private_redacted": 5
+    },
+    "character_private_redaction_note": "[REDACTED — character-private payload omitted from published audit fixture; source_kind character_private retained for lane verification]"
+  },
+  "published_attempt_ids": [
+    "03d8cd87-3e69-422d-9f1b-3e654485ff4c",
+    "08cac05b-661d-497b-99e4-863c967616e6",
+    "0af61312-41ea-47e2-886a-1544521b227d",
+    "0cc72110-384f-4922-8b02-b05b81d3c1b3",
+    "10a0046a-1266-4369-addf-fdc4b77168ac",
+    "110d4ef2-db2d-4c1b-9767-e575dadff48a",
+    "11fedd23-1f35-4c61-8be2-935a140d86ed",
+    "13ebf8db-0e75-409e-ba93-3a6c8b5dac22",
+    "1af821bd-9094-45de-90a6-c1b675a7469e",
+    "1d95d906-a4b9-4acb-9a47-40db185a787e",
+    "1ddfcfe5-488a-4482-a8ef-264517e48195",
+    "1e68fc37-35cf-49fb-9d91-7feb0dfd616c",
+    "208473a7-176f-4dce-95c6-c6c81433513b",
+    "240642b1-68dc-44df-862c-ed382171ffb6",
+    "24cc619d-533b-4373-86ab-51d6577e9fb4",
+    "24d19740-0adb-4df5-a9f9-dde458bacbc9",
+    "32fae694-0bdc-4d9a-82cc-5048c0cb1fd4",
+    "45936195-d150-4987-9f99-df492d2295df",
+    "4e5fb643-87d1-44ba-8d82-d037c682cc1c",
+    "51cac6a4-2097-44a5-ba29-4b5124ea0ee5",
+    "58dbbf6c-2451-4bc1-99fe-011c8dfcfaa4",
+    "596fa261-d661-4db5-a6e5-094202aeff1b",
+    "62bc5504-3a8f-46b2-807d-22a058326236",
+    "704fc820-f68c-45fb-a534-b46daafe5794",
+    "73912bd4-7ade-40ce-8466-343b5c0d432f",
+    "7ec040d8-cdd7-460f-ba1c-0008700af4df",
+    "92debfbc-fb9d-4d41-b0ff-df9f01c9ffc0",
+    "95c27073-3b8e-4cc9-9a11-4e16c00907ca",
+    "97b3e823-ec31-49f2-8793-78950713a688",
+    "9e0c2456-108d-49bc-967e-727f7ce11552",
+    "9f5fdff7-d921-4448-8841-58b356984133",
+    "a33ae087-5836-4ae7-8ed8-25e3ec891f4f",
+    "a4e9fa29-fd93-4a4c-918a-f9da772a47f0",
+    "a53a15cb-31ba-40da-8a6b-a253309ba0ba",
+    "a5c9f08a-10e6-4b88-bb6f-e6c78a04386c",
+    "ae609951-b346-4e09-ab83-92673acbe746",
+    "b0b9bc67-3633-42ba-868b-21515c204170",
+    "b195732f-af65-4558-a38f-af9f4e12136f",
+    "b3e84c12-eac4-44a4-b3d1-bb99d11c251a",
+    "b5c38d70-4987-4a9c-9a70-5f458a84012e",
+    "bb94c1bf-d677-4fb3-9f34-e631a626ffb5",
+    "c20c8896-a019-4898-ac79-dd0c22cebdba",
+    "c364c64d-394c-400f-96eb-3fa2aadaa4aa",
+    "cd977a92-4877-4596-903d-034646088222",
+    "d1b06ec5-39c6-49e7-bfee-0c27d3fd0790",
+    "ea6da952-858b-4299-9c63-a88552ca5cee",
+    "ec33c95a-8c01-4f78-8cfa-b42299795f67",
+    "edea8780-0f63-4086-b405-cf870228e6f3",
+    "ee89e9f2-ac02-4fe6-a3ed-47f7880693cd",
+    "f5ec556e-ec40-48f2-8b4e-8ea07384a495",
+    "f85d4aaf-180a-42fe-8512-771055e1ecb4",
+    "f9148fb0-3d77-4aa6-aaef-68096a70d442"
+  ],
+  "original_mechanical_counts": {
+    "note": "Counts below derived from full local runtime source at export; not all reproducible from published subset alone.",
+    "player_pvr_total": 18,
+    "player_pvr_invalid_excluded": 18,
+    "player_decomposition_attempts": 36,
+    "opening_segmentation_failures": 2,
+    "plot_librarian_contract_corrections": 20,
+    "player_decomposition_reported_tokens": 112113,
+    "opening_segmentation_reported_tokens": 17092,
+    "plot_librarian_contract_correction_reported_tokens": 213335,
+    "complete_execution_evidence_attempt_count": 341,
+    "published_execution_evidence_attempt_count": 52
+  },
+  "finding_evidence_mapping": {
+    "SQA-01": {
+      "summary": "Player perceptual decomposition inference failure (18/18 invalid_excluded; 36/36 attempts failed).",
+      "evidence": {
+        "session_json_pvr_records": "sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json",
+        "all_player_decomposition_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/03d8cd87-3e69-422d-9f1b-3e654485ff4c.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/08cac05b-661d-497b-99e4-863c967616e6.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0af61312-41ea-47e2-886a-1544521b227d.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/0cc72110-384f-4922-8b02-b05b81d3c1b3.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/11fedd23-1f35-4c61-8be2-935a140d86ed.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/13ebf8db-0e75-409e-ba93-3a6c8b5dac22.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/1d95d906-a4b9-4acb-9a47-40db185a787e.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/1ddfcfe5-488a-4482-a8ef-264517e48195.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/1e68fc37-35cf-49fb-9d91-7feb0dfd616c.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/208473a7-176f-4dce-95c6-c6c81433513b.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/240642b1-68dc-44df-862c-ed382171ffb6.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/24cc619d-533b-4373-86ab-51d6577e9fb4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/4e5fb643-87d1-44ba-8d82-d037c682cc1c.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/596fa261-d661-4db5-a6e5-094202aeff1b.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/62bc5504-3a8f-46b2-807d-22a058326236.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/704fc820-f68c-45fb-a534-b46daafe5794.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/7ec040d8-cdd7-460f-ba1c-0008700af4df.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/97b3e823-ec31-49f2-8793-78950713a688.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/9e0c2456-108d-49bc-967e-727f7ce11552.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/9f5fdff7-d921-4448-8841-58b356984133.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a33ae087-5836-4ae7-8ed8-25e3ec891f4f.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a4e9fa29-fd93-4a4c-918a-f9da772a47f0.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a53a15cb-31ba-40da-8a6b-a253309ba0ba.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/a5c9f08a-10e6-4b88-bb6f-e6c78a04386c.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/ae609951-b346-4e09-ab83-92673acbe746.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/b0b9bc67-3633-42ba-868b-21515c204170.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/b195732f-af65-4558-a38f-af9f4e12136f.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/b3e84c12-eac4-44a4-b3d1-bb99d11c251a.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/bb94c1bf-d677-4fb3-9f34-e631a626ffb5.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/c364c64d-394c-400f-96eb-3fa2aadaa4aa.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/cd977a92-4877-4596-903d-034646088222.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/ec33c95a-8c01-4f78-8cfa-b42299795f67.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/edea8780-0f63-4086-b405-cf870228e6f3.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/ee89e9f2-ac02-4fe6-a3ed-47f7880693cd.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/f85d4aaf-180a-42fe-8512-771055e1ecb4.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/f9148fb0-3d77-4aa6-aaef-68096a70d442.json"
+        ]
+      }
+    },
+    "SQA-02a": {
+      "summary": "Opening segmentation inference failure (2/2 attempts failed).",
+      "evidence": {
+        "attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/45936195-d150-4987-9f99-df492d2295df.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/f5ec556e-ec40-48f2-8b4e-8ea07384a495.json"
+        ],
+        "session_opening_canon": "sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json"
+      }
+    },
+    "SQA-02b": {
+      "summary": "Opening degradation/continuation correct as-is.",
+      "evidence": {
+        "session_continuation": "sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json",
+        "opening_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/45936195-d150-4987-9f99-df492d2295df.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/f5ec556e-ec40-48f2-8b4e-8ea07384a495.json"
+        ]
+      }
+    },
+    "SQA-03": {
+      "summary": "Advisory Director reliance under failed player perception (architectural debt / monitor).",
+      "evidence": {
+        "turn_1_director": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/c20c8896-a019-4898-ac79-dd0c22cebdba.json",
+        "turn_1_character": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/58dbbf6c-2451-4bc1-99fe-011c8dfcfaa4.json",
+        "turn_1_narrator": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/1af821bd-9094-45de-90a6-c1b675a7469e.json",
+        "turn_7_participation_direct": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/92debfbc-fb9d-4d41-b0ff-df9f01c9ffc0.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/51cac6a4-2097-44a5-ba29-4b5124ea0ee5.json"
+        ],
+        "turn_11_director_advisory": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/ea6da952-858b-4299-9c63-a88552ca5cee.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/d1b06ec5-39c6-49e7-bfee-0c27d3fd0790.json"
+        ],
+        "turn_12_hg_round_3f65afd6": {
+          "director": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/b5c38d70-4987-4a9c-9a70-5f458a84012e.json",
+          "character_orientation": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/10a0046a-1266-4369-addf-fdc4b77168ac.json",
+          "character_move": "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/95c27073-3b8e-4cc9-9a11-4e16c00907ca.json"
+        }
+      }
+    },
+    "SQA-04b": {
+      "summary": "Plot/Librarian contract-correction friction (~20 corrections / ~213k tokens).",
+      "evidence": {
+        "representative_correction_attempts": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/24d19740-0adb-4df5-a9f9-dde458bacbc9.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/32fae694-0bdc-4d9a-82cc-5048c0cb1fd4.json"
+        ],
+        "following_corrected_results": [
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/110d4ef2-db2d-4c1b-9767-e575dadff48a.json",
+          "execution_evidence/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa/attempts/73912bd4-7ade-40ce-8466-343b5c0d432f.json"
+        ]
+      }
+    },
+    "SQA-06": {
+      "summary": "Character semantic validation/retry correct as-is.",
+      "evidence": {
+        "session_json": "sessions/hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa.json"
+      }
+    }
+  },
+  "verification": {
+    "readme": "data/fixtures/audit_sqa_e2e_9065f006/README.md",
+    "audit_report": "governance/records/e2e-session-quality-audit-9065f006.md",
+    "investigation_tool_example": "python tools/investigation/trace_turn_forensics.py hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa turn 1 --sessions-root data/fixtures/audit_sqa_e2e_9065f006/sessions --evidence-root data/fixtures/audit_sqa_e2e_9065f006/execution_evidence"
+  }
+}

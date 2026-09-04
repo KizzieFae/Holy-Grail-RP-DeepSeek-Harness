@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "a33ae087-5836-4ae7-8ed8-25e3ec891f4f",
+  "correlation": {
+    "evidence_id": "a33ae087-5836-4ae7-8ed8-25e3ec891f4f",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-7f91da47-316d-4d0f-b0ba-e07d5489b735",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-7f91da47-316d-4d0f-b0ba-e07d5489b735",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe looked up. \"I do not know,\" she answered honestly. \"And I imagine that each new challenge is a new question as well. I would like to ay that my steadiness would hold, but the truth it, is probably would not- at first. But I could -learn- to hold. That is what I offer, a willingness to push myself... to achieve. I would be lying if I tried to say that I would get it right the first time.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units. Each unit is mapped to its exact source substring, classified by type, and interpreted for the system's perception/reaction.\n\n---\n\n### Perceptual Unit Decomposition\n\n**Unit 1: Physical Action (Non-Verbal Engagement)**  \n- **Source Span:** `\"She looked up.\"`  \n- **Type:** Physical Action / Gaze Direction  \n- **Semantic Interpretation:** The character raises her gaze toward the speaker, establishing direct, attentive contact and signaling that she is fully present and listening.\n\n---\n\n**Unit 2: Direct Candid Answer**  \n- **Source Span:** `\"I do not know,\"`  \n- **Type:** Dialogue / Explicit Response  \n- **Semantic Interpretation:** She provides an immediate, unvarnished verbal answer of uncertainty, offering no false reassurance.\n\n---\n\n**Unit 3: Narrative Tone Modifier**  \n- **Source Span:** `she answered honestly.`  \n- **Type:** Narrative Attribution / Deliverance Cue  \n- **Semantic Interpretation:** The narrator explicitly cues her delivery as honest and unadorned, stripping any ambiguity from her previous words and anchoring her credibility.\n\n---\n\n**Unit 4: Cognitive Framing / Abstract Worldview**  \n- **Source Span:** `\"And I imagine that each new challenge is a new question as well.`  \n- **Type:** Dialogue / Philosophical Postulate  \n- **Semantic Interpretation:** She formulates a personal axiom—that every difficulty functions as an unanswerable variable—establishing her broader mental framework before diving into her specific self-assessment.\n\n---\n\n**Unit 5: Conditional Aspiration (Ideal Self-Image)**  \n- **Source Span:** `I would like to ay that my steadiness would hold,`  \n- **Type:** Dialogue / Introspective Desire  \n- **Semantic Interpretation:** She articulates a preferred narrative about her own resilience. (Note the typo \"ay\" for \"say\"—this can be perceived as a slight verbal stumble or raw, out-loud thinking as she processes her own honesty).\n\n---\n\n**Unit 6: Vulnerable Self-Correction / Admission of Flaw**  \n- **Source Span:** `but the truth it, is probably would not- at first.`  \n- **Type:** Dialogue / Candid Self-Assessment  \n- **Semantic Interpretation:** She haltingly corrects her prior idealization, directly admitting that her steadiness is likely to *fail* initially. The fragmented syntax (`truth it`, `is probably would not`) mirrors genuine internal conflict and misgiving.\n\n---\n\n**Unit 7: Core Commitment / Emphasized Adaptive Capability**  \n- **Source Span:** `But I could -learn- to hold.`  \n- **Type:** Dialogue / Pivotal Promise <br/> *(Emphasis marker present)*  \n- **Semantic Interpretation:** She pivots from acknowledging failure to offering her primary asset: the capacity to *gain* steadiness over time. The deliberate emphasis on `-learn-` marks this as the central, undeniable core of her value proposition.\n\n---\n\n**Unit 8: Definitive Offer / Value Proposition**  \n- **Source Span:** `That is what I offer, a willingness to push myself... to achieve.`  \n- **Type:** Dialogue / Contractual Declaration  \n- **Semantic Interpretation:** She explicitly itemizes what she contributes to the situation: not guaranteed success, but a documented, sincere willingness to work relentlessly toward a goal. The ellipsis (`...`) indicates a deliberate, thoughtful pause.\n\n---\n\n**Unit 9: Final Integrity Pledge / Anti-Oath**  \n- **",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "max-tokens"
+    },
+    "usage": {
+      "inputTokens": 141,
+      "outputTokens": 4096,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 3345
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "max-tokens"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:38:41.954Z"
+}

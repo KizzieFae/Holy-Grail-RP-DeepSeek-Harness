@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "b3e84c12-eac4-44a4-b3d1-bb99d11c251a",
+  "correlation": {
+    "evidence_id": "b3e84c12-eac4-44a4-b3d1-bb99d11c251a",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-84eb456c-9b7a-4e46-8459-c4f950d8a29f-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-84eb456c-9b7a-4e46-8459-c4f950d8a29f-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "03d8cd87-3e69-422d-9f1b-3e654485ff4c",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie moved to the cushion, lowering to it, sitting in a formal sieza position. they were not in Japan, but hold habits died hard. \"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\" she hesittated, looking up. \"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "# Semantic Perceptual Unit Decomposition\n\n## Unit 1: Spatial Locomotion (Targeted Movement)\n**Source:** \"Kizzie moved to the cushion,\"\n**Type:** Motor action — deliberate translocation with a destination object.\n**Grounding:** The agent initiates intentional travel from an unidentified prior position toward a cushion object.\n\n## Unit 2: Vertical Descent (Postural Transition)\n**Source:** \"lowering to it,\"\n**Type:** Motor action — controlled downward movement, indicating a change in body elevation toward the seated surface.\n\n## Unit 3: Static Posture Assumption (Formal Sieza)\n**Source:** \"sitting in a formal sieza position.\"\n**Type:** Postural configuration — kneeling/formal sitting posture with folded legs beneath the body; denotes culturally-marked stylized seating.\n**Grounding:** The posture is deliberate, disciplined, and codified (Japanese traditional formal seating).\n\n## Unit 4: Environmental Meta-Awareness (Out-of-Context Recognition)\n**Source:** \"they were not in Japan,\"\n**Type:** Spatial-cognitive appraisal — narrator/character awareness of geographic-cultural context that does not match the enacted posture.\n**Grounding:** Pronoun \"they\" (singular, they/them usage) anchors to Kizzie. There is an implicit recognition that the setting does not call for this posture.\n\n## Unit 5: Habit Persistence (Internal Commentary)\n**Source:** \"but hold habits died hard.\"\n**Type:** Self-reflective cognitive observation — acknowledgment of behavioral automaticity persisting beyond its originating context.\n**Grounding:** \"hold\" is read as \"old\" (orthographic variance). The causal thrust is that despite environmental mismatch (not Japan), the habitual postural practice persists.\n\n## Unit 6: Dialogic Initiation — Prefatory Self-Account\n**Source:** \"A string of bad luck, if I am being honest—nothing that was my fault, mind you, but...\"\n**Type:** Verbal utterance — explanatory disclosure.\n**Sub-units:**\n- **6a:** \"A string of bad luck\" — declaration of an unlucky sequence.\n- **6b:** \"if I am being honest\" — epistemic qualifier asserting forthcoming candor.\n- **6c:** \"nothing that was my fault, mind you,\" — defensive denial of culpability (exculpatory claim).\n- **6d:** \"but...\" — discourse trail-off feeding into further elaboration (aposiopesis).\n\n## Unit 7: Prosodic-Behavioral Marker — Hesitation\n**Source:** \"she hesittated,\"\n**Type:** Paralinguistic behavior — pause, uncertainty, or reticence before continuation.\n**Grounding:** Spelling \"hesittated\" = \"hesitated.\" Pronoun shift \"she\" (alternates with \"they\" in prior units — indicates she/they pronoun usage across the turn).\n\n## Unit 8: Gaze Redirection — Upward Visual Orientation\n**Source:** \"looking up.\"\n**Type:** Visual/attentional shift — eye movement from previous focus (downward or level) toward the conversational partner (or upward space). Functions as an interpersonal engagement cue.\n\n## Unit 9: Dialogic Expansion — Reflective Question\n**Source:** \"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before?\"\n**Type:** Verbal utterance — rhetorical/experiential question addressed to the interlocutor.\n**Sub-units:**\n- **9a:** \"Have you ever had a time in your life\" — elicits a comparable lived experience.\n- **9b:** \"when the entire road has been destroyed\" — metaphorical framing of catastrophic loss/destruction of prior expectations or trajectory.\n- **9c:** \"and you realized that there was another path,\" — posits a subsequent discovery/cognition of an alternative.\n- **9d:** \"one you would not have even considered before?\" — the alternative is framed as previously unthought-of, specifying that the discovery is of a non-obvious route.\n\n## Unit 10: Dialogic Conclusion — Worldview Assertion\n**Source:** \"Some people see misfortune, I see an opportunity to reinvent.\"\n**Type:** Verbal utterance — philosophical/personal maxim; comparative contrast.\n**Sub-units:**\n- **10a:** \"Some people see misfortune,\" — establishes a normative/counterpoint interpretive framework attributed to a general population.\n- **10b:** \"I see an opportunity to reinvent.\" — self-defining reframe; positions the \"bad luck\" (from Unit 6) and \"road destroyed\" (from Unit 9b) as the raw material of self-reconstruction.\n\n---\n\n## Source Accounting Summary\n\n| Unit | Source Fragment | Category |\n|------|----------------|----------|\n| 1 | \"moved to the cushion\" | Motor |\n| 2 | \"lowering to it,\" | Motor |\n| 3 | \"sitting in a formal sieza position.\" | Posture |\n| 4 | \"they were not in Japan,\" | Spatial-cognitive |\n| 5 | \"hold habits died hard.\" | Cognitive — habit appraisal |\n| 6 | \"A string of bad luck...but...\" | Dialogue |\n| 7 | \"she hesittated,\" | Paralinguistic |\n| 8 | \"looking up.\" | Gaze/Visual |\n| 9 | \"Have you ever had...considered before?\" | Dialogue (interrogative) |\n| 10 | \"Some people see misfortune, I see an opportunity to reinvent.\" | Dialogue (assertive) |\n\n**Note on pronoun variance:** The turn alternates between \"they\" (Unit 4) and \"she\" (Unit 7) — consistent with a she/they character usage. All source text is preserved verbatim except where orthographic irregularities (\"hold,\" \"hesittated,\" \"sieza\") have been flagged for clarity. The entirety of the source has been fully accounted for with no omissions or spurious additions.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 27,
+      "outputTokens": 1729,
+      "cacheReadTokens": 128,
+      "reasoningTokens": 479
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:06:47.078Z"
+}

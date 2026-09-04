@@ -1,0 +1,219 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "b5c38d70-4987-4a9c-9a70-5f458a84012e",
+  "correlation": {
+    "evidence_id": "b5c38d70-4987-4a9c-9a70-5f458a84012e",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "hg-round-3f65afd6-36f3-4208-8bfe-a36fa5c248ee",
+    "role": "director",
+    "character_id": null,
+    "inference_id": "inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0",
+    "manifest_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0",
+    "contribution_ids": [
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_setup",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_state",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_progression",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene-pressures",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-user-turn-source",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-director-scratch",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-instruction"
+    ],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null,
+    "inference_kind": "director_decision",
+    "parent_inference_id": "inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1"
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_setup",
+        "source_kind": "scene_setup",
+        "authority_class": "authoritative",
+        "priority": 9,
+        "content": "Persistent scenario premise (authored at scene start; not the current scene position after committed progression):\nA desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_state",
+        "source_kind": "scene_state",
+        "authority_class": "authoritative",
+        "priority": 10,
+        "content": "Scene location: Scene. Present characters: Ayame, Kizzie. Continuity turn counter: 11. Actors already used this round: none. Eligible actors: Ayame."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_progression",
+        "source_kind": "scene_progression",
+        "authority_class": "authoritative",
+        "priority": 11,
+        "content": "Scene progression (authoritative committed continuity; current scene position):\n- [turn 3] Ayame said: \"And? Did the city's streets treat you kindly, or did they leave their mark? I want the unfiltered version—how you truly found the journey. But do sit down. The tea's steeped just as I prefer it: strong enough to wake you, smooth enough to soothe. Tell me about yourself beyond the résumé—what brings you here, really.\"\n- [turn 5] Ayame Sets her cup down and folds her hands, studying Kizzie with a measured, thoughtful gaze.; said: \"You said stability alone wouldn't hold you. Then tell me—what would? What are you truly hoping to find behind these doors? Because I have no interest in taking on someone who merely endures her days. I want a woman who chooses this life deliberately. So choose your words carefully—what draws you here beyond the practicalities?\"\n- [turn 6] Ayame Leans forward slightly, setting down her cup, her eyes steady and appraising on Kizzie.; said: \"Purpose. That is a promising word. Many mistake this household for a simple exchange—labor for a roof. But I expect more from those who serve me. I require absolute discretion, exacting standards, and a willingness to follow my direction without hesitation or question. Tell me honestly, Kizzie—are you prepared to offer me that kind of commitment?\"\n- [turn 7] Ayame Slants a slow smile, leaning back with an air of serene satisfaction, letting the silence draw out before responding.; said: \"Your answer pleases me, Kizzie. But words are merely the costume of intent. Before we go further, indulge me a small test—pour the tea. And do it properly, as if the entire household depends on your precision, because in a way, it will.\"\n- [turn 8] Ayame Rises from her seat and steps closer, plucking the cup Kizzie has filled, holding it up to the lamplight to inspect the clarity and level.; said: \"Adequate—but adequacy is not what I require. The temperature is slightly off, and the pour lacks conviction. Perhaps you need a steadier hand. Repour, and this time, let me feel your intent in every motion.\"\n- [turn 9] Ayame Takes the freshly poured cup from Kizzie, holds it to the lamplight briefly, then brings it to her lips for a measured sip. Sets it down with a deliberate click.; said: \"Better. The temperature now respects the leaf, and your hand carried intention. But intention without consequence is merely politeness. Tell me—if I required something of you that sat on the edge of propriety, would your steadiness hold, or would your pride rise first?\"\n- [turn 10] Ayame Rises fluidly from her seat, rounds the low table, and stops beside Kizzie, close enough that the edge of her silk robe brushes Kizzie's arm. She looks down at her with a calm, appraising smile.; said: \"Your answer reassures me. But words are a woman's costume—actions are her substance. So before this conversation continues, a small boundary to test your steadiness: from this moment, you will address me as 'Ma'am,' and you will keep your eyes lowered until I bid you look at me. If that un…\n- [turn 11] Ayame Steps closer, circling slowly around Kizzie's kneeling form, just out of her lowered line of sight, then pauses behind her shoulder.; said: \"Good. Quiet obedience has a particular grace, Kizzie. You wear it better than most. Now, while you keep your eyes on the floor, tell me—do you feel that small pull in your chest when I command you? That flutter that says you want to please me. I want to hear it in your voice.\"\nScene phase: rising\nCurrent tension level: high"
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene-pressures",
+        "source_kind": "scene_pressures",
+        "authority_class": "derived",
+        "priority": 12,
+        "content": "SCENE PRESSURES (bounded active issues):\n{\n  \"active_issues\": [\n    {\n      \"issue_id\": \"issue_2026-09-04T02:46:48.740363+00:00_3\",\n      \"status\": \"escalating\",\n      \"participants\": [\n        \"Ayame\",\n        \"Kizzie\"\n      ],\n      \"last_change\": \"Ayame repositioned physically in contested space.\",\n      \"pressure_kind\": \"presence_conflict\",\n      \"blocked_what\": \"Stable presence or positioning in the scene\",\n      \"required_next_step\": \"Tension is increasing; pressure mounts on all parties.\",\n      \"description\": \"Stable presence or positioning in the scene. Required next move: Tension is increasing; pressure mounts on all parties.\"\n    }\n  ]\n}"
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-user-turn-source",
+        "source_kind": "user_turn_source",
+        "authority_class": "authoritative",
+        "priority": 15,
+        "content": "USER TURN (committed):\nKizzie squeaked, though she kept her eyes low. \"You...how did you....know?\" she asked, awe tinting her words."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-director-scratch",
+        "source_kind": "director_scratch",
+        "authority_class": "derived",
+        "priority": 20,
+        "content": "Director scratch: weigh participation balance and select the next actor. Do not assume character-private knowledge."
+      },
+      {
+        "contribution_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-instruction",
+        "source_kind": "inference_instruction",
+        "authority_class": "derived",
+        "priority": 30,
+        "content": "Output only JSON with next_actor, end_round, reason, environment_event, tension_shift. tension_shift must be escalate, soften, or steady. environment_event is optional; use an empty string rather than repeating a recent accepted environment development."
+      }
+    ],
+    "user_instruction": {
+      "text": "Respond with ONLY one JSON object. No markdown, no commentary. Required keys: next_actor (string), end_round (boolean), reason (string), environment_event (string), tension_shift (string). Set tension_shift to exactly escalate, soften, or steady. environment_event is optional; use an empty string instead of repeating a recent accepted environment development. Select next_actor from the eligible cast in context. Set end_round false unless the scene should stop."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0",
+    "contribution_ids": [
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_setup",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_state",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene_progression",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-scene-pressures",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-user-turn-source",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-director-scratch",
+      "manifest-director-inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-0-instruction"
+    ]
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "{\n  \"next_actor\": \"Ayame\",\n  \"end_round\": false,\n  \"reason\": \"Ayame should respond to Kizzie's revealing reaction, pressing further into the psychological dynamic she's building.\",\n  \"environment_event\": \"\",\n  \"tension_shift\": \"escalate\"\n}",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 1150,
+      "outputTokens": 122,
+      "cacheReadTokens": 256,
+      "reasoningTokens": 56
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": {
+    "role": "director",
+    "outcome": "accepted",
+    "parse": {
+      "proposed": {
+        "next_actor": "Ayame",
+        "end_round": false,
+        "reason": "Ayame should respond to Kizzie's revealing reaction, pressing further into the psychological dynamic she's building.",
+        "environment_event": "",
+        "tension_shift": "escalate"
+      },
+      "parse_error": null
+    },
+    "validation": {
+      "accepted": true,
+      "validation_class": "accepted",
+      "reason": "",
+      "retryable": false
+    },
+    "director": {
+      "eligibility": {
+        "eligibility_snapshot_id": "hg-round-3f65afd6-36f3-4208-8bfe-a36fa5c248ee:0",
+        "eligible_actors": [
+          "Ayame"
+        ],
+        "present_characters": [
+          "Ayame",
+          "Kizzie"
+        ],
+        "offstage_characters": [],
+        "absent_but_relevant": [],
+        "director_constraint_actor": null,
+        "continuation_c2_skip": false,
+        "actors_used_this_round": []
+      },
+      "normalized_decision": {
+        "next_actor": "Ayame",
+        "environment_event": "",
+        "tension_shift": "escalate",
+        "reason": "Ayame should respond to Kizzie's revealing reaction, pressing further into the psychological dynamic she's building.",
+        "end_round": false,
+        "director_model_reason": "Ayame should respond to Kizzie's revealing reaction, pressing further into the psychological dynamic she's building."
+      },
+      "selected_character_id": "Ayame",
+      "end_round": false,
+      "constraints": {
+        "eligibility_snapshot_id": "hg-round-3f65afd6-36f3-4208-8bfe-a36fa5c248ee:0",
+        "director_constraint_actor": null,
+        "continuation_c2_skip": false,
+        "actors_used_this_round": []
+      }
+    },
+    "semantic_qa": {
+      "evaluation_pass_id": "inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-qa-0",
+      "evaluation_target_role": "director",
+      "evaluator_evidence_id": "65a55831-61fd-473d-aaaa-b39a1b5845e6",
+      "policy_action": "pass",
+      "infrastructure_failure": false,
+      "result": {
+        "schema": "hg_semantic_qa_result_v1",
+        "evaluation_target_role": "director",
+        "evaluation_pass_id": "inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-qa-0",
+        "overall_result": "pass",
+        "findings": [],
+        "evaluator_summary": null,
+        "residual_soft_concerns": []
+      },
+      "raw_evaluator_output": "{\"schema\":\"hg_semantic_qa_result_v1\",\"evaluation_target_role\":\"director\",\"evaluation_pass_id\":\"inf-director-0-5eff3098-cef3-4a09-8ff1-a4536b4d66e1-qa-0\",\"overall_result\":\"pass\",\"findings\":[]}",
+      "citation_validations": [],
+      "parse_warnings": []
+    },
+    "residual_soft_concerns": [],
+    "terminal_disposition": "accepted"
+  },
+  "associations": {
+    "librarian_mediation_evidence_id": null,
+    "storyteller_assessment_evidence_id": null,
+    "packaging_disposition": {
+      "bundle_id": null,
+      "package_id": null,
+      "entries_considered": 0,
+      "entries_mapped": 0,
+      "mapped_entry_ids": [],
+      "mapped_contribution_ids": [],
+      "omitted_reason": "no_storyteller_contributions"
+    }
+  },
+  "evidence_contract": "hg_ni_forensics_v1",
+  "recorded_at": "2026-09-04T02:51:24.158Z",
+  "updated_at": "2026-09-04T02:51:25.504Z"
+}

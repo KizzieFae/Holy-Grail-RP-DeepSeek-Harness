@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "edea8780-0f63-4086-b405-cf870228e6f3",
+  "correlation": {
+    "evidence_id": "edea8780-0f63-4086-b405-cf870228e6f3",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-e76e85d9-08e7-4d34-b7e6-5f76e4c976d5",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-e76e85d9-08e7-4d34-b7e6-5f76e4c976d5",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie followed dutifully, her stockinged feet making no sound on the wooden floor. \"It was, uneventful. My uber driver was quite chatty. I considered bringing a suitcase, but I thought showing up with one would be presumptuous.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Below is the turn decomposed into semantic perceptual units, with every unit traced back to its exact source substring. The source text reads:\n\n> Kizzie followed dutifully, her stockinged feet making no sound on the wooden floor. \"It was, uneventful. My uber driver was quite chatty. I considered bringing a suitcase, but I thought showing up with one would be presumptuous.\"\n\n---\n\n| # | Semantic Unit | Type | Source Substring (verbatim) |\n|---|---|---|---|\n| 1 | Kizzie moves after someone in a compliant, obedient posture. | Action (Motion) | `Kizzie followed dutifully` |\n| 2 | Her feet are bare in stockings and produce no sound as she walks across the wooden floor. | Sensory Detail (Auditory/Tactile) | `her stockinged feet making no sound on the wooden floor` |\n| 3 | She reports that the journey/occasion was without notable incident. | Spoken Utterance (Report) | `It was, uneventful.` (note the mid-sentence comma retained) |\n| 4 | She reports that her rideshare driver had talked a great deal. | Spoken Utterance (Report) | `My uber driver was quite chatty.` |\n| 5 | She states that she had contemplated bringing luggage. | Spoken Utterance (Retrospective choice) | `I considered bringing a suitcase` |\n| 6 | She expresses that she refrained from bringing the luggage because arriving with it would have seemed overly forward or improper. | Spoken Utterance (Rationale/Judgment) | `but I thought showing up with one would be presumptuous` |\n\n---\n\n**Source Accounting Notes**\n\n- Units 1–2 form the first narrative sentence (`Kizzie followed dutifully, her stockinged feet making no sound on the wooden floor. `). Unit 2 depends on the clause continuation after the comma.\n- Units 3–6 constitute a single continuous quoted utterance enclosed by opening quotation mark before `It` and closing after `presumptuous.`:\n  `\"It was, uneventful. My uber driver was quite chatty. I considered bringing a suitcase, but I thought showing up with one would be presumptuous.\"`\n- No source text is omitted, duplicated, or reordered: stitching the excerpts in order 1→2→3→4→5→6 (adding the comma after *dutifully*, the period after *floor*, the speech quotation marks, and spaces between sentences) reproduces the original 100%.\n\n**Boundary/Overlap Summary**\n\n- Unit 3 ends at `.` following `uneventful.`\n- Unit 4 spans from `My uber driver` up to `chatty.`\n- Unit 5 ends at `suitcase` (comma belongs to the continuation).\n- Unit 6 begins with `but` (conjunction linking the two clauses) and ends at the terminal period inside the quotation.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 99,
+      "outputTokens": 1978,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1349
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T01:51:08.485Z"
+}

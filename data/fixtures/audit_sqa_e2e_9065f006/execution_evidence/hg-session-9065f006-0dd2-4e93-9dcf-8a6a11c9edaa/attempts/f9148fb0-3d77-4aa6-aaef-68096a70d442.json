@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "f9148fb0-3d77-4aa6-aaef-68096a70d442",
+  "correlation": {
+    "evidence_id": "f9148fb0-3d77-4aa6-aaef-68096a70d442",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-34366285-8a75-4dce-b241-8b437ddb4d31-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-34366285-8a75-4dce-b241-8b437ddb4d31-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "9f5fdff7-d921-4448-8841-58b356984133",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie smiled, rising. \"May I fetch new cups, Ayame-sama? I would not wish to pour into cups that have already been used.\" If given perissin, she whould head toward what looked to be a kitchen and return with fresh teacups. These she would place on the table before lowering to her knees and very carefully, with two hands, she would pour new cups before lifting ayame's and offering it with a light bow and holding it in two hands."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the player-authored turn decomposed into its semantic perceptual",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "max-tokens"
+    },
+    "usage": {
+      "inputTokens": 17,
+      "outputTokens": 4096,
+      "cacheReadTokens": 128,
+      "reasoningTokens": 4084
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "max-tokens"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:25:47.635Z"
+}

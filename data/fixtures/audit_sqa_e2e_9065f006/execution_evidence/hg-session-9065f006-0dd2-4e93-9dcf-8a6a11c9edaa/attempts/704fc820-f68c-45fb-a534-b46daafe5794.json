@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "704fc820-f68c-45fb-a534-b46daafe5794",
+  "correlation": {
+    "evidence_id": "704fc820-f68c-45fb-a534-b46daafe5794",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-30c4b178-5514-4a43-b8b1-c8d3cfafed12-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-30c4b178-5514-4a43-b8b1-c8d3cfafed12-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "ae609951-b346-4e09-ab83-92673acbe746",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie rose, preparing to follow. \"Thank you, ma'am.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units, with complete source accounting (each unit maps verbatim to its source string segment, covering the entire input without omission).\n\n---\n\n### Semantic Perceptual Units Breakdown\n\n**Source Text:** `Kizzie rose, preparing to follow. \"Thank you, ma'am.\"`\n\n#### Unit 1: Subject Anchor\n- **Type:** Identity Reference\n- **Description:** Establishes the acting entity for the subsequent units.\n- **Source Fragment:** `Kizzie`\n\n#### Unit 2: Motor Action (Rise)\n- **Type:** Physical Action / Locomotion\n- **Description:** Kizzie physically moves from a lower position (e.g., seated or kneeling) to a standing one.\n- **Source Fragment:** `rose`\n\n#### Unit 3: Preparatory Motor Intent\n- **Type:** Tactical / Postural Intent\n- **Description:** Indicates an immediate anticipatory action—preparing her body/mind to advance behind another character. This is a non-verbal cue of obedience or readiness.\n- **Source Fragment:** `, preparing to follow.`\n\n#### Unit 4: Polite Speech Act (Gratitude)\n- **Type:** Dialogue / Verbal Utterance\n- **Description:** Spoken expression of thanks directed at a female superior or elder, marked by the honorific \"ma'am.\" This conveys respect and closes the interaction.\n- **Source Fragment:** `\"Thank you, ma'am.\"`\n\n---\n\n### Complete Source Accounting (Concatenation Check)\n\n- `\"Kizzie\"` (Unit 1)\n- `\" \"` (spacing attributed to narrative flow)\n- `\"rose\"` (Unit 2)\n- `\", \"` (spacing/punctuation attributed to narrative flow)\n- `\"preparing to follow.\"` (Unit 3)\n- `\" \"` (spacing)\n- `\"\\\"Thank you, ma'am.\\\"\"` (Unit 4)\n\n**Total coverage:** Every alphanumeric character, punctuation mark, and quoted string from the original source has been assigned to a semantic unit or acknowledged as grammatical spacing/conjunction within the flow. No content is omitted.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 60,
+      "outputTokens": 1484,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1033
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:21:36.741Z"
+}

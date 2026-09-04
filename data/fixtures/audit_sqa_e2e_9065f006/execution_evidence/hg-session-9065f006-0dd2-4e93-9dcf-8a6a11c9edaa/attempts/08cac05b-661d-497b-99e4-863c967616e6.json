@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "08cac05b-661d-497b-99e4-863c967616e6",
+  "correlation": {
+    "evidence_id": "08cac05b-661d-497b-99e4-863c967616e6",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-6492d2c8-ed9c-469d-b9cf-eae1377b6052",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-6492d2c8-ed9c-469d-b9cf-eae1377b6052",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie lowered her gaze. \"Yes, ma'am.\" It was a simple thing this, but it settled like a pit in her stomach, tail lowering, ears flicking subtly."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "### Semantic Decomposition of Player Action\n\nThe player-authored turn is parsed into five distinct perceptual units, each quoted directly from the source to ensure complete fidelity. Each unit represents a discrete semantic signal conveying physical, social, or emotional state.\n\n---\n\n**Unit 1: Nonverbal Gesture — Gaze Aversion**  \n- **Source**: `\"Kizzie lowered her gaze.\"`  \n- **Interpretation**: A deliberate demotion of the eyes, signaling submission, deference, or avoidance of direct authoritative contact. It confirms compliance but also hints at internalized discomfort.\n\n---\n\n**Unit 2: Spoken Dialogue — Formal Acknowledgment**  \n- **Source**: `\"'Yes, ma'am.'\"`  \n- **Interpretation**: A concise, polite acceptance of a command or reprimand. The phrasing \"ma'am\" establishes a power hierarchy, and the flat delivery (inferred) suggests compliance without genuine enthusiasm.\n\n---\n\n**Unit 3: Internal Visceral Response — Emotional Weight**  \n- **Source**: `\"It was a simple thing this, but it settled like a pit in her stomach\"`  \n- **Interpretation**: A narrative introspection. The character internally acknowledges that the action *should* be simple, yet the phrase \"pit in her stomach\" encodes deep anxiety, guilt, or dread—directly contradicting the surface-level simplicity.\n\n---\n\n**Unit 4: Nonverbal Posture — Tail Lowering**  \n- **Source**: `\"tail lowering\"`  \n- **Interpretation**: A classical submission cue in anthro/furry contexts. Accompanying the gaze drop, it telegraphs a submissive or fearful posture, reinforcing the internal shame or anxiety from Unit 3.\n\n---\n\n**Unit 5: Nonverbal Micromovement — Ear Flicking**  \n- **Source**: `\"ears flicking subtly\"`  \n- **Interpretation**: A high-frequency, involuntary action indicating nervousness, suppressed agitation, or an attempt to process the situation. The subtlety distinguishes it from a full startle response, implying restrained inner conflict.\n\n---\n\n### Complete Source Accountability\nEvery word of the original text is accounted for within the five units:\n\n> \"Kizzie lowered her gaze.\" → Unit 1  \n> \"'Yes, ma'am.'\" → Unit 2  \n> \"It was a simple thing this, but it settled like a pit in her stomach\" → Unit 3  \n> \"tail lowering,\" → Unit 4  \n> \"ears flicking subtly.\" → Unit 5  \n\n*No external interpretation or omitted content.* The composite state of Kizzie is one of **forced obedience under internal distress**, expressed through multi-channel signaling (vocal, ocular, postural, and micro-facial).",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 82,
+      "outputTokens": 1869,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1308
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:46:10.749Z"
+}

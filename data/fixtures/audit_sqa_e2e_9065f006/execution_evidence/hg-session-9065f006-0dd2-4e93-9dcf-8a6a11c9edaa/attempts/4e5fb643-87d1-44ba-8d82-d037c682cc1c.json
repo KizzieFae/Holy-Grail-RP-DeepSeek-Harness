@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "4e5fb643-87d1-44ba-8d82-d037c682cc1c",
+  "correlation": {
+    "evidence_id": "4e5fb643-87d1-44ba-8d82-d037c682cc1c",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-ae49f9d3-d8c5-4a2b-9b01-864b5f7e9c45-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-ae49f9d3-d8c5-4a2b-9b01-864b5f7e9c45-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "ec33c95a-8c01-4f78-8cfa-b42299795f67",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie smiled and set her cup down. \"I would be disappointed if you had not offered, Ayame-sama.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, complete with exact source accounting.\n\n| # | Semantic Category | Perceptual Unit (Decomposed Meaning) | Source Fragment (Exact Quote) |\n| :--- | :--- | :--- | :--- |\n| 1 | **Subject Identification** | The actor performing the actions and speech in this turn is **Kizzie**. | `Kizzie` |\n| 2 | **Facial Expression** | Kizzie performs a non-verbal communicative action: **smiling** (indicates warmth, approval, or amusement). | `smiled` |\n| 3 | **Physical Action (Object Interaction)** | Kizzie performs a deliberate motor action involving a prop: **setting her cup down** (signals pause, readiness, or settling into conversation). | `set her cup down` |\n| 4 | **Speech Marker (Narration)** | The line transitions from narration to dialogue. Kizzie begins her spoken line (represented by the opening quotation mark). | `\"` |\n| 5 | **Speech / Conditional Clause** | Kizzie states the *hypothetical event* that would trigger her stated emotion: **\"if you had not offered\"** (regarding a specific offer made by Ayame). | `if you had not offered` |\n| 6 | **Speech / Emotional Evaluation** | Kizzie voices her *reaction* to that hypothetical event: **\"I would be disappointed\"** (implies she values the offer and expects it; serves as positive reinforcement). | `I would be disappointed` |\n| 7 | **Speech / Social Address & Honorific** | Kizzie directly addresses the recipient, using the respectful honorific **\"Ayame-sama\"** (establishes the target of the dialogue and maintains a socially respectful dynamic). | `Ayame-sama` |\n| 8 | **Speech Marker (Narration)** | The spoken line concludes (represented by the closing quotation mark and period). | `.\"` |\n\n---\n\n**Summary of Intent (Synthesized Meta-Unit):**\nKizzie performs a *physical transition* (smiling and lowering her cup) before delivering a conditional statement of *positive validation* (\"I would be disappointed if you had not offered\"), explicitly directed at *Ayame-sama* through respectful address, implying that the offer was both anticipated and welcomed.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 70,
+      "outputTokens": 1710,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1208
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:20:24.702Z"
+}

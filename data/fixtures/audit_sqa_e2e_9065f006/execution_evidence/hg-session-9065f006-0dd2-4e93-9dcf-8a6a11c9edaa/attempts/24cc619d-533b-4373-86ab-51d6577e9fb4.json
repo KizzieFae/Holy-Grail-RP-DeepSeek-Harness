@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "24cc619d-533b-4373-86ab-51d6577e9fb4",
+  "correlation": {
+    "evidence_id": "24cc619d-533b-4373-86ab-51d6577e9fb4",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-fc42fe13-e90c-4447-adda-4a0ea9f2e50f-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-fc42fe13-e90c-4447-adda-4a0ea9f2e50f-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "11fedd23-1f35-4c61-8be2-935a140d86ed",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie offered her hands, turning them so that their palms were lifted. Her hands were perfectly still; there was no hesitation."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "**Semantic Perceptual Unit Decomposition**\n\n1. **Unit: Initial Offer Action**  \n   - **Source**: \"Kizzie offered her hands\"\n   - **Semantic Weight**: The primary gesture of extending her hands outward, signaling a physical invitation or surrender.\n\n2. **Unit: Orientation Change (Palms Up)**  \n   - **Source**: \"turning them so that their palms were lifted\"\n   - **Semantic Weight**: A deliberate manipulative action rotating the hands to expose the palms—commonly a submissive or trust-indicating posture, revealing vulnerability.\n\n3. **Unit: Absolute Motionlessness**  \n   - **Source**: \"Her hands were perfectly still\"\n   - **Semantic Weight**: A static, observable state of the hands, indicating complete physical composure and a lack of tremor or withdrawal.\n\n4. **Unit: Absence of Hesitation**  \n   - **Source**: \"there was no hesitation\"\n   - **Semantic Weight**: An inferred negative state regarding her mental/emotional process, implying decisiveness, safety, or detached calmness. (Note: This is a narrative interpretation drawn directly from the concluding clause, often tied to the stillness observed in the prior unit.)\n\n---\n\n**Complete Source Accounting Table**:\n\n| # | Semantic Perceptual Unit | Verbatim Source Text |\n|---|--------------------------|----------------------|\n| 1 | Physical extension of hands (offer) | `Kizzie offered her hands` |\n| 2 | Rotational movement to expose palms | `turning them so that their palms were lifted` |\n| 3 | Complete lack of physical movement in the hands | `Her hands were perfectly still` |\n| 4 | Absence of psychological hesitation/dithering | `there was no hesitation` |",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 71,
+      "outputTokens": 840,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 477
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:09:32.724Z"
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "0cc72110-384f-4922-8b02-b05b81d3c1b3",
+  "correlation": {
+    "evidence_id": "0cc72110-384f-4922-8b02-b05b81d3c1b3",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-78c25497-f42e-44ea-b86c-66a36db4ce3f",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-78c25497-f42e-44ea-b86c-66a36db4ce3f",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\n\"Not in my head, ma'am, but in my heart I do.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, complete with precise source accounting.\n\n---\n\n### Semantic Perceptual Decomposition\n\n**Unit 1: Cognitive Negation (Mental State)**\n- **Source Account:** `Not in my head`\n- **Semantic Content:** The speaker explicitly denies that the subject of the query (belief, understanding, or acceptance) resides within their rational intellect or cognitive processing.\n- **Perceptual Function:** Disambiguates the *locus* of the internal state, ruling out the mind as the source of truth for the character.\n\n---\n\n**Unit 2: Social Interlocutor Address (Vocative)**\n- **Source Account:** `, ma'am,`\n- **Semantic Content:** A direct, respectful honorific directed at the receiving party (likely the GM/NPC). Establishes the interpersonal dynamic and targets the following statement explicitly at that individual.\n- **Perceptual Function:** Grounds the communication in the current social framework, indicating deference or politeness that colors how the subsequent assertion is to be interpreted.\n\n---\n\n**Unit 3: Emotional Delineation (Affective Location)**\n- **Source Account:** `but in my heart`\n- **Semantic Content:** Introduces a contrastive pivot (`but`), redirecting the perceived location of the belief/state from the intellect to the emotional core. Signals a deeply visceral, passionate, or genuine conviction that bypasses logical argumentation.\n- **Perceptual Function:** Shifts the perception of the speaker's internal truth from rationality to sentiment, implying unshakeable emotional commitment despite any intellectual doubt.\n\n---\n\n**Unit 4: Propositional Assertion (Performative Commitment)**\n- **Source Account:** `I do.`\n- **Semantic Content:** A declarative confirmation of the implied action or state (e.g., \"believe,\" \"love,\" or \"accept\"). Completes the sentence's predicate, anchoring the sentiment in a concrete personal statement of fact.\n- **Perceptual Function:** Acts as the final, unqualified verbal commitment. It seals the character's stance, making it clear that despite the negation in Unit 1, the final answer to the underlying question is an emphatic *yes*.\n\n---\n\n### Integrative Narrative Summary\nThe character splits their inner self into two distinct domains. They deny the *cognitive* domain (head) as the seat of the truth, but affirm the *affective* domain (heart) via a contrastive conjunction. The address (\"ma'am\") ensures the response is directed personally, while the final performative assertion (\"I do\") provides the definitive, emotional commitment that overrides the intellectual denial.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 60,
+      "outputTokens": 1647,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1106
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:12:38.449Z"
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "11fedd23-1f35-4c61-8be2-935a140d86ed",
+  "correlation": {
+    "evidence_id": "11fedd23-1f35-4c61-8be2-935a140d86ed",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-fc42fe13-e90c-4447-adda-4a0ea9f2e50f",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-fc42fe13-e90c-4447-adda-4a0ea9f2e50f",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie offered her hands, turning them so that their palms were lifted. Her hands were perfectly still; there was no hesitation."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "# Decomposition into Semantic Perceptual Units\n\n## Narrative Overview\nKizzie performs a deliberate physical gesture (offering her hands, palms up) that communicates openness, and the prose emphasizes a lack of any tremor or hesitation — a behavioral display of trust.\n\n---\n\n## Semantic Perceptual Units\n\n### Unit 1: Initiation of the Gesture — Extension Toward the Other\n- **Perceptible via:** Visual (proxemic change; arms/hands move into shared space)\n- **Semantic load:** A voluntary, socially meaningful act of offering; places the hands within the other's reach, inviting contact or inspection.\n- **Exact source span:**\n  > \"Kizzie offered her hands,\"\n\n### Unit 2: Orientation Change — Palms Turned Upward\n- **Perceptible via:** Visual (rotation of the hands/wrists)\n- **Semantic load:** An intentional openness cue — palms-up is a classic gestural signal of surrender, receptivity, or candor. It physically exposes the most vulnerable surface of the hand.\n- **Exact source span:**\n  > \"turning them so that their palms were lifted\"\n\n### Unit 3: Terminal State — Absolute Motionlessness\n- **Perceptible via:** Visual (absence of micro-movement); Kinesthetic (if the other touches them, there would be no resistance or trembling)\n- **Semantic load:** The stillness contrasts with the prior motion, framing the offering as stable and sustained — not a transient gesture but a held posture of readiness.\n- **Exact source span:**\n  > \"Her hands were perfectly still;\"\n\n### Unit 4: Behavioral Readout — Absence of Hesitation\n- **Perceptible via:** Visual inference (stillness is read as decisive); Metaknowledge of body language norms\n- **Semantic load:** The narrator directly glosses the stillness's significance — no second-guessing, no fear or reluctance precedes or accompanies the gesture. This dignifies the act as one of deliberate trust or composure.\n- **Exact source span:**\n  > \"there was no hesitation.\"\n\n---\n\n## Source Accounting (Full Quote)\n> **Unit 1** — Kizzie offered her hands,\n> **Unit 2** — turning them so that their palms were lifted.\n> **Unit 3** — Her hands were perfectly still;\n> **Unit 4** — there was no hesitation.\n\n*No extraneous text in the turn is unaccounted for; the entire player-authored passage is mapped 1:1 to the four units above.*",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 71,
+      "outputTokens": 784,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 252
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T03:09:25.973Z"
+}

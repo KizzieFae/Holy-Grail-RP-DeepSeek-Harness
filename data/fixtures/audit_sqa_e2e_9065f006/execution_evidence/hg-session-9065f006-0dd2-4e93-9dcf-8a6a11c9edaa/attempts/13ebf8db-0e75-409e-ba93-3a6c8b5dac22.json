@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "13ebf8db-0e75-409e-ba93-3a6c8b5dac22",
+  "correlation": {
+    "evidence_id": "13ebf8db-0e75-409e-ba93-3a6c8b5dac22",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-5b8e8edd-27f5-465f-a24e-ca444a545eee-retry-1",
+    "attempt_index": 1,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-5b8e8edd-27f5-465f-a24e-ca444a545eee-retry-1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": "1ddfcfe5-488a-4482-a8ef-264517e48195",
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nShe hummed thoughtfully. \"That is a difficult question to answer. Hai, stability would be nice, but honesty requires me to say that I would be a little disappointed. I really do wish to reinvent myself, to be challenged and to learn and grow. That may be asking more than what you offer, but if one reaches for the moon, even if they fall short, they may still achieve great height.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "# Semantic Decomposition of Player Turn\n\n## Source Text\n> She hummed thoughtfully. \"That is a difficult question to answer. Hai, stability would be nice, but honesty requires me to say that I would be a little disappointed. I really do wish to reinvent myself, to be challenged and to learn and grow. That may be asking more than what you offer, but if one reaches for the moon, even if they fall short, they may still achieve great height.\"\n\n---\n\n## Perceptual Units\n\n### UNIT 1 — Nonverbal Contemplative Signal\n- **Source excerpt:** \"She hummed thoughtfully.\"\n- **Perceptual channel:** Kinesthetic/Auditory (physical behavior)\n- **Semantic content:** The character pauses to reflect before responding; the hum signals deliberation. Establishes tone of considered, honest reply.\n- **Function in scene:** Bridges her internal processing to her spoken answer; signals sincerity.\n\n---\n\n### UNIT 2 — Acknowledgment of Question Difficulty\n- **Source excerpt:** \"That is a difficult question to answer.\"\n- **Perceptual channel:** Declarative speech\n- **Semantic content:** Meta-commentary; frames her upcoming response as weighed, not reflexive. Also functions as a hedge that softens what follows.\n- **Function in scene:** Buys space; validates the weight of what was asked of her.\n\n---\n\n### UNIT 3 — Conditional Preference (Stability Acknowledged)\n- **Source excerpt:** \"Hai, stability would be nice,\"\n- **Perceptual channel:** Declarative speech (assent with reservation)\n- **Semantic content:** She concedes that stability holds appeal — uses \"Hai\" (affirmative particle) to signal agreement in principle before introducing complexity.\n- **Function in scene:** Establishes baseline: she is not rejecting safety outright; she values it in the abstract.\n\n---\n\n### UNIT 4 — Honest Admission of Disappointment\n- **Source excerpt:** \"but honesty requires me to say that I would be a little disappointed.\"\n- **Perceptual channel:** Emotional disclosure (spoken)\n- **Semantic content:** She voluntarily reveals a negative emotional layer to her answer — choosing stability would cost her something emotionally. \"Honesty requires\" frames this as an obligation she feels toward the interlocutor.\n- **Function in scene:** Risk-laden vulnerability; she admits the counterpart's offer, while attractive, would leave her wanting more. Tactful but direct.\n\n---\n\n### UNIT 5 — Desire for Reinvention & Growth\n- **Source excerpt:** \"I really do wish to reinvent myself, to be challenged and to learn and grow.\"\n- **Perceptual channel:** Aspirational declaration (spoken)\n- **Semantic content:** Core motivational triad: reinvention, challenge, growth. The repetition of verbs (\"to be challenged,\" \"to learn and grow\") emphasizes what she actively seeks — transformation over comfort.\n- **Function in scene:** This is the crux of her answer — what she actually wants from any path forward. Positions her as someone in a season of deliberate change.\n\n---\n\n### UNIT 6 — Tasteful Qualification of Offer's Sufficiency\n- **Source excerpt:** \"That may be asking more than what you offer,\"\n- **Perceptual channel:** Conditional assessment (spoken)\n- **Semantic content:** Diplomatic critique; she implies the interlocutor's proposal falls short of her ambitions without condemning it. \"May\" softens the judgment, leaving room for dialogue.\n- **Function in scene:** Gentle pushback; invites the counterpart to rise to her level of aspiration.\n\n---\n\n### UNIT 7 — Closing Proverb / Philosophical Frame\n- **Source excerpt:** \"but if one reaches for the moon, even if they fall short, they may still achieve great height.\"\n- **Perceptual channel:** Aphoristic speech (metaphorical)\n- **Semantic content:** She justifies high ambition even at risk of failure. \"Reaching for the moon\" = impossible/inflated goal; \"great height\" = partial success still transcendes mediocrity. This is her personal credo, offered as explanation for why she leans toward the riskier path.\n- **Function in scene:** Elevates the conversation's register; reframes her preference as principled rather than merely restless. Ends on a poetic, self-defining note.\n\n---\n\n## Source Accounting Check\n| Unit | Exact Source Coverage |\n|------|----------------------|\n| 1 | \"She hummed thoughtfully.\" ✓ |\n| 2 | \"That is a difficult question to answer.\" ✓ |\n| 3 | \"Hai, stability would be nice,\" ✓ |\n| 4 | \"but honesty requires me to say that I would be a little disappointed.\" ✓ |\n| 5 | \"I really do wish to reinvent myself, to be challenged and to learn and grow.\" ✓ |\n| 6 | \"That may be asking more than what you offer,\" ✓ |\n| 7 | \"but if one reaches for the moon, even if they fall short, they may still achieve great height.\" ✓ |\n\n**All source text accounted for — no omissions, no extrapolations beyond the provided material.**",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 127,
+      "outputTokens": 1374,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 318
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:12:38.000Z"
+}

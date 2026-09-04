@@ -1,0 +1,54 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "92debfbc-fb9d-4d41-b0ff-df9f01c9ffc0",
+  "correlation": {
+    "evidence_id": "92debfbc-fb9d-4d41-b0ff-df9f01c9ffc0",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "hg-round-5ae6bc0f-c05e-4911-bb13-960589fe5ea1",
+    "role": "participation",
+    "character_turn_index": 0,
+    "participation_decision_id": "participation-hg-round-5ae6bc0f-c05e-4911-bb13-960589fe5ea1-0",
+    "inference_id": null,
+    "attempt_index": 0
+  },
+  "request": null,
+  "response": null,
+  "decision": {
+    "role": "participation",
+    "outcome": "selected",
+    "participation": {
+      "selection_mode": "direct",
+      "selected_actor": "Ayame",
+      "participation_sources": [
+        "forced_designation"
+      ],
+      "reason": "Forced designation selects eligible actor Ayame.",
+      "director_required": false,
+      "director_constraint_actor": null,
+      "continuation_c2_skip": false,
+      "forced_designation_ignored": false,
+      "forced_designation_ignore_reason": null,
+      "eligibility": {
+        "eligibility_snapshot_id": "hg-round-5ae6bc0f-c05e-4911-bb13-960589fe5ea1:0",
+        "eligible_actors": [
+          "Ayame"
+        ],
+        "present_characters": [
+          "Ayame",
+          "Kizzie"
+        ],
+        "offstage_characters": [],
+        "absent_but_relevant": [],
+        "actors_used_this_round": []
+      }
+    }
+  },
+  "associations": {
+    "selected_character_id": "Ayame",
+    "character_inference_id": "inf-character-0-4db3e3ae-1b94-4c08-adf1-7be21056b884",
+    "character_evidence_id": "51cac6a4-2097-44a5-ba29-4b5124ea0ee5"
+  },
+  "recorded_at": "2026-09-04T02:17:37.987Z",
+  "updated_at": "2026-09-04T02:17:51.376Z"
+}

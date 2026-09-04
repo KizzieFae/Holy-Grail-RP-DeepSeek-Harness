@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "208473a7-176f-4dce-95c6-c6c81433513b",
+  "correlation": {
+    "evidence_id": "208473a7-176f-4dce-95c6-c6c81433513b",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-44f274ed-6885-417e-bec5-44c46e5e576a",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-44f274ed-6885-417e-bec5-44c46e5e576a",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie smiled gratefully. \"Thank you, Ayame-sama,\" Kizzie replied with a bow before stepping within. She made a point to turn and remove her shoes, facing them toward the wall."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into discrete semantic perceptual units, with the exact source strings mapped to each unit for complete source accounting.\n\n**Unit 1: Grateful Expression (Visual)**\n- **Source:** `Kizzie smiled gratefully.`\n- **Perception:** Kizzie's facial expression changes to one of gratitude.\n\n**Unit 2: Verbal Gratitude (Auditory)**\n- **Source:** `\"Thank you, Ayame-sama,\"`\n- **Perception:** Kizzie speaks a sentence of thanks, addressing Ayame.\n\n**Unit 3: Bow (Visual/Physical Action)**\n- **Source:** `Kizzie replied with a bow`\n- **Perception:** Kizzie performs a bow as part of her reply.\n\n**Unit 4: Entering the Threshold (Visual/Physical Action)**\n- **Source:** `before stepping within.`\n- **Perception:** Kizzie moves across the threshold into the interior space.\n\n**Unit 5: Turning Around (Visual/Physical Action)**\n- **Source:** `She made a point to turn`\n- **Perception:** Kizzie deliberately rotates her body to face the opposite direction.\n\n**Unit 6: Removing Footwear (Visual/Physical Action)**\n- **Source:** `and remove her shoes,`\n- **Perception:** Kizzie takes off her shoes.\n\n**Unit 7: Arranging Shoes (Visual/Physical Action)**\n- **Source:** `facing them toward the wall.`\n- **Perception:** Kizzie orients her shoes so they point toward the wall (aligning them neatly).",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 87,
+      "outputTokens": 1028,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 690
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T01:46:56.267Z"
+}

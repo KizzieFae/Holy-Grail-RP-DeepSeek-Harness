@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "9e0c2456-108d-49bc-967e-727f7ce11552",
+  "correlation": {
+    "evidence_id": "9e0c2456-108d-49bc-967e-727f7ce11552",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-ca0dfd05-6cd5-4f68-aee3-e67d0d0080b4",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-ca0dfd05-6cd5-4f68-aee3-e67d0d0080b4",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie nodded. \"Hai,\" she agreed, restarting. This time, she took more care, watching the pot as it heated, waiting until just the tiniest of bubbles appeared on the bottom- marking the temperature that was perfect for green tea. This time, when she poured, it was almost as if she were willing the water out of the pot rather than relying on gravity, and she raised the pot up a little to influence the stream. A half spoon of honey was added and stirred. Once more, she offered with two hands. \"I hope this is more to your liking, ayame-sama. I have never been taught to make tea, nor any parts of  service, but I am willing and eager to learn.\""
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the player-authored turn decomposed into discrete semantic perceptual units. Each unit is paired with its exact source accounting (the verbatim text that comprises it) to ensure no information is lost.\n\n### Semantic Perceptual Units\n\n**Unit 1: Acknowledgment and Process Reset**  \n*(Action / State of Intent)*\n> **Source:** \"Kizzie nodded. 'Hai,' she agreed, restarting.\"\n>\n> *Interpretation:* Kizzie accepts the previous feedback via a non-verbal nod, verbally confirms with \"Hai,\" and consciously begins the tea-making process anew.\n\n---\n\n**Unit 2: Deliberate Observation and Thresholding**  \n*(Perception / Action)*\n> **Source:** \"This time, she took more care, watching the pot as it heated, waiting until just the tiniest of bubbles appeared on the bottom-\"\n>\n> *Interpretation:* Kizzie modifies her behavior by increasing focus. She actively observes the pot and waits for a specific micro-cue (tiny bubbles) that signals the correct moment.\n\n---\n\n**Unit 3: Cognitive Calibration**  \n*(Cognition / Knowledge Application)*\n> **Source:** \"marking the temperature that was perfect for green tea.\"\n>\n> *Interpretation:* She interprets the visual cue of the bubbles as definitive evidence that the water has reached the ideal temperature for brewing green tea.\n\n---\n\n**Unit 4: Intentional and Kinesthetic Pouring**  \n*(Action / Technique / Qualia)*\n> **Source:** \"This time, when she poured, it was almost as if she were willing the water out of the pot rather than relying on gravity, and she raised the pot up a little to influence the stream.\"\n>\n> *Interpretation:* Kizzie performs a second pour with heightened intentionality. She visualizes and exerts mental focus over the flow (willing the water), and physically adjusts her mechanics by raising the pot to control and shape the water stream.\n\n---\n\n**Unit 5: Ingredient Integration and Formal Presentation**  \n*(Action / Gesture)*\n> **Source:** \"A half spoon of honey was added and stirred. Once more, she offered with two hands.\"\n>\n> *Interpretation:* Kizzie completes the preparation by adding and mixing a precise quantity of honey. She then replicates the culturally respectful presentation gesture, offering the cup with both hands.\n\n---\n\n**Unit 6: Verbal Expression of Hope for Approval**  \n*(Dialogue / Emotional Address)*\n> **Source:** \"'I hope this is more to your liking, ayame-sama.\"  \n>\n> *Interpretation:* Kizzie vocalizes her desire that this second attempt meets the other character's approval, using the honorific \"ayame-sama\" to show respect.\n\n---\n\n**Unit 7: Confession of Inexperience**  \n*(Dialogue / Self-Disclosure)*\n> **Source:** \"I have never been taught to make tea, nor any parts of service,\"  \n>\n> *Interpretation:* She explicitly states her lack of formal training not only in tea-making but in all aspects of serving, framing herself as an untrained novice.\n\n---\n\n**Unit 8: Declaration of Receptivity and Motivation**  \n*(Dialogue / Intent / State of Mind)*\n> **Source:** \"but I am willing and eager to learn.\"  \n>\n> *Interpretation:* Kizzie emotes a strong positive disposition toward growth, declaring both a passive readiness (willing) and an active enthusiasm (eager) to receive instruction.\n\n---\n\n### Complete Source Accounting Summary\nAll text from the original player turn is distributed across Units 1 through 8, with no omission or duplication:\n\n- **Unit 1:** `Kizzie nodded. \"Hai,\" she agreed, restarting.`\n- **Unit 2:** `This time, she took more care, watching the pot as it heated, waiting until just the tiniest of bubbles appeared on the bottom-`\n- **Unit 3:** `marking the temperature that was perfect for green tea.`\n- **Unit 4:** `This time, when she poured, it was almost as if she were willing the water out of the pot rather than relying on gravity, and she raised the pot up a little to influence the stream.`\n- **Unit 5:** `A half spoon of honey was added and stirred. Once more, she offered with two hands.`\n- **Unit 6:** `\"I hope this is more to your liking, ayame-sama.`\n- **Unit 7:** `I have never been taught to make tea, nor any parts of service,`\n- **Unit 8:** `but I am willing and eager to learn.'`",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 197,
+      "outputTokens": 2473,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1503
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:32:28.955Z"
+}

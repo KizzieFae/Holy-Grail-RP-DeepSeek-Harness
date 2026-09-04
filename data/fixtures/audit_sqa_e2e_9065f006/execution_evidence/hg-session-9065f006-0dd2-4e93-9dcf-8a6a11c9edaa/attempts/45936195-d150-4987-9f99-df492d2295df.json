@@ -1,0 +1,129 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "45936195-d150-4987-9f99-df492d2295df",
+  "correlation": {
+    "evidence_id": "45936195-d150-4987-9f99-df492d2295df",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": "opening-segmentation",
+    "role": "opening_segmentation",
+    "character_id": null,
+    "inference_id": "opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7",
+    "manifest_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7",
+    "contribution_ids": [
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_setup",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_state",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_progression",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-opening-text",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-cast",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-instruction"
+    ],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-opening-text",
+        "source_kind": "opening_text",
+        "authority_class": "authoritative",
+        "priority": 5,
+        "content": "OPENING PROSE (authoritative — do not rewrite; segment only):\nIt had been a horrible week. You had lost your job, then your apartment, and desperation was starting to feel like a second skin.\n\nThe advertisement had promised room and board for light housework and occasional \"domestic duties\" in exchange for live-in help at an opulent mansion. The fine print—\"morally flexible person preferred\"—had felt strange, but not strange enough to turn you away from a roof, a meal, and the possibility of stability.\n\nThe interview had been scheduled almost at once. Now you stood at the entrance to a mansion that looked too polished, too quiet, and too expensive to belong to your life. Somewhere inside, Ayame Suzuki waited to conduct what was supposed to be an ordinary household interview. You lifted your hand toward the door, still telling yourself your streak of misfortune had been nothing but bad luck."
+      },
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-cast",
+        "source_kind": "scene_reference",
+        "authority_class": "authoritative",
+        "priority": 8,
+        "content": "Present characters (use exact display names in recipients): Ayame, Kizzie"
+      },
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_setup",
+        "source_kind": "scene_setup",
+        "authority_class": "authoritative",
+        "priority": 9,
+        "content": "Persistent scenario premise (authored at scene start; not the current scene position after committed progression):\nA desperate applicant has arrived at an opulent private mansion for a scheduled household interview offering room, board, and light domestic duties in exchange for live-in help. The host is conducting a formal entry evaluation in a controlled household space while at least one established presence remains actively involved. The applicant has recently lost employment and housing in quick succession and is seeking stability through the advertised arrangement; the host presents the opportunity as respectable live-in household employment with boundaries that may prove less ordinary than they first appear."
+      },
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_state",
+        "source_kind": "scene_state",
+        "authority_class": "authoritative",
+        "priority": 10,
+        "content": "Scene location: Scene. Present characters: Ayame, Kizzie. Continuity turn counter: 0."
+      },
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_progression",
+        "source_kind": "scene_progression",
+        "authority_class": "authoritative",
+        "priority": 11,
+        "content": "Scene progression (authoritative committed continuity; current scene position):\n- No committed public events yet.\nScene phase: opening\nCurrent tension level: low"
+      },
+      {
+        "contribution_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-instruction",
+        "source_kind": "inference_instruction",
+        "authority_class": "derived",
+        "priority": 30,
+        "content": "Segment the authoritative opening prose into perceptual visibility units.\nDo NOT rewrite, paraphrase, or omit opening prose in unit text fragments.\nUse exact substrings from the opening where possible.\n\n\nOUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):\n{\n  \"perceptual_visibility\": {\n    \"units\": [\n      {\n        \"unit_id\": \"u1\",\n        \"kind\": observable_scene|observable_event|speech|internal|presentation_only,\n        \"text\": \"<verbatim prose fragment from the opening>\",\n        \"recipients\": {\n          \"scope\": \"public|present|directed|private|role_private|environmental\",\n          \"characters\": [],\n          \"roles\": []\n        }\n      }\n    ]\n  }\n}\n\nSegment the authoritative opening prose into semantic units with accurate recipient scopes.\nDo NOT return presentation_text — the opening prose is already fixed.\ninternal units must never be public. presentation_only is human-facing only.\nObservable scene detail visible to present characters should be public or present scoped.\nPrivate interior thoughts or knowledge not perceptible to others must be internal/private scoped.\nUse exact character display names from the cast list in recipients.characters.\n\n"
+      }
+    ],
+    "user_instruction": {
+      "text": "Segment the authoritative opening prose into narrative visibility units per the instructions."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7",
+    "contribution_ids": [
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_setup",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_state",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-scene_progression",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-opening-text",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-cast",
+      "manifest-opening-segmentation-opening-segmentation-01096b8e-6912-46c0-8b21-07b50b096ff7-instruction"
+    ]
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "max-tokens"
+    },
+    "usage": {
+      "inputTokens": 674,
+      "outputTokens": 4096,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 4096
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "max-tokens"
+    }
+  },
+  "decision": {
+    "role": "opening",
+    "outcome": "presentation_failed",
+    "inference_outcome": "empty_output",
+    "presentation_text": null,
+    "failure_reason": "opening segmentation produced no narrative visibility units",
+    "attempt_index": 0
+  },
+  "associations": {},
+  "recorded_at": "2026-09-04T01:30:02.691Z",
+  "updated_at": "2026-09-04T01:30:02.695Z"
+}

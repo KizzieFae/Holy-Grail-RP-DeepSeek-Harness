@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "a5c9f08a-10e6-4b88-bb6f-e6c78a04386c",
+  "correlation": {
+    "evidence_id": "a5c9f08a-10e6-4b88-bb6f-e6c78a04386c",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-f6dce353-33f3-4d0a-be3a-a301e51bbdb1",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-f6dce353-33f3-4d0a-be3a-a301e51bbdb1",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie nodded, looking up, her gaze vulnerable and honest. \"Yes...yes, I do. Please?\" she added, the word unbidden, sipping out."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "```\nSource accounting:\n- Motion: \"nodded\"\n- Gaze behavior: \"looking up\"\n- Facial expression / emotional quality: \"gaze vulnerable and honest\"\n- Spoken utterance with hesitation markers: \"Yes...yes, I do. Please?\"\n- Meta-commentary on speech production: \"she added, the word unbidden, sipping out\"\n- Character reference: 2nd person self (\"I\")\nTarget character: Kizzie (tracks via 3rd-person narration)\n```\n\nDecomposed perceptual units:\n\n```\nunit 1\n  action: nod (gestural confirmation)\n  actor: Kizzie\n  framing: physical movement\n\nunit 2\n  action: lifts gaze upward (looking up)\n  actor: Kizzie\n  object/context: implied interlocutor (recipient of the gaze)\n  perceptual channel: visual\n\nunit 3\n  modality: gaze conveys internal state\n  semantic content: vulnerability + honesty (affective overlay on the eye contact)\n  channel: visual/emotional\n\nunit 4\n  utterance: \"Yes...yes, I do.\"\n  function: verbal agreement / direct response to a pending question\n  hesitation feature: paired repetition of \"yes\" separated by ellipsis (speech disfluency indicative of emotional weight)\n\nunit 5\n  utterance: \"Please?\"\n  function: entreaty / supplement of the agreement\n  modal: request for action (implicitly, continuation of whatever was offered)\n\nunit 6\n  narrative tag: \"she added, the word unbidden, sipping out\"\n  self-describing property: \"unbidden\" (impulsive leakage of speech)\n  motion metaphor for speech: sipping out (lexical/visual bridging of its involuntary, tentative extraction)\n\nOperational states implied\n  internal: fluctuating certainty (hesitant affirmation) → desire/pleading\n  interpersonal: openness toward counterpart; subject positioning as asker\n  physiological cues registered: absence of eye-lower avoidance → trust signal\n```",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 80,
+      "outputTokens": 488,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 71
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:53:54.356Z"
+}

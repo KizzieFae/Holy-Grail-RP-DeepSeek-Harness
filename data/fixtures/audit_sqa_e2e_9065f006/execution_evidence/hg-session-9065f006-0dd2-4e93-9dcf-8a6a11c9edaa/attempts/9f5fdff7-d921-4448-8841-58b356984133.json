@@ -1,0 +1,64 @@
+{
+  "schema": "hg_execution_evidence_attempt_v1",
+  "evidence_id": "9f5fdff7-d921-4448-8841-58b356984133",
+  "correlation": {
+    "evidence_id": "9f5fdff7-d921-4448-8841-58b356984133",
+    "hg_session_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_scene_id": "hg-session-9065f006-0dd2-4e93-9dcf-8a6a11c9edaa",
+    "hg_round_id": null,
+    "role": "player_decomposition",
+    "character_id": null,
+    "inference_id": "player-decomposition-34366285-8a75-4dce-b241-8b437ddb4d31",
+    "attempt_index": 0,
+    "dsh_inference_session_id": "hg-inf-player-decomposition-34366285-8a75-4dce-b241-8b437ddb4d31",
+    "manifest_id": null,
+    "contribution_ids": [],
+    "domain_commit_id": null,
+    "rp_history_entry_id": null,
+    "continuity_turn_index": null,
+    "prior_attempt_id": null,
+    "evaluation_pass_id": null,
+    "participation_decision_id": null,
+    "character_turn_index": null
+  },
+  "request": {
+    "schema": "hg_assembled_request_v1",
+    "system_persona": "Holy Grail RP runtime.",
+    "contributions": [],
+    "user_instruction": {
+      "text": "Decompose the player-authored turn into semantic perceptual units with complete source accounting.\n\nPLAYER SOURCE:\nKizzie smiled, rising. \"May I fetch new cups, Ayame-sama? I would not wish to pour into cups that have already been used.\" If given perissin, she whould head toward what looked to be a kitchen and return with fresh teacups. These she would place on the table before lowering to her knees and very carefully, with two hands, she would pour new cups before lifting ayame's and offering it with a light bow and holding it in two hands."
+    },
+    "inference_profile": {
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoning_effort": "low",
+      "effective_thinking": "enabled",
+      "effective_reasoning_effort": "low"
+    },
+    "manifest_id": null,
+    "contribution_ids": []
+  },
+  "response": {
+    "schema": "hg_model_response_v1",
+    "assistant_text": "Here is the decomposition of the player-authored turn into semantic perceptual units, with each unit mapped directly to the verbatim source text.\n\n### Semantic Perceptual Unit Decomposition\n\n**Unit 1: Facial Expression**\n- **Description**: Kizzie manifests a smile.\n- **Source Accounting**: `\"Kizzie smiled\"`\n\n**Unit 2: Postural Change**\n- **Description**: Kizzie rises from her previous position (presumably kneeling/sitting).\n- **Source Accounting**: `\", rising.\"`\n\n**Unit 3: Verbal Request & Rationale**\n- **Description**: Kizzie speaks, requesting permission from Ayame-sama to fetch new cups, explicitly stating her rationale (avoiding contamination from used cups).\n- **Source Accounting**: `\"May I fetch new cups, Ayame-sama? I would not wish to pour into cups that have already been used.\"`\n\n**Unit 4: Conditional Locomotion (Conditional)** *[Note: This entire block is contingent upon receiving permission]*\n- **Description**: If permission is granted, Kizzie moves toward a room that appears to be a kitchen.\n- **Source Accounting**: `\"If given perissin, she whould head toward what looked to be a kitchen\"`\n\n**Unit 5: Conditional Acquisition (Conditional)**\n- **Description**: If permission is granted, she returns from the kitchen carrying fresh teacups.\n- **Source Accounting**: `\"and return with fresh teacups.\"`\n\n**Unit 6: Conditional Placement (Conditional)**\n- **Description**: If permission is granted, she places the fresh teacups upon the table.\n- **Source Accounting**: `\"These she would place on the table\"`\n\n**Unit 7: Conditional Postural Change (Conditional)**\n- **Description**: If permission is granted, she lowers herself to her knees.\n- **Source Accounting**: `\"before lowering to her knees\"`\n\n**Unit 8: Conditional Precision Action (Conditional)**\n- **Description**: If permission is granted, she very carefully pours the tea into the new cups, exclusively using both hands.\n- **Source Accounting**: `\"and very carefully, with two hands, she would pour new cups\"`\n\n**Unit 9: Conditional Handling (Conditional)**\n- **Description**: If permission is granted, she lifts Ayame's specific cup.\n- **Source Accounting**: `\"before lifting ayame's\"`\n\n**Unit 10: Conditional Offering & Deference (Conditional)**\n- **Description**: If permission is granted, she offers the lifted cup to Ayame, executing a light bow while maintaining a two-handed grip on the cup.\n- **Source Accounting**: `\"and offering it with a light bow and holding it in two hands.\"`\n\n---\n\n### Source Consolidation & Accounting\nAll text from the `PLAYER SOURCE` has been accounted for verbatim within Units 1–10. The typographical errors in the source (`\"perissin\"`, `\"whould\"`, `\"ayame's\"`) have been preserved exactly as written in the accounting column to ensure complete textual fidelity. No source content is omitted or duplicated in this decomposition.",
+    "failed": false,
+    "failure": null,
+    "finish": {
+      "kind": "stop"
+    },
+    "usage": {
+      "inputTokens": 145,
+      "outputTokens": 1845,
+      "cacheReadTokens": 0,
+      "reasoningTokens": 1193
+    },
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "turn_end_reason": {
+      "kind": "completed"
+    }
+  },
+  "decision": null,
+  "associations": {},
+  "recorded_at": "2026-09-04T02:25:23.024Z"
+}
