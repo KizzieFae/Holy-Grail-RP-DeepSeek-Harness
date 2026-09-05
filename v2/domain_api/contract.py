@@ -393,6 +393,16 @@ class PlayerDecompositionContextPrepareRequest:
 
 
 @dataclass(frozen=True)
+class PlayerDecompositionNormalizeRequest:
+    hg_session_id: str
+    content: str
+    speaker: str = "Player"
+    semantic_decomposition: dict[str, Any] | None = None
+    generation: dict[str, Any] | None = None
+    attempt_index: int = 0
+
+
+@dataclass(frozen=True)
 class PlayerVisibilityTriageContextPrepareRequest:
     hg_session_id: str
     inference_id: str

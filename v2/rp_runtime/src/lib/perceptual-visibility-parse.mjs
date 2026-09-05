@@ -48,7 +48,54 @@ export function parsePerceptualVisibilityEnvelope(raw) {
   };
 }
 
-/** Parse player decomposition envelopes (#91). */
+/** Parse player semantic decomposition envelopes (#124). */
+export function parseSemanticDecompositionEnvelope(raw) {
+  if (!raw || !String(raw).trim()) {
+    return { semanticDecomposition: null, parseError: 'empty output' };
+  }
+
+  let stripped = String(raw).trim();
+  if (stripped.startsWith('```')) {
+    stripped = stripped.replace(/^```(?:json)?\s*/, '');
+    stripped = stripped.replace(/\s*```$/, '');
+    stripped = stripped.trim();
+  }
+
+  if (!stripped.startsWith('{')) {
+    return { semanticDecomposition: null, parseError: 'not json object' };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(stripped);
+  } catch {
+    return { semanticDecomposition: null, parseError: 'json parse failed' };
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return { semanticDecomposition: null, parseError: 'envelope not an object' };
+  }
+
+  const semanticDecomposition = payload.semantic_decomposition;
+  if (semanticDecomposition != null && typeof semanticDecomposition !== 'object') {
+    return { semanticDecomposition: null, parseError: 'semantic_decomposition not an object' };
+  }
+
+  const units = semanticDecomposition?.units;
+  if (units != null && !Array.isArray(units)) {
+    return { semanticDecomposition: null, parseError: 'semantic_decomposition.units not a list' };
+  }
+
+  return {
+    semanticDecomposition:
+      semanticDecomposition && typeof semanticDecomposition === 'object'
+        ? semanticDecomposition
+        : null,
+    parseError: null,
+  };
+}
+
+/** Parse player decomposition envelopes (#91). Legacy pre-#124 canonical envelope. */
 export function parsePlayerDecompositionEnvelope(raw) {
   if (!raw || !String(raw).trim()) {
     return { perceptualVisibility: null, sourceAccounting: null, parseError: 'empty output' };

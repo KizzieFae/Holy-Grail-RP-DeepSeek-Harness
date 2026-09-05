@@ -104,44 +104,25 @@ Use exact character display names from the cast list in recipients.characters.
 """
 
 
-PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION = f"""
+PLAYER_SEMANTIC_DECOMPOSITION_OUTPUT_INSTRUCTION = f"""
 OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 {{
-  "perceptual_visibility": {{
+  "semantic_decomposition": {{
     "units": [
       {{
-        "unit_id": "u1",
         "kind": "observable_scene|observable_event|speech|internal",
-        "text": "<verbatim prose fragment for this semantic unit>",
+        "text": "<verbatim semantic excerpt from the player source>",
         "recipients": {{
           "scope": "public|present|directed|private|role_private|environmental",
           "characters": ["<optional character ids>"],
           "roles": ["<optional role names>"]
-        }},
-        "source_provenance": {{
-          "segment_ids": ["s1"],
-          "order_index": 0
         }}
-      }}
-    ]
-  }},
-  "source_accounting": {{
-    "segments": [
-      {{
-        "segment_id": "s1",
-        "char_start": 0,
-        "char_end": 42,
-        "disposition": "projects|non_projects",
-        "unit_ids": ["u1"]
       }}
     ]
   }}
 }}
 
-RULES:
-- Account for every character position in the player source using half-open [char_start, char_end) segments.
-- Use disposition non_projects only for source spans that produce no perceptual unit.
-- Do not use presentation_only.
+SEMANTIC RULES:
 - Kind identifies perceptibility in principle; scope identifies entitlement for perceptible information.
 - observable_scene / observable_event: perceptible in principle; scope determines which characters may perceive.
 - speech: spoken or communicated content; scope and authority determine recipients.
@@ -149,13 +130,23 @@ RULES:
   cognition, private mental state, nonperceptual explanatory narration, background/context, and other
   player-authored narrative facts not directly observable in the scene — not only literal thoughts.
 - Hidden/concealed physical actions: observable_event with restrictive recipient scope (NOT internal).
-- Spoken communication/claims: speech with appropriate scope.
 - Examples: "Kizzie settled into seiza." → observable_event; "They weren't in Japan, but old habits
   died hard." → internal; concealed latch work behind a closed door → observable_event + private scope.
-- Each unit must reference segment_ids and order_index.
-- Segment unit_ids must reciprocally reference units.
+
+COMPLETENESS:
+- Every substantive (non-whitespace) character in the player source must appear in exactly one unit excerpt.
+- Unit excerpts must be verbatim substrings of the player source.
+- Unit excerpts must not overlap.
+- Whitespace between semantic units may be omitted from excerpts.
+- Array order is not authoritative.
+
+DO NOT include: unit_id, segment_id, char_start, char_end, order_index, source_accounting,
+occurrence numbers, disambiguation metadata, or any mechanical indexing/accounting fields.
 - Do NOT use kind uniform_projection — that kind is reserved for deterministic checker synthesis only.
 """
+
+# Legacy combined contract retained for reference/tests migrating off pre-#124 envelopes.
+PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION = PLAYER_SEMANTIC_DECOMPOSITION_OUTPUT_INSTRUCTION
 
 
 PLAYER_VISIBILITY_TRIAGE_OUTPUT_INSTRUCTION = """

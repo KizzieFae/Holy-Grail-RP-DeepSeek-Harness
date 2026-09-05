@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from narrative_visibility_prompt import PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION
+from narrative_visibility_prompt import PLAYER_SEMANTIC_DECOMPOSITION_OUTPUT_INSTRUCTION
 
 from .contract import (
     PlayerDecompositionContextPrepareRequest,
@@ -29,8 +29,8 @@ def prepare_player_decomposition_context(
             priority=30,
             content=(
                 "Decompose the player-authored turn provided in the user message "
-                "into semantic perceptual units with complete source accounting.\n"
-                f"\n{PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION}\n"
+                "into semantic perceptual units with verbatim excerpts only.\n"
+                f"\n{PLAYER_SEMANTIC_DECOMPOSITION_OUTPUT_INSTRUCTION}\n"
             ),
             provenance={"inference_id": req.inference_id, "role": "player_decomposition"},
         ),

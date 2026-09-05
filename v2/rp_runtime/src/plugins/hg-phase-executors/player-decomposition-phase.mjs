@@ -1,23 +1,136 @@
-import { parsePlayerDecompositionEnvelope } from '../../lib/perceptual-visibility-parse.mjs';
+import { parseSemanticDecompositionEnvelope } from '../../lib/perceptual-visibility-parse.mjs';
 
 const MAX_PLAYER_DECOMPOSITION_ATTEMPTS = 2;
 
 /** Domain Host context-preparation boundary (matches narrator `context_prepare` convention). */
 export const PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE = 'context_prepare';
 
+/** Post-inference Domain Host normalization transport/HTTP failure (not semantic, not retryable). */
+export const PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT =
+  'normalization_transport_unavailable';
+
 export const PLAYER_DECOMPOSITION_TASK_PROMPT =
-  'Decompose the player-authored turn into semantic perceptual units with complete source accounting.';
+  'Decompose the player-authored turn into semantic perceptual units with verbatim excerpts only.';
 
 export const PLAYER_DECOMPOSITION_RETRY_HEADER = 'ATTEMPT_2_OUTPUT_RETRY:';
+
+const RETRY_GUIDANCE = {
+  sir_malformed:
+    'Respond with ONLY valid JSON matching the OUTPUT FORMAT in context.',
+  sir_invalid_semantics:
+    'Correct invalid kind or recipient scope values. Use only allowed kinds and scopes.',
+  sir_non_verbatim_excerpt:
+    'Each unit excerpt must be a verbatim substring of the player source.',
+  sir_substantive_omission:
+    'Account for all substantive player source content in semantic unit excerpts.',
+  sir_overlap_conflict:
+    'Semantic unit excerpts must not overlap and must fit the player source without conflict.',
+  fragment_assignment_ambiguous:
+    'Your verbatim unit excerpts were insufficiently distinctive for deterministic source matching. '
+    + 'Select unambiguous semantic boundaries using naturally distinctive verbatim excerpts. '
+    + 'Account for all substantive player source content.',
+  normalization_search_budget_exceeded:
+    'Your verbatim unit excerpts produced an overly complex matching surface for deterministic normalization. '
+    + 'Select clearer semantic boundaries using naturally distinctive verbatim excerpts. '
+    + 'Account for all substantive player source content.',
+  validation_rejected:
+    'Correct semantic kind/recipient choices while preserving verbatim excerpts and completeness.',
+};
+
+function resolveNormalizationTransportFailureClass(err) {
+  const known = err?.failureClass;
+  if (
+    known === 'host_internal_error'
+    || known === 'api_http_error'
+    || known === 'service_unavailable'
+    || known === 'transport_error'
+  ) {
+    return known;
+  }
+  return PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT;
+}
+
+function buildNormalizationTransportFailure({
+  attemptInferenceId,
+  attempt,
+  evidenceId,
+  err,
+  semanticDecomposition,
+  rawSemanticOutput,
+  modelProfile,
+}) {
+  return {
+    playerDecomposition: {
+      failure_class: resolveNormalizationTransportFailureClass(err),
+      reason: err instanceof Error ? err.message : String(err),
+      generation: buildInferenceGenerationForensics({
+        attemptInferenceId,
+        attempt,
+        evidenceId,
+        rawSemanticOutput,
+        modelProfile,
+        extra: {
+          semantic_decomposition: semanticDecomposition ?? null,
+          normalization_stage: 'transport',
+        },
+      }),
+    },
+    evidenceId,
+  };
+}
+
+function buildInferenceGenerationForensics({
+  attemptInferenceId,
+  attempt,
+  evidenceId = null,
+  rawSemanticOutput = null,
+  modelProfile = null,
+  extra = {},
+}) {
+  return {
+    inference_id: attemptInferenceId,
+    attempt_index: attempt,
+    evidence_id: evidenceId ?? null,
+    provider: modelProfile?.provider ?? null,
+    model: modelProfile?.model ?? null,
+    ...(rawSemanticOutput != null ? { raw_semantic_output: rawSemanticOutput } : {}),
+    ...extra,
+  };
+}
+
+function attachInferenceEvidenceToDecomposition(decomposition, {
+  evidenceId,
+  attemptInferenceId,
+  attempt,
+  rawSemanticOutput,
+  modelProfile,
+}) {
+  if (!decomposition || typeof decomposition !== 'object') return decomposition;
+  const generation = decomposition.generation ?? {};
+  decomposition.generation = {
+    ...generation,
+    inference_id: generation.inference_id ?? attemptInferenceId,
+    attempt_index: generation.attempt_index ?? attempt,
+    evidence_id: evidenceId ?? generation.evidence_id ?? null,
+    provider: generation.provider ?? modelProfile?.provider ?? null,
+    model: generation.model ?? modelProfile?.model ?? null,
+    ...(rawSemanticOutput != null && generation.raw_semantic_output == null
+      ? { raw_semantic_output: rawSemanticOutput }
+      : {}),
+  };
+  return decomposition;
+}
 
 export function buildPlayerDecompositionUserPrompt(playerContent, { priorFailureCode = null } = {}) {
   let prompt = `${PLAYER_DECOMPOSITION_TASK_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`;
   if (priorFailureCode) {
+    const guidance = RETRY_GUIDANCE[priorFailureCode]
+      ?? 'Respond with ONLY a single JSON object matching the OUTPUT FORMAT in context.';
     prompt += (
       `\n\n${PLAYER_DECOMPOSITION_RETRY_HEADER}\n` +
-      `Prior attempt failed output contract (${priorFailureCode}).\n` +
-      'Respond with ONLY a single JSON object matching the OUTPUT FORMAT in context.\n' +
-      'No markdown fences, headings, or explanatory prose.'
+      `Prior attempt failed semantic contract (${priorFailureCode}).\n` +
+      `${guidance}\n` +
+      'Do not include source positions, indices, occurrence numbers, segment IDs, or accounting fields.'
     );
   }
   return prompt;
@@ -27,38 +140,18 @@ function normalizeForIndexing(content) {
   return String(content ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
-function buildMockPlayerDecomposition(playerContent) {
+function buildMockSemanticDecomposition(playerContent) {
   const normalized = normalizeForIndexing(playerContent);
-  const length = normalized.length;
-  if (!length) {
-    return {
-      perceptual_visibility: { units: [] },
-      source_accounting: {
-        segments: [{ segment_id: 's1', char_start: 0, char_end: 0, disposition: 'non_projects', unit_ids: [] }],
-      },
-    };
+  if (!normalized.length) {
+    return { semantic_decomposition: { units: [] } };
   }
   return {
-    perceptual_visibility: {
+    semantic_decomposition: {
       units: [
         {
-          unit_id: 'u1',
           kind: 'speech',
           text: normalized,
           recipients: { scope: 'public', characters: [], roles: [] },
-          source_provenance: { segment_ids: ['s1'], order_index: 0 },
-          source: 'player_decomposition',
-        },
-      ],
-    },
-    source_accounting: {
-      segments: [
-        {
-          segment_id: 's1',
-          char_start: 0,
-          char_end: length,
-          disposition: 'projects',
-          unit_ids: ['u1'],
         },
       ],
     },
@@ -119,7 +212,7 @@ export async function runPlayerDecompositionPhase({
       const mockFallback =
         modelProfile?.kind === 'mock'
           ? [
-              JSON.stringify(buildMockPlayerDecomposition(playerContent)),
+              JSON.stringify(buildMockSemanticDecomposition(playerContent)),
             ]
           : [];
       const inferRun = await runEphemeralInference({
@@ -150,7 +243,12 @@ export async function runPlayerDecompositionPhase({
             playerDecomposition: {
               failure_class: 'inference_unavailable',
               reason: inferRun.failure?.message ?? 'player decomposition inference failed',
-              generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+              generation: buildInferenceGenerationForensics({
+                attemptInferenceId,
+                attempt,
+                evidenceId: inferRun.evidenceId,
+                modelProfile,
+              }),
             },
             evidenceId: inferRun.evidenceId,
           };
@@ -158,38 +256,102 @@ export async function runPlayerDecompositionPhase({
         continue;
       }
 
-      const parsed = parsePlayerDecompositionEnvelope(inferRun.raw ?? '');
+      const parsed = parseSemanticDecompositionEnvelope(inferRun.raw ?? '');
       if (parsed.parseError) {
-        priorFailureCode = parsed.parseError;
+        priorFailureCode = 'sir_malformed';
         priorEvidenceId = inferRun.evidenceId;
         if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
           return {
             playerDecomposition: {
-              failure_class: 'malformed_output',
+              failure_class: 'sir_malformed',
               reason: parsed.parseError,
-              generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+              generation: buildInferenceGenerationForensics({
+                attemptInferenceId,
+                attempt,
+                evidenceId: inferRun.evidenceId,
+                rawSemanticOutput: inferRun.raw ?? null,
+                modelProfile,
+              }),
             },
             evidenceId: inferRun.evidenceId,
           };
         }
+        continue;
+      }
+
+      let normalizeResult;
+      try {
+        normalizeResult = await api.normalizePlayerDecomposition({
+          hg_session_id: hgSessionId,
+          content: playerContent,
+          speaker: 'Player',
+          semantic_decomposition: parsed.semanticDecomposition,
+          generation: buildInferenceGenerationForensics({
+            attemptInferenceId,
+            attempt,
+            evidenceId: inferRun.evidenceId,
+            rawSemanticOutput: inferRun.raw ?? null,
+            modelProfile,
+          }),
+          attempt_index: attempt,
+        });
+      } catch (err) {
+        return buildNormalizationTransportFailure({
+          attemptInferenceId,
+          attempt,
+          evidenceId: inferRun.evidenceId,
+          err,
+          semanticDecomposition: parsed.semanticDecomposition,
+          rawSemanticOutput: inferRun.raw ?? null,
+          modelProfile,
+        });
+      }
+
+      if (normalizeResult.accepted && normalizeResult.player_decomposition) {
+        return {
+          playerDecomposition: attachInferenceEvidenceToDecomposition(
+            normalizeResult.player_decomposition,
+            {
+              evidenceId: inferRun.evidenceId,
+              attemptInferenceId,
+              attempt,
+              rawSemanticOutput: inferRun.raw ?? null,
+              modelProfile,
+            },
+          ),
+          evidenceId: inferRun.evidenceId,
+          normalizationAudit: normalizeResult.normalization_audit ?? null,
+        };
+      }
+
+      const failureClass = normalizeResult.failure_class ?? 'normalization_impossible';
+      priorFailureCode = failureClass;
+      priorEvidenceId = inferRun.evidenceId;
+      if (normalizeResult.retry_eligible && attempt + 1 < MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
         continue;
       }
 
       return {
         playerDecomposition: {
-          perceptual_visibility: parsed.perceptualVisibility,
-          source_accounting: parsed.sourceAccounting,
-          generation: {
-            inference_id: attemptInferenceId,
-            attempt_index: attempt,
-            provider: modelProfile?.provider ?? null,
-            model: modelProfile?.model ?? null,
-          },
+          failure_class: failureClass,
+          reason: normalizeResult.reason ?? failureClass,
+          generation: buildInferenceGenerationForensics({
+            attemptInferenceId,
+            attempt,
+            evidenceId: inferRun.evidenceId,
+            rawSemanticOutput: inferRun.raw ?? null,
+            modelProfile,
+            extra: {
+              semantic_decomposition: parsed.semanticDecomposition,
+              normalization: normalizeResult.normalization_audit ?? null,
+            },
+          }),
         },
         evidenceId: inferRun.evidenceId,
       };
     } catch (err) {
       priorFailureCode = 'inference_unavailable';
+      priorEvidenceId = priorEvidenceId ?? null;
       if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
         return {
           playerDecomposition: {
