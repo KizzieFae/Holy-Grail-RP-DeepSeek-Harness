@@ -2,6 +2,9 @@
  * Bounded live validation for Issue #120 — seiza/Japan generalized internal regression.
  * Run from v2/rp_runtime: node scripts/issue120-live-validation.mjs
  *
+ * Replay captured evidence (no paid inference):
+ *   node scripts/issue120-live-validation.mjs --replay tests/fixtures/issue120-live-call-1-decomposition.json
+ *
  * Entrypoint: direct runPlayerDecompositionPhase (matches #112 repeatability harness).
  * Profile: deepseekInferenceProfile({ reasoningEffort: 'low' }) — no maxTokens override.
  */
@@ -15,6 +18,14 @@ import { deepseekInferenceProfile } from '../src/lib/inference-profile.mjs';
 import { parsePlayerDecompositionEnvelope } from '../src/lib/perceptual-visibility-parse.mjs';
 import { runPlayerDecompositionPhase } from '../src/plugins/hg-phase-executors/player-decomposition-phase.mjs';
 import { startDomainApi } from '../tests/helpers/domain-api.mjs';
+import {
+  analyzeSemantics,
+  buildSemanticPass,
+  evaluateAyameProjection,
+  JAPAN_TOKEN,
+  projectPlayerUserTurnForAyame,
+  readProjectionFromRecordUserTurnMetadata,
+} from './lib/issue120-projection.mjs';
 
 const SEIZA_JAPAN_TURN =
   'Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position. '
@@ -25,7 +36,6 @@ const SEIZA_JAPAN_TURN =
   + 'realized that there was another path, one you would not have even considered before? '
   + 'Some people see misfortune, I see an opportunity to reinvent."';
 
-const JAPAN_TOKEN = 'they were not in Japan, but hold habits died hard.';
 const CAST = ['Ayame', 'Kizzie', 'Harley', 'Celina'];
 const MODEL_PROFILE = deepseekInferenceProfile({ reasoningEffort: 'low' });
 
@@ -53,49 +63,76 @@ function summarizeAttempt(attempt) {
   };
 }
 
-function analyzeSemantics(units) {
-  const japanUnit = (units ?? []).find((unit) => String(unit.text ?? '').includes('not in Japan'));
-  return {
-    unit_count: Array.isArray(units) ? units.length : 0,
-    units: (units ?? []).map((unit) => ({
-      unit_id: unit.unit_id,
-      kind: unit.kind,
-      scope: unit.recipients?.scope ?? null,
-      text_preview: String(unit.text ?? '').slice(0, 120),
-    })),
-    japan_unit: japanUnit
-      ? {
-        unit_id: japanUnit.unit_id,
-        kind: japanUnit.kind,
-        scope: japanUnit.recipients?.scope ?? null,
-        text: japanUnit.text,
-      }
-      : null,
-    japan_is_internal: japanUnit?.kind === 'internal',
-    has_observable_seiza: (units ?? []).some(
-      (unit) => unit.kind === 'observable_event' && /seiza|sieza|cushion/i.test(unit.text ?? ''),
-    ),
-    speech_units: (units ?? []).filter((unit) => unit.kind === 'speech').length,
-  };
+function parseReplayArg(argv) {
+  const index = argv.indexOf('--replay');
+  if (index === -1) return null;
+  const replayPath = argv[index + 1];
+  if (!replayPath) {
+    throw new Error('--replay requires a path to captured evidence JSON');
+  }
+  return path.resolve(replayPath);
 }
 
-async function projectForAyame(api, sessionId, content, decomposition) {
-  const entry = await api.recordUserTurn({
-    hg_session_id: sessionId,
+async function buildCallReport({
+  api,
+  callIndex,
+  content,
+  decomposition,
+  evidenceRoot = null,
+  sessionId = null,
+  attemptSummary = null,
+  entrypoint = 'runPlayerDecompositionPhase',
+}) {
+  const resolvedSessionId = sessionId ?? `issue120-live-seiza-japan-${callIndex}`;
+  const parsed = decomposition.failure_class
+    ? { parseError: decomposition.failure_class }
+    : parsePlayerDecompositionEnvelope(JSON.stringify({
+      perceptual_visibility: decomposition.perceptual_visibility,
+      source_accounting: decomposition.source_accounting,
+    }));
+
+  const units = decomposition.perceptual_visibility?.units ?? [];
+  const domain = await projectPlayerUserTurnForAyame({
+    api,
+    sessionId: resolvedSessionId,
     content,
-    speaker: 'Kizzie',
-    player_decomposition: decomposition,
+    decomposition,
+    presentCharacters: CAST,
   });
-  const metadata = entry.metadata ?? {};
-  const pvr = metadata.perceptual_visibility ?? {};
-  const audit = metadata.perceptual_visibility_validation ?? metadata.validation_audit ?? {};
-  const projection = metadata.perceptual_visibility_projection ?? {};
+  const semantics = analyzeSemantics(units);
+  const projection = evaluateAyameProjection({
+    semantics,
+    assembly: domain.assembly,
+  });
+  const legacyProjection = readProjectionFromRecordUserTurnMetadata(domain.entry);
+  const legacyJapanExcluded = semantics.japan_unit
+    ? (legacyProjection.excluded_unit_ids ?? []).includes(semantics.japan_unit.unit_id)
+    : null;
+
   return {
-    validation_accepted: Boolean(audit.accepted),
-    validation_status: pvr.validation_status ?? null,
-    failure_class: pvr.recovery?.failure_class ?? null,
-    ayame_projection: projection,
-    units: pvr.units ?? [],
+    call_index: callIndex,
+    entrypoint,
+    harness: 'issue120-live-validation.mjs',
+    model_profile: entrypoint === 'replay' ? null : MODEL_PROFILE,
+    phase_failure_class: decomposition.failure_class ?? null,
+    parse_ok: !parsed.parseError,
+    raw_decomposition: decomposition,
+    attempt: attemptSummary,
+    semantics,
+    contract: {
+      validation_accepted: domain.validation_accepted,
+      validation_status: domain.validation_status,
+      failure_class: domain.failure_class,
+    },
+    projection,
+    projection_path: 'assemble_player_user_entry_for_viewer',
+    legacy_projection_bug: {
+      japan_excluded_from_ayame: legacyJapanExcluded,
+      metadata_projection_present: Object.keys(legacyProjection).length > 0,
+    },
+    semantic_pass: buildSemanticPass({ semantics, projection }),
+    contract_pass: domain.validation_accepted === true,
+    evidence_root: evidenceRoot,
   };
 }
 
@@ -117,16 +154,6 @@ async function runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex }) {
   const wallMs = Date.now() - started;
 
   const decomposition = phaseResult.playerDecomposition ?? {};
-  const parsed = decomposition.failure_class
-    ? { parseError: decomposition.failure_class }
-    : parsePlayerDecompositionEnvelope(JSON.stringify({
-      perceptual_visibility: decomposition.perceptual_visibility,
-      source_accounting: decomposition.source_accounting,
-    }));
-
-  const units = decomposition.perceptual_visibility?.units ?? [];
-  const domain = await projectForAyame(api, sessionId, SEIZA_JAPAN_TURN, decomposition);
-
   const indexPath = path.join(evidenceRoot, sessionId, 'index.json');
   let attemptSummary = null;
   if (fs.existsSync(indexPath)) {
@@ -139,75 +166,82 @@ async function runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex }) {
     }
   }
 
-  const semantics = analyzeSemantics(units);
-  const excluded = domain.ayame_projection?.excluded_unit_ids ?? [];
-  const japanExcluded = semantics.japan_unit
-    ? excluded.includes(semantics.japan_unit.unit_id)
-    : null;
+  return buildCallReport({
+    api,
+    callIndex,
+    content: SEIZA_JAPAN_TURN,
+    decomposition,
+    evidenceRoot,
+    sessionId,
+    attemptSummary,
+  });
+}
 
-  return {
-    call_index: callIndex,
-    entrypoint: 'runPlayerDecompositionPhase',
-    harness: 'issue120-live-validation.mjs',
-    model_profile: MODEL_PROFILE,
-    phase_failure_class: decomposition.failure_class ?? null,
-    parse_ok: !parsed.parseError,
-    raw_decomposition: decomposition,
-    attempt: attemptSummary,
-    semantics,
-    contract: {
-      validation_accepted: domain.validation_accepted,
-      validation_status: domain.validation_status,
-      failure_class: domain.failure_class,
-    },
-    projection: {
-      japan_excluded_from_ayame: japanExcluded,
-      japan_token_in_ayame_content: String(domain.ayame_projection?.content ?? '').includes(JAPAN_TOKEN),
-      exclusion_reasons: domain.ayame_projection?.exclusion_reasons ?? {},
-    },
-    semantic_pass:
-      semantics.japan_is_internal
-      && semantics.has_observable_seiza
-      && semantics.speech_units >= 2
-      && japanExcluded === true,
-    contract_pass: domain.validation_accepted === true,
-  };
+async function replayCapturedCall({ api, replayPath, callIndex = 1 }) {
+  const fixture = JSON.parse(fs.readFileSync(replayPath, 'utf8'));
+  const content = fixture.player_text ?? SEIZA_JAPAN_TURN;
+  const decomposition = fixture.raw_decomposition;
+  const sessionId = `issue120-replay-${callIndex}`;
+  await api.createSession({ cast: CAST, hg_session_id: sessionId });
+  return buildCallReport({
+    api,
+    callIndex,
+    content,
+    decomposition,
+    sessionId,
+    entrypoint: 'replay',
+  });
 }
 
 async function main() {
+  const replayPath = parseReplayArg(process.argv);
   const allowSecond = process.argv.includes('--second-call');
-  const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'issue120-live-evidence-'));
+  const evidenceRoot = replayPath ? null : fs.mkdtempSync(path.join(os.tmpdir(), 'issue120-live-evidence-'));
   const port = 29820 + Math.floor(Math.random() * 100);
   const host = await startDomainApi(port, { withSession: true });
   const baseUrl = host.baseUrl;
   const api = createDomainApiClient(baseUrl);
-  const { ctx, phaseExecutors } = await createHolyGrailRpContext({
-    domainApi: { baseUrl },
-    inference: {
-      mountDeepSeek: true,
-      executionEvidence: { enabled: true, root: evidenceRoot },
-      defaultProfile: MODEL_PROFILE,
-    },
-  });
+  const { ctx, phaseExecutors } = replayPath
+    ? { ctx: { fiber: { dispose: async () => {} } }, phaseExecutors: null }
+    : await createHolyGrailRpContext({
+      domainApi: { baseUrl },
+      inference: {
+        mountDeepSeek: true,
+        executionEvidence: { enabled: true, root: evidenceRoot },
+        defaultProfile: MODEL_PROFILE,
+      },
+    });
 
-  const report = { calls: [] };
+  const report = {
+    mode: replayPath ? 'replay' : 'live',
+    replay_source: replayPath,
+    calls: [],
+  };
   try {
-    const first = await runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex: 1 });
-    report.calls.push(first);
-    const needsSecond = allowSecond
-      || (!first.semantic_pass && first.parse_ok)
-      || (first.semantic_pass && !first.contract_pass);
-    if (needsSecond && report.calls.length < 2) {
-      const second = await runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex: 2 });
-      report.calls.push(second);
+    if (replayPath) {
+      report.calls.push(await replayCapturedCall({ api, replayPath, callIndex: 1 }));
+    } else {
+      const first = await runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex: 1 });
+      report.calls.push(first);
+      const needsSecond = allowSecond
+        || (!first.semantic_pass && first.parse_ok)
+        || (first.semantic_pass && !first.contract_pass);
+      if (needsSecond && report.calls.length < 2) {
+        const second = await runLiveCall({ api, phaseExecutors, evidenceRoot, callIndex: 2 });
+        report.calls.push(second);
+      }
     }
   } finally {
     await ctx.fiber.dispose();
     await host.stop();
   }
 
-  report.evidence_root = evidenceRoot;
-  const reportPath = path.join(evidenceRoot, 'issue120-live-report.json');
+  if (evidenceRoot) {
+    report.evidence_root = evidenceRoot;
+  }
+  const reportPath = evidenceRoot
+    ? path.join(evidenceRoot, 'issue120-live-report.json')
+    : path.join(path.dirname(replayPath ?? '.'), 'issue120-replay-report.json');
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ evidenceRoot, reportPath, report }, null, 2));
 }

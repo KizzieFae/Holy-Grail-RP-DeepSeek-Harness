@@ -1,0 +1,159 @@
+{
+  "player_text": null,
+  "raw_decomposition": {
+    "perceptual_visibility": {
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": " they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "text": "\"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\"",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s4"
+            ],
+            "order_index": 2
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "text": " she hesittated, looking up.",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 3
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "text": "\"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\"",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s7"
+            ],
+            "order_index": 4
+          }
+        }
+      ]
+    },
+    "source_accounting": {
+      "segments": [
+        {
+          "segment_id": "s1",
+          "char_start": 0,
+          "char_end": 80,
+          "disposition": "projects",
+          "unit_ids": [
+            "u1"
+          ]
+        },
+        {
+          "segment_id": "s2",
+          "char_start": 80,
+          "char_end": 131,
+          "disposition": "projects",
+          "unit_ids": [
+            "u2"
+          ]
+        },
+        {
+          "segment_id": "s3",
+          "char_start": 131,
+          "char_end": 132,
+          "disposition": "non_projects",
+          "unit_ids": []
+        },
+        {
+          "segment_id": "s4",
+          "char_start": 132,
+          "char_end": 220,
+          "disposition": "projects",
+          "unit_ids": [
+            "u3"
+          ]
+        },
+        {
+          "segment_id": "s5",
+          "char_start": 220,
+          "char_end": 248,
+          "disposition": "projects",
+          "unit_ids": [
+            "u4"
+          ]
+        },
+        {
+          "segment_id": "s6",
+          "char_start": 248,
+          "char_end": 249,
+          "disposition": "non_projects",
+          "unit_ids": []
+        },
+        {
+          "segment_id": "s7",
+          "char_start": 249,
+          "char_end": 483,
+          "disposition": "projects",
+          "unit_ids": [
+            "u5"
+          ]
+        }
+      ]
+    },
+    "generation": {
+      "inference_id": "player-decomposition-issue120-1",
+      "attempt_index": 0,
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash"
+    }
+  },
+  "source": "issue120-live-call-1"
+}
