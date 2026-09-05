@@ -199,8 +199,11 @@ data/execution_evidence/<hg_session_id>/
 | `semantic.qa_by_target_role[role]` | Flat discovery of Director/Narrator QA candidate ids |
 | `participation_by_round[hg_round_id]` | Participation-direct decision record ids |
 | `plot_cognition.by_round` / `by_commit` / `by_inference_kind` | Derived Plot Cognition inference navigation (#64; rebuildable) |
+| `inference_health` (#114) | Rebuildable Level-2 inference-health aggregates (counts + rates by `inference_kind` else `role`; utilization only when configured ceiling exists) |
 
-Query via `python tools/investigation/list_execution_evidence.py <hg_session_id>` with `--chain`, `--role`, `--qa-target-role`, `--participation`, `--summary`, and `--cite` (see [audit-workflows.md](./audit-workflows.md)).
+**Inference health (#114, observational):** New inference attempts may include additive `inference_health` (`hg_inference_health_v1`) derived from the assembled request profile (`inference_profile.max_tokens`), model response usage/finish, and existing decision structural/lineage fields. **Utilization** is generation tokens constrained by the configured output ceiling (`outputTokens` + `reasoningTokens` when present) ÷ `max_tokens`; prompt/`inputTokens` and mixed `totalTokens` numerators are not used. Recovery is a **separate** dimension (`none` / `attempted` / `recovered` / `unrecovered`) and does not overwrite primary hard-exhaustion or structural-failure evidence when a later correction succeeds. A successful correction’s own `structural_valid` reflects the correction attempt only — primary parse errors remain lineage/recovery context. Continuity remains authoritative narrative truth; inference health never writes Continuity. Pre-#114 attempts lack `max_tokens` / `inference_health`; index rebuild treats missing ceilings as non-observable for utilization and does not fabricate classifications. Threshold/near-ceiling policy semantics are **out of scope** for v1.
+
+Query via `python tools/investigation/list_execution_evidence.py <hg_session_id>` with `--chain`, `--role`, `--qa-target-role`, `--participation`, `--summary`, `--cite`, and `--inference-health` (see [audit-workflows.md](./audit-workflows.md)).
 
 Plot Cognition chronicle (scope-keyed, not session-keyed): `python tools/investigation/trace_plot_cognition_forensics.py <plot_cognition_scope_id> timeline` — see [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md).
 

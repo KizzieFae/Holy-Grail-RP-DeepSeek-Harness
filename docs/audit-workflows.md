@@ -57,6 +57,7 @@ The CLI emits `hg_turn_investigator_v1` JSON with authority-labelled `surfaces[]
 |------|------|
 | NI / S4 / mediation lineage | `trace_ni_forensics.py` |
 | Execution-evidence role chains / citations | `list_execution_evidence.py` |
+| Inference budget/recovery health aggregates (#114) | `list_execution_evidence.py --inference-health` |
 | Plot Cognition chronicle detail | `trace_plot_cognition_forensics.py` |
 | Human audit tag drill-down | `list_audit_tags.py --tag <id> --trace` |
 

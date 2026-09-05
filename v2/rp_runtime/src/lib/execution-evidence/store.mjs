@@ -2,6 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { ATTEMPT_SCHEMA, INDEX_SCHEMA, NI_FORENSICS_CONTRACT, PLOT_COGNITION_FORENSICS_INDEX_CONTRACT } from './config.mjs';
+import {
+  beginInferenceHealthAccumulation,
+  deriveInferenceHealthFromAttempt,
+  emptyInferenceHealthIndex,
+  finalizeInferenceHealthIndex,
+  accumulateInferenceHealthAttempt,
+} from './inference-health.mjs';
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
@@ -65,6 +72,7 @@ function emptyIndex(hgSessionId) {
     semantic: emptySemanticIndex(),
     ni: emptyNiIndex(),
     plot_cognition: emptyPlotCognitionIndex(),
+    inference_health: emptyInferenceHealthIndex(),
   };
 }
 
@@ -80,6 +88,7 @@ function mergeDecision(currentDecision, patchDecision) {
     'librarian_mediation',
     'storyteller_advisory',
     'librarian_proposal',
+    'plot_cognition',
   ];
   for (const key of nestedKeys) {
     if (patchDecision?.[key] || currentDecision?.[key]) {
@@ -133,6 +142,9 @@ export class ExecutionEvidenceStore {
       ...attempt,
       recorded_at: attempt.recorded_at ?? new Date().toISOString(),
     };
+    if (!payload.inference_health && (payload.request || payload.response)) {
+      payload.inference_health = deriveInferenceHealthFromAttempt(payload);
+    }
     delete payload.semantic_qa;
     writeJsonAtomic(this.attemptPath(hgSessionId, evidenceId), payload);
     this._indexAttempt(hgSessionId, evidenceId, attempt.correlation);
@@ -145,6 +157,7 @@ export class ExecutionEvidenceStore {
     if (this._isPlotCognitionInference(attempt)) {
       this._indexPlotCognition(hgSessionId, evidenceId, attempt);
     }
+    this._rebuildInferenceHealthIndex(hgSessionId);
     return evidenceId;
   }
 
@@ -168,6 +181,12 @@ export class ExecutionEvidenceStore {
       updated_at: new Date().toISOString(),
     };
     delete next.semantic_qa;
+    if (next.request || next.response) {
+      next.inference_health = deriveInferenceHealthFromAttempt({
+        ...next,
+        inference_health: patch.inference_health ?? current.inference_health ?? null,
+      });
+    }
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
     this._indexSemanticQa(hgSessionId, evidenceId, next);
@@ -177,6 +196,7 @@ export class ExecutionEvidenceStore {
     if (this._isPlotCognitionInference(next)) {
       this._indexPlotCognition(hgSessionId, evidenceId, next);
     }
+    this._rebuildInferenceHealthIndex(hgSessionId);
   }
 
   readAttempt(hgSessionId, evidenceId) {
@@ -211,6 +231,7 @@ export class ExecutionEvidenceStore {
     index.participation_by_round = {};
     index.ni = emptyNiIndex();
     index.plot_cognition = emptyPlotCognitionIndex();
+    index.inference_health = emptyInferenceHealthIndex();
     for (const evidenceId of index.attempt_ids ?? []) {
       const attempt = this.readAttempt(hgSessionId, evidenceId);
       if (!attempt) continue;
@@ -227,9 +248,34 @@ export class ExecutionEvidenceStore {
         this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
       }
     }
+    index.inference_health = this._buildInferenceHealthIndex(hgSessionId, index.attempt_ids ?? []);
     index.updated_at = new Date().toISOString();
     writeJsonAtomic(this.indexPath(hgSessionId), index);
     return index;
+  }
+
+  _buildInferenceHealthIndex(hgSessionId, attemptIds) {
+    const acc = beginInferenceHealthAccumulation();
+    for (const evidenceId of attemptIds) {
+      const attempt = this.readAttempt(hgSessionId, evidenceId);
+      if (!attempt) continue;
+      const health = deriveInferenceHealthFromAttempt(attempt);
+      // Persist recomputed health onto historical records only in-memory for indexing;
+      // do not rewrite attempt files during rebuild (honest additive compatibility).
+      accumulateInferenceHealthAttempt(acc, attempt, health);
+    }
+    return finalizeInferenceHealthIndex(acc);
+  }
+
+  _rebuildInferenceHealthIndex(hgSessionId) {
+    const indexPath = this.indexPath(hgSessionId);
+    const current = readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
+    current.inference_health = this._buildInferenceHealthIndex(
+      hgSessionId,
+      current.attempt_ids ?? [],
+    );
+    current.updated_at = new Date().toISOString();
+    writeJsonAtomic(indexPath, current);
   }
 
   _indexAttempt(hgSessionId, evidenceId, correlation, indexOverride = null) {
@@ -240,6 +286,9 @@ export class ExecutionEvidenceStore {
     }
     if (!current.participation_by_round) {
       current.participation_by_round = {};
+    }
+    if (!current.inference_health) {
+      current.inference_health = emptyInferenceHealthIndex();
     }
     if (!current.attempt_ids.includes(evidenceId)) {
       current.attempt_ids.push(evidenceId);
