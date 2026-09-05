@@ -14,17 +14,19 @@ from player_source_accounting import (
     normalized_source_sha256,
 )
 
-NORMALIZER_VERSION = 4
+NORMALIZER_VERSION = 5
 PLAYER_UNIT_SOURCE = "player_decomposition"
 
-# Unified deterministic work budget for normalization (#124 / G-124-03).
-# Charges occurrence scanning, substantive-mask construction, DFS visits,
-# candidate probes, and overlap checks. Benchmarked 2026-09-05:
-# - representative / Yes.Yes / material ambiguity: <= 20 work units
-# - 7-unit identical single-char tiling: ~42k work (~160ms), accepts
-# - 9-unit pathological tiling: budget fail ~25k work (~120ms)
-# - 50k-source 1-char excerpt: budget fail during occurrence_scan (<5ms)
-NORMALIZATION_DETERMINISTIC_WORK_BUDGET = 80_000
+# Unified deterministic work budget for normalization (#124 / G-124-03 / G-124-03b).
+# Charges occurrence scanning, substantive-mask construction (source + span precompute),
+# DFS visits, candidate probes, and overlap comparisons.
+# Benchmarked 2026-09-05 (v5, G-124-03b):
+# - representative / Yes.Yes / material ambiguity: <= 40 work units
+# - 7-unit identical single-char tiling: ~296k work (~196ms), accepts
+# - 9-unit pathological tiling: budget fail ~350k work (~206ms)
+# - 50k-source 1-char excerpt: budget fail during occurrence_scan (~162ms)
+# Headroom ~18% above legitimate 7×`a` stress (~296k).
+NORMALIZATION_DETERMINISTIC_WORK_BUDGET = 350_000
 # Retained alias — DFS node visits are one charged operation inside the work budget.
 NORMALIZATION_SEARCH_NODE_BUDGET = NORMALIZATION_DETERMINISTIC_WORK_BUDGET
 
@@ -230,12 +232,39 @@ def _substantive_complete(source: str, spans: list[_Span]) -> bool:
     return True
 
 
-def _span_substantive_mask(source: str, span: _Span) -> int:
+def _span_substantive_mask(
+    source: str,
+    span: _Span,
+    *,
+    ledger: _DeterministicWorkLedger | None = None,
+) -> int | None:
     mask = 0
     for index in range(span.start, span.end):
+        if ledger is not None and not ledger.charge(1, "substantive_mask"):
+            return None
         if _is_substantive_char(source[index]):
             mask |= 1 << index
     return mask
+
+
+def _precompute_span_substantive_masks(
+    source: str,
+    candidates: list[list[_Span]],
+    *,
+    ledger: _DeterministicWorkLedger,
+) -> dict[tuple[int, int], int] | None:
+    """Meter span-mask construction once per unique candidate span (G-124-03b)."""
+    masks: dict[tuple[int, int], int] = {}
+    for unit_spans in candidates:
+        for span in unit_spans:
+            key = (span.start, span.end)
+            if key in masks:
+                continue
+            mask = _span_substantive_mask(source, span, ledger=ledger)
+            if mask is None:
+                return None
+            masks[key] = mask
+    return masks
 
 
 def _uncovered_substantive_count(substantive_mask: int, covered_mask: int) -> int:
@@ -427,6 +456,19 @@ def _search_and_resolve_assignment(
             _budget_failure_audit(ledger, stage=ledger.exhaustion_stage or "substantive_mask"),
         )
 
+    span_substantive_masks = _precompute_span_substantive_masks(
+        source,
+        candidates,
+        ledger=ledger,
+    )
+    if span_substantive_masks is None:
+        return (
+            None,
+            FAILURE_SEARCH_BUDGET_EXCEEDED,
+            "deterministic normalization work budget exceeded",
+            _budget_failure_audit(ledger, stage=ledger.exhaustion_stage or "substantive_mask"),
+        )
+
     partial_exists = False
     complete_count = 0
     budget_exceeded = False
@@ -479,6 +521,9 @@ def _search_and_resolve_assignment(
                 return
             overlap_blocked = False
             for existing in occupied:
+                if not ledger.charge(1, "overlap_check"):
+                    budget_exceeded = True
+                    return
                 if span.overlaps(existing):
                     partial_exists = True
                     overlap_blocked = True
@@ -487,13 +532,14 @@ def _search_and_resolve_assignment(
                 return
             if overlap_blocked:
                 continue
+            span_mask = span_substantive_masks[(span.start, span.end)]
             chosen.append((unit, span))
             occupied.append(span)
             visit(
                 position + 1,
                 chosen,
                 occupied,
-                covered_mask | _span_substantive_mask(source, span),
+                covered_mask | span_mask,
             )
             occupied.pop()
             chosen.pop()

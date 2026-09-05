@@ -266,7 +266,10 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         audit = result["normalization_audit"]
         self.assertTrue(audit.get("budget_exceeded"))
         self.assertGreaterEqual(audit.get("work_consumed", 0), NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
-        self.assertIn(audit.get("work_exhaustion_stage"), {"dfs_visit", "candidate_probe", "occurrence_scan"})
+        self.assertIn(
+            audit.get("work_exhaustion_stage"),
+            {"dfs_visit", "candidate_probe", "occurrence_scan", "overlap_check", "substantive_mask"},
+        )
 
     def test_pathological_tiling_fails_within_time_bound(self) -> None:
         content = "a" * 9
@@ -350,10 +353,10 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         self.assertTrue(audit.get("budget_exceeded"))
         self.assertEqual(audit.get("work_exhaustion_stage"), "occurrence_scan")
         self.assertGreaterEqual(audit.get("work_consumed", 0), NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
-        self.assertLess(elapsed_ms, 250)
+        self.assertLess(elapsed_ms, 500)
 
     def test_long_source_multi_unit_budget_exceeded_quickly(self) -> None:
-        content = "a" * 10_000
+        content = "a" * 100_000
         start = time.perf_counter()
         result = normalize_player_semantic_decomposition(
             content=content,
@@ -363,7 +366,7 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         elapsed_ms = (time.perf_counter() - start) * 1000
         self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
         self.assertEqual(result["normalization_audit"].get("work_exhaustion_stage"), "occurrence_scan")
-        self.assertLess(elapsed_ms, 250)
+        self.assertLess(elapsed_ms, 500)
 
     def test_budget_audit_fields_present_on_failure(self) -> None:
         result = normalize_player_semantic_decomposition(
@@ -380,10 +383,12 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
             "work_candidates_generated",
             "work_substantive_mask",
             "work_candidate_probes",
+            "work_overlap_checks",
             "search_nodes_visited",
             "work_exhaustion_stage",
         ):
             self.assertIn(field, audit)
+        self.assertGreater(audit.get("work_overlap_checks", 0), 0)
 
     def test_material_ambiguity_early_exit_stays_bounded(self) -> None:
         content = "she nodded. she nodded."
