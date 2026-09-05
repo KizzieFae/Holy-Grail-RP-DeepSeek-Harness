@@ -154,6 +154,50 @@ RULES:
   died hard." → internal; concealed latch work behind a closed door → observable_event + private scope.
 - Each unit must reference segment_ids and order_index.
 - Segment unit_ids must reciprocally reference units.
+- Do NOT use kind uniform_projection — that kind is reserved for deterministic checker synthesis only.
+"""
+
+
+PLAYER_VISIBILITY_TRIAGE_OUTPUT_INSTRUCTION = """
+OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
+{
+  "uniform_projection_safe": true|false,
+  "reason": "<short audit-only code, e.g. affirmative_uniform_present|requires_semantic_decomposition|uncertain>"
+}
+
+ROLE: Routing checker only. You do NOT classify semantic units, name recipients, or produce source spans.
+
+Set uniform_projection_safe to true ONLY when you can affirmatively assert that EVERY meaningful
+portion of the complete player source is safe to represent as ONE uniformly projected unit visible
+to ALL Characters present at submit time, with NO semantic decomposition required to prevent
+over-disclosure.
+
+Return uniform_projection_safe: false when ANY portion may contain:
+- intrinsically nonperceptual or internal information;
+- unexpressed cognition or private mental state;
+- explanatory/background/contextual narration not directly perceptible in the scene;
+- player-authored narrative exposition establishing story truth Characters cannot directly observe
+  (e.g. geographic/historical context, off-screen facts, authorial asides like "they were not in Japan");
+- concealed or restricted observable actions;
+- private, directed, role-private, or subset entitlement;
+- mixed entitlement within the same turn;
+- any ambiguity about the above.
+
+CRITICAL EXAMPLES (must return false):
+- Action plus authorial aside: sitting in seiza WHILE narrating they are not in Japan / old habits —
+  the aside is not uniformly perceptible scene truth.
+- Concealed action: smiling while slipping something unseen, hidden work, actions explicitly not visible
+  to others present.
+- Lowered voice, whisper, wondering aloud about whether others can hear — potential private/subset speech.
+- Directed speech to one character, private thoughts, mixed public+private spans.
+
+SAFE EXAMPLES (may return true only when the ENTIRE source is uniformly present-visible):
+- Simple public speech to the room.
+- Simple observable action everyone present could see.
+- Simple perceptible scene description with no hidden cognition or authorial exposition.
+
+Absence of detected complexity is insufficient. Uncertainty requires false.
+The reason field is audit-only and must not be treated as semantic truth.
 """
 
 

@@ -302,25 +302,48 @@ export class HolyGrailApplicationClient {
             input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
               ? mockInferenceProfile()
               : inference.roleProfiles.character;
-          const decompositionInferenceId = `player-decomposition-${crypto.randomUUID()}`;
-          const sceneSessionId = SessionId(`hg-player-decomp-${crypto.randomUUID()}`);
+          const sceneSessionId = SessionId(`hg-player-submit-${crypto.randomUUID()}`);
           const sceneAgent = this.supervisor.runtime.ctx.agentLoop.create(
             sceneSessionId,
             agentOptionsFromProfile(mockInferenceProfile()),
           );
-          const decompositionResult = await phaseExecutors.runPlayerDecomposition({
+          const triageInferenceId = `player-visibility-triage-${crypto.randomUUID()}`;
+          const triageModelProfile = modelProfileForInferenceKind(
+            modelProfile,
+            'player_visibility_triage',
+            { ...this.runtimeSettings, ...input },
+            { inferenceMode: this.options.inferenceMode },
+          );
+          const triageResult = await phaseExecutors.runPlayerVisibilityTriage({
             api,
             trace,
             sceneAgent,
             hgSessionId: this.activeSessionId,
             hgSceneId: this.activeSessionId,
             hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
-            inferenceId: decompositionInferenceId,
+            inferenceId: triageInferenceId,
             playerContent: userMessage,
-            mockResponses: input.mockPlayerDecompositionResponses,
-            modelProfile,
+            mockResponses: input.mockPlayerVisibilityTriageResponses,
+            modelProfile: triageModelProfile,
           });
-          playerDecomposition = decompositionResult.playerDecomposition;
+          if (triageResult.route === 'uniform_projection' && triageResult.playerDecomposition) {
+            playerDecomposition = triageResult.playerDecomposition;
+          } else {
+            const decompositionInferenceId = `player-decomposition-${crypto.randomUUID()}`;
+            const decompositionResult = await phaseExecutors.runPlayerDecomposition({
+              api,
+              trace,
+              sceneAgent,
+              hgSessionId: this.activeSessionId,
+              hgSceneId: this.activeSessionId,
+              hgRoundId: this.activeRoundOperation?.hg_round_id ?? null,
+              inferenceId: decompositionInferenceId,
+              playerContent: userMessage,
+              mockResponses: input.mockPlayerDecompositionResponses,
+              modelProfile,
+            });
+            playerDecomposition = decompositionResult.playerDecomposition;
+          }
         }
       }
 

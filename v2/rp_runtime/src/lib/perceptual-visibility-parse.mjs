@@ -97,3 +97,63 @@ export function parsePlayerDecompositionEnvelope(raw) {
     parseError: null,
   };
 }
+
+/** Parse player visibility triage checker envelopes (#121). */
+export function parsePlayerVisibilityTriageEnvelope(raw) {
+  if (!raw || !String(raw).trim()) {
+    return {
+      uniformProjectionSafe: null,
+      reason: null,
+      parseError: 'empty output',
+    };
+  }
+
+  let stripped = String(raw).trim();
+  if (stripped.startsWith('```')) {
+    stripped = stripped.replace(/^```(?:json)?\s*/, '');
+    stripped = stripped.replace(/\s*```$/, '');
+    stripped = stripped.trim();
+  }
+
+  if (!stripped.startsWith('{')) {
+    return {
+      uniformProjectionSafe: null,
+      reason: null,
+      parseError: 'not json object',
+    };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(stripped);
+  } catch {
+    return {
+      uniformProjectionSafe: null,
+      reason: null,
+      parseError: 'json parse failed',
+    };
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return {
+      uniformProjectionSafe: null,
+      reason: null,
+      parseError: 'envelope not an object',
+    };
+  }
+
+  const safeRaw = payload.uniform_projection_safe;
+  if (typeof safeRaw !== 'boolean') {
+    return {
+      uniformProjectionSafe: null,
+      reason: payload.reason ?? null,
+      parseError: 'uniform_projection_safe missing or not boolean',
+    };
+  }
+
+  return {
+    uniformProjectionSafe: safeRaw,
+    reason: payload.reason != null ? String(payload.reason) : null,
+    parseError: null,
+  };
+}

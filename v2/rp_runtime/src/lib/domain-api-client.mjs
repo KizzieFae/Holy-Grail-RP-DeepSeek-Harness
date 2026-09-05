@@ -487,6 +487,15 @@ export function createDomainApiClient(baseUrl) {
         'preparePlayerDecompositionContext',
       );
     },
+    preparePlayerVisibilityTriageContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/player-visibility-triage/context/prepare',
+        body,
+        'preparePlayerVisibilityTriageContext',
+      );
+    },
     persistOpening(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/opening/persist', body, 'persistOpening');
     },

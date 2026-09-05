@@ -393,6 +393,15 @@ class PlayerDecompositionContextPrepareRequest:
 
 
 @dataclass(frozen=True)
+class PlayerVisibilityTriageContextPrepareRequest:
+    hg_session_id: str
+    inference_id: str
+    hg_round_id: str | None = None
+    turn_index: int = 0
+    attempt_index: int = 0
+
+
+@dataclass(frozen=True)
 class NarratorContextPrepareRequest:
     hg_scene_id: str
     hg_round_id: str

@@ -15,6 +15,7 @@ UnitKind = Literal[
     "speech",
     "internal",
     "presentation_only",
+    "uniform_projection",
 ]
 
 ValidationStatus = Literal[
@@ -36,6 +37,7 @@ VALID_UNIT_KINDS = frozenset(
         "speech",
         "internal",
         "presentation_only",
+        "uniform_projection",
     }
 )
 

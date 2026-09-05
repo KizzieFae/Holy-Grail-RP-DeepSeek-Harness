@@ -9,6 +9,7 @@ import { runNarratorPhase } from './narrator-phase.mjs';
 import { runOpeningPhase } from './opening-phase.mjs';
 import { runOpeningSegmentationPhase } from './opening-segmentation-phase.mjs';
 import { runPlayerDecompositionPhase } from './player-decomposition-phase.mjs';
+import { runPlayerVisibilityTriagePhase } from './player-visibility-triage-phase.mjs';
 
 /**
  * Coherent RP phase execution capability: Director, Character, and Narrator
@@ -76,6 +77,13 @@ export default class HgPhaseExecutors extends Service {
 
   runPlayerDecomposition(params) {
     return runPlayerDecompositionPhase({
+      ...this._phaseDeps(),
+      ...params,
+    });
+  }
+
+  runPlayerVisibilityTriage(params) {
+    return runPlayerVisibilityTriagePhase({
       ...this._phaseDeps(),
       ...params,
     });
