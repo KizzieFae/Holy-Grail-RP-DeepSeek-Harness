@@ -309,6 +309,7 @@ class DomainKernel:
         return self._session_info(session)
 
     def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
+        from player_entitlement_authority import build_entitlement_authority_snapshot_from_fixture
         from player_perceptual_service import (
             attach_player_perceptual_metadata,
             validate_player_perceptual_decomposition,
@@ -339,6 +340,9 @@ class DomainKernel:
             },
             record=record,
             validation_audit=validation_audit,
+            entitlement_authority_snapshot=build_entitlement_authority_snapshot_from_fixture(
+                fixture
+            ),
         )
         entry = append_history_entry(
             fixture.rp_history,

@@ -10,6 +10,7 @@ from perceptual_visibility_projection import (
     build_perceptual_visibility_audit_metadata,
 )
 from player_decomposition_fixtures import build_issue_120_seiza_japan_fixture
+from player_entitlement_authority import merge_entitlement_snapshot_into_metadata
 from player_perceptual_service import (
     FAILURE_VALIDATION_REJECTED,
     validate_player_perceptual_decomposition,
@@ -47,7 +48,10 @@ class Issue121UniformProjectionTests(unittest.TestCase):
             "entry_id": "entry-uniform",
             "kind": "user",
             "content": content,
-            "metadata": {"perceptual_visibility": record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {"perceptual_visibility": record.to_dict()},
+                session_cast=["Ayame", "Harley", "Kizzie"],
+            ),
         }
         for viewer in ("Ayame", "Harley"):
             assembly = assemble_perceptual_history_entry_for_viewer(

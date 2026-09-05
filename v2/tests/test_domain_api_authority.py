@@ -38,6 +38,7 @@ from domain_api.kernel import (  # noqa: E402
 )
 from domain_api.session_history import append_history_entry  # noqa: E402
 from player_decomposition_fixtures import build_player_decomposition_for_content  # noqa: E402
+from player_entitlement_authority import build_entitlement_authority_snapshot_from_fixture
 from player_perceptual_service import (  # noqa: E402
     attach_player_perceptual_metadata,
     validate_player_perceptual_decomposition,
@@ -561,10 +562,12 @@ def test_prepare_context_transcript_bounded_at_sixteen(kernel: DomainKernel) -> 
             speaker="Traveler",
             decomposition=build_player_decomposition_for_content(content),
         )
+        snapshot = build_entitlement_authority_snapshot_from_fixture(fixture)
         metadata = attach_player_perceptual_metadata(
             {"speaker": "Traveler"},
             record=record,
             validation_audit=audit,
+            entitlement_authority_snapshot=snapshot,
         )
         append_history_entry(
             fixture.rp_history,

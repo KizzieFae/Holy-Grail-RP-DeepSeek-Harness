@@ -9,7 +9,11 @@ from perception_audibility_constants import (
     AUDIBILITY_PRIVATE,
     AUDIBILITY_PUBLIC,
 )
-from perception_audibility_visibility import speech_beat_viewer_may_perceive
+from perception_audibility_visibility import (
+    resolve_entitled_characters,
+    resolve_recipient_scope,
+    speech_beat_viewer_may_perceive,
+)
 
 
 def speech_authority_from_beat(
@@ -56,6 +60,29 @@ def speech_authority_from_player_recipients(
         "audibility": audibility,
         "audience": audience,
     }
+
+
+def player_speech_unit_allows_viewer(
+    unit: Any,
+    *,
+    viewer_character: str,
+    role_assignments: dict[str, str] | None,
+    session_cast: list[str] | None,
+) -> bool:
+    """Speech eligibility for player units using one role-resolution primitive."""
+    scope = resolve_recipient_scope(unit.recipients)
+    if scope == "role_private":
+        entitled = resolve_entitled_characters(
+            scope,
+            unit.recipients,
+            role_assignments=role_assignments,
+            session_cast=session_cast,
+        )
+        return str(viewer_character or "").strip() in entitled
+    return speech_authority_allows_viewer(
+        unit.authority,
+        viewer_character=viewer_character,
+    )
 
 
 def speech_authority_allows_viewer(
