@@ -37,6 +37,7 @@ export const PRODUCTION_MAX_TOKEN_CEILING = 8192;
  */
 export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
   opening_segmentation: PRODUCTION_TOKEN_CEILINGS.opening,
+  player_visibility_triage: 32,
   plot_cognition_update: PRODUCTION_MAX_TOKEN_CEILING,
   plot_cognition_update_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
   librarian_proposal: PRODUCTION_MAX_TOKEN_CEILING,
@@ -46,6 +47,7 @@ export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
 /** Operation-specific reasoning overrides (#110). Role defaults remain unchanged. */
 export const PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES = {
   opening_segmentation: 'off',
+  player_visibility_triage: 'off',
 };
 
 /** Bounded diagnostic ceiling for calibration runs (not production). */

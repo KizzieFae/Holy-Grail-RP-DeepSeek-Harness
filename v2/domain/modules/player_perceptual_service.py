@@ -24,6 +24,13 @@ from player_source_accounting import (
     normalized_source_sha256,
     validate_source_accounting,
 )
+from player_uniform_projection import (
+    UNIFORM_PROJECTION_KIND,
+    UNIFORM_PROJECTION_DERIVATION_PROFILE,
+    UNIFORM_PROJECTION_SYNTHESIS_ROUTE,
+    UNIFORM_PROJECTION_SYNTHESIS_SOURCE,
+    is_uniform_projection_synthesis_decomposition,
+)
 
 PLAYER_SOURCE_KIND = "player"
 PLAYER_UNIT_SOURCE = "player_decomposition"
@@ -100,6 +107,57 @@ def _segment_unit_linkage_ok(
     return True, ""
 
 
+def _validate_uniform_projection_decomposition(
+    *,
+    normalized_source: str,
+    units: list[PerceptualVisibilityUnit],
+    accounting_segments: list[dict[str, Any]],
+    generation: dict[str, Any],
+) -> tuple[list[PerceptualVisibilityUnit], str]:
+    if len(units) != 1:
+        return [], "uniform projection requires exactly one unit"
+    unit = units[0]
+    if unit.kind != UNIFORM_PROJECTION_KIND:
+        return [], "uniform projection unit kind mismatch"
+    if unit.source != UNIFORM_PROJECTION_SYNTHESIS_SOURCE:
+        return [], "uniform projection requires synthesis source provenance"
+    scope = str(unit.recipients.get("scope", "") or "").strip().lower()
+    if scope != "present":
+        return [], "uniform projection requires present scope"
+    characters = unit.recipients.get("characters")
+    roles = unit.recipients.get("roles")
+    if not isinstance(characters, list) or characters:
+        return [], "uniform projection cannot name character subset"
+    if not isinstance(roles, list) or roles:
+        return [], "uniform projection cannot name role subset"
+    if unit.text != normalized_source:
+        return [], "uniform projection unit text must equal normalized source"
+    if generation.get("derivation_profile") != UNIFORM_PROJECTION_DERIVATION_PROFILE:
+        return [], "uniform projection missing derivation_profile"
+    if generation.get("synthesis_route") != UNIFORM_PROJECTION_SYNTHESIS_ROUTE:
+        return [], "uniform projection missing synthesis_route"
+    checker = generation.get("checker")
+    if not isinstance(checker, dict) or checker.get("uniform_projection_safe") is not True:
+        return [], "uniform projection requires affirmative checker safety"
+    if len(accounting_segments) != 1:
+        return [], "uniform projection requires single accounting segment"
+    segment = accounting_segments[0]
+    if int(segment.get("char_start", -1)) != 0:
+        return [], "uniform projection segment must start at 0"
+    if int(segment.get("char_end", -1)) != len(normalized_source):
+        return [], "uniform projection segment must cover full source"
+    if str(segment.get("disposition", "")) != "projects":
+        return [], "uniform projection segment must project"
+    linked = {
+        str(item).strip()
+        for item in list(segment.get("unit_ids") or [])
+        if str(item).strip()
+    }
+    if linked != {unit.unit_id}:
+        return [], "uniform projection segment unit linkage mismatch"
+    return [unit], ""
+
+
 def validate_player_perceptual_decomposition(
     *,
     content: str,
@@ -155,6 +213,91 @@ def validate_player_perceptual_decomposition(
         }
 
     units = _normalize_units_payload(list(units_raw))
+    generation = dict(decomposition.get("generation") or generation)
+
+    if is_uniform_projection_synthesis_decomposition(decomposition):
+        accounting_segments = []
+        source_accounting = decomposition.get("source_accounting")
+        if isinstance(source_accounting, dict):
+            raw_segments = source_accounting.get("segments")
+            if isinstance(raw_segments, list):
+                accounting_segments = [dict(item) for item in raw_segments if isinstance(item, dict)]
+        uniform_units, uniform_reason = _validate_uniform_projection_decomposition(
+            normalized_source=normalized_source,
+            units=units,
+            accounting_segments=accounting_segments,
+            generation=generation,
+        )
+        if not uniform_units:
+            record = build_player_failure_record(
+                failure_class=FAILURE_VALIDATION_REJECTED,
+                generation=generation,
+                validation_notes=[uniform_reason],
+            )
+            return record, {
+                "accepted": False,
+                "reason": uniform_reason,
+                "validation_profile": ValidationProfile.PLAYER_SUBMIT.value,
+                "failure_class": FAILURE_VALIDATION_REJECTED,
+                "route": "uniform_projection",
+            }
+
+        accounting_ok, accounting_reason = validate_source_accounting(
+            normalized_source=normalized_source,
+            accounting={"segments": accounting_segments, **(source_accounting or {})},
+            unit_ids={unit.unit_id for unit in uniform_units},
+        )
+        if not accounting_ok:
+            record = build_player_failure_record(
+                failure_class=FAILURE_SOURCE_ACCOUNTING_INCOMPLETE,
+                generation=generation,
+                validation_notes=[accounting_reason],
+            )
+            return record, {
+                "accepted": False,
+                "reason": accounting_reason,
+                "validation_profile": ValidationProfile.PLAYER_SUBMIT.value,
+                "failure_class": FAILURE_SOURCE_ACCOUNTING_INCOMPLETE,
+                "route": "uniform_projection",
+            }
+
+        generation = dict(generation)
+        generation["source_accounting"] = _build_source_accounting_payload(
+            normalized_source=normalized_source,
+            segments=accounting_segments,
+        )
+        record = PerceptualVisibilityRecord(
+            schema_version=PERCEPTUAL_VISIBILITY_SCHEMA_VERSION,
+            record_id=f"pvr-player-{uuid.uuid4()}",
+            source_kind=PLAYER_SOURCE_KIND,
+            units=uniform_units,
+            validation_status="valid",
+            validation_profile=ValidationProfile.PLAYER_SUBMIT.value,
+            validation_notes=[],
+            generation=generation,
+        )
+        return record, {
+            "accepted": True,
+            "reason": "",
+            "validation_profile": ValidationProfile.PLAYER_SUBMIT.value,
+            "failure_class": None,
+            "route": "uniform_projection",
+        }
+
+    if any(unit.kind == UNIFORM_PROJECTION_KIND for unit in units):
+        record = build_player_failure_record(
+            failure_class=FAILURE_VALIDATION_REJECTED,
+            generation=generation,
+            validation_notes=["uniform_projection not permitted on semantic decomposition path"],
+        )
+        return record, {
+            "accepted": False,
+            "reason": "uniform_projection not permitted on semantic decomposition path",
+            "validation_profile": ValidationProfile.PLAYER_SUBMIT.value,
+            "failure_class": FAILURE_VALIDATION_REJECTED,
+            "route": "semantic_decomposition",
+        }
+
     for unit in units:
         if unit.source != PLAYER_UNIT_SOURCE and unit.source == "narrator_generation":
             unit.source = PLAYER_UNIT_SOURCE

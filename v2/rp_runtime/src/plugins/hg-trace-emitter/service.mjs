@@ -44,6 +44,9 @@ export const HG_EVENT_TYPES = [
   'hg/player-decomposition-started',
   'hg/player-decomposition-completed',
   'hg/player-decomposition-failed',
+  'hg/player-visibility-triage-started',
+  'hg/player-visibility-triage-completed',
+  'hg/player-visibility-triage-failed',
   'hg/round-completed',
 ];
 

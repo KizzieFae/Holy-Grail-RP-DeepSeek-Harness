@@ -51,6 +51,7 @@ from .contract import (  # noqa: E402
     OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
     PlayerDecompositionContextPrepareRequest,
+    PlayerVisibilityTriageContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
@@ -100,6 +101,9 @@ from .opening_segmentation_context import (  # noqa: E402
 )
 from .player_decomposition_context import (  # noqa: E402
     prepare_player_decomposition_context as build_player_decomposition_context,
+)
+from .player_visibility_triage_context import (  # noqa: E402
+    prepare_player_visibility_triage_context as build_player_visibility_triage_context,
 )
 from perceptual_visibility_validation import ValidationProfile  # noqa: E402
 from .perceptual_visibility_service import (  # noqa: E402
@@ -1450,6 +1454,12 @@ class DomainKernel:
     ) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_session_id)
         return build_player_decomposition_context(fixture, req)
+
+    def prepare_player_visibility_triage_context(
+        self, req: PlayerVisibilityTriageContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_session_id)
+        return build_player_visibility_triage_context(fixture, req)
 
     def persist_opening_presentation(self, req: OpeningPersistRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)

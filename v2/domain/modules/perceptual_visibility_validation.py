@@ -128,6 +128,11 @@ def validate_perceptual_visibility_record(
     actor = str(acting_character or "").strip()
     filtered_units: list[PerceptualVisibilityUnit] = []
     for unit in units:
+        if unit.kind == "uniform_projection":
+            return PerceptualVisibilityValidationResult(
+                accepted=False,
+                reason="uniform_projection is synthesis-only and not valid for this profile",
+            )
         if len(unit.text) > MAX_PVR_UNIT_TEXT_CHARS:
             return PerceptualVisibilityValidationResult(
                 accepted=False,

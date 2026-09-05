@@ -1,0 +1,735 @@
+{
+  "generated_at": "2026-09-05T06:23:25.584Z",
+  "repeat": 3,
+  "mock": false,
+  "corpus_size": 12,
+  "total_runs": 36,
+  "false_simple_count": 0,
+  "false_complex_count": 0,
+  "safety_critical_false_simple_count": 0,
+  "false_simple": [],
+  "false_complex": [],
+  "runs": [
+    {
+      "run_index": 1,
+      "case_id": "pos_simple_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_speech-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "pos_simple_action",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_action-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "pos_scene_description",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_scene_description-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "pos_mixed_action_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_mixed_action_speech-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_seiza_japan_120",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_seiza_japan_120-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_issue_88_mixed",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "concealed_restricted_observable_action",
+        "inference_id": "issue121-neg_issue_88_mixed-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_concealed_action",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "concealed_action_unseen_note",
+        "inference_id": "issue121-neg_concealed_action-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_internal_cognition",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "internal_mental_state",
+        "inference_id": "issue121-neg_internal_cognition-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_explanatory_narration",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_explanatory_narration-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_directed_speech",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_directed_speech-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_role_private",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_role_private-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 1,
+      "case_id": "neg_ambiguous_lowered_voice",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "player_lowered_voice_wondering_aloud_private_subset_ambiguity",
+        "inference_id": "issue121-neg_ambiguous_lowered_voice-run1"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "pos_simple_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_speech-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "pos_simple_action",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_action-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "pos_scene_description",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_scene_description-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "pos_mixed_action_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_mixed_action_speech-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_seiza_japan_120",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_seiza_japan_120-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_issue_88_mixed",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_issue_88_mixed-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_concealed_action",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "concealed_observable_action",
+        "inference_id": "issue121-neg_concealed_action-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_internal_cognition",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "unexpressed cognition/internal mental state",
+        "inference_id": "issue121-neg_internal_cognition-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_explanatory_narration",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_explanatory_narration-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_directed_speech",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_directed_speech-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_role_private",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition|uncertain",
+        "inference_id": "issue121-neg_role_private-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 2,
+      "case_id": "neg_ambiguous_lowered_voice",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "lowered_voice_wondering_aloud_with_possible_subset_audibility",
+        "inference_id": "issue121-neg_ambiguous_lowered_voice-run2"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "pos_simple_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_speech-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "pos_simple_action",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_simple_action-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "pos_scene_description",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_scene_description-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "pos_mixed_action_speech",
+      "category": "uniform_safe_positive",
+      "safety_critical": false,
+      "expected_route": "uniform_projection",
+      "actual_route": "uniform_projection",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue121-pos_mixed_action_speech-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_seiza_japan_120",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_seiza_japan_120-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_issue_88_mixed",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition|concealed_restricted_observable_actions",
+        "inference_id": "issue121-neg_issue_88_mixed-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_concealed_action",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_concealed_action-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_internal_cognition",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_internal_cognition-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_explanatory_narration",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_explanatory_narration-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_directed_speech",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "whisper_indicates_subset_private_speech",
+        "inference_id": "issue121-neg_directed_speech-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_role_private",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue121-neg_role_private-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    },
+    {
+      "run_index": 3,
+      "case_id": "neg_ambiguous_lowered_voice",
+      "category": "mandatory_negative",
+      "safety_critical": true,
+      "expected_route": "full_pvr",
+      "actual_route": "full_pvr",
+      "classification": "correct",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "lowered_voice_private_potential",
+        "inference_id": "issue121-neg_ambiguous_lowered_voice-run3"
+      },
+      "present_characters": [
+        "Ayame",
+        "Kizzie",
+        "Harley",
+        "Celina"
+      ]
+    }
+  ],
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue121-checker-nEFmhw"
+}
