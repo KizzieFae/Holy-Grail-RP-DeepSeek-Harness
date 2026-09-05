@@ -14,8 +14,13 @@ from player_source_accounting import (
     normalized_source_sha256,
 )
 
-NORMALIZER_VERSION = 1
+NORMALIZER_VERSION = 2
 PLAYER_UNIT_SOURCE = "player_decomposition"
+
+# DFS node visits for global assignment search. Chosen from targeted benchmarks on
+# identical single-char tiling: 8 units (~40k visits, <2s) completes; 9 units
+# (~363k visits, ~38s / ~105MB) exceeds this budget and returns classified failure.
+NORMALIZATION_SEARCH_NODE_BUDGET = 100_000
 
 VALID_PLAYER_SIR_KINDS = frozenset(
     {"observable_scene", "observable_event", "speech", "internal"}
@@ -32,6 +37,7 @@ FAILURE_SIR_OVERLAP_CONFLICT = "sir_overlap_conflict"
 FAILURE_FRAGMENT_AMBIGUOUS = "fragment_assignment_ambiguous"
 FAILURE_FRAGMENT_AMBIGUOUS_TERMINAL = "fragment_assignment_ambiguous_terminal"
 FAILURE_NORMALIZATION_IMPOSSIBLE = "normalization_impossible"
+FAILURE_SEARCH_BUDGET_EXCEEDED = "normalization_search_budget_exceeded"
 FAILURE_VALIDATION_REJECTED = "validation_rejected"
 
 RETRY_ELIGIBLE_FAILURES = frozenset(
@@ -42,6 +48,7 @@ RETRY_ELIGIBLE_FAILURES = frozenset(
         FAILURE_SIR_SUBSTANTIVE_OMISSION,
         FAILURE_SIR_OVERLAP_CONFLICT,
         FAILURE_FRAGMENT_AMBIGUOUS,
+        FAILURE_SEARCH_BUDGET_EXCEEDED,
         FAILURE_VALIDATION_REJECTED,
     }
 )
@@ -145,6 +152,26 @@ def _substantive_complete(source: str, spans: list[_Span]) -> bool:
         if _is_substantive_char(char) and not covered[index]:
             return False
     return True
+
+
+def _substantive_mask(source: str) -> int:
+    mask = 0
+    for index, char in enumerate(source):
+        if _is_substantive_char(char):
+            mask |= 1 << index
+    return mask
+
+
+def _span_substantive_mask(source: str, span: _Span) -> int:
+    mask = 0
+    for index in range(span.start, span.end):
+        if _is_substantive_char(source[index]):
+            mask |= 1 << index
+    return mask
+
+
+def _uncovered_substantive_count(substantive_mask: int, covered_mask: int) -> int:
+    return (substantive_mask & ~covered_mask).bit_count()
 
 
 def _assignment_key(assignment: list[tuple[int, _Span]]) -> tuple[tuple[int, int, int], ...]:
@@ -263,55 +290,145 @@ def _build_player_decomposition(
     }
 
 
-def _search_assignments(
+def _search_and_resolve_assignment(
     source: str,
     units: list[_SirUnit],
-) -> tuple[list[list[tuple[_SirUnit, _Span]]], str, str]:
+    *,
+    attempt_index: int,
+) -> tuple[list[tuple[_SirUnit, _Span]] | None, str, str, dict[str, Any]]:
+    audit: dict[str, Any] = {
+        "version": NORMALIZER_VERSION,
+        "search_budget": NORMALIZATION_SEARCH_NODE_BUDGET,
+        "search_nodes_visited": 0,
+    }
+
     if not units:
         if any(_is_substantive_char(char) for char in source):
-            return [], FAILURE_SIR_SUBSTANTIVE_OMISSION, "empty units with substantive source"
-        return [[]], "", ""
+            audit["failure_reason"] = "empty units with substantive source"
+            return None, FAILURE_SIR_SUBSTANTIVE_OMISSION, audit["failure_reason"], audit
+        audit["assignment_count"] = 0
+        audit["ambiguity_class"] = "unique"
+        return [], "", "", audit
 
     candidates: list[list[_Span]] = []
     for unit in units:
         occurrences = _find_occurrences(source, unit.text)
         if not occurrences:
-            return [], FAILURE_SIR_NON_VERBATIM, f"unit {unit.index} excerpt not found in source"
+            reason = f"unit {unit.index} excerpt not found in source"
+            audit["failure_reason"] = reason
+            return None, FAILURE_SIR_NON_VERBATIM, reason, audit
         candidates.append(occurrences)
 
     order = sorted(range(len(units)), key=lambda idx: len(candidates[idx]))
-    complete: list[list[tuple[_SirUnit, _Span]]] = []
-    partial_exists = False
+    remaining_text_capacity = [len(units[idx].text) for idx in order]
+    suffix_capacity = [0] * (len(order) + 1)
+    for index in range(len(order) - 1, -1, -1):
+        suffix_capacity[index] = suffix_capacity[index + 1] + remaining_text_capacity[index]
 
-    def visit(position: int, chosen: list[tuple[_SirUnit, _Span]], occupied: list[_Span]) -> None:
-        nonlocal partial_exists
+    substantive_mask = _substantive_mask(source)
+    partial_exists = False
+    complete_count = 0
+    budget_exceeded = False
+    material_proven = False
+    nodes_visited = 0
+    fingerprint_best: dict[
+        tuple[tuple[str, str, str, int], ...],
+        tuple[list[tuple[_SirUnit, _Span]], tuple[tuple[int, int, int], ...]],
+    ] = {}
+
+    def visit(
+        position: int,
+        chosen: list[tuple[_SirUnit, _Span]],
+        occupied: list[_Span],
+        covered_mask: int,
+    ) -> None:
+        nonlocal partial_exists, complete_count, budget_exceeded, material_proven, nodes_visited
+        if budget_exceeded or material_proven:
+            return
+
+        nodes_visited += 1
+        if nodes_visited > NORMALIZATION_SEARCH_NODE_BUDGET:
+            budget_exceeded = True
+            return
+
         if position >= len(order):
-            spans = [span for _, span in chosen]
-            if _substantive_complete(source, spans):
-                complete.append(list(chosen))
+            if (substantive_mask & ~covered_mask) == 0:
+                complete_count += 1
+                fingerprint = _canonical_semantic_fingerprint(source, chosen)
+                assignment_key = _assignment_key(chosen)
+                existing = fingerprint_best.get(fingerprint)
+                if existing is None or assignment_key < existing[1]:
+                    fingerprint_best[fingerprint] = (list(chosen), assignment_key)
+                if len(fingerprint_best) >= 2:
+                    material_proven = True
             else:
                 partial_exists = True
+            return
+
+        remaining_capacity = suffix_capacity[position]
+        if _uncovered_substantive_count(substantive_mask, covered_mask) > remaining_capacity:
+            partial_exists = True
             return
 
         unit_index = order[position]
         unit = units[unit_index]
         for span in candidates[unit_index]:
+            if budget_exceeded or material_proven:
+                return
             if any(span.overlaps(existing) for existing in occupied):
                 partial_exists = True
                 continue
             chosen.append((unit, span))
             occupied.append(span)
-            visit(position + 1, chosen, occupied)
+            visit(
+                position + 1,
+                chosen,
+                occupied,
+                covered_mask | _span_substantive_mask(source, span),
+            )
             occupied.pop()
             chosen.pop()
 
-    visit(0, [], [])
+    visit(0, [], [], 0)
+    audit["search_nodes_visited"] = nodes_visited
+    audit["assignment_count"] = complete_count
 
-    if complete:
-        return complete, "", ""
+    if budget_exceeded:
+        audit["budget_exceeded"] = True
+        reason = "deterministic normalization search budget exceeded"
+        return None, FAILURE_SEARCH_BUDGET_EXCEEDED, reason, audit
+
+    if material_proven or len(fingerprint_best) >= 2:
+        audit["ambiguity_class"] = "material"
+        audit["material_assignment_count"] = len(fingerprint_best)
+        if attempt_index > 0:
+            return (
+                None,
+                FAILURE_FRAGMENT_AMBIGUOUS_TERMINAL,
+                "material ambiguity after retry",
+                audit,
+            )
+        return (
+            None,
+            FAILURE_FRAGMENT_AMBIGUOUS,
+            "material ambiguity requires semantic retry",
+            audit,
+        )
+
+    if fingerprint_best:
+        fingerprint = next(iter(fingerprint_best))
+        chosen, _ = fingerprint_best[fingerprint]
+        audit["ambiguity_class"] = "unique" if complete_count == 1 else "equivalent"
+        return chosen, "", "", audit
+
     if partial_exists:
-        return [], FAILURE_SIR_SUBSTANTIVE_OMISSION, "substantive source not fully covered"
-    return [], FAILURE_SIR_OVERLAP_CONFLICT, "no non-overlapping placement for excerpts"
+        reason = "substantive source not fully covered"
+        audit["failure_reason"] = reason
+        return None, FAILURE_SIR_SUBSTANTIVE_OMISSION, reason, audit
+
+    reason = "no non-overlapping placement for excerpts"
+    audit["failure_reason"] = reason
+    return None, FAILURE_SIR_OVERLAP_CONFLICT, reason, audit
 
 
 def _resolve_assignment(
@@ -320,35 +437,7 @@ def _resolve_assignment(
     *,
     attempt_index: int,
 ) -> tuple[list[tuple[_SirUnit, _Span]] | None, str, str, dict[str, Any]]:
-    assignments, failure_class, reason = _search_assignments(source, units)
-    audit: dict[str, Any] = {
-        "version": NORMALIZER_VERSION,
-        "assignment_count": len(assignments),
-    }
-    if failure_class:
-        audit["failure_reason"] = reason
-        return None, failure_class, reason, audit
-
-    if not assignments:
-        return None, FAILURE_NORMALIZATION_IMPOSSIBLE, "no assignments", audit
-
-    fingerprints: dict[tuple[Any, ...], list[tuple[list[tuple[_SirUnit, _Span]], tuple[Any, ...]]]] = {}
-    for assignment in assignments:
-        fingerprint = _canonical_semantic_fingerprint(source, assignment)
-        fingerprints.setdefault(fingerprint, []).append((assignment, _assignment_key(assignment)))
-
-    unique_fingerprints = list(fingerprints.keys())
-    if len(unique_fingerprints) == 1:
-        candidates = fingerprints[unique_fingerprints[0]]
-        chosen = min(candidates, key=lambda item: item[1])[0]
-        audit["ambiguity_class"] = "unique" if len(candidates) == 1 else "equivalent"
-        return chosen, "", "", audit
-
-    audit["ambiguity_class"] = "material"
-    audit["material_assignment_count"] = len(unique_fingerprints)
-    if attempt_index > 0:
-        return None, FAILURE_FRAGMENT_AMBIGUOUS_TERMINAL, "material ambiguity after retry", audit
-    return None, FAILURE_FRAGMENT_AMBIGUOUS, "material ambiguity requires semantic retry", audit
+    return _search_and_resolve_assignment(source, units, attempt_index=attempt_index)
 
 
 def normalize_player_semantic_decomposition(
@@ -458,6 +547,8 @@ def _failure_result(
 ) -> dict[str, Any]:
     retry_eligible = failure_class in RETRY_ELIGIBLE_FAILURES
     if failure_class == FAILURE_FRAGMENT_AMBIGUOUS and attempt_index > 0:
+        retry_eligible = False
+    if failure_class == FAILURE_SEARCH_BUDGET_EXCEEDED and attempt_index > 0:
         retry_eligible = False
     return {
         "accepted": False,

@@ -215,6 +215,47 @@ test('player decomposition retry adds bounded failure feedback without replaying
   assert.equal(result.playerDecomposition.perceptual_visibility.units.length, 1);
 });
 
+test('player decomposition search-budget retry stays semantic-only', async () => {
+  const { api } = createTrackingApi({
+    normalizeResult: (body) => (
+      body.attempt_index === 0
+        ? {
+          accepted: false,
+          failure_class: 'normalization_search_budget_exceeded',
+          reason: 'deterministic normalization search budget exceeded',
+          retry_eligible: true,
+          normalization_audit: { budget_exceeded: true },
+        }
+        : {
+          accepted: true,
+          player_decomposition: {
+            ...CANONICAL_DECOMPOSITION,
+            generation: body.generation ?? {},
+          },
+          normalization_audit: {},
+          validation_audit: { accepted: true },
+          retry_eligible: false,
+        }
+    ),
+  });
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_SIR, VALID_SIR]);
+
+  await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-budget-retry',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.match(calls[1].prompt, /normalization_search_budget_exceeded/);
+  assert.match(calls[1].prompt, /distinctive verbatim excerpts/);
+  assert.doesNotMatch(calls[1].prompt, /\bchar_start\b|\bsegment_id\b|\bsearch_nodes_visited\b/);
+});
+
 test('player decomposition context prepare failure is attributed before inference', async () => {
   const prepareCalls = [];
   const api = {

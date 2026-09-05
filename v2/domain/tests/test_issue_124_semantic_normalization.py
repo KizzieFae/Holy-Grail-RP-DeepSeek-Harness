@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import time
 import unittest
 
 from player_semantic_normalization import (
     FAILURE_FRAGMENT_AMBIGUOUS,
     FAILURE_FRAGMENT_AMBIGUOUS_TERMINAL,
+    FAILURE_SEARCH_BUDGET_EXCEEDED,
     FAILURE_SIR_NON_VERBATIM,
     FAILURE_SIR_SUBSTANTIVE_OMISSION,
     FAILURE_VALIDATION_REJECTED,
+    NORMALIZATION_SEARCH_NODE_BUDGET,
     normalize_player_semantic_decomposition,
 )
 from player_perceptual_service import validate_player_perceptual_decomposition
@@ -236,6 +239,109 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         generation = decomposition["generation"]
         self.assertIn("semantic_decomposition", generation)
         self.assertIn("normalization", generation)
+
+    def _single_char_units(self, count: int) -> dict:
+        return _sir(
+            *[
+                {
+                    "kind": "speech",
+                    "text": "a",
+                    "recipients": {"scope": "public", "characters": [], "roles": []},
+                }
+                for _ in range(count)
+            ]
+        )
+
+    def test_search_budget_exceeded_on_pathological_tiling(self) -> None:
+        content = "a" * 9
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(9),
+            attempt_index=0,
+        )
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
+        self.assertTrue(result["retry_eligible"])
+        audit = result["normalization_audit"]
+        self.assertTrue(audit.get("budget_exceeded"))
+        self.assertGreater(audit.get("search_nodes_visited", 0), NORMALIZATION_SEARCH_NODE_BUDGET)
+
+    def test_search_budget_exceeded_terminal_after_retry(self) -> None:
+        content = "a" * 9
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(9),
+            attempt_index=1,
+        )
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
+        self.assertFalse(result["retry_eligible"])
+
+    def test_equal_fingerprints_do_not_short_circuit_to_equivalent(self) -> None:
+        """Nine identical one-char units exceed the search budget instead of accepting."""
+        result = normalize_player_semantic_decomposition(
+            content="a" * 9,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(9),
+        )
+        self.assertNotEqual(result.get("normalization_audit", {}).get("ambiguity_class"), "equivalent")
+        self.assertFalse(result["accepted"])
+
+    def test_equivalent_repeated_fragment_still_normalizes_within_budget(self) -> None:
+        content = "a" * 7
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(7),
+        )
+        self.assertTrue(result["accepted"])
+        audit = result["normalization_audit"]
+        self.assertEqual(audit.get("ambiguity_class"), "equivalent")
+        self.assertLessEqual(audit.get("search_nodes_visited", 0), NORMALIZATION_SEARCH_NODE_BUDGET)
+
+    def test_omission_pathology_terminates_within_budget(self) -> None:
+        content = "a" * 50
+        start = time.perf_counter()
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(10),
+        )
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["failure_class"], FAILURE_SIR_SUBSTANTIVE_OMISSION)
+        self.assertLess(elapsed_ms, 2000)
+        self.assertLessEqual(
+            result["normalization_audit"].get("search_nodes_visited", 0),
+            NORMALIZATION_SEARCH_NODE_BUDGET,
+        )
+
+    def test_material_ambiguity_early_exit_stays_bounded(self) -> None:
+        content = "she nodded. she nodded."
+        start = time.perf_counter()
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=_sir(
+                {
+                    "kind": "observable_event",
+                    "text": "she nodded.",
+                    "recipients": {"scope": "public", "characters": [], "roles": []},
+                },
+                {
+                    "kind": "internal",
+                    "text": "she nodded.",
+                    "recipients": {"scope": "private", "characters": [], "roles": []},
+                },
+            ),
+            attempt_index=0,
+        )
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        self.assertEqual(result["failure_class"], FAILURE_FRAGMENT_AMBIGUOUS)
+        self.assertLess(elapsed_ms, 500)
+        self.assertLessEqual(result["normalization_audit"].get("search_nodes_visited", 0), 20)
 
 
 if __name__ == "__main__":

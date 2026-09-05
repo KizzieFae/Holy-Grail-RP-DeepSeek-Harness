@@ -25,6 +25,10 @@ const RETRY_GUIDANCE = {
     'Your verbatim unit excerpts were insufficiently distinctive for deterministic source matching. '
     + 'Select unambiguous semantic boundaries using naturally distinctive verbatim excerpts. '
     + 'Account for all substantive player source content.',
+  normalization_search_budget_exceeded:
+    'Your verbatim unit excerpts produced an overly complex matching surface for deterministic normalization. '
+    + 'Select clearer semantic boundaries using naturally distinctive verbatim excerpts. '
+    + 'Account for all substantive player source content.',
   validation_rejected:
     'Correct semantic kind/recipient choices while preserving verbatim excerpts and completeness.',
 };
