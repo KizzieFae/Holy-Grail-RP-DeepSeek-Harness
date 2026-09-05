@@ -72,7 +72,7 @@ This assessment distinguishes **capability necessity** (whether perceptual-decom
 | Experiment | Ceiling | Result | Evidence |
 |------------|---------|--------|----------|
 | Two-fixture × five-run (seiza/Japan + #88 mixed) | **4096** | **10/10** `max-tokens`; **0/10** JSON emitted; **0/10** contract accepted | [`issue-112-evidence-4096-ceiling-report.json`](issue-112-evidence-4096-ceiling-report.json) |
-| Same fixtures | **8192** (investigation override only) | **10/10** `max-tokens`; **0/10** JSON emitted; **0/10** contract accepted | [`issue-112-evidence-8192-ceiling-report.json`](issue-112-evidence-8192-ceiling-report.json) |
+| Same fixtures | **8192** (investigation override only) | **10/10** `max-tokens`; **1/10** partial JSON emitted (no parse/contract success); **0/10** contract accepted | [`issue-112-evidence-8192-ceiling-report.json`](issue-112-evidence-8192-ceiling-report.json) |
 
 ### Uncapped difficult-case cost (controlled)
 
@@ -81,7 +81,7 @@ Five-run repeatability on seiza/Japan dense turn (`complex_dense`) with **no out
 | Metric | Finding |
 |--------|---------|
 | Total tokens per run | ~27k–44k (27,202 – 43,870) |
-| Wall-clock | ~74s–131s per run |
+| Wall-clock | ~89s–140s per run |
 | `validation_accepted` | **0/5** |
 | Semantic units produced | **5/5** runs produced plausible semantic units (including disputed Japan narration as `internal/private`) |
 | Mechanical validity | **0/5** accepted — source accounting / contract validation failed despite semantic direction |
@@ -292,7 +292,7 @@ Operational monitoring of checker **false-simple** and **false-complex** rates b
 | 6 | Multi-observer behavior | Triage YES cases include multi-observer differential | E3 |
 | 7 | Participation-direct behavior | Heavier scene/boilerplate reliance when PVR absent | E1 SQA-03 |
 | 8 | Director dependency | Advisory `user_turn_source` practically important under PVR failure | E1 SQA-03 |
-| 9 | Latency (PVR-attributable) | Difficult full PVR: ~45s–131s wall-clock in samples | E4, E5 |
+| 9 | Latency (PVR-attributable) | Difficult full PVR: ~46s–140s wall-clock in samples | E4, E5 |
 | 10 | Token cost (PVR-attributable) | Production ceiling exhausted; uncapped ~27k–44k on dense turn | E4–E7 |
 | 11 | Retry/failure surface | 4096/8192 exhaustion; validator rejects despite semantic output | E4–E7 |
 | 12 | Implementation complexity | Combined semantic+mechanical LLM contract is complex | E4, code |
