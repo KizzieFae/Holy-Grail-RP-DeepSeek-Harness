@@ -1,8 +1,10 @@
 # Issue #124 / PR #127 — Final Forensic Hardening
 
 **Date:** 2026-09-05  
-**Behavioral HEAD:** `c70aab147f70141f634bc0bb9d88c98fa706c0b7`  
-**Prior Greptile anchor:** `0d2b3124e769f9a150fe1d6637e3413120c59be2` (5/5 — superseded for behavioral review)
+**Final PR HEAD:** `4c22bd21d07501b8a4e6f99baaec26870e36eeef`  
+**Behavioral forensic HEAD:** `c70aab147f70141f634bc0bb9d88c98fa706c0b7`  
+**Test-correction commit:** `4c22bd21d07501b8a4e6f99baaec26870e36eeef` (test-only)  
+**Prior Greptile anchor:** `0d2b3124e769f9a150fe1d6637e3413120c59be2` (5/5 — superseded)
 
 ## Remediation scope
 
@@ -18,7 +20,19 @@ Deferred: explicit `authority:` component labels (#124-only convention).
 | `v2/rp_runtime/src/plugins/hg-phase-executors/player-decomposition-phase.mjs` | `buildInferenceGenerationForensics`, `attachInferenceEvidenceToDecomposition`; all generation paths include `evidence_id`; terminal `sir_malformed` includes `raw_semantic_output` |
 | `v2/rp_runtime/tests/player-decomposition-phase.test.mjs` | Terminal malformed, success, retry, transport assertions |
 
-## Deterministic validation
+## Full-suite regression disposition
+
+| Field | Value |
+|-------|-------|
+| **Original full-suite result** | 461/462 pass (pre-correction) |
+| **Failing test** | `HgTraceEmitter: rejects unknown event types` |
+| **Root cause** | Stale `HG_EVENT_TYPES.length === 43`; authoritative list is 46 after #124 player-decomposition + player-visibility-triage trace events |
+| **Correction** | `4c22bd2` — test-only; count → 46; assert visibility-triage events |
+| **Production behavior changed?** | **No** — event definitions unchanged; test expectation updated |
+| **Isolated trace-emitter result** | 2/2 pass |
+| **Final full-suite result** | **464/464 pass** (`npm test`, ~19m) |
+
+## Deterministic validation (targeted)
 
 ```text
 node --test v2/rp_runtime/tests/player-decomposition-phase.test.mjs v2/rp_runtime/tests/player-visibility-triage-phase.test.mjs
