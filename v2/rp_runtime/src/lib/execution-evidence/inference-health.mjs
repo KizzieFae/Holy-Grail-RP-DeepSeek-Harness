@@ -40,7 +40,30 @@ export function resolveUsageTotalTokens(usage) {
 }
 
 /**
- * Utilization requires a known configured ceiling. Never invents near-ceiling bands.
+ * Token quantity constrained by configured `max_tokens` (output-generation ceiling).
+ *
+ * Repository evidence (`application-settings` "output headroom",
+ * `classifyReasoningBudgetOutcome`): the ceiling bounds generation — visible
+ * `outputTokens` plus `reasoningTokens` when present. Prompt/`inputTokens` are
+ * never included; `totalTokens` is not used as a utilization numerator because it
+ * mixes input with generation.
+ *
+ * @param {object|null|undefined} usage
+ * @returns {number|null}
+ */
+export function resolveCeilingConstrainedTokens(usage) {
+  if (!usage || typeof usage !== 'object') return null;
+  const output = Number(usage.outputTokens ?? usage.output_tokens);
+  const reasoning = Number(usage.reasoningTokens ?? usage.reasoning_tokens);
+  const hasOutput = Number.isFinite(output) && output >= 0;
+  const hasReasoning = Number.isFinite(reasoning) && reasoning >= 0;
+  if (!hasOutput && !hasReasoning) return null;
+  return (hasOutput ? output : 0) + (hasReasoning ? reasoning : 0);
+}
+
+/**
+ * Utilization = ceiling-constrained generation tokens / configured output ceiling.
+ * Requires a known configured ceiling. Never invents near-ceiling bands.
  * @param {object|null|undefined} usage
  * @param {number|null|undefined} configuredMaxTokens
  * @returns {number|null}
@@ -49,9 +72,9 @@ export function computeUtilization(usage, configuredMaxTokens) {
   if (configuredMaxTokens == null) return null;
   const ceiling = Number(configuredMaxTokens);
   if (!Number.isFinite(ceiling) || ceiling <= 0) return null;
-  const total = resolveUsageTotalTokens(usage);
-  if (total == null) return null;
-  return total / ceiling;
+  const constrained = resolveCeilingConstrainedTokens(usage);
+  if (constrained == null) return null;
+  return constrained / ceiling;
 }
 
 /**
@@ -95,52 +118,70 @@ export function isContractCorrectionKind(inferenceKind) {
 }
 
 /**
+ * @param {object} block
+ * @param {{ treatAsCorrection: boolean }} options
+ * @returns {{ structural_valid: boolean|null, structural_error: string|null } | null}
+ */
+function structuralFromDecisionBlock(block, { treatAsCorrection }) {
+  if (!block || typeof block !== 'object') return null;
+  const lineage = block.contract_lineage ?? null;
+  const stage = String(block.proposal_generation_stage ?? '');
+
+  if (treatAsCorrection || stage === 'contract_correction') {
+    // Correction attempt: own structural result only — never primary_parse_error.
+    const ownErr = stage === 'contract_correction'
+      ? (block.structural_parse_error ?? null)
+      : (block.structural_parse_error ?? null);
+    const corrErr = lineage?.correction_parse_error ?? ownErr ?? null;
+    if (corrErr) {
+      return { structural_valid: false, structural_error: String(corrErr) };
+    }
+    if (lineage?.correction_used === true) {
+      return { structural_valid: true, structural_error: null };
+    }
+    return null;
+  }
+
+  // Primary (or non-correction) attempt: own structural failure / primary lineage error.
+  const err = block.structural_parse_error
+    ?? lineage?.primary_parse_error
+    ?? null;
+  if (err) return { structural_valid: false, structural_error: String(err) };
+  if (block.proposal_generation_failure === 'structural_parse_failed') {
+    return { structural_valid: false, structural_error: 'structural_parse_failed' };
+  }
+  return null;
+}
+
+/**
  * Extract objective structural signals already present on decision patches.
+ * Structural validity is evaluated for **this attempt**. Primary parse errors in
+ * contract lineage remain lineage/recovery context and must not mark a successful
+ * correction attempt as structurally failed.
+ *
  * @param {object|null|undefined} decision
+ * @param {{ correlation?: object|null }} [options]
  * @returns {{ structural_valid: boolean|null, structural_error: string|null }}
  */
-export function extractStructuralSignals(decision) {
+export function extractStructuralSignals(decision, options = {}) {
   if (!decision || typeof decision !== 'object') {
     return { structural_valid: null, structural_error: null };
   }
 
-  const librarian = decision.librarian_proposal;
-  if (librarian && typeof librarian === 'object') {
-    const err = librarian.structural_parse_error
-      ?? librarian.contract_lineage?.primary_parse_error
-      ?? null;
-    if (err) return { structural_valid: false, structural_error: String(err) };
-    if (librarian.proposal_generation_failure === 'structural_parse_failed') {
-      return { structural_valid: false, structural_error: 'structural_parse_failed' };
-    }
-    if (librarian.proposal_generation_stage === 'contract_correction'
-      && librarian.contract_lineage?.correction_used) {
-      const corrErr = librarian.contract_lineage?.correction_parse_error;
-      if (corrErr) return { structural_valid: false, structural_error: String(corrErr) };
-      return { structural_valid: true, structural_error: null };
-    }
-  }
+  const correlation = options.correlation ?? null;
+  const treatAsCorrection = isContractCorrectionKind(correlation?.inference_kind);
 
-  const plot = decision.plot_cognition;
-  if (plot && typeof plot === 'object') {
-    const err = plot.structural_parse_error
-      ?? plot.contract_lineage?.primary_parse_error
-      ?? null;
-    if (err) return { structural_valid: false, structural_error: String(err) };
-  }
-
-  for (const key of [
-    'character_orientation',
-    'librarian_mediation',
-    'storyteller_advisory',
-    'storyteller_orientation',
-  ]) {
-    const block = decision[key];
-    if (!block || typeof block !== 'object') continue;
-    const err = block.structural_parse_error
-      ?? block.contract_lineage?.primary_parse_error
-      ?? null;
-    if (err) return { structural_valid: false, structural_error: String(err) };
+  const blocks = [
+    decision.librarian_proposal,
+    decision.plot_cognition,
+    decision.character_orientation,
+    decision.librarian_mediation,
+    decision.storyteller_advisory,
+    decision.storyteller_orientation,
+  ];
+  for (const block of blocks) {
+    const signal = structuralFromDecisionBlock(block, { treatAsCorrection });
+    if (signal) return signal;
   }
 
   return { structural_valid: null, structural_error: null };
@@ -246,15 +287,16 @@ export function buildInferenceHealth({
     || budget.reasoning_budget_exhausted === true;
   const utilization = computeUtilization(
     usageRaw ?? {
-      totalTokens: usage?.total_tokens,
-      inputTokens: usage?.input_tokens,
       outputTokens: usage?.output_tokens,
       reasoningTokens: usage?.reasoning_tokens,
+      // input/total intentionally omitted from utilization numerator source
+      inputTokens: usage?.input_tokens,
+      totalTokens: usage?.total_tokens,
     },
     configured_max_tokens,
   );
 
-  const structural = extractStructuralSignals(decision);
+  const structural = extractStructuralSignals(decision, { correlation });
   let structural_valid = structural.structural_valid;
   let structural_error = structural.structural_error;
   if (structural_valid == null && existingHealth?.structural_valid != null) {

@@ -12,6 +12,8 @@ import {
   buildInferenceHealthIndex,
   computeUtilization,
   deriveInferenceHealthFromAttempt,
+  extractStructuralSignals,
+  resolveCeilingConstrainedTokens,
 } from '../src/lib/execution-evidence/inference-health.mjs';
 import { ExecutionEvidenceStore } from '../src/lib/execution-evidence/store.mjs';
 
@@ -84,21 +86,57 @@ test('assembled request persists configured max_tokens ceiling', () => {
   assert.equal(request.inference_profile.max_tokens, 8192);
 });
 
-test('utilization omitted when ceiling absent; present when ceiling known', () => {
+test('utilization uses generation tokens only; prompt does not inflate (G-118-01)', () => {
   assert.equal(computeUtilization({ totalTokens: 1000 }, null), null);
-  assert.equal(computeUtilization({ totalTokens: 2048 }, 4096), 0.5);
+  assert.equal(computeUtilization({ totalTokens: 2048 }, 4096), null);
+  assert.equal(computeUtilization({ outputTokens: 2048 }, 4096), 0.5);
+  assert.equal(resolveCeilingConstrainedTokens({
+    inputTokens: 8000,
+    outputTokens: 100,
+    reasoningTokens: 50,
+    totalTokens: 8150,
+  }), 150);
+  assert.equal(computeUtilization({
+    inputTokens: 8000,
+    outputTokens: 100,
+    reasoningTokens: 50,
+    totalTokens: 8150,
+  }, 4096), 150 / 4096);
+  assert.equal(computeUtilization({ outputTokens: 0, reasoningTokens: 4096 }, 4096), 1);
+  assert.equal(computeUtilization({ outputTokens: 10 }, 0), null);
+  assert.equal(computeUtilization({ outputTokens: 10 }, -1), null);
+
   const noCeiling = buildInferenceHealth({
     profile: {},
     trace: {
       finish: { kind: 'stop' },
-      usage: { totalTokens: 3000, outputTokens: 100 },
+      usage: { totalTokens: 3000, outputTokens: 100, inputTokens: 2900 },
       failed: false,
     },
     assistantText: 'ok',
   });
   assert.equal(noCeiling.configured_max_tokens, null);
   assert.equal(noCeiling.utilization, null);
+  assert.equal(noCeiling.usage?.input_tokens, 2900);
   assert.equal(noCeiling.hard_exhaustion, false);
+
+  const largePrompt = buildInferenceHealth({
+    profile: { maxTokens: 4096 },
+    trace: {
+      finish: { kind: 'stop' },
+      usage: {
+        inputTokens: 12000,
+        outputTokens: 200,
+        reasoningTokens: 100,
+        totalTokens: 12300,
+      },
+      failed: false,
+    },
+    assistantText: '{"ok":true}',
+  });
+  assert.equal(largePrompt.utilization, 300 / 4096);
+  assert.ok(largePrompt.utilization < 0.1);
+  assert.equal(largePrompt.usage.input_tokens, 12000);
 });
 
 test('Level-1 scenarios: healthy, high util, max-token, recovery, provider fail', () => {
@@ -106,7 +144,7 @@ test('Level-1 scenarios: healthy, high util, max-token, recovery, provider fail'
     profile: { maxTokens: 8192 },
     trace: {
       finish: { kind: 'stop' },
-      usage: { totalTokens: 800, outputTokens: 100, reasoningTokens: 50 },
+      usage: { totalTokens: 800, outputTokens: 100, reasoningTokens: 50, inputTokens: 650 },
       failed: false,
     },
     assistantText: '{"schema":"ok"}',
@@ -115,18 +153,19 @@ test('Level-1 scenarios: healthy, high util, max-token, recovery, provider fail'
   assert.equal(healthy.hard_exhaustion, false);
   assert.equal(healthy.provider_failed, false);
   assert.equal(healthy.recovery.state, 'none');
-  assert.ok(healthy.utilization != null && healthy.utilization < 0.2);
+  assert.equal(healthy.utilization, 150 / 8192);
 
   const highUtil = buildInferenceHealth({
     profile: { maxTokens: 4096 },
     trace: {
       finish: { kind: 'stop' },
-      usage: { totalTokens: 3900, outputTokens: 200 },
+      usage: { totalTokens: 5000, inputTokens: 900, outputTokens: 3800, reasoningTokens: 200 },
       failed: false,
     },
     assistantText: '{"schema":"ok"}',
   });
   assert.equal(highUtil.finish_class, 'complete');
+  assert.equal(highUtil.utilization, 4000 / 4096);
   assert.ok(highUtil.utilization > 0.9);
   assert.equal(highUtil.hard_exhaustion, false);
   assert.equal(Object.hasOwn(highUtil, 'near_ceiling'), false);
@@ -135,7 +174,7 @@ test('Level-1 scenarios: healthy, high util, max-token, recovery, provider fail'
     profile: { maxTokens: 4096 },
     trace: {
       finish: { kind: 'max_tokens' },
-      usage: { totalTokens: 4096, outputTokens: 0, reasoningTokens: 4096 },
+      usage: { totalTokens: 5000, inputTokens: 904, outputTokens: 0, reasoningTokens: 4096 },
       failed: false,
     },
     assistantText: '',
@@ -159,6 +198,92 @@ test('Level-1 scenarios: healthy, high util, max-token, recovery, provider fail'
   assert.equal(providerFail.finish_class, 'provider_error');
   assert.equal(providerFail.recovery.state, 'none');
   assert.equal(providerFail.utilization, null);
+});
+
+test('successful correction does not inherit primary structural failure (G-118-02)', () => {
+  const lineage = {
+    correction_used: true,
+    primary_evidence_id: 'ev-p',
+    primary_parse_error: 'json_parse_failed',
+    correction_evidence_id: 'ev-c',
+    correction_parse_error: null,
+  };
+
+  const primarySignals = extractStructuralSignals({
+    librarian_proposal: {
+      structural_parse_error: 'json_parse_failed',
+      proposal_generation_stage: 'primary',
+      contract_lineage: lineage,
+    },
+  }, { correlation: { inference_kind: 'librarian_proposal' } });
+  assert.equal(primarySignals.structural_valid, false);
+  assert.equal(primarySignals.structural_error, 'json_parse_failed');
+
+  const correctionSignals = extractStructuralSignals({
+    librarian_proposal: {
+      structural_parse_error: null,
+      proposal_generation_stage: 'contract_correction',
+      contract_lineage: lineage,
+    },
+  }, { correlation: { inference_kind: 'librarian_proposal_contract_correction' } });
+  assert.equal(correctionSignals.structural_valid, true);
+  assert.equal(correctionSignals.structural_error, null);
+
+  const primaryHealth = buildInferenceHealth({
+    profile: { maxTokens: 4096 },
+    correlation: { inference_kind: 'librarian_proposal', evidence_id: 'ev-p' },
+    decision: {
+      librarian_proposal: {
+        structural_parse_error: 'json_parse_failed',
+        proposal_generation_stage: 'primary',
+        contract_lineage: lineage,
+      },
+    },
+    trace: {
+      finish: { kind: 'stop' },
+      usage: { outputTokens: 40, reasoningTokens: 10, inputTokens: 500 },
+      failed: false,
+    },
+    assistantText: '{bad',
+  });
+  assert.equal(primaryHealth.structural_valid, false);
+  assert.equal(primaryHealth.recovery.state, 'recovered');
+
+  const correctionHealth = buildInferenceHealth({
+    profile: { maxTokens: 8192 },
+    correlation: {
+      inference_kind: 'librarian_proposal_contract_correction',
+      evidence_id: 'ev-c',
+      parent_inference_id: 'inf-p',
+    },
+    decision: {
+      librarian_proposal: {
+        structural_parse_error: null,
+        proposal_generation_stage: 'contract_correction',
+        contract_lineage: lineage,
+      },
+    },
+    trace: {
+      finish: { kind: 'stop' },
+      usage: { outputTokens: 80, reasoningTokens: 20, inputTokens: 600 },
+      failed: false,
+    },
+    assistantText: '{"ok":true}',
+  });
+  assert.equal(correctionHealth.structural_valid, true);
+  assert.equal(correctionHealth.recovery.state, 'recovered');
+
+  const failedCorrection = extractStructuralSignals({
+    librarian_proposal: {
+      proposal_generation_stage: 'contract_correction',
+      contract_lineage: {
+        ...lineage,
+        correction_parse_error: 'still_invalid',
+      },
+    },
+  }, { correlation: { inference_kind: 'librarian_proposal_contract_correction' } });
+  assert.equal(failedCorrection.structural_valid, false);
+  assert.equal(failedCorrection.structural_error, 'still_invalid');
 });
 
 test('store: primary failure remains visible after successful correction recovery', (t) => {
@@ -231,16 +356,21 @@ test('store: primary failure remains visible after successful correction recover
   assert.equal(primary.inference_health.configured_max_tokens, 4096);
   assert.equal(correction.inference_health.recovery.state, 'recovered');
   assert.equal(correction.inference_health.hard_exhaustion, false);
+  assert.equal(correction.inference_health.structural_valid, true);
+  assert.equal(correction.inference_health.structural_error, null);
 
   const index = store.readIndex('sess-health');
   const group = index.inference_health.by_group['inference_kind:librarian_proposal'];
   const corrGroup = index.inference_health.by_group['inference_kind:librarian_proposal_contract_correction'];
   assert.equal(group.hard_exhaustion_count, 1);
   assert.equal(group.recovered_primary_failure_count, 1);
+  assert.equal(group.structural_failure_count, 1);
   assert.equal(corrGroup.correction_attempt_count, 1);
+  assert.equal(corrGroup.structural_failure_count, 0);
   assert.equal(index.inference_health.totals.hard_exhaustion_count, 1);
   assert.equal(index.inference_health.totals.correction_attempt_count, 1);
   assert.equal(index.inference_health.totals.recovered_primary_failure_count, 1);
+  assert.equal(index.inference_health.totals.structural_failure_count, 1);
 });
 
 test('structural primary failure then successful correction', (t) => {
@@ -296,6 +426,12 @@ test('structural primary failure then successful correction', (t) => {
   assert.equal(primary.inference_health.structural_valid, false);
   assert.equal(primary.inference_health.recovery.state, 'recovered');
   assert.equal(primary.inference_health.hard_exhaustion, false);
+  const correction = store.readAttempt('sess-health', 'ev-s-corr');
+  assert.equal(correction.inference_health.structural_valid, true);
+  assert.equal(correction.inference_health.recovery.state, 'recovered');
+  const index = store.readIndex('sess-health');
+  assert.equal(index.inference_health.totals.structural_failure_count, 1);
+  assert.equal(index.inference_health.totals.recovered_primary_failure_count, 1);
 });
 
 test('historical attempts without health fields rebuild honestly', (t) => {
@@ -450,9 +586,12 @@ test('#111-analog corpus: systematic correction dependence discoverable in Level
   assert.equal(plot.hard_exhaustion_rate, 1);
   assert.equal(plot.recovered_primary_failure_count, 5);
   assert.equal(plot.recovered_primary_failure_rate, 1);
+  assert.equal(plot.structural_failure_count, 5);
   assert.equal(plotCorr.correction_attempt_count, 5);
   assert.equal(plotCorr.correction_attempt_rate, 1);
+  assert.equal(plotCorr.structural_failure_count, 0);
   assert.equal(healthIndex.totals.correction_attempt_count, 5);
+  assert.equal(healthIndex.totals.structural_failure_count, 5);
   assert.ok(healthIndex.totals.correction_attempt_rate > 0);
   assert.ok(
     plot.recovered_primary_failure_rate === 1
