@@ -487,6 +487,15 @@ export function createDomainApiClient(baseUrl) {
         'preparePlayerDecompositionContext',
       );
     },
+    normalizePlayerDecomposition(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/player-decomposition/normalize',
+        body,
+        'normalizePlayerDecomposition',
+      );
+    },
     preparePlayerVisibilityTriageContext(body) {
       return postJson(
         metrics,

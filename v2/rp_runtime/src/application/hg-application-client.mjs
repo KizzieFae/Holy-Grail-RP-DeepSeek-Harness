@@ -330,6 +330,12 @@ export class HolyGrailApplicationClient {
             playerDecomposition = triageResult.playerDecomposition;
           } else {
             const decompositionInferenceId = `player-decomposition-${crypto.randomUUID()}`;
+            const decompositionModelProfile = modelProfileForInferenceKind(
+              modelProfile,
+              'player_decomposition',
+              { ...this.runtimeSettings, ...input },
+              { inferenceMode: this.options.inferenceMode },
+            );
             const decompositionResult = await phaseExecutors.runPlayerDecomposition({
               api,
               trace,
@@ -340,7 +346,7 @@ export class HolyGrailApplicationClient {
               inferenceId: decompositionInferenceId,
               playerContent: userMessage,
               mockResponses: input.mockPlayerDecompositionResponses,
-              modelProfile,
+              modelProfile: decompositionModelProfile,
             });
             playerDecomposition = decompositionResult.playerDecomposition;
           }

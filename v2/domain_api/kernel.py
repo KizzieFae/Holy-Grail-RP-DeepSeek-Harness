@@ -51,6 +51,7 @@ from .contract import (  # noqa: E402
     OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
     PlayerDecompositionContextPrepareRequest,
+    PlayerDecompositionNormalizeRequest,
     PlayerVisibilityTriageContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
@@ -101,6 +102,9 @@ from .opening_segmentation_context import (  # noqa: E402
 )
 from .player_decomposition_context import (  # noqa: E402
     prepare_player_decomposition_context as build_player_decomposition_context,
+)
+from .player_decomposition_normalize import (  # noqa: E402
+    normalize_player_decomposition_request,
 )
 from .player_visibility_triage_context import (  # noqa: E402
     prepare_player_visibility_triage_context as build_player_visibility_triage_context,
@@ -1454,6 +1458,18 @@ class DomainKernel:
     ) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_session_id)
         return build_player_decomposition_context(fixture, req)
+
+    def normalize_player_decomposition(
+        self, req: PlayerDecompositionNormalizeRequest
+    ) -> dict[str, Any]:
+        self.store.require(req.hg_session_id)
+        return normalize_player_decomposition_request(
+            content=req.content,
+            speaker=req.speaker,
+            semantic_decomposition=req.semantic_decomposition,
+            generation=req.generation,
+            attempt_index=req.attempt_index,
+        )
 
     def prepare_player_visibility_triage_context(
         self, req: PlayerVisibilityTriageContextPrepareRequest

@@ -44,6 +44,9 @@ export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
   librarian_proposal_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
 };
 
+/** Inference kinds with intentionally uncapped output tokens (#124 measurement). */
+export const UNCAPPED_INFERENCE_KINDS = new Set(['player_decomposition']);
+
 /** Operation-specific reasoning overrides (#110). Role defaults remain unchanged. */
 export const PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES = {
   opening_segmentation: 'off',
@@ -115,6 +118,14 @@ export function tokenCeilingForInferenceKind(inferenceKind, settings = {}, optio
 export function modelProfileForInferenceKind(modelProfile, inferenceKind, settings = {}, options = {}) {
   if (!modelProfile || !inferenceKind || modelProfile.kind === 'mock') {
     return modelProfile;
+  }
+  if (UNCAPPED_INFERENCE_KINDS.has(inferenceKind)) {
+    const reasoningOverride = PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES[inferenceKind];
+    const { maxTokens: _removed, ...rest } = modelProfile;
+    return {
+      ...rest,
+      ...(reasoningOverride !== undefined ? { reasoningEffort: reasoningOverride } : {}),
+    };
   }
   const ceiling = tokenCeilingForInferenceKind(inferenceKind, settings, options);
   const reasoningOverride = PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES[inferenceKind];

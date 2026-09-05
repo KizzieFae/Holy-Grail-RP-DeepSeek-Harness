@@ -21,6 +21,7 @@ from .contract import (
     OpeningPerceptualVisibilityAttachRequest,
     OpeningSegmentationContextPrepareRequest,
     PlayerDecompositionContextPrepareRequest,
+    PlayerDecompositionNormalizeRequest,
     PlayerVisibilityTriageContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
@@ -702,6 +703,17 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     attempt_index=int(data.get("attempt_index", 0)),
                 )
                 self._send_json(200, self.kernel.prepare_player_decomposition_context(req))
+                return
+            if path == "/v1/sessions/player-decomposition/normalize":
+                req = PlayerDecompositionNormalizeRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    content=str(data["content"]),
+                    speaker=str(data.get("speaker", "Player")),
+                    semantic_decomposition=data.get("semantic_decomposition"),
+                    generation=data.get("generation"),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                )
+                self._send_json(200, self.kernel.normalize_player_decomposition(req))
                 return
             if path == "/v1/sessions/player-visibility-triage/context/prepare":
                 req = PlayerVisibilityTriageContextPrepareRequest(

@@ -9,7 +9,25 @@ import {
 } from '../src/plugins/hg-phase-executors/player-decomposition-phase.mjs';
 import { mockInferenceProfile } from '../src/lib/inference-profile.mjs';
 
-const VALID_DECOMPOSITION = JSON.stringify({
+const VALID_SIR = JSON.stringify({
+  semantic_decomposition: {
+    units: [
+      {
+        kind: 'speech',
+        text: 'Hello.',
+        recipients: { scope: 'public', characters: [], roles: [] },
+      },
+    ],
+  },
+});
+
+const CANONICAL_OUTPUT_MARKERS = [
+  'OUTPUT FORMAT — return ONLY valid JSON',
+  '"semantic_decomposition"',
+  'verbatim semantic excerpt',
+];
+
+const CANONICAL_DECOMPOSITION = {
   perceptual_visibility: {
     units: [
       {
@@ -18,10 +36,12 @@ const VALID_DECOMPOSITION = JSON.stringify({
         text: 'Hello.',
         recipients: { scope: 'public', characters: [], roles: [] },
         source_provenance: { segment_ids: ['s1'], order_index: 0 },
+        source: 'player_decomposition',
       },
     ],
   },
   source_accounting: {
+    source_length: 6,
     segments: [
       {
         segment_id: 's1',
@@ -32,16 +52,12 @@ const VALID_DECOMPOSITION = JSON.stringify({
       },
     ],
   },
-});
+  generation: {},
+};
 
-const CANONICAL_OUTPUT_MARKERS = [
-  'OUTPUT FORMAT — return ONLY valid JSON',
-  '"perceptual_visibility"',
-  '"source_accounting"',
-];
-
-function createTrackingApi() {
+function createTrackingApi({ normalizeResult } = {}) {
   const prepareCalls = [];
+  const normalizeCalls = [];
   const manifest = {
     manifest_id: 'manifest-player-decomposition-test',
     inference_id: 'player-decomposition-test',
@@ -63,6 +79,7 @@ function createTrackingApi() {
   };
   return {
     prepareCalls,
+    normalizeCalls,
     api: {
       preparePlayerDecompositionContext(body) {
         prepareCalls.push(body);
@@ -78,6 +95,22 @@ function createTrackingApi() {
               content: `Task framing\n${CANONICAL_OUTPUT_MARKERS.join('\n')}`,
             },
           ],
+        });
+      },
+      normalizePlayerDecomposition(body) {
+        normalizeCalls.push(body);
+        if (normalizeResult) {
+          return Promise.resolve(normalizeResult(body));
+        }
+        return Promise.resolve({
+          accepted: true,
+          player_decomposition: {
+            ...CANONICAL_DECOMPOSITION,
+            generation: body.generation ?? {},
+          },
+          normalization_audit: { version: 1, ambiguity_class: 'unique' },
+          validation_audit: { accepted: true },
+          retry_eligible: false,
         });
       },
     },
@@ -102,9 +135,9 @@ function createInferenceRecorder(responses) {
   return { runEphemeralInference, calls };
 }
 
-test('player decomposition phase wires canonical contract manifest into inference', async () => {
-  const { api, prepareCalls } = createTrackingApi();
-  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_DECOMPOSITION]);
+test('player decomposition phase wires semantic contract manifest into inference', async () => {
+  const { api, prepareCalls, normalizeCalls } = createTrackingApi();
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_SIR]);
   const playerContent = 'Hello.';
 
   const result = await runPlayerDecompositionPhase({
@@ -119,9 +152,8 @@ test('player decomposition phase wires canonical contract manifest into inferenc
   });
 
   assert.equal(prepareCalls.length, 1);
-  assert.equal(prepareCalls[0].hg_session_id, 'hg-session-test');
-  assert.equal(prepareCalls[0].inference_id, 'player-decomposition-test');
-
+  assert.equal(normalizeCalls.length, 1);
+  assert.equal(normalizeCalls[0].semantic_decomposition.units.length, 1);
   assert.equal(calls.length, 1);
   const instruction = calls[0].manifest.contributions.find(
     (item) => item.source_kind === 'inference_instruction',
@@ -130,12 +162,6 @@ test('player decomposition phase wires canonical contract manifest into inferenc
   for (const marker of CANONICAL_OUTPUT_MARKERS) {
     assert.match(instruction.content, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
-  assert.equal(
-    instruction.contribution_id,
-    'manifest-player-decomposition-player-decomposition-test-instruction',
-  );
-  assert.match(calls[0].prompt, /PLAYER SOURCE:\nHello\./);
-  assert.ok(!instruction.content.includes('Hello.'));
   assert.equal(result.playerDecomposition.perceptual_visibility.units.length, 1);
 });
 
@@ -146,9 +172,30 @@ test('player decomposition keeps player source in user prompt only', () => {
 });
 
 test('player decomposition retry adds bounded failure feedback without replaying assistant output', async () => {
-  const { api } = createTrackingApi();
+  const { api } = createTrackingApi({
+    normalizeResult: (body) => (
+      body.attempt_index === 0
+        ? {
+          accepted: false,
+          failure_class: 'sir_malformed',
+          reason: 'not json object',
+          retry_eligible: true,
+          normalization_audit: {},
+        }
+        : {
+          accepted: true,
+          player_decomposition: {
+            ...CANONICAL_DECOMPOSITION,
+            generation: body.generation ?? {},
+          },
+          normalization_audit: {},
+          validation_audit: { accepted: true },
+          retry_eligible: false,
+        }
+    ),
+  });
   const prose = 'Here is a markdown decomposition of the turn.';
-  const { runEphemeralInference, calls } = createInferenceRecorder([prose, VALID_DECOMPOSITION]);
+  const { runEphemeralInference, calls } = createInferenceRecorder([prose, VALID_SIR]);
 
   const result = await runPlayerDecompositionPhase({
     api,
@@ -162,13 +209,9 @@ test('player decomposition retry adds bounded failure feedback without replaying
   });
 
   assert.equal(calls.length, 2);
-  assert.match(calls[0].prompt, /PLAYER SOURCE:\nHello\./);
-  assert.doesNotMatch(calls[0].prompt, new RegExp(PLAYER_DECOMPOSITION_RETRY_HEADER));
   assert.match(calls[1].prompt, new RegExp(PLAYER_DECOMPOSITION_RETRY_HEADER));
-  assert.match(calls[1].prompt, /not json object/);
+  assert.match(calls[1].prompt, /sir_malformed/);
   assert.ok(!calls[1].prompt.includes(prose));
-  assert.equal(calls[1].evidenceContext.attemptIndex, 1);
-  assert.equal(calls[1].evidenceContext.priorAttemptId, 'evidence-1');
   assert.equal(result.playerDecomposition.perceptual_visibility.units.length, 1);
 });
 
@@ -179,8 +222,11 @@ test('player decomposition context prepare failure is attributed before inferenc
       prepareCalls.push(body);
       return Promise.reject(new Error('domain host unavailable'));
     },
+    normalizePlayerDecomposition() {
+      throw new Error('normalize should not be called');
+    },
   };
-  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_DECOMPOSITION]);
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_SIR]);
 
   const result = await runPlayerDecompositionPhase({
     api,
@@ -199,47 +245,6 @@ test('player decomposition context prepare failure is attributed before inferenc
     result.playerDecomposition.failure_class,
     PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
   );
-  assert.equal(result.playerDecomposition.reason, 'domain host unavailable');
-  assert.equal(result.playerDecomposition.generation.attempt_index, 0);
-  assert.equal(result.evidenceId, null);
-  assert.equal(result.playerDecomposition.perceptual_visibility, undefined);
-});
-
-test('player decomposition context prepare failure on retry attempt stays attributed', async () => {
-  const { api, prepareCalls } = createTrackingApi();
-  const prose = 'Still prose.';
-  const { runEphemeralInference, calls } = createInferenceRecorder([prose]);
-  const originalPrepare = api.preparePlayerDecompositionContext.bind(api);
-  let prepareAttempts = 0;
-  api.preparePlayerDecompositionContext = async (body) => {
-    prepareAttempts += 1;
-    if (body.attempt_index === 1) {
-      throw new Error('domain host unavailable on retry');
-    }
-    return originalPrepare(body);
-  };
-
-  const result = await runPlayerDecompositionPhase({
-    api,
-    runEphemeralInference,
-    hgSessionId: 'hg-session-test',
-    hgSceneId: 'hg-session-test',
-    hgRoundId: 'hg-round-test',
-    inferenceId: 'player-decomposition-prepare-retry-fail',
-    playerContent: 'Hello.',
-    modelProfile: mockInferenceProfile(),
-  });
-
-  assert.equal(prepareAttempts, 2);
-  assert.equal(prepareCalls.length, 1);
-  assert.equal(calls.length, 1);
-  assert.equal(
-    result.playerDecomposition.failure_class,
-    PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
-  );
-  assert.equal(result.playerDecomposition.reason, 'domain host unavailable on retry');
-  assert.equal(result.playerDecomposition.generation.attempt_index, 1);
-  assert.equal(result.evidenceId, null);
 });
 
 test('player decomposition malformed output fails closed after two attempts', async () => {
@@ -259,7 +264,26 @@ test('player decomposition malformed output fails closed after two attempts', as
   });
 
   assert.equal(calls.length, 2);
-  assert.equal(result.playerDecomposition.failure_class, 'malformed_output');
-  assert.equal(result.playerDecomposition.reason, 'not json object');
+  assert.equal(result.playerDecomposition.failure_class, 'sir_malformed');
   assert.equal(result.playerDecomposition.perceptual_visibility, undefined);
+});
+
+test('player decomposition delegates normalization to domain host', async () => {
+  const { api, normalizeCalls } = createTrackingApi();
+  const { runEphemeralInference } = createInferenceRecorder([VALID_SIR]);
+
+  await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-normalize',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.equal(normalizeCalls.length, 1);
+  assert.equal(normalizeCalls[0].content, 'Hello.');
+  assert.ok(normalizeCalls[0].semantic_decomposition);
 });

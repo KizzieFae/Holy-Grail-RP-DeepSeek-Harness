@@ -1,0 +1,13 @@
+{
+  "experiment": "issue124_live_semantic_validation",
+  "generated_at": "2026-09-05T07:46:59.127Z",
+  "case_id": "complex_dense_seiza_japan",
+  "inference_id": "issue124-live-complex-dense",
+  "max_tokens": null,
+  "attempt_count": 2,
+  "normalization_accepted": false,
+  "failure_class": "inference_unavailable",
+  "unit_count": 0,
+  "normalization_audit": null,
+  "evidence_id": null
+}

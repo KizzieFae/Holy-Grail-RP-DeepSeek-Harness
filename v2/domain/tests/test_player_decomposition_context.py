@@ -34,8 +34,8 @@ class PlayerDecompositionContextTests(unittest.TestCase):
             "manifest-player-decomposition-player-decomposition-test-1-instruction",
         )
         self.assertIn("OUTPUT FORMAT — return ONLY valid JSON", instruction.content)
-        self.assertIn('"perceptual_visibility"', instruction.content)
-        self.assertIn('"source_accounting"', instruction.content)
+        self.assertIn('"semantic_decomposition"', instruction.content)
+        self.assertIn("verbatim semantic excerpt", instruction.content)
         self.assertIn(PLAYER_DECOMPOSITION_OUTPUT_INSTRUCTION.strip(), instruction.content)
 
     def test_kernel_prepare_player_decomposition_context(self) -> None:
@@ -50,7 +50,7 @@ class PlayerDecompositionContextTests(unittest.TestCase):
         instruction = next(
             item for item in manifest.contributions if item.source_kind == "inference_instruction"
         )
-        self.assertIn("Do not use presentation_only.", instruction.content)
+        self.assertIn("DO NOT include:", instruction.content)
         self.assertIn("intrinsically nonperceptual player information", instruction.content)
         self.assertIn("NOT internal", instruction.content)
         self.assertNotIn("Unexpressed cognition: internal", instruction.content)
