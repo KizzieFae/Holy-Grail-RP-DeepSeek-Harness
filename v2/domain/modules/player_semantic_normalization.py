@@ -14,14 +14,19 @@ from player_source_accounting import (
     normalized_source_sha256,
 )
 
-NORMALIZER_VERSION = 3
+NORMALIZER_VERSION = 4
 PLAYER_UNIT_SOURCE = "player_decomposition"
 
-# DFS node visits for global assignment search. Benchmarked 2026-09-05:
-# - representative / Yes.Yes / material ambiguity: <= 5 nodes
-# - 7-unit identical single-char equivalent tiling: 13,700 nodes (~160ms)
-# - 9-unit pathological tiling: budget fail at 15,001 nodes (~220ms) vs 100,001 (~1.4s)
-NORMALIZATION_SEARCH_NODE_BUDGET = 15_000
+# Unified deterministic work budget for normalization (#124 / G-124-03).
+# Charges occurrence scanning, substantive-mask construction, DFS visits,
+# candidate probes, and overlap checks. Benchmarked 2026-09-05:
+# - representative / Yes.Yes / material ambiguity: <= 20 work units
+# - 7-unit identical single-char tiling: ~42k work (~160ms), accepts
+# - 9-unit pathological tiling: budget fail ~25k work (~120ms)
+# - 50k-source 1-char excerpt: budget fail during occurrence_scan (<5ms)
+NORMALIZATION_DETERMINISTIC_WORK_BUDGET = 80_000
+# Retained alias — DFS node visits are one charged operation inside the work budget.
+NORMALIZATION_SEARCH_NODE_BUDGET = NORMALIZATION_DETERMINISTIC_WORK_BUDGET
 
 VALID_PLAYER_SIR_KINDS = frozenset(
     {"observable_scene", "observable_event", "speech", "internal"}
@@ -55,6 +60,53 @@ RETRY_ELIGIBLE_FAILURES = frozenset(
 )
 
 
+@dataclass
+class _DeterministicWorkLedger:
+    budget: int
+    consumed: int = 0
+    occurrence_scan_steps: int = 0
+    candidates_generated: int = 0
+    substantive_mask_steps: int = 0
+    candidate_probes: int = 0
+    overlap_checks: int = 0
+    dfs_nodes_visited: int = 0
+    exhaustion_stage: str | None = None
+
+    def charge(self, amount: int, stage: str) -> bool:
+        if amount <= 0:
+            return True
+        if self.consumed + amount > self.budget:
+            self.exhaustion_stage = stage
+            return False
+        self.consumed += amount
+        if stage == "occurrence_scan":
+            self.occurrence_scan_steps += amount
+        elif stage == "candidates_generated":
+            self.candidates_generated += amount
+        elif stage == "substantive_mask":
+            self.substantive_mask_steps += amount
+        elif stage == "candidate_probe":
+            self.candidate_probes += amount
+        elif stage == "overlap_check":
+            self.overlap_checks += amount
+        elif stage == "dfs_visit":
+            self.dfs_nodes_visited += amount
+        return True
+
+    def to_audit(self) -> dict[str, Any]:
+        return {
+            "deterministic_work_budget": self.budget,
+            "work_consumed": self.consumed,
+            "work_occurrence_scan": self.occurrence_scan_steps,
+            "work_candidates_generated": self.candidates_generated,
+            "work_substantive_mask": self.substantive_mask_steps,
+            "work_candidate_probes": self.candidate_probes,
+            "work_overlap_checks": self.overlap_checks,
+            "search_nodes_visited": self.dfs_nodes_visited,
+            "work_exhaustion_stage": self.exhaustion_stage,
+        }
+
+
 @dataclass(frozen=True)
 class _SirUnit:
     index: int
@@ -76,18 +128,41 @@ def _is_substantive_char(char: str) -> bool:
     return bool(char) and not char.isspace()
 
 
-def _find_occurrences(source: str, text: str) -> list[_Span]:
+def _find_occurrences(
+    source: str,
+    text: str,
+    *,
+    ledger: _DeterministicWorkLedger | None = None,
+) -> list[_Span] | None:
     if not text:
         return []
     spans: list[_Span] = []
     start = 0
     while True:
+        if ledger is not None and not ledger.charge(1, "occurrence_scan"):
+            return None
         index = source.find(text, start)
         if index < 0:
             break
         spans.append(_Span(index, index + len(text)))
+        if ledger is not None:
+            ledger.charge(1, "candidates_generated")
         start = index + 1
     return spans
+
+
+def _substantive_mask(
+    source: str,
+    *,
+    ledger: _DeterministicWorkLedger | None = None,
+) -> int | None:
+    mask = 0
+    for index, char in enumerate(source):
+        if ledger is not None and not ledger.charge(1, "substantive_mask"):
+            return None
+        if _is_substantive_char(char):
+            mask |= 1 << index
+    return mask
 
 
 def _parse_sir_units(
@@ -153,14 +228,6 @@ def _substantive_complete(source: str, spans: list[_Span]) -> bool:
         if _is_substantive_char(char) and not covered[index]:
             return False
     return True
-
-
-def _substantive_mask(source: str) -> int:
-    mask = 0
-    for index, char in enumerate(source):
-        if _is_substantive_char(char):
-            mask |= 1 << index
-    return mask
 
 
 def _span_substantive_mask(source: str, span: _Span) -> int:
@@ -291,17 +358,34 @@ def _build_player_decomposition(
     }
 
 
+def _budget_failure_audit(
+    ledger: _DeterministicWorkLedger,
+    *,
+    stage: str,
+) -> dict[str, Any]:
+    audit = {
+        "version": NORMALIZER_VERSION,
+        "budget_exceeded": True,
+        "work_exhaustion_stage": stage,
+        **ledger.to_audit(),
+    }
+    # Back-compat alias: search_budget now reports the unified work budget.
+    audit["search_budget"] = ledger.budget
+    return audit
+
+
 def _search_and_resolve_assignment(
     source: str,
     units: list[_SirUnit],
     *,
     attempt_index: int,
 ) -> tuple[list[tuple[_SirUnit, _Span]] | None, str, str, dict[str, Any]]:
+    ledger = _DeterministicWorkLedger(budget=NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
     audit: dict[str, Any] = {
         "version": NORMALIZER_VERSION,
-        "search_budget": NORMALIZATION_SEARCH_NODE_BUDGET,
-        "search_nodes_visited": 0,
+        **ledger.to_audit(),
     }
+    audit["search_budget"] = ledger.budget
 
     if not units:
         if any(_is_substantive_char(char) for char in source):
@@ -313,10 +397,18 @@ def _search_and_resolve_assignment(
 
     candidates: list[list[_Span]] = []
     for unit in units:
-        occurrences = _find_occurrences(source, unit.text)
+        occurrences = _find_occurrences(source, unit.text, ledger=ledger)
+        if occurrences is None:
+            return (
+                None,
+                FAILURE_SEARCH_BUDGET_EXCEEDED,
+                "deterministic normalization work budget exceeded",
+                _budget_failure_audit(ledger, stage=ledger.exhaustion_stage or "occurrence_scan"),
+            )
         if not occurrences:
             reason = f"unit {unit.index} excerpt not found in source"
             audit["failure_reason"] = reason
+            audit.update(ledger.to_audit())
             return None, FAILURE_SIR_NON_VERBATIM, reason, audit
         candidates.append(occurrences)
 
@@ -326,12 +418,19 @@ def _search_and_resolve_assignment(
     for index in range(len(order) - 1, -1, -1):
         suffix_capacity[index] = suffix_capacity[index + 1] + remaining_text_capacity[index]
 
-    substantive_mask = _substantive_mask(source)
+    substantive_mask = _substantive_mask(source, ledger=ledger)
+    if substantive_mask is None:
+        return (
+            None,
+            FAILURE_SEARCH_BUDGET_EXCEEDED,
+            "deterministic normalization work budget exceeded",
+            _budget_failure_audit(ledger, stage=ledger.exhaustion_stage or "substantive_mask"),
+        )
+
     partial_exists = False
     complete_count = 0
     budget_exceeded = False
     material_proven = False
-    nodes_visited = 0
     fingerprint_best: dict[
         tuple[tuple[str, str, str, int], ...],
         tuple[list[tuple[_SirUnit, _Span]], tuple[tuple[int, int, int], ...]],
@@ -343,12 +442,11 @@ def _search_and_resolve_assignment(
         occupied: list[_Span],
         covered_mask: int,
     ) -> None:
-        nonlocal partial_exists, complete_count, budget_exceeded, material_proven, nodes_visited
+        nonlocal partial_exists, complete_count, budget_exceeded, material_proven
         if budget_exceeded or material_proven:
             return
 
-        nodes_visited += 1
-        if nodes_visited > NORMALIZATION_SEARCH_NODE_BUDGET:
+        if not ledger.charge(1, "dfs_visit"):
             budget_exceeded = True
             return
 
@@ -376,8 +474,18 @@ def _search_and_resolve_assignment(
         for span in candidates[unit_index]:
             if budget_exceeded or material_proven:
                 return
-            if any(span.overlaps(existing) for existing in occupied):
-                partial_exists = True
+            if not ledger.charge(1, "candidate_probe"):
+                budget_exceeded = True
+                return
+            overlap_blocked = False
+            for existing in occupied:
+                if span.overlaps(existing):
+                    partial_exists = True
+                    overlap_blocked = True
+                    break
+            if budget_exceeded or material_proven:
+                return
+            if overlap_blocked:
                 continue
             chosen.append((unit, span))
             occupied.append(span)
@@ -391,12 +499,13 @@ def _search_and_resolve_assignment(
             chosen.pop()
 
     visit(0, [], [], 0)
-    audit["search_nodes_visited"] = nodes_visited
+    audit.update(ledger.to_audit())
     audit["assignment_count"] = complete_count
 
     if budget_exceeded:
         audit["budget_exceeded"] = True
-        reason = "deterministic normalization search budget exceeded"
+        audit["work_exhaustion_stage"] = ledger.exhaustion_stage or "dfs_visit"
+        reason = "deterministic normalization work budget exceeded"
         return None, FAILURE_SEARCH_BUDGET_EXCEEDED, reason, audit
 
     if material_proven or len(fingerprint_best) >= 2:

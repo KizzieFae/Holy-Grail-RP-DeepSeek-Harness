@@ -12,7 +12,7 @@ from player_semantic_normalization import (
     FAILURE_SIR_NON_VERBATIM,
     FAILURE_SIR_SUBSTANTIVE_OMISSION,
     FAILURE_VALIDATION_REJECTED,
-    NORMALIZATION_SEARCH_NODE_BUDGET,
+    NORMALIZATION_DETERMINISTIC_WORK_BUDGET,
     normalize_player_semantic_decomposition,
 )
 from player_perceptual_service import validate_player_perceptual_decomposition
@@ -265,7 +265,8 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         self.assertTrue(result["retry_eligible"])
         audit = result["normalization_audit"]
         self.assertTrue(audit.get("budget_exceeded"))
-        self.assertGreater(audit.get("search_nodes_visited", 0), NORMALIZATION_SEARCH_NODE_BUDGET)
+        self.assertGreaterEqual(audit.get("work_consumed", 0), NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
+        self.assertIn(audit.get("work_exhaustion_stage"), {"dfs_visit", "candidate_probe", "occurrence_scan"})
 
     def test_pathological_tiling_fails_within_time_bound(self) -> None:
         content = "a" * 9
@@ -313,7 +314,7 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         self.assertTrue(result["accepted"])
         audit = result["normalization_audit"]
         self.assertEqual(audit.get("ambiguity_class"), "equivalent")
-        self.assertLessEqual(audit.get("search_nodes_visited", 0), NORMALIZATION_SEARCH_NODE_BUDGET)
+        self.assertLessEqual(audit.get("work_consumed", 0), NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
 
     def test_omission_pathology_terminates_within_budget(self) -> None:
         content = "a" * 50
@@ -328,9 +329,61 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         self.assertEqual(result["failure_class"], FAILURE_SIR_SUBSTANTIVE_OMISSION)
         self.assertLess(elapsed_ms, 2000)
         self.assertLessEqual(
-            result["normalization_audit"].get("search_nodes_visited", 0),
-            NORMALIZATION_SEARCH_NODE_BUDGET,
+            result["normalization_audit"].get("work_consumed", 0),
+            NORMALIZATION_DETERMINISTIC_WORK_BUDGET,
         )
+
+    def test_long_source_budget_exceeded_not_omission(self) -> None:
+        content = "a" * 50_000
+        start = time.perf_counter()
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(7),
+            attempt_index=0,
+        )
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
+        self.assertNotEqual(result["failure_class"], FAILURE_SIR_SUBSTANTIVE_OMISSION)
+        audit = result["normalization_audit"]
+        self.assertTrue(audit.get("budget_exceeded"))
+        self.assertEqual(audit.get("work_exhaustion_stage"), "occurrence_scan")
+        self.assertGreaterEqual(audit.get("work_consumed", 0), NORMALIZATION_DETERMINISTIC_WORK_BUDGET)
+        self.assertLess(elapsed_ms, 250)
+
+    def test_long_source_multi_unit_budget_exceeded_quickly(self) -> None:
+        content = "a" * 10_000
+        start = time.perf_counter()
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(7),
+        )
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
+        self.assertEqual(result["normalization_audit"].get("work_exhaustion_stage"), "occurrence_scan")
+        self.assertLess(elapsed_ms, 250)
+
+    def test_budget_audit_fields_present_on_failure(self) -> None:
+        result = normalize_player_semantic_decomposition(
+            content="a" * 9,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(9),
+            attempt_index=0,
+        )
+        audit = result["normalization_audit"]
+        for field in (
+            "deterministic_work_budget",
+            "work_consumed",
+            "work_occurrence_scan",
+            "work_candidates_generated",
+            "work_substantive_mask",
+            "work_candidate_probes",
+            "search_nodes_visited",
+            "work_exhaustion_stage",
+        ):
+            self.assertIn(field, audit)
 
     def test_material_ambiguity_early_exit_stays_bounded(self) -> None:
         content = "she nodded. she nodded."
