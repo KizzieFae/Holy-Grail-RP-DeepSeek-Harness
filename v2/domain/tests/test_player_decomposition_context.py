@@ -25,9 +25,21 @@ class PlayerDecompositionContextTests(unittest.TestCase):
 
         self.assertEqual(manifest.role, "player_decomposition")
         self.assertEqual(manifest.manifest_id, "manifest-player-decomposition-player-decomposition-test-1")
-        self.assertEqual(len(manifest.contributions), 1)
+        self.assertEqual(len(manifest.contributions), 2)
 
-        instruction = manifest.contributions[0]
+        entitlement = next(
+            item
+            for item in manifest.contributions
+            if item.source_kind == "player_pvr_entitlement_context"
+        )
+        self.assertEqual(
+            entitlement.contribution_id,
+            "manifest-player-decomposition-player-decomposition-test-1-entitlement-context",
+        )
+        self.assertEqual(entitlement.authority_class, "authoritative")
+        self.assertIn("PlayerPvrEntitlementContextV1", entitlement.content)
+
+        instruction = manifest.contributions[1]
         self.assertEqual(instruction.source_kind, "inference_instruction")
         self.assertEqual(
             instruction.contribution_id,

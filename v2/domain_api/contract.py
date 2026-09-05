@@ -62,6 +62,7 @@ SourceKind = Literal[
     "triggering_user_context",
     "immediate_user_turn_context",
     "narrator_environment_cognition",
+    "player_pvr_entitlement_context",
 ]
 # librarian_storyteller remains reserved legacy vocabulary; S3b mapper emits storyteller_* lanes.
 ValidationClass = Literal[

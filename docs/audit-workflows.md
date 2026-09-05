@@ -120,8 +120,11 @@ domain_commit_id + continuity_turn_index
 Reconstruct one player turn's Character-facing perception:
 
 ```text
-rp_history user entry (full content preserved)
-  → execution_evidence player_decomposition attempt(s) (inference_id, attempt_index)
+authoritative session cast + Continuity scene_state (present/offstage/roles)
+  → execution_evidence player_decomposition request.contributions
+    (includes PlayerPvrEntitlementContextV1 authoritative contribution)
+  → raw semantic player-PVR result (inference attempt)
+  → #124 Host normalization (deterministic source accounting)
   → metadata.perceptual_visibility (canonical PVR or explicit failure record)
   → metadata.perceptual_visibility_validation (accepted/rejected, failure_class)
   → generation.source_accounting (normalized length/hash, segments, segment↔unit linkage)
@@ -129,6 +132,8 @@ rp_history user entry (full content preserved)
   → perceptual_visibility_projection audit on transcript/trigger lines
   → downstream consumer (recent_scene_transcript / user_turn_trigger / memory)
 ```
+
+Legacy shorthand (pre-#125) omitted the entitlement-context contribution; current full-PVR runs must include it.
 
 **Historical boundary:** user entries without `metadata.perceptual_visibility` classify as `historical_missing_player_decomposition` and are omitted from Character transcript (not retroactively decomposed). **Current failure boundary:** `decomposition_failed` uses neutral transcript marker only; Character trigger omitted; player-interaction memory skipped. Director/orchestration trigger remains full unredacted `content`.
 
