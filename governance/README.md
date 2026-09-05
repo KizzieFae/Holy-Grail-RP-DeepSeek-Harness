@@ -83,6 +83,7 @@ Cursor rules `@`-include execution policies and route project behavior to `sourc
 | `registry-validation-report.md` | Completed registry validation snapshot |
 | `token-efficiency-plan-issue-145.md` | Issue #145 programme provenance (not live workflow authority) |
 | `operational-retrieval-pilot.md` | Closed retrieval pilot runbook |
+| `issue-112-player-pvr-architectural-assessment.md` | Issue #112 player PVR architectural assessment (SQA-03) |
 | `progression-layer-validation-status-v1.md` | Completed progression v1 checkpoint |
 
 ## Separation rules

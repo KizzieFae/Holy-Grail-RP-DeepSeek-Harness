@@ -1,0 +1,536 @@
+{
+  "experiment": "issue121_pvr_8192_two_fixture_repeatability",
+  "generated_at": "2026-09-05T05:00:50.637Z",
+  "head_sha": "4f0d79962bdb0fd89dcec15aa6f5d0e89097f390",
+  "production_profile": {
+    "kind": "dsh",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "reasoningEffort": "low",
+    "maxTokens": 4096
+  },
+  "experimental_profile": {
+    "kind": "dsh",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "reasoningEffort": "low",
+    "maxTokens": 8192
+  },
+  "experimental_max_tokens": 8192,
+  "mechanism": "temp script deepseekInferenceProfile({ reasoningEffort: low, maxTokens: 8192 }) — not tracked in repo",
+  "results": [
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 1,
+      "wall_ms": 56786,
+      "tokens": {
+        "input": 34,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16418
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "e65edebf-3611-4b53-9268-141ea6b552e0",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak": false,
+        "japan_unit": null,
+        "seiza_kind": null,
+        "hesitation_kind": null,
+        "speech_count": 0,
+        "speech_scopes": [],
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 2,
+      "wall_ms": 51832,
+      "tokens": {
+        "input": 34,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16418
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "999ee82a-2efd-41ab-bcf4-fef9d7c6e8e7",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak": false,
+        "japan_unit": null,
+        "seiza_kind": null,
+        "hesitation_kind": null,
+        "speech_count": 0,
+        "speech_scopes": [],
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 3,
+      "wall_ms": 51498,
+      "tokens": {
+        "input": 34,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16418
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "8ec1ec96-cb59-4ec0-a084-7a2745ea6920",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak": false,
+        "japan_unit": null,
+        "seiza_kind": null,
+        "hesitation_kind": null,
+        "speech_count": 0,
+        "speech_scopes": [],
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 4,
+      "wall_ms": 52567,
+      "tokens": {
+        "input": 34,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16418
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "a1af370c-d77b-4772-97f0-0d96885ef2be",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak": false,
+        "japan_unit": null,
+        "seiza_kind": null,
+        "hesitation_kind": null,
+        "speech_count": 0,
+        "speech_scopes": [],
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 5,
+      "wall_ms": 55475,
+      "tokens": {
+        "input": 34,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16418
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "73c0dbbc-6aa8-42f8-94c2-9eef4f560594",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak": false,
+        "japan_unit": null,
+        "seiza_kind": null,
+        "hesitation_kind": null,
+        "speech_count": 0,
+        "speech_scopes": [],
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 1,
+      "wall_ms": 52804,
+      "tokens": {
+        "input": 118,
+        "output": 8192,
+        "reasoning": 7763,
+        "total": 16073
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": true,
+      "assistant_text_len": 1686,
+      "parse_ok": false,
+      "parse_error": "json parse failed",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "json parse failed",
+        "reason": "json parse failed",
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "f696aa9e-c83a-4b0d-838b-ceb664fe7342",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak_harley_private": false,
+        "private_unit": null,
+        "concealed_kind": null,
+        "departure_kind": null,
+        "speech_kind": null,
+        "leak_as_internal": false,
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 2,
+      "wall_ms": 58950,
+      "tokens": {
+        "input": 118,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16502
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "d8f17aee-fa7c-437f-9731-39cd48dbf700",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak_harley_private": false,
+        "private_unit": null,
+        "concealed_kind": null,
+        "departure_kind": null,
+        "speech_kind": null,
+        "leak_as_internal": false,
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 3,
+      "wall_ms": 49850,
+      "tokens": {
+        "input": 118,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16502
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "9a4acfc2-84f5-459b-a0dc-8c52a8afc8c9",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak_harley_private": false,
+        "private_unit": null,
+        "concealed_kind": null,
+        "departure_kind": null,
+        "speech_kind": null,
+        "leak_as_internal": false,
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 4,
+      "wall_ms": 49263,
+      "tokens": {
+        "input": 118,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16502
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "d6136d7a-ab58-4431-a81c-89f78e11e334",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak_harley_private": false,
+        "private_unit": null,
+        "concealed_kind": null,
+        "departure_kind": null,
+        "speech_kind": null,
+        "leak_as_internal": false,
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 5,
+      "wall_ms": 58623,
+      "tokens": {
+        "input": 118,
+        "output": 8192,
+        "reasoning": 8192,
+        "total": 16502
+      },
+      "finish": "max-tokens",
+      "ceiling_exhausted": true,
+      "json_emitted": false,
+      "assistant_text_len": 0,
+      "parse_ok": false,
+      "parse_error": null,
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": null,
+        "notes": []
+      },
+      "viewers": null,
+      "evidence_id": "1d361d6c-984c-4f87-9b09-0ace2e14d28b",
+      "levels": {
+        "level1_semantic": false,
+        "level2_entitlement": false,
+        "material_leak_harley_private": false,
+        "private_unit": null,
+        "concealed_kind": null,
+        "departure_kind": null,
+        "speech_kind": null,
+        "leak_as_internal": false,
+        "level3_segmentation": false,
+        "level4_accounting": false,
+        "level5_viewer_useful": false
+      }
+    }
+  ],
+  "fixture_a_summary": {
+    "completed": 5,
+    "json_emitted": 0,
+    "ceiling_exhausted": 5,
+    "level1_semantic": 0,
+    "level2_entitlement": 0,
+    "material_leaks": 0,
+    "level4_accounting": 0,
+    "contract_valid": 0,
+    "production_useful": 0,
+    "wall_ms": {
+      "min": 51498,
+      "max": 56786,
+      "median": 52567
+    },
+    "reasoning_tokens": {
+      "min": 8192,
+      "max": 8192,
+      "median": 8192
+    },
+    "output_tokens": {
+      "min": 8192,
+      "max": 8192,
+      "median": 8192
+    },
+    "total_tokens": {
+      "min": 16418,
+      "max": 16418,
+      "median": 16418
+    }
+  },
+  "fixture_b_summary": {
+    "completed": 5,
+    "json_emitted": 1,
+    "ceiling_exhausted": 5,
+    "level1_semantic": 0,
+    "level2_entitlement": 0,
+    "material_leaks": 0,
+    "level4_accounting": 0,
+    "contract_valid": 0,
+    "production_useful": 0,
+    "wall_ms": {
+      "min": 49263,
+      "max": 58950,
+      "median": 52804
+    },
+    "reasoning_tokens": {
+      "min": 7763,
+      "max": 8192,
+      "median": 8192
+    },
+    "output_tokens": {
+      "min": 8192,
+      "max": 8192,
+      "median": 8192
+    },
+    "total_tokens": {
+      "min": 16073,
+      "max": 16502,
+      "median": 16502
+    }
+  },
+  "combined_summary": {
+    "completed": 10,
+    "json_emitted": 1,
+    "ceiling_exhausted": 10,
+    "level1_semantic": 0,
+    "level2_entitlement": 0,
+    "material_leaks": 0,
+    "level4_accounting": 0,
+    "contract_valid": 0,
+    "production_useful": 0,
+    "wall_ms": {
+      "min": 49263,
+      "max": 58950,
+      "median": 52804
+    },
+    "reasoning_tokens": {
+      "min": 7763,
+      "max": 8192,
+      "median": 8192
+    },
+    "output_tokens": {
+      "min": 8192,
+      "max": 8192,
+      "median": 8192
+    },
+    "total_tokens": {
+      "min": 16073,
+      "max": 16502,
+      "median": 16418
+    }
+  }
+}
