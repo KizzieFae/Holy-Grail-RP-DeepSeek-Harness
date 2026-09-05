@@ -1,13 +1,372 @@
 {
   "experiment": "issue124_live_semantic_validation",
-  "generated_at": "2026-09-05T07:46:59.127Z",
-  "case_id": "complex_dense_seiza_japan",
-  "inference_id": "issue124-live-complex-dense",
-  "max_tokens": null,
-  "attempt_count": 2,
-  "normalization_accepted": false,
-  "failure_class": "inference_unavailable",
-  "unit_count": 0,
-  "normalization_audit": null,
-  "evidence_id": null
+  "generated_at": "2026-09-05T09:11:25.010Z",
+  "validation_anchor": "0d2b3124e769f9a150fe1d6637e3413120c59be2",
+  "model_profile": {
+    "kind": "dsh",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "reasoningEffort": "low"
+  },
+  "max_tokens_policy": "uncapped",
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue124-live-QZtd4t",
+  "cases": [
+    {
+      "case_id": "ordinary_public",
+      "description": "straightforward ordinary public speech (issue109 public_speech)",
+      "input_chars": 42,
+      "inference_id": "issue124-pd-ordinary_public",
+      "wall_clock_ms": 23869,
+      "max_tokens": null,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "normalization_accepted": true,
+      "parse_ok": true,
+      "unit_count": 2,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_len": 15,
+          "text_preview": "\"Good evening,\"",
+          "order_index": 0
+        },
+        {
+          "unit_id": "u2",
+          "kind": "observable_event",
+          "scope": "public",
+          "characters": [],
+          "text_len": 26,
+          "text_preview": "she said with a small bow.",
+          "order_index": 1
+        }
+      ],
+      "normalization_audit": {
+        "version": 3,
+        "search_budget": 15000,
+        "search_nodes_visited": 3,
+        "assignment_count": 1,
+        "ambiguity_class": "unique",
+        "assignments": [
+          {
+            "sir_index": 0,
+            "char_start": 0,
+            "char_end": 15,
+            "kind": "speech"
+          },
+          {
+            "sir_index": 1,
+            "char_start": 16,
+            "char_end": 42,
+            "kind": "observable_event"
+          }
+        ]
+      },
+      "generation": {
+        "inference_id": "issue124-pd-ordinary_public",
+        "attempt_index": 0,
+        "normalization_stage": null,
+        "has_raw_semantic_output": true,
+        "has_semantic_decomposition": true
+      },
+      "domain_validation": {
+        "validation_status": "valid",
+        "accepted": false,
+        "failure_class": null,
+        "unit_count": 2
+      },
+      "attempts": [
+        {
+          "evidence_id": "78ba03bd-8727-47ef-ac31-c947b4af6aad",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "provider": "deepseek-official",
+          "model": "deepseek-v4-flash",
+          "reasoning_effort": null,
+          "max_tokens": null,
+          "wall_ms": 23869,
+          "input_tokens": 525,
+          "output_tokens": 3258,
+          "reasoning_tokens": 3160,
+          "total_tokens": null,
+          "finish": "stop",
+          "failed": false,
+          "assistant_prefix": "{\n  \"semantic_decomposition\": {\n    \"units\": [\n      {\n        \"kind\": \"speech\",\n        \"text\": \"\\\"Good evening,\\\"\",\n  "
+        }
+      ],
+      "tokens_aggregate": {
+        "input_tokens": 525,
+        "output_tokens": 3258,
+        "reasoning_tokens": 3160,
+        "total_tokens": 0
+      },
+      "evidence_id": "78ba03bd-8727-47ef-ac31-c947b4af6aad"
+    },
+    {
+      "case_id": "mixed_asymmetric",
+      "description": "mixed public/private perceptually asymmetric (#88-shaped mixed turn)",
+      "input_chars": 312,
+      "inference_id": "issue124-pd-mixed_asymmetric",
+      "wall_clock_ms": 13561,
+      "max_tokens": null,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "normalization_accepted": true,
+      "parse_ok": true,
+      "unit_count": 4,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 63,
+          "text_preview": "The player walks away from Harley toward the storeroom archway.",
+          "order_index": 0
+        },
+        {
+          "unit_id": "u2",
+          "kind": "observable_event",
+          "scope": "private",
+          "characters": [],
+          "text_len": 108,
+          "text_preview": "Behind the closed door, the player works a concealed floor-panel latch with a te",
+          "order_index": 1
+        },
+        {
+          "unit_id": "u3",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 73,
+          "text_preview": "The player steps back into Harley's view, brushing dust from their hands.",
+          "order_index": 2
+        },
+        {
+          "unit_id": "u4",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_len": 65,
+          "text_preview": "\"Panel secured—the seam is hidden,\" the player says to the group.",
+          "order_index": 3
+        }
+      ],
+      "normalization_audit": {
+        "version": 3,
+        "search_budget": 15000,
+        "search_nodes_visited": 5,
+        "assignment_count": 1,
+        "ambiguity_class": "unique",
+        "assignments": [
+          {
+            "sir_index": 0,
+            "char_start": 0,
+            "char_end": 63,
+            "kind": "observable_event"
+          },
+          {
+            "sir_index": 1,
+            "char_start": 64,
+            "char_end": 172,
+            "kind": "observable_event"
+          },
+          {
+            "sir_index": 2,
+            "char_start": 173,
+            "char_end": 246,
+            "kind": "observable_event"
+          },
+          {
+            "sir_index": 3,
+            "char_start": 247,
+            "char_end": 312,
+            "kind": "speech"
+          }
+        ]
+      },
+      "generation": {
+        "inference_id": "issue124-pd-mixed_asymmetric",
+        "attempt_index": 0,
+        "normalization_stage": null,
+        "has_raw_semantic_output": true,
+        "has_semantic_decomposition": true
+      },
+      "domain_validation": {
+        "validation_status": "valid",
+        "accepted": false,
+        "failure_class": null,
+        "unit_count": 4
+      },
+      "attempts": [
+        {
+          "evidence_id": "b95161bb-fe54-4491-8841-0517df39cbf0",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "provider": "deepseek-official",
+          "model": "deepseek-v4-flash",
+          "reasoning_effort": null,
+          "max_tokens": null,
+          "wall_ms": 13561,
+          "input_tokens": 581,
+          "output_tokens": 1913,
+          "reasoning_tokens": 1650,
+          "total_tokens": null,
+          "finish": "stop",
+          "failed": false,
+          "assistant_prefix": "{\n  \"semantic_decomposition\": {\n    \"units\": [\n      {\n        \"kind\": \"observable_event\",\n        \"text\": \"The player w"
+        }
+      ],
+      "tokens_aggregate": {
+        "input_tokens": 581,
+        "output_tokens": 1913,
+        "reasoning_tokens": 1650,
+        "total_tokens": 0
+      },
+      "evidence_id": "b95161bb-fe54-4491-8841-0517df39cbf0"
+    },
+    {
+      "case_id": "complex_dense_seiza_japan",
+      "description": "dense multi-span action+speech seiza/Japan (#120 regression input)",
+      "input_chars": 483,
+      "inference_id": "issue124-pd-complex_dense_seiza_japan",
+      "wall_clock_ms": 28048,
+      "max_tokens": null,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "normalization_accepted": true,
+      "parse_ok": true,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "public",
+          "characters": [],
+          "text_len": 80,
+          "text_preview": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "order_index": 0
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_len": 50,
+          "text_preview": "they were not in Japan, but hold habits died hard.",
+          "order_index": 1
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_len": 88,
+          "text_preview": "\"A string of bad luck, if I am being honest-nothing that was my fault, mind you,",
+          "order_index": 2
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "public",
+          "characters": [],
+          "text_len": 27,
+          "text_preview": "she hesittated, looking up.",
+          "order_index": 3
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_len": 234,
+          "text_preview": "\"Have you ever had a time in your life when the entire road has been destroyed a",
+          "order_index": 4
+        }
+      ],
+      "normalization_audit": {
+        "version": 3,
+        "search_budget": 15000,
+        "search_nodes_visited": 6,
+        "assignment_count": 1,
+        "ambiguity_class": "unique",
+        "assignments": [
+          {
+            "sir_index": 0,
+            "char_start": 0,
+            "char_end": 80,
+            "kind": "observable_event"
+          },
+          {
+            "sir_index": 1,
+            "char_start": 81,
+            "char_end": 131,
+            "kind": "internal"
+          },
+          {
+            "sir_index": 2,
+            "char_start": 132,
+            "char_end": 220,
+            "kind": "speech"
+          },
+          {
+            "sir_index": 3,
+            "char_start": 221,
+            "char_end": 248,
+            "kind": "observable_event"
+          },
+          {
+            "sir_index": 4,
+            "char_start": 249,
+            "char_end": 483,
+            "kind": "speech"
+          }
+        ]
+      },
+      "generation": {
+        "inference_id": "issue124-pd-complex_dense_seiza_japan",
+        "attempt_index": 0,
+        "normalization_stage": null,
+        "has_raw_semantic_output": true,
+        "has_semantic_decomposition": true
+      },
+      "domain_validation": {
+        "validation_status": "valid",
+        "accepted": false,
+        "failure_class": null,
+        "unit_count": 5
+      },
+      "attempts": [
+        {
+          "evidence_id": "673d6733-e919-4b20-b22b-6003e12e4ab0",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "provider": "deepseek-official",
+          "model": "deepseek-v4-flash",
+          "reasoning_effort": null,
+          "max_tokens": null,
+          "wall_ms": 28048,
+          "input_tokens": 625,
+          "output_tokens": 4011,
+          "reasoning_tokens": 3660,
+          "total_tokens": null,
+          "finish": "stop",
+          "failed": false,
+          "assistant_prefix": "{\n  \"semantic_decomposition\": {\n    \"units\": [\n      {\n        \"kind\": \"observable_event\",\n        \"text\": \"Kizzie moved"
+        }
+      ],
+      "tokens_aggregate": {
+        "input_tokens": 625,
+        "output_tokens": 4011,
+        "reasoning_tokens": 3660,
+        "total_tokens": 0
+      },
+      "evidence_id": "673d6733-e919-4b20-b22b-6003e12e4ab0"
+    }
+  ]
 }
