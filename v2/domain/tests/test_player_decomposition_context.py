@@ -51,6 +51,9 @@ class PlayerDecompositionContextTests(unittest.TestCase):
             item for item in manifest.contributions if item.source_kind == "inference_instruction"
         )
         self.assertIn("Do not use presentation_only.", instruction.content)
+        self.assertIn("intrinsically nonperceptual player information", instruction.content)
+        self.assertIn("NOT internal", instruction.content)
+        self.assertNotIn("Unexpressed cognition: internal", instruction.content)
 
 
 if __name__ == "__main__":
