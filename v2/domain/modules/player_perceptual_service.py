@@ -458,8 +458,13 @@ def attach_player_perceptual_metadata(
     *,
     record: PerceptualVisibilityRecord,
     validation_audit: dict[str, Any],
+    entitlement_authority_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from player_entitlement_authority import ENTITLEMENT_AUTHORITY_SNAPSHOT_KEY
+
     merged = dict(metadata or {})
     merged[METADATA_KEY] = record.to_dict()
     merged[VALIDATION_AUDIT_KEY] = dict(validation_audit)
+    if entitlement_authority_snapshot is not None:
+        merged[ENTITLEMENT_AUTHORITY_SNAPSHOT_KEY] = dict(entitlement_authority_snapshot)
     return merged

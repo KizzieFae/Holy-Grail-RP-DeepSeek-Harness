@@ -26,6 +26,7 @@ from player_decomposition_fixtures import (
     build_multi_segment_player_decomposition,
     build_player_decomposition_for_content,
 )
+from player_entitlement_authority import merge_entitlement_snapshot_into_metadata
 from player_perceptual_service import (
     FAILURE_MISSING_DECOMPOSITION,
     FAILURE_SOURCE_ACCOUNTING_INCOMPLETE,
@@ -167,7 +168,10 @@ class Issue91PlayerPerceptualTests(unittest.TestCase):
         entry = {
             "entry_id": "e1",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=["Alice", "Bob", "Carol"],
+            ),
         }
         bob = assemble_perceptual_history_entry_for_viewer(
             entry,
@@ -235,7 +239,10 @@ class Issue91PlayerPerceptualTests(unittest.TestCase):
         entry = {
             "entry_id": "e-audit",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=["Alice", "Bob"],
+            ),
         }
         assembly = assemble_perceptual_history_entry_for_viewer(
             entry,

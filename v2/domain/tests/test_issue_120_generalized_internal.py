@@ -17,6 +17,7 @@ from player_decomposition_fixtures import (
     build_multi_segment_player_decomposition,
     build_player_decomposition_for_content,
 )
+from player_entitlement_authority import merge_entitlement_snapshot_into_metadata
 from player_perceptual_service import validate_player_perceptual_decomposition
 from player_source_accounting import normalize_source_for_indexing
 
@@ -42,7 +43,10 @@ class Issue120GeneralizedInternalTests(unittest.TestCase):
         entry = {
             "entry_id": "e-seiza-japan",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=["Ayame", "Kizzie", "Harley", "Celina"],
+            ),
         }
         ayame = assemble_perceptual_history_entry_for_viewer(
             entry,
@@ -78,7 +82,10 @@ class Issue120GeneralizedInternalTests(unittest.TestCase):
         entry = {
             "entry_id": "e-cognition",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=["Ayame", "Kizzie"],
+            ),
         }
         ayame = assemble_perceptual_history_entry_for_viewer(
             entry,
@@ -156,7 +163,10 @@ class Issue120GeneralizedInternalTests(unittest.TestCase):
         entry = {
             "entry_id": "e-mixed",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=["Ayame", "Kizzie"],
+            ),
         }
         ayame = assemble_perceptual_history_entry_for_viewer(
             entry,

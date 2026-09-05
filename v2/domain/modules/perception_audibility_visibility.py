@@ -127,28 +127,83 @@ def resolve_recipient_scope(recipients: dict[str, Any]) -> str:
     return scope or "public"
 
 
+def _bound_entitled_characters_to_cast(
+    entitled: frozenset[str],
+    session_cast: list[str] | None,
+) -> frozenset[str]:
+    if session_cast is None:
+        return entitled
+    cast = frozenset(str(name).strip() for name in session_cast if str(name or "").strip())
+    return frozenset(name for name in entitled if name in cast)
+
+
+def resolve_entitled_characters(
+    scope: str,
+    recipients: dict[str, Any] | None,
+    *,
+    role_assignments: dict[str, str] | None = None,
+    session_cast: list[str] | None = None,
+) -> frozenset[str]:
+    """Resolve deterministic entitled character viewers for private recipient scopes."""
+    recipients = recipients if isinstance(recipients, dict) else {}
+    normalized_scope = str(scope or "public").strip().lower() or "public"
+    explicit = frozenset(
+        str(name).strip()
+        for name in (recipients.get("characters") or [])
+        if str(name).strip()
+    )
+
+    if normalized_scope in ("directed", "private"):
+        return _bound_entitled_characters_to_cast(explicit, session_cast)
+
+    if normalized_scope != "role_private":
+        return frozenset()
+
+    roles_raw = recipients.get("roles")
+    target_roles = frozenset(
+        str(role).strip()
+        for role in (roles_raw or [])
+        if str(role).strip()
+    )
+    from_roles: set[str] = set()
+    assignments = role_assignments if isinstance(role_assignments, dict) else {}
+    for character_name, role_name in assignments.items():
+        character_key = str(character_name or "").strip()
+        role_key = str(role_name or "").strip()
+        if not character_key or not role_key:
+            continue
+        if role_key in target_roles:
+            from_roles.add(character_key)
+
+    if not target_roles and not explicit:
+        return frozenset()
+    return _bound_entitled_characters_to_cast(explicit | frozenset(from_roles), session_cast)
+
+
 def character_in_recipient_scope(
     viewer_character: str,
     scope: str,
     *,
     present_characters: list[str],
     recipients: dict[str, Any] | None = None,
+    role_assignments: dict[str, str] | None = None,
+    session_cast: list[str] | None = None,
 ) -> bool:
     """Whether ``viewer_character`` is eligible for an NVR unit recipient scope."""
     viewer = str(viewer_character or "").strip()
     if not viewer:
         return False
     present = [str(name).strip() for name in present_characters if str(name or "").strip()]
-    recipients = recipients if isinstance(recipients, dict) else {}
-    scoped_characters = [
-        str(name).strip()
-        for name in (recipients.get("characters") or [])
-        if str(name).strip()
-    ]
     normalized_scope = str(scope or "public").strip().lower() or "public"
 
     if normalized_scope in ("public", "present", "environmental"):
         return viewer in present
     if normalized_scope in ("directed", "private", "role_private"):
-        return viewer in scoped_characters
+        entitled = resolve_entitled_characters(
+            normalized_scope,
+            recipients,
+            role_assignments=role_assignments,
+            session_cast=session_cast,
+        )
+        return viewer in entitled
     return False

@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from perceptual_visibility_authority import speech_authority_allows_viewer
+from perceptual_visibility_authority import (
+    player_speech_unit_allows_viewer,
+    speech_authority_allows_viewer,
+)
 from perceptual_visibility_contract import (
     CHARACTER_SOURCE_KIND,
     PLAYER_PERCEPT_UNAVAILABLE_MARKER,
@@ -22,6 +25,7 @@ from perception_audibility_visibility import (
     character_in_recipient_scope,
     resolve_recipient_scope,
 )
+from player_entitlement_authority import extract_entitlement_authority_snapshot
 
 PERCEPTUAL_PROJECTOR_ID = "hg.perceptual_visibility.v1"
 PERCEPTUAL_PROJECTOR_VERSION = 1
@@ -51,6 +55,8 @@ def _unit_eligible_for_viewer(
     *,
     viewer_character: str,
     present_characters: list[str],
+    role_assignments: dict[str, str] | None = None,
+    session_cast: list[str] | None = None,
 ) -> bool:
     scope = resolve_recipient_scope(unit.recipients)
     return character_in_recipient_scope(
@@ -58,6 +64,8 @@ def _unit_eligible_for_viewer(
         scope,
         present_characters=present_characters,
         recipients=unit.recipients,
+        role_assignments=role_assignments,
+        session_cast=session_cast,
     )
 
 
@@ -99,6 +107,7 @@ def assemble_perceptual_visibility_for_viewer(
     historical_normalization: bool = False,
     legacy_metadata_key: str | None = None,
     acting_character: str | None = None,
+    entitlement_authority_snapshot: dict[str, Any] | None = None,
 ) -> PerceptualVisibilityAssemblyResult:
     included: list[str] = []
     excluded: list[str] = []
@@ -130,6 +139,27 @@ def assemble_perceptual_visibility_for_viewer(
             legacy_metadata_key=legacy_metadata_key,
         )
 
+    role_assignments: dict[str, str] | None = None
+    session_cast: list[str] | None = None
+    if record.source_kind == PLAYER_SOURCE_KIND:
+        if entitlement_authority_snapshot is None:
+            return PerceptualVisibilityAssemblyResult(
+                content=None,
+                excluded_unit_ids=[],
+                exclusion_reasons={},
+                authority_narrowed_unit_ids=[],
+                degraded_path="missing_entitlement_authority_snapshot",
+                source_entry_id=source_entry_id,
+                viewer_character=viewer_character,
+                record_validation_status=record.validation_status,
+                source_kind=record.source_kind,
+                validation_profile=record.validation_profile,
+                historical_normalization=historical_normalization,
+                legacy_metadata_key=legacy_metadata_key,
+            )
+        role_assignments = dict(entitlement_authority_snapshot.get("role_assignments") or {})
+        session_cast = list(entitlement_authority_snapshot.get("session_cast") or [])
+
     for unit in _sorted_units_for_record(record):
         if _player_internal_ineligible(unit, record=record):
             excluded.append(unit.unit_id)
@@ -148,13 +178,26 @@ def assemble_perceptual_visibility_for_viewer(
             unit,
             viewer_character=viewer_character,
             present_characters=present_characters,
+            role_assignments=role_assignments,
+            session_cast=session_cast,
         ):
             excluded.append(unit.unit_id)
             reasons[unit.unit_id] = "recipient_ineligible"
             continue
 
         if unit.kind == "speech":
-            if not speech_authority_allows_viewer(
+            if record.source_kind == PLAYER_SOURCE_KIND:
+                if not player_speech_unit_allows_viewer(
+                    unit,
+                    viewer_character=viewer_character,
+                    role_assignments=role_assignments,
+                    session_cast=session_cast,
+                ):
+                    excluded.append(unit.unit_id)
+                    reasons[unit.unit_id] = "authority_narrowed"
+                    narrowed.append(unit.unit_id)
+                    continue
+            elif not speech_authority_allows_viewer(
                 unit.authority,
                 viewer_character=viewer_character,
             ):
@@ -272,6 +315,11 @@ def assemble_perceptual_history_entry_for_viewer(
         historical_normalization=bool(load_provenance.get("historical_normalization")),
         legacy_metadata_key=load_provenance.get("legacy_metadata_key"),
         acting_character=acting_character or str(entry.get("actor_id") or "").strip() or None,
+        entitlement_authority_snapshot=(
+            extract_entitlement_authority_snapshot(metadata)
+            if source_kind == PLAYER_SOURCE_KIND
+            else None
+        ),
     )
     if load_provenance.get("degraded_recovery"):
         result.degraded_path = "invalid_fallback_structured"

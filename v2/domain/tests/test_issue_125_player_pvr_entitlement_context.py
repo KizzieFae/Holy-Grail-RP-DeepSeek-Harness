@@ -18,6 +18,7 @@ from player_decomposition_fixtures import (
     ISSUE_88_PRIVATE_METHOD_TOKEN,
     build_issue_88_mixed_turn_fixture,
 )
+from player_entitlement_authority import merge_entitlement_snapshot_into_metadata
 from player_perceptual_service import validate_player_perceptual_decomposition
 from player_semantic_normalization import normalize_player_semantic_decomposition
 
@@ -200,7 +201,11 @@ class Issue125ForensicReconstructionTests(unittest.TestCase):
         entry = {
             "entry_id": "issue-125-forensic-88",
             "content": content,
-            "metadata": {METADATA_KEY: record.to_dict()},
+            "metadata": merge_entitlement_snapshot_into_metadata(
+                {METADATA_KEY: record.to_dict()},
+                session_cast=list(fixture.cast),
+                role_assignments=dict(fixture.manager.scene_state.role_assignments),
+            ),
         }
 
         harley = assemble_perceptual_history_entry_for_viewer(

@@ -127,8 +127,9 @@ authoritative session cast + Continuity scene_state (present/offstage/roles)
   → #124 Host normalization (deterministic source accounting)
   → metadata.perceptual_visibility (canonical PVR or explicit failure record)
   → metadata.perceptual_visibility_validation (accepted/rejected, failure_class)
+  → metadata.entitlement_authority_snapshot (commit-time role_assignments + session_cast; required for current player projection)
   → generation.source_accounting (normalized length/hash, segments, segment↔unit linkage)
-  → projector hg.perceptual_visibility.v1 assembly
+  → projector hg.perceptual_visibility.v1 assembly (role_private resolves roles via snapshot, not current Continuity)
   → perceptual_visibility_projection audit on transcript/trigger lines
   → downstream consumer (recent_scene_transcript / user_turn_trigger / memory)
 ```
