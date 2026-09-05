@@ -142,9 +142,16 @@ RULES:
 - Account for every character position in the player source using half-open [char_start, char_end) segments.
 - Use disposition non_projects only for source spans that produce no perceptual unit.
 - Do not use presentation_only.
-- Hidden physical actions: observable_event with restrictive recipient scope.
-- Unexpressed cognition: internal (never public scope).
-- Spoken communication/claims: speech.
+- Kind identifies perceptibility in principle; scope identifies entitlement for perceptible information.
+- observable_scene / observable_event: perceptible in principle; scope determines which characters may perceive.
+- speech: spoken or communicated content; scope and authority determine recipients.
+- internal: intrinsically nonperceptual player information (never public scope). Use for unexpressed
+  cognition, private mental state, nonperceptual explanatory narration, background/context, and other
+  player-authored narrative facts not directly observable in the scene — not only literal thoughts.
+- Hidden/concealed physical actions: observable_event with restrictive recipient scope (NOT internal).
+- Spoken communication/claims: speech with appropriate scope.
+- Examples: "Kizzie settled into seiza." → observable_event; "They weren't in Japan, but old habits
+  died hard." → internal; concealed latch work behind a closed door → observable_event + private scope.
 - Each unit must reference segment_ids and order_index.
 - Segment unit_ids must reciprocally reference units.
 """
