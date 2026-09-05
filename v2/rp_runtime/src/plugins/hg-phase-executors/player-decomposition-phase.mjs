@@ -63,18 +63,62 @@ function buildNormalizationTransportFailure({
     playerDecomposition: {
       failure_class: resolveNormalizationTransportFailureClass(err),
       reason: err instanceof Error ? err.message : String(err),
-      generation: {
-        inference_id: attemptInferenceId,
-        attempt_index: attempt,
-        provider: modelProfile?.provider ?? null,
-        model: modelProfile?.model ?? null,
-        raw_semantic_output: rawSemanticOutput ?? null,
-        semantic_decomposition: semanticDecomposition ?? null,
-        normalization_stage: 'transport',
-      },
+      generation: buildInferenceGenerationForensics({
+        attemptInferenceId,
+        attempt,
+        evidenceId,
+        rawSemanticOutput,
+        modelProfile,
+        extra: {
+          semantic_decomposition: semanticDecomposition ?? null,
+          normalization_stage: 'transport',
+        },
+      }),
     },
     evidenceId,
   };
+}
+
+function buildInferenceGenerationForensics({
+  attemptInferenceId,
+  attempt,
+  evidenceId = null,
+  rawSemanticOutput = null,
+  modelProfile = null,
+  extra = {},
+}) {
+  return {
+    inference_id: attemptInferenceId,
+    attempt_index: attempt,
+    evidence_id: evidenceId ?? null,
+    provider: modelProfile?.provider ?? null,
+    model: modelProfile?.model ?? null,
+    ...(rawSemanticOutput != null ? { raw_semantic_output: rawSemanticOutput } : {}),
+    ...extra,
+  };
+}
+
+function attachInferenceEvidenceToDecomposition(decomposition, {
+  evidenceId,
+  attemptInferenceId,
+  attempt,
+  rawSemanticOutput,
+  modelProfile,
+}) {
+  if (!decomposition || typeof decomposition !== 'object') return decomposition;
+  const generation = decomposition.generation ?? {};
+  decomposition.generation = {
+    ...generation,
+    inference_id: generation.inference_id ?? attemptInferenceId,
+    attempt_index: generation.attempt_index ?? attempt,
+    evidence_id: evidenceId ?? generation.evidence_id ?? null,
+    provider: generation.provider ?? modelProfile?.provider ?? null,
+    model: generation.model ?? modelProfile?.model ?? null,
+    ...(rawSemanticOutput != null && generation.raw_semantic_output == null
+      ? { raw_semantic_output: rawSemanticOutput }
+      : {}),
+  };
+  return decomposition;
 }
 
 export function buildPlayerDecompositionUserPrompt(playerContent, { priorFailureCode = null } = {}) {
@@ -199,7 +243,12 @@ export async function runPlayerDecompositionPhase({
             playerDecomposition: {
               failure_class: 'inference_unavailable',
               reason: inferRun.failure?.message ?? 'player decomposition inference failed',
-              generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+              generation: buildInferenceGenerationForensics({
+                attemptInferenceId,
+                attempt,
+                evidenceId: inferRun.evidenceId,
+                modelProfile,
+              }),
             },
             evidenceId: inferRun.evidenceId,
           };
@@ -216,7 +265,13 @@ export async function runPlayerDecompositionPhase({
             playerDecomposition: {
               failure_class: 'sir_malformed',
               reason: parsed.parseError,
-              generation: { inference_id: attemptInferenceId, attempt_index: attempt },
+              generation: buildInferenceGenerationForensics({
+                attemptInferenceId,
+                attempt,
+                evidenceId: inferRun.evidenceId,
+                rawSemanticOutput: inferRun.raw ?? null,
+                modelProfile,
+              }),
             },
             evidenceId: inferRun.evidenceId,
           };
@@ -231,13 +286,13 @@ export async function runPlayerDecompositionPhase({
           content: playerContent,
           speaker: 'Player',
           semantic_decomposition: parsed.semanticDecomposition,
-          generation: {
-            inference_id: attemptInferenceId,
-            attempt_index: attempt,
-            provider: modelProfile?.provider ?? null,
-            model: modelProfile?.model ?? null,
-            raw_semantic_output: inferRun.raw ?? null,
-          },
+          generation: buildInferenceGenerationForensics({
+            attemptInferenceId,
+            attempt,
+            evidenceId: inferRun.evidenceId,
+            rawSemanticOutput: inferRun.raw ?? null,
+            modelProfile,
+          }),
           attempt_index: attempt,
         });
       } catch (err) {
@@ -254,7 +309,16 @@ export async function runPlayerDecompositionPhase({
 
       if (normalizeResult.accepted && normalizeResult.player_decomposition) {
         return {
-          playerDecomposition: normalizeResult.player_decomposition,
+          playerDecomposition: attachInferenceEvidenceToDecomposition(
+            normalizeResult.player_decomposition,
+            {
+              evidenceId: inferRun.evidenceId,
+              attemptInferenceId,
+              attempt,
+              rawSemanticOutput: inferRun.raw ?? null,
+              modelProfile,
+            },
+          ),
           evidenceId: inferRun.evidenceId,
           normalizationAudit: normalizeResult.normalization_audit ?? null,
         };
@@ -271,15 +335,17 @@ export async function runPlayerDecompositionPhase({
         playerDecomposition: {
           failure_class: failureClass,
           reason: normalizeResult.reason ?? failureClass,
-          generation: {
-            inference_id: attemptInferenceId,
-            attempt_index: attempt,
-            provider: modelProfile?.provider ?? null,
-            model: modelProfile?.model ?? null,
-            raw_semantic_output: inferRun.raw ?? null,
-            semantic_decomposition: parsed.semanticDecomposition,
-            normalization: normalizeResult.normalization_audit ?? null,
-          },
+          generation: buildInferenceGenerationForensics({
+            attemptInferenceId,
+            attempt,
+            evidenceId: inferRun.evidenceId,
+            rawSemanticOutput: inferRun.raw ?? null,
+            modelProfile,
+            extra: {
+              semantic_decomposition: parsed.semanticDecomposition,
+              normalization: normalizeResult.normalization_audit ?? null,
+            },
+          }),
         },
         evidenceId: inferRun.evidenceId,
       };

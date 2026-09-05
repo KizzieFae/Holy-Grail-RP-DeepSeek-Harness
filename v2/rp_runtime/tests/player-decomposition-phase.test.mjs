@@ -282,6 +282,7 @@ test('player decomposition normalization transport failure does not retry infere
   assert.equal(result.playerDecomposition.failure_class, 'transport_error');
   assert.notEqual(result.playerDecomposition.failure_class, 'inference_unavailable');
   assert.equal(result.playerDecomposition.generation.normalization_stage, 'transport');
+  assert.equal(result.playerDecomposition.generation.evidence_id, 'evidence-1');
   assert.ok(result.playerDecomposition.generation.semantic_decomposition);
 });
 
@@ -310,6 +311,7 @@ test('player decomposition generic normalization throw uses normalization_transp
     PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT,
   );
   assert.equal(result.playerDecomposition.generation.normalization_stage, 'transport');
+  assert.equal(result.playerDecomposition.generation.evidence_id, 'evidence-1');
 });
 
 test('player decomposition context prepare failure is attributed before inference', async () => {
@@ -363,6 +365,75 @@ test('player decomposition malformed output fails closed after two attempts', as
   assert.equal(calls.length, 2);
   assert.equal(result.playerDecomposition.failure_class, 'sir_malformed');
   assert.equal(result.playerDecomposition.perceptual_visibility, undefined);
+  const generation = result.playerDecomposition.generation;
+  assert.equal(generation.raw_semantic_output, prose);
+  assert.equal(generation.evidence_id, 'evidence-2');
+  assert.equal(generation.inference_id, 'player-decomposition-fail-retry-1');
+  assert.equal(generation.attempt_index, 1);
+});
+
+test('player decomposition success persists direct evidence_id linkage', async () => {
+  const { api } = createTrackingApi();
+  const { runEphemeralInference } = createInferenceRecorder([VALID_SIR]);
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-evidence-link',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  const generation = result.playerDecomposition.generation;
+  assert.equal(generation.evidence_id, 'evidence-1');
+  assert.equal(generation.inference_id, 'player-decomposition-evidence-link');
+  assert.equal(generation.attempt_index, 0);
+  assert.equal(generation.raw_semantic_output, VALID_SIR);
+});
+
+test('player decomposition retry success persists attempt-specific evidence_id', async () => {
+  const { api } = createTrackingApi({
+    normalizeResult: (body) => (
+      body.attempt_index === 0
+        ? {
+          accepted: false,
+          failure_class: 'fragment_assignment_ambiguous',
+          reason: 'material ambiguity requires semantic retry',
+          retry_eligible: true,
+          normalization_audit: { ambiguity_class: 'material' },
+        }
+        : {
+          accepted: true,
+          player_decomposition: {
+            ...CANONICAL_DECOMPOSITION,
+            generation: body.generation ?? {},
+          },
+          normalization_audit: {},
+          validation_audit: { accepted: true },
+          retry_eligible: false,
+        }
+    ),
+  });
+  const { runEphemeralInference } = createInferenceRecorder([VALID_SIR, VALID_SIR]);
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-retry-evidence',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  const generation = result.playerDecomposition.generation;
+  assert.equal(generation.evidence_id, 'evidence-2');
+  assert.equal(generation.inference_id, 'player-decomposition-retry-evidence-retry-1');
+  assert.equal(generation.attempt_index, 1);
 });
 
 test('player decomposition delegates normalization to domain host', async () => {
