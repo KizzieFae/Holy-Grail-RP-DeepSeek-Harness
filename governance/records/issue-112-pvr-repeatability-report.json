@@ -1,0 +1,864 @@
+{
+  "experiment": "issue112_pvr_repeatability",
+  "generated_at": "2026-09-05T03:01:01.460Z",
+  "config": {
+    "baseline": "2292a17b80b2470500a75935f81d281c5f99944d",
+    "model_profile": {
+      "kind": "dsh",
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoningEffort": "low"
+    },
+    "cast": [
+      "Ayame",
+      "Kizzie",
+      "Harley",
+      "Celina"
+    ],
+    "player_content_chars": 483,
+    "disputed_sentence": "they were not in Japan, but hold habits died hard.",
+    "run_count": 5
+  },
+  "results": [
+    {
+      "run_number": 1,
+      "case_id": "complex_dense_repeat_1",
+      "session_id": "issue112-repeat-complex_dense_repeat_1",
+      "inference_id": "issue112-pd-complex_dense_repeat_1",
+      "wall_clock_ms": 130524,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "valid",
+      "validation_accepted": false,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "roles": [],
+          "text": "they were not in Japan, but hold habits died hard.",
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "directed",
+          "characters": [],
+          "roles": [],
+          "text": "\"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "she hesittated, looking up.",
+          "source_provenance": {
+            "segment_ids": [
+              "s4"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "directed",
+          "characters": [],
+          "roles": [],
+          "text": "\"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 0
+          }
+        }
+      ],
+      "semantic_signature": [
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "kizzie moved to the cushion, lowering to it, sitting in a formal sieza position."
+        },
+        {
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_norm": "they were not in japan, but hold habits died hard."
+        },
+        {
+          "kind": "speech",
+          "scope": "directed",
+          "characters": [],
+          "text_norm": "a string of bad luck, if i am being honest-nothing that was my fault, mind you, but..."
+        },
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "she hesittated, looking up."
+        },
+        {
+          "kind": "speech",
+          "scope": "directed",
+          "characters": [],
+          "text_norm": "have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? some people see misfortune, i see an opportunity to reinvent."
+        }
+      ],
+      "source_accounting_segment_count": 5,
+      "disputed_sentence": {
+        "classification": "internal/private",
+        "unit": {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": "they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 0
+          }
+        },
+        "excluded_from_characters": true
+      },
+      "attempts": [
+        {
+          "evidence_id": "cecc16f1-d945-46c7-b49d-99dc04fd6c7f",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 12,
+            "output": 20960,
+            "reasoning": 20180,
+            "total": 41152
+          },
+          "inference_profile": {
+            "provider": "deepseek-official",
+            "model": "deepseek-v4-flash",
+            "max_tokens": null,
+            "reasoning_effort": "low",
+            "effective_thinking": "enabled",
+            "effective_reasoning_effort": "low"
+          }
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 12,
+        "output": 20960,
+        "reasoning": 20180,
+        "total": 41152
+      }
+    },
+    {
+      "run_number": 2,
+      "case_id": "complex_dense_repeat_2",
+      "session_id": "issue112-repeat-complex_dense_repeat_2",
+      "inference_id": "issue112-pd-complex_dense_repeat_2",
+      "wall_clock_ms": 88539,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "invalid_excluded",
+      "validation_accepted": false,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "roles": [],
+          "text": " they were not in Japan, but hold habits died hard.",
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " \"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 2
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " she hesittated, looking up.",
+          "source_provenance": {
+            "segment_ids": [
+              "s4"
+            ],
+            "order_index": 3
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " \"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 4
+          }
+        }
+      ],
+      "semantic_signature": [
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "kizzie moved to the cushion, lowering to it, sitting in a formal sieza position."
+        },
+        {
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_norm": "they were not in japan, but hold habits died hard."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "a string of bad luck, if i am being honest-nothing that was my fault, mind you, but..."
+        },
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "she hesittated, looking up."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? some people see misfortune, i see an opportunity to reinvent."
+        }
+      ],
+      "source_accounting_segment_count": 5,
+      "disputed_sentence": {
+        "classification": "internal/private",
+        "unit": {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": " they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        "excluded_from_characters": true
+      },
+      "attempts": [
+        {
+          "evidence_id": "aab4220e-2121-4162-8ded-eeb1157476ea",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 12,
+            "output": 13984,
+            "reasoning": 13206,
+            "total": 27202
+          },
+          "inference_profile": {
+            "provider": "deepseek-official",
+            "model": "deepseek-v4-flash",
+            "max_tokens": null,
+            "reasoning_effort": "low",
+            "effective_thinking": "enabled",
+            "effective_reasoning_effort": "low"
+          }
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 12,
+        "output": 13984,
+        "reasoning": 13206,
+        "total": 27202
+      }
+    },
+    {
+      "run_number": 3,
+      "case_id": "complex_dense_repeat_3",
+      "session_id": "issue112-repeat-complex_dense_repeat_3",
+      "inference_id": "issue112-pd-complex_dense_repeat_3",
+      "wall_clock_ms": 111420,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "invalid_excluded",
+      "validation_accepted": false,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "roles": [],
+          "text": "they were not in Japan, but hold habits died hard.",
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "roles": [],
+          "text": "“A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...”",
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 2
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "she hesittated, looking up.",
+          "source_provenance": {
+            "segment_ids": [
+              "s4"
+            ],
+            "order_index": 3
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "roles": [],
+          "text": "“Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.”",
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 4
+          }
+        }
+      ],
+      "semantic_signature": [
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "kizzie moved to the cushion, lowering to it, sitting in a formal sieza position."
+        },
+        {
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_norm": "they were not in japan, but hold habits died hard."
+        },
+        {
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_norm": "“a string of bad luck, if i am being honest-nothing that was my fault, mind you, but...”"
+        },
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "she hesittated, looking up."
+        },
+        {
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_norm": "“have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? some people see misfortune, i see an opportunity to reinvent.”"
+        }
+      ],
+      "source_accounting_segment_count": 5,
+      "disputed_sentence": {
+        "classification": "internal/private",
+        "unit": {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": "they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        "excluded_from_characters": true
+      },
+      "attempts": [
+        {
+          "evidence_id": "eedc6ed3-3dc4-42e7-bf6e-8c1cb4b0b1b0",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 12,
+            "output": 16157,
+            "reasoning": 15381,
+            "total": 31550
+          },
+          "inference_profile": {
+            "provider": "deepseek-official",
+            "model": "deepseek-v4-flash",
+            "max_tokens": null,
+            "reasoning_effort": "low",
+            "effective_thinking": "enabled",
+            "effective_reasoning_effort": "low"
+          }
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 12,
+        "output": 16157,
+        "reasoning": 15381,
+        "total": 31550
+      }
+    },
+    {
+      "run_number": 4,
+      "case_id": "complex_dense_repeat_4",
+      "session_id": "issue112-repeat-complex_dense_repeat_4",
+      "inference_id": "issue112-pd-complex_dense_repeat_4",
+      "wall_clock_ms": 139558,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "valid",
+      "validation_accepted": false,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "roles": [],
+          "text": " they were not in Japan, but hold habits died hard.",
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " \"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 2
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " she hesittated, looking up.",
+          "source_provenance": {
+            "segment_ids": [
+              "s4"
+            ],
+            "order_index": 3
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": " \"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 4
+          }
+        }
+      ],
+      "semantic_signature": [
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "kizzie moved to the cushion, lowering to it, sitting in a formal sieza position."
+        },
+        {
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_norm": "they were not in japan, but hold habits died hard."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "a string of bad luck, if i am being honest-nothing that was my fault, mind you, but..."
+        },
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "she hesittated, looking up."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? some people see misfortune, i see an opportunity to reinvent."
+        }
+      ],
+      "source_accounting_segment_count": 5,
+      "disputed_sentence": {
+        "classification": "internal/private",
+        "unit": {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": " they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          }
+        },
+        "excluded_from_characters": true
+      },
+      "attempts": [
+        {
+          "evidence_id": "244612a9-6367-44a6-abb3-2b8052be1ac9",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 12,
+            "output": 22318,
+            "reasoning": 21540,
+            "total": 43870
+          },
+          "inference_profile": {
+            "provider": "deepseek-official",
+            "model": "deepseek-v4-flash",
+            "max_tokens": null,
+            "reasoning_effort": "low",
+            "effective_thinking": "enabled",
+            "effective_reasoning_effort": "low"
+          }
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 12,
+        "output": 22318,
+        "reasoning": 21540,
+        "total": 43870
+      }
+    },
+    {
+      "run_number": 5,
+      "case_id": "complex_dense_repeat_5",
+      "session_id": "issue112-repeat-complex_dense_repeat_5",
+      "inference_id": "issue112-pd-complex_dense_repeat_5",
+      "wall_clock_ms": 109586,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "invalid_excluded",
+      "validation_accepted": false,
+      "unit_count": 5,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position.",
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          }
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "roles": [],
+          "text": "they were not in Japan, but hold habits died hard.",
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 1
+          }
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "\"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s5"
+            ],
+            "order_index": 2
+          }
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "she hesittated, looking up.",
+          "source_provenance": {
+            "segment_ids": [
+              "s7"
+            ],
+            "order_index": 3
+          }
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "roles": [],
+          "text": "\"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\"",
+          "source_provenance": {
+            "segment_ids": [
+              "s9"
+            ],
+            "order_index": 4
+          }
+        }
+      ],
+      "semantic_signature": [
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "kizzie moved to the cushion, lowering to it, sitting in a formal sieza position."
+        },
+        {
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_norm": "they were not in japan, but hold habits died hard."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "a string of bad luck, if i am being honest-nothing that was my fault, mind you, but..."
+        },
+        {
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "she hesittated, looking up."
+        },
+        {
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_norm": "have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? some people see misfortune, i see an opportunity to reinvent."
+        }
+      ],
+      "source_accounting_segment_count": 9,
+      "disputed_sentence": {
+        "classification": "internal/private",
+        "unit": {
+          "unit_id": "u2",
+          "kind": "internal",
+          "text": "they were not in Japan, but hold habits died hard.",
+          "recipients": {
+            "scope": "private",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s3"
+            ],
+            "order_index": 1
+          }
+        },
+        "excluded_from_characters": true
+      },
+      "attempts": [
+        {
+          "evidence_id": "24fcefc6-209d-4f6f-9f13-cec711ff3d94",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 12,
+            "output": 17580,
+            "reasoning": 16622,
+            "total": 34214
+          },
+          "inference_profile": {
+            "provider": "deepseek-official",
+            "model": "deepseek-v4-flash",
+            "max_tokens": null,
+            "reasoning_effort": "low",
+            "effective_thinking": "enabled",
+            "effective_reasoning_effort": "low"
+          }
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 12,
+        "output": 17580,
+        "reasoning": 16622,
+        "total": 34214
+      }
+    }
+  ]
+}

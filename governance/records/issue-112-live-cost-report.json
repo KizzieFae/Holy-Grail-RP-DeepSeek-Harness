@@ -1,0 +1,198 @@
+{
+  "baseline": "2292a17",
+  "results": [
+    {
+      "case_id": "ordinary_public",
+      "description": "straightforward ordinary public speech (issue109 public_speech)",
+      "input_identity": "ordinary_public",
+      "input_chars": 42,
+      "wall_clock_ms": 45932,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "valid",
+      "validation_accepted": false,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_len": 13
+        },
+        {
+          "unit_id": "u2",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 16
+        }
+      ],
+      "unit_count": 2,
+      "attempts": [
+        {
+          "evidence_id": "697ab45e-621e-4240-aca0-64dcf1e7cfbc",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 40,
+            "output": 6517,
+            "reasoning": 6040,
+            "total": 12597
+          },
+          "assistant_prefix": "{\n  \"perceptual_visibility\": {\n    \"units\": [\n      {\n      "
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 40,
+        "output": 6517,
+        "reasoning": 6040,
+        "total": 12597
+      }
+    },
+    {
+      "case_id": "mixed_asymmetric",
+      "description": "mixed public/private perceptually asymmetric (#88-shaped mixed turn)",
+      "input_identity": "mixed_asymmetric",
+      "input_chars": 312,
+      "wall_clock_ms": 107808,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "valid",
+      "validation_accepted": false,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 63
+        },
+        {
+          "unit_id": "u2",
+          "kind": "observable_event",
+          "scope": "private",
+          "characters": [],
+          "text_len": 108
+        },
+        {
+          "unit_id": "u3",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [
+            "harley"
+          ],
+          "text_len": 73
+        },
+        {
+          "unit_id": "u4",
+          "kind": "speech",
+          "scope": "public",
+          "characters": [],
+          "text_len": 65
+        }
+      ],
+      "unit_count": 4,
+      "attempts": [
+        {
+          "evidence_id": "eb359b97-aa07-42db-8972-be8a5a19034f",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 480,
+            "output": 15008,
+            "reasoning": 14262,
+            "total": 29750
+          },
+          "assistant_prefix": "{\n  \"perceptual_visibility\": {\n    \"units\": [\n      {\n      "
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 480,
+        "output": 15008,
+        "reasoning": 14262,
+        "total": 29750
+      }
+    },
+    {
+      "case_id": "complex_dense",
+      "description": "dense multi-span action+speech from SQA-03 session (historical failed decomposition input)",
+      "input_identity": "complex_dense",
+      "input_chars": 483,
+      "wall_clock_ms": 74409,
+      "attempt_count": 1,
+      "retry_used": false,
+      "phase_failure_class": null,
+      "parse_ok": true,
+      "validation_status": "valid",
+      "validation_accepted": false,
+      "units": [
+        {
+          "unit_id": "u1",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 80
+        },
+        {
+          "unit_id": "u2",
+          "kind": "internal",
+          "scope": "private",
+          "characters": [],
+          "text_len": 50
+        },
+        {
+          "unit_id": "u3",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_len": 88
+        },
+        {
+          "unit_id": "u4",
+          "kind": "observable_event",
+          "scope": "present",
+          "characters": [],
+          "text_len": 27
+        },
+        {
+          "unit_id": "u5",
+          "kind": "speech",
+          "scope": "present",
+          "characters": [],
+          "text_len": 234
+        }
+      ],
+      "unit_count": 5,
+      "attempts": [
+        {
+          "evidence_id": "1f5d6add-5f7c-4489-865a-3791bcee61b8",
+          "attempt_index": 0,
+          "prior_attempt_id": null,
+          "failed": false,
+          "finish": "stop",
+          "tokens": {
+            "input": 396,
+            "output": 11467,
+            "reasoning": 10509,
+            "total": 22372
+          },
+          "assistant_prefix": "{\n  \"perceptual_visibility\": {\n    \"units\": [\n      {\n      "
+        }
+      ],
+      "tokens_aggregate": {
+        "input": 396,
+        "output": 11467,
+        "reasoning": 10509,
+        "total": 22372
+      }
+    }
+  ]
+}

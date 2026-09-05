@@ -1,0 +1,464 @@
+{
+  "experiment": "issue121_pvr_two_fixture_repeatability",
+  "generated_at": "2026-09-05T04:50:10.661Z",
+  "head_sha": "4f0d79962bdb0fd89dcec15aa6f5d0e89097f390",
+  "config": {
+    "model_profile": {
+      "kind": "dsh",
+      "provider": "deepseek-official",
+      "model": "deepseek-v4-flash",
+      "reasoningEffort": "low",
+      "maxTokens": 4096
+    },
+    "cast": [
+      "Ayame",
+      "Kizzie",
+      "Harley",
+      "Celina"
+    ],
+    "runs_per_fixture": 5,
+    "single_attempt_per_run": true,
+    "fixtures": [
+      {
+        "id": "fixture_a_seiza_japan",
+        "provenance": "issue112-seiza-japan-regression / ISSUE_120_SEIZA_JAPAN_TURN",
+        "content": "Kizzie moved to the cushion, lowering to it, sitting in a formal sieza position. they were not in Japan, but hold habits died hard. \"A string of bad luck, if I am being honest-nothing that was my fault, mind you, but...\" she hesittated, looking up. \"Have you ever had a time in your life when the entire road has been destroyed and you realized that there was another path, one you would not have even considered before? Some people see misfortune, I see an opportunity to reinvent.\""
+      },
+      {
+        "id": "fixture_b_issue88_mixed",
+        "provenance": "build_issue_88_mixed_turn_fixture / issue112-live-cost mixed_asymmetric",
+        "content": "The player walks away from Harley toward the storeroom archway. Behind the closed door, the player works a concealed floor-panel latch with a tension-wrench rake technique. The player steps back into Harley's view, brushing dust from their hands. \"Panel secured—the seam is hidden,\" the player says to the group.",
+        "private_token": "tension-wrench rake technique",
+        "completion_token": "Panel secured",
+        "departure_token": "walks away from Harley"
+      }
+    ]
+  },
+  "results": [
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 1,
+      "session_id": "issue121-fixture_a_seiza_japan-run-1",
+      "inference_id": "issue121-pd-fixture_a_seiza_japan-1",
+      "wall_ms": 30056,
+      "tokens": {
+        "input": 34,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8226
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "japan_unit": null,
+        "japan_is_internal": false,
+        "japan_leak_risk": null,
+        "seiza_observable": false,
+        "hesitation_observable": false,
+        "speech_count": 0,
+        "speech_all_perceptible_kinds": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "7786f11f-2c8a-4c71-940e-fc37bc4070aa"
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 2,
+      "session_id": "issue121-fixture_a_seiza_japan-run-2",
+      "inference_id": "issue121-pd-fixture_a_seiza_japan-2",
+      "wall_ms": 28405,
+      "tokens": {
+        "input": 34,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8226
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "japan_unit": null,
+        "japan_is_internal": false,
+        "japan_leak_risk": null,
+        "seiza_observable": false,
+        "hesitation_observable": false,
+        "speech_count": 0,
+        "speech_all_perceptible_kinds": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "c1ae45e3-e4ed-4035-8d53-4e90867ba5d8"
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 3,
+      "session_id": "issue121-fixture_a_seiza_japan-run-3",
+      "inference_id": "issue121-pd-fixture_a_seiza_japan-3",
+      "wall_ms": 27514,
+      "tokens": {
+        "input": 34,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8226
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "japan_unit": null,
+        "japan_is_internal": false,
+        "japan_leak_risk": null,
+        "seiza_observable": false,
+        "hesitation_observable": false,
+        "speech_count": 0,
+        "speech_all_perceptible_kinds": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "5c4347f4-d279-4cca-9061-35eaa7c5e51c"
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 4,
+      "session_id": "issue121-fixture_a_seiza_japan-run-4",
+      "inference_id": "issue121-pd-fixture_a_seiza_japan-4",
+      "wall_ms": 26132,
+      "tokens": {
+        "input": 34,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8226
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "japan_unit": null,
+        "japan_is_internal": false,
+        "japan_leak_risk": null,
+        "seiza_observable": false,
+        "hesitation_observable": false,
+        "speech_count": 0,
+        "speech_all_perceptible_kinds": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "8e9851ba-4ac8-4d87-8a77-e918ee306bc3"
+    },
+    {
+      "fixture_id": "fixture_a_seiza_japan",
+      "run_number": 5,
+      "session_id": "issue121-fixture_a_seiza_japan-run-5",
+      "inference_id": "issue121-pd-fixture_a_seiza_japan-5",
+      "wall_ms": 29349,
+      "tokens": {
+        "input": 34,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8226
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "japan_unit": null,
+        "japan_is_internal": false,
+        "japan_leak_risk": null,
+        "seiza_observable": false,
+        "hesitation_observable": false,
+        "speech_count": 0,
+        "speech_all_perceptible_kinds": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "21a34083-21e1-4bb6-94eb-bac225e4d1e4"
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 1,
+      "session_id": "issue121-fixture_b_issue88_mixed-run-1",
+      "inference_id": "issue121-pd-fixture_b_issue88_mixed-1",
+      "wall_ms": 27238,
+      "tokens": {
+        "input": 246,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8438
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "private_unit": null,
+        "private_is_concealed_observable": false,
+        "private_not_internal": true,
+        "departure_public": false,
+        "speech_public": false,
+        "concealed_not_speech": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "57e9bb57-5398-43d5-9513-3fd4a6877c6f"
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 2,
+      "session_id": "issue121-fixture_b_issue88_mixed-run-2",
+      "inference_id": "issue121-pd-fixture_b_issue88_mixed-2",
+      "wall_ms": 28827,
+      "tokens": {
+        "input": 118,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8310
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "private_unit": null,
+        "private_is_concealed_observable": false,
+        "private_not_internal": true,
+        "departure_public": false,
+        "speech_public": false,
+        "concealed_not_speech": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "18601475-454d-4deb-b849-8d486a9f9e6c"
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 3,
+      "session_id": "issue121-fixture_b_issue88_mixed-run-3",
+      "inference_id": "issue121-pd-fixture_b_issue88_mixed-3",
+      "wall_ms": 28919,
+      "tokens": {
+        "input": 118,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8310
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "private_unit": null,
+        "private_is_concealed_observable": false,
+        "private_not_internal": true,
+        "departure_public": false,
+        "speech_public": false,
+        "concealed_not_speech": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "aaba80a7-735f-425b-a2d7-6254f257e11e"
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 4,
+      "session_id": "issue121-fixture_b_issue88_mixed-run-4",
+      "inference_id": "issue121-pd-fixture_b_issue88_mixed-4",
+      "wall_ms": 25873,
+      "tokens": {
+        "input": 118,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8310
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "private_unit": null,
+        "private_is_concealed_observable": false,
+        "private_not_internal": true,
+        "departure_public": false,
+        "speech_public": false,
+        "concealed_not_speech": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "7ad524b9-b2f5-4385-9697-218d150b194c"
+    },
+    {
+      "fixture_id": "fixture_b_issue88_mixed",
+      "run_number": 5,
+      "session_id": "issue121-fixture_b_issue88_mixed-run-5",
+      "inference_id": "issue121-pd-fixture_b_issue88_mixed-5",
+      "wall_ms": 27902,
+      "tokens": {
+        "input": 118,
+        "output": 4096,
+        "reasoning": 4096,
+        "total": 8310
+      },
+      "finish": "max-tokens",
+      "infer_failed": false,
+      "phase_failure": "empty output",
+      "parse_ok": false,
+      "parse_error": "empty output",
+      "raw_assistant_prefix": "",
+      "raw_unit_count": 0,
+      "units": [],
+      "source_accounting": null,
+      "contract": {
+        "accepted": false,
+        "status": "invalid_excluded",
+        "failure_class": "empty output",
+        "reason": "empty output",
+        "notes": []
+      },
+      "semantics": {
+        "private_unit": null,
+        "private_is_concealed_observable": false,
+        "private_not_internal": true,
+        "departure_public": false,
+        "speech_public": false,
+        "concealed_not_speech": true
+      },
+      "semantic_pass": false,
+      "viewer_projections": null,
+      "evidence_id": "abf99b40-4925-44dd-8936-dcaaa0e42126"
+    }
+  ],
+  "fixture_a_seiza_japan_summary": {
+    "contract_valid": 0,
+    "semantic_pass": 0,
+    "wall_ms": {
+      "min": 26132,
+      "max": 30056,
+      "median": 28405
+    },
+    "total_tokens": null
+  },
+  "fixture_b_issue88_mixed_summary": {
+    "contract_valid": 0,
+    "semantic_pass": 0,
+    "wall_ms": {
+      "min": 25873,
+      "max": 28919,
+      "median": 27902
+    },
+    "total_tokens": null
+  }
+}
