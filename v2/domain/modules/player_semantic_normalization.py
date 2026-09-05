@@ -14,13 +14,14 @@ from player_source_accounting import (
     normalized_source_sha256,
 )
 
-NORMALIZER_VERSION = 2
+NORMALIZER_VERSION = 3
 PLAYER_UNIT_SOURCE = "player_decomposition"
 
-# DFS node visits for global assignment search. Chosen from targeted benchmarks on
-# identical single-char tiling: 8 units (~40k visits, <2s) completes; 9 units
-# (~363k visits, ~38s / ~105MB) exceeds this budget and returns classified failure.
-NORMALIZATION_SEARCH_NODE_BUDGET = 100_000
+# DFS node visits for global assignment search. Benchmarked 2026-09-05:
+# - representative / Yes.Yes / material ambiguity: <= 5 nodes
+# - 7-unit identical single-char equivalent tiling: 13,700 nodes (~160ms)
+# - 9-unit pathological tiling: budget fail at 15,001 nodes (~220ms) vs 100,001 (~1.4s)
+NORMALIZATION_SEARCH_NODE_BUDGET = 15_000
 
 VALID_PLAYER_SIR_KINDS = frozenset(
     {"observable_scene", "observable_event", "speech", "internal"}

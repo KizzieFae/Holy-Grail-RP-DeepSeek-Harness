@@ -5,6 +5,10 @@ const MAX_PLAYER_DECOMPOSITION_ATTEMPTS = 2;
 /** Domain Host context-preparation boundary (matches narrator `context_prepare` convention). */
 export const PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE = 'context_prepare';
 
+/** Post-inference Domain Host normalization transport/HTTP failure (not semantic, not retryable). */
+export const PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT =
+  'normalization_transport_unavailable';
+
 export const PLAYER_DECOMPOSITION_TASK_PROMPT =
   'Decompose the player-authored turn into semantic perceptual units with verbatim excerpts only.';
 
@@ -32,6 +36,46 @@ const RETRY_GUIDANCE = {
   validation_rejected:
     'Correct semantic kind/recipient choices while preserving verbatim excerpts and completeness.',
 };
+
+function resolveNormalizationTransportFailureClass(err) {
+  const known = err?.failureClass;
+  if (
+    known === 'host_internal_error'
+    || known === 'api_http_error'
+    || known === 'service_unavailable'
+    || known === 'transport_error'
+  ) {
+    return known;
+  }
+  return PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT;
+}
+
+function buildNormalizationTransportFailure({
+  attemptInferenceId,
+  attempt,
+  evidenceId,
+  err,
+  semanticDecomposition,
+  rawSemanticOutput,
+  modelProfile,
+}) {
+  return {
+    playerDecomposition: {
+      failure_class: resolveNormalizationTransportFailureClass(err),
+      reason: err instanceof Error ? err.message : String(err),
+      generation: {
+        inference_id: attemptInferenceId,
+        attempt_index: attempt,
+        provider: modelProfile?.provider ?? null,
+        model: modelProfile?.model ?? null,
+        raw_semantic_output: rawSemanticOutput ?? null,
+        semantic_decomposition: semanticDecomposition ?? null,
+        normalization_stage: 'transport',
+      },
+    },
+    evidenceId,
+  };
+}
 
 export function buildPlayerDecompositionUserPrompt(playerContent, { priorFailureCode = null } = {}) {
   let prompt = `${PLAYER_DECOMPOSITION_TASK_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`;
@@ -180,20 +224,33 @@ export async function runPlayerDecompositionPhase({
         continue;
       }
 
-      const normalizeResult = await api.normalizePlayerDecomposition({
-        hg_session_id: hgSessionId,
-        content: playerContent,
-        speaker: 'Player',
-        semantic_decomposition: parsed.semanticDecomposition,
-        generation: {
-          inference_id: attemptInferenceId,
+      let normalizeResult;
+      try {
+        normalizeResult = await api.normalizePlayerDecomposition({
+          hg_session_id: hgSessionId,
+          content: playerContent,
+          speaker: 'Player',
+          semantic_decomposition: parsed.semanticDecomposition,
+          generation: {
+            inference_id: attemptInferenceId,
+            attempt_index: attempt,
+            provider: modelProfile?.provider ?? null,
+            model: modelProfile?.model ?? null,
+            raw_semantic_output: inferRun.raw ?? null,
+          },
           attempt_index: attempt,
-          provider: modelProfile?.provider ?? null,
-          model: modelProfile?.model ?? null,
-          raw_semantic_output: inferRun.raw ?? null,
-        },
-        attempt_index: attempt,
-      });
+        });
+      } catch (err) {
+        return buildNormalizationTransportFailure({
+          attemptInferenceId,
+          attempt,
+          evidenceId: inferRun.evidenceId,
+          err,
+          semanticDecomposition: parsed.semanticDecomposition,
+          rawSemanticOutput: inferRun.raw ?? null,
+          modelProfile,
+        });
+      }
 
       if (normalizeResult.accepted && normalizeResult.player_decomposition) {
         return {
@@ -228,6 +285,7 @@ export async function runPlayerDecompositionPhase({
       };
     } catch (err) {
       priorFailureCode = 'inference_unavailable';
+      priorEvidenceId = priorEvidenceId ?? null;
       if (attempt + 1 >= MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
         return {
           playerDecomposition: {

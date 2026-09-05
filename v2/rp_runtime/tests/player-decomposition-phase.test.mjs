@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   PLAYER_DECOMPOSITION_FAILURE_CLASS_CONTEXT_PREPARE,
+  PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT,
   PLAYER_DECOMPOSITION_RETRY_HEADER,
   buildPlayerDecompositionUserPrompt,
   runPlayerDecompositionPhase,
@@ -254,6 +255,61 @@ test('player decomposition search-budget retry stays semantic-only', async () =>
   assert.match(calls[1].prompt, /normalization_search_budget_exceeded/);
   assert.match(calls[1].prompt, /distinctive verbatim excerpts/);
   assert.doesNotMatch(calls[1].prompt, /\bchar_start\b|\bsegment_id\b|\bsearch_nodes_visited\b/);
+});
+
+test('player decomposition normalization transport failure does not retry inference', async () => {
+  const { api } = createTrackingApi({
+    normalizeResult() {
+      const err = new Error('domain host connection refused');
+      err.failureClass = 'transport_error';
+      return Promise.reject(err);
+    },
+  });
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_SIR, VALID_SIR]);
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-normalize-throw',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(result.playerDecomposition.failure_class, 'transport_error');
+  assert.notEqual(result.playerDecomposition.failure_class, 'inference_unavailable');
+  assert.equal(result.playerDecomposition.generation.normalization_stage, 'transport');
+  assert.ok(result.playerDecomposition.generation.semantic_decomposition);
+});
+
+test('player decomposition generic normalization throw uses normalization_transport_unavailable', async () => {
+  const { api } = createTrackingApi({
+    normalizeResult() {
+      return Promise.reject(new Error('normalize kernel exploded'));
+    },
+  });
+  const { runEphemeralInference, calls } = createInferenceRecorder([VALID_SIR, VALID_SIR]);
+
+  const result = await runPlayerDecompositionPhase({
+    api,
+    runEphemeralInference,
+    hgSessionId: 'hg-session-test',
+    hgSceneId: 'hg-session-test',
+    hgRoundId: 'hg-round-test',
+    inferenceId: 'player-decomposition-normalize-generic-throw',
+    playerContent: 'Hello.',
+    modelProfile: mockInferenceProfile(),
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(
+    result.playerDecomposition.failure_class,
+    PLAYER_DECOMPOSITION_FAILURE_CLASS_NORMALIZATION_TRANSPORT,
+  );
+  assert.equal(result.playerDecomposition.generation.normalization_stage, 'transport');
 });
 
 test('player decomposition context prepare failure is attributed before inference', async () => {

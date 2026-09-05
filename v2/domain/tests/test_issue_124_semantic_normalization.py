@@ -267,6 +267,20 @@ class Issue124SemanticNormalizationTests(unittest.TestCase):
         self.assertTrue(audit.get("budget_exceeded"))
         self.assertGreater(audit.get("search_nodes_visited", 0), NORMALIZATION_SEARCH_NODE_BUDGET)
 
+    def test_pathological_tiling_fails_within_time_bound(self) -> None:
+        content = "a" * 9
+        start = time.perf_counter()
+        result = normalize_player_semantic_decomposition(
+            content=content,
+            speaker="Player",
+            semantic_decomposition=self._single_char_units(9),
+            attempt_index=0,
+        )
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["failure_class"], FAILURE_SEARCH_BUDGET_EXCEEDED)
+        self.assertLess(elapsed_ms, 500)
+
     def test_search_budget_exceeded_terminal_after_retry(self) -> None:
         content = "a" * 9
         result = normalize_player_semantic_decomposition(
