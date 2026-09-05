@@ -58,6 +58,53 @@ class PerceptualVisibilityValidationTests(unittest.TestCase):
         assert result.record is not None
         self.assertIsNotNone(result.record.units[0].authority)
 
+    def test_opening_speech_without_beat_index_passes(self) -> None:
+        result = validate_perceptual_visibility_record(
+            units_raw=[
+                {
+                    "unit_id": "u1",
+                    "kind": "speech",
+                    "text": '"Welcome," she said.',
+                    "recipients": {"scope": "public"},
+                }
+            ],
+            profile=ValidationProfile.OPENING,
+            source_kind="opening",
+        )
+        self.assertTrue(result.accepted)
+        assert result.record is not None
+        self.assertIsNone(result.record.units[0].source_provenance.get("beat_index"))
+
+    def test_narrator_speech_without_beat_index_rejected(self) -> None:
+        move = {
+            "move_schema_version": 2,
+            "beats": [
+                {"type": "speech", "dialogue": "Hello Bob", "audibility": "directed", "audience": ["Bob"]}
+            ],
+        }
+        result = validate_perceptual_visibility_record(
+            units_raw=[
+                {
+                    "unit_id": "u1",
+                    "kind": "speech",
+                    "text": '"Hello Bob"',
+                    "recipients": {"scope": "public"},
+                }
+            ],
+            profile=ValidationProfile.NARRATOR_PRESENTATION,
+            structured_move=move,
+            acting_character="Alice",
+            source_kind="narrator",
+        )
+        self.assertFalse(result.accepted)
+        self.assertIn("missing beat_index", result.reason)
+
+    def test_opening_instruction_aligns_with_opening_provenance(self) -> None:
+        from narrative_visibility_prompt import OPENING_SEGMENTATION_OUTPUT_INSTRUCTION
+
+        self.assertIn("Do NOT include beat_index", OPENING_SEGMENTATION_OUTPUT_INSTRUCTION)
+        self.assertNotIn('"beat_index"', OPENING_SEGMENTATION_OUTPUT_INSTRUCTION)
+
     def test_structured_authority_narrows_speech(self) -> None:
         move = {
             "move_schema_version": 2,

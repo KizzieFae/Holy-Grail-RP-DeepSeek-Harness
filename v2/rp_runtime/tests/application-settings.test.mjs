@@ -128,3 +128,21 @@ test('application settings: operation-specific inference kind ceilings apply hea
   );
   assert.equal(librarianProfile.maxTokens, 8192);
 });
+
+test('application settings: opening_segmentation disables thinking with 4096 ceiling', () => {
+  const opening = resolveApplicationRoleProfiles({
+    inferenceMode: 'live',
+    roleRouting: 'simple',
+    model: HG_DEEPSEEK_DEFAULT_MODEL,
+  }).opening;
+  assert.equal(opening.reasoningEffort, 'low');
+  assert.equal(opening.maxTokens, 4096);
+  assert.equal(tokenCeilingForInferenceKind('opening_segmentation'), 4096);
+  const segmentationProfile = modelProfileForInferenceKind(opening, 'opening_segmentation');
+  assert.equal(segmentationProfile.reasoningEffort, 'off');
+  assert.equal(segmentationProfile.maxTokens, 4096);
+  assert.equal(
+    segmentationProfile.maxTokens,
+    PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS.opening_segmentation,
+  );
+});

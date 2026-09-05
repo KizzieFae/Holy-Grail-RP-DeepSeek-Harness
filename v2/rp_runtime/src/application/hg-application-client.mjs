@@ -10,6 +10,7 @@ import {
 import {
   buildInferenceOptions,
   defaultRuntimeSettings,
+  modelProfileForInferenceKind,
   settingsView,
   validateRuntimeSettings,
   validateSessionSetup,
@@ -693,10 +694,17 @@ export class HolyGrailApplicationClient {
       { ...this.runtimeSettings, ...input },
       { inferenceMode: this.options.inferenceMode },
     );
-    const modelProfile =
+    const runtimeSettings = { ...this.runtimeSettings, ...input };
+    const baseProfile =
       input.inferenceMode === 'mock' || this.options.inferenceMode === 'mock'
         ? mockInferenceProfile()
         : inference.roleProfiles.opening;
+    const modelProfile = modelProfileForInferenceKind(
+      baseProfile,
+      'opening_segmentation',
+      runtimeSettings,
+      { inferenceMode: this.options.inferenceMode },
+    );
 
     return phaseExecutors.runOpeningSegmentation({
       api,
