@@ -36,10 +36,16 @@ export const PRODUCTION_MAX_TOKEN_CEILING = 8192;
  * Headroom bounds — not target consumption. Role-level ceilings remain unchanged.
  */
 export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
+  opening_segmentation: PRODUCTION_TOKEN_CEILINGS.opening,
   plot_cognition_update: PRODUCTION_MAX_TOKEN_CEILING,
   plot_cognition_update_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
   librarian_proposal: PRODUCTION_MAX_TOKEN_CEILING,
   librarian_proposal_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
+};
+
+/** Operation-specific reasoning overrides (#110). Role defaults remain unchanged. */
+export const PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES = {
+  opening_segmentation: 'off',
 };
 
 /** Bounded diagnostic ceiling for calibration runs (not production). */
@@ -103,16 +109,21 @@ export function tokenCeilingForInferenceKind(inferenceKind, settings = {}, optio
   return Number.isFinite(ceiling) ? ceiling : null;
 }
 
-/** Apply operation-specific output headroom without changing role defaults. */
+/** Apply operation-specific profile overrides without changing role defaults. */
 export function modelProfileForInferenceKind(modelProfile, inferenceKind, settings = {}, options = {}) {
-  if (!modelProfile || !inferenceKind) {
+  if (!modelProfile || !inferenceKind || modelProfile.kind === 'mock') {
     return modelProfile;
   }
   const ceiling = tokenCeilingForInferenceKind(inferenceKind, settings, options);
-  if (!Number.isFinite(ceiling)) {
+  const reasoningOverride = PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES[inferenceKind];
+  if (!Number.isFinite(ceiling) && reasoningOverride === undefined) {
     return modelProfile;
   }
-  return { ...modelProfile, maxTokens: ceiling };
+  return {
+    ...modelProfile,
+    ...(Number.isFinite(ceiling) ? { maxTokens: ceiling } : {}),
+    ...(reasoningOverride !== undefined ? { reasoningEffort: reasoningOverride } : {}),
+  };
 }
 
 function liveProfileForRole(role, settings = {}, options = {}) {

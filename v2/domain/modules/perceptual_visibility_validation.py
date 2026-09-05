@@ -153,12 +153,15 @@ def validate_perceptual_visibility_record(
         working = unit
         if unit.kind == "speech":
             beat_index = unit.source_provenance.get("beat_index")
-            if beat_index is None:
+            if beat_index is None and profile in (
+                ValidationProfile.NARRATOR_PRESENTATION,
+                ValidationProfile.CHARACTER_MOVE,
+            ):
                 return PerceptualVisibilityValidationResult(
                     accepted=False,
                     reason=f"speech unit {unit.unit_id} missing beat_index",
                 )
-            if profile in (
+            if beat_index is not None and profile in (
                 ValidationProfile.NARRATOR_PRESENTATION,
                 ValidationProfile.CHARACTER_MOVE,
             ):

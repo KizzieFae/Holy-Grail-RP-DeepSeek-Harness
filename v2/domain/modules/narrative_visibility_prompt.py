@@ -94,6 +94,9 @@ OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
 
 Segment the authoritative opening prose into semantic units with accurate recipient scopes.
 Do NOT return presentation_text — the opening prose is already fixed.
+Do NOT include beat_index or other CharacterMove beat provenance — template openings exist
+before any CharacterMove beats at session initialization.
+Genuine quoted dialogue may use kind=speech with recipient scope only.
 internal units must never be public. presentation_only is human-facing only.
 Observable scene detail visible to present characters should be public or present scoped.
 Private interior thoughts or knowledge not perceptible to others must be internal/private scoped.

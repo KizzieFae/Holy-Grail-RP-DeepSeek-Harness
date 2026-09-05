@@ -243,3 +243,63 @@ test('production template bootstrap: segmentation failure fails closed for chara
   const ayameTranscript = await characterTranscript(api, created.hg_session_id, 'Ayame');
   assert.equal(ayameTranscript, null);
 });
+
+test('production template bootstrap: OPENING speech without beat_index validates (Marlene stress mock)', async (t) => {
+  const sessionsDir = makeTempSessionsDir();
+  t.after(() => {
+    fs.rmSync(sessionsDir, { recursive: true, force: true });
+  });
+
+  const client = new HolyGrailApplicationClient({
+    inferenceMode: 'mock',
+    domainHost: { sessionsDir },
+  });
+  await client.start();
+  t.after(() => client.stop());
+
+  const openers = await client.listTemplateOpeners('marlene_willow_dorm_omega_misassignment');
+  const created = await client.createSession({
+    characters: ['marlene', 'willow', 'kizzie'],
+    sceneTemplateId: 'marlene_willow_dorm_omega_misassignment',
+    roleAssignments: {
+      marlene: 'alpha_roommate_marlene',
+      willow: 'alpha_roommate_willow',
+      kizzie: 'misassigned_omega_student',
+    },
+    opening: { mode: 'template', opener_id: openers[0].opener_id },
+    mockOpeningSegmentationResponses: [
+      JSON.stringify({
+        perceptual_visibility: {
+          units: [
+            {
+              unit_id: 'public_dorm',
+              kind: 'observable_scene',
+              text: 'The dorm smelled like old takeout and engine grease',
+              recipients: { scope: 'public' },
+            },
+            {
+              unit_id: 'willow_speech',
+              kind: 'speech',
+              text: '"This is fucking stupid..."',
+              recipients: { scope: 'present', characters: ['Willow', 'Marlene'] },
+            },
+            {
+              unit_id: 'kizzie_internal',
+              kind: 'internal',
+              text: 'probably looking every bit the goddamn soft',
+              recipients: { scope: 'private', characters: ['Kizzie'] },
+            },
+          ],
+        },
+      }),
+    ],
+  });
+
+  const api = createDomainApiClient(client.supervisor.domainHostUrl);
+  const history = await api.getSessionHistory(created.hg_session_id);
+  const opening = history.entries.find((entry) => entry.kind === 'opening');
+  assert.ok(opening?.metadata?.perceptual_visibility?.units?.length);
+  const speechUnit = opening.metadata.perceptual_visibility.units.find((u) => u.kind === 'speech');
+  assert.ok(speechUnit);
+  assert.equal(speechUnit.source_provenance?.beat_index, undefined);
+});
