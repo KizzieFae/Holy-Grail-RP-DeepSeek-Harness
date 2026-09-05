@@ -36,6 +36,7 @@ test('buildUniformProjectionDecomposition matches checker contract', () => {
   const content = 'The player nods.';
   const decomposition = buildUniformProjectionDecomposition(content, {
     checkerAudit: { uniform_projection_safe: true, reason: 'affirmative_uniform_present' },
+  inferenceId: 'checker-test',
     inferenceId: 'checker-test',
   });
   assert.equal(decomposition.generation.derivation_profile, 'uniform_projection');

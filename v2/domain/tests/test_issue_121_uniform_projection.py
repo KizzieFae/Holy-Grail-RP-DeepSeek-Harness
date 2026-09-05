@@ -29,7 +29,7 @@ class Issue121UniformProjectionTests(unittest.TestCase):
             checker_audit={
                 "uniform_projection_safe": True,
                 "reason": "affirmative_uniform_present",
-                "inference_id": "test-checker",
+                "inference_id": "player-visibility-triage-test",
             },
         )
         record, audit = validate_player_perceptual_decomposition(
@@ -66,6 +66,7 @@ class Issue121UniformProjectionTests(unittest.TestCase):
         decomposition = build_uniform_projection_decomposition(
             content,
             checker_audit={"uniform_projection_safe": True, "reason": "affirmative_uniform_present"},
+            inference_id="player-visibility-triage-test",
         )
         decomposition["generation"]["synthesis_route"] = "semantic_decomposition_forged"
         record, audit = validate_player_perceptual_decomposition(
@@ -128,3 +129,41 @@ class Issue121UniformProjectionTests(unittest.TestCase):
         safety_critical = [case for case in corpus if case.safety_critical]
         self.assertTrue(any(case.case_id == "neg_seiza_japan_120" for case in safety_critical))
         self.assertTrue(any(case.case_id == "neg_issue_88_mixed" for case in safety_critical))
+
+    def test_uniform_projection_rejects_forged_checker_inference_id(self) -> None:
+        content = "Hello."
+        decomposition = build_uniform_projection_decomposition(
+            content,
+            checker_audit={
+                "uniform_projection_safe": True,
+                "reason": "affirmative_uniform_present",
+                "inference_id": "forged-checker-id",
+            },
+        )
+        record, audit = validate_player_perceptual_decomposition(
+            content=content,
+            speaker="Player",
+            decomposition=decomposition,
+        )
+        self.assertFalse(audit["accepted"])
+        self.assertIn("checker inference provenance", audit["reason"])
+
+    def test_uniform_projection_rejects_oversized_source(self) -> None:
+        from perceptual_visibility_contract import MAX_PVR_UNIT_TEXT_CHARS
+
+        content = "x" * (MAX_PVR_UNIT_TEXT_CHARS + 1)
+        decomposition = build_uniform_projection_decomposition(
+            content,
+            checker_audit={
+                "uniform_projection_safe": True,
+                "reason": "affirmative_uniform_present",
+                "inference_id": "player-visibility-triage-test",
+            },
+        )
+        record, audit = validate_player_perceptual_decomposition(
+            content=content,
+            speaker="Player",
+            decomposition=decomposition,
+        )
+        self.assertFalse(audit["accepted"])
+        self.assertIn("per-unit text bound", audit["reason"])

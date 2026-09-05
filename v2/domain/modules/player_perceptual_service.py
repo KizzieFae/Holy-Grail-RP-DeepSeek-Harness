@@ -8,6 +8,7 @@ from typing import Any
 from perceptual_visibility_authority import speech_authority_from_player_recipients
 from perceptual_visibility_contract import (
     METADATA_KEY,
+    MAX_PVR_UNIT_TEXT_CHARS,
     PERCEPTUAL_VISIBILITY_SCHEMA_VERSION,
     VALIDATION_AUDIT_KEY,
     PerceptualVisibilityRecord,
@@ -132,6 +133,8 @@ def _validate_uniform_projection_decomposition(
         return [], "uniform projection cannot name role subset"
     if unit.text != normalized_source:
         return [], "uniform projection unit text must equal normalized source"
+    if len(unit.text) > MAX_PVR_UNIT_TEXT_CHARS:
+        return [], "uniform projection unit exceeds per-unit text bound"
     if generation.get("derivation_profile") != UNIFORM_PROJECTION_DERIVATION_PROFILE:
         return [], "uniform projection missing derivation_profile"
     if generation.get("synthesis_route") != UNIFORM_PROJECTION_SYNTHESIS_ROUTE:
@@ -139,6 +142,9 @@ def _validate_uniform_projection_decomposition(
     checker = generation.get("checker")
     if not isinstance(checker, dict) or checker.get("uniform_projection_safe") is not True:
         return [], "uniform projection requires affirmative checker safety"
+    inference_id = str(checker.get("inference_id", "") or "").strip()
+    if not inference_id.startswith("player-visibility-triage-"):
+        return [], "uniform projection requires checker inference provenance"
     if len(accounting_segments) != 1:
         return [], "uniform projection requires single accounting segment"
     segment = accounting_segments[0]
