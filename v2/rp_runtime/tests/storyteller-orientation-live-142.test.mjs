@@ -20,6 +20,7 @@ test('live storyteller orientation bounded validation (no transport 400 on schem
   const previous = {
     HG_DATA_DIR: process.env.HG_DATA_DIR,
     HG_EXECUTION_EVIDENCE: process.env.HG_EXECUTION_EVIDENCE,
+    HG_EXECUTION_EVIDENCE_DIR: process.env.HG_EXECUTION_EVIDENCE_DIR,
   };
   process.env.HG_DATA_DIR = dataDir;
   process.env.HG_EXECUTION_EVIDENCE = 'on';
