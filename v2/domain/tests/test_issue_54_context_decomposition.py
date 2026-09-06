@@ -334,7 +334,7 @@ def test_narrator_n2_failure_audit_kernel_orchestration() -> None:
             domain_commit_id=commit.domain_commit_id,
             continuity_turn_index=commit.continuity_turn_index or 1,
             attempt_index=0,
-            environment_cognition_audit=audit,
+            cognition_failure=audit,
         )
     )
     fixture = kernel.store.require(scene_id)

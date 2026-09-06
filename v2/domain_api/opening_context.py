@@ -5,6 +5,7 @@ from __future__ import annotations
 from .context_substrate import auth_projections_to_contributions
 from .continuity_context_projector import project_authoritative_context
 from .contract import OpeningContextPrepareRequest, PromptContribution, PromptContributionManifest
+from .manifest_validation import finalize_prompt_contribution_manifest
 from .opening_prompt import build_opening_generation_instruction
 from .session_state import LiveSession
 
@@ -102,7 +103,8 @@ def prepare_opening_context(
             provenance={"inference_id": req.inference_id, "role": "opening"},
         )
     )
-    return PromptContributionManifest(
+    return finalize_prompt_contribution_manifest(
+        "opening",
         manifest_id=manifest_id,
         inference_id=req.inference_id,
         hg_scene_id=hg_scene_id,
@@ -111,5 +113,5 @@ def prepare_opening_context(
         character_id=None,
         turn_index=0,
         attempt_index=0,
-        contributions=tuple(contributions),
+        contributions=contributions,
     )

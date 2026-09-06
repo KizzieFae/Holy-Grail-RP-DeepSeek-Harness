@@ -9,6 +9,7 @@ import {
 import { extractInferenceTrace } from '../../lib/inference-trace.mjs';
 import { waitForIdle } from '../../lib/inference-utils.mjs';
 import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
+import { validateBridgeManifest } from '../../lib/manifest-validation.mjs';
 
 /**
  * Shared ephemeral inference substrate for all RP phase executors.
@@ -30,6 +31,10 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
   }) {
     const profile = resolveInferenceProfile(inferenceConfig, modelProfile);
     const agentOpts = agentOptionsFromProfile(profile);
+    validateBridgeManifest({
+      manifest,
+      inferenceKind: evidenceContext?.inferenceKind ?? null,
+    });
     let disposeAdapter = () => {};
     let disposeRequestHook = () => {};
 
@@ -60,6 +65,7 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     const contextRegistration = ctx.hgContextBridge.registerManifest({
       agent,
       manifest,
+      inferenceKind: evidenceContext?.inferenceKind ?? null,
     });
     agent.followup(
       createUserMessage({

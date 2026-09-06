@@ -12,6 +12,7 @@ from .director_context_digests import (
     director_scene_condition_flags,
     validate_director_context_completeness,
 )
+from .manifest_validation import validate_contribution_package
 from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .plot_cognition_orchestration_service import PlotCognitionOrchestrationService
 from .session_state import LiveSession, RoundFixture
@@ -111,9 +112,11 @@ def prepare_director_context(
     normalized_refs, ref_errors = validate_authority_references(authority_refs)
     if ref_errors:
         raise ValueError("Director context preparation failed: " + "; ".join(ref_errors))
+    validate_contribution_package("director_turn", contributions)
     return DirectorContextPrepareResponse(
         manifest_id=manifest_id,
         inference_id=req.inference_id,
+        inference_kind="director_turn",
         hg_scene_id=req.hg_scene_id,
         hg_round_id=req.hg_round_id,
         role="director",

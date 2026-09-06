@@ -104,6 +104,7 @@ def build_semantic_qa_context_response(
     evaluation_pass_id: str,
     evaluation_target_role: str,
     inference_id: str,
+    inference_kind: str,
     hg_scene_id: str,
     hg_round_id: str,
     turn_index: int,
@@ -129,12 +130,16 @@ def build_semantic_qa_context_response(
         character_id=character_id,
         include_default_transport=include_default_transport,
     )
+    from .manifest_validation import validate_contribution_package
+
+    validate_contribution_package(inference_kind, contributions)
     normalized_refs, _ = validate_authority_references(authority_references)
     return SemanticQaContextPrepareResponse(
         manifest_id=manifest_id,
         evaluation_pass_id=evaluation_pass_id,
         evaluation_target_role=evaluation_target_role,
         inference_id=inference_id,
+        inference_kind=inference_kind,
         hg_scene_id=hg_scene_id,
         hg_round_id=hg_round_id,
         turn_index=turn_index,

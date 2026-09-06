@@ -8,6 +8,7 @@ from perceptual_visibility_legacy import perceptual_visibility_record_from_entry
 from .context_substrate import auth_projections_to_contributions
 from .continuity_context_projector import project_authoritative_context
 from .contract import OpeningSegmentationContextPrepareRequest, PromptContribution, PromptContributionManifest
+from .manifest_validation import finalize_prompt_contribution_manifest
 from .session_state import LiveSession
 
 
@@ -90,7 +91,8 @@ def prepare_opening_segmentation_context(
         )
     )
 
-    return PromptContributionManifest(
+    return finalize_prompt_contribution_manifest(
+        "opening_segmentation",
         manifest_id=manifest_id,
         inference_id=req.inference_id,
         hg_scene_id=hg_scene_id,
@@ -99,5 +101,5 @@ def prepare_opening_segmentation_context(
         character_id=None,
         turn_index=0,
         attempt_index=0,
-        contributions=tuple(contributions),
+        contributions=contributions,
     )

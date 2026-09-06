@@ -17,6 +17,7 @@ from .narrator_environment_cognition import (
     parse_n1_cognition_result,
 )
 from .knowledge_access_request_serialization import knowledge_access_request_to_dict
+from .manifest_validation import finalize_prompt_contribution_manifest
 from .session_state import CharacterTurnRecord, LiveSession, RoundFixture
 
 
@@ -149,7 +150,8 @@ def prepare_environment_cognition_context(
         ),
         ]
     )
-    manifest = PromptContributionManifest(
+    manifest = finalize_prompt_contribution_manifest(
+        "narrator_environment_cognition",
         manifest_id=manifest_id,
         inference_id=req.inference_id,
         hg_scene_id=req.hg_scene_id,

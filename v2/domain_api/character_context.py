@@ -7,6 +7,7 @@ from typing import Any
 from .character_upstream_context import assemble_character_upstream_contributions
 from .context_substrate import memory_projections_for_character
 from .contract import ContextPrepareRequest, PromptContribution, PromptContributionManifest
+from .manifest_validation import finalize_prompt_contribution_manifest
 from .librarian_bundle_codec import librarian_knowledge_bundle_from_dict
 from .librarian_packaging_mapper import map_librarian_bundle_to_contributions
 from .librarian_packaging_validity import PackagingBindingContext
@@ -109,7 +110,8 @@ def prepare_character_context(
             },
         ),
     )
-    return PromptContributionManifest(
+    return finalize_prompt_contribution_manifest(
+        "character_turn",
         manifest_id=manifest_id,
         inference_id=req.inference_id,
         hg_scene_id=req.hg_scene_id,

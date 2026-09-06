@@ -258,7 +258,14 @@ export async function runNarratorPhase({
         continuity_turn_index: continuityTurnIndex,
         attempt_index: attemptIndex,
         correction_context: correctionContext ?? undefined,
-        environment_cognition_audit: environmentCognitionAudit ?? undefined,
+        ...(environmentCognitionAudit?.cognition_failed
+          ? { cognition_failure: environmentCognitionAudit }
+          : {
+              environmental_response_obligations_text:
+                environmentCognitionAudit?.environmental_response_obligations_text ?? undefined,
+              environmental_response_obligations:
+                environmentCognitionAudit?.environmental_response_obligations ?? undefined,
+            }),
       });
       manifestId = String(manifest.manifest_id);
     } catch (error) {

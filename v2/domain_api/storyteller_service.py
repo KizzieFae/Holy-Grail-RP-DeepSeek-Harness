@@ -70,9 +70,13 @@ class StorytellerService:
             rnd,
             inference_id=inference_id,
         )
+        from .manifest_validation import validate_contribution_package
+
+        validate_contribution_package("storyteller_orientation", contributions)
         return {
             "manifest_id": manifest_id,
             "inference_id": inference_id,
+            "inference_kind": "storyteller_orientation",
             "hg_scene_id": fixture.hg_scene_id,
             "hg_round_id": rnd.hg_round_id,
             "turn_index": int(rnd.turn_index),
@@ -165,9 +169,13 @@ class StorytellerService:
             bundle,
             inference_id=inference_id,
         )
+        from .manifest_validation import validate_contribution_package
+
+        validate_contribution_package("storyteller_assessment", contributions)
         return {
             "manifest_id": manifest_id,
             "inference_id": inference_id,
+            "inference_kind": "storyteller_assessment",
             "orientation_id": orientation.orientation_id,
             "bundle_id": _bundle_field(bundle, "bundle_id"),
             "schema": "hg_storyteller_assessment_v1",

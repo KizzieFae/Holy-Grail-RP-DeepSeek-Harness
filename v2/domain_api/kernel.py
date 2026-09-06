@@ -827,10 +827,14 @@ class DomainKernel:
             fixture,
             req,
         )
+        from .manifest_validation import validate_contribution_package
+
+        validate_contribution_package("character_semantic_evaluation", contributions)
         return SemanticEvaluationContextResponse(
             manifest_id=manifest_id,
             evaluation_pass_id=req.evaluation_pass_id,
             inference_id=req.inference_id,
+            inference_kind="character_semantic_evaluation",
             hg_scene_id=req.hg_scene_id,
             hg_round_id=req.hg_round_id,
             character_id=req.character_id,
@@ -856,9 +860,13 @@ class DomainKernel:
             fixture,
             inference_id=inference_id,
         )
+        from .manifest_validation import validate_contribution_package
+
+        validate_contribution_package("librarian_mediation", response.contributions)
         return {
             "manifest_id": response.manifest_id,
             "inference_id": response.inference_id,
+            "inference_kind": "librarian_mediation",
             "request_id": response.request_id,
             "hg_scene_id": response.hg_scene_id,
             "hg_round_id": response.hg_round_id,
@@ -1022,11 +1030,15 @@ class DomainKernel:
                     "evidence_catalog": [],
                 }
             response = self.cognition.librarian_proposals.prepare_proposal_context(request, fixture)
+            from .manifest_validation import validate_contribution_package
+
+            validate_contribution_package("librarian_proposal", response.contributions)
             return {
                 "skipped": False,
                 "orchestration_status": "prepared",
                 "manifest_id": response.manifest_id,
                 "inference_id": response.inference_id,
+                "inference_kind": "librarian_proposal",
                 "request_id": response.request_id,
                 "hg_scene_id": response.hg_scene_id,
                 "hg_round_id": response.hg_round_id,
@@ -1702,14 +1714,14 @@ class DomainKernel:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
         turn_record = self._require_narrator_turn_record(fixture, rnd, req)
-        cognition_audit = req.environment_cognition_audit
-        if isinstance(cognition_audit, dict) and cognition_audit.get("cognition_failed"):
+        cognition_failure = req.cognition_failure
+        if isinstance(cognition_failure, dict) and cognition_failure.get("cognition_failed"):
             record_environment_cognition_failure(
                 fixture,
                 turn_record,
-                failure_stage=str(cognition_audit.get("failure_stage") or "unknown"),
-                failure_reason=str(cognition_audit.get("failure_reason") or ""),
-                cognition_id=str(cognition_audit.get("cognition_id") or "") or None,
+                failure_stage=str(cognition_failure.get("failure_stage") or "unknown"),
+                failure_reason=str(cognition_failure.get("failure_reason") or ""),
+                cognition_id=str(cognition_failure.get("cognition_id") or "") or None,
             )
             if isinstance(self.store, SessionRepository):
                 self.store.persist(fixture)
@@ -1725,9 +1737,6 @@ class DomainKernel:
             turn_record,
             req,
             story_records=story_records,
-            environment_cognition_audit=cognition_audit
-            if isinstance(cognition_audit, dict)
-            else None,
         )
 
     def prepare_narrator_semantic_qa_context(

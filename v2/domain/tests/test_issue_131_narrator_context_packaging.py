@@ -93,6 +93,17 @@ class NarratorPresentationPackagingTests(unittest.TestCase):
         self.turn_idx = commit.continuity_turn_index or 1
 
     def _prepare(self, audit: dict | None = None):
+        kwargs = {}
+        if isinstance(audit, dict):
+            if audit.get("cognition_failed"):
+                kwargs["cognition_failure"] = audit
+            else:
+                kwargs["environmental_response_obligations_text"] = audit.get(
+                    "environmental_response_obligations_text"
+                )
+                kwargs["environmental_response_obligations"] = audit.get(
+                    "environmental_response_obligations"
+                )
         return self.kernel.prepare_narrator_context(
             NarratorContextPrepareRequest(
                 hg_scene_id=self.scene_id,
@@ -102,7 +113,7 @@ class NarratorPresentationPackagingTests(unittest.TestCase):
                 domain_commit_id=self.commit_id,
                 continuity_turn_index=self.turn_idx,
                 attempt_index=0,
-                environment_cognition_audit=audit,
+                **kwargs,
             )
         )
 
@@ -142,7 +153,9 @@ class NarratorPresentationPackagingTests(unittest.TestCase):
                 domain_commit_id=self.commit_id,
                 continuity_turn_index=self.turn_idx,
                 attempt_index=1,
-                environment_cognition_audit=audit,
+                environmental_response_obligations_text=audit[
+                    "environmental_response_obligations_text"
+                ],
                 correction_context=correction,
             )
         )

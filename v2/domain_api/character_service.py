@@ -59,6 +59,9 @@ class CharacterKnowledgeService:
             character_id=character_id,
             inference_id=inference_id,
         )
+        from .manifest_validation import validate_contribution_package
+
+        validate_contribution_package("character_orientation", contributions)
         visibility = build_character_visibility_envelope(
             fixture,
             character_id=character_id,
@@ -67,6 +70,7 @@ class CharacterKnowledgeService:
         return {
             "manifest_id": manifest_id,
             "inference_id": inference_id,
+            "inference_kind": "character_orientation",
             "character_id": character_id,
             "hg_scene_id": fixture.hg_scene_id,
             "hg_round_id": rnd.hg_round_id,

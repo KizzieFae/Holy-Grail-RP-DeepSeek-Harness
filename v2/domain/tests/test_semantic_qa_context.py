@@ -16,9 +16,9 @@ from domain_api.semantic_qa_context import build_semantic_qa_context_response  #
 def test_assembly_transports_role_contributions_and_refs_without_rubric() -> None:
     role_contrib = PromptContribution(
         contribution_id="manifest-test-role-context",
-        source_kind="director_decision",
-        authority_class="derived",
-        knowledge_ids=("candidate:1",),
+        source_kind="scene_state",
+        authority_class="authoritative",
+        knowledge_ids=("scene:1",),
         priority=10,
         content="Role-provided context only.",
         provenance={"evaluation_pass_id": "eval-pass-1"},
@@ -37,6 +37,7 @@ def test_assembly_transports_role_contributions_and_refs_without_rubric() -> Non
         evaluation_pass_id="eval-pass-1",
         evaluation_target_role="director",
         inference_id="inf-director-1",
+        inference_kind="director_semantic_qa",
         hg_scene_id="scene-1",
         hg_round_id="round-1",
         turn_index=0,
