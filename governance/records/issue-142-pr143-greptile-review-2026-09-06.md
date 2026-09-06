@@ -2,7 +2,9 @@
 
 **Retrieved:** 2026-09-06  
 **PR:** https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/143  
-**Reviewed head:** `1ab1c30aed61811a19a74d3a522869d8a5a5b7c5`  
+**Reviewed head (initial):** `1ab1c30aed61811a19a74d3a522869d8a5a5b7c5`  
+**Remediation head:** `539f0b81c16cdf498f3bb8d766c582046a70504a`  
+**PR head at retrieval:** `b36ed19` (empty Greptile trigger commit; no production delta)  
 **Issue:** #142 — Storyteller orientation finalize crashes on raw parse-failure payload
 
 ## Check run
@@ -24,7 +26,7 @@
 
 ## Re-review
 
-Pending on remediation commit (see post-remediation SHA in implementation validation record).
+Greptile initial run **success** on implementation commit `1ab1c30`. P2 env-snapshot finding remediated in `539f0b8`. Automated re-run on remediation head was not observed at retrieval time; behavioral candidate is `539f0b8`.
 
 ## Scope note
 

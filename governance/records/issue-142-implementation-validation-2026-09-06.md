@@ -3,7 +3,7 @@
 **Date:** 2026-09-06  
 **Issue:** #142 OPEN → `implemented` (implementation cycle)  
 **Base:** `9baf987cc3b29146e863447427b87379af94e4e0` (`main`)  
-**Implementation branch:** `issue-142-storyteller-finalize-transport`
+**Implementation SHA:** `539f0b81c16cdf498f3bb8d766c582046a70504a` (production); `1ab1c30` initial implementation
 
 ## Root cause
 
