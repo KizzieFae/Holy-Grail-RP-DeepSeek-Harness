@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 import { runInferenceWithContractCorrection } from './contract-correction-substrate.mjs';
 import {
   buildPlotCognitionInitCorrectionPrompt,
@@ -202,17 +203,16 @@ export async function runPlotCognitionPendingWorkLifecycle({
       initPayload = parsed.result;
     } else {
       const initInferenceId = `${inferenceId}-plot-init`;
-      const initManifest = {
-        contributions: [{
-          contribution_id: `${initPrepare.manifest_id}-sources`,
-          source_kind: 'active_constraints',
-          authority_class: 'derived',
-          knowledge_ids: ['plot_cognition:init_sources'],
-          priority: 10,
-          content: JSON.stringify(initPrepare.source_snapshot ?? {}).slice(0, 8000),
-          provenance: {},
-        }],
-      };
+      const initContributions = [{
+        contribution_id: `${initPrepare.manifest_id}-sources`,
+        source_kind: 'active_constraints',
+        authority_class: 'derived',
+        knowledge_ids: ['plot_cognition:init_sources'],
+        priority: 10,
+        content: JSON.stringify(initPrepare.source_snapshot ?? {}).slice(0, 8000),
+        provenance: {},
+      }];
+      const initManifest = bridgeManifestFromHostPrepare(initPrepare, initContributions);
       const mockList = Array.isArray(mockInitResponse)
         ? mockInitResponse
         : (mockInitResponse ? [mockInitResponse] : []);

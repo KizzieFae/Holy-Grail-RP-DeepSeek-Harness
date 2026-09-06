@@ -72,6 +72,9 @@ const NARRATOR_ENV_COGNITION_LANES = new Set([
 
 const COMMON_INSTRUCTION = new Set(['inference_instruction']);
 const CORRECTION = new Set(['semantic_correction']);
+const PLOT_COGNITION_INIT = new Set(['active_constraints']);
+const PLOT_COGNITION_UPDATE = new Set(['active_constraints', 'advisory_context']);
+const PLOT_COGNITION_EPISTEMIC = new Set(['active_constraints', 'derived']);
 
 /** @type {Record<string, Set<string>>} */
 export const ALLOWED_SOURCE_KINDS = {
@@ -133,6 +136,10 @@ export const ALLOWED_SOURCE_KINDS = {
     COMMON_INSTRUCTION,
     new Set(['active_constraints', 'librarian_knowledge']),
   ),
+  librarian_proposal_contract_correction: union(
+    COMMON_INSTRUCTION,
+    new Set(['active_constraints', 'librarian_knowledge']),
+  ),
   opening: union(
     SCENE_AUTHORITY,
     COMMON_INSTRUCTION,
@@ -157,6 +164,13 @@ export const ALLOWED_SOURCE_KINDS = {
     COMMON_INSTRUCTION,
     new Set(['librarian_knowledge']),
   ),
+  plot_cognition_init: PLOT_COGNITION_INIT,
+  plot_cognition_init_contract_correction: PLOT_COGNITION_INIT,
+  plot_cognition_update: PLOT_COGNITION_UPDATE,
+  plot_cognition_update_contract_correction: PLOT_COGNITION_UPDATE,
+  plot_cognition_epistemic_eval: PLOT_COGNITION_EPISTEMIC,
+  plot_cognition_epistemic_eval_contract_correction: PLOT_COGNITION_EPISTEMIC,
+  character_advisory_generation: PLOT_COGNITION_EPISTEMIC,
 };
 
 const INFERENCE_KIND_ALIASES = {

@@ -1,4 +1,5 @@
 import { parseJsonObject } from './inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 
 export const LIBRARIAN_PROPOSAL_RESULT_SCHEMA = 'hg_librarian_proposal_result_v1';
 export const LIBRARIAN_PROPOSAL_CONFIG_ID = 'librarian_proposal_v1';
@@ -248,9 +249,8 @@ export function parseLibrarianProposalResult(raw, catalogAnchorIds = new Set()) 
 }
 
 export function manifestFromLibrarianProposalPrepareResponse(prepareResponse) {
-  return {
-    manifest_id: prepareResponse.manifest_id,
-    inference_id: prepareResponse.inference_id,
-    contributions: prepareResponse.contributions ?? [],
-  };
+  return bridgeManifestFromHostPrepare(
+    prepareResponse,
+    prepareResponse.contributions ?? [],
+  );
 }

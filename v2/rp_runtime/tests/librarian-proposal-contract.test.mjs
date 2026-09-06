@@ -8,6 +8,7 @@ import {
   buildLibrarianProposalPrompt,
   parseLibrarianProposalResult,
 } from '../src/lib/librarian-proposal-envelope.mjs';
+import { validateBridgeManifest } from '../src/lib/manifest-validation.mjs';
 import { runLibrarianProposalGeneration } from '../src/lib/librarian-proposal-substrate.mjs';
 import { createDomainApiClient } from '../src/lib/domain-api-client.mjs';
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
@@ -151,6 +152,75 @@ test('contract correction repairs historical malformed shape with exactly one ex
   assert.equal(inference.ok, true);
   assert.equal(inference.correctionUsed, true);
   assert.equal(inference.inferRuns.length, 2);
+});
+
+test('manifest-backed contract correction accepts registered correction inference kind', async () => {
+  const hostManifest = {
+    manifest_id: 'manifest-librarian-req-1',
+    inference_id: 'inf-librarian-0',
+    inference_kind: 'librarian_proposal',
+    contributions: [
+      {
+        contribution_id: 'manifest-req',
+        source_kind: 'inference_instruction',
+        authority_class: 'derived',
+        knowledge_ids: ['librarian_proposal_request:req-1'],
+        priority: 10,
+        content: 'request',
+      },
+      {
+        contribution_id: 'manifest-epistemic',
+        source_kind: 'active_constraints',
+        authority_class: 'authoritative',
+        knowledge_ids: ['librarian_proposal_epistemic:req-1'],
+        priority: 10,
+        content: 'epistemic',
+      },
+      {
+        contribution_id: 'manifest-catalog',
+        source_kind: 'librarian_knowledge',
+        authority_class: 'derived',
+        knowledge_ids: ['committed_move:commit-1'],
+        priority: 12,
+        content: 'catalog',
+      },
+    ],
+  };
+  const kinds = [];
+  let correctionManifest = null;
+  const inference = await runInferenceWithContractCorrection({
+    runEphemeralInference: async ({ manifest, evidenceContext }) => {
+      validateBridgeManifest({
+        manifest,
+        inferenceKind: evidenceContext?.inferenceKind ?? null,
+      });
+      kinds.push(evidenceContext?.inferenceKind);
+      if (evidenceContext?.inferenceKind === 'librarian_proposal_contract_correction') {
+        correctionManifest = manifest;
+      }
+      return {
+        evidenceId: `ev-${kinds.length}`,
+        raw: kinds.length === 1 ? HISTORICAL_MALFORMED : validProposal(),
+        failed: false,
+        trace: { finish: { kind: 'stop' } },
+      };
+    },
+    primaryInferenceId: 'inf-lib-manifest',
+    primaryInferenceKind: 'librarian_proposal',
+    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    buildPrimaryPrompt: () => buildLibrarianProposalPrompt(PARSE_CONTEXT),
+    buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
+    parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
+    parseContext: PARSE_CONTEXT,
+    manifest: hostManifest,
+    maxCorrections: 1,
+  });
+  assert.deepEqual(kinds, ['librarian_proposal', 'librarian_proposal_contract_correction']);
+  assert.equal(inference.ok, true);
+  assert.equal(inference.correctionUsed, true);
+  assert.equal(correctionManifest?.manifest_id, hostManifest.manifest_id);
+  assert.equal(correctionManifest?.inference_kind, 'librarian_proposal_contract_correction');
+  assert.deepEqual(correctionManifest?.contributions, hostManifest.contributions);
 });
 
 test('contract correction stops after second malformed response', async () => {

@@ -1,4 +1,5 @@
 import { parseJsonObject } from './inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 
 export const CHARACTER_ORIENTATION_SCHEMA = 'hg_character_orientation_v1';
 
@@ -46,10 +47,10 @@ export function buildCharacterOrientationPrompt({
 }
 
 export function manifestFromCharacterPrepareResponse(prepareResponse) {
-  return {
-    manifest_id: prepareResponse.manifest_id,
-    contributions: prepareResponse.contributions ?? [],
-  };
+  return bridgeManifestFromHostPrepare(
+    prepareResponse,
+    prepareResponse.contributions ?? [],
+  );
 }
 
 export function parseCharacterOrientation(raw) {

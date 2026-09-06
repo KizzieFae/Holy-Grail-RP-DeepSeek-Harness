@@ -1,4 +1,5 @@
 import { parseJsonObject } from './inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 
 export const STORYTELLER_ASSESSMENT_SCHEMA = 'hg_storyteller_assessment_v1';
 
@@ -49,10 +50,10 @@ export function buildStorytellerAssessmentPrompt({
 }
 
 export function manifestFromStorytellerAssessmentPrepareResponse(prepareResponse) {
-  return {
-    manifest_id: prepareResponse.manifest_id,
-    contributions: prepareResponse.contributions ?? [],
-  };
+  return bridgeManifestFromHostPrepare(
+    prepareResponse,
+    prepareResponse.contributions ?? [],
+  );
 }
 
 export function parseStorytellerAssessment(raw) {
