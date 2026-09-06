@@ -12,10 +12,12 @@ import { deepseekInferenceProfile } from '../lib/inference-profile.mjs';
 import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../lib/live-inference-prompts.mjs';
 import { parseJsonObject } from '../lib/inference-utils.mjs';
 import { repoRoot } from '../lib/runtime-config.mjs';
+import { installIssue136ValidationCards, loadIssue136TruthFixture } from './issue136-fixture-truth.mjs';
 import { startHarnessRuntime } from './harness-runtime.mjs';
+import { directorFor } from './inference-mocks.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = repoRoot();
+const REPO_ROOT = repoRoot;
 
 function extractContractProvenance(manifest) {
   const structural = (manifest?.contributions ?? []).find(
@@ -44,8 +46,7 @@ function summarizeParsedMove(parsed) {
 }
 
 export async function runIssue136CharacterLiveSlice({
-  characterId = 'Alice',
-  role = 'guest',
+  fixtureId = '136-T2-A-STABILITY',
   maxAttempts = 3,
   dataDir = null,
   candidateSha = null,
@@ -81,15 +82,13 @@ export async function runIssue136CharacterLiveSlice({
   });
 
   const domainApi = createDomainApiClient(runtime.baseUrl);
+  installIssue136ValidationCards(rootDir);
+  const truth = loadIssue136TruthFixture(fixtureId);
+  const characterId = truth.character_id;
+  const role = 'guest';
+  const directorDecision = JSON.parse(directorFor(characterId));
   const modelProfile = deepseekInferenceProfile({ reasoningEffort: 'low', maxTokens: 1024 });
   const inferenceId = `issue136-live-${crypto.randomUUID()}`;
-  const directorDecision = {
-    next_actor: characterId,
-    end_round: false,
-    reason: 'issue136 bounded character live slice',
-    environment_event: '',
-    tension_shift: '',
-  };
 
   const attempts = [];
   let committed = false;
@@ -100,12 +99,11 @@ export async function runIssue136CharacterLiveSlice({
 
   try {
     const session = await domainApi.createSession({
-      characters: ['Alice', 'Bob'],
-      opening: { mode: 'custom', text: 'Alice and Bob share a quiet workshop; no new facts have emerged.' },
+      characters: truth.character_cards,
+      opening: { mode: 'custom', text: truth.scene_stimulus },
       location: 'Workshop',
       memory_scope_id: `issue136-live-${crypto.randomUUID()}`,
       plot_cognition_scope_id: `issue136-live-pc-${crypto.randomUUID()}`,
-      role_assignments: { Alice: 'guest', Bob: 'staff' },
     });
     const round = await domainApi.startRound({ hg_scene_id: session.hg_scene_id });
     const beforeState = await domainApi.getSceneState(session.hg_scene_id);
@@ -202,13 +200,19 @@ export async function runIssue136CharacterLiveSlice({
         validated_move: validation.normalized_move ?? proposed,
         director_decision: directorDecision,
         expected_turn_index: expectedTurnIndex,
-      });
+      }).catch((error) => ({
+        committed: false,
+        reason: String(error?.message ?? error),
+        commit_error: true,
+      }));
 
       if (commit.committed) {
         committed = true;
         domainCommitId = commit.domain_commit_id ?? null;
         continuityTurnIndex = commit.continuity_turn_index ?? null;
         attemptRecord.committed = true;
+      } else if (commit.commit_error) {
+        attemptRecord.commit_error = commit.reason;
       }
       attempts.push(attemptRecord);
     }
@@ -220,6 +224,8 @@ export async function runIssue136CharacterLiveSlice({
   const report = {
     schema: 'issue136_character_live_slice_v1',
     candidate_sha: candidateSha,
+    fixture_id: fixtureId,
+    character_id: characterId,
     provider: modelProfile.provider,
     model: modelProfile.model,
     reasoning_effort: modelProfile.reasoningEffort,
