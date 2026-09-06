@@ -76,9 +76,9 @@ No other production `src/` correction kinds found.
 | Review | SHA | Result |
 |--------|-----|--------|
 | Initial implementation | `53c8f68e2c025b2cb492f6f546359cc1916c0963` | SUCCESS 5/5, 0 comments (check `101463567879`) — superseded for final production/test gate |
-| Post-remediation | _(record after Greptile completes)_ | Required on exact production/test candidate |
+| Post-remediation | `bffe8c0345306db60509d7723256b61ff64291bd` (check `101470581806`; production/test at `d8a6e5e`) | SUCCESS 5/5, 0 comments, 20 files |
 
-Record: `governance/records/issue-138-pr139-greptile-review-2026-09-06.md` (initial review only).
+Record: `governance/records/issue-138-pr139-greptile-review-2026-09-06.md` (initial); `governance/records/issue-138-pr139-greptile-rereview-2026-09-06.md` (post-remediation).
 
 ---
 
