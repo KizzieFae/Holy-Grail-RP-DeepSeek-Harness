@@ -395,7 +395,8 @@ def _s4b_result(*, commit_id: str, event_id: str) -> dict:
     }
 
 
-def _b2_result(*, commit_id: str, issue_id: str) -> dict:
+def _b2_result(*, commit_id: str, issue_id: str, issue_ref: str | None = None) -> dict:
+    resolved_issue_ref = issue_ref if issue_ref is not None else issue_id
     return {
         "schema": LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
         "proposals": [
@@ -417,7 +418,7 @@ def _b2_result(*, commit_id: str, issue_id: str) -> dict:
                     },
                 ],
                 "proposed_payload": {
-                    "issue_ref": issue_id,
+                    "issue_ref": resolved_issue_ref,
                     "semantic_unmet_condition": "The vault remains sealed.",
                 },
             }
@@ -549,6 +550,24 @@ class S4MutationEnvelopeTests(unittest.TestCase):
             expected_surfaces=S4_DURABLE_MUTATION_SURFACES_BY_KIND["issue_tension_pressure"],
         )
         self.assertIn(issue.issue_id, fixture.manager.issue_pressure_semantic_overlays)
+
+    def test_layer2_b2_finalize_with_stable_ref_issue_ref(self) -> None:
+        fixture, request, issue = _session_b2()
+        service = LibrarianProposalService()
+        stable_ref = f"issue:{issue.issue_id}"
+        result = service.finalize_proposals(
+            request,
+            fixture,
+            proposal_result=_b2_result(
+                commit_id=request.domain_commit_id,
+                issue_id=issue.issue_id,
+                issue_ref=stable_ref,
+            ),
+        )
+        self.assertIsNotNone(result.continuity_decision)
+        self.assertEqual(result.continuity_decision.accepted_count, 1)
+        overlay = fixture.manager.issue_pressure_semantic_overlays[issue.issue_id]
+        self.assertEqual(overlay["accepted_payload"]["issue_ref"], stable_ref)
 
     def test_layer2_non_mutating_salience_leaves_canonical_state_unchanged(self) -> None:
         fixture, request, _event = _session_s4b()

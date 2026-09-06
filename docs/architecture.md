@@ -61,6 +61,8 @@ Character knowledge (#38): DSH **`runCharacterKnowledgeCognition`** → orientat
 | `PublicEvent.revelation_significance_by_character` | `knowledge_revelation_significance` |
 | `ContinuityManager.issue_pressure_semantic_overlays` | `issue_tension_pressure` |
 
+For `issue_tension_pressure`, `issue_ref` accepts the bare authoritative `issue_id` or the catalog stable reference `issue:{issue_id}` (same typed stable-reference pattern as `event_ref` / `event:{event_id}` for `knowledge_revelation_significance`).
+
 S4 **must not** modify `turn_counter`, authoritative `IssueState`, or `known_by`. `consequence_meaning` and `information_salience` remain accepted audit-only kinds without durable Continuity mutation. At-most-once: terminal audit per `domain_commit_id` via `find_terminal_audit_for_commit`. See [PACKET_CONTRACTS.md](../PACKET_CONTRACTS.md).
 
 **Future option (not implemented):** bounded post-commit Storyteller refresh (`material_commit_refresh`) could later activate the validated S3b Narrator mapper; not required for #32 completion.
