@@ -66,7 +66,7 @@ Issue #134 established fail-closed model-context validation for role-turn infere
 
 ## Validation evidence
 
-**Implementation candidate SHA:** _(recorded after commit)_
+**Implementation candidate SHA:** `b9cf7a16af02a283834cbd8befd12cf26740433a`
 
 | Suite | Result |
 |-------|--------|
