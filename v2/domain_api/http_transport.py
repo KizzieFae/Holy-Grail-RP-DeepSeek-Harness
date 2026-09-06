@@ -378,7 +378,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         hg_scene_id=str(body["hg_scene_id"]),
                         hg_round_id=str(body["hg_round_id"]),
                         inference_id=str(body["inference_id"]),
-                        orientation_result=dict(body.get("orientation_result") or {}),
+                        orientation_result=body.get("orientation_result") or {},
                     ),
                 )
                 return
@@ -404,7 +404,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         inference_id=str(body["inference_id"]),
                         orientation=dict(body.get("orientation") or {}),
                         bundle=dict(body.get("bundle") or {}),
-                        assessment_result=dict(body.get("assessment_result") or {}),
+                        assessment_result=body.get("assessment_result") or {},
                         orientation_inference_id=str(body.get("orientation_inference_id") or body["inference_id"]),
                         assessment_inference_id=str(body.get("assessment_inference_id") or body["inference_id"]),
                         follow_up_request_ids=list(body.get("follow_up_request_ids") or ()),
