@@ -107,6 +107,7 @@ class DirectorContextPrepareRequest:
 class DirectorContextPrepareResponse:
     manifest_id: str
     inference_id: str
+    inference_kind: str
     hg_scene_id: str
     hg_round_id: str
     role: str
@@ -236,6 +237,13 @@ class DirectorDecisionResult:
 
 @dataclass(frozen=True)
 class PromptContribution:
+    """Model-facing inference context contribution (#134).
+
+    Prompt contributions are intentionally model-projectable. Forensic and audit
+    artifacts must remain in durable evidence channels until explicitly distilled
+    into content authorized for a specific inference path.
+    """
+
     contribution_id: str
     source_kind: SourceKind
     authority_class: AuthorityClass
@@ -247,8 +255,14 @@ class PromptContribution:
 
 @dataclass(frozen=True)
 class PromptContributionManifest:
+    """Ephemeral model-context package for one inference (#134).
+
+    Every contribution in this manifest is authorized for model registration.
+    """
+
     manifest_id: str
     inference_id: str
+    inference_kind: str
     hg_scene_id: str
     hg_round_id: str
     role: str
@@ -299,6 +313,7 @@ class SemanticEvaluationContextResponse:
     manifest_id: str
     evaluation_pass_id: str
     inference_id: str
+    inference_kind: str
     hg_scene_id: str
     hg_round_id: str
     character_id: str
@@ -317,6 +332,7 @@ class SemanticQaContextPrepareResponse:
     evaluation_pass_id: str
     evaluation_target_role: str
     inference_id: str
+    inference_kind: str
     hg_scene_id: str
     hg_round_id: str
     turn_index: int
@@ -422,7 +438,9 @@ class NarratorContextPrepareRequest:
     continuity_turn_index: int
     attempt_index: int = 0
     correction_context: dict[str, Any] | None = None
-    environment_cognition_audit: dict[str, Any] | None = None
+    environmental_response_obligations_text: str | None = None
+    environmental_response_obligations: list[dict[str, Any]] | None = None
+    cognition_failure: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

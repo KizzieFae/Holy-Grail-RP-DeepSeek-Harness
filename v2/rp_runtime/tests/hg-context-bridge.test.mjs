@@ -171,3 +171,39 @@ test('HgContextBridge: scoped registrations do not leak across inference agents'
     false,
   );
 });
+
+test('HgContextBridge: rejects invalid model-context package before registration', async (t) => {
+  const { ctx, contextBridge } = await createHolyGrailRpContext();
+  t.after(async () => {
+    await ctx.fiber.dispose();
+  });
+
+  const agent = ctx.agentLoop.create(SessionId('hg-inf-bridge-reject'));
+  const invalidManifest = {
+    manifest_id: 'manifest-invalid',
+    inference_id: 'inf-invalid',
+    inference_kind: 'narrator_presentation',
+    hg_scene_id: 'scene-1',
+    hg_round_id: 'round-1',
+    role: 'narrator',
+    character_id: 'Alice',
+    turn_index: 1,
+    attempt_index: 0,
+    contributions: [
+      {
+        contribution_id: 'bad-env-cog',
+        source_kind: 'narrator_environment_cognition',
+        authority_class: 'derived',
+        knowledge_ids: ['audit-1'],
+        priority: 28,
+        content: '{"forensic":"audit"}',
+        provenance: {},
+      },
+    ],
+  };
+
+  assert.throws(
+    () => contextBridge.registerManifest({ agent, manifest: invalidManifest }),
+    /model-context package rejected/,
+  );
+});

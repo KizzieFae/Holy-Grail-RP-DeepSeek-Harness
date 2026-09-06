@@ -101,7 +101,7 @@ function manifestFromPrepareResponse(prepareResponse) {
 
 /**
  * Pre-render Narrator environmental cognition (#49).
- * Returns audit payload for prepareNarratorContext.environment_cognition_audit.
+ * Returns audit payload for durable turn metadata / execution evidence.
  */
 export async function runNarratorEnvironmentCognition({
   api,

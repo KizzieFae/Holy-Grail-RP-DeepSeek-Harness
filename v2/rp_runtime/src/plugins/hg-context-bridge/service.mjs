@@ -7,6 +7,8 @@ import { Service } from '@deepseek-ai/cordis';
  * Transports already-decided Python projections; does not interpret domain
  * semantics, ordering policy, or authority classes.
  */
+import { validateBridgeManifest } from '../../lib/manifest-validation.mjs';
+
 export default class HgContextBridge extends Service {
   static name = 'hgContextBridge';
 
@@ -20,6 +22,7 @@ export default class HgContextBridge extends Service {
    * @param {object} options
    * @param {object} options.agent - ephemeral DSH inference agent
    * @param {object|null|undefined} options.manifest - PromptContributionManifest from Domain API
+   * @param {string} [options.inferenceKind] - fallback when manifest.inference_kind is absent
    * @returns {{
    *   dispose: () => void,
    *   manifestId: string|null,
@@ -27,7 +30,8 @@ export default class HgContextBridge extends Service {
    *   correlation: object,
    * }}
    */
-  registerManifest({ agent, manifest }) {
+  registerManifest({ agent, manifest, inferenceKind = null }) {
+    validateBridgeManifest({ manifest, inferenceKind });
     const contributions = manifest?.contributions ?? [];
     const disposers = [];
     const contributionIds = [];

@@ -60,6 +60,7 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     const contextRegistration = ctx.hgContextBridge.registerManifest({
       agent,
       manifest,
+      inferenceKind: evidenceContext?.inferenceKind ?? null,
     });
     agent.followup(
       createUserMessage({

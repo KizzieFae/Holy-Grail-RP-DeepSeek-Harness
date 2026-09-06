@@ -535,9 +535,19 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("correction_context"), dict)
                         else None
                     ),
-                    environment_cognition_audit=(
-                        dict(data["environment_cognition_audit"])
-                        if isinstance(data.get("environment_cognition_audit"), dict)
+                    environmental_response_obligations_text=(
+                        str(data["environmental_response_obligations_text"])
+                        if data.get("environmental_response_obligations_text") is not None
+                        else None
+                    ),
+                    environmental_response_obligations=(
+                        list(data["environmental_response_obligations"])
+                        if isinstance(data.get("environmental_response_obligations"), list)
+                        else None
+                    ),
+                    cognition_failure=(
+                        dict(data["cognition_failure"])
+                        if isinstance(data.get("cognition_failure"), dict)
                         else None
                     ),
                 )

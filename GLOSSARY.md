@@ -108,6 +108,8 @@ For **symptom → owner** routing and current module names, use [MODULE_INDEX.md
 
 **Packet** — Bounded runtime input projection (`RuntimeCharacterPacket`, `RuntimeScenePacket`, `RetrievedContextBundle` — [PACKET_CONTRACTS.md](./PACKET_CONTRACTS.md)). Character inference context is assembled as Domain Host **`PromptContributionManifest`** contributions (including **`recent_scene_transcript`** and **`user_turn_trigger`** from durable `rp_history`), transported by DSH **`HgContextBridge`**, with continuity-backed state, grounding, cross-session buckets (when enabled), and formatted retrieval.
 
+**Prompt contribution** — A single model-facing inference input lane (`PromptContribution`) or packaged collection (`PromptContributionManifest`). Prompt contributions are **not** forensic retention channels; audit artifacts stay in durable evidence stores unless explicitly distilled into an authorized model-facing contribution (#134). Host and Bridge enforce per-inference **`source_kind` allowlists** and reject invalid packages atomically.
+
 **Retrieved context** — **Non-authoritative** snippets from compiled indexes or scope knowledge, selected per turn under caps. Never replaces continuity truth (PRD §7).
 
 **Cross-session memory** — Optional aggregation of bounded text buckets from **prior saved sessions** when starting a new scene with overlapping cast. Controlled by `RP_CROSS_SESSION_MEMORY`. See [docs/cross_session_memory.md](./docs/cross_session_memory.md).

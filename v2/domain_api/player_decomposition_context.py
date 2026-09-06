@@ -9,6 +9,7 @@ from .contract import (
     PromptContribution,
     PromptContributionManifest,
 )
+from .manifest_validation import finalize_prompt_contribution_manifest
 from .player_pvr_entitlement_context import (
     PLAYER_PVR_ENTITLEMENT_INTERPRETATION_INSTRUCTION,
     build_player_pvr_entitlement_context_contribution,
@@ -49,7 +50,8 @@ def prepare_player_decomposition_context(
         ),
     ]
 
-    return PromptContributionManifest(
+    return finalize_prompt_contribution_manifest(
+        "player_decomposition",
         manifest_id=manifest_id,
         inference_id=req.inference_id,
         hg_scene_id=hg_scene_id,
@@ -58,5 +60,5 @@ def prepare_player_decomposition_context(
         character_id=None,
         turn_index=req.turn_index,
         attempt_index=req.attempt_index,
-        contributions=tuple(contributions),
+        contributions=contributions,
     )

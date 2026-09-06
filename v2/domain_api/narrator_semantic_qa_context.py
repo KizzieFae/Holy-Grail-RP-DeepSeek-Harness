@@ -418,6 +418,7 @@ def build_narrator_semantic_qa_context_response(
         evaluation_pass_id=evaluation_pass_id,
         evaluation_target_role="narrator",
         inference_id=inference_id,
+        inference_kind="narrator_semantic_qa",
         hg_scene_id=hg_scene_id,
         hg_round_id=hg_round_id,
         turn_index=turn_index,
