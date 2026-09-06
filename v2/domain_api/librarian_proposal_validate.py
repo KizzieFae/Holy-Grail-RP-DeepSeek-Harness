@@ -196,6 +196,20 @@ def validate_host_proposal_item(
         )
         if not epistemic_ok:
             codes.extend(epistemic_codes)
+    if str(proposal.proposal_kind) == "issue_tension_pressure":
+        issue_ref = str(proposal.proposed_payload.get("issue_ref", "") or "").strip()
+        if issue_ref:
+            matched = False
+            for item in catalog:
+                if str(item.evidence_kind) != "continuity_issue":
+                    continue
+                provenance = dict(item.provenance or {})
+                issue_id = str(provenance.get("issue_id", "") or "").strip()
+                if issue_ref in {issue_id, item.stable_ref}:
+                    matched = True
+                    break
+            if not matched:
+                codes.append("unknown_issue_reference")
     deduped = tuple(dict.fromkeys(codes))
     accepted = not deduped
     return HostProposalItemValidation(

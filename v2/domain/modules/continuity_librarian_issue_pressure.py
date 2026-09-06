@@ -56,12 +56,18 @@ def _find_issue(manager: Any, issue_ref: str) -> Any | None:
     ref = str(issue_ref or "").strip()
     if not ref:
         return None
-    issue = (getattr(manager, "issues", None) or {}).get(ref)
-    if issue is None:
-        for candidate in (getattr(manager, "issues", None) or {}).values():
-            if str(getattr(candidate, "issue_id", "")) == ref:
-                return candidate
-    return issue
+    issues = getattr(manager, "issues", None) or {}
+    issue = issues.get(ref)
+    if issue is not None:
+        return issue
+    for candidate in issues.values():
+        issue_id = str(getattr(candidate, "issue_id", ""))
+        if issue_id == ref:
+            return candidate
+        stable = f"issue:{issue_id}"
+        if ref == stable:
+            return candidate
+    return None
 
 
 def _build_overlay(

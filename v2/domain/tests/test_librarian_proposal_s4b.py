@@ -13,7 +13,7 @@ _V2 = _ROOT / "v2"
 if str(_V2) not in sys.path:
     sys.path.insert(0, str(_V2))
 
-from continuity_state import PublicEvent  # noqa: E402
+from continuity_state import IssueState, IssueStatus, PublicEvent  # noqa: E402
 from domain_api.librarian_proposal_contract import (  # noqa: E402
     LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
     ProposalCommitBinding,
@@ -97,6 +97,55 @@ def _session_with_event(
         librarian_inference_id="inf-librarian-s4b",
     )
     return fixture, request, event
+
+
+def _active_issue(*, issue_id: str = "issue-pressure-1") -> IssueState:
+    return IssueState(
+        issue_id=issue_id,
+        description="Vault access remains blocked.",
+        participants=["Alice", "Bob"],
+        status=IssueStatus.ACTIVE,
+        created_at=datetime.now(timezone.utc),
+        pressure_kind="access_conflict",
+        blocked_what="Vault access",
+        required_next_step="Someone must find the key.",
+        last_change="Alice refused to leave.",
+    )
+
+
+def _session_with_issue(
+    *,
+    commit_id: str = "commit-s4b-issue-1",
+    issue: IssueState | None = None,
+) -> tuple:
+    fixture = initialize_live_session(
+        cast=["Alice", "Bob"],
+        hg_session_id="session-s4b-issue",
+    )
+    issue = issue or _active_issue()
+    fixture.manager.issues[issue.issue_id] = issue
+    assert fixture.manager.scene_state is not None
+    fixture.manager.scene_state.active_issue_ids = [issue.issue_id]
+    append_history_entry(
+        fixture.rp_history,
+        kind="committed_turn",
+        content="blocked at vault",
+        hg_round_id="round-s4b-issue-1",
+        domain_commit_id=commit_id,
+        actor_id="Alice",
+        metadata={
+            "continuity_turn_index": 1,
+            "structured_move": _minimal_move(),
+        },
+    )
+    request = build_post_commit_proposal_request(
+        hg_scene_id="scene-s4b-issue",
+        hg_round_id="round-s4b-issue-1",
+        turn_index=1,
+        domain_commit_id=commit_id,
+        librarian_inference_id="inf-librarian-s4b-issue",
+    )
+    return fixture, request, issue
 
 
 def _s4b_proposal_result(
@@ -612,6 +661,75 @@ class LibrarianProposalS4bTests(unittest.TestCase):
             domain_commit_id="commit-s4b-1",
         )
         self.assertIn("unknown_event_reference", item.rejection_codes)
+
+    def test_host_accepts_stable_ref_issue_ref(self) -> None:
+        fixture, request, issue = _session_with_issue()
+        catalog, _commit = build_post_commit_evidence_catalog(request, fixture)
+        proposal = LibrarianSemanticProposal(
+            proposal_id="prop-host-issue",
+            proposal_batch_id="batch-1",
+            proposal_origin="librarian",
+            proposal_kind="issue_tension_pressure",
+            evidence_anchors=(
+                EvidenceAnchor(
+                    anchor_id=f"continuity_issue:{issue.issue_id}",
+                    evidence_kind="continuity_issue",
+                ),
+            ),
+            derivation_summary="pressure",
+            confidence="likely",
+            proposed_payload={
+                "issue_ref": f"issue:{issue.issue_id}",
+                "semantic_unmet_condition": "The vault remains sealed.",
+            },
+            commit_binding=ProposalCommitBinding(
+                domain_commit_id=request.domain_commit_id,
+                hg_round_id=request.hg_round_id,
+                turn_index=request.turn_index,
+            ),
+            provenance=ProposalProvenance(librarian_inference_id="inf-1"),
+        )
+        item = validate_host_proposal_item(
+            proposal,
+            catalog=catalog,
+            domain_commit_id=request.domain_commit_id,
+        )
+        self.assertTrue(item.accepted)
+        self.assertNotIn("unknown_issue_reference", item.rejection_codes)
+
+    def test_host_rejects_unknown_issue_ref(self) -> None:
+        fixture, request, issue = _session_with_issue()
+        catalog, _commit = build_post_commit_evidence_catalog(request, fixture)
+        proposal = LibrarianSemanticProposal(
+            proposal_id="prop-host-issue-bad",
+            proposal_batch_id="batch-1",
+            proposal_origin="librarian",
+            proposal_kind="issue_tension_pressure",
+            evidence_anchors=(
+                EvidenceAnchor(
+                    anchor_id=f"continuity_issue:{issue.issue_id}",
+                    evidence_kind="continuity_issue",
+                ),
+            ),
+            derivation_summary="bad ref",
+            confidence="likely",
+            proposed_payload={
+                "issue_ref": "issue:missing-issue",
+                "semantic_unmet_condition": "The vault remains sealed.",
+            },
+            commit_binding=ProposalCommitBinding(
+                domain_commit_id=request.domain_commit_id,
+                hg_round_id=request.hg_round_id,
+                turn_index=request.turn_index,
+            ),
+            provenance=ProposalProvenance(librarian_inference_id="inf-1"),
+        )
+        item = validate_host_proposal_item(
+            proposal,
+            catalog=catalog,
+            domain_commit_id=request.domain_commit_id,
+        )
+        self.assertIn("unknown_issue_reference", item.rejection_codes)
 
     def test_continuity_rejects_missing_public_event_anchor(self) -> None:
         fixture, request, event = _session_with_event()

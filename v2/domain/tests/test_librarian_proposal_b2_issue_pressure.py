@@ -122,9 +122,10 @@ def _proposal(
     stakes: str | None = "Party progress toward the objective is stalled.",
     manufactured: bool = False,
     pressure_kind: str | None = None,
+    issue_ref: str | None = None,
 ) -> LibrarianSemanticProposal:
     payload: dict = {
-        "issue_ref": issue_id,
+        "issue_ref": issue_ref if issue_ref is not None else issue_id,
         "semantic_unmet_condition": semantic,
     }
     if stakes:
@@ -195,6 +196,31 @@ class TestB2IssuePressureOverlay(unittest.TestCase):
         self.assertFalse(result.applied)
         self.assertEqual(result.reason_code, REASON_UNKNOWN_ISSUE)
         self.assertNotIn("missing-issue", fixture.manager.issue_pressure_semantic_overlays)
+
+    def test_apply_accepts_catalog_stable_ref_issue_ref(self) -> None:
+        fixture, _request, issue = _session_with_issue()
+        stable_ref = f"issue:{issue.issue_id}"
+        proposal = _proposal(
+            commit_id="commit-b2-1",
+            issue_id=issue.issue_id,
+            issue_ref=stable_ref,
+        )
+        result = apply_issue_tension_pressure(fixture.manager, proposal)
+        self.assertTrue(result.applied)
+        self.assertEqual(result.reason_code, "applied")
+        overlay = fixture.manager.issue_pressure_semantic_overlays[issue.issue_id]
+        self.assertEqual(overlay["accepted_payload"]["issue_ref"], stable_ref)
+
+    def test_apply_rejects_unknown_prefixed_issue_ref(self) -> None:
+        fixture, _request, issue = _session_with_issue()
+        proposal = _proposal(
+            commit_id="commit-b2-1",
+            issue_id=issue.issue_id,
+            issue_ref="issue:missing-issue",
+        )
+        result = apply_issue_tension_pressure(fixture.manager, proposal)
+        self.assertFalse(result.applied)
+        self.assertEqual(result.reason_code, REASON_UNKNOWN_ISSUE)
 
     def test_continuity_rejects_unknown_issue_in_catalog(self) -> None:
         fixture, request, issue = _session_with_issue()
