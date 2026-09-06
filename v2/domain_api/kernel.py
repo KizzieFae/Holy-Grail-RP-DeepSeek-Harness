@@ -1172,7 +1172,7 @@ class DomainKernel:
         hg_scene_id: str,
         hg_round_id: str,
         inference_id: str,
-        orientation_result: dict[str, Any],
+        orientation_result: dict[str, Any] | str,
     ) -> dict[str, Any]:
         fixture = self.store.require(hg_scene_id)
         rnd = self._require_round(fixture, hg_round_id)
@@ -1217,7 +1217,7 @@ class DomainKernel:
         inference_id: str,
         orientation: dict[str, Any],
         bundle: dict[str, Any],
-        assessment_result: dict[str, Any],
+        assessment_result: dict[str, Any] | str,
         orientation_inference_id: str,
         assessment_inference_id: str,
         follow_up_request_ids: list[str] | None = None,
