@@ -15,6 +15,11 @@ from typing import Any, Literal
 ParseFailureClass = Literal["ok", "unrecoverable", "schema_recoverable"]
 
 from character_move_adapters import CanonicalV2Move
+from character_move_response_contract import (
+    MOTIVATION_REQUIRED_FIELDS,
+    V2_ROOT_ALLOWLIST,
+    beat_allowed_keys_for_type,
+)
 from issue240_semantic_evaluation import (
     issue240_v2_root_allowlist_extra,
     validate_issue240_semantic_evaluation_ingress,
@@ -26,16 +31,6 @@ MAX_V2_TEXT_CODEPOINTS = 8192
 MAX_V2_AUDIENCE_ITEMS = 32
 MAX_V2_SEMANTIC_PROPOSALS = 8
 MAX_V2_PROPOSAL_TEXT_CODEPOINTS = 256
-
-V2_ROOT_ALLOWLIST = frozenset(
-    {
-        "move_schema_version",
-        "beats",
-        "motivation",
-        "scene_state_updates",
-        "semantic_proposals",
-    }
-)
 
 V2_SPEECH_AUDIBILITY = frozenset({"public", "directed", "private"})
 V2_ACTION_RECIPIENT_SCOPES = frozenset(
@@ -178,7 +173,7 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
     mot = m.get("motivation")
     if not isinstance(mot, dict):
         return "motivation must be an object"
-    for req in ("goal", "tactic", "emotional_driver", "risk_level"):
+    for req in MOTIVATION_REQUIRED_FIELDS:
         v = str(mot.get(req, "") or "").strip()
         if not v:
             return f"motivation missing or empty required key: {req!r}"
@@ -192,7 +187,7 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
         bt = b.get("type")
         if bt not in ("action", "speech"):
             return f"invalid beat type: {bt!r}"
-        unknown = [k for k in b if k not in _beat_allowed_keys(bt)]
+        unknown = [k for k in b if k not in beat_allowed_keys_for_type(bt)]
         if unknown:
             return f"unknown fields on {bt!r} beat: {unknown}"
         if bt == "action":
@@ -249,14 +244,6 @@ def validate_canonical_v2(m: dict[str, Any]) -> str:
     return ""
 
 
-def _beat_allowed_keys(bt: Any) -> set[str]:
-    if bt == "action":
-        return {"type", "action", "recipients"}
-    if bt == "speech":
-        return {"type", "dialogue", "audibility", "audience"}
-    return set()
-
-
 def _as_canonical_v2_handoff(d: dict[str, Any]) -> CanonicalV2Move:
     m = CanonicalV2Move()
     m.update(d)
@@ -307,7 +294,7 @@ def has_meaningful_rp_body(data: dict[str, Any]) -> bool:
     mot = data.get("motivation")
     if not isinstance(mot, dict):
         return False
-    for req in ("goal", "tactic", "emotional_driver", "risk_level"):
+    for req in MOTIVATION_REQUIRED_FIELDS:
         if not str(mot.get(req, "") or "").strip():
             return False
     return True

@@ -86,7 +86,7 @@ class Issue136InferenceInstructionOwnershipTests(unittest.TestCase):
         scratch = next(c for c in manifest.contributions if c.source_kind == "director_scratch")
         return scratch.content
 
-    def _character_instruction(self) -> str:
+    def _character_instructions(self) -> list:
         manifest = self.kernel.prepare_context(
             ContextPrepareRequest(
                 hg_scene_id=self.scene_id,
@@ -98,10 +98,23 @@ class Issue136InferenceInstructionOwnershipTests(unittest.TestCase):
                 attempt_index=0,
             )
         )
-        instruction = next(
+        return [
             c for c in manifest.contributions if c.source_kind == "inference_instruction"
+        ]
+
+    def _character_structural_contract(self) -> str:
+        structural = next(
+            c for c in self._character_instructions()
+            if c.contribution_id.endswith("-response-contract")
         )
-        return instruction.content
+        return structural.content
+
+    def _character_behavioral_instruction(self) -> str:
+        behavioral = next(
+            c for c in self._character_instructions()
+            if c.contribution_id.endswith("-instruction")
+        )
+        return behavioral.content
 
     def test_director_host_contract_contains_schema_and_domain_requirements(self) -> None:
         text = self._director_instruction().lower()
@@ -122,18 +135,24 @@ class Issue136InferenceInstructionOwnershipTests(unittest.TestCase):
         self.assertIn("character-private knowledge", scratch)
 
     def test_character_host_contract_contains_schema_and_invariant(self) -> None:
-        text = self._character_instruction()
-        lower = text.lower()
-        self.assertIn("move_schema_version 2", lower)
-        self.assertIn("beats", lower)
-        self.assertIn("motivation", lower)
-        self.assertIn("semantic_evaluation", lower)
-        self.assertIn("type action", lower)
-        self.assertIn("type speech", lower)
-        self.assertIn("risk_level", lower)
+        structural = self._character_structural_contract()
+        behavioral = self._character_behavioral_instruction()
+        structural_lower = structural.lower()
+        behavioral_lower = behavioral.lower()
+        self.assertIn('"move_schema_version": 2', structural)
+        self.assertIn("beats", structural_lower)
+        self.assertIn("motivation", structural_lower)
+        self.assertIn("semantic_evaluation", structural_lower)
+        self.assertIn('"type": "action"', structural)
+        self.assertIn('"action":', structural)
+        self.assertIn('"type": "speech"', structural)
+        self.assertIn('"dialogue":', structural)
+        self.assertIn("risk_level", structural_lower)
         for level in ("low", "medium", "high"):
-            self.assertIn(level, lower)
-        self.assertIn(APPROVED_CHARACTER_INVARIANT, text)
+            self.assertIn(level, structural_lower)
+        self.assertIn(APPROVED_CHARACTER_INVARIANT, behavioral)
+        self.assertNotIn('"move_schema_version": 2', behavioral)
+        self.assertNotIn("type action (key action)", behavioral_lower)
 
     def test_dsh_transport_prompts_are_minimal_and_non_duplicative(self) -> None:
         prompts = _load_dsh_transport_prompts()

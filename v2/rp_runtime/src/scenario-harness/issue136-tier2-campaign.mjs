@@ -7,6 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { createHolyGrailRpContext } from '../bootstrap.mjs';
 import { repoRoot } from '../lib/runtime-config.mjs';
 import { CampaignLimits } from './campaign-limits.mjs';
+import {
+  CampaignRunState,
+  classifyDeterministicInfrastructureFailure,
+  DeterministicStopClass,
+  evaluateExpansionGate,
+  Issue136CampaignStateMachine,
+} from './issue136-campaign-state.mjs';
 import { joinScenarioForensics, readExecutionAttempts } from './forensic-query.mjs';
 import { startHarnessRuntime } from './harness-runtime.mjs';
 import { directorFor, VALID_CHARACTER_MOVE } from './inference-mocks.mjs';
@@ -561,35 +568,68 @@ export async function runIssue136Tier2Campaign({
     maxRuns: guard.max_runs,
     maxInferences: guard.max_inferences,
   });
+  const stateMachine = new Issue136CampaignStateMachine(limits);
   const rootDir = campaignDataDir ?? path.join(issue136CampaignDataRoot(), mode, new Date().toISOString().replace(/[:.]/g, '-'));
   fs.mkdirSync(rootDir, { recursive: true });
 
   const fixtureIds = (fixtureFilter ?? ISSUE136_FIXTURE_IDS).filter((id) => ISSUE136_FIXTURE_IDS.includes(id));
   const runs = [];
+  const fixtureResultBuckets = new Map(fixtureIds.map((id) => [id, []]));
 
   await withIssue136Harness({ mode, campaignLimits: limits, campaignDataDir: rootDir }, async (harness) => {
     for (const fixtureId of fixtureIds) {
+      if (!stateMachine.shouldScheduleMore()) break;
       const reps = ISSUE136_REPETITIONS[fixtureId] ?? 1;
       for (let repetition = 1; repetition <= reps; repetition += 1) {
-        const result = await runIssue136FixtureCampaign({
-          fixtureId,
-          repetition,
-          mode,
-          campaignLimits: limits,
-          campaignDataDir: path.join(rootDir, fixtureId, `rep-${repetition}`),
-          harness,
-        });
-        runs.push(result);
+        if (!stateMachine.shouldScheduleMore()) break;
+        try {
+          const result = await runIssue136FixtureCampaign({
+            fixtureId,
+            repetition,
+            mode,
+            campaignLimits: limits,
+            campaignDataDir: path.join(rootDir, fixtureId, `rep-${repetition}`),
+            harness,
+          });
+          runs.push(result);
+          const bucket = fixtureResultBuckets.get(fixtureId) ?? [];
+          bucket.push(result);
+          fixtureResultBuckets.set(fixtureId, bucket);
+          const gateReason = evaluateExpansionGate({
+            fixtureId,
+            fixtureResults: bucket,
+            repetitions: reps,
+          });
+          if (gateReason) {
+            stateMachine.stop(DeterministicStopClass.EXPANSION_GATE, gateReason);
+          }
+        } catch (error) {
+          const stopClass = classifyDeterministicInfrastructureFailure(error);
+          if (stopClass) {
+            stateMachine.stop(stopClass, String(error?.message ?? error));
+            break;
+          }
+          throw error;
+        }
       }
     }
-    if (includeSentinel) {
-      const sentinel = await runIssue136ProductionSentinel({
-        mode,
-        campaignLimits: limits,
-        campaignDataDir: path.join(rootDir, 'sentinel'),
-        harness,
-      });
-      runs.push(sentinel);
+    if (includeSentinel && stateMachine.shouldScheduleMore()) {
+      try {
+        const sentinel = await runIssue136ProductionSentinel({
+          mode,
+          campaignLimits: limits,
+          campaignDataDir: path.join(rootDir, 'sentinel'),
+          harness,
+        });
+        runs.push(sentinel);
+      } catch (error) {
+        const stopClass = classifyDeterministicInfrastructureFailure(error)
+          ?? DeterministicStopClass.SENTINEL_HOST_FAILURE;
+        stateMachine.stop(stopClass, String(error?.message ?? error));
+      }
+    }
+    if (stateMachine.state === CampaignRunState.RUNNING) {
+      stateMachine.complete();
     }
   });
 
@@ -599,6 +639,7 @@ export async function runIssue136Tier2Campaign({
     campaign_data_dir: rootDir,
     safety_guard: guard,
     limits: limits.snapshot(),
+    campaign_state: stateMachine.snapshot(),
     fixture_ids: fixtureIds,
     repetitions: ISSUE136_REPETITIONS,
     runs,
@@ -612,8 +653,8 @@ export async function runIssue136Tier2Campaign({
 
 export function proveProductionInferenceUnchanged() {
   const productionPaths = [
-    'v2/domain/modules/character_context.py',
-    'v2/domain/modules/director_context.py',
+    'v2/domain_api/character_context.py',
+    'v2/domain_api/director_context.py',
     'v2/rp_runtime/src/lib/live-inference-prompts.mjs',
   ];
   const diffs = {};
