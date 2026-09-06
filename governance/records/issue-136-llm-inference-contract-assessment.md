@@ -6,7 +6,8 @@
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full (`docs/issue-bootstrap-profiles.md`)  
 **Remediation authorization on #136:** NONE (assessment only)  
-**External review:** PR + Greptile required per #136 validation criteria
+**External review:** PR + Greptile required per #136 validation criteria  
+**Prompt corpus evidence:** [`issue-136-llm-inference-prompt-corpus-evidence.md`](issue-136-llm-inference-prompt-corpus-evidence.md) (verbatim static instructions at assessment SHA)
 
 ---
 
@@ -36,7 +37,7 @@ Holy Grail RP implements a **distributed inference architecture**: every RP LLM 
 
 **Primary risks / refinement areas (repository inspection; runtime causality not claimed):**
 
-- **Instruction duplication** between DSH `live-inference-prompts.mjs` and Host `inference_instruction` contributions for Director/Character (same JSON shape stated twice).
+- **Instruction duplication** between DSH `live-inference-prompts.mjs` and Host `inference_instruction` contributions for Director/Character — **verbatim evidence in prompt corpus §F-136-02**.
 - **Context volume** from stacked advisory overlays (Storyteller, plot cognition, scene digests, Librarian bundles) competing with transcript and character state in Character/Director manifests.
 - **Legacy drift:** `prompt_builders.py` remains in tree but is off the hot path — documentation risk only.
 - **Auxiliary call cost:** Player PVR triage + decomposition and multi-step Character cognition multiply inference per player turn and per character turn.
@@ -67,9 +68,10 @@ Holy Grail RP implements a **distributed inference architecture**: every RP LLM 
 
 1. Trace `runEphemeralInference` / `runInferenceWithContractCorrection` call sites in DSH phase executors.
 2. Map each call to Domain Host `prepare_*` / `finalize_*` endpoints and context modules.
-3. Read prompt/instruction sources: `live-inference-prompts.mjs`, `*-envelope.mjs`, `*_context.py` instruction contributions, `narrator_render_instruction.py`, `narrative_visibility_prompt.py`.
-4. Trace consumers and validation per `MODULE_INDEX.md` and kernel validators.
-5. Apply assessment principles (fidelity over valence, clear beats elaborate, role ownership, minimum-effective-prompt) as **evaluation lenses**, not assumed defects.
+3. **Capture verbatim static model-facing instructions** into [`issue-136-llm-inference-prompt-corpus-evidence.md`](issue-136-llm-inference-prompt-corpus-evidence.md) (no paraphrase of prompt text).
+4. Read prompt/instruction sources: `live-inference-prompts.mjs`, `*-envelope.mjs`, `*_context.py` instruction contributions, `narrator_render_instruction.py`, `narrative_visibility_prompt.py`.
+5. Trace consumers and validation per `MODULE_INDEX.md` and kernel validators.
+6. Apply assessment principles (fidelity over valence, clear beats elaborate, role ownership, minimum-effective-prompt) as **evaluation lenses**, not assumed defects.
 
 ---
 
@@ -173,7 +175,9 @@ Selection authority correctly belongs to Director; eligibility is pre-computed (
 
 ### Prompt economy
 
-**Worthwhile refinement:** `LIVE_DIRECTOR_PROMPT` and `director_context.py` `inference_instruction` duplicate the same JSON contract. This is not a functional defect but adds token overhead and drift risk if one side updates without the other.
+**Worthwhile refinement (F-136-02):** Verbatim comparison in prompt corpus §F-136-02 shows overlapping JSON contract between DSH user prompt and Host `inference_instruction`, with DSH-only additions (`JSON only`, eligible cast, `end_round` default). Both are model-facing in the same inference. Not a functional defect; drift risk if edited independently.
+
+**Evidence:** [`issue-136-llm-inference-prompt-corpus-evidence.md` §D.1](issue-136-llm-inference-prompt-corpus-evidence.md)
 
 ### Fidelity / drift lenses
 
@@ -219,11 +223,11 @@ Action avoidance would manifest in action beats with excessive qualification; se
 
 ### Context competition
 
-**Architectural debt (context volume):** Character manifest stacks auth projections, round transcript, memory, librarian bundle, storyteller advisory, plot overlay, and correction context. `manifest_projection_policy.py` helps lane discipline but does not cap total volume.
+**Observation (F-136-03, revised):** Production Character path objectively involves 3–5+ inference calls (orientation → mediation → optional projection → move → semantic eval). This is **structurally evidenced** in call graph; token/latency cost and quality harm are **not** directly measured in #136. Reclassified from `architectural debt` to `observation` + runtime-evidence uncertainty (see prompt corpus §F-136-03).
 
 ### Duplication
 
-Character `inference_instruction` duplicates `LIVE_CHARACTER_PROMPT` schema elements (same as Director).
+Character `inference_instruction` duplicates `LIVE_CHARACTER_PROMPT` schema elements — verbatim table in prompt corpus §F-136-02.
 
 ### Already appropriate
 
@@ -237,7 +241,9 @@ Character `inference_instruction` duplicates `LIVE_CHARACTER_PROMPT` schema elem
 
 ### Clarity and scope
 
-Narrator has **split contracts**: (1) environment cognition (JSON resolutions), (2) presentation (prose + optional NVR JSON). Render path is the most instruction-rich, appropriately so because rendering is the operational responsibility.
+Narrator has **split contracts**: environment cognition (JSON) and presentation (prose + optional NVR). DSH `LIVE_NARRATOR_PROMPT` is one sentence (`Render the committed character move as scene narration only. Plain prose, no JSON.`); operational detail lives in Host `build_narrator_render_prompt()` manifest contribution (priority 30) plus `NARRATOR_VISIBILITY_OUTPUT_INSTRUCTION`.
+
+**Evidence:** prompt corpus §N.2 — verbatim render rules include verbatim dialogue substring requirements (RULES 1–8) and IMMERSIVE ENVIRONMENT DUTY block.
 
 ### Responsibility alignment
 
@@ -247,9 +253,11 @@ Narrator has **split contracts**: (1) environment cognition (JSON resolutions), 
 
 `narrator_render_instruction.py` immersive rules block is substantive but targets a genuine operational gap (environmental presence) that structured move JSON does not carry. **Worthwhile refinement** candidate: ensure obligations are projected once (see #131 duplication concern) rather than expanding prose further.
 
-### Fidelity / action avoidance
+### Fidelity / anti-drift
 
-F1/F2 deterministic validation and narrator semantic QA (`nar_*` dimensions) enforce fidelity; prompts should not duplicate enforcement prose. `LIVE_NARRATOR_PROMPT` is intentionally minimal because manifest carries render instruction.
+Fidelity language is **operational** (verbatim speech substrings, closed-world psychological invention ban in semantic QA rubric) rather than character-trait behavioral prose. Host `NARRATOR_SEMANTIC_QA_RUBRIC` includes: `nar_psychological_invention: material unsupported affirmative interior claims. Apply the closed-world rule...` — enforcement via QA, not generative prompt expansion.
+
+**Evidence:** prompt corpus §N.3
 
 ### NVR interaction
 
@@ -398,15 +406,15 @@ Player decomposition ──► per-character perceptual records ──► Charac
 | ID | Finding | Evidence | Classification | Disposition |
 |----|---------|----------|----------------|-------------|
 | F-136-01 | Inference architecture is manifest-based with per-kind allowlists | `manifest_projection_policy.py`, `inference-substrate.mjs` | **correct as-is** | Document as canonical pattern |
-| F-136-02 | Director/Character JSON instructions duplicated across DSH and Host | `live-inference-prompts.mjs` vs `director_context.py` / `character_context.py` | **worthwhile refinement** | Single-source instruction ownership (future Issue) |
-| F-136-03 | Character inference chain is deep (3–5+ calls per turn) | `character-phase.mjs`, `character-cognition-substrate.mjs` | **architectural debt** (cost/latency) | Assess skip/degrade policies with runtime metrics |
+| F-136-02 | Director/Character JSON instructions duplicated across DSH and Host | Verbatim §F-136-02 in prompt corpus | **worthwhile refinement** | Single-source instruction ownership (future Issue) |
+| F-136-03 | Character inference chain depth (3–5+ calls/turn) | Call graph in `character-phase.mjs`; **revised** per corpus §F-136-03 | **observation** (structure); cost/quality tradeoff **uncertain** | Runtime metrics before remediation |
 | F-136-04 | Narrator render contract is well-structured with deterministic fidelity enforcement | `narrator_render_instruction.py`, `narrator_presentation_validation.py` | **correct as-is** | Preserve; avoid prompt rewrites |
 | F-136-05 | Storyteller advisory packaging respects non-authoritative boundary | `storyteller_orientation_context.py` instructions, packaging mappers | **correct as-is** | Preserve separation |
 | F-136-06 | Librarian read/write paths correctly separated | mediation vs proposal modules | **correct as-is** | Preserve |
 | F-136-07 | `prompt_builders.py` legacy off hot path | MODULE_INDEX.md, no imports from domain_api | **worthwhile refinement** | Deprecation doc only |
-| F-136-08 | Player PVR decomposition reliability historically poor | issue-112 evidence | **architectural debt** | Runtime gating (triage) already exists; further work needs evidence |
+| F-136-08 | Player PVR decomposition reliability historically poor | issue-112 evidence; prompts §AUX.4 in corpus | **architectural debt** (owned by #112 successors) | **Out of #136 remediation scope** |
 | F-136-09 | Semantic QA provides enforcement beyond prompts | `*-semantic-*.mjs`, kernel validators | **correct as-is** | Do not duplicate in prompts |
-| F-136-10 | Narrator env cognition projection duplication | #131 (related) | **architectural debt** | Tracked separately; cross-reference |
+| F-136-10 | Narrator env cognition projection duplication | #131 (related); corpus §N.1–2 | **architectural debt** (owned by #131) | **Out of #136 remediation scope** |
 | F-136-11 | `character_inference_slice` omitted from initial inventory draft | Greptile P1 on PR #137; `character-inference-slice.mjs` | **worthwhile refinement** (doc completeness) | Added to inventory §5 (remediated in PR) |
 
 ---
@@ -480,3 +488,5 @@ Player decomposition ──► per-character perceptual records ──► Charac
 ## Greptile review record
 
 See [`issue-136-pr137-greptile-review-2026-09-06.md`](issue-136-pr137-greptile-review-2026-09-06.md).
+
+**Prompt corpus:** Added in second evidence pass; requires exact-SHA Greptile re-review per #136 validation criteria.
