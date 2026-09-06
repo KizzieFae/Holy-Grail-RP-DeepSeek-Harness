@@ -144,8 +144,18 @@ Canonical `inference_kind` values: `manifest_projection_policy.py` (`INFERENCE_K
 | **opening_segmentation** | After opening | NVR units for opening prose | segmentation phase + `OPENING_SEGMENTATION_OUTPUT_INSTRUCTION` | Opening text | perceptual_visibility.units | Opening metadata | **Derived** | NVR validation | After opening | One-time | #90 |
 | **player_visibility_triage** | Player turn | Route uniform vs full PVR | `buildPlayerVisibilityTriageUserPrompt` | Entitlement + scene context | uniform_projection_safe | Decomposition vs shortcut | **Advisory** routing | parse boolean | Before decomposition | One call per player turn | #121 |
 | **player_decomposition** | Player turn (non-uniform) | Semantic units for player text | `PLAYER_DECOMPOSITION_TASK_PROMPT` | PVR entitlement context | semantic_decomposition.units | Per-character perceptual records | **Proposed** → normalized | Host normalize | Before round | Cost/reliability (#112) | #109, #125 |
+| **character_inference_slice** | `HgPhaseExecutors.runCharacterInference()` (API/harness) | Standalone character move without full round orchestration | `DEFAULT_CHARACTER_PROMPT` in `character-inference-slice.mjs` (or caller override); same Host `prepareCharacterContext` manifest | Same as `character_turn` minus cognition chain | move_schema_version 2 JSON | Optional `commitMove` | **Proposed** until validated | `validateMove` + optional commit; no semantic eval loop | Bypasses Director/ST/Narrator round | Slimmer than production path | `service.mjs` exposes slice |
+| **plot_cognition_epistemic_eval** | Character projection lifecycle (optional) | Epistemic withhold/pass on plot overlay | `character-epistemic-projection-eval.mjs` | Projection batch context | epistemic eval schema | Projection gate | **Advisory** | contract correction | Before `character_advisory_generation` | Extra call when projection enabled | plot cognition tests |
+| **character_advisory_generation** | Character projection lifecycle (optional) | Regenerate advisory overlay text | plot cognition advisory generation endpoints | Finalized projection context | advisory text | Plot overlay contributions | **Advisory** | regen on failure | Character manifest overlay | Conditional | plot cognition tests |
 
 **Runtime aliases:** `director_decision` → `director_turn`; `character_move` → `character_turn` (`manifest-projection-policy.mjs`).
+
+**Harness / certification only (not production round path):**
+
+| Call | File | Purpose |
+|------|------|---------|
+| `storyteller_certification_eval` | `scenario-harness/certification-evaluator.mjs` | Tier-2 Storyteller certification rubric |
+| Instrumented wrapper | `scenario-harness/instrumented-inference.mjs` | Campaign accounting over production substrate |
 
 **Legacy (not hot path):** `v2/domain/modules/prompt_builders.py` — monolithic Director/Character prompts; superseded by manifest assembly.
 
@@ -397,6 +407,7 @@ Player decomposition ──► per-character perceptual records ──► Charac
 | F-136-08 | Player PVR decomposition reliability historically poor | issue-112 evidence | **architectural debt** | Runtime gating (triage) already exists; further work needs evidence |
 | F-136-09 | Semantic QA provides enforcement beyond prompts | `*-semantic-*.mjs`, kernel validators | **correct as-is** | Do not duplicate in prompts |
 | F-136-10 | Narrator env cognition projection duplication | #131 (related) | **architectural debt** | Tracked separately; cross-reference |
+| F-136-11 | `character_inference_slice` omitted from initial inventory draft | Greptile P1 on PR #137; `character-inference-slice.mjs` | **worthwhile refinement** (doc completeness) | Added to inventory §5 (remediated in PR) |
 
 ---
 
@@ -468,4 +479,4 @@ Player decomposition ──► per-character perceptual records ──► Charac
 
 ## Greptile review record
 
-*(Completed in PR — see `governance/records/issue-136-pr*-greptile-review-*.md`)*
+See [`issue-136-pr137-greptile-review-2026-09-06.md`](issue-136-pr137-greptile-review-2026-09-06.md).
