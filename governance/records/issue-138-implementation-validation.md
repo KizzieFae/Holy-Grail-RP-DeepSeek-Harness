@@ -126,3 +126,60 @@ Record: `governance/records/issue-138-pr139-greptile-review-2026-09-06.md` (init
 ## Relationship to #134
 
 Issue #134 established fail-closed model-context validation for role-turn inference paths. #138 completes enrollment for plot-cognition lifecycle paths, DSH envelope preservation, and the production-reachable Librarian proposal correction kind without weakening bridge policy.
+
+---
+
+## Validation (Governance-authorized `implemented` → `validated`)
+
+**Transition date:** 2026-09-06
+
+**Authorization:** Governance accepts Regression-Gate Attribution Report; scoped #138 evidence sufficient.
+
+**Issue state:** OPEN, `Current status: validated`
+
+**Project:** Status In Progress, Workflow Validating, Priority P1
+
+**PR:** #139 (integration not authorized)
+
+### Acceptance record (all satisfied)
+
+| Criterion | Status |
+|-----------|--------|
+| Manifest-contract repair complete | ✓ |
+| Host `inference_kind` preservation on demonstrated production paths | ✓ |
+| Seven production plot-cognition kinds registered correctly | ✓ |
+| `librarian_proposal_contract_correction` registered correctly | ✓ |
+| Source-kind allowlists narrow and evidence-derived | ✓ |
+| Python/JS policy parity passes | ✓ |
+| #134 fail-closed guarantees remain intact | ✓ |
+| Character semantic path advances through former blocker | ✓ |
+| Production-like two-character round passes | ✓ |
+| Librarian proposal correction path passes | ✓ |
+| Plot-cognition correction paths pass | ✓ |
+| Forensic primary/correction inference-kind attribution passes | ✓ |
+| Full Python domain regression: 1051 passed | ✓ |
+| Required scoped runtime regression suites pass | ✓ |
+| Post-remediation Greptile: SUCCESS 5/5, zero findings | ✓ |
+| Remaining global-suite failures baseline-equivalent and unrelated | ✓ |
+
+### Key SHAs
+
+| Role | SHA |
+|------|-----|
+| Production/test candidate | `d8a6e5e100e2fd0ba82e30c74079f18a95e98a83` |
+| Greptile-reviewed post-remediation | `bffe8c0345306db60509d7723256b61ff64291bd` |
+| PR head at validation transition | `08f8c15595a578aa53d935df646513d2a05081a6` |
+| #138 merge-base `main` | `c616d98912474cc1b3366ac21afebe9397885de3` |
+
+### Baseline-equivalent global-suite debt (intake filed separately)
+
+1. **`reasoning-scaffolding-live.test.mjs`** — missing embedded `inference_kind` in test manifest; fails on baseline and #138.
+2. **`storyteller-tier2-capture-gate.test.mjs`** — unregistered `storyteller_certification_eval`; fails on baseline and #138.
+3. **Runner non-termination** — failure path skips disposal; reproduces on baseline and #138.
+
+Governance does not require #138 to repair these as a condition of validation.
+
+### Next step
+
+Await Governance integration/closure authorization for PR #139. Do not merge without authorization.
+
