@@ -140,9 +140,58 @@ Output only valid JSON for move_schema_version 2 with non-empty beats[], motivat
 
 ## Scenario-grade validation
 
-**Status:** **INCOMPLETE** — blocked from primary live round harness by pre-existing `plot_cognition_init` / character-cognition manifest validation failures on this branch baseline. Tier 2 multi-turn paired pre/post characterization runs were **not** executed to completion.
+### Pre-#138 blocked validation (historical — preserved)
 
-**Governance disposition:** Do **not** advance to `validated` until scenario obligations and Greptile re-review on implementation SHA are satisfied.
+**Status at `f385219`:** **INCOMPLETE** — blocked from primary live round harness by pre-existing manifest/inference-kind infrastructure defects (later governed under Issue #138). Tier 2 multi-turn paired pre/post characterization runs were **not** executed.
+
+| Test (pre-#138) | Failure | Assessment |
+|-----------------|---------|------------|
+| `execution-evidence-forensic.test.mjs` (participation path) | `unknown inference_kind 'plot_cognition_init'` | #138 infrastructure; not #136 |
+| `two-character-round.test.mjs` (primary round) | same | same |
+| `semantic-evaluation-live-pass.test.mjs` | missing `inference_kind` on character cognition manifest | same |
+
+**Do not rewrite history:** scenario validation did not succeed before #138.
+
+### Post-#138 activation (2026-09-06)
+
+| Field | Value |
+|-------|-------|
+| **`main` anchor (#138 integrated)** | `9baf987cc3b29146e863447427b87379af94e4e0` |
+| **Validation branch head** | `c16e31e55ba4baf33f8fbbe7611431405827b0e0` |
+| **#136 implementation SHA** | `f3852196395505b8077ab817a736c7e7eddef099` (unchanged; merge is mechanical base sync only) |
+
+#### Production-like path readiness (post-#138)
+
+| Stage | Evidence | Result |
+|-------|----------|--------|
+| Plot cognition init | `two-character-round.test.mjs`, `participation-round.test.mjs` | **PASS** |
+| Character orientation / generation / semantic eval | `semantic-evaluation-live-pass.test.mjs` (live provider) | **PASS** |
+| Character commit + Narrator | `two-character-round.test.mjs` | **PASS** |
+| Storyteller on production `runRound` path | `storyteller-round-integration.test.mjs` | **PASS** (`hg/storyteller-started` → `hg/storyteller-completed`) |
+| Forensic evidence chains | `execution-evidence-forensic.test.mjs` | **PASS** (5/5) |
+
+**Conclusion:** #138 removes prior infrastructure blockers. Integrated path operational on `c16e31e`.
+
+#### Deterministic regression (post-#138)
+
+| Suite | Result |
+|-------|--------|
+| `pytest v2/domain/tests/test_issue_136_inference_instruction_ownership.py` | **4 passed** |
+| `pytest v2/domain/tests/` (full) | **1055 passed** |
+| `node --test` #136 ownership + orchestration + round + forensic + storyteller integration | **all passed** (see command log in activation report) |
+| `node --test tests/semantic-evaluation-scenarios.test.mjs` | **7/7 passed** |
+
+#### Baseline debt (#140 / #141)
+
+| Test | Result | Owner |
+|------|--------|-------|
+| `reasoning-scaffolding-live.test.mjs` | **FAIL** — missing `inference_kind` | #140 |
+
+#### Scenario-grade semantic campaign (Tier 2 fidelity dimensions)
+
+**Status:** **INCOMPLETE** — path unblocked, but governed multi-fixture forensic campaign across all nine #136 semantic dimensions was **not executed** in this cycle. Bounded live pass (`semantic-evaluation-live-pass`) is insufficient alone for `validated`.
+
+**Governance disposition:** Remain **`implemented`**.
 
 ---
 
@@ -156,10 +205,17 @@ Output only valid JSON for move_schema_version 2 with non-empty beats[], motivat
 
 ## Greptile
 
-Pending re-review on implementation candidate SHA (post-push).
+| Review | SHA | Scope | Result |
+|--------|-----|-------|--------|
+| Phase 1 assessment | `b1d10ba` | Assessment docs only | SUCCESS (2 P1 remediated in docs) |
+| **Implementation (#136 prod/test)** | `f385219` / post-sync `c16e31e` | Production prompt/ownership diff | **NOT REVIEWED** |
+
+**Required before `validated`:** Greptile review on exact production/test candidate after any base sync. Post-#138 merge commit `c16e31e` adds no #136 production diff; Greptile must still cover implementation files on current PR head.
 
 ---
 
 ## Workflow state
 
-Target after this record: **`implemented`** (not `validated`).
+**Current:** **`implemented`** (not `validated`).
+
+**Blockers to `validated`:** (1) Tier-2 scenario-grade semantic campaign incomplete; (2) Greptile not completed on implementation candidate.
