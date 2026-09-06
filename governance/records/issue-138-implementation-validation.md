@@ -84,4 +84,4 @@ Issue #134 established fail-closed model-context validation for role-turn infere
 
 **Runtime advancement:** `two-character-round` primary case advances past prior `plot_cognition_init` / `missing inference_kind` blockers; current failure is `librarian_persistence_failure` (downstream of restored manifest infrastructure).
 
-**Greptile:** pending on candidate SHA after PR open.
+**Greptile:** SUCCESS on `53c8f68e2c025b2cb492f6f546359cc1916c0963` — 18 files reviewed, 0 comments, confidence 5/5 (check run `101463567879`). Record: `governance/records/issue-138-pr139-greptile-review-2026-09-06.md`. PR head `79610e3` is docs-only after Greptile run.
