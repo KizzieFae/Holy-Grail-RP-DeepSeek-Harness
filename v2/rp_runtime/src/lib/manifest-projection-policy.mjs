@@ -136,6 +136,10 @@ export const ALLOWED_SOURCE_KINDS = {
     COMMON_INSTRUCTION,
     new Set(['active_constraints', 'librarian_knowledge']),
   ),
+  librarian_proposal_contract_correction: union(
+    COMMON_INSTRUCTION,
+    new Set(['active_constraints', 'librarian_knowledge']),
+  ),
   opening: union(
     SCENE_AUTHORITY,
     COMMON_INSTRUCTION,

@@ -90,6 +90,56 @@ class Issue138PlotCognitionPolicyTests(unittest.TestCase):
             ALLOWED_SOURCE_KINDS["plot_cognition_update_contract_correction"],
             ALLOWED_SOURCE_KINDS["plot_cognition_update"],
         )
+        self.assertEqual(
+            ALLOWED_SOURCE_KINDS["librarian_proposal_contract_correction"],
+            ALLOWED_SOURCE_KINDS["librarian_proposal"],
+        )
+
+    def test_librarian_proposal_correction_accepts_host_shaped_contributions(self) -> None:
+        contributions = [
+            PromptContribution(
+                contribution_id="manifest-req",
+                source_kind="inference_instruction",
+                authority_class="derived",
+                knowledge_ids=("librarian_proposal_request:req-1",),
+                priority=10,
+                content="request",
+            ),
+            PromptContribution(
+                contribution_id="manifest-epistemic",
+                source_kind="active_constraints",
+                authority_class="authoritative",
+                knowledge_ids=("librarian_proposal_epistemic:req-1",),
+                priority=10,
+                content="epistemic",
+            ),
+            PromptContribution(
+                contribution_id="manifest-catalog",
+                source_kind="librarian_knowledge",
+                authority_class="derived",
+                knowledge_ids=("committed_move:commit-1",),
+                priority=12,
+                content="catalog",
+            ),
+        ]
+        validate_model_context_contributions(
+            "librarian_proposal_contract_correction",
+            contributions,
+        )
+        with self.assertRaises(ManifestProjectionPolicyError):
+            validate_model_context_contributions(
+                "librarian_proposal_contract_correction",
+                [
+                    PromptContribution(
+                        contribution_id="bad",
+                        source_kind="semantic_correction",
+                        authority_class="derived",
+                        knowledge_ids=("x",),
+                        priority=1,
+                        content="{}",
+                    )
+                ],
+            )
 
     def test_unknown_plot_cognition_kind_still_rejected(self) -> None:
         with self.assertRaises(ManifestProjectionPolicyError):

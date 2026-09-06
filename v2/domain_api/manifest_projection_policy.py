@@ -22,6 +22,7 @@ InferenceKind = Literal[
     "narrator_semantic_qa",
     "librarian_mediation",
     "librarian_proposal",
+    "librarian_proposal_contract_correction",
     "opening",
     "opening_segmentation",
     "player_decomposition",
@@ -48,6 +49,7 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "narrator_semantic_qa",
     "librarian_mediation",
     "librarian_proposal",
+    "librarian_proposal_contract_correction",
     "opening",
     "opening_segmentation",
     "player_decomposition",
@@ -213,6 +215,9 @@ ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
         _COMMON_INSTRUCTION | frozenset({"active_constraints"})
     ),
     "librarian_proposal": (
+        _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
+    ),
+    "librarian_proposal_contract_correction": (
         _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
     ),
     "opening": (
