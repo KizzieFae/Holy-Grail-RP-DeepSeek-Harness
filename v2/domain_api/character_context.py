@@ -102,7 +102,13 @@ def prepare_character_context(
                 "motivation object, and semantic_evaluation. "
                 "Each beat must be type action (key action) or type speech (key dialogue). "
                 "Action-only, speech-only, and mixed beat sequences are all valid when "
-                "appropriate to the scene."
+                "appropriate to the scene. "
+                "motivation must include goal, tactic, emotional_driver, and risk_level. "
+                "risk_level must be exactly low, medium, or high. "
+                "semantic_evaluation must include a decision field. "
+                "Ground this turn's beats and motivation in the authoritative Character and "
+                "scene context already supplied; action, inaction, and change should follow "
+                "from that context."
             ),
             provenance={
                 "inference_id": req.inference_id,

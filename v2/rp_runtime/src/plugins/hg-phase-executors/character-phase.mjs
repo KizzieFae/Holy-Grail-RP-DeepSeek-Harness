@@ -19,6 +19,7 @@ import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
 import { runCharacterProjectionLifecycle } from './plot-cognition-character-projection.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
+import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../../lib/live-inference-prompts.mjs';
 import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
 import { roleForCharacter } from './role-utils.mjs';
 
@@ -67,7 +68,7 @@ async function runCharacterInferenceWithInfraRetry({
     });
     const characterRun = await runEphemeralInference({
       inferenceId: `${characterInferenceId}-${attemptIndex}${infraAttempt ? '-infra-retry' : ''}`,
-      prompt: prompt ?? 'Produce your character move as JSON only.',
+      prompt: prompt ?? LIVE_INFERENCE_TRANSPORT_PROMPT,
       manifest,
       mockResponses: mockResponses.length ? [mockResponses[0]] : [],
       modelProfile,

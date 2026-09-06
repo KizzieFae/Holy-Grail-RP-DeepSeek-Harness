@@ -3,15 +3,10 @@ import { SessionId } from '@deepseek-ai/dsh-session';
 import { agentOptionsFromProfile, mockInferenceProfile } from '../../lib/inference-profile.mjs';
 import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../../lib/live-inference-prompts.mjs';
 import { resolveRoundSession } from '../../lib/resolve-round-session.mjs';
 
-const DEFAULT_CHARACTER_PROMPT = (
-  'Respond with a single JSON object only (no markdown). '
-  + 'Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."},{"type":"speech","dialogue":"..."}],'
-  + '"motivation":{"goal":"...","tactic":"...","emotional_driver":"...","risk_level":"low"},'
-  + '"semantic_evaluation":{"decision":"no_covered_change"}}. '
-  + 'Action-only, speech-only, and mixed beat sequences are all valid when appropriate.'
-);
+const DEFAULT_CHARACTER_PROMPT = LIVE_INFERENCE_TRANSPORT_PROMPT;
 
 /**
  * Standalone character inference + optional commit — phase execution, not round orchestration.
