@@ -2,28 +2,16 @@ import {
   SEMANTIC_QA_RESULT_SCHEMA,
   parseSemanticQaResult,
 } from './semantic-qa-envelope.mjs';
+import {
+  bridgeManifestFromHostPrepare,
+  normalizeBridgeContributions,
+} from './bridge-manifest.mjs';
 
 function manifestFromSemanticQaContext(contextResponse) {
-  const contributions = (contextResponse.contributions ?? []).map((c) => ({
-    contribution_id: c.contribution_id,
-    source_kind: c.source_kind,
-    authority_class: c.authority_class,
-    priority: c.priority,
-    content: c.content,
-    knowledge_ids: c.knowledge_ids,
-    provenance: c.provenance,
-  }));
-  return {
-    manifest_id: contextResponse.manifest_id,
-    inference_id: contextResponse.inference_id,
-    hg_scene_id: contextResponse.hg_scene_id,
-    hg_round_id: contextResponse.hg_round_id,
-    role: 'semantic_evaluator',
-    character_id: contextResponse.character_id ?? null,
-    turn_index: contextResponse.turn_index,
-    attempt_index: 0,
-    contributions,
-  };
+  return bridgeManifestFromHostPrepare(
+    contextResponse,
+    normalizeBridgeContributions(contextResponse.contributions),
+  );
 }
 
 /**

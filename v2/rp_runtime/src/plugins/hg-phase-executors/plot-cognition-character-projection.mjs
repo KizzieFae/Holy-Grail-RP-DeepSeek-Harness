@@ -4,6 +4,7 @@ import {
   parseEpistemicProjectionEvalResult,
 } from './character-epistemic-projection-eval.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from '../../lib/bridge-manifest.mjs';
 import { runInferenceWithContractCorrection } from '../../lib/contract-correction-substrate.mjs';
 
 function orderedBatchItems(prepare) {
@@ -239,7 +240,10 @@ export async function runCharacterProjectionLifecycle({
         inferenceId,
         evaluationPassId,
         regenerationPrepareId: regenPrepare.regeneration_prepare_id,
-        generatorManifest: regenPrepare.generator_manifest ?? { contributions: [] },
+        generatorManifest: bridgeManifestFromHostPrepare(
+          regenPrepare,
+          regenPrepare.generator_manifest?.contributions ?? [],
+        ),
         modelProfile,
         mockResponse: mockRegenerationResponses[mockRegenIndex++] ?? null,
         parentEvidenceId: firstEval.evidenceId,

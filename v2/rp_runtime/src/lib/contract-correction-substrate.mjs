@@ -102,7 +102,9 @@ export async function runInferenceWithContractCorrection({
   const correctionRun = await runEphemeralInference({
     inferenceId: correctionInferenceId,
     prompt: correctionPrompt,
-    manifest,
+    manifest: manifest?.manifest_id
+      ? { ...manifest, inference_kind: correctionInferenceKind }
+      : manifest,
     mockResponses: correctionMock ? [correctionMock] : [],
     modelProfile,
     evidenceContext: {

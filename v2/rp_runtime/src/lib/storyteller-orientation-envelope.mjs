@@ -1,4 +1,5 @@
 import { parseJsonObject } from './inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 
 export const STORYTELLER_ORIENTATION_SCHEMA = 'hg_storyteller_orientation_v1';
 
@@ -50,10 +51,10 @@ export function buildStorytellerOrientationPrompt({
 }
 
 export function manifestFromStorytellerPrepareResponse(prepareResponse) {
-  return {
-    manifest_id: prepareResponse.manifest_id,
-    contributions: prepareResponse.contributions ?? [],
-  };
+  return bridgeManifestFromHostPrepare(
+    prepareResponse,
+    prepareResponse.contributions ?? [],
+  );
 }
 
 export function parseStorytellerOrientation(raw) {
