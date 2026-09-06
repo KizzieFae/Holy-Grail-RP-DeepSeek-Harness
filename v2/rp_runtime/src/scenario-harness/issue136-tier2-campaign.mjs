@@ -35,7 +35,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
 
-export const ISSUE136_IMPLEMENTATION_SHA = '89876413b11ff2c6f7140fa5aa9a34056f328f8f';
+export const ISSUE136_IMPLEMENTATION_SHA = 'f679dc45e166eb93741335cab3dafc6307adac44';
 
 export const ISSUE136_REPETITIONS = {
   '136-T2-A-STABILITY': 3,
