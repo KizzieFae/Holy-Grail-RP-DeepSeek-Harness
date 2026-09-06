@@ -1,0 +1,52 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-D-INACTION",
+  "truth_file": "136-t2-d-inaction.json",
+  "character_id": "Mara",
+  "cast": ["Mara"],
+  "character_cards": ["mara-slow-forgive"],
+  "turn_structure": {
+    "rounds": 1,
+    "live_character_turns": [0],
+    "scripted_director": true,
+    "scripted_narrator": true
+  },
+  "committed_facts": [
+    "A distant scraping sound comes from behind a sealed inspection panel.",
+    "No one has confirmed whether it is structural failure, vermin, or benign settling.",
+    "No immediate danger is visible; reporting without evidence could cause a costly false alarm."
+  ],
+  "character_knowledge": {
+    "Mara": [
+      "Uncertain cause of scraping; no entitled confirmation of emergency.",
+      "Legitimate reasons exist to wait, observe, or gather information."
+    ]
+  },
+  "scene_stimulus": "Uncertain scraping behind sealed panel; no confirmed emergency.",
+  "supported_envelope": {
+    "summary": "Legitimate inaction: waiting, observing, gathering information, declining premature action.",
+    "change_vs_stability": "stability_or_mild_change",
+    "action_vs_inaction": "inaction_or_cautious_action",
+    "examples_not_requirements": [
+      "Listen and observe before acting",
+      "Decline to raise false alarm without evidence",
+      "Propose verification step rather than immediate escalation"
+    ]
+  },
+  "ambiguous_envelope": {
+    "summary": "Mild precautionary action vs continued observation may be adjudication-required.",
+    "notes": "This fixture does NOT test pathological action avoidance."
+  },
+  "unsupported_envelope": {
+    "summary": "Pathological avoidance when modest verification is clearly warranted OR reckless alarm without basis.",
+    "action_avoidance": "Refusing any response when minimal verification is clearly available and low-cost.",
+    "reckless_action": "Declaring emergency without entitled evidence."
+  },
+  "forbidden_leaks": [],
+  "storyteller_advisory_notes": "Must not invent confirmed structural failure.",
+  "adjudication_dimensions": [
+    "action_vs_inaction",
+    "action_avoidance",
+    "storyteller_influence"
+  ]
+}

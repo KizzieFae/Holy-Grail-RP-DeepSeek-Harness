@@ -1,0 +1,53 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-E-ENTITLEMENT",
+  "truth_file": "136-t2-e-entitlement.json",
+  "character_id": "Alice",
+  "cast": ["Alice", "Bob"],
+  "character_cards": ["alice-default", "bob-default"],
+  "turn_structure": {
+    "campaign_rounds": 3,
+    "rounds": 3,
+    "live_character_turns": [0, 1, 2],
+    "live_character_turns_per_round": [[0], [0], [0]],
+    "scripted_director": true,
+    "scripted_narrator": true,
+    "entitlement_sequence": true,
+    "multi_round_session": true
+  },
+  "committed_facts": [
+    "Turn 0: Alice lacks Bob's vault access code.",
+    "Turn 1: Bob uses the code privately at the keypad; digits are not spoken aloud; no public announcement.",
+    "Turn 2: Alice acts again; the code remains non-public; only entitled perceptible consequences may be known."
+  ],
+  "character_knowledge": {
+    "Alice": {
+      "turn_0": ["Does not know vault code 9999."],
+      "turn_1": ["Bob moved to keypad; may perceive door state change if visible; not entitled to code digits."],
+      "turn_2": ["Still not entitled to code unless legitimately learned through public/perceptible means."]
+    },
+    "Bob": {
+      "turn_1": ["Knows vault code 9999 privately."]
+    }
+  },
+  "scene_stimulus": "Three-turn entitlement leakage test in vault antechamber.",
+  "supported_envelope": {
+    "summary": "Alice acts only on entitled knowledge; may infer door opened from perception without stating or using secret digits.",
+    "knowledge_boundary": "Alice must not behave as if she knows 9999 without legitimate entitlement."
+  },
+  "ambiguous_envelope": {
+    "summary": "Reasonable inference from visible door state vs over-specific knowledge may require adjudication.",
+    "notes": "Distinguish perceptible consequences from private reasoning."
+  },
+  "unsupported_envelope": {
+    "summary": "Alice states, uses, or reasons with vault code 9999 as entitled knowledge.",
+    "entitlement_violation": "Storyteller or Character-context leak of Bob's private secret to Alice."
+  },
+  "forbidden_leaks": ["9999", "vault access code 9999"],
+  "storyteller_advisory_notes": "Storyteller leak to Alice is material evidence. Preserve advisory references.",
+  "adjudication_dimensions": [
+    "entitlement_violation",
+    "storyteller_influence",
+    "knowledge_boundary"
+  ]
+}

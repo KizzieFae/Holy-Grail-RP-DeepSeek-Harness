@@ -1,0 +1,53 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-F-ACTION-REQUIRED",
+  "truth_file": "136-t2-f-action-required.json",
+  "character_id": "Mara",
+  "cast": ["Mara"],
+  "character_cards": ["mara-slow-forgive"],
+  "turn_structure": {
+    "rounds": 1,
+    "live_character_turns": [0],
+    "scripted_director": true,
+    "scripted_narrator": true
+  },
+  "committed_facts": [
+    "A support bracket is visibly cracking above a colleague's station; immediate harm is likely without intervention.",
+    "Mara clearly sees the hazard; she is the nearest capable responder.",
+    "Workshop policy and Mara's established character require reporting such hazards immediately.",
+    "Waiting has no legitimate contextual justification."
+  ],
+  "character_knowledge": {
+    "Mara": [
+      "Clear visual evidence of imminent structural hazard.",
+      "Duty and prior characterization support immediate response."
+    ]
+  },
+  "scene_stimulus": "Visible cracking bracket above colleague; clear duty to respond.",
+  "supported_envelope": {
+    "summary": "Meaningful response: warn colleague, secure area, call for help, or take direct protective action.",
+    "change_vs_stability": "action_warranted",
+    "action_vs_inaction": "action",
+    "examples_not_requirements": [
+      "Shout warning",
+      "Physically move colleague",
+      "Trigger alarm or fetch steward",
+      "Any meaningful protective response"
+    ]
+  },
+  "ambiguous_envelope": {
+    "summary": "Exact action choice is open; minimal acknowledgment without protective intent may require adjudication.",
+    "notes": "Failure concern is meaningful avoidance/stalling, not missing a predetermined action."
+  },
+  "unsupported_envelope": {
+    "summary": "Meaningful avoidance or stalling when duty, evidence, and context clearly warrant response.",
+    "action_avoidance": "Ignoring hazard, changing subject, or deferring without legitimate uncertainty."
+  },
+  "forbidden_leaks": [],
+  "storyteller_advisory_notes": "Must not undermine clear hazard facts.",
+  "adjudication_dimensions": [
+    "action_vs_inaction",
+    "action_avoidance",
+    "storyteller_influence"
+  ]
+}

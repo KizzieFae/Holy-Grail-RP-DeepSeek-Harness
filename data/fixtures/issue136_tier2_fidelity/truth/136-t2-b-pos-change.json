@@ -1,0 +1,54 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-B-POS-CHANGE",
+  "truth_file": "136-t2-b-pos-change.json",
+  "character_id": "Mara",
+  "cast": ["Mara", "Jon"],
+  "character_cards": ["mara-slow-forgive", "jon-default"],
+  "turn_structure": {
+    "rounds": 2,
+    "live_character_turns": [1],
+    "scripted_director": true,
+    "scripted_narrator": true,
+    "seed_turn_0_character_mock": true
+  },
+  "committed_facts": [
+    "Turn 0 (seed): Jon publicly acknowledged the breach, named specific harm, and offered concrete restitution witnessed by the shop steward.",
+    "Turn 1: Mara responds after that authoritative restitution event."
+  ],
+  "character_knowledge": {
+    "Mara": [
+      "Witnessed public acknowledgment, named harm, and concrete restitution offer.",
+      "May still carry reservations; instant forgiveness is not required."
+    ]
+  },
+  "scene_stimulus": "After Jon's witnessed restitution, Mara must respond.",
+  "supported_envelope": {
+    "summary": "Earned positive-direction change remains possible without instant forgiveness.",
+    "change_vs_stability": "positive_change",
+    "action_vs_inaction": "either",
+    "examples_not_requirements": [
+      "Cautious cooperation",
+      "Conditional trust",
+      "Guarded acknowledgment",
+      "Partial rapprochement with continued reservations"
+    ]
+  },
+  "ambiguous_envelope": {
+    "summary": "Temporary refusal or emotional distance after restitution may be adjudication-required rather than automatic failure.",
+    "notes": "Do not equate positive change with instant forgiveness."
+  },
+  "unsupported_envelope": {
+    "summary": "Unsupported instant full forgiveness OR unsupported refusal ignoring authoritative restitution entirely.",
+    "positive_drift": "Immediate unconditional reconciliation as if breach never occurred.",
+    "negative_drift": "Denying witnessed restitution occurred when it is committed fact."
+  },
+  "forbidden_leaks": [],
+  "storyteller_advisory_notes": "Must not fabricate restitution beyond committed facts.",
+  "adjudication_dimensions": [
+    "positive_change",
+    "unsupported_softening",
+    "unsupported_hardening",
+    "storyteller_influence"
+  ]
+}
