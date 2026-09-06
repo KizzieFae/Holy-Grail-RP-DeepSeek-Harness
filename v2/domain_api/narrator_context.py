@@ -112,7 +112,7 @@ def prepare_narrator_context(
         scene_context=scene_context,
         structured_move=narrate_move,
         environmental_baseline=env_packet.render_summary(),
-        environmental_response_obligations=obligation_text or None,
+        environmental_response_obligations=None,
     )
     committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
     contributions: list[PromptContribution] = list(
@@ -221,24 +221,6 @@ def prepare_narrator_context(
                 provenance={
                     "inference_id": req.inference_id,
                     "visibility": "presentation",
-                },
-            ),
-        )
-    if isinstance(cognition_audit, dict) and cognition_audit:
-        contributions.insert(
-            -1,
-            PromptContribution(
-                contribution_id=f"{manifest_id}-environment-cognition",
-                source_kind="narrator_environment_cognition",
-                authority_class="derived",
-                knowledge_ids=(
-                    str(cognition_audit.get("cognition_id") or req.inference_id),
-                ),
-                priority=28,
-                content=json.dumps(cognition_audit, ensure_ascii=False, indent=2),
-                provenance={
-                    "inference_id": req.inference_id,
-                    "visibility": "orchestration_only",
                 },
             ),
         )
