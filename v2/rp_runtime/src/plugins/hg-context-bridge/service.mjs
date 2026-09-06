@@ -22,7 +22,7 @@ export default class HgContextBridge extends Service {
    * @param {object} options
    * @param {object} options.agent - ephemeral DSH inference agent
    * @param {object|null|undefined} options.manifest - PromptContributionManifest from Domain API
-   * @param {string} [options.inferenceKind] - fallback when manifest.inference_kind is absent
+   * @param {string} [options.inferenceKind] - required only for non-manifest bridge-bound packages
    * @returns {{
    *   dispose: () => void,
    *   manifestId: string|null,

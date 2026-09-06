@@ -10,10 +10,30 @@ import {
  * @param {string|undefined|null} inferenceKind
  */
 export function resolveManifestInferenceKind(manifest, inferenceKind) {
+  const contributions = manifest?.contributions ?? [];
+  const hasManifestContract = Boolean(manifest?.manifest_id);
   const fromManifest = manifest?.inference_kind;
-  if (fromManifest) return resolveInferenceKind(String(fromManifest));
-  if (inferenceKind) return resolveInferenceKind(String(inferenceKind));
-  return null;
+  const manifestKind = fromManifest ? resolveInferenceKind(String(fromManifest)) : null;
+  const callerKind = inferenceKind ? resolveInferenceKind(String(inferenceKind)) : null;
+
+  if (hasManifestContract) {
+    if (!manifestKind) {
+      throw new Error(
+        'model-context package rejected: PromptContributionManifest missing required inference_kind',
+      );
+    }
+    if (callerKind && callerKind !== manifestKind) {
+      throw new Error(
+        `model-context package rejected: inference_kind mismatch (manifest='${manifestKind}', caller='${callerKind}')`,
+      );
+    }
+    return manifestKind;
+  }
+
+  if (!callerKind) {
+    throw new Error('model-context package rejected: missing inference_kind');
+  }
+  return callerKind;
 }
 
 /**

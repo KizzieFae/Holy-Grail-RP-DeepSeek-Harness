@@ -148,6 +148,25 @@ class NarratorPresentationPolicyIntegrationTests(unittest.TestCase):
                 ],
             )
 
+    def test_validate_prompt_contribution_manifest_requires_inference_kind(self) -> None:
+        from domain_api.contract import PromptContributionManifest
+        from domain_api.manifest_validation import validate_prompt_contribution_manifest
+
+        manifest = PromptContributionManifest(
+            manifest_id="manifest-no-kind",
+            inference_id="inf-no-kind",
+            inference_kind="",
+            hg_scene_id=self.scene_id,
+            hg_round_id=self.rnd_id,
+            role="narrator",
+            character_id="Alice",
+            turn_index=1,
+            attempt_index=0,
+            contributions=(),
+        )
+        with self.assertRaises(ValueError):
+            validate_prompt_contribution_manifest(manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

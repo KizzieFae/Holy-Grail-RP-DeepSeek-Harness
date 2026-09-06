@@ -207,3 +207,37 @@ test('HgContextBridge: rejects invalid model-context package before registration
     /model-context package rejected/,
   );
 });
+
+test('HgContextBridge: missing manifest inference_kind rejects caller fallback', async (t) => {
+  const { ctx, contextBridge } = await createHolyGrailRpContext();
+  t.after(async () => {
+    await ctx.fiber.dispose();
+  });
+
+  const agent = ctx.agentLoop.create(SessionId('hg-inf-bridge-missing-kind'));
+  const malformedManifest = {
+    manifest_id: 'manifest-missing-kind',
+    inference_id: 'inf-missing-kind',
+    contributions: [
+      {
+        contribution_id: 'c-1',
+        source_kind: 'inference_instruction',
+        authority_class: 'authoritative',
+        knowledge_ids: [],
+        priority: 1,
+        content: 'x',
+        provenance: {},
+      },
+    ],
+  };
+
+  assert.throws(
+    () =>
+      contextBridge.registerManifest({
+        agent,
+        manifest: malformedManifest,
+        inferenceKind: 'narrator_presentation',
+      }),
+    /missing required inference_kind/,
+  );
+});
