@@ -1,4 +1,8 @@
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import {
+  bridgeManifestFromHostPrepare,
+  normalizeBridgeContributions,
+} from '../../lib/bridge-manifest.mjs';
 
 export const SEMANTIC_EVAL_RESULT_SCHEMA = 'hg_semantic_evaluation_result_v1';
 export const SEMANTIC_EVAL_CONFIG_ID = 'semantic_evaluator_v1';
@@ -125,26 +129,10 @@ export function parseSemanticEvaluationResult(raw, authorityReferences = []) {
 }
 
 function manifestFromSemanticContext(contextResponse) {
-  const contributions = (contextResponse.contributions ?? []).map((c) => ({
-    contribution_id: c.contribution_id,
-    source_kind: c.source_kind,
-    authority_class: c.authority_class,
-    priority: c.priority,
-    content: c.content,
-    knowledge_ids: c.knowledge_ids,
-    provenance: c.provenance,
-  }));
-  return {
-    manifest_id: contextResponse.manifest_id,
-    inference_id: contextResponse.inference_id,
-    hg_scene_id: contextResponse.hg_scene_id,
-    hg_round_id: contextResponse.hg_round_id,
-    role: 'semantic_evaluator',
-    character_id: contextResponse.character_id,
-    turn_index: contextResponse.turn_index,
-    attempt_index: 0,
-    contributions,
-  };
+  return bridgeManifestFromHostPrepare(
+    contextResponse,
+    normalizeBridgeContributions(contextResponse.contributions),
+  );
 }
 
 export async function runSemanticEvaluation({

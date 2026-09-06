@@ -1,4 +1,8 @@
 import { parseJsonObject } from './inference-utils.mjs';
+import {
+  bridgeManifestFromHostPrepare,
+  normalizeBridgeContributions,
+} from './bridge-manifest.mjs';
 
 export const LIBRARIAN_MEDIATION_RESULT_SCHEMA = 'hg_librarian_mediation_result_v1';
 export const LIBRARIAN_MEDIATION_CONFIG_ID = 'librarian_mediator_v1';
@@ -135,24 +139,8 @@ export function parseLibrarianMediationResult(raw, catalogSourceIds = new Set())
 }
 
 export function manifestFromLibrarianPrepareResponse(prepareResponse) {
-  const contributions = (prepareResponse.contributions ?? []).map((c) => ({
-    contribution_id: c.contribution_id,
-    source_kind: c.source_kind,
-    authority_class: c.authority_class,
-    priority: c.priority,
-    content: c.content,
-    knowledge_ids: c.knowledge_ids,
-    provenance: c.provenance,
-  }));
-  return {
-    manifest_id: prepareResponse.manifest_id,
-    inference_id: prepareResponse.inference_id,
-    hg_scene_id: prepareResponse.hg_scene_id,
-    hg_round_id: prepareResponse.hg_round_id,
-    role: 'librarian',
-    character_id: null,
-    turn_index: 0,
-    attempt_index: 0,
-    contributions,
-  };
+  return bridgeManifestFromHostPrepare(
+    prepareResponse,
+    normalizeBridgeContributions(prepareResponse.contributions),
+  );
 }

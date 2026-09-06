@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import { parseJsonObject } from './inference-utils.mjs';
+import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 import {
   plotCognitionSemanticTransportCorrectionGuidance,
   plotCognitionSemanticTransportPromptLines,
@@ -255,7 +256,7 @@ export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
       },
     });
   }
-  return { contributions };
+  return bridgeManifestFromHostPrepare(prepareResponse, contributions);
 }
 
 function newId(prefix) {

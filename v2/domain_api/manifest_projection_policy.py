@@ -14,6 +14,7 @@ InferenceKind = Literal[
     "character_turn",
     "character_orientation",
     "character_semantic_evaluation",
+    "character_advisory_generation",
     "director_turn",
     "director_semantic_qa",
     "narrator_presentation",
@@ -25,6 +26,12 @@ InferenceKind = Literal[
     "opening_segmentation",
     "player_decomposition",
     "player_visibility_triage",
+    "plot_cognition_init",
+    "plot_cognition_init_contract_correction",
+    "plot_cognition_update",
+    "plot_cognition_update_contract_correction",
+    "plot_cognition_epistemic_eval",
+    "plot_cognition_epistemic_eval_contract_correction",
     "storyteller_orientation",
     "storyteller_assessment",
 ]
@@ -33,6 +40,7 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "character_turn",
     "character_orientation",
     "character_semantic_evaluation",
+    "character_advisory_generation",
     "director_turn",
     "director_semantic_qa",
     "narrator_presentation",
@@ -44,6 +52,12 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "opening_segmentation",
     "player_decomposition",
     "player_visibility_triage",
+    "plot_cognition_init",
+    "plot_cognition_init_contract_correction",
+    "plot_cognition_update",
+    "plot_cognition_update_contract_correction",
+    "plot_cognition_epistemic_eval",
+    "plot_cognition_epistemic_eval_contract_correction",
     "storyteller_orientation",
     "storyteller_assessment",
 )
@@ -134,6 +148,13 @@ _NARRATOR_ENV_COGNITION_LANES: Final[frozenset[str]] = frozenset(
 
 _COMMON_INSTRUCTION: Final[frozenset[str]] = frozenset({"inference_instruction"})
 _CORRECTION: Final[frozenset[str]] = frozenset({"semantic_correction"})
+_PLOT_COGNITION_INIT: Final[frozenset[str]] = frozenset({"active_constraints"})
+_PLOT_COGNITION_UPDATE: Final[frozenset[str]] = frozenset(
+    {"active_constraints", "advisory_context"}
+)
+_PLOT_COGNITION_EPISTEMIC: Final[frozenset[str]] = frozenset(
+    {"active_constraints", "derived"}
+)
 
 ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
     "character_turn": (
@@ -216,6 +237,13 @@ ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
     "storyteller_assessment": (
         _COMMON_INSTRUCTION | frozenset({"librarian_knowledge"})
     ),
+    "plot_cognition_init": _PLOT_COGNITION_INIT,
+    "plot_cognition_init_contract_correction": _PLOT_COGNITION_INIT,
+    "plot_cognition_update": _PLOT_COGNITION_UPDATE,
+    "plot_cognition_update_contract_correction": _PLOT_COGNITION_UPDATE,
+    "plot_cognition_epistemic_eval": _PLOT_COGNITION_EPISTEMIC,
+    "plot_cognition_epistemic_eval_contract_correction": _PLOT_COGNITION_EPISTEMIC,
+    "character_advisory_generation": _PLOT_COGNITION_EPISTEMIC,
 }
 
 
