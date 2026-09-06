@@ -211,6 +211,7 @@ Distinguish **Narrator proposal**, **Host establishment decision**, **persisted 
 | Librarian mediation | audit `librarian_queries[]` (`mediation_outcome`, optional `composed_grounding`); execution evidence `decision.environment_cognition` on Narrator attempts | `need_id`, `request_id` |
 | Sufficiency (#89) | audit `sufficiency_evaluations[]` | `need_id`, `response_sufficient`, `sufficiency_state` |
 | Presentation obligation (#89) | audit `environmental_response_obligations[]`; manifest `environmental_response_obligation` lane | `obligation_id`, `render_behavior` |
+| Full cognition audit (#131) | `turn_metadata_by_index[].narrator_environment_audit`; execution evidence `decision.environment_cognition` | `cognition_id`, `domain_commit_id` — **not** presentation manifest content |
 | N2 resolution | audit `n2_resolutions[]` | `need_id`, `category`, `response_sufficient` |
 | Host B2 acceptance | audit `establishment_decisions[].authority_decision` | `decision_id`, `authorized` |
 | Persisted B2 | `_story_knowledge/.../records.jsonl` | `story_record_id`, `decision_id` (via `epistemic_authority_ref`) |
