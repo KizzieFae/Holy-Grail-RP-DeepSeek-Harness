@@ -2,42 +2,54 @@
 
 **Retrieved:** 2026-09-06  
 **PR:** https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/137  
-**Initial reviewed head:** `3cc5a47ba93563d7f958744ca3a0767ae6653bdd`  
 **Issue:** #136 — System-level LLM inference-contract and prompt architecture assessment
 
-## Initial check run
+---
+
+## Review 1 — initial assessment (`3cc5a47`)
 
 | Field | Value |
 |-------|-------|
-| **Name** | Greptile Review |
 | **Head SHA** | `3cc5a47` |
-| **Status** | completed |
-| **Conclusion** | success |
-| **Started** | 2026-09-06T08:08:16Z |
-| **Completed** | 2026-09-06T08:10:43Z |
-| **Duration** | ~2m27s |
+| **Conclusion** | success (~2m27s) |
+| **Inline comments** | 1 P1 |
+
+| Severity | Finding | Disposition |
+|----------|---------|-------------|
+| P1 | `runCharacterInferenceSlice` omitted from inventory | **Remediated** in `36db58c` — added to §5 inventory + corpus §C.3 |
+
+---
+
+## Review 2 — prompt corpus pass (`b1d10ba`)
+
+| Field | Value |
+|-------|-------|
+| **Head SHA** | `b1d10bad07714e93cca5e44b3bffbe44aa1a9761` |
+| **Conclusion** | **SUCCESS** (~6m53s) |
+| **Started** | 2026-09-06T08:26:53Z |
+| **Completed** | 2026-09-06T08:33:46Z |
 | **Greptile app** | https://github.com/apps/greptile-apps |
 
-## Inline comments (initial)
+### Inline comments (2)
 
 | Severity | Location | Finding | Disposition |
 |----------|----------|---------|-------------|
-| P1 | `issue-136-llm-inference-contract-assessment.md` L69 | `runCharacterInferenceSlice` / `HgPhaseExecutors.runCharacterInference()` omitted from inventory | **Remediated** — added `character_inference_slice`, `plot_cognition_epistemic_eval`, `character_advisory_generation`, and harness-only table to §5 |
+| P1 | assessment L70 (method step) | Character inference path omitted | **Stale/disputed** — slice present in §5 inventory L149 and corpus §C.3 at `b1d10ba`; added §4.4 harness path for call-flow visibility |
+| P1 | assessment L149 | Standalone Character contract misstated (optional commit; context equivalence) | **Valid — remediated** post-review: corrected synthetic Director decision + `commitMove` on accept in assessment §5, corpus §C.3, §4.4 |
 
-## Assessment changes in response
+### Files reviewed at `b1d10ba`
 
-- Expanded §5 inventory with standalone Character slice path (`character-inference-slice.mjs`).
-- Added plot cognition projection sub-calls and harness-only certification paths.
-- Added finding F-136-11 documenting the doc gap and remediation.
+- `governance/records/issue-136-llm-inference-contract-assessment.md`
+- `governance/records/issue-136-llm-inference-prompt-corpus-evidence.md`
 
-## Re-review (remediation head `36db58c`)
+---
 
-| Field | Value |
-|-------|-------|
-| **Remediation commit** | `36db58c` |
-| **Greptile re-review** | Not yet reported on updated head at retrieval time; initial P1 remediated in assessment §5 |
-| **Final assessment candidate SHA** | `36db58c` |
+## Post-review remediation commit
+
+Greptile P1 on `character_inference_slice` contract accuracy remediated in documentation after `b1d10ba` review. See PR head for final SHA after remediation commit.
+
+---
 
 ## Governance note
 
-Greptile review is external review evidence for Phase 1 assessment candidate readiness. It is **not** sole merge authorization. Issue #136 remains **`investigating`** until Governance receives the assessment package. **Do not** transition to `consensus_reached` on assessment PR alone.
+Greptile SUCCESS on `b1d10ba` with 2 P1 inline comments is external review evidence for Phase 1 assessment candidate readiness. **Not** sole merge authorization. Issue #136 remains **`investigating`**. Do not transition to `consensus_reached` on assessment PR alone.

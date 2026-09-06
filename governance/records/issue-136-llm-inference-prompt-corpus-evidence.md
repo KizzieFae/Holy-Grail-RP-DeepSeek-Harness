@@ -181,7 +181,16 @@ Upstream manifest from `assemble_character_upstream_contributions`: auth project
 
 ### C.3 `character_inference_slice`
 
-**Provenance:** `character-inference-slice.mjs` `DEFAULT_CHARACTER_PROMPT`; uses same `prepareCharacterContext` manifest as production minus cognition chain.
+**Provenance:** `character-inference-slice.mjs` `DEFAULT_CHARACTER_PROMPT`; `prepareCharacterContext` via Domain API.
+
+**Lifecycle distinction from production `character_turn`:**
+
+- **Does not run:** orientation, Librarian mediation, plot projection, or semantic evaluation loops.
+- **Synthetic Director decision:** Unless `options.directorDecision` is supplied, injects default into manifest prepare:
+  ```json
+  {"next_actor":"<characterId>","end_round":false,"reason":"character-only slice","environment_event":"","tension_shift":""}
+  ```
+- **Commit behavior:** On `validateMove` accept, **always** calls `commitMove` with that director decision; loop retries until committed or attempts exhausted. Not a "prompt-only" or commit-optional path in normal operation.
 
 #### A. Slice default user prompt (verbatim)
 
@@ -189,7 +198,7 @@ Upstream manifest from `assemble_character_upstream_contributions`: auth project
 Respond with a single JSON object only (no markdown). Schema: {"move_schema_version":2,"beats":[{"type":"action","action":"..."},{"type":"speech","dialogue":"..."}],"motivation":{"goal":"...","tactic":"...","emotional_driver":"...","risk_level":"low"},"semantic_evaluation":{"decision":"no_covered_change"}}. Action-only, speech-only, and mixed beat sequences are all valid when appropriate.
 ```
 
-**Shares:** Host `inference_instruction` from `character_context.py` when manifest prepared. **Does not run:** orientation, mediation, semantic evaluation loops (unless caller extends).
+**Shares:** Host `inference_instruction` from `character_context.py` when manifest prepared.
 
 ---
 

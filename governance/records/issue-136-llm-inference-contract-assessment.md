@@ -121,6 +121,12 @@ hg-round-orchestrator/service.mjs
 
 All calls funnel through `v2/rp_runtime/src/plugins/hg-phase-executors/inference-substrate.mjs` → `runEphemeralInference()`. Context bridge (`hg-context-bridge/service.mjs`) binds Host `PromptContribution` manifests into DSH agent context.
 
+### 4.4 Harness / standalone path (outside round orchestrator)
+
+| Path | Trigger | Notes |
+|------|---------|-------|
+| `character_inference_slice` | `HgPhaseExecutors.runCharacterInference()` | Uses `prepareCharacterContext` with a **synthetic default Director decision** (`reason: 'character-only slice'`); on validation accept, **always calls `commitMove`**; skips cognition chain and semantic QA. See inventory §5 and prompt corpus §C.3. |
+
 ---
 
 ## 5. Inference-contract inventory
@@ -146,7 +152,7 @@ Canonical `inference_kind` values: `manifest_projection_policy.py` (`INFERENCE_K
 | **opening_segmentation** | After opening | NVR units for opening prose | segmentation phase + `OPENING_SEGMENTATION_OUTPUT_INSTRUCTION` | Opening text | perceptual_visibility.units | Opening metadata | **Derived** | NVR validation | After opening | One-time | #90 |
 | **player_visibility_triage** | Player turn | Route uniform vs full PVR | `buildPlayerVisibilityTriageUserPrompt` | Entitlement + scene context | uniform_projection_safe | Decomposition vs shortcut | **Advisory** routing | parse boolean | Before decomposition | One call per player turn | #121 |
 | **player_decomposition** | Player turn (non-uniform) | Semantic units for player text | `PLAYER_DECOMPOSITION_TASK_PROMPT` | PVR entitlement context | semantic_decomposition.units | Per-character perceptual records | **Proposed** → normalized | Host normalize | Before round | Cost/reliability (#112) | #109, #125 |
-| **character_inference_slice** | `HgPhaseExecutors.runCharacterInference()` (API/harness) | Standalone character move without full round orchestration | `DEFAULT_CHARACTER_PROMPT` in `character-inference-slice.mjs` (or caller override); same Host `prepareCharacterContext` manifest | Same as `character_turn` minus cognition chain | move_schema_version 2 JSON | Optional `commitMove` | **Proposed** until validated | `validateMove` + optional commit; no semantic eval loop | Bypasses Director/ST/Narrator round | Slimmer than production path | `service.mjs` exposes slice |
+| **character_inference_slice** | `HgPhaseExecutors.runCharacterInference()` (API/harness) | Standalone character move without full round orchestration | `DEFAULT_CHARACTER_PROMPT` in `character-inference-slice.mjs` (or caller override); Host `prepareCharacterContext` with **synthetic default Director decision** injected | `prepareCharacterContext` manifest (no cognition chain); `director_decision` defaulted to `{next_actor: characterId, reason: 'character-only slice', ...}` unless caller overrides | move_schema_version 2 JSON | **`commitMove` on validation accept** (success path) | **Proposed** until validated/committed | `validateMove` then `commitMove`; **no** semantic eval loop | Bypasses live Director/ST/Narrator round | Slimmer than production path; distinct lifecycle | `character-inference-slice.mjs`, `service.mjs` |
 | **plot_cognition_epistemic_eval** | Character projection lifecycle (optional) | Epistemic withhold/pass on plot overlay | `character-epistemic-projection-eval.mjs` | Projection batch context | epistemic eval schema | Projection gate | **Advisory** | contract correction | Before `character_advisory_generation` | Extra call when projection enabled | plot cognition tests |
 | **character_advisory_generation** | Character projection lifecycle (optional) | Regenerate advisory overlay text | plot cognition advisory generation endpoints | Finalized projection context | advisory text | Plot overlay contributions | **Advisory** | regen on failure | Character manifest overlay | Conditional | plot cognition tests |
 
