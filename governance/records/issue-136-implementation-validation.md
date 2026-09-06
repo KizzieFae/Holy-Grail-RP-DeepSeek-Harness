@@ -219,3 +219,83 @@ Output only valid JSON for move_schema_version 2 with non-empty beats[], motivat
 **Current:** **`implemented`** (not `validated`).
 
 **Blockers to `validated`:** (1) Tier-2 scenario-grade semantic campaign incomplete; (2) Greptile not completed on implementation candidate.
+
+---
+
+## Response-contract implementation cycle (2026-09-06)
+
+**Authorization:** Implementation + deterministic validation + Greptile + bounded Character-only live slice. **Not** authorized: full Tier-2 rerun, `validated`, merge, closure.
+
+### Canonical contract
+
+| Field | Value |
+|-------|-------|
+| Module | `v2/domain/modules/character_move_response_contract.py` |
+| Revision | `character_move_response_contract_v1` |
+| Digest | `e5192fb332e8726f4a8c107b2869a32e76b2b93e314964111ffab7eda0f05651` |
+| Implementation SHA (feat) | `89876413b11ff2c6f7140fa5aa9a34056f328f8f` |
+| PR head (exact candidate) | `bebdd31` (includes harness anchor + live-slice wiring) |
+
+### Architecture delivered
+
+- Declarative contract module owns structural allowlists, exemplar, prohibitions, projection text, provenance digest.
+- `character_move_ingress.py` imports structural constants (bounded extraction; validation algorithm unchanged).
+- `character_context.py` emits **two** `inference_instruction` contributions: `-response-contract` (priority 28) + `-instruction` (priority 30) with revision/digest on structural contribution only.
+- DSH remains transport-only (`LIVE_INFERENCE_TRANSPORT_PROMPT`).
+- Correction path reuses identical structural projection (digest parity tested).
+- Campaign stop-state machine: `issue136-campaign-state.mjs` + Tier-2 runner integration.
+
+### Files added/changed (this cycle)
+
+| File | Role |
+|------|------|
+| `v2/domain/modules/character_move_response_contract.py` | Canonical structural authority |
+| `v2/domain/modules/character_move_ingress.py` | Import contract constants |
+| `v2/domain_api/character_context.py` | Dual Host projections + provenance |
+| `v2/domain/tests/test_issue_136_character_move_response_contract.py` | Contract↔ingress + manifest parity |
+| `v2/domain/tests/test_issue_136_inference_instruction_ownership.py` | Updated split-contribution assertions |
+| `v2/rp_runtime/src/scenario-harness/issue136-campaign-state.mjs` | Stop-state machine |
+| `v2/rp_runtime/src/scenario-harness/issue136-tier2-campaign.mjs` | Runner integration |
+| `v2/rp_runtime/src/scenario-harness/issue136-character-live-slice.mjs` | Bounded live validation harness |
+| `v2/rp_runtime/tests/issue136-campaign-state.test.mjs` | Stop-state unit tests |
+
+### Deterministic validation
+
+| Command | Result |
+|---------|--------|
+| `pytest v2/domain/tests/` | **1076 passed** |
+| `pytest domain/tests/test_issue_136_character_move_response_contract.py domain/tests/test_issue_136_inference_instruction_ownership.py` | **11 passed** |
+| `node --test tests/issue136-campaign-state.test.mjs tests/issue-136-instruction-ownership.test.mjs tests/issue136-tier2-campaign-smoke.test.mjs` | **14 passed** |
+
+### Bounded Character-only live slice (not Tier-2)
+
+| Field | Value |
+|-------|-------|
+| Fixture | `136-T2-A-STABILITY` / character `Mara` |
+| Provider / model / reasoning | `deepseek-official` / `deepseek-v4-flash` / `low` |
+| Candidate SHA | `89876413b11ff2c6f7140fa5aa9a34056f328f8f` |
+| Contract revision / digest | `character_move_response_contract_v1` / `e5192fb3…0f05651` |
+| Ingress-accepted move | **Yes** — attempt 0 accepted + committed (`domain_commit_id` `hg-commit-a7610abd-…`) |
+| Beat shapes | `type`+`action`, `type`+`dialogue` (no `description`/`key`) |
+| `move_schema_version` | Present (`2`) on accepted output |
+| Report | `data/issue136_character_live_slice/2026-09-06T23-37-35-335Z/character-live-slice-report.json` |
+
+**Note:** Earlier slice runs failed commit only because harness passed stringified `directorDecision`; fixed in `f679dc4`. Structural ingress succeeded on all attempts even before that fix.
+
+### Storyteller infrastructure sentinel
+
+**Not rerun live** — #142 merged to `main` at `51e1b74` with dedicated validation. Mock Tier-2 harness smoke still completes post stop-state repair.
+
+### Greptile (response-contract cycle)
+
+| Field | Value |
+|-------|-------|
+| Requested head | `bebdd31` |
+| PR | #137 |
+| Status at handoff | **Requested** via PR comment; check run not yet reported |
+
+### Remaining obligations
+
+1. Greptile clean review on exact PR head (`bebdd31`+).
+2. Full Tier-2 semantic campaign (nine dimensions) — still **unauthorized** until Governance re-authorizes after structural + Greptile gates.
+3. Do **not** merge PR #137 or transition #136 to `validated` without Governance authorization.
