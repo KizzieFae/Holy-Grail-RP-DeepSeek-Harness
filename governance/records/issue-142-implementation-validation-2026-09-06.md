@@ -3,7 +3,11 @@
 **Date:** 2026-09-06  
 **Issue:** #142 OPEN → `implemented` (implementation cycle)  
 **Base:** `9baf987cc3b29146e863447427b87379af94e4e0` (`main`)  
-**Implementation SHA:** `539f0b81c16cdf498f3bb8d766c582046a70504a` (production); `1ab1c30` initial implementation
+**Production/test candidate:** `539f0b81c16cdf498f3bb8d766c582046a70504a`  
+**Initial implementation SHA:** `1ab1c30aed61811a19a74d3a522869d8a5a5b7c5`  
+**Greptile initial head:** `1ab1c30` (check `101572093988`, 1 P2)  
+**Greptile re-reviewed head:** `9ffd3b07ffe4d1ba5fe260195def4e083d6cbc7a` (check `101573847451`, success, 0 new comments)  
+**PR head:** `9ffd3b0`
 
 ## Root cause
 
@@ -56,7 +60,13 @@ After pass-through fix, existing path records:
 
 ## Greptile
 
-Recorded separately in `governance/records/issue-142-pr*-greptile-review-2026-09-06.md` after PR open.
+| Stage | SHA | Check run | Result |
+|-------|-----|-----------|--------|
+| Initial | `1ab1c30` | `101572093988` | success; P2 env-snapshot |
+| Remediation | `539f0b8` | — | live-test env restore |
+| Re-review | `9ffd3b0` | `101573847451` | success; 0 new comments |
+
+Records: `issue-142-pr143-greptile-review-2026-09-06.md`, `issue-142-pr143-greptile-rereview-2026-09-06.md`.
 
 ## Workflow
 
