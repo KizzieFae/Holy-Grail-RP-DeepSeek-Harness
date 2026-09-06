@@ -30,9 +30,13 @@
 - Added plot cognition projection sub-calls and harness-only certification paths.
 - Added finding F-136-11 documenting the doc gap and remediation.
 
-## Re-review
+## Re-review (remediation head `36db58c`)
 
-*(Updated after remediation commit — see PR head for final SHA)*
+| Field | Value |
+|-------|-------|
+| **Remediation commit** | `36db58c` |
+| **Greptile re-review** | Not yet reported on updated head at retrieval time; initial P1 remediated in assessment §5 |
+| **Final assessment candidate SHA** | `36db58c` |
 
 ## Governance note
 
