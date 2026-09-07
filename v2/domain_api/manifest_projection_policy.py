@@ -35,6 +35,7 @@ InferenceKind = Literal[
     "plot_cognition_epistemic_eval_contract_correction",
     "storyteller_orientation",
     "storyteller_assessment",
+    "storyteller_certification_eval",
 ]
 
 INFERENCE_KINDS: Final[tuple[str, ...]] = (
@@ -62,6 +63,7 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "plot_cognition_epistemic_eval_contract_correction",
     "storyteller_orientation",
     "storyteller_assessment",
+    "storyteller_certification_eval",
 )
 
 _SCENE_AUTHORITY: Final[frozenset[str]] = frozenset(
@@ -157,6 +159,7 @@ _PLOT_COGNITION_UPDATE: Final[frozenset[str]] = frozenset(
 _PLOT_COGNITION_EPISTEMIC: Final[frozenset[str]] = frozenset(
     {"active_constraints", "derived"}
 )
+_CERTIFICATION_TRUTH: Final[frozenset[str]] = frozenset({"certification_truth"})
 
 ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
     "character_turn": (
@@ -242,6 +245,7 @@ ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
     "storyteller_assessment": (
         _COMMON_INSTRUCTION | frozenset({"librarian_knowledge"})
     ),
+    "storyteller_certification_eval": _CERTIFICATION_TRUTH,
     "plot_cognition_init": _PLOT_COGNITION_INIT,
     "plot_cognition_init_contract_correction": _PLOT_COGNITION_INIT,
     "plot_cognition_update": _PLOT_COGNITION_UPDATE,

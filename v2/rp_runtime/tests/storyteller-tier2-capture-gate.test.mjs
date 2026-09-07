@@ -415,17 +415,23 @@ test('certification evaluator prompt uses evaluationSubject when provided', asyn
   assert.ok(capturedPrompt.includes('Certification subject to evaluate'));
 });
 
-test('durable execution evidence remains queryable after harness teardown', async () => {
+test('durable execution evidence remains queryable after harness teardown', async (t) => {
   const campaignDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-durable-evidence-'));
   const runtime = await startHarnessRuntime({
     dataDir: campaignDir,
     sessionsDir: path.join(campaignDir, 'sessions'),
     forensicsDir: path.join(campaignDir, 'plot_cognition_forensics'),
   });
+  t.after(async () => {
+    await runtime.dispose();
+  });
   const session = await runtime.api.createSession({ cast: ['Alice', 'Bob'] });
   const { ctx: rpCtx, phaseExecutors } = await createHarnessRpContext({
     baseUrl: runtime.baseUrl,
     dataDir: runtime.dataDir,
+  });
+  t.after(async () => {
+    await rpCtx.fiber.dispose();
   });
   const limits = new CampaignLimits({ maxRuns: 1, maxInferences: 1 });
   const instrumented = createInstrumentedInference({
@@ -444,11 +450,53 @@ test('durable execution evidence remains queryable after harness teardown', asyn
       inferenceKind: 'storyteller_certification_eval',
     },
   });
-  await rpCtx.fiber.dispose();
-  await runtime.dispose();
   const check = verifyDurableEvidence(campaignDir, session.hg_session_id);
   assert.equal(check.queryable, true);
   assert.ok(check.count >= 1);
+});
+
+test('harness disposes host and fiber when instrumented inference throws', async (t) => {
+  const campaignDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-durable-evidence-fail-'));
+  const disposed = { fiber: false, runtime: false };
+  const runtime = await startHarnessRuntime({
+    dataDir: campaignDir,
+    sessionsDir: path.join(campaignDir, 'sessions'),
+    forensicsDir: path.join(campaignDir, 'plot_cognition_forensics'),
+  });
+  t.after(async () => {
+    await runtime.dispose();
+    disposed.runtime = true;
+  });
+  const { ctx: rpCtx } = await createHarnessRpContext({
+    baseUrl: runtime.baseUrl,
+    dataDir: runtime.dataDir,
+  });
+  t.after(async () => {
+    await rpCtx.fiber.dispose();
+    disposed.fiber = true;
+    assert.equal(disposed.fiber, true);
+    assert.equal(disposed.runtime, true);
+  });
+  const instrumented = createInstrumentedInference({
+    phaseExecutors: {
+      runEphemeralInference: async () => {
+        throw new Error('injected_harness_inference_failure');
+      },
+    },
+    campaignLimits: new CampaignLimits({ maxRuns: 1, maxInferences: 1 }),
+    runtimeConfig: mockRuntimeConfig(),
+  });
+  await assert.rejects(
+    () => instrumented.runEphemeralInference({
+      inferenceId: 'inf-fail-test',
+      prompt: 'test',
+      manifest: { contributions: [] },
+      mockResponses: ['{}'],
+      modelProfile: mockRuntimeConfig().defaultProfile,
+      evidenceContext: { inferenceKind: 'storyteller_certification_eval' },
+    }),
+    /injected_harness_inference_failure/,
+  );
 });
 
 test('token rollup uses inputTokens/outputTokens field names', () => {
