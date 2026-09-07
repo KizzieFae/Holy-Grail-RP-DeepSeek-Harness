@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-07  
 **Issue:** [#146](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/146)  
-**Phase:** `validated` (Governance formal validation 2026-09-07; integration authorization pending)  
+**Phase:** `closed` (stacked integration 2026-09-07; merged via PR #147 into #144 branch)  
 **Assigned workflow weight:** `standard`  
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full  
@@ -22,7 +22,7 @@
 | Project Status | In Progress |
 | Project Workflow | Validating |
 | Priority | P3 |
-| Merge / closure | NOT authorized |
+| Merge / closure | PR #147 merged 2026-09-07; Issue closed |
 
 ---
 
@@ -159,15 +159,36 @@ Greptile remains useful optional external assurance when credits are available.
 
 ---
 
-## Remaining obligations
+## Stacked integration (2026-09-07)
 
-1. Governance **integration/merge authorization** (not granted in validation cycle)
-2. PR #147 merge after authorization
-3. #136 Storyteller-bound G2 rerun after integration (separate)
-4. Optional Greptile when credits available (non-blocking)
+| Role | SHA |
+|------|-----|
+| Pre-merge #144 base | `58b1a786cf30dd2c84010c1425c7832faa289e30` |
+| PR #147 head | `94f0e3d9b532066e388e05adc95ef2dab94593f9` |
+| Production behavior anchor | `b93eeed` |
+| Merge commit / resulting #144 branch | `0dd39aa2a5d28009bd364cb325be772bf64267a7` |
+| Merge method | GitHub merge commit (PR #147 → `issue-144-storyteller-orientation-response-contract`) |
+
+**Stacked state:** #146 production behavior is integrated into `issue-144-storyteller-orientation-response-contract` @ `0dd39aa`. **Not on `main`.** Combined orientation + assessment repair reaches `main` only when #144 chain (PR #145) is authorized and merged.
+
+### Post-merge deterministic validation (on #144 @ `0dd39aa`)
+
+| Command | Result |
+|---------|--------|
+| `pytest test_issue_144_* + test_issue_146_* + test_storyteller_finalize_transport.py -q` | 39 passed |
+| `node --test issue-144-instruction-ownership + issue-146-instruction-ownership` | 4 passed |
 
 ---
 
-## Recommendation
+## Closure disposition
 
-**#146 is formally validated** under revised Greptile policy. **Ready for Governance integration authorization.** **Do not merge** until explicitly authorized.
+- Issue #146: `validated` → `closed` (2026-09-07)
+- Authority: `issue-tracking-workflow.md` §H (`validated` → `closed`); authorized integration target was stacked PR base (#144 branch), not `main`
+- PR #147: **MERGED**
+- Greptile: NOT COMPLETED / optional / non-blocking (unchanged)
+
+## Remaining obligations (post-#146)
+
+1. #144 validation/integration chain (PR #145 → `main`) — separate Governance tract
+2. #136 Storyteller-bound G2 rerun after combined stack reaches integrated base (separate)
+3. Optional Greptile when credits available (non-blocking)
