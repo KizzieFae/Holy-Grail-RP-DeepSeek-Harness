@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-07  
 **Issue:** [#146](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/146)  
-**Phase:** implemented (Governance formal validation NOT authorized)  
+**Phase:** `validated` (Governance formal validation 2026-09-07; integration authorization pending)  
 **Assigned workflow weight:** `standard`  
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full  
@@ -18,9 +18,9 @@
 | Field | Value |
 |-------|-------|
 | Issue state | OPEN |
-| Current status | `implemented` |
+| Current status | `validated` |
 | Project Status | In Progress |
-| Project Workflow | Implemented |
+| Project Workflow | Validating |
 | Priority | P3 |
 | Merge / closure | NOT authorized |
 
@@ -129,19 +129,45 @@ storyteller-assessment-envelope.mjs           ← manifest bridge + test-compat 
 
 ## Greptile
 
-Pending PR creation and substantive review on candidate `b93eeed`. Trial credit limit may block (same as #144).
+| Field | Value |
+|-------|-------|
+| Substantive review on PR #147 head `55be264` | **NOT COMPLETED** — trial credit limit (review `PRR_kwDOT7v53s8AAAABMZwtFA`, 2026-09-07) |
+| Governance disposition (2026-09-07 policy) | **OPTIONAL / NON-BLOCKING** — absence is not a validation failure |
+| PASS/FAIL label | **Neither** — review did not run |
+
+Greptile remains useful optional external assurance when credits are available.
+
+---
+
+## Formal validation (2026-09-07)
+
+| Gate | Result |
+|------|--------|
+| Acceptance objective | **PASS** |
+| Full consensus before implementation | **PASS** |
+| Deterministic validation (55 tests) | **PASS** |
+| Bounded live sentinel | **PASS** |
+| #142 / #144 preservation | **PASS** |
+| #136 campaign | **N/A** (not run) |
+| Production drift `b93eeed..55be264` (`v2/domain*`, `v2/rp_runtime/src`) | **None** |
+| Greptile substantive review | **N/A** (optional/non-blocking) |
+| Documentation | **PASS** (governance records sufficient) |
+| Repository cleanup | **PASS** |
+| PR #147 mergeable | **PASS** |
+
+**Validated candidate SHA:** `55be264` (PR head; production anchor `b93eeed` unchanged)
 
 ---
 
 ## Remaining obligations
 
-1. Dedicated #146 PR + substantive Greptile on exact candidate
-2. Governance formal `validated` transition
-3. Sentinel script orientation/usefulness lookup refinement (bounded, in #146)
-4. #136 Storyteller-bound G2 rerun after #146 integration (separate)
+1. Governance **integration/merge authorization** (not granted in validation cycle)
+2. PR #147 merge after authorization
+3. #136 Storyteller-bound G2 rerun after integration (separate)
+4. Optional Greptile when credits available (non-blocking)
 
 ---
 
 ## Recommendation
 
-**#146 assessment response-contract implementation is ready for Governance formal-validation review** on deterministic evidence + bounded live binding success. **Do not merge** until Greptile completes and Governance authorizes integration.
+**#146 is formally validated** under revised Greptile policy. **Ready for Governance integration authorization.** **Do not merge** until explicitly authorized.
