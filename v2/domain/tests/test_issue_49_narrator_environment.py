@@ -371,7 +371,9 @@ class EnvironmentalPacketTests(unittest.TestCase):
 
 class CognitionMediationTests(unittest.TestCase):
     def test_baseline_sufficient_zero_needs(self) -> None:
-        n1 = parse_n1_cognition_result({"baseline_sufficient": True, "information_needs": []})
+        n1 = parse_n1_cognition_result(
+            {"baseline_sufficient": True, "information_needs": [], "resolutions": []}
+        )
         self.assertTrue(n1.baseline_sufficient)
         self.assertEqual(n1.information_needs, [])
 

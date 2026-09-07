@@ -464,6 +464,8 @@ class NarratorEnvironmentCognitionFinalizeRequest:
     cognition_result: dict[str, Any]
     librarian_outcomes: list[dict[str, Any]] | None = None
     cognition_id: str | None = None
+    cognition_raw: str | None = None
+    inference_envelope: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

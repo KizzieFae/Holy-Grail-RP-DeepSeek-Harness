@@ -205,11 +205,13 @@ export async function runNarratorPhase({
       continuityTurnIndex,
       modelProfile,
       mockCognitionResponse: mockNarratorEnvironmentCognitionResponse,
-      allowDeterministicFallback: true,
     });
     if (!envCognition.ok) {
       environmentCognitionAudit = {
         cognition_failed: true,
+        cognition_status: 'failed',
+        status_reason: 'pipeline_exception',
+        baseline_sufficient: null,
         failure_stage: envCognition.stage ?? 'cognition_failed',
         failure_boundary: envCognition.boundary ?? null,
         failure_reason: envCognition.failureReason ?? 'environment_cognition_unavailable',
@@ -219,10 +221,14 @@ export async function runNarratorPhase({
       environmentCognitionEvidence = environmentCognitionAudit;
     } else {
       environmentCognitionAudit = envCognition.audit;
-      environmentCognitionEvidence = {
-        cognition_failed: false,
+      environmentCognitionEvidence = envCognition.environmentCognitionEvidence ?? {
+        cognition_failed: Boolean(envCognition.audit?.cognition_failed),
+        cognition_status: envCognition.audit?.cognition_status ?? envCognition.finalize?.cognition_status ?? null,
+        status_reason: envCognition.audit?.status_reason ?? envCognition.finalize?.status_reason ?? null,
+        baseline_sufficient: envCognition.audit?.n1?.baseline_sufficient ?? envCognition.finalize?.baseline_sufficient ?? null,
         cognition_id: envCognition.audit?.cognition_id ?? null,
         domain_commit_id: domainCommitId,
+        inference_attempt_id: envCognition.environmentCognitionEvidence?.inference_attempt_id ?? null,
       };
     }
   } catch (error) {
@@ -258,8 +264,8 @@ export async function runNarratorPhase({
         continuity_turn_index: continuityTurnIndex,
         attempt_index: attemptIndex,
         correction_context: correctionContext ?? undefined,
-        ...(environmentCognitionAudit?.cognition_failed
-          ? { cognition_failure: environmentCognitionAudit }
+        ...(environmentCognitionEvidence?.cognition_failed
+          ? { cognition_failure: environmentCognitionEvidence }
           : {
               environmental_response_obligations_text:
                 environmentCognitionAudit?.environmental_response_obligations_text ?? undefined,

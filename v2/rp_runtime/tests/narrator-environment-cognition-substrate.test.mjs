@@ -39,8 +39,26 @@ function createMockApi({
         context: { environmental_current_view: { location_ref: 'location:workshop' } },
       };
     },
-    async buildNarratorEnvironmentKnowledgeRequests({ n1_result: n1 }) {
+    async buildNarratorEnvironmentKnowledgeRequests({ cognition_raw, n1_result: n1 }) {
       calls.kar += 1;
+      if (cognition_raw) {
+        try {
+          const parsed = JSON.parse(cognition_raw);
+          if (parsed?.baseline_sufficient === true) {
+            return { knowledge_access_requests: [] };
+          }
+          if (parsed?.baseline_sufficient === false) {
+            return {
+              knowledge_access_requests: [{
+                request_id: 'kar-need-1',
+                consumer_role: 'narrator',
+              }],
+            };
+          }
+        } catch {
+          return { knowledge_access_requests: [] };
+        }
+      }
       if (n1?.baseline_sufficient) {
         return { knowledge_access_requests: [] };
       }
@@ -53,11 +71,22 @@ function createMockApi({
     },
     async finalizeNarratorEnvironmentCognition(body) {
       calls.finalize += 1;
+      const inferenceFailed = Boolean(body.inference_envelope?.inference_failed);
+      const hasRaw = Boolean(body.cognition_raw);
+      const cognitionStatus = inferenceFailed || !hasRaw ? 'indeterminate' : 'determined';
+      const statusReason = inferenceFailed ? 'inference_error' : (hasRaw ? 'model_result' : 'empty_output');
       return {
         ...finalizeResult,
+        cognition_status: cognitionStatus,
+        status_reason: statusReason,
+        baseline_sufficient: cognitionStatus === 'determined' ? true : null,
         audit: {
           cognition_id: 'cog-test',
+          cognition_status: cognitionStatus,
+          status_reason: statusReason,
+          cognition_failed: false,
           establishment_decisions: finalizeResult.establishment_decisions ?? [],
+          environmental_response_obligations_text: '',
           ...finalizeResult.audit,
         },
         cognition_result: body.cognition_result,
@@ -201,11 +230,11 @@ test('match mediation with insufficiency may persist B2 at finalize', async () =
   assert.match(finalizeBody.librarian_outcomes[0].composed_grounding ?? '', /matched authored detail/);
 });
 
-test('cognition inference failure returns auditable failure when fallback disabled', async () => {
+test('inference failure forwards envelope to domain without local fallback', async () => {
   const api = createMockApi();
   const result = await runNarratorEnvironmentCognition({
     api,
-    runEphemeralInference: async () => ({ failed: true, failure: { reason: 'provider_error' } }),
+    runEphemeralInference: async () => ({ failed: true, failure: { reason: 'provider_error' }, raw: '', trace: { finish: { kind: 'error' } } }),
     hgSessionId: 'scene-1',
     hgSceneId: 'scene-1',
     hgRoundId: 'round-1',
@@ -213,12 +242,10 @@ test('cognition inference failure returns auditable failure when fallback disabl
     characterId: 'Alice',
     domainCommitId: 'commit-fail',
     continuityTurnIndex: 4,
-    allowDeterministicFallback: false,
   });
-  assert.equal(result.ok, false);
-  assert.equal(result.stage, 'cognition_inference');
-  assert.equal(result.boundary, 'inference_provider');
-  assert.match(result.failureReason, /provider_error/);
+  assert.equal(result.ok, true);
+  assert.equal(api.calls.finalize, 1);
+  assert.equal(result.environmentCognitionEvidence.cognition_status, 'indeterminate');
 });
 
 test('buildCognitionPrompt mentions sufficiency not no_match gate', () => {

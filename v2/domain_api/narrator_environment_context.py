@@ -14,6 +14,7 @@ from .narrator_environment_cognition import (
     NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
     build_cognition_context_payload,
     build_librarian_knowledge_access_request,
+    classify_environment_cognition_outcome,
     parse_n1_cognition_result,
 )
 from .knowledge_access_request_serialization import knowledge_access_request_to_dict
@@ -162,7 +163,9 @@ def prepare_environment_cognition_context(
         attempt_index=0,
         contributions=contributions,
     )
-    n1 = parse_n1_cognition_result({"baseline_sufficient": True, "information_needs": []})
+    n1 = parse_n1_cognition_result(
+        {"baseline_sufficient": True, "information_needs": [], "resolutions": []}
+    )
     knowledge_requests: list[dict[str, Any]] = []
     if not n1.baseline_sufficient:
         for need in n1.information_needs:
@@ -189,11 +192,16 @@ def build_environment_knowledge_requests(
     turn_record: CharacterTurnRecord,
     req: NarratorEnvironmentCognitionPrepareRequest,
     *,
-    n1_raw: dict[str, Any],
+    n1_raw: dict[str, Any] | None = None,
+    cognition_raw: str | dict[str, Any] | None = None,
+    inference_envelope: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     context_payload = build_cognition_context_payload(fixture, rnd, turn_record)
-    n1 = parse_n1_cognition_result(n1_raw)
-    if n1.baseline_sufficient:
+    if cognition_raw is not None or inference_envelope is not None:
+        n1, _ = classify_environment_cognition_outcome(cognition_raw, inference_envelope)
+    else:
+        n1 = parse_n1_cognition_result(n1_raw or {})
+    if n1.cognition_status != "determined" or n1.baseline_sufficient is not False:
         return []
     location_ref = str(context_payload["environmental_current_view"].get("location_ref", ""))
     return [

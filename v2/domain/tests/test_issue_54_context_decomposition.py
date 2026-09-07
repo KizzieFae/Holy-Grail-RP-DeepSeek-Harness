@@ -283,6 +283,13 @@ def test_build_environment_knowledge_requests_from_n1() -> None:
                 "category": "environmental_detail",
             }
         ],
+        "resolutions": [
+            {
+                "need_id": "need-1",
+                "category": "B1",
+                "detail": "behind the door",
+            }
+        ],
     }
     via_kernel = kernel.build_narrator_environment_knowledge_requests(req, n1_raw=n1_raw)
     fixture = kernel.store.require(scene_id)

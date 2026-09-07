@@ -582,6 +582,14 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     cognition_id=(
                         str(data["cognition_id"]) if data.get("cognition_id") else None
                     ),
+                    cognition_raw=(
+                        str(data["cognition_raw"]) if data.get("cognition_raw") is not None else None
+                    ),
+                    inference_envelope=(
+                        dict(data["inference_envelope"])
+                        if isinstance(data.get("inference_envelope"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(
                     200,
@@ -598,12 +606,20 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     continuity_turn_index=int(data["continuity_turn_index"]),
                 )
                 n1_raw = dict(data.get("n1_result") or {})
+                cognition_raw = data.get("cognition_raw")
+                inference_envelope = (
+                    dict(data["inference_envelope"])
+                    if isinstance(data.get("inference_envelope"), dict)
+                    else None
+                )
                 self._send_json(
                     200,
                     {
                         "knowledge_access_requests": self.kernel.build_narrator_environment_knowledge_requests(
                             req,
                             n1_raw=n1_raw,
+                            cognition_raw=cognition_raw,
+                            inference_envelope=inference_envelope,
                         )
                     },
                 )

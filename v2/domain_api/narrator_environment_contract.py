@@ -23,6 +23,38 @@ MediationOutcomeKind = Literal[
     "mediation_failure",
 ]
 
+CognitionStatus = Literal["determined", "indeterminate", "failed"]
+
+CognitionStatusReason = Literal[
+    "model_result",
+    "empty_output",
+    "malformed_output",
+    "contract_invalid",
+    "provider_limit",
+    "inference_error",
+    "pipeline_exception",
+]
+
+EnvironmentalRenderBehavior = Literal[
+    "communicate_grounded",
+    "bounded_refusal",
+    "no_material_obligation",
+    "sufficiency_undetermined",
+    "cognition_unavailable",
+]
+
+CognitionSufficiencyState = Literal[
+    "determined_sufficient",
+    "determined_insufficient",
+    "undetermined",
+    "unavailable",
+    "sufficient",
+    "insufficient",
+    "failure",
+    "forbidden",
+    "unresolved",
+]
+
 ENVIRONMENTAL_DESCRIPTOR_MARKER = "environmental_descriptor"
 ENVIRONMENTAL_DESCRIPTOR_EVENT_TYPE = "environmental_descriptor"
 
@@ -182,15 +214,23 @@ class NarratorInformationNeed:
 
 @dataclass
 class NarratorEnvironmentN1Result:
-    baseline_sufficient: bool
+    """N1 environmental cognition outcome (#49 / #151)."""
+
+    cognition_status: CognitionStatus = "determined"
+    status_reason: CognitionStatusReason = "model_result"
+    baseline_sufficient: bool | None = None
     information_needs: list[NarratorInformationNeed] = field(default_factory=list)
     assessment_notes: str = ""
+    status_detail: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "cognition_status": self.cognition_status,
+            "status_reason": self.status_reason,
             "baseline_sufficient": self.baseline_sufficient,
             "information_needs": [item.to_dict() for item in self.information_needs],
             "assessment_notes": self.assessment_notes,
+            "status_detail": self.status_detail,
         }
 
 
@@ -263,16 +303,12 @@ class EnvironmentalResponseObligation:
     obligation_id: str
     need_id: str | None
     rendering_question: str
-    render_behavior: Literal[
-        "communicate_grounded", "bounded_refusal", "no_material_obligation"
-    ]
+    render_behavior: EnvironmentalRenderBehavior
     grounded_material: tuple[str, ...]
     resolution_category: EnvironmentalDetailCategory
     response_sufficient: bool
     mediation_outcome: MediationOutcomeKind | None
-    sufficiency_state: Literal[
-        "sufficient", "insufficient", "failure", "forbidden", "unresolved"
-    ]
+    sufficiency_state: CognitionSufficiencyState
     established_b2_property_key: str | None = None
     established_b2_value: str | None = None
     refusal_reason: str | None = None
@@ -305,6 +341,12 @@ class NarratorEnvironmentCognitionAudit:
     cognition_id: str
     location_ref: str
     n1: NarratorEnvironmentN1Result
+    cognition_status: CognitionStatus = "determined"
+    status_reason: CognitionStatusReason = "model_result"
+    cognition_failed: bool = False
+    failure_stage: str | None = None
+    failure_reason: str | None = None
+    inference_attempt_id: str | None = None
     librarian_queries: list[dict[str, Any]] = field(default_factory=list)
     n2_resolutions: list[NarratorEnvironmentResolution] = field(default_factory=list)
     establishment_decisions: list[dict[str, Any]] = field(default_factory=list)
@@ -322,6 +364,12 @@ class NarratorEnvironmentCognitionAudit:
         return {
             "cognition_id": self.cognition_id,
             "location_ref": self.location_ref,
+            "cognition_status": self.cognition_status,
+            "status_reason": self.status_reason,
+            "cognition_failed": self.cognition_failed,
+            "failure_stage": self.failure_stage,
+            "failure_reason": self.failure_reason,
+            "inference_attempt_id": self.inference_attempt_id,
             "n1": self.n1.to_dict(),
             "librarian_queries": list(self.librarian_queries),
             "n2_resolutions": [item.to_dict() for item in self.n2_resolutions],
