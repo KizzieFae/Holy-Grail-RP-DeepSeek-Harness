@@ -19,14 +19,15 @@ from .librarian_contract import (
     StableReference,
 )
 from .retrieval_contract import EntityRef
+from storyteller_assessment_response_contract import (  # noqa: E402
+    STORYTELLER_ASSESSMENT_SCHEMA,
+)
 from storyteller_orientation_response_contract import (  # noqa: E402
     BREADTH_VALUES,
     ORIENTATION_TRIGGER_VALUES,
     STORYTELLER_ORIENTATION_SCHEMA,
     TEMPORAL_VALUES,
 )
-
-STORYTELLER_ASSESSMENT_SCHEMA = "hg_storyteller_assessment_v1"
 STORYTELLER_ADVISORY_PACKAGE_SCHEMA = "hg_storyteller_advisory_package_v1"
 
 StorytellerTrigger = Literal["round_start", "material_commit_refresh", "follow_up_gap"]
