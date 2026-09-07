@@ -50,6 +50,17 @@ export const ISSUE136_REPETITIONS = {
   '136-T2-F-ACTION-REQUIRED': 3,
 };
 
+/** Governance-authorized focused live slice: F×3 + D×2 only. */
+export const ISSUE136_FD_FOCUSED_REPETITIONS = {
+  '136-T2-F-ACTION-REQUIRED': 3,
+  '136-T2-D-INACTION': 2,
+};
+
+export const ISSUE136_FD_FOCUSED_FIXTURE_ORDER = [
+  '136-T2-F-ACTION-REQUIRED',
+  '136-T2-D-INACTION',
+];
+
 const LIVE_MAX_ATTEMPTS = 3;
 const QA_ATTEMPTS_PER_CHARACTER_TURN = LIVE_MAX_ATTEMPTS;
 const ST_INFERENCES_PER_ROUND = 3;
@@ -544,8 +555,11 @@ export async function runIssue136Tier2Campaign({
   includeSentinel = true,
   fixtureFilter = null,
   campaignDataDir = null,
+  repetitionsOverride = null,
+  fixtureOrder = null,
 } = {}) {
-  const guard = deriveIssue136SafetyGuard({ includeSentinel });
+  const repetitions = repetitionsOverride ?? ISSUE136_REPETITIONS;
+  const guard = deriveIssue136SafetyGuard({ repetitions, includeSentinel });
   const limits = new CampaignLimits({
     maxRuns: guard.max_runs,
     maxInferences: guard.max_inferences,
@@ -554,14 +568,18 @@ export async function runIssue136Tier2Campaign({
   const rootDir = campaignDataDir ?? path.join(issue136CampaignDataRoot(), mode, new Date().toISOString().replace(/[:.]/g, '-'));
   fs.mkdirSync(rootDir, { recursive: true });
 
-  const fixtureIds = (fixtureFilter ?? ISSUE136_FIXTURE_IDS).filter((id) => ISSUE136_FIXTURE_IDS.includes(id));
+  const allowed = (fixtureFilter ?? ISSUE136_FIXTURE_IDS)
+    .filter((id) => ISSUE136_FIXTURE_IDS.includes(id));
+  const fixtureIds = fixtureOrder
+    ? fixtureOrder.filter((id) => allowed.includes(id))
+    : allowed;
   const runs = [];
   const fixtureResultBuckets = new Map(fixtureIds.map((id) => [id, []]));
 
   await withIssue136Harness({ mode, campaignLimits: limits, campaignDataDir: rootDir }, async (harness) => {
     for (const fixtureId of fixtureIds) {
       if (!stateMachine.shouldScheduleMore()) break;
-      const reps = ISSUE136_REPETITIONS[fixtureId] ?? 1;
+      const reps = repetitions[fixtureId] ?? 1;
       for (let repetition = 1; repetition <= reps; repetition += 1) {
         if (!stateMachine.shouldScheduleMore()) break;
         try {
@@ -623,7 +641,7 @@ export async function runIssue136Tier2Campaign({
     limits: limits.snapshot(),
     campaign_state: stateMachine.snapshot(),
     fixture_ids: fixtureIds,
-    repetitions: ISSUE136_REPETITIONS,
+    repetitions,
     runs,
     repo_root: repoRoot,
     implementation_sha: ISSUE136_IMPLEMENTATION_SHA,
