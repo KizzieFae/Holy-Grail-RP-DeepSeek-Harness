@@ -23,6 +23,7 @@
     ]
   },
   "scene_stimulus": "Uncertain scraping behind sealed panel; no confirmed emergency.",
+  "turn_zero_perception": true,
   "supported_envelope": {
     "summary": "Legitimate inaction: waiting, observing, gathering information, declining premature action.",
     "change_vs_stability": "stability_or_mild_change",

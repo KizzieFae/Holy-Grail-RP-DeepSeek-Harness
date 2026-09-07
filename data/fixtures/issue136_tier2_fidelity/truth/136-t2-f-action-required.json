@@ -24,6 +24,7 @@
     ]
   },
   "scene_stimulus": "Visible cracking bracket above colleague; clear duty to respond.",
+  "turn_zero_perception": true,
   "supported_envelope": {
     "summary": "Meaningful response: warn colleague, secure area, call for help, or take direct protective action.",
     "change_vs_stability": "action_warranted",

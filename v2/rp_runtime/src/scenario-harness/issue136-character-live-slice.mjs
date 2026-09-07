@@ -12,6 +12,7 @@ import { deepseekInferenceProfile } from '../lib/inference-profile.mjs';
 import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../lib/live-inference-prompts.mjs';
 import { parseJsonObject } from '../lib/inference-utils.mjs';
 import { repoRoot } from '../lib/runtime-config.mjs';
+import { attachIssue136TurnZeroPerception } from './issue136-fixture-bootstrap.mjs';
 import { installIssue136ValidationCards, loadIssue136TruthFixture } from './issue136-fixture-truth.mjs';
 import { startHarnessRuntime } from './harness-runtime.mjs';
 import { directorFor } from './inference-mocks.mjs';
@@ -105,6 +106,7 @@ export async function runIssue136CharacterLiveSlice({
       memory_scope_id: `issue136-live-${crypto.randomUUID()}`,
       plot_cognition_scope_id: `issue136-live-pc-${crypto.randomUUID()}`,
     });
+    await attachIssue136TurnZeroPerception(domainApi, session.hg_session_id, truth);
     const round = await domainApi.startRound({ hg_scene_id: session.hg_scene_id });
     const beforeState = await domainApi.getSceneState(session.hg_scene_id);
     const expectedTurnIndex = Number(beforeState.turn_counter ?? 0);

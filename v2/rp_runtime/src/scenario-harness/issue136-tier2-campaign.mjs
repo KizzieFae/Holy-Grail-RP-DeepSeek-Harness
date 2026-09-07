@@ -25,6 +25,10 @@ import {
   mockRuntimeConfig,
 } from './live-config.mjs';
 import {
+  attachIssue136TurnZeroPerception,
+  ISSUE136_OPENING_PROSE_BY_FIXTURE,
+} from './issue136-fixture-bootstrap.mjs';
+import {
   detectIssue136ForbiddenLeaks,
   installIssue136ValidationCards,
   ISSUE136_FIXTURE_IDS,
@@ -83,30 +87,7 @@ const JON_BETRAYAL_MOVE = {
   semantic_evaluation: { decision: 'no_covered_change' },
 };
 
-const NARRATOR_BY_FIXTURE = {
-  '136-T2-A-STABILITY': [
-    'Jon approached Mara at the workbench with routine workshop business; nothing new had changed between them.',
-  ],
-  '136-T2-B-POS-CHANGE': [
-    'Before the gathered shop steward, Jon publicly acknowledged the breach, named the harm to Mara, and offered concrete restitution.',
-    'The steward witnessed the restitution offer; Mara must now respond.',
-  ],
-  '136-T2-C-NEG-CHANGE': [
-    'The shop steward confronted Jon with falsified safety records implicating Mara and confirmed the betrayal authoritatively.',
-    'The betrayal was now authoritatively confirmed; Mara must respond.',
-  ],
-  '136-T2-D-INACTION': [
-    'A distant scraping sound came from behind a sealed inspection panel, but no immediate danger was visible.',
-  ],
-  '136-T2-E-ENTITLEMENT': [
-    'Alice waited in the vault antechamber, uncertain what Bob knew.',
-    'Bob stepped to the keypad and entered a code without speaking the digits aloud; the vault door clicked unlocked.',
-    'The door stood open, but Alice had heard no code spoken aloud.',
-  ],
-  '136-T2-F-ACTION-REQUIRED': [
-    'A support bracket cracked visibly above a colleague\'s station; immediate harm looked likely without intervention.',
-  ],
-};
+const NARRATOR_BY_FIXTURE = ISSUE136_OPENING_PROSE_BY_FIXTURE;
 
 const ENTITLEMENT_SEQUENCE = ['Alice', 'Bob', 'Alice'];
 
@@ -163,7 +144,7 @@ export function deriveIssue136SafetyGuard({
   };
 }
 
-function buildSessionCreateBody(truth) {
+export function buildSessionCreateBody(truth) {
   const body = {
     characters: truth.character_cards,
     opening: { mode: 'custom', text: truth.scene_stimulus },
@@ -420,6 +401,7 @@ export async function runIssue136FixtureCampaign({
     limits.assertCanRun();
     const sessionBody = buildSessionCreateBody(truth);
     const created = await ctx.api.createSession(sessionBody);
+    await attachIssue136TurnZeroPerception(ctx.api, created.hg_session_id, truth);
     const scopeId = sessionBody.memory_scope_id;
 
     let roundResult;

@@ -105,6 +105,12 @@ export function validateIssue136TruthSchema(truth, expectedFixtureId = null) {
       throw new Error(`issue136_truth_missing:${field}`);
     }
   }
+  if (truth.turn_zero_perception === true) {
+    const prose = String(truth.turn_zero_observable_stimulus ?? truth.scene_stimulus ?? '').trim();
+    if (!prose) {
+      throw new Error(`issue136_truth_missing_turn_zero_stimulus:${truth.fixture_id}`);
+    }
+  }
   if (!Array.isArray(truth.cast) || truth.cast.length < 1) {
     throw new Error('issue136_truth_invalid: cast');
   }
