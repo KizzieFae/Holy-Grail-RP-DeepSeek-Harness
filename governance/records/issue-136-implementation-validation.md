@@ -290,12 +290,82 @@ Output only valid JSON for move_schema_version 2 with non-empty beats[], motivat
 
 | Field | Value |
 |-------|-------|
-| Requested head | `bebdd31` |
-| PR | #137 |
-| Status at handoff | **Requested** via PR comment; check run not yet reported |
+| Reviewed SHA | `f679dc45e166eb93741335cab3dafc6307adac44` |
+| Check run ID | `101578663373` |
+| Result | **SUCCESS** (~2m09s; 38 files reviewed, **0 comments**) |
+| PR head at review request | `f679dc4` |
+| Later request on `b8c4ed5` | Greptile trial credit limit reached (no new review) |
+
+### Post-review drift (after Greptile `f679dc4`)
+
+| SHA | Classification | Production impact |
+|-----|----------------|-------------------|
+| `bebdd31` | Tooling | SHA anchor constant only (`ISSUE136_IMPLEMENTATION_SHA`) |
+| `b8c4ed5` | Governance/docs | `issue-136-implementation-validation.md` update only |
+
+No production/domain/runtime behavior changes after Greptile-reviewed `f679dc4`.
+
+### G2 — Storyteller infrastructure sentinel (live)
+
+| Field | Value |
+|-------|-------|
+| Candidate SHA | `b8c4ed5` |
+| Provider / model / reasoning | `deepseek-official` / `deepseek-v4-flash` / `low` |
+| Inference kind | `storyteller_orientation` |
+| Orientation outcome | Live inference completed (`evidence_id` `d11eb44a-536a-49cc-82f6-8508aba0e4cb`) |
+| Finalize result | Structured rejection: `stage=orientation_finalize`, `reason=schema_mismatch` |
+| Bound/degraded | `bound=false`, activation `degraded` (not skipped) |
+| `dict(string)` HTTP 400 | **Not observed** |
+| Evidence | `data/issue136_g2_g3_gates/2026-09-06T23-57-23-541Z/g2-sentinel/` |
+| **G2 result** | **PASS** (criterion 2: structured authoritative rejection; #142 transport intact) |
+
+### G3 — Tier-2 `136-T2-A-STABILITY` ×1 (live)
+
+| Field | Value |
+|-------|-------|
+| Fixture | `136-T2-A-STABILITY` rep 1 |
+| Session | `hg-session-e849ee5e-e8ae-41b6-b796-60f318d2822c` |
+| Character commit | `hg-commit-f9307614-3a74-4779-8cb7-70acbb0e12b1` |
+| Contract revision / digest | `character_move_response_contract_v1` / `e5192fb332e8726f4a8c107b2869a32e76b2b93e314964111ffab7eda0f05651` |
+| Structural move | `move_schema_version: 2`; beats `type+action`, `type+dialogue`; motivation complete; `semantic_evaluation.decision=no_covered_change` |
+| Ingress | Accepted on first attempt; committed |
+| Storyteller | Same structured `schema_mismatch` degradation (not bound) |
+| Campaign limits | `stopped=false`, `run_count=1`, `inference_count=10` |
+| Evidence | `data/issue136_g2_g3_gates/2026-09-06T23-57-23-541Z/g3-a-stability-rep-1/` |
+
+**G3 semantic adjudication (single run):** Stable characterization — guarded boundary via craft metaphor; no reconciliation; no gratuitous hostility. Aligns with supported stability envelope. No entitlement leaks. Storyteller advisory unavailable (schema_mismatch) but Character path fully interpretable.
+
+**Forensic sufficiency:** YES for structural + Character semantic dimensions; MIXED for storyteller_influence (degraded).
 
 ### Remaining obligations
 
-1. Greptile clean review on exact PR head (`bebdd31`+).
-2. Full Tier-2 semantic campaign (nine dimensions) — still **unauthorized** until Governance re-authorizes after structural + Greptile gates.
+1. Greptile re-review on `b8c4ed5` optional (docs-only drift per precedent; blocked by trial credit limit).
+2. Full Tier-2 fixture matrix — **not authorized** until Storyteller-bound G2 passes.
 3. Do **not** merge PR #137 or transition #136 to `validated` without Governance authorization.
+
+**Durable G2/G3 record:** [`issue-136-g2-g3-gate-report-2026-09-06.md`](issue-136-g2-g3-gate-report-2026-09-06.md)
+
+---
+
+## Session boundary (2026-09-06)
+
+| Field | Value |
+|-------|-------|
+| Phase | Character response-contract structurally proven; semantic campaign blocked on Storyteller orientation adherence |
+| Production anchor | `8987641` |
+| Greptile anchor | `f679dc4` (check `101578663373`, 0 findings) |
+| PR #137 head | `b8c4ed5`+ (preservation commit pending) |
+| Character structural work | Complete and passing |
+| G2 infrastructure | PASS (#142 transport); Storyteller-bound gate NOT satisfied |
+| G3 A×1 | PASS semantic-readiness (Character); Storyteller unbound |
+| Blocker Issue | See GitHub #136 progress comment for assigned number |
+| Next step | Resolve Storyteller orientation blocker → rerun Storyteller-bound G2 → Governance G4 authorization |
+
+**Governance status summary:**
+
+- Character response-contract structural repair: implemented and structurally passing.
+- Greptile implementation review: passing.
+- G3 Character stability gate: interpretable/pass.
+- #142 transport blocker: resolved.
+- Full Tier-2 semantic campaign: NOT authorized.
+- Remaining blocker: Storyteller orientation remains unbound due authoritative `schema_mismatch`.
