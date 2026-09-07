@@ -3,18 +3,9 @@ import {
   buildStorytellerOrientationDecisionPatch,
 } from './execution-evidence/ni-evidence.mjs';
 import { runLibrarianMediation } from './librarian-mediation-substrate.mjs';
-import {
-  buildStorytellerAssessmentPrompt,
-  manifestFromStorytellerAssessmentPrepareResponse,
-  parseStorytellerAssessment,
-  STORYTELLER_ASSESSMENT_SCHEMA,
-} from './storyteller-assessment-envelope.mjs';
-import {
-  buildStorytellerOrientationPrompt,
-  manifestFromStorytellerPrepareResponse,
-  parseStorytellerOrientation,
-  STORYTELLER_ORIENTATION_SCHEMA,
-} from './storyteller-orientation-envelope.mjs';
+import { manifestFromStorytellerAssessmentPrepareResponse } from './storyteller-assessment-envelope.mjs';
+import { LIVE_INFERENCE_TRANSPORT_PROMPT } from './live-inference-prompts.mjs';
+import { manifestFromStorytellerPrepareResponse } from './storyteller-orientation-envelope.mjs';
 
 /**
  * DSH-side Storyteller cognition substrate (#32 S3a).
@@ -54,7 +45,7 @@ export async function runStorytellerCognition({
 
   const orientationRun = await runEphemeralInference({
     inferenceId: orientationInferenceId,
-    prompt: buildStorytellerOrientationPrompt({ schema: STORYTELLER_ORIENTATION_SCHEMA }),
+    prompt: LIVE_INFERENCE_TRANSPORT_PROMPT,
     manifest: orientationManifest,
     mockResponses: mockOrientationResponse ? [mockOrientationResponse] : [],
     modelProfile,
@@ -82,14 +73,11 @@ export async function runStorytellerCognition({
     };
   }
 
-  const parsedOrientation = parseStorytellerOrientation(orientationRun.raw);
   const orientationFinalize = await domainApi.finalizeStorytellerOrientation({
     hg_scene_id: hgSceneId,
     hg_round_id: hgRoundId,
     inference_id: inferenceId,
-    orientation_result: parsedOrientation.ok
-      ? parsedOrientation.result
-      : orientationRun.raw,
+    orientation_result: orientationRun.raw,
   });
 
   if (recorder?.isEnabled?.() && orientationRun.evidenceId && hgSessionId) {
@@ -172,7 +160,7 @@ export async function runStorytellerCognition({
 
   const assessmentRun = await runEphemeralInference({
     inferenceId: assessmentInferenceId,
-    prompt: buildStorytellerAssessmentPrompt({ schema: STORYTELLER_ASSESSMENT_SCHEMA }),
+    prompt: LIVE_INFERENCE_TRANSPORT_PROMPT,
     manifest: assessmentManifest,
     mockResponses: mockAssessmentResponse ? [mockAssessmentResponse] : [],
     modelProfile,
@@ -200,14 +188,13 @@ export async function runStorytellerCognition({
     };
   }
 
-  const parsedAssessment = parseStorytellerAssessment(assessmentRun.raw);
   const assessmentFinalize = await domainApi.finalizeStorytellerAssessment({
     hg_scene_id: hgSceneId,
     hg_round_id: hgRoundId,
     inference_id: inferenceId,
     orientation: orientationFinalize.orientation,
     bundle: mediation.bundle,
-    assessment_result: parsedAssessment.ok ? parsedAssessment.result : assessmentRun.raw,
+    assessment_result: assessmentRun.raw,
     orientation_inference_id: orientationInferenceId,
     assessment_inference_id: assessmentInferenceId,
     follow_up_request_ids: [],

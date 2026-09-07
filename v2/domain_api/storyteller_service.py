@@ -23,6 +23,7 @@ from .librarian_service import LibrarianService
 from .session_state import LiveSession, RoundFixture
 from .storyteller_assessment_context import build_storyteller_assessment_context
 from .storyteller_contract import (
+    STORYTELLER_ASSESSMENT_SCHEMA,
     STORYTELLER_ORIENTATION_SCHEMA,
     StorytellerAdvisoryPackage,
     StorytellerAuditRecord,
@@ -178,7 +179,7 @@ class StorytellerService:
             "inference_kind": "storyteller_assessment",
             "orientation_id": orientation.orientation_id,
             "bundle_id": _bundle_field(bundle, "bundle_id"),
-            "schema": "hg_storyteller_assessment_v1",
+            "schema": STORYTELLER_ASSESSMENT_SCHEMA,
             "contributions": [
                 {
                     "contribution_id": item.contribution_id,

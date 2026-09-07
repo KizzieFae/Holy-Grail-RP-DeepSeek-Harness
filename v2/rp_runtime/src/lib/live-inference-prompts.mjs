@@ -1,5 +1,13 @@
 /** Default user prompts for live provider inference (not mock-specific). */
 
+/** DSH transport envelope only — role schema/domain contracts live in Host inference_instruction. */
+export const LIVE_INFERENCE_TRANSPORT_PROMPT =
+  'Return only the requested JSON object. No markdown or commentary.';
+
+export const LIVE_STORYTELLER_ORIENTATION_PROMPT = LIVE_INFERENCE_TRANSPORT_PROMPT;
+
+export const LIVE_STORYTELLER_ASSESSMENT_PROMPT = LIVE_INFERENCE_TRANSPORT_PROMPT;
+
 export const LIVE_DIRECTOR_PROMPT = [
   'Respond with ONLY one JSON object. No markdown, no commentary.',
   'Required keys: next_actor (string), end_round (boolean), reason (string),',
