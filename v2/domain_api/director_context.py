@@ -69,7 +69,9 @@ def prepare_director_context(
                 knowledge_ids=(f"director:{req.inference_id}",),
                 priority=20,
                 content=(
-                    "Director scratch: weigh participation balance and select the next actor. "
+                    "Director scratch: weigh participation balance when selecting the next actor. "
+                    "Select next_actor from the eligible cast supplied in context. "
+                    "Set end_round to false unless the scene should stop. "
                     "Do not assume character-private knowledge."
                 ),
                 provenance={"inference_id": req.inference_id, "role": "director"},
@@ -81,10 +83,13 @@ def prepare_director_context(
                 knowledge_ids=(f"inference:{req.inference_id}",),
                 priority=30,
                 content=(
-                    "Output only JSON with next_actor, end_round, reason, environment_event, "
-                    "tension_shift. tension_shift must be escalate, soften, or steady. "
+                    "Output only JSON with required keys: next_actor (string), end_round (boolean), "
+                    "reason (string), environment_event (string), tension_shift (string). "
+                    "tension_shift must be exactly escalate, soften, or steady. "
                     "environment_event is optional; use an empty string rather than repeating "
-                    "a recent accepted environment development."
+                    "a recent accepted environment development. "
+                    "Select next_actor from the eligible cast in context. "
+                    "Set end_round to false unless the scene should stop."
                 ),
                 provenance={"inference_id": req.inference_id},
             ),

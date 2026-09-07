@@ -15,6 +15,11 @@ from .memory_service import MemoryService
 from .plot_cognition_overlay_service import PlotCognitionOverlayService
 from .session_state import LiveSession, RoundFixture
 
+from character_move_response_contract import (  # noqa: E402
+    character_move_response_contract_provenance,
+    project_character_move_response_contract_text,
+)
+
 
 def prepare_character_context(
     fixture: LiveSession,
@@ -90,6 +95,22 @@ def prepare_character_context(
                     "eligibility_accepted": False,
                 }
             )
+    contract_provenance = character_move_response_contract_provenance()
+    contributions.append(
+        PromptContribution(
+            contribution_id=f"{manifest_id}-response-contract",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(f"inference:{req.inference_id}",),
+            priority=28,
+            content=project_character_move_response_contract_text(),
+            provenance={
+                "inference_id": req.inference_id,
+                **contract_provenance,
+                **({"librarian_knowledge_audit": librarian_audit} if librarian_audit else {}),
+            },
+        ),
+    )
     contributions.append(
         PromptContribution(
             contribution_id=f"{manifest_id}-instruction",
@@ -98,11 +119,10 @@ def prepare_character_context(
             knowledge_ids=(f"inference:{req.inference_id}",),
             priority=30,
             content=(
-                "Output only valid JSON for move_schema_version 2 with non-empty beats[], "
-                "motivation object, and semantic_evaluation. "
-                "Each beat must be type action (key action) or type speech (key dialogue). "
-                "Action-only, speech-only, and mixed beat sequences are all valid when "
-                "appropriate to the scene."
+                "Output only valid JSON matching the response contract above. "
+                "Ground this turn's beats and motivation in the authoritative Character and "
+                "scene context already supplied; action, inaction, and change should follow "
+                "from that context."
             ),
             provenance={
                 "inference_id": req.inference_id,

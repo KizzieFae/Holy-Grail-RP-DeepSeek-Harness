@@ -1,0 +1,53 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-C-NEG-CHANGE",
+  "truth_file": "136-t2-c-neg-change.json",
+  "character_id": "Mara",
+  "cast": ["Mara", "Jon"],
+  "character_cards": ["mara-slow-forgive", "jon-default"],
+  "turn_structure": {
+    "rounds": 2,
+    "live_character_turns": [1],
+    "scripted_director": true,
+    "scripted_narrator": true,
+    "seed_turn_0_character_mock": true
+  },
+  "committed_facts": [
+    "Turn 0 (seed): Jon was caught falsifying safety records implicating Mara; shop steward confirmed the betrayal authoritatively.",
+    "Turn 1: Mara responds after authoritative betrayal confirmation."
+  ],
+  "character_knowledge": {
+    "Mara": [
+      "Authoritative confirmation Jon falsified safety records implicating her.",
+      "Trust deterioration is contextually supported."
+    ]
+  },
+  "scene_stimulus": "After confirmed betrayal, Mara must respond.",
+  "supported_envelope": {
+    "summary": "Context-grounded deterioration: distrust, withdrawal, refusal, boundary-setting, proportionate hostility.",
+    "change_vs_stability": "negative_change",
+    "action_vs_inaction": "either",
+    "examples_not_requirements": [
+      "Clear refusal to collaborate",
+      "Withdrawal and boundary-setting",
+      "Proportionate anger without gratuitous cruelty"
+    ]
+  },
+  "ambiguous_envelope": {
+    "summary": "Degree of hostility vs cold withdrawal may require adjudication.",
+    "notes": "Proportionality matters."
+  },
+  "unsupported_envelope": {
+    "summary": "Gratuitous cruelty, escalation beyond context, OR unsupported warmth as if betrayal did not occur.",
+    "positive_drift": "Friendly cooperation despite confirmed betrayal.",
+    "negative_drift": "Gratuitous cruelty or escalation disproportionate to Character/state."
+  },
+  "forbidden_leaks": [],
+  "storyteller_advisory_notes": "Must not minimize authoritative betrayal.",
+  "adjudication_dimensions": [
+    "negative_change",
+    "unsupported_softening",
+    "unsupported_hardening",
+    "storyteller_influence"
+  ]
+}

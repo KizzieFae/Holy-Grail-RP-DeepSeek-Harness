@@ -16,6 +16,7 @@ import {
 import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
+import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../../lib/live-inference-prompts.mjs';
 import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
 
 function buildCandidateSnapshot({
@@ -171,7 +172,7 @@ export async function runDirectorPhase({
 
     const directorRun = await runEphemeralInference({
       inferenceId: `${directorInferenceId}-${attemptIndex}`,
-      prompt: prompt ?? 'Produce your director decision as JSON only.',
+      prompt: prompt ?? LIVE_INFERENCE_TRANSPORT_PROMPT,
       manifest,
       mockResponses: useMockDirectorResponses
         ? [mockDirectorResponses[responseIndex]]

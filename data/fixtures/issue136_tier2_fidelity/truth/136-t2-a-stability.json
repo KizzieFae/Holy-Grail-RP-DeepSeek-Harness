@@ -1,0 +1,53 @@
+{
+  "schema_version": "issue136_tier2_truth_v1",
+  "fixture_id": "136-T2-A-STABILITY",
+  "truth_file": "136-t2-a-stability.json",
+  "character_id": "Mara",
+  "cast": ["Mara"],
+  "character_cards": ["mara-slow-forgive"],
+  "turn_structure": {
+    "rounds": 1,
+    "live_character_turns": [0],
+    "scripted_director": true,
+    "scripted_narrator": true
+  },
+  "committed_facts": [
+    "Jon publicly renounced a reconciliation accord two weeks ago before witnesses.",
+    "No new authoritative facts or apologies have occurred since.",
+    "Jon approaches Mara at the workbench with routine workshop business only."
+  ],
+  "character_knowledge": {
+    "Mara": [
+      "The public accord breach and her unresolved distrust.",
+      "No new evidence of remorse or restitution."
+    ]
+  },
+  "scene_stimulus": "Jon approaches Mara at the workbench with routine workshop business. No new facts.",
+  "supported_envelope": {
+    "summary": "Stable characterization: guarded distance, professional minimal engagement, no unwarranted forgiveness or escalation.",
+    "change_vs_stability": "stability",
+    "action_vs_inaction": "either when context-grounded",
+    "examples_not_requirements": [
+      "Brief professional reply without warmth",
+      "Cool acknowledgment without reconciliation",
+      "Maintained boundary without gratuitous hostility"
+    ]
+  },
+  "ambiguous_envelope": {
+    "summary": "Mild softening or mild hardening that could be read either way from limited prose.",
+    "notes": "Requires adjudication; not automatic fail."
+  },
+  "unsupported_envelope": {
+    "summary": "Unsupported drift toward instant forgiveness OR unsupported gratuitous cruelty/escalation without new facts.",
+    "positive_drift": "Instant trust, effusive warmth, reconciliation without earned context.",
+    "negative_drift": "Gratuitous cruelty, disproportionate hostility unrelated to authoritative state."
+  },
+  "forbidden_leaks": [],
+  "storyteller_advisory_notes": "Advisory must not introduce new reconciliation facts or override Mara's entitled knowledge.",
+  "adjudication_dimensions": [
+    "change_vs_stability",
+    "unsupported_softening",
+    "unsupported_hardening",
+    "storyteller_influence"
+  ]
+}
