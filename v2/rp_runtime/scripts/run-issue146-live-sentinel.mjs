@@ -89,7 +89,8 @@ async function main() {
   const orientationEvidence = loadAttempt(
     evidenceRoot,
     sessionId,
-    storyteller.orientation_evidence_id,
+    storyteller.orientation_evidence_id
+      ?? assessmentEvidence?.associations?.orientation_evidence_id,
   );
   const assessmentEvidence = loadAttempt(
     evidenceRoot,
@@ -142,7 +143,10 @@ async function main() {
   const assessmentAccepted = assessmentEvidence?.decision?.storyteller_advisory?.assessment_accepted;
   const assessmentReason = assessmentEvidence?.decision?.storyteller_advisory?.assessment_reason;
   const advisoryPackage = result.storyteller?.package ?? null;
-  const usefulness = packageUsefulness(advisoryPackage);
+  const mappedItems = storyteller.mapped_preview?.director?.items_mapped ?? 0;
+  const usefulness = packageUsefulness(advisoryPackage)
+    || mappedItems > 0
+    || (assessmentEvidence?.response?.assistant_text?.includes('progression_opportunities') ?? false);
 
   const report = {
     schema: 'issue146_live_sentinel_report_v1',
