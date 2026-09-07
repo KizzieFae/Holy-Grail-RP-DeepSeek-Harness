@@ -358,7 +358,7 @@ No production/domain/runtime behavior changes after Greptile-reviewed `f679dc4`.
 | Character structural work | Complete and passing |
 | G2 infrastructure | PASS (#142 transport); Storyteller-bound gate NOT satisfied |
 | G3 A×1 | PASS semantic-readiness (Character); Storyteller unbound |
-| Blocker Issue | See GitHub #136 progress comment for assigned number |
+| Blocker Issue | [#144](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/144) — Storyteller orientation schema adherence |
 | Next step | Resolve Storyteller orientation blocker → rerun Storyteller-bound G2 → Governance G4 authorization |
 
 **Governance status summary:**
