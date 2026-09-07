@@ -130,7 +130,7 @@ When Scene Grounding is active, expect prompt-facing derived facts in metadata o
 
 **Environmental descriptor derived rows (#49):** `record_kind=derived`, `event_type=environmental_descriptor`, `grounding_markers` includes `environmental_descriptor`. Payload `committed_text` JSON carries `property_key`, `value`, `stable_refs`, optional `supersedes`. `epistemic_authority_ref` uses `establishment_decision` with Host `decision_id` (orchestration-only visibility by default). `related_refs` may include `supersedes` → prior `story_record_id`.
 
-**Continuity audit (#49; #89 sufficiency):** `turn_metadata_by_index[turn].narrator_environment_audit` stores N1/N2/Librarian outcomes, post-mediation **`sufficiency_evaluations`**, **`environmental_response_obligations`**, Host establishment decisions (`decision_id`), and cognition failure records (`cognition_failed`) when pre-finalize cognition is unavailable.
+**Continuity audit (#49; #89 sufficiency; #151 status):** `turn_metadata_by_index[turn].narrator_environment_audit` stores cognition status/reason, N1/N2/Librarian outcomes, post-mediation **`sufficiency_evaluations`**, **`environmental_response_obligations`**, Host establishment decisions (`decision_id`), and hard cognition failure records (`cognition_failed`) when the pipeline is unavailable. `baseline_sufficient` is authoritative only when `cognition_status=determined`.
 
 ### Plot Cognition Overlay (`_plot_cognition_overlay`) — #59
 

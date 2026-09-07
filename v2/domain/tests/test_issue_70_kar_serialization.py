@@ -58,6 +58,13 @@ def _n1_raw_with_needs() -> dict:
                 "category": "environmental_detail",
             }
         ],
+        "resolutions": [
+            {
+                "need_id": "need-70",
+                "category": "B1",
+                "detail": "behind the door",
+            }
+        ],
     }
 
 

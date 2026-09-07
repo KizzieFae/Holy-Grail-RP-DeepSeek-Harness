@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from domain_api.narrator_environment_authority import mediation_blocks_invention
 from domain_api.narrator_environment_contract import (
+    CognitionStatusReason,
     EnvironmentalCurrentView,
     EnvironmentalResponseObligation,
     EnvironmentalResponseSufficiency,
@@ -22,6 +23,38 @@ from domain_api.narrator_environment_contract import (
 SufficiencyState = Literal["sufficient", "insufficient", "failure", "forbidden", "unresolved"]
 
 _SAFE_MEDIATION_FOR_ESTABLISHMENT = frozenset({"match", "no_match"})
+
+
+def build_sufficiency_undetermined_obligation(
+    status_reason: CognitionStatusReason,
+) -> EnvironmentalResponseObligation:
+    return EnvironmentalResponseObligation(
+        obligation_id=f"env-obl-cognition-undetermined-{uuid.uuid4().hex[:8]}",
+        need_id=None,
+        rendering_question="",
+        render_behavior="sufficiency_undetermined",
+        grounded_material=(),
+        resolution_category="cannot_safely_resolve",
+        response_sufficient=False,
+        mediation_outcome=None,
+        sufficiency_state="undetermined",
+        refusal_reason=f"cognition_{status_reason}",
+    )
+
+
+def build_cognition_unavailable_obligation(failure_reason: str) -> EnvironmentalResponseObligation:
+    return EnvironmentalResponseObligation(
+        obligation_id=f"env-obl-cognition-unavailable-{uuid.uuid4().hex[:8]}",
+        need_id=None,
+        rendering_question="",
+        render_behavior="cognition_unavailable",
+        grounded_material=(),
+        resolution_category="cannot_safely_resolve",
+        response_sufficient=False,
+        mediation_outcome=None,
+        sufficiency_state="unavailable",
+        refusal_reason=str(failure_reason or "pipeline_exception"),
+    )
 
 
 def _librarian_outcome_for_need(
@@ -155,7 +188,21 @@ def reconcile_post_mediation_environmental_resolutions(
     sufficiency_records: list[EnvironmentalResponseSufficiency] = []
     obligations: list[EnvironmentalResponseObligation] = []
 
-    if n1.baseline_sufficient and not n1.information_needs:
+    if n1.cognition_status == "indeterminate":
+        obligations.append(build_sufficiency_undetermined_obligation(n1.status_reason))
+        return list(resolutions), sufficiency_records, obligations
+
+    if n1.cognition_status == "failed":
+        obligations.append(
+            build_cognition_unavailable_obligation(n1.status_detail or "pipeline_exception")
+        )
+        return list(resolutions), sufficiency_records, obligations
+
+    if (
+        n1.cognition_status == "determined"
+        and n1.baseline_sufficient is True
+        and not n1.information_needs
+    ):
         obligations.append(
             EnvironmentalResponseObligation(
                 obligation_id=f"env-obl-baseline-{uuid.uuid4().hex[:8]}",
@@ -403,10 +450,31 @@ def format_environmental_response_obligations(
             )
         if item.refusal_reason and item.render_behavior == "bounded_refusal":
             lines.append(f"  refusal_reason: {item.refusal_reason}")
-    lines.append(
+    lines.append(_obligation_footer_for_behaviors({item.render_behavior for item in obligations}))
+    return "\n".join(lines)
+
+
+def _obligation_footer_for_behaviors(behaviors: set[str]) -> str:
+    if "sufficiency_undetermined" in behaviors:
+        return (
+            "ENVIRONMENTAL COGNITION STATUS: sufficiency could NOT be determined for this turn.\n"
+            "Do NOT treat the environmental baseline as cognitively verified sufficient.\n"
+            "Do NOT invent material environmental facts or information needs.\n"
+            "You MAY render perceptual/environmental texture ONLY from narrator_environment_baseline "
+            "and immediate_user_turn_context / triggering_user_context when present.\n"
+            "Respond to player environmental/perceptual actions within those authoritative bounds.\n"
+            "Omit unsupported detail rather than guess."
+        )
+    if "cognition_unavailable" in behaviors:
+        return (
+            "ENVIRONMENTAL COGNITION STATUS: environmental cognition pipeline was unavailable.\n"
+            "Do NOT treat the environmental baseline as cognitively verified sufficient.\n"
+            "Do NOT invent material environmental facts or information needs.\n"
+            "Use only authoritative baseline and immediate/triggering user context when present."
+        )
+    return (
         "Render communicate_grounded obligations concretely in narration. "
         "Do not substitute inferred purpose for requested observable detail when grounded_material "
         "or host_accepted_detail answers the question. "
         "For bounded_refusal, omit unsupported detail without inventing."
     )
-    return "\n".join(lines)

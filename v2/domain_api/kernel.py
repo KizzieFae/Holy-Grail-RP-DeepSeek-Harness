@@ -1656,15 +1656,25 @@ class DomainKernel:
             story_service=story_service,
             n1_raw=req.cognition_result,
             n2_raw=req.cognition_result,
+            cognition_raw=req.cognition_raw,
+            inference_envelope=req.inference_envelope,
             librarian_outcomes=req.librarian_outcomes,
             cognition_id=req.cognition_id,
+            inference_attempt_id=(
+                str((req.inference_envelope or {}).get("inference_attempt_id", "") or "") or None
+            ),
         )
         if isinstance(self.store, SessionRepository):
             self.store.persist(fixture)
         return result
 
     def build_narrator_environment_knowledge_requests(
-        self, req: NarratorEnvironmentCognitionPrepareRequest, *, n1_raw: dict[str, Any]
+        self,
+        req: NarratorEnvironmentCognitionPrepareRequest,
+        *,
+        n1_raw: dict[str, Any] | None = None,
+        cognition_raw: str | dict[str, Any] | None = None,
+        inference_envelope: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         fixture = self.store.require(req.hg_scene_id)
         rnd = self._require_round(fixture, req.hg_round_id)
@@ -1675,6 +1685,8 @@ class DomainKernel:
             turn_record,
             req,
             n1_raw=n1_raw,
+            cognition_raw=cognition_raw,
+            inference_envelope=inference_envelope,
         )
 
     def _require_narrator_turn_record(
@@ -1715,14 +1727,18 @@ class DomainKernel:
         rnd = self._require_round(fixture, req.hg_round_id)
         turn_record = self._require_narrator_turn_record(fixture, rnd, req)
         cognition_failure = req.cognition_failure
+        obligation_text = req.environmental_response_obligations_text
+        obligations = req.environmental_response_obligations
         if isinstance(cognition_failure, dict) and cognition_failure.get("cognition_failed"):
-            record_environment_cognition_failure(
+            audit = record_environment_cognition_failure(
                 fixture,
                 turn_record,
                 failure_stage=str(cognition_failure.get("failure_stage") or "unknown"),
                 failure_reason=str(cognition_failure.get("failure_reason") or ""),
                 cognition_id=str(cognition_failure.get("cognition_id") or "") or None,
             )
+            obligation_text = audit.get("environmental_response_obligations_text")
+            obligations = audit.get("environmental_response_obligations")
             if isinstance(self.store, SessionRepository):
                 self.store.persist(fixture)
         story_service = self.cognition.story_knowledge
@@ -1731,11 +1747,24 @@ class DomainKernel:
             if story_service is not None
             else None
         )
+        effective_req = NarratorContextPrepareRequest(
+            hg_scene_id=req.hg_scene_id,
+            hg_round_id=req.hg_round_id,
+            inference_id=req.inference_id,
+            character_id=req.character_id,
+            domain_commit_id=req.domain_commit_id,
+            continuity_turn_index=req.continuity_turn_index,
+            attempt_index=req.attempt_index,
+            correction_context=req.correction_context,
+            environmental_response_obligations_text=obligation_text,
+            environmental_response_obligations=obligations,
+            cognition_failure=None,
+        )
         return build_narrator_context(
             fixture,
             rnd,
             turn_record,
-            req,
+            effective_req,
             story_records=story_records,
         )
 

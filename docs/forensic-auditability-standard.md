@@ -217,7 +217,9 @@ Distinguish **Narrator proposal**, **Host establishment decision**, **persisted 
 | Persisted B2 | `_story_knowledge/.../records.jsonl` | `story_record_id`, `decision_id` (via `epistemic_authority_ref`) |
 | Render / QA | execution evidence Narrator attempts; semantic QA `nar_environmental_*` dimensions | `domain_commit_id`, `cognition_id` |
 
-**Cognition failure:** When DSH environmental cognition fails before finalize, `narrator_environment_audit.cognition_failed=true` (via `prepareNarratorContext` failure payload) and `decision.environment_cognition` on the Narrator attempt record the failure without granting invention authority.
+**Cognition failure:** When DSH environmental cognition hard-fails before finalize, `narrator_environment_audit.cognition_failed=true` (via `prepareNarratorContext` failure payload) and `decision.environment_cognition` on the Narrator attempt record the failure without granting invention authority.
+
+**Cognition status (#151):** Join `cognition_status`, `status_reason`, nullable `n1.baseline_sufficient`, and turn-level `environmental_response_obligations[].render_behavior` (`sufficiency_undetermined` | `cognition_unavailable` | `no_material_obligation`). Do not treat indeterminate/failed cognition as affirmative baseline sufficiency. Historical `parse_fallback_*` assessment notes are legacy defect-era evidence.
 
 **Narrator F1 fidelity retry (#93):** Bounded two-attempt fidelity retry preserves per-attempt request/response, `decision.fidelity_correction` (intended correction), next-attempt `semantic_correction` contribution (consumed correction), and post-persistence `decision.terminal_presentation` join. Investigator procedure: [audit-workflows.md](./audit-workflows.md) → Narrator F1 fidelity retry.
 

@@ -39,6 +39,7 @@ IMMERSIVE ENVIRONMENT DUTY (#49 / #89):
 - When environmental response obligations are present, communicate communicate_grounded obligations concretely; do not substitute inferred purpose for requested observable detail.
 - Use ephemeral sensory texture for liveliness where appropriate; avoid sterile action-summary narration and generic irrelevant filler.
 - Do not invent material facts when baseline or cognition marked bounded_refusal/failure; omit rather than guess.
+- When environmental response obligations use sufficiency_undetermined or cognition_unavailable, do not treat baseline as verified sufficient; use only authoritative baseline and immediate/triggering user context.
 - Vary focus and phrasing; avoid full re-description every turn unless materially expected.
 """
     if structured_move is not None and is_canonical_v2_move(structured_move):

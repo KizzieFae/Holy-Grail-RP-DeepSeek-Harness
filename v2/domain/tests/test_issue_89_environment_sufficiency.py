@@ -36,6 +36,14 @@ class SufficiencyReconciliationTests(unittest.TestCase):
                 "information_needs": [
                     {"need_id": "need-1", "question": "Is the parcel small?"}
                 ],
+                "resolutions": [
+                    {
+                        "need_id": "need-1",
+                        "category": "cannot_safely_resolve",
+                        "response_sufficient": True,
+                        "detail": "small parcel",
+                    }
+                ],
             }
         )
         resolutions = parse_n2_cognition_results(
@@ -180,7 +188,9 @@ class SufficiencyReconciliationTests(unittest.TestCase):
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     def test_baseline_sufficient_emits_no_material_obligation(self) -> None:
-        n1 = parse_n1_cognition_result({"baseline_sufficient": True, "information_needs": []})
+        n1 = parse_n1_cognition_result(
+            {"baseline_sufficient": True, "information_needs": [], "resolutions": []}
+        )
         fixture = initialize_live_session(cast=["Alice"])
         view = build_environmental_current_view(fixture, story_records=[])
         _, _, obligations = reconcile_post_mediation_environmental_resolutions(

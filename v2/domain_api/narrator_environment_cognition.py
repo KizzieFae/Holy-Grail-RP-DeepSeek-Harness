@@ -16,6 +16,7 @@ from domain_api.librarian_contract import (
 )
 from domain_api.retrieval_contract import EntityRef
 from domain_api.narrator_environment_contract import (
+    CognitionStatusReason,
     MediationOutcomeKind,
     NarratorEnvironmentCognitionAudit,
     NarratorEnvironmentN1Result,
@@ -36,12 +37,150 @@ from domain_api.narrator_environment_establishment import (
 from domain_api.narrator_environment_projection import build_environmental_current_view
 from domain_api.narrator_environment_packet import assemble_narrator_environment_packet
 from domain_api.narrator_environment_sufficiency import (
+    build_cognition_unavailable_obligation,
+    build_sufficiency_undetermined_obligation,
     format_environmental_response_obligations,
     reconcile_post_mediation_environmental_resolutions,
     refresh_obligations_after_b2,
 )
 from domain_api.story_knowledge_service import StoryKnowledgeService
 from .session_history import project_immediate_user_turn_context
+
+
+_FINISH_LIMIT_KINDS = frozenset({"max-tokens", "max_tokens", "max_tokens_reached"})
+_VALID_RESOLUTION_CATEGORIES = frozenset({"A", "B1", "B2", "C", "cannot_safely_resolve"})
+_STATUS_DETAIL_MAX_CHARS = 240
+
+
+def _normalize_finish_kind(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("kind", "") or "").strip().lower()
+    return str(value or "").strip().lower()
+
+
+def _bounded_status_detail(value: Any) -> str:
+    text = str(value or "").strip()
+    if len(text) <= _STATUS_DETAIL_MAX_CHARS:
+        return text
+    return text[: _STATUS_DETAIL_MAX_CHARS - 1] + "…"
+
+
+def _parse_information_needs(raw: dict[str, Any]) -> list[NarratorInformationNeed]:
+    needs: list[NarratorInformationNeed] = []
+    for index, item in enumerate(list(raw.get("information_needs") or [])):
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("question", "") or "").strip()
+        if not question:
+            continue
+        need_id = str(item.get("need_id", "") or f"need-{index + 1}")
+        refs = tuple(
+            str(ref).strip()
+            for ref in list(item.get("referent_refs") or [])
+            if str(ref).strip()
+        )
+        needs.append(NarratorInformationNeed(need_id=need_id, question=question, referent_refs=refs))
+    return needs
+
+
+def _contract_schema_valid(parsed: dict[str, Any]) -> bool:
+    if "baseline_sufficient" not in parsed:
+        return False
+    if not isinstance(parsed.get("baseline_sufficient"), bool):
+        return False
+    resolutions = parsed.get("resolutions")
+    if resolutions is None or not isinstance(resolutions, list):
+        return False
+    for item in resolutions:
+        if not isinstance(item, dict):
+            return False
+        category = str(item.get("category", "") or "")
+        if category and category not in _VALID_RESOLUTION_CATEGORIES:
+            return False
+    return True
+
+
+def _determined_outcome_from_parsed(parsed: dict[str, Any]) -> NarratorEnvironmentN1Result | None:
+    if not _contract_schema_valid(parsed):
+        return None
+    baseline_sufficient = bool(parsed.get("baseline_sufficient"))
+    needs = _parse_information_needs(parsed)
+    if baseline_sufficient and needs:
+        return None
+    if baseline_sufficient:
+        return NarratorEnvironmentN1Result(
+            cognition_status="determined",
+            status_reason="model_result",
+            baseline_sufficient=True,
+            information_needs=[],
+            assessment_notes=str(parsed.get("assessment_notes", "") or ""),
+        )
+    if not needs:
+        return None
+    return NarratorEnvironmentN1Result(
+        cognition_status="determined",
+        status_reason="model_result",
+        baseline_sufficient=False,
+        information_needs=needs,
+        assessment_notes=str(parsed.get("assessment_notes", "") or ""),
+    )
+
+
+def _indeterminate_outcome(
+    reason: CognitionStatusReason,
+    *,
+    status_detail: str = "",
+) -> NarratorEnvironmentN1Result:
+    return NarratorEnvironmentN1Result(
+        cognition_status="indeterminate",
+        status_reason=reason,
+        baseline_sufficient=None,
+        information_needs=[],
+        assessment_notes="",
+        status_detail=_bounded_status_detail(status_detail),
+    )
+
+
+def classify_environment_cognition_outcome(
+    cognition_raw: str | dict[str, Any] | None,
+    inference_envelope: dict[str, Any] | None = None,
+) -> tuple[NarratorEnvironmentN1Result, dict[str, Any] | None]:
+    """Deterministically classify environmental cognition (#151)."""
+    envelope = dict(inference_envelope or {})
+    inference_failed = bool(envelope.get("inference_failed"))
+    finish_kind = _normalize_finish_kind(envelope.get("finish_kind"))
+
+    parsed: dict[str, Any] | None = None
+    raw_text = ""
+    if isinstance(cognition_raw, dict):
+        parsed = cognition_raw
+        raw_text = json.dumps(cognition_raw, ensure_ascii=False)
+    elif cognition_raw is not None:
+        raw_text = str(cognition_raw).strip()
+        if raw_text:
+            try:
+                loaded = json.loads(raw_text)
+            except json.JSONDecodeError:
+                return _indeterminate_outcome("malformed_output", status_detail=raw_text[:120]), None
+            parsed = loaded if isinstance(loaded, dict) else None
+
+    if parsed is not None:
+        determined = _determined_outcome_from_parsed(parsed)
+        if determined is not None:
+            return determined, parsed
+        if raw_text:
+            return _indeterminate_outcome("contract_invalid", status_detail=raw_text[:120]), None
+
+    if inference_failed:
+        return _indeterminate_outcome("inference_error"), None
+    if finish_kind in _FINISH_LIMIT_KINDS:
+        return _indeterminate_outcome("provider_limit"), None
+    return _indeterminate_outcome("empty_output"), None
+
+
+def parse_n1_cognition_result(raw: dict[str, Any]) -> NarratorEnvironmentN1Result:
+    outcome, _ = classify_environment_cognition_outcome(raw, None)
+    return outcome
 
 
 def _public_event_for_commit(
@@ -104,31 +243,6 @@ def extract_committed_occurrence_summary(
             if evidence.triggering_user is not None:
                 payload["triggering_user"] = evidence.triggering_user.to_dict()
     return payload
-
-
-def parse_n1_cognition_result(raw: dict[str, Any]) -> NarratorEnvironmentN1Result:
-    baseline_sufficient = bool(raw.get("baseline_sufficient"))
-    needs: list[NarratorInformationNeed] = []
-    for index, item in enumerate(list(raw.get("information_needs") or [])):
-        if not isinstance(item, dict):
-            continue
-        question = str(item.get("question", "") or "").strip()
-        if not question:
-            continue
-        need_id = str(item.get("need_id", "") or f"need-{index + 1}")
-        refs = tuple(
-            str(ref).strip()
-            for ref in list(item.get("referent_refs") or [])
-            if str(ref).strip()
-        )
-        needs.append(NarratorInformationNeed(need_id=need_id, question=question, referent_refs=refs))
-    if baseline_sufficient:
-        needs = []
-    return NarratorEnvironmentN1Result(
-        baseline_sufficient=baseline_sufficient or not needs,
-        information_needs=needs,
-        assessment_notes=str(raw.get("assessment_notes", "") or ""),
-    )
 
 
 def parse_n2_cognition_results(raw: dict[str, Any]) -> list[NarratorEnvironmentResolution]:
@@ -348,16 +462,71 @@ def finalize_narrator_environment_cognition(
     turn_record: CharacterTurnRecord,
     *,
     story_service: StoryKnowledgeService,
-    n1_raw: dict[str, Any],
-    n2_raw: dict[str, Any],
+    n1_raw: dict[str, Any] | None = None,
+    n2_raw: dict[str, Any] | None = None,
+    cognition_raw: str | dict[str, Any] | None = None,
+    inference_envelope: dict[str, Any] | None = None,
     librarian_outcomes: list[dict[str, Any]] | None = None,
     cognition_id: str | None = None,
+    inference_attempt_id: str | None = None,
 ) -> dict[str, Any]:
     cognition_id = cognition_id or f"nar-env-cog-{uuid.uuid4().hex[:12]}"
-    n1 = parse_n1_cognition_result(n1_raw)
-    n2 = parse_n2_cognition_results(n2_raw)
+    if cognition_raw is not None or inference_envelope is not None:
+        n1, parsed_payload = classify_environment_cognition_outcome(
+            cognition_raw if cognition_raw is not None else (n1_raw or {}),
+            inference_envelope,
+        )
+        n2_source = parsed_payload or {}
+    else:
+        merged_raw = dict(n1_raw or {})
+        if isinstance(n2_raw, dict) and n2_raw.get("resolutions") is not None:
+            merged_raw["resolutions"] = list(n2_raw.get("resolutions") or [])
+        n1, parsed_payload = classify_environment_cognition_outcome(merged_raw, None)
+        n2_source = parsed_payload or merged_raw
+
+    _, view = assemble_narrator_environment_packet(
+        fixture,
+        story_records=story_service.list_records(str(fixture.memory_scope_id or "")),
+    )
+
+    if n1.cognition_status == "indeterminate":
+        obligations = [build_sufficiency_undetermined_obligation(n1.status_reason)]
+        audit = NarratorEnvironmentCognitionAudit(
+            cognition_id=cognition_id,
+            location_ref=view.location_ref,
+            cognition_status="indeterminate",
+            status_reason=n1.status_reason,
+            cognition_failed=False,
+            inference_attempt_id=inference_attempt_id,
+            n1=n1,
+            environmental_response_obligations=obligations,
+            immediate_user_turn=project_immediate_user_turn_context(fixture.rp_history),
+            triggering_user=extract_triggering_user_context(fixture, turn_record),
+            domain_commit_id=turn_record.domain_commit_id,
+        )
+        turn_meta = fixture.manager.turn_metadata_by_index.setdefault(
+            turn_record.continuity_turn_index,
+            {},
+        )
+        turn_meta["narrator_environment_audit"] = audit.to_dict()
+        return {
+            "accepted": True,
+            "cognition_id": cognition_id,
+            "cognition_status": "indeterminate",
+            "status_reason": n1.status_reason,
+            "baseline_sufficient": None,
+            "audit": audit.to_dict(),
+            "establishment_decisions": [],
+            "environmental_response_obligations": [item.to_dict() for item in obligations],
+            "environmental_response_obligations_text": format_environmental_response_obligations(
+                obligations
+            ),
+            "updated_environmental_view": view.to_dict(),
+        }
+
+    n2 = parse_n2_cognition_results(n2_source)
     n2_raw_items = [
-        item for item in list(n2_raw.get("resolutions") or []) if isinstance(item, dict)
+        item for item in list(n2_source.get("resolutions") or []) if isinstance(item, dict)
     ]
 
     story_records = story_service.list_records(str(fixture.memory_scope_id or ""))
@@ -393,6 +562,10 @@ def finalize_narrator_environment_cognition(
     audit = NarratorEnvironmentCognitionAudit(
         cognition_id=cognition_id,
         location_ref=view.location_ref,
+        cognition_status="determined",
+        status_reason="model_result",
+        cognition_failed=False,
+        inference_attempt_id=inference_attempt_id,
         n1=n1,
         librarian_queries=list(librarian_outcomes or []),
         n2_resolutions=n2,
@@ -413,6 +586,9 @@ def finalize_narrator_environment_cognition(
     return {
         "accepted": True,
         "cognition_id": cognition_id,
+        "cognition_status": "determined",
+        "status_reason": "model_result",
+        "baseline_sufficient": n1.baseline_sufficient,
         "audit": audit.to_dict(),
         "establishment_decisions": decisions,
         "environmental_response_obligations": [item.to_dict() for item in obligations],
@@ -431,25 +607,40 @@ def record_environment_cognition_failure(
     failure_reason: str,
     cognition_id: str | None = None,
 ) -> dict[str, Any]:
-    """Durable audit when environmental cognition fails before N2/finalize (#49 D7)."""
-    audit: dict[str, Any] = {
-        "cognition_failed": True,
-        "failure_stage": failure_stage,
-        "failure_reason": failure_reason,
-        "cognition_id": cognition_id,
-        "domain_commit_id": turn_record.domain_commit_id,
-        "location_ref": "",
-        "n1": {"baseline_sufficient": True, "information_needs": [], "assessment_notes": ""},
-        "librarian_queries": [],
-        "n2_resolutions": [],
-        "establishment_decisions": [],
-    }
+    """Durable audit when environmental cognition hard-fails before classification (#49 / #151)."""
+    cognition_id = cognition_id or f"nar-env-cog-{uuid.uuid4().hex[:12]}"
+    n1 = NarratorEnvironmentN1Result(
+        cognition_status="failed",
+        status_reason="pipeline_exception",
+        baseline_sufficient=None,
+        information_needs=[],
+        assessment_notes="",
+        status_detail=_bounded_status_detail(failure_reason),
+    )
+    obligations = [build_cognition_unavailable_obligation(failure_reason)]
+    _, view = assemble_narrator_environment_packet(fixture, story_records=[])
+    audit = NarratorEnvironmentCognitionAudit(
+        cognition_id=cognition_id,
+        location_ref=view.location_ref,
+        cognition_status="failed",
+        status_reason="pipeline_exception",
+        cognition_failed=True,
+        failure_stage=failure_stage,
+        failure_reason=failure_reason,
+        n1=n1,
+        environmental_response_obligations=obligations,
+        domain_commit_id=turn_record.domain_commit_id,
+    )
+    audit_dict = audit.to_dict()
+    audit_dict["environmental_response_obligations_text"] = format_environmental_response_obligations(
+        obligations
+    )
     turn_meta = fixture.manager.turn_metadata_by_index.setdefault(
         turn_record.continuity_turn_index,
         {},
     )
-    turn_meta["narrator_environment_audit"] = audit
-    return audit
+    turn_meta["narrator_environment_audit"] = audit_dict
+    return audit_dict
 
 
 NARRATOR_ENVIRONMENT_COGNITION_RUBRIC = (

@@ -99,8 +99,36 @@ function manifestFromPrepareResponse(prepareResponse) {
   return manifest;
 }
 
+function buildInferenceEnvelope({
+  cognitionInferenceId,
+  raw,
+  trace,
+  failed,
+}) {
+  const finish = trace?.finish ?? null;
+  return {
+    raw_assistant_text: raw ?? '',
+    inference_failed: Boolean(failed),
+    finish_kind: typeof finish === 'object' ? finish?.kind ?? finish : finish,
+    inference_attempt_id: cognitionInferenceId,
+  };
+}
+
+function environmentCognitionEvidenceFromFinalize(finalize, inferenceEnvelope) {
+  const audit = finalize?.audit ?? {};
+  return {
+    cognition_failed: Boolean(audit.cognition_failed),
+    cognition_status: audit.cognition_status ?? finalize?.cognition_status ?? null,
+    status_reason: audit.status_reason ?? finalize?.status_reason ?? null,
+    baseline_sufficient: audit.n1?.baseline_sufficient ?? finalize?.baseline_sufficient ?? null,
+    cognition_id: audit.cognition_id ?? finalize?.cognition_id ?? null,
+    domain_commit_id: audit.domain_commit_id ?? null,
+    inference_attempt_id: inferenceEnvelope?.inference_attempt_id ?? null,
+  };
+}
+
 /**
- * Pre-render Narrator environmental cognition (#49).
+ * Pre-render Narrator environmental cognition (#49 / #151).
  * Returns audit payload for durable turn metadata / execution evidence.
  */
 export async function runNarratorEnvironmentCognition({
@@ -115,7 +143,6 @@ export async function runNarratorEnvironmentCognition({
   continuityTurnIndex,
   modelProfile = null,
   mockCognitionResponse = null,
-  allowDeterministicFallback = true,
 }) {
   const evidenceContextBase = {
     hgSessionId,
@@ -142,6 +169,7 @@ export async function runNarratorEnvironmentCognition({
   const manifest = manifestFromPrepareResponse(prepare);
 
   let cognitionRaw = mockCognitionResponse;
+  let inferenceEnvelope = null;
   if (!cognitionRaw) {
     const run = await runEnvironmentCognitionStage(
       ENV_COGNITION_STAGES.INFERENCE,
@@ -159,37 +187,24 @@ export async function runNarratorEnvironmentCognition({
         },
       }),
     );
-    if (run.failed) {
-      if (!allowDeterministicFallback) {
-        return {
-          ok: false,
-          stage: ENV_COGNITION_STAGES.INFERENCE,
-          boundary: FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
-          failureReason: run.failure?.reason ?? run.failure?.message ?? 'cognition_inference_failed',
-          audit: null,
-          prepare,
-        };
-      }
-      cognitionRaw = JSON.stringify({
-        baseline_sufficient: true,
-        information_needs: [],
-        resolutions: [],
-        assessment_notes: 'deterministic_fallback_baseline_sufficient',
-      });
-    } else {
-      cognitionRaw = run.raw;
-    }
+    cognitionRaw = run.raw ?? '';
+    inferenceEnvelope = buildInferenceEnvelope({
+      cognitionInferenceId,
+      raw: cognitionRaw,
+      trace: run.trace,
+      failed: run.failed,
+    });
+  } else {
+    inferenceEnvelope = buildInferenceEnvelope({
+      cognitionInferenceId,
+      raw: cognitionRaw,
+      trace: null,
+      failed: false,
+    });
   }
 
   const parsed = parseCognitionResult(cognitionRaw);
-  const cognitionResult = parsed.ok
-    ? parsed.result
-    : {
-      baseline_sufficient: true,
-      information_needs: [],
-      resolutions: [],
-      assessment_notes: 'parse_fallback_baseline_sufficient',
-    };
+  const cognitionResult = parsed.ok ? parsed.result : {};
 
   const karResponse = await runEnvironmentCognitionStage(
     ENV_COGNITION_STAGES.KAR_BUILD,
@@ -201,7 +216,8 @@ export async function runNarratorEnvironmentCognition({
       character_id: characterId,
       domain_commit_id: domainCommitId,
       continuity_turn_index: continuityTurnIndex,
-      n1_result: cognitionResult,
+      cognition_raw: cognitionRaw ?? '',
+      inference_envelope: inferenceEnvelope,
     }),
   );
 
@@ -219,7 +235,7 @@ export async function runNarratorEnvironmentCognition({
         inferenceId: `${cognitionInferenceId}-lib-${index}`,
         knowledgeAccessRequest: kar,
         runEphemeralInference,
-        allowDeterministicFallback,
+        allowDeterministicFallback: true,
         modelProfile,
         evidenceContextBase: {
           ...evidenceContextBase,
@@ -254,6 +270,8 @@ export async function runNarratorEnvironmentCognition({
       domain_commit_id: domainCommitId,
       continuity_turn_index: continuityTurnIndex,
       cognition_result: cognitionResult,
+      cognition_raw: cognitionRaw ?? '',
+      inference_envelope: inferenceEnvelope,
       librarian_outcomes: librarianOutcomes,
     }),
   );
@@ -265,6 +283,7 @@ export async function runNarratorEnvironmentCognition({
     prepare,
     cognitionResult,
     librarianOutcomes,
+    environmentCognitionEvidence: environmentCognitionEvidenceFromFinalize(finalize, inferenceEnvelope),
   };
 }
 
