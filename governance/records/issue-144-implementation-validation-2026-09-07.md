@@ -120,24 +120,81 @@ storyteller-orientation-envelope.mjs        ← manifest bridge + test-compat sc
 
 ---
 
+## Acceptance-criterion clarification (Governance 2026-09-07)
+
+Original intake included round-level `bound=true` as an outcome criterion. Post-#144 live evidence requires precise recording **without rewriting history**:
+
+| Criterion | Result |
+|-----------|--------|
+| **Orientation-specific acceptance** | **PASS** — Host accepts live orientation response (`orientation_finalize.accepted=true`, `reason=ok`). |
+| **System Storyteller binding (`bound=true`)** | **BLOCKED downstream** — `assessment_finalize` prevents round-level binding. |
+| **Downstream assessment failure** | Outside #144 agreed implementation scope; separate blocker Issue filed. |
+
+```text
+Orientation contract repair: demonstrated passing.
+Round-level binding criterion: blocked by separate assessment defect.
+Greptile gate: incomplete.
+```
+
+This is **not** a #144 orientation regression. It is newly isolated evidence of a separate Storyteller assessment defect.
+
+---
+
+## Downstream assessment blocker (intake from preserved live evidence)
+
+| Field | Value |
+|-------|-------|
+| Failure stage | `assessment_finalize` |
+| Host rejection reason | `schema_mismatch` |
+| Provider inference | Completed (`failed: false`) |
+| Raw output preserved | Yes |
+| Schema wrapper in raw payload | **Absent** (`schema: hg_storyteller_assessment_v1` required by parser) |
+| Assessment evidence ID | `965eb382-0025-4318-b2a1-bc9ad21e294e` |
+| Intake classification | `schema_mismatch` — analogous symptom class to pre-#144 orientation; full architecture TBD |
+| Follow-on Issue | [#146](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/146) |
+
+No additional live inference was run for this characterization.
+
+---
+
 ## Greptile
 
 | Field | Value |
 |-------|-------|
 | Requested on | PR #145 head `14a1f7a` |
-| Result | **Blocked** — Greptile trial credit limit (50 credits); no code review check run |
-| Review comments | Credit-limit notices only; no architectural findings |
+| Substantive review | **NOT COMPLETED** |
+| Reason | Greptile trial credit limit (50 credits) |
+| Reviewed implementation SHA | None substantively reviewed in this cycle |
+| Required before integration | Exact-candidate substantive Greptile review on production candidate `14a1f7a` |
 
-**Remediation:** Governance must authorize Greptile re-request after credit upgrade or alternate review path before integration.
+Do not claim PASS/FAIL/reviewed/clean. Do not trigger repeated Greptile requests while credits remain unavailable. No substitute review authorized as Greptile-equivalent.
+
+---
+
+## Session-boundary resume record (stateless handoff)
+
+| Field | Value |
+|-------|-------|
+| Phase | `implemented` — Governance orientation fix accepted; formal `validated` **not** authorized |
+| Assigned / effective / bootstrap | `standard` / `full` / Full |
+| Production candidate | `14a1f7a` |
+| PR head (docs drift) | `de651fd` |
+| PR | #145 OPEN — **do not merge** |
+| Orientation revision / digest | `storyteller_orientation_response_contract_v1` / `7b877b30eda28a8c299bee5918c6ed0b8907b5a9a50d29271388721669c81fd3` |
+| Live orientation | `accepted=true` — evidence `1b2dccef-a1ec-4598-9c04-8ecd4ff6aade` |
+| Downstream blocker | Assessment `schema_mismatch` — see follow-on Issue |
+| Greptile | Incomplete (credit limit) |
+| Remaining #144 obligations | Substantive Greptile on `14a1f7a`; Governance `validated` transition; merge only after authorization |
+| Next step | Greptile credit upgrade → re-request on PR #145 → Governance formal validation |
 
 ---
 
 ## Remaining obligations
 
-1. Greptile exact-candidate review (blocked on account credits).
+1. Greptile exact-candidate substantive review (blocked on account credits).
 2. Governance formal `validated` transition (not self-declared).
 3. After merge: #136 must independently rerun Storyteller-bound G2 on integrated base.
-4. Potential follow-on: Storyteller assessment response-contract (same pattern; not in #144 scope).
+4. Storyteller assessment response-contract: follow-on Issue (separate from #144).
 
 ---
 
