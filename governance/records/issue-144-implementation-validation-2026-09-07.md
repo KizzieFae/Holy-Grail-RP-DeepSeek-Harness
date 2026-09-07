@@ -3,7 +3,7 @@
 **Date:** 2026-09-07  
 **Issue:** [#144](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/144)  
 **PR:** [#145](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/145)  
-**Phase:** implemented (Governance formal validation NOT authorized)  
+**Phase:** `validated` (combined #144+#146 formal validation 2026-09-07; integration authorization pending)  
 **Assigned workflow weight:** `standard`  
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full  
@@ -19,11 +19,11 @@
 | Field | Value |
 |-------|-------|
 | Issue state | OPEN |
-| Current status | `implemented` |
+| Current status | `validated` |
 | Project Status | In Progress |
-| Project Workflow | Implemented |
+| Project Workflow | Validating |
 | Priority | P3 |
-| Merge / closure | NOT authorized |
+| Merge / closure | NOT authorized (awaiting Governance PR #145 → `main` authorization) |
 
 ---
 
@@ -157,47 +157,137 @@ No additional live inference was run for this characterization.
 
 ---
 
-## Greptile
+## Combined candidate lineage (2026-09-07)
 
-| Field | Value |
-|-------|-------|
-| Requested on | PR #145 head `14a1f7a` |
-| Substantive review | **NOT COMPLETED** |
-| Reason | Greptile trial credit limit (50 credits) |
-| Reviewed implementation SHA | None substantively reviewed in this cycle |
-| Required before integration | Exact-candidate substantive Greptile review on production candidate `14a1f7a` |
+| Role | SHA | Classification |
+|------|-----|----------------|
+| #144 production core | `422b12a` | production |
+| #144 production candidate | `14a1f7a` | production (+ sentinel tooling) |
+| #144 prior docs head | `58b1a78` | governance/docs |
+| #146 production anchor | `b93eeed` | production |
+| #146 validated head | `94f0e3d` | governance/docs |
+| #146 → #144 merge (PR #147) | `0dd39aa` | merge commit |
+| **Current PR #145 head** | **`dc07712`** | governance/docs only (post-merge) |
 
-Do not claim PASS/FAIL/reviewed/clean. Do not trigger repeated Greptile requests while credits remain unavailable. No substitute review authorized as Greptile-equivalent.
+**Production drift checks:**
+
+| Delta | `v2/domain`, `v2/domain_api`, `v2/rp_runtime/src` |
+|-------|-----------------------------------------------------|
+| `14a1f7a` → `dc07712` (orientation modules) | **empty** — orientation production unchanged |
+| `b93eeed` → `dc07712` (#146 assessment scope) | **empty** — assessment production unchanged |
+| `51e1b74` → `dc07712` (full stack vs `main`) | **expected** — #144 + #146 production additions only |
+
+Post-`b93eeed` commits (`55be264`, `94f0e3d`, `0dd39aa`, `dc07712`) are governance/docs/merge only.
 
 ---
 
-## Session-boundary resume record (stateless handoff)
+## #146 dependency resolution
 
 | Field | Value |
 |-------|-------|
-| Phase | `implemented` — Governance orientation fix accepted; formal `validated` **not** authorized |
-| Assigned / effective / bootstrap | `standard` / `full` / Full |
-| Production candidate | `14a1f7a` |
-| PR head (docs drift) | `de651fd` |
-| PR | #145 OPEN — **do not merge** |
-| Orientation revision / digest | `storyteller_orientation_response_contract_v1` / `7b877b30eda28a8c299bee5918c6ed0b8907b5a9a50d29271388721669c81fd3` |
-| Live orientation | `accepted=true` — evidence `1b2dccef-a1ec-4598-9c04-8ecd4ff6aade` |
-| Downstream blocker | Assessment `schema_mismatch` — see follow-on Issue |
-| Greptile | Incomplete (credit limit) |
-| Remaining #144 obligations | Substantive Greptile on `14a1f7a`; Governance `validated` transition; merge only after authorization |
-| Next step | Greptile credit upgrade → re-request on PR #145 → Governance formal validation |
+| Issue #146 | **CLOSED** (stacked integration complete) |
+| PR #147 | **MERGED** into `issue-144-storyteller-orientation-response-contract` @ `0dd39aa` |
+| Assessment contract | `storyteller_assessment_response_contract_v1` / digest `e1c0812f…` |
+| Downstream blocker | **Resolved** on combined candidate |
+
+---
+
+## Combined architecture verification
+
+Both response-contract modules coexist without conflict:
+
+| Check | Result |
+|-------|--------|
+| `storyteller_orientation_response_contract.py` | Present; canonical orientation authority |
+| `storyteller_assessment_response_contract.py` | Present; canonical assessment authority |
+| Orientation structural @28 | `storyteller_orientation_response_contract` |
+| Assessment structural @28 | `storyteller_assessment_response_contract` (distinct contribution_id) |
+| Behavioral @100 | Separate orientation/assessment instructions |
+| DSH transport-only (both paths) | `LIVE_INFERENCE_TRANSPORT_PROMPT` |
+| Raw forward to Host (P3 assessment) | `assessment_result: assessmentRun.raw` |
+| Parser semantics | Unchanged; imports canonical schema constants |
+| Circular dependencies | None |
+| Schema authority duplication | None — single Host-owned module per role |
+| Contribution-ID collision | None — distinct `contribution_id` suffixes |
+| Provenance collision | None — distinct revision/digest per contract |
+| Retry/correction | None |
+
+---
+
+## Combined deterministic validation (2026-09-07 @ `dc07712`)
+
+| Command | Result |
+|---------|--------|
+| `pytest v2/domain/tests/test_issue_144_storyteller_orientation_response_contract.py -q` | 12 passed |
+| `pytest v2/domain/tests/test_issue_146_storyteller_assessment_response_contract.py -q` | 13 passed |
+| `pytest v2/domain/tests/test_storyteller_finalize_transport.py -q` | 14 passed |
+| `pytest v2/domain/tests/test_storyteller_s3a.py -q` | 12 passed |
+| `node --test v2/rp_runtime/tests/issue-144-instruction-ownership.test.mjs` | 2 passed |
+| `node --test v2/rp_runtime/tests/issue-146-instruction-ownership.test.mjs` | 2 passed |
+| `node --test v2/rp_runtime/tests/storyteller-round-integration.test.mjs` | 2 passed |
+
+**Total:** 57 tests passed.
+
+---
+
+## Live-evidence reuse decision
+
+**Authority:** `issue-tracking-workflow.md` §B.0.2 (no material production delta after evidence SHAs; Issue criteria do not mandate fresh live run).
+
+| Evidence bundle | SHA | Reuse basis |
+|-----------------|-----|-------------|
+| #144 orientation sentinel | `14a1f7a` | Orientation production modules unchanged `14a1f7a` → `dc07712` |
+| #146 combined sentinel | `b93eeed` | Assessment production unchanged `b93eeed` → `dc07712`; ran on stacked branch with #144 orientation repair |
+
+**Provider/model/reasoning:** `deepseek-official` / `deepseek-v4-flash` / `low` (matches #144 validation conditions).
+
+**No additional paid live inference run** — existing evidence bounds combined production behavior.
+
+### Combined acceptance reconciliation
+
+| Criterion | Prior state | Current state |
+|-----------|-------------|---------------|
+| **Orientation-specific acceptance** | PASS | **PASS** (reused #144 evidence `1b2dccef…` / #146 `c18a912b…`) |
+| **System Storyteller binding** | BLOCKED downstream | **PASS** (#146 sentinel `57b3b2f1…`) |
+
+| Gate | Result |
+|------|--------|
+| Orientation finalize `accepted` | **true** |
+| Assessment finalize `accepted` | **true** (`assessment_reason: ok`) |
+| Round-level `storyteller.bound` | **true** |
+| Operational usefulness | **PASS** — 3 progression opportunities mapped to director |
+| #142 transport regression | None observed |
+
+Evidence root: `data/issue146_live_sentinel/2026-09-07T01-11-36-750Z/`
+
+---
+
+## Formal validation (combined #144+#146, 2026-09-07)
+
+All 28 substantive gates **PASS** or **N/A** (see Issue transition comment). Validated candidate SHA: **`dc07712`**.
+
+Production behavior anchors: orientation **`14a1f7a`**, assessment **`b93eeed`**.
+
+---
+
+## Greptile (revised policy 2026-09-07)
+
+| Field | Value |
+|-------|-------|
+| PR #145 reviews on `14a1f7a` | Trial credit limit only — **NOT COMPLETED** |
+| Governance disposition | **OPTIONAL / NON-BLOCKING** |
+| PASS/FAIL label | **Neither** |
 
 ---
 
 ## Remaining obligations
 
-1. Greptile exact-candidate substantive review (blocked on account credits).
-2. Governance formal `validated` transition (not self-declared).
-3. After merge: #136 must independently rerun Storyteller-bound G2 on integrated base.
-4. Storyteller assessment response-contract: follow-on Issue (separate from #144).
+1. Governance **integration/merge authorization** for PR #145 → `main`
+2. After `main` integration: #136 Storyteller-bound G2 rerun (separate tract)
+3. Optional Greptile when credits available (non-blocking)
 
 ---
 
 ## Recommendation
 
-**#144 orientation response-contract implementation is ready for Governance formal-validation review** on deterministic evidence + live orientation acceptance. **Do not merge** until Greptile (or authorized substitute review) completes and Governance authorizes integration.
+**#144 combined formal validation PASS.** PR #145 ready for Governance integration authorization to `main`. **Do not merge** until explicitly authorized.
