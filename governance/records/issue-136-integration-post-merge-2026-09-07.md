@@ -55,7 +55,7 @@ Local `.tmp-*` session scratch files classified **transient**; removed where una
 
 **A — READY FOR CLOSURE** (pending explicit Governance authorization)
 
-- Issue remains **OPEN** / `validated`
+- Issue **reopened** after PR merge auto-closed it (`2026-09-07T06:14:15Z`); remains **OPEN** / `validated`
 - Project: In Progress / Validating / P3
 - No live inference in this step
 - No production remediation
