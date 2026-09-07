@@ -40,6 +40,9 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
   if (context.characterizationMode === true) {
     correlation.characterization_mode = true;
   }
+  if (context.calibrationMode === true) {
+    correlation.calibration_mode = true;
+  }
   if (context.parentInferenceId) {
     correlation.parent_inference_id = context.parentInferenceId;
   }

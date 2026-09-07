@@ -68,6 +68,10 @@ export function generateLlmCallCatalog(options = {}) {
     },
     policy_authority: 'v2/rp_runtime/src/application/application-settings.mjs',
     metadata_authority: 'v2/rp_runtime/src/application/llm-call-catalog.mjs',
+    application_token_quota_policy: {
+      enforced: false,
+      summary: 'Holy-Grail application maxTokens are globally disabled during the present LLM/prompt-efficiency development period. reference_application_token_quota preserves baseline assignments for later analysis; application_token_quota reflects current enforcement (UNCAPPED). Provider/model-native limits and non-token safeguards still apply.',
+    },
     primary_runtime,
     harness_annex,
   };

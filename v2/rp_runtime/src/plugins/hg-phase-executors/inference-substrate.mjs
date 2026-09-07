@@ -4,6 +4,7 @@ import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
 import {
+  isApplicationTokenQuotaEnforced,
   isCharacterizationModeEnabled,
   stripApplicationMaxTokens,
 } from '../../application/application-settings.mjs';
@@ -27,12 +28,11 @@ function resolveCharacterizationActive(inferenceConfig = {}) {
   );
 }
 
-function prepareProfileForInference(profile, characterizationActive) {
-  if (!characterizationActive) return profile;
+function prepareProfileForInference(profile) {
   const stripped = stripApplicationMaxTokens(profile);
   if (stripped?.maxTokens !== undefined || stripped?.max_tokens !== undefined) {
     throw new Error(
-      'characterization mode: Holy-Grail maxTokens must not reach inference substrate',
+      'Holy-Grail maxTokens must not reach inference substrate while application quotas are disabled',
     );
   }
   return stripped;
@@ -59,17 +59,18 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     const characterizationActive = resolveCharacterizationActive(inferenceConfig);
     const resolvedProfile = prepareProfileForInference(
       resolveInferenceProfile(inferenceConfig, modelProfile),
-      characterizationActive,
     );
     const agentOpts = agentOptionsFromProfile(resolvedProfile);
-    if (characterizationActive && agentOpts.maxTokens !== undefined) {
+    if (agentOpts.maxTokens !== undefined) {
       throw new Error(
-        'characterization mode: agent options must not include Holy-Grail maxTokens',
+        'agent options must not include Holy-Grail maxTokens while application quotas are disabled',
       );
     }
     const resolvedEvidenceContext = {
       ...(evidenceContext ?? {}),
       characterizationMode: characterizationActive,
+      calibrationMode: inferenceConfig.inferenceCalibration === true,
+      applicationTokenQuotasEnforced: isApplicationTokenQuotaEnforced(),
       inferenceKind: evidenceContext?.inferenceKind
         ?? manifest?.inference_kind
         ?? null,
@@ -157,6 +158,7 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
       evidenceId,
       inferenceWallClockMs,
       characterizationMode: characterizationActive,
+      applicationTokenQuotasEnforced: isApplicationTokenQuotaEnforced(),
     };
   }
 

@@ -8,7 +8,10 @@ import {
   PRIMARY_RUNTIME_CATALOG,
   PRIMARY_RUNTIME_CALL_IDS,
 } from '../src/application/llm-call-catalog.mjs';
-import { resolveCatalogApplicationTokenQuota } from '../src/application/llm-call-catalog-policy.mjs';
+import {
+  resolveCatalogApplicationTokenQuota,
+  resolveCatalogReferenceApplicationTokenQuota,
+} from '../src/application/llm-call-catalog-policy.mjs';
 import { generateLlmCallCatalog } from '../scripts/generate-llm-call-catalog.mjs';
 import { INFERENCE_KINDS } from '../src/lib/manifest-projection-policy.mjs';
 
@@ -35,11 +38,13 @@ test('llm call catalog: production kinds are subset of INFERENCE_KINDS', () => {
 
 test('llm call catalog: quota resolution succeeds for all primary rows', () => {
   for (const entry of PRIMARY_RUNTIME_CATALOG) {
-    const quota = resolveCatalogApplicationTokenQuota(entry, {}, {});
+    const reference = resolveCatalogReferenceApplicationTokenQuota(entry, {}, {});
+    const enforced = resolveCatalogApplicationTokenQuota(entry, {}, {});
     assert.ok(
-      quota === 'UNCAPPED' || Number.isFinite(quota),
-      `${entry.call_id} quota unresolved`,
+      reference === 'UNCAPPED' || Number.isFinite(reference),
+      `${entry.call_id} reference quota unresolved`,
     );
+    assert.equal(enforced, 'UNCAPPED');
   }
 });
 
@@ -71,7 +76,9 @@ test('llm call catalog: committed docs file matches generator when present', () 
     const gen = generated.primary_runtime[i];
     const com = committed.primary_runtime[i];
     assert.equal(com.call_id, gen.call_id);
-    assert.equal(com.application_token_quota, gen.application_token_quota);
+    assert.equal(com.reference_application_token_quota, gen.reference_application_token_quota);
+    assert.equal(com.application_token_quota, 'UNCAPPED');
+    assert.equal(com.application_token_quota_enforced, false);
     assert.equal(com.reasoning_policy, gen.reasoning_policy);
   }
 });

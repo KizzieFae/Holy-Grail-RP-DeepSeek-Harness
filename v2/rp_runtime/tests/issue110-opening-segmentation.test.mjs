@@ -19,7 +19,7 @@ test('issue110: opening_segmentation profile disables thinking at application cl
   }).opening;
   const profile = modelProfileForInferenceKind(opening, 'opening_segmentation');
   assert.equal(profile.reasoningEffort, 'off');
-  assert.equal(profile.maxTokens, 4096);
+  assert.equal(profile.maxTokens, undefined);
 });
 
 test('issue110: reasoning-budget exhaustion classifier unchanged', () => {
