@@ -149,3 +149,16 @@ Replace `createTrackingInference` mocks with bounded real-model profiles on the 
 - Truth fixtures: `data/fixtures/storyteller_tier1_truth/`
 - Run: `node scripts/run-tranche1.mjs` (requires `DEEPSEEK_API_KEY`)
 - Pre-live tests: `tests/storyteller-tier1-live-campaign.test.mjs`
+
+### Harness certification manifest contract (#141)
+
+Tier-1/Tier-2 certification evaluation uses a **harness-only** inference kind:
+
+| Field | Value |
+|-------|--------|
+| `inference_kind` | `storyteller_certification_eval` |
+| Allowed `source_kind` | `certification_truth` only |
+| Evaluator | `src/scenario-harness/certification-evaluator.mjs` |
+| Policy | `manifest-projection-policy.mjs` / `manifest_projection_policy.py` (parity via `test_manifest_policy_parity.py`) |
+
+`certification_truth` contributions carry **fixture authority** (`authority_class: fixture`, read-only provenance). They are model-facing certification context only and **do not** represent production continuity or committed runtime state. #134 fail-closed bridge validation applies unchanged.

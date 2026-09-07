@@ -75,6 +75,7 @@ const CORRECTION = new Set(['semantic_correction']);
 const PLOT_COGNITION_INIT = new Set(['active_constraints']);
 const PLOT_COGNITION_UPDATE = new Set(['active_constraints', 'advisory_context']);
 const PLOT_COGNITION_EPISTEMIC = new Set(['active_constraints', 'derived']);
+const CERTIFICATION_TRUTH = new Set(['certification_truth']);
 
 /** @type {Record<string, Set<string>>} */
 export const ALLOWED_SOURCE_KINDS = {
@@ -164,6 +165,7 @@ export const ALLOWED_SOURCE_KINDS = {
     COMMON_INSTRUCTION,
     new Set(['librarian_knowledge']),
   ),
+  storyteller_certification_eval: CERTIFICATION_TRUTH,
   plot_cognition_init: PLOT_COGNITION_INIT,
   plot_cognition_init_contract_correction: PLOT_COGNITION_INIT,
   plot_cognition_update: PLOT_COGNITION_UPDATE,
