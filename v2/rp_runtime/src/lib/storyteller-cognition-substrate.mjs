@@ -9,12 +9,8 @@ import {
   parseStorytellerAssessment,
   STORYTELLER_ASSESSMENT_SCHEMA,
 } from './storyteller-assessment-envelope.mjs';
-import {
-  buildStorytellerOrientationPrompt,
-  manifestFromStorytellerPrepareResponse,
-  parseStorytellerOrientation,
-  STORYTELLER_ORIENTATION_SCHEMA,
-} from './storyteller-orientation-envelope.mjs';
+import { LIVE_INFERENCE_TRANSPORT_PROMPT } from './live-inference-prompts.mjs';
+import { manifestFromStorytellerPrepareResponse } from './storyteller-orientation-envelope.mjs';
 
 /**
  * DSH-side Storyteller cognition substrate (#32 S3a).
@@ -54,7 +50,7 @@ export async function runStorytellerCognition({
 
   const orientationRun = await runEphemeralInference({
     inferenceId: orientationInferenceId,
-    prompt: buildStorytellerOrientationPrompt({ schema: STORYTELLER_ORIENTATION_SCHEMA }),
+    prompt: LIVE_INFERENCE_TRANSPORT_PROMPT,
     manifest: orientationManifest,
     mockResponses: mockOrientationResponse ? [mockOrientationResponse] : [],
     modelProfile,
@@ -82,14 +78,11 @@ export async function runStorytellerCognition({
     };
   }
 
-  const parsedOrientation = parseStorytellerOrientation(orientationRun.raw);
   const orientationFinalize = await domainApi.finalizeStorytellerOrientation({
     hg_scene_id: hgSceneId,
     hg_round_id: hgRoundId,
     inference_id: inferenceId,
-    orientation_result: parsedOrientation.ok
-      ? parsedOrientation.result
-      : orientationRun.raw,
+    orientation_result: orientationRun.raw,
   });
 
   if (recorder?.isEnabled?.() && orientationRun.evidenceId && hgSessionId) {

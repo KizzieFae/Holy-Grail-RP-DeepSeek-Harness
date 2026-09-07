@@ -19,8 +19,13 @@ from .librarian_contract import (
     StableReference,
 )
 from .retrieval_contract import EntityRef
+from storyteller_orientation_response_contract import (  # noqa: E402
+    BREADTH_VALUES,
+    ORIENTATION_TRIGGER_VALUES,
+    STORYTELLER_ORIENTATION_SCHEMA,
+    TEMPORAL_VALUES,
+)
 
-STORYTELLER_ORIENTATION_SCHEMA = "hg_storyteller_orientation_v1"
 STORYTELLER_ASSESSMENT_SCHEMA = "hg_storyteller_assessment_v1"
 STORYTELLER_ADVISORY_PACKAGE_SCHEMA = "hg_storyteller_advisory_package_v1"
 
@@ -318,13 +323,13 @@ def parse_storyteller_orientation(raw: dict[str, Any] | str) -> tuple[Storytelle
         if str(item).strip()
     )
     temporal = str(parsed.get("temporal_focus") or "current")
-    if temporal not in {"current", "recent", "historical", "session", "arc"}:
+    if temporal not in TEMPORAL_VALUES:
         temporal = "current"
     breadth = str(parsed.get("breadth_preference") or "broad")
-    if breadth not in {"broad", "focused"}:
+    if breadth not in BREADTH_VALUES:
         breadth = "broad"
     trigger = str(parsed.get("trigger") or "round_start")
-    if trigger not in {"round_start", "material_commit_refresh", "follow_up_gap"}:
+    if trigger not in ORIENTATION_TRIGGER_VALUES:
         trigger = "round_start"
 
     return (
