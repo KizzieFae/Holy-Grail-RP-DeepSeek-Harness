@@ -5,6 +5,8 @@ import {
   buildInferenceOptions,
   modelProfileForInferenceKind,
   PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS,
+  referenceTokenCeilingForInferenceKind,
+  referenceTokenCeilingForRole,
   resolveApplicationRoleProfiles,
   tokenCeilingForInferenceKind,
   validateRuntimeSettings,
@@ -32,10 +34,11 @@ test('application settings: simple role routing shares director and character pr
   assert.equal(profiles.character.reasoningEffort, 'high');
   assert.equal(profiles.narrator.reasoningEffort, 'low');
   assert.equal(profiles.semantic_evaluator.reasoningEffort, 'off');
-  assert.notEqual(profiles.director.maxTokens, profiles.narrator.maxTokens);
+  assert.equal(profiles.director.maxTokens, undefined);
+  assert.equal(profiles.narrator.maxTokens, undefined);
 });
 
-test('application settings: advanced role routing preserves distinct profiles', () => {
+test('application settings: advanced role routing preserves distinct models but strips maxTokens', () => {
   const director = {
     kind: 'dsh',
     provider: 'deepseek-official',
@@ -65,6 +68,7 @@ test('application settings: advanced role routing preserves distinct profiles', 
   assert.equal(profiles.director.model, 'director-model');
   assert.equal(profiles.character.model, 'character-model');
   assert.equal(profiles.narrator.model, 'narrator-model');
+  assert.equal(profiles.director.maxTokens, undefined);
 });
 
 test('application settings: buildInferenceOptions honors mock mode from options', () => {
@@ -86,13 +90,15 @@ test('application settings: live role profiles include explicit non-mock storyte
   assert.equal(profiles.storyteller.provider, 'deepseek-official');
   assert.notEqual(profiles.storyteller.provider, 'hg-mock');
   assert.equal(profiles.storyteller.reasoningEffort, 'low');
-  assert.equal(profiles.storyteller.maxTokens, 4096);
+  assert.equal(profiles.storyteller.maxTokens, undefined);
+  assert.equal(referenceTokenCeilingForRole('storyteller'), 4096);
 });
 
 test('application settings: buildInferenceOptions carries live storyteller profile', () => {
   const options = buildInferenceOptions({ inferenceMode: 'live' });
   assert.equal(options.roleProfiles.storyteller.kind, 'dsh');
   assert.equal(options.roleProfiles.storyteller.provider, 'deepseek-official');
+  assert.equal(options.applicationTokenQuotasEnforced, false);
 });
 
 test('application settings: runtime resolution preserves live storyteller from application profiles', () => {
@@ -109,40 +115,40 @@ test('application settings: validate runtime settings bounds', () => {
   assert.equal(validateRuntimeSettings({ maxTokens: 32 }).valid, false);
 });
 
-test('application settings: operation-specific inference kind ceilings apply headroom only', () => {
+test('application settings: reference kind ceilings remain available while runtime is uncapped', () => {
   const storyteller = resolveApplicationRoleProfiles({
     inferenceMode: 'live',
     roleRouting: 'simple',
     model: HG_DEEPSEEK_DEFAULT_MODEL,
   }).storyteller;
-  assert.equal(storyteller.maxTokens, 4096);
-  assert.equal(tokenCeilingForInferenceKind('plot_cognition_update'), 8192);
-  assert.equal(tokenCeilingForInferenceKind('librarian_proposal'), 8192);
-  assert.equal(tokenCeilingForInferenceKind('director'), null);
+  assert.equal(storyteller.maxTokens, undefined);
+  assert.equal(referenceTokenCeilingForInferenceKind('plot_cognition_update'), 8192);
+  assert.equal(tokenCeilingForInferenceKind('plot_cognition_update'), null);
   const plotProfile = modelProfileForInferenceKind(storyteller, 'plot_cognition_update');
-  assert.equal(plotProfile.maxTokens, PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS.plot_cognition_update);
+  assert.equal(plotProfile.maxTokens, undefined);
   assert.equal(plotProfile.reasoningEffort, 'low');
   const librarianProfile = modelProfileForInferenceKind(
     { ...storyteller, maxTokens: 4096 },
     'librarian_proposal',
   );
-  assert.equal(librarianProfile.maxTokens, 8192);
+  assert.equal(librarianProfile.maxTokens, undefined);
 });
 
-test('application settings: opening_segmentation disables thinking with 4096 ceiling', () => {
+test('application settings: opening_segmentation disables thinking; runtime remains uncapped', () => {
   const opening = resolveApplicationRoleProfiles({
     inferenceMode: 'live',
     roleRouting: 'simple',
     model: HG_DEEPSEEK_DEFAULT_MODEL,
   }).opening;
   assert.equal(opening.reasoningEffort, 'low');
-  assert.equal(opening.maxTokens, 4096);
-  assert.equal(tokenCeilingForInferenceKind('opening_segmentation'), 4096);
+  assert.equal(opening.maxTokens, undefined);
+  assert.equal(referenceTokenCeilingForInferenceKind('opening_segmentation'), 4096);
+  assert.equal(tokenCeilingForInferenceKind('opening_segmentation'), null);
   const segmentationProfile = modelProfileForInferenceKind(opening, 'opening_segmentation');
   assert.equal(segmentationProfile.reasoningEffort, 'off');
-  assert.equal(segmentationProfile.maxTokens, 4096);
+  assert.equal(segmentationProfile.maxTokens, undefined);
   assert.equal(
-    segmentationProfile.maxTokens,
+    referenceTokenCeilingForInferenceKind('opening_segmentation'),
     PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS.opening_segmentation,
   );
 });

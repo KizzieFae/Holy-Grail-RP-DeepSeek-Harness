@@ -4,12 +4,73 @@
  */
 
 import { normalizeFinishKind } from '../completion-finish-kind.mjs';
+import {
+  isApplicationTokenQuotaEnforced,
+  referenceTokenCeilingForInferenceKind,
+  referenceTokenCeilingForRole,
+  UNCAPPED_INFERENCE_KINDS,
+} from '../../application/application-settings.mjs';
 import { classifyReasoningBudgetOutcome } from '../reasoning-provider-options.mjs';
 
 export const INFERENCE_HEALTH_SCHEMA = 'hg_inference_health_v1';
 export const INFERENCE_HEALTH_INDEX_SCHEMA = 'hg_inference_health_index_v1';
 
 /** @typedef {'none' | 'attempted' | 'recovered' | 'unrecovered'} RecoveryState */
+
+/**
+ * Baseline reference quota for telemetry/catalog comparison (not enforced).
+ * @param {object|null|undefined} correlation
+ * @returns {number | 'UNCAPPED' | null}
+ */
+export function resolveReferenceApplicationTokenQuota(correlation = null) {
+  const kind = correlation?.inference_kind ?? null;
+  if (kind && UNCAPPED_INFERENCE_KINDS.has(kind)) {
+    return 'UNCAPPED';
+  }
+  if (kind) {
+    const kindCeiling = referenceTokenCeilingForInferenceKind(kind);
+    if (Number.isFinite(kindCeiling)) {
+      return kindCeiling;
+    }
+  }
+  const role = correlation?.role ?? null;
+  if (role) {
+    return referenceTokenCeilingForRole(role);
+  }
+  return null;
+}
+
+/**
+ * @param {object|null|undefined} params
+ * @returns {string}
+ */
+export function resolveApplicationQuotaState({
+  applicationQuotaEnforced = isApplicationTokenQuotaEnforced(),
+  configuredMaxTokens = null,
+  characterizationMode = false,
+  calibrationMode = false,
+  finishClass = null,
+}) {
+  if (characterizationMode) {
+    return applicationQuotaEnforced ? 'characterization_capped' : 'characterization_uncapped';
+  }
+  if (calibrationMode && applicationQuotaEnforced) {
+    return 'calibration_capped';
+  }
+  if (!applicationQuotaEnforced) {
+    if (finishClass === 'output_limit' && configuredMaxTokens == null) {
+      return 'provider_or_external_limit';
+    }
+    return 'application_quota_disabled';
+  }
+  if (configuredMaxTokens == null) {
+    return 'production_uncapped_kind';
+  }
+  if (finishClass === 'output_limit') {
+    return 'production_capped_exhaustion';
+  }
+  return 'production_capped';
+}
 
 /**
  * @param {object|null|undefined} profile
@@ -261,6 +322,7 @@ export function buildInferenceHealth({
   correlation = null,
   decision = null,
   existingHealth = null,
+  inferenceWallClockMs = null,
 }) {
   const configuredFromProfile = resolveConfiguredMaxTokens(profile);
   const configuredFromRequest = resolveConfiguredMaxTokens(requestProfile);
@@ -322,9 +384,32 @@ export function buildInferenceHealth({
     existing: existingHealth?.recovery ?? null,
   });
 
+  const application_quota_enforced = evidenceContext?.applicationTokenQuotasEnforced
+    ?? existingHealth?.application_quota_enforced
+    ?? isApplicationTokenQuotaEnforced();
+  const calibration_mode = evidenceContext?.calibrationMode === true
+    || correlation?.calibration_mode === true;
+  const characterization_mode = evidenceContext?.characterizationMode === true
+    || correlation?.characterization_mode === true;
+  const reference_application_token_quota = evidenceContext?.referenceApplicationTokenQuota
+    ?? existingHealth?.reference_application_token_quota
+    ?? resolveReferenceApplicationTokenQuota(correlation);
+  const application_quota_state = resolveApplicationQuotaState({
+    applicationQuotaEnforced: application_quota_enforced,
+    configuredMaxTokens: configured_max_tokens,
+    characterizationMode: characterization_mode,
+    calibrationMode: calibration_mode,
+    finishClass: finish_class,
+  });
+
   return {
     schema: INFERENCE_HEALTH_SCHEMA,
     configured_max_tokens,
+    application_quota_enforced,
+    reference_application_token_quota,
+    application_quota_state,
+    characterization_mode,
+    calibration_mode,
     usage,
     utilization,
     finish_kind_raw,
@@ -335,6 +420,12 @@ export function buildInferenceHealth({
     structural_valid,
     structural_error,
     recovery,
+    timing: Number.isFinite(Number(inferenceWallClockMs)) && Number(inferenceWallClockMs) >= 0
+      ? {
+        inference_wall_clock_ms: Number(inferenceWallClockMs),
+        measurement: 'substrate_runEphemeralInference_idle_boundary',
+      }
+      : existingHealth?.timing ?? null,
   };
 }
 

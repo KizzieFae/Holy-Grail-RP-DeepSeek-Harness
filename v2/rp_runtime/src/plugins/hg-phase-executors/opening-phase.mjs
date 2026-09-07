@@ -61,6 +61,7 @@ export async function runOpeningPhase({
           hgSceneId,
           hgRoundId: 'opening-bootstrap',
           role: 'opening',
+          inferenceKind: manifest.inference_kind ?? 'opening',
           inferenceId,
           attemptIndex: attempt,
           priorAttemptId: priorEvidenceId,

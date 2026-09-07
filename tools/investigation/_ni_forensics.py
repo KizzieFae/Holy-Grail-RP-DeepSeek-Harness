@@ -11,12 +11,26 @@ from typing import Any
 NI_FORENSICS_CONTRACT = "hg_ni_forensics_v1"
 INVESTIGATOR_SCHEMA = "hg_ni_investigator_v1"
 
-DISPOSITION_PROPAGATED = "propagated"
-DISPOSITION_OMITTED = "omitted"
-DISPOSITION_INCOMPLETE = "incomplete"
-DISPOSITION_INDETERMINATE = "indeterminate"
+_CATALOG_PATH_PARTS = ("docs", "llm-call-catalog.json")
 
-INFERENCE_KINDS = (
+
+def load_catalog_inference_kinds(repo_root: Path | None = None) -> tuple[str, ...]:
+    """Production-utilized kinds from #152 authoritative catalog (fallback: legacy tuple)."""
+    root = repo_root or Path(__file__).resolve().parents[2]
+    catalog_path = root.joinpath(*_CATALOG_PATH_PARTS)
+    if catalog_path.is_file():
+        doc = json.loads(catalog_path.read_text(encoding="utf-8"))
+        kinds = {
+            str(row.get("canonical_inference_kind", "")).strip()
+            for row in doc.get("primary_runtime", [])
+            if row.get("canonical_inference_kind")
+        }
+        if kinds:
+            return tuple(sorted(kinds))
+    return _LEGACY_INFERENCE_KINDS
+
+
+_LEGACY_INFERENCE_KINDS = (
     "character_orientation",
     "librarian_mediation",
     "storyteller_orientation",
@@ -26,6 +40,12 @@ INFERENCE_KINDS = (
     "librarian_proposal",
 )
 
+INFERENCE_KINDS = load_catalog_inference_kinds()
+
+DISPOSITION_PROPAGATED = "propagated"
+DISPOSITION_OMITTED = "omitted"
+DISPOSITION_INCOMPLETE = "incomplete"
+DISPOSITION_INDETERMINATE = "indeterminate"
 
 def _empty_ni_index() -> dict[str, Any]:
     return {

@@ -34,6 +34,14 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
   };
   if (context.inferenceKind) {
     correlation.inference_kind = context.inferenceKind;
+  } else if (manifest?.inference_kind) {
+    correlation.inference_kind = String(manifest.inference_kind);
+  }
+  if (context.characterizationMode === true) {
+    correlation.characterization_mode = true;
+  }
+  if (context.calibrationMode === true) {
+    correlation.calibration_mode = true;
   }
   if (context.parentInferenceId) {
     correlation.parent_inference_id = context.parentInferenceId;
@@ -73,6 +81,7 @@ export class ExecutionEvidenceRecorder {
     trace,
     assistantText,
     inferenceSessionId,
+    inferenceWallClockMs = null,
   }) {
     if (!this.enabled) return null;
     const hgSessionId = evidenceContext?.hgSessionId;
@@ -112,6 +121,7 @@ export class ExecutionEvidenceRecorder {
         evidenceContext,
         correlation,
         decision: evidenceContext?.initialDecision ?? null,
+        inferenceWallClockMs,
       }),
     };
     if (evidenceContext?.inferenceKind || evidenceContext?.niForensics) {

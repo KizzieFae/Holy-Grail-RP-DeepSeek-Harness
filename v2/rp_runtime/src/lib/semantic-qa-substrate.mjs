@@ -76,8 +76,9 @@ export async function runSemanticQaEvaluation({
     manifest,
     mockResponses: mockResponse ? [mockResponse] : [],
     modelProfile,
-    evidenceContext: {
+        evidenceContext: {
       ...evidenceContextBase,
+      inferenceKind: contextResponse.inference_kind ?? evidenceContextBase?.inferenceKind ?? null,
       role: 'semantic_evaluator',
       priorAttemptId: parentCandidateEvidenceId,
       evaluationPassId,

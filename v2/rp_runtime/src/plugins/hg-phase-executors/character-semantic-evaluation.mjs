@@ -185,6 +185,7 @@ export async function runSemanticEvaluation({
       hgSceneId,
       hgRoundId,
       role: 'semantic_evaluator',
+      inferenceKind: contextResponse.inference_kind ?? 'character_semantic_evaluation',
       characterId,
       inferenceId: characterInferenceId,
       attemptIndex: 0,
