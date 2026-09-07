@@ -100,3 +100,27 @@ test('validateBridgeManifest: provenance.visibility does not authorize projectio
     /model-context package rejected/,
   );
 });
+
+test('validateBridgeManifest: infrastructure_provider_probe accepts empty non-manifest package', () => {
+  const resolved = validateBridgeManifest({
+    manifest: { contributions: [] },
+    inferenceKind: 'infrastructure_provider_probe',
+  });
+  assert.equal(resolved, 'infrastructure_provider_probe');
+});
+
+test('validateBridgeManifest: infrastructure_provider_probe rejects any contribution', () => {
+  assert.throws(
+    () => validateBridgeManifest({
+      manifest: {
+        contributions: [{
+          contribution_id: 'c-1',
+          source_kind: 'inference_instruction',
+          content: 'x',
+        }],
+      },
+      inferenceKind: 'infrastructure_provider_probe',
+    }),
+    /disallowed source_kind/,
+  );
+});

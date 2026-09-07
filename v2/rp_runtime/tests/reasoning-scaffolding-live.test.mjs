@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createTestSession, startDomainApi } from './helpers/domain-api.mjs';
+import { startDomainApi } from './helpers/domain-api.mjs';
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { deepseekInferenceProfile } from '../src/lib/inference-profile.mjs';
 
@@ -20,18 +20,8 @@ test('live reasoning scaffolding: off disables provider thinking (#29)', {
     inference: { mountDeepSeek: true },
   });
 
-  const session = await createTestSession(host.baseUrl);
-  const manifest = {
-    manifest_id: 'manifest-reasoning-off',
-    inference_id: 'inf-reasoning-off',
-    hg_scene_id: session.hg_session_id,
-    hg_round_id: session.hg_round_id ?? 'round-1',
-    role: 'semantic_evaluator',
-    character_id: null,
-    turn_index: 0,
-    attempt_index: 0,
-    contributions: [],
-  };
+  // Non-manifest infrastructure probe (#140): no Host-prepared PromptContributionManifest.
+  const manifest = { contributions: [] };
 
   const run = await phaseExecutors.runEphemeralInference({
     inferenceId: 'reasoning-off-live',
@@ -41,7 +31,10 @@ test('live reasoning scaffolding: off disables provider thinking (#29)', {
       reasoningEffort: 'off',
       maxTokens: 64,
     }),
-    evidenceContext: { role: 'semantic_evaluator' },
+    evidenceContext: {
+      role: 'semantic_evaluator',
+      inferenceKind: 'infrastructure_provider_probe',
+    },
   });
 
   const trace = run.trace;
