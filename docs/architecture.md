@@ -214,6 +214,30 @@ Default character prompt topology uses harmonized teaching blocks. Environment r
 
 ---
 
+## Runtime LLM call catalog and characterization (#152)
+
+**Purpose:** Durable map of current production LLM configuration identities, executable quota/reasoning policy, and empirical characterization status — not a historical ledger of retired calls.
+
+| Artifact | Role |
+|----------|------|
+| `v2/rp_runtime/src/application/application-settings.mjs` | **Executable authority** for production token ceilings, UNCAPPED kinds, and reasoning overrides |
+| `v2/rp_runtime/src/application/llm-call-catalog.mjs` | **Metadata registry** (25 primary runtime rows + 2 harness annex rows) |
+| `v2/rp_runtime/src/application/llm-call-catalog-policy.mjs` | Derives quota/reasoning from executable policy for catalog export |
+| `v2/rp_runtime/scripts/generate-llm-call-catalog.mjs` | Deterministic generator |
+| `docs/llm-call-catalog.json` | **Committed generated view** (regenerate after policy or characterization changes) |
+
+**Population terminology (do not conflate):** 26 canonical `INFERENCE_KINDS`; 24 production-utilized unique kinds; **25 primary runtime configuration identity rows** (includes distinct `librarian_mediation@character` and `@narrator` quota resolution); 2 harness/test annex identities (visible, non-blocking).
+
+**`UNCAPPED`:** no Holy-Grail application `maxTokens` for that kind (currently `player_decomposition` only). Provider/model native limits may still apply.
+
+**Characterization vs calibration:** `HG_INFERENCE_CHARACTERIZATION=1` strips Holy-Grail application `maxTokens` at the shared inference substrate, preserves production reasoning policy, and records `characterization_mode` in execution evidence. `HG_INFERENCE_CALIBRATION` remains separate (diagnostic ceiling); both flags active together fail closed. Ordinary production behavior is unchanged without the characterization flag.
+
+**Evidence locations:** raw attempts remain under `data/execution_evidence/`; aggregated characterization summaries under `data/llm_characterization/` (`index.json`, `batches/<batch_id>/manifest.json`, `batches/<batch_id>/summaries/<call_id>.json`). Each batch manifest records `inference_mode` (`mock` or `live`); the catalog generator prefers **live** summaries when present. Mock batches validate infrastructure only and must not be treated as production-faithful token/latency evidence. Wall-clock timing on attempts uses `inference_health.timing.inference_wall_clock_ms` with measurement label `substrate_runEphemeralInference_idle_boundary` (substrate idle wait — not phase latency or retry-chain latency).
+
+**Drift protection:** `v2/rp_runtime/tests/llm-call-catalog-consistency.test.mjs` plus catalog generator parity check the registry against executable policy and the committed JSON view.
+
+---
+
 ## Related
 
 - [rp-data-layout.md](./rp-data-layout.md) — on-disk data

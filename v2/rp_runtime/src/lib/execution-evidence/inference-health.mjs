@@ -261,6 +261,7 @@ export function buildInferenceHealth({
   correlation = null,
   decision = null,
   existingHealth = null,
+  inferenceWallClockMs = null,
 }) {
   const configuredFromProfile = resolveConfiguredMaxTokens(profile);
   const configuredFromRequest = resolveConfiguredMaxTokens(requestProfile);
@@ -325,6 +326,8 @@ export function buildInferenceHealth({
   return {
     schema: INFERENCE_HEALTH_SCHEMA,
     configured_max_tokens,
+    characterization_mode: evidenceContext?.characterizationMode === true
+      || correlation?.characterization_mode === true,
     usage,
     utilization,
     finish_kind_raw,
@@ -335,6 +338,12 @@ export function buildInferenceHealth({
     structural_valid,
     structural_error,
     recovery,
+    timing: Number.isFinite(Number(inferenceWallClockMs)) && Number(inferenceWallClockMs) >= 0
+      ? {
+        inference_wall_clock_ms: Number(inferenceWallClockMs),
+        measurement: 'substrate_runEphemeralInference_idle_boundary',
+      }
+      : existingHealth?.timing ?? null,
   };
 }
 

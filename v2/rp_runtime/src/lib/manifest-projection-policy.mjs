@@ -177,6 +177,8 @@ export const ALLOWED_SOURCE_KINDS = {
   character_advisory_generation: PLOT_COGNITION_EPISTEMIC,
 };
 
+export const INFERENCE_KINDS = Object.freeze(Object.keys(ALLOWED_SOURCE_KINDS).sort());
+
 const INFERENCE_KIND_ALIASES = {
   director_decision: 'director_turn',
   character_move: 'character_turn',

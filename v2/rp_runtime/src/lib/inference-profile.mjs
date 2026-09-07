@@ -71,7 +71,7 @@ export function agentOptionsFromProfile(profile) {
   if (profile.temperature !== undefined) {
     options.temperature = profile.temperature;
   }
-  if (profile.maxTokens !== undefined) {
+  if (profile.maxTokens !== undefined && profile.maxTokens !== null) {
     options.maxTokens = profile.maxTokens;
   }
   return options;

@@ -68,12 +68,47 @@ export const DEFAULT_RUNTIME_SETTINGS = {
 function calibrationModeEnabled(settings = {}, options = {}) {
   const flag = settings.inferenceCalibration ?? settings.inference_calibration
     ?? options.inferenceCalibration;
+  if (flag === false || flag === '0') return false;
   if (flag === true || flag === '1') return true;
   return process.env.HG_INFERENCE_CALIBRATION === '1';
 }
 
+function characterizationModeEnabled(settings = {}, options = {}) {
+  const flag = settings.inferenceCharacterization ?? settings.inference_characterization
+    ?? options.inferenceCharacterization;
+  if (flag === false || flag === '0') return false;
+  if (flag === true || flag === '1') return true;
+  return process.env.HG_INFERENCE_CHARACTERIZATION === '1';
+}
+
+/** Calibration and characterization are mutually exclusive (#152). */
+export function assertMutuallyExclusiveInferenceModes(settings = {}, options = {}) {
+  if (calibrationModeEnabled(settings, options) && characterizationModeEnabled(settings, options)) {
+    throw new Error(
+      'HG_INFERENCE_CALIBRATION and HG_INFERENCE_CHARACTERIZATION cannot both be active',
+    );
+  }
+}
+
+export function isCharacterizationModeEnabled(settings = {}, options = {}) {
+  assertMutuallyExclusiveInferenceModes(settings, options);
+  return characterizationModeEnabled(settings, options);
+}
+
+export function isCalibrationModeEnabled(settings = {}, options = {}) {
+  assertMutuallyExclusiveInferenceModes(settings, options);
+  return calibrationModeEnabled(settings, options);
+}
+
+/** Remove Holy-Grail application maxTokens while preserving other profile fields. */
+export function stripApplicationMaxTokens(profile) {
+  if (!profile || typeof profile !== 'object') return profile;
+  const { maxTokens: _removed, max_tokens: _legacy, ...rest } = profile;
+  return rest;
+}
+
 /** Per-role reasoning: internal defaults; optional API global override for director/character only. */
-function resolveReasoningEffortForRole(role, settings = {}) {
+export function resolveReasoningEffortForRole(role, settings = {}) {
   const advanced = settings.roleRouting === 'advanced' && settings.roleProfiles?.[role];
   if (advanced?.reasoningEffort != null && String(advanced.reasoningEffort).trim() !== '') {
     return advanced.reasoningEffort;
@@ -90,6 +125,10 @@ function resolveReasoningEffortForRole(role, settings = {}) {
 }
 
 export function tokenCeilingForRole(role, settings = {}, options = {}) {
+  assertMutuallyExclusiveInferenceModes(settings, options);
+  if (characterizationModeEnabled(settings, options)) {
+    return null;
+  }
   if (calibrationModeEnabled(settings, options)) {
     return DIAGNOSTIC_TOKEN_CEILING;
   }
@@ -107,6 +146,10 @@ export function tokenCeilingForRole(role, settings = {}, options = {}) {
 }
 
 export function tokenCeilingForInferenceKind(inferenceKind, settings = {}, options = {}) {
+  assertMutuallyExclusiveInferenceModes(settings, options);
+  if (characterizationModeEnabled(settings, options)) {
+    return null;
+  }
   if (calibrationModeEnabled(settings, options)) {
     return DIAGNOSTIC_TOKEN_CEILING;
   }
@@ -118,6 +161,14 @@ export function tokenCeilingForInferenceKind(inferenceKind, settings = {}, optio
 export function modelProfileForInferenceKind(modelProfile, inferenceKind, settings = {}, options = {}) {
   if (!modelProfile || !inferenceKind || modelProfile.kind === 'mock') {
     return modelProfile;
+  }
+  assertMutuallyExclusiveInferenceModes(settings, options);
+  if (characterizationModeEnabled(settings, options)) {
+    const reasoningOverride = PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES[inferenceKind];
+    return stripApplicationMaxTokens({
+      ...modelProfile,
+      ...(reasoningOverride !== undefined ? { reasoningEffort: reasoningOverride } : {}),
+    });
   }
   if (UNCAPPED_INFERENCE_KINDS.has(inferenceKind)) {
     const reasoningOverride = PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES[inferenceKind];
@@ -146,16 +197,17 @@ function liveProfileForRole(role, settings = {}, options = {}) {
       ...deepseekInferenceProfile({
         model: advanced.model ?? settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
         reasoningEffort: resolveReasoningEffortForRole(role, settings),
-        maxTokens: advanced.maxTokens ?? tokenCeilingForRole(role, settings, options),
+        maxTokens: advanced.maxTokens ?? tokenCeilingForRole(role, settings, options) ?? undefined,
       }),
       ...advanced,
       kind: advanced.kind ?? 'dsh',
     };
   }
+  const ceiling = tokenCeilingForRole(role, settings, options);
   return deepseekInferenceProfile({
     model: settings.model ?? HG_DEEPSEEK_DEFAULT_MODEL,
     reasoningEffort: resolveReasoningEffortForRole(role, settings),
-    maxTokens: tokenCeilingForRole(role, settings, options),
+    ...(Number.isFinite(ceiling) ? { maxTokens: ceiling } : {}),
   });
 }
 
@@ -251,6 +303,7 @@ export function buildInferenceOptions(settings = {}, options = {}) {
     model: runtime.model,
     roleRouting: runtime.roleRouting,
     inferenceCalibration: calibrationModeEnabled(runtime, options),
+    inferenceCharacterization: characterizationModeEnabled(runtime, options),
   };
 }
 

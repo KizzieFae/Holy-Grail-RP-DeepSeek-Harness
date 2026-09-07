@@ -1,6 +1,12 @@
+import { performance } from 'node:perf_hooks';
+
 import { createUserMessage } from '@deepseek-ai/dsh-llm';
 import { SessionId } from '@deepseek-ai/dsh-session';
 
+import {
+  isCharacterizationModeEnabled,
+  stripApplicationMaxTokens,
+} from '../../application/application-settings.mjs';
 import { createExecutionEvidenceRecorder } from '../../lib/execution-evidence/recorder.mjs';
 import {
   agentOptionsFromProfile,
@@ -10,6 +16,27 @@ import { extractInferenceTrace } from '../../lib/inference-trace.mjs';
 import { waitForIdle } from '../../lib/inference-utils.mjs';
 import { HgMockLlmAdapter } from '../../mock-llm-adapter.mjs';
 import { validateBridgeManifest } from '../../lib/manifest-validation.mjs';
+
+function resolveCharacterizationActive(inferenceConfig = {}) {
+  return isCharacterizationModeEnabled(
+    inferenceConfig.settings ?? {},
+    {
+      inferenceCharacterization: inferenceConfig.inferenceCharacterization,
+      inferenceCalibration: inferenceConfig.inferenceCalibration,
+    },
+  );
+}
+
+function prepareProfileForInference(profile, characterizationActive) {
+  if (!characterizationActive) return profile;
+  const stripped = stripApplicationMaxTokens(profile);
+  if (stripped?.maxTokens !== undefined || stripped?.max_tokens !== undefined) {
+    throw new Error(
+      'characterization mode: Holy-Grail maxTokens must not reach inference substrate',
+    );
+  }
+  return stripped;
+}
 
 /**
  * Shared ephemeral inference substrate for all RP phase executors.
@@ -29,29 +56,49 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     modelProfile,
     evidenceContext = null,
   }) {
-    const profile = resolveInferenceProfile(inferenceConfig, modelProfile);
-    const agentOpts = agentOptionsFromProfile(profile);
+    const characterizationActive = resolveCharacterizationActive(inferenceConfig);
+    const resolvedProfile = prepareProfileForInference(
+      resolveInferenceProfile(inferenceConfig, modelProfile),
+      characterizationActive,
+    );
+    const agentOpts = agentOptionsFromProfile(resolvedProfile);
+    if (characterizationActive && agentOpts.maxTokens !== undefined) {
+      throw new Error(
+        'characterization mode: agent options must not include Holy-Grail maxTokens',
+      );
+    }
+    const resolvedEvidenceContext = {
+      ...(evidenceContext ?? {}),
+      characterizationMode: characterizationActive,
+      inferenceKind: evidenceContext?.inferenceKind
+        ?? manifest?.inference_kind
+        ?? null,
+    };
     validateBridgeManifest({
       manifest,
-      inferenceKind: evidenceContext?.inferenceKind ?? null,
+      inferenceKind: resolvedEvidenceContext.inferenceKind ?? null,
     });
     let disposeAdapter = () => {};
     let disposeRequestHook = () => {};
 
-    if (profile.kind === 'mock') {
+    if (resolvedProfile.kind === 'mock') {
       const adapter = new HgMockLlmAdapter(
         mockResponses.length ? mockResponses : ['{}'],
       );
-      disposeAdapter = ctx.llm.registerAdapter([profile.provider], adapter);
+      disposeAdapter = ctx.llm.registerAdapter([resolvedProfile.provider], adapter);
+    }
+
+    const agentCreateOptions = {
+      provider: agentOpts.provider,
+      model: agentOpts.model,
+    };
+    if (agentOpts.maxTokens !== undefined) {
+      agentCreateOptions.maxTokens = agentOpts.maxTokens;
     }
 
     const agent = ctx.agentLoop.create(
       SessionId(`hg-inf-${inferenceId}`),
-      {
-        provider: agentOpts.provider,
-        model: agentOpts.model,
-        maxTokens: agentOpts.maxTokens,
-      },
+      agentCreateOptions,
     );
     if (agentOpts.reasoningEffort !== undefined) {
       disposeRequestHook = agent.ctx.on('agent/request', async (_payload, next) => {
@@ -65,7 +112,7 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     const contextRegistration = ctx.hgContextBridge.registerManifest({
       agent,
       manifest,
-      inferenceKind: evidenceContext?.inferenceKind ?? null,
+      inferenceKind: resolvedEvidenceContext.inferenceKind ?? null,
     });
     agent.followup(
       createUserMessage({
@@ -73,25 +120,28 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
         source: { kind: 'user' },
       }),
     );
+    const inferenceStartedAt = performance.now();
     await waitForIdle(ctx, agent);
+    const inferenceWallClockMs = performance.now() - inferenceStartedAt;
 
     const trace = extractInferenceTrace(agent.session.events, {
-      provider: profile.provider,
-      model: profile.model,
-      reasoningEffort: profile.reasoningEffort ?? null,
+      provider: resolvedProfile.provider,
+      model: resolvedProfile.model,
+      reasoningEffort: resolvedProfile.reasoningEffort ?? null,
       manifestId: contextRegistration.manifestId,
       contributionIds: contextRegistration.contributionIds,
     });
     const raw = trace.assistant_text;
     const evidenceId = recorder.recordInferenceAttempt({
-      evidenceContext,
+      evidenceContext: resolvedEvidenceContext,
       manifest,
       contextRegistration,
       prompt,
-      profile,
+      profile: resolvedProfile,
       trace,
       assistantText: raw,
       inferenceSessionId: String(agent.id),
+      inferenceWallClockMs,
     });
     contextRegistration.dispose();
     disposeRequestHook();
@@ -105,6 +155,8 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
       failure: trace.failure,
       inferenceSessionEvents: [...agent.session.events],
       evidenceId,
+      inferenceWallClockMs,
+      characterizationMode: characterizationActive,
     };
   }
 
