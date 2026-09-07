@@ -3,7 +3,7 @@
 **Date:** 2026-09-07  
 **Issue:** [#144](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/144)  
 **PR:** [#145](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/pull/145)  
-**Phase:** `validated` (combined #144+#146 formal validation 2026-09-07; integration authorization pending)  
+**Phase:** `closed` (PR #145 integrated to `main` 2026-09-07)  
 **Assigned workflow weight:** `standard`  
 **Effective workflow weight:** `full`  
 **Bootstrap profile:** Full  
@@ -19,11 +19,11 @@
 | Field | Value |
 |-------|-------|
 | Issue state | OPEN |
-| Current status | `validated` |
-| Project Status | In Progress |
-| Project Workflow | Validating |
+| Current status | `closed` |
+| Project Status | Done |
+| Project Workflow | Done |
 | Priority | P3 |
-| Merge / closure | NOT authorized (awaiting Governance PR #145 → `main` authorization) |
+| Merge / closure | PR #145 merged to `main` @ `77252e3`; Issue closed 2026-09-07 |
 
 ---
 
@@ -280,14 +280,42 @@ Production behavior anchors: orientation **`14a1f7a`**, assessment **`b93eeed`**
 
 ---
 
-## Remaining obligations
+## Integration to `main` (2026-09-07)
 
-1. Governance **integration/merge authorization** for PR #145 → `main`
-2. After `main` integration: #136 Storyteller-bound G2 rerun (separate tract)
-3. Optional Greptile when credits available (non-blocking)
+| Role | SHA |
+|------|-----|
+| Pre-merge `main` | `51e1b74` |
+| PR #145 head | `549d24a` |
+| Orientation production anchor | `14a1f7a` |
+| Assessment production anchor | `b93eeed` |
+| Merge commit / resulting `main` | `77252e3` |
+| Merge method | GitHub merge commit |
+
+**Base drift:** NONE (`origin/main` unchanged at `51e1b74` pre-merge).
+
+### Post-merge deterministic validation (`main` @ `77252e3`)
+
+| Command | Result |
+|---------|--------|
+| `pytest` (#144 + #146 + finalize_transport + s3a) | 51 passed |
+| `node --test` (instruction-ownership + round-integration) | 6 passed |
+
+**Total:** 57/57 passed. No live sentinel rerun.
 
 ---
 
-## Recommendation
+## Closure disposition
 
-**#144 combined formal validation PASS.** PR #145 ready for Governance integration authorization to `main`. **Do not merge** until explicitly authorized.
+- Issue #144: `validated` → `closed` (2026-09-07)
+- PR #145: **MERGED** to `main`
+- Issue #146: remains **CLOSED** (stacked assessment repair integrated via #145)
+- Greptile: NOT COMPLETED / optional / non-blocking (unchanged)
+
+## #136 handoff
+
+Integrated `main` SHA for Storyteller-bound G2 resume: **`77252e3`**
+
+## Remaining obligations (post-#144)
+
+1. #136 Storyteller-bound G2 rerun on `main` @ `77252e3` (separate Governance tract)
+2. Optional Greptile when credits available (non-blocking)
