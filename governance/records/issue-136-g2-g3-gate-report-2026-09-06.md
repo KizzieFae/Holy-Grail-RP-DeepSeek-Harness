@@ -92,5 +92,5 @@ Later Greptile request on `b8c4ed5` hit trial credit limit; docs-only drift clas
 - G3 Character stability gate: **interpretable/pass**
 - #142 transport blocker: **resolved**
 - Full Tier-2 semantic campaign: **NOT authorized**
-- Remaining blocker: Storyteller orientation `schema_mismatch` → `bound=false`
+- Remaining blocker: Storyteller orientation `schema_mismatch` → `bound=false` — tracked as [#144](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/144)
 - Next #136 step after blocker resolution: rerun **Storyteller-bound G2**, then return to Governance for G4 campaign authorization
