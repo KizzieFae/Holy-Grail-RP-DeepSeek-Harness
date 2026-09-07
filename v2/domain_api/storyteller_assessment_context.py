@@ -5,6 +5,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from storyteller_assessment_response_contract import (  # noqa: E402
+    project_storyteller_assessment_response_contract_text,
+    storyteller_assessment_response_contract_provenance,
+)
+
 from .contract import PromptContribution
 from .librarian_contract import LibrarianKnowledgeBundle
 from .storyteller_contract import StorytellerOrientationAssessment
@@ -134,6 +139,7 @@ def build_storyteller_assessment_context(
         "breadth_preference": orientation.breadth_preference,
     }
 
+    contract_provenance = storyteller_assessment_response_contract_provenance()
     contributions = (
         PromptContribution(
             contribution_id=f"{manifest}:storyteller_orientation_summary",
@@ -146,6 +152,19 @@ def build_storyteller_assessment_context(
                 + json.dumps(orientation_summary, ensure_ascii=False, indent=2)
             ),
             provenance={"projection_kind": "storyteller_orientation_summary"},
+        ),
+        PromptContribution(
+            contribution_id=f"{manifest}:storyteller_assessment_response_contract",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(),
+            priority=28,
+            content=project_storyteller_assessment_response_contract_text(),
+            provenance={
+                "projection_kind": "storyteller_assessment_response_contract",
+                "contract": STORYTELLER_ASSESSMENT_CONTRACT,
+                **contract_provenance,
+            },
         ),
         PromptContribution(
             contribution_id=f"{manifest}:librarian_bundle_digest",

@@ -12,6 +12,10 @@ from .director_context_digests import (
     project_user_turn_source_and_hints,
 )
 from .session_state import LiveSession, RoundFixture
+from storyteller_orientation_response_contract import (  # noqa: E402
+    project_storyteller_orientation_response_contract_text,
+    storyteller_orientation_response_contract_provenance,
+)
 
 
 STORYTELLER_ORIENTATION_CONTRACT = "storyteller_orientation_v1"
@@ -77,6 +81,23 @@ def build_storyteller_orientation_context(
             provenance={
                 "projection_kind": "storyteller_orientation_scene_snapshot",
                 "contract": STORYTELLER_ORIENTATION_CONTRACT,
+            },
+        )
+    )
+
+    contract_provenance = storyteller_orientation_response_contract_provenance()
+    contributions.append(
+        PromptContribution(
+            contribution_id=f"{manifest}:storyteller_orientation_response_contract",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(),
+            priority=28,
+            content=project_storyteller_orientation_response_contract_text(),
+            provenance={
+                "projection_kind": "storyteller_orientation_response_contract",
+                "contract": STORYTELLER_ORIENTATION_CONTRACT,
+                **contract_provenance,
             },
         )
     )

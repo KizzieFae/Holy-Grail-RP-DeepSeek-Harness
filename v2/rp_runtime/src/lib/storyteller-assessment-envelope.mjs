@@ -1,6 +1,7 @@
 import { parseJsonObject } from './inference-utils.mjs';
 import { bridgeManifestFromHostPrepare } from './bridge-manifest.mjs';
 
+/** Test/mock compatibility only — canonical authority is Host `storyteller_assessment_response_contract`. */
 export const STORYTELLER_ASSESSMENT_SCHEMA = 'hg_storyteller_assessment_v1';
 
 const PROHIBITED = new Set([
@@ -37,18 +38,6 @@ function findProhibited(value, path = '') {
   return hits;
 }
 
-export function buildStorytellerAssessmentPrompt({
-  schema = STORYTELLER_ASSESSMENT_SCHEMA,
-} = {}) {
-  return [
-    'You are the Holy Grail Storyteller informed narrative assessment phase.',
-    'Given the Librarian bundle digest, assess what is narratively significant now.',
-    'Use opportunity framing — not mandates. Cite evidence_refs from bundle entries or authoritative refs.',
-    'Do NOT prescribe actor selection, dialogue, narration, structured moves, or continuity mutations.',
-    `Return ONLY one JSON object matching schema ${schema}.`,
-  ].join('\n');
-}
-
 export function manifestFromStorytellerAssessmentPrepareResponse(prepareResponse) {
   return bridgeManifestFromHostPrepare(
     prepareResponse,
@@ -56,6 +45,7 @@ export function manifestFromStorytellerAssessmentPrepareResponse(prepareResponse
   );
 }
 
+/** Test-compat mirror of Host parse — not used on production hot path (#146). */
 export function parseStorytellerAssessment(raw) {
   let parsed;
   try {
