@@ -6,6 +6,8 @@ export const LIVE_INFERENCE_TRANSPORT_PROMPT =
 
 export const LIVE_STORYTELLER_ORIENTATION_PROMPT = LIVE_INFERENCE_TRANSPORT_PROMPT;
 
+export const LIVE_STORYTELLER_ASSESSMENT_PROMPT = LIVE_INFERENCE_TRANSPORT_PROMPT;
+
 export const LIVE_DIRECTOR_PROMPT = [
   'Respond with ONLY one JSON object. No markdown, no commentary.',
   'Required keys: next_actor (string), end_round (boolean), reason (string),',
