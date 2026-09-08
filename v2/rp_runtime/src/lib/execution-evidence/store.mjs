@@ -62,6 +62,17 @@ function emptyPlotCognitionIndex() {
   };
 }
 
+function emptyTimingIndex() {
+  return {
+    by_operation: {},
+    by_round: {},
+  };
+}
+
+function emptyRoundActivityIndex() {
+  return {};
+}
+
 function emptyIndex(hgSessionId) {
   return {
     schema: INDEX_SCHEMA,
@@ -73,6 +84,8 @@ function emptyIndex(hgSessionId) {
     ni: emptyNiIndex(),
     plot_cognition: emptyPlotCognitionIndex(),
     inference_health: emptyInferenceHealthIndex(),
+    timing: emptyTimingIndex(),
+    round_activity: emptyRoundActivityIndex(),
   };
 }
 
@@ -147,7 +160,7 @@ export class ExecutionEvidenceStore {
     }
     delete payload.semantic_qa;
     writeJsonAtomic(this.attemptPath(hgSessionId, evidenceId), payload);
-    this._indexAttempt(hgSessionId, evidenceId, attempt.correlation);
+    this._indexAttempt(hgSessionId, evidenceId, attempt.correlation, null, attempt);
     if (attempt.correlation?.role === 'participation') {
       this._indexParticipation(hgSessionId, evidenceId, attempt.correlation);
     }
@@ -173,6 +186,10 @@ export class ExecutionEvidenceStore {
     const next = {
       ...current,
       ...patch,
+      correlation: {
+        ...(current.correlation ?? {}),
+        ...(patch.correlation ?? {}),
+      },
       decision: mergeDecision(current.decision, patch.decision),
       associations: {
         ...(current.associations ?? {}),
@@ -181,11 +198,21 @@ export class ExecutionEvidenceStore {
       updated_at: new Date().toISOString(),
     };
     delete next.semantic_qa;
+    const preservedTiming = current.inference_health?.timing ?? null;
     if (next.request || next.response) {
       next.inference_health = deriveInferenceHealthFromAttempt({
         ...next,
         inference_health: patch.inference_health ?? current.inference_health ?? null,
       });
+      if (preservedTiming) {
+        next.inference_health = {
+          ...(next.inference_health ?? {}),
+          timing: preservedTiming,
+        };
+      }
+    }
+    if (next.execution && current.execution) {
+      next.execution = current.execution;
     }
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
@@ -278,7 +305,7 @@ export class ExecutionEvidenceStore {
     writeJsonAtomic(indexPath, current);
   }
 
-  _indexAttempt(hgSessionId, evidenceId, correlation, indexOverride = null) {
+  _indexAttempt(hgSessionId, evidenceId, correlation, indexOverride = null, attempt = null) {
     const indexPath = this.indexPath(hgSessionId);
     const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
     if (!current.semantic) {
@@ -290,6 +317,12 @@ export class ExecutionEvidenceStore {
     if (!current.inference_health) {
       current.inference_health = emptyInferenceHealthIndex();
     }
+    if (!current.timing) {
+      current.timing = emptyTimingIndex();
+    }
+    if (!current.round_activity) {
+      current.round_activity = emptyRoundActivityIndex();
+    }
     if (!current.attempt_ids.includes(evidenceId)) {
       current.attempt_ids.push(evidenceId);
     }
@@ -300,10 +333,105 @@ export class ExecutionEvidenceStore {
       roundAttempts.add(evidenceId);
       current.rounds[key] = [...roundAttempts];
     }
+    if (attempt) {
+      this._indexTimingAndActivity(hgSessionId, evidenceId, attempt, current);
+    }
     current.updated_at = new Date().toISOString();
     if (!indexOverride) {
       writeJsonAtomic(indexPath, current);
     }
+  }
+
+  _indexTimingAndActivity(_hgSessionId, evidenceId, attempt, current) {
+    const correlation = attempt?.correlation ?? {};
+    const operationId = correlation.operation_id ?? attempt.associations?.operation_id ?? null;
+    const roundId = correlation.hg_round_id ?? attempt.associations?.hg_round_id ?? null;
+    const role = correlation.role ?? null;
+
+    if (operationId) {
+      const opKey = String(operationId);
+      const opBucket = new Set(current.timing.by_operation[opKey] ?? []);
+      opBucket.add(evidenceId);
+      current.timing.by_operation[opKey] = [...opBucket];
+    }
+    if (roundId) {
+      const roundKey = String(roundId);
+      const roundBucket = new Set(current.timing.by_round[roundKey] ?? []);
+      roundBucket.add(evidenceId);
+      current.timing.by_round[roundKey] = [...roundBucket];
+
+      const activity = current.round_activity[roundKey] ?? {
+        evidence_ids: [],
+        roles: {},
+        inference_kinds: {},
+        participation_evidence_ids: [],
+        total_tokens: 0,
+      };
+      this._pushUnique(activity.evidence_ids, evidenceId);
+      if (role && role !== 'execution_span' && role !== 'application_lifecycle') {
+        const roleEntry = activity.roles[role] ?? { count: 0, evidence_ids: [] };
+        roleEntry.count += 1;
+        this._pushUnique(roleEntry.evidence_ids, evidenceId);
+        activity.roles[role] = roleEntry;
+      }
+      const kind = correlation.inference_kind;
+      if (kind) {
+        const kindEntry = activity.inference_kinds[kind] ?? { count: 0, evidence_ids: [], total_tokens: 0 };
+        kindEntry.count += 1;
+        this._pushUnique(kindEntry.evidence_ids, evidenceId);
+        const tokens = Number(attempt.inference_health?.usage?.total_tokens);
+        if (Number.isFinite(tokens)) {
+          kindEntry.total_tokens += tokens;
+          activity.total_tokens = Number(activity.total_tokens ?? 0) + tokens;
+        }
+        activity.inference_kinds[kind] = kindEntry;
+      }
+      if (role === 'participation') {
+        this._pushUnique(activity.participation_evidence_ids, evidenceId);
+      }
+      current.round_activity[roundKey] = activity;
+    }
+  }
+
+  patchOperationRoundAssociation(hgSessionId, operationId, hgRoundId) {
+    if (!hgSessionId || !operationId || !hgRoundId) return;
+    const attemptsDir = path.join(this.sessionDir(hgSessionId), 'attempts');
+    if (!fs.existsSync(attemptsDir)) return;
+    for (const fileName of fs.readdirSync(attemptsDir)) {
+      if (!fileName.endsWith('.json')) continue;
+      const filePath = path.join(attemptsDir, fileName);
+      const current = readJsonIfExists(filePath);
+      if (!current) continue;
+      const matchesOperation = String(current.correlation?.operation_id ?? '') === String(operationId)
+        || String(current.associations?.operation_id ?? '') === String(operationId)
+        || String(current.decision?.operation_id ?? '') === String(operationId);
+      if (!matchesOperation) continue;
+      if (current.correlation?.hg_round_id === hgRoundId) continue;
+      const nextCorrelation = {
+        ...(current.correlation ?? {}),
+        hg_round_id: hgRoundId,
+      };
+      const nextAssociations = {
+        ...(current.associations ?? {}),
+        hg_round_id: hgRoundId,
+      };
+      const nextDecision = current.decision && typeof current.decision === 'object'
+        ? { ...current.decision, hg_round_id: hgRoundId }
+        : current.decision;
+      this.patchAttempt(hgSessionId, current.evidence_id, {
+        correlation: nextCorrelation,
+        associations: nextAssociations,
+        decision: nextDecision,
+      });
+    }
+    const index = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
+    for (const evidenceId of index.attempt_ids ?? []) {
+      const attempt = this.readAttempt(hgSessionId, evidenceId);
+      if (!attempt) continue;
+      this._indexTimingAndActivity(hgSessionId, evidenceId, attempt, index);
+    }
+    index.updated_at = new Date().toISOString();
+    writeJsonAtomic(this.indexPath(hgSessionId), index);
   }
 
   _indexParticipation(hgSessionId, evidenceId, correlation, indexOverride = null) {

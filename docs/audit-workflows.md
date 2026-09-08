@@ -188,6 +188,8 @@ For post-hoc model/orchestration reconstruction:
 
 CLI helper: `python tools/investigation/list_execution_evidence.py <hg_session_id>`
 
+**Round latency reconstruction (#158):** `python tools/investigation/reconstruct_round_latency.py <hg_session_id> [--operation <operation_id>]` rebuilds Player-operation elapsed time, authoritative inference timings (`dsh_session_turn_boundary`), non-LLM execution spans, and token rollups from durable evidence. Use DSH turn event times and span `execution.*` fields for ordering — not evidence write order (`recorded_at`). Unattributed remainder is a valid analytical output.
+
 **Causal-chain investigation (#28):** Prefer role workflow flags over raw index topology:
 
 | Path | CLI starting point |

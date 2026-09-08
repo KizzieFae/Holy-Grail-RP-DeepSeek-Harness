@@ -1,5 +1,9 @@
 export function waitForIdle(ctx, agent) {
   return new Promise((resolve) => {
+    if (agent?.status === 'idle') {
+      resolve();
+      return;
+    }
     const dispose = ctx.on('agent/status', ({ agent: subject, status }) => {
       if (subject === agent && status === 'idle') {
         dispose();
