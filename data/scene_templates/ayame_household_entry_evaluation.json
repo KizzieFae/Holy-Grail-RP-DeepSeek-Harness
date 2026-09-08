@@ -11,6 +11,21 @@
     "evaluation_room",
     "private_quarters"
   ],
+  "perceptual_scene_context": {
+    "schema_version": 1,
+    "character_zones_by_role": {
+      "applicant": "exterior_threshold",
+      "host": "interior_entry"
+    },
+    "portals": {
+      "main_entrance_door": {
+        "state": "closed",
+        "opacity": "opaque",
+        "acoustic": "ordinary",
+        "connects": ["exterior_threshold", "interior_entry"]
+      }
+    }
+  },
   "role_slots": [
     {
       "role_name": "host",

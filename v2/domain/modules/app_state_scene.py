@@ -342,6 +342,16 @@ def apply_scene_setup_to_scene_state(
         for item in scene_setup.get("location_entry_slots", [])
         if str(item or "").strip()
     ]
+    perceptual_context = scene_setup.get("perceptual_scene_context")
+    if isinstance(perceptual_context, dict) and perceptual_context:
+        from perceptual_scene_context import resolve_template_perceptual_scene_context
+
+        resolved = resolve_template_perceptual_scene_context(
+            perceptual_context,
+            role_assignments=dict(scene_state.role_assignments or {}),
+        )
+        if resolved:
+            scene_state.perceptual_scene_context = resolved
     if continuity_manager is not None and continuity_manager.scene_state is scene_state:
         continuity_manager.apply_must_remain_presence_from_fn(
             get_must_remain_characters_fn

@@ -25,10 +25,12 @@ from perception_audibility_visibility import (
     character_in_recipient_scope,
     resolve_recipient_scope,
 )
+from perceptual_scene_context import PerceptualSceneContextV1
 from player_entitlement_authority import extract_entitlement_authority_snapshot
+from viewer_perceptual_entitlement import ViewerPerceptualEntitlementDecision, evaluate_viewer_perceptual_entitlement
 
 PERCEPTUAL_PROJECTOR_ID = "hg.perceptual_visibility.v1"
-PERCEPTUAL_PROJECTOR_VERSION = 1
+PERCEPTUAL_PROJECTOR_VERSION = 2
 
 
 @dataclass
@@ -48,6 +50,7 @@ class PerceptualVisibilityAssemblyResult:
     legacy_metadata_key: str | None = None
     projector_id: str = PERCEPTUAL_PROJECTOR_ID
     projector_version: int = PERCEPTUAL_PROJECTOR_VERSION
+    unit_entitlement_decisions: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _unit_eligible_for_viewer(
@@ -108,12 +111,15 @@ def assemble_perceptual_visibility_for_viewer(
     legacy_metadata_key: str | None = None,
     acting_character: str | None = None,
     entitlement_authority_snapshot: dict[str, Any] | None = None,
+    perceptual_scene_context: PerceptualSceneContextV1 | None = None,
+    player_character: str | None = None,
 ) -> PerceptualVisibilityAssemblyResult:
     included: list[str] = []
     excluded: list[str] = []
     reasons: dict[str, str] = {}
     narrowed: list[str] = []
     fragments: list[str] = []
+    entitlement_audit: list[dict[str, Any]] = []
 
     degraded_path: str | None = None
     if record.validation_status == "invalid_fallback_structured":
@@ -137,6 +143,7 @@ def assemble_perceptual_visibility_for_viewer(
             validation_profile=record.validation_profile,
             historical_normalization=historical_normalization,
             legacy_metadata_key=legacy_metadata_key,
+            unit_entitlement_decisions=entitlement_audit,
         )
 
     role_assignments: dict[str, str] | None = None
@@ -156,6 +163,7 @@ def assemble_perceptual_visibility_for_viewer(
                 validation_profile=record.validation_profile,
                 historical_normalization=historical_normalization,
                 legacy_metadata_key=legacy_metadata_key,
+                unit_entitlement_decisions=entitlement_audit,
             )
         role_assignments = dict(entitlement_authority_snapshot.get("role_assignments") or {})
         session_cast = list(entitlement_authority_snapshot.get("session_cast") or [])
@@ -206,6 +214,34 @@ def assemble_perceptual_visibility_for_viewer(
                 narrowed.append(unit.unit_id)
                 continue
 
+        if record.source_kind == PLAYER_SOURCE_KIND:
+            decisions = evaluate_viewer_perceptual_entitlement(
+                unit,
+                viewer_character=viewer_character,
+                recipient_allowed=True,
+                scene_context=perceptual_scene_context,
+                player_character=player_character,
+            )
+            unit_included = False
+            for decision in decisions:
+                entitlement_audit.append(decision.to_dict())
+                segment_key = (
+                    f"{unit.unit_id}:{decision.segment_index}"
+                    if decision.segment_index
+                    else unit.unit_id
+                )
+                if decision.projected:
+                    unit_included = True
+                    included.append(segment_key)
+                    fragments.append(decision.text.strip())
+                else:
+                    excluded.append(segment_key)
+                    reasons[segment_key] = decision.reason_code
+            if not unit_included:
+                excluded.append(unit.unit_id)
+                reasons.setdefault(unit.unit_id, "perceptual_entitlement_withheld")
+            continue
+
         included.append(unit.unit_id)
         fragments.append(unit.text.strip())
 
@@ -228,6 +264,7 @@ def assemble_perceptual_visibility_for_viewer(
         validation_profile=record.validation_profile,
         historical_normalization=historical_normalization,
         legacy_metadata_key=legacy_metadata_key,
+        unit_entitlement_decisions=entitlement_audit,
     )
 
 
@@ -239,6 +276,8 @@ def assemble_perceptual_history_entry_for_viewer(
     structured_move: dict[str, Any] | None = None,
     acting_character: str | None = None,
     source_kind: str = "unknown",
+    perceptual_scene_context: PerceptualSceneContextV1 | None = None,
+    player_character: str | None = None,
 ) -> PerceptualVisibilityAssemblyResult:
     entry_id = str(entry.get("entry_id", "") or "")
     metadata = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
@@ -307,6 +346,12 @@ def assemble_perceptual_history_entry_for_viewer(
                 source_kind=source_kind,
             )
 
+    resolved_player_character = player_character
+    if source_kind == PLAYER_SOURCE_KIND and not resolved_player_character:
+        resolved_player_character = (
+            str(entry.get("actor_id") or metadata.get("speaker") or "").strip() or None
+        )
+
     result = assemble_perceptual_visibility_for_viewer(
         record,
         viewer_character=viewer_character,
@@ -320,6 +365,8 @@ def assemble_perceptual_history_entry_for_viewer(
             if source_kind == PLAYER_SOURCE_KIND
             else None
         ),
+        perceptual_scene_context=perceptual_scene_context,
+        player_character=resolved_player_character,
     )
     if load_provenance.get("degraded_recovery"):
         result.degraded_path = "invalid_fallback_structured"
@@ -353,4 +400,6 @@ def build_perceptual_visibility_audit_metadata(
         audit["unit_ids"] = [unit.unit_id for unit in record.units]
         if record.recovery:
             audit["recovery"] = dict(record.recovery)
+    if result.unit_entitlement_decisions:
+        audit["unit_entitlement_decisions"] = list(result.unit_entitlement_decisions)
     return {"perceptual_visibility_projection": audit}

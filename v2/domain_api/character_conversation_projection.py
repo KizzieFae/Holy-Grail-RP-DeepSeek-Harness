@@ -23,8 +23,11 @@ from perceptual_visibility_legacy import perceptual_visibility_record_from_entry
 from perceptual_visibility_projection import (  # noqa: E402
     build_perceptual_visibility_audit_metadata,
 )
-from player_perceptual_projection import assemble_player_user_entry_for_viewer  # noqa: E402
-
+from .viewer_player_perception import (  # noqa: E402
+    assemble_viewer_player_perception_for_session,
+    resolve_perceptual_scene_context,
+    resolve_player_character_name,
+)
 from .session_history import (  # noqa: E402
     substantive_user_entry_for_trigger,
     project_history_to_character_context_chat,
@@ -94,12 +97,16 @@ def project_character_conversation_for_manifest(
         continuity_manager=fixture.manager,
         char_names=cast,
     )
+    scene_context = resolve_perceptual_scene_context(fixture)
+    player_character = resolve_player_character_name(fixture)
     transcript_chat = project_history_to_character_context_chat(
         history,
         character_id=character_id,
         character_names=cast,
         present_characters=present,
         get_character_display_name_fn=_character_display_name,
+        perceptual_scene_context=scene_context,
+        player_character=player_character,
     )
     recent_dialogue = build_recent_dialogue_history_for_viewer(
         chat_history=transcript_chat,
@@ -122,7 +129,8 @@ def project_character_conversation_for_manifest(
             or (latest_user.get("metadata") or {}).get("speaker")
             or "Player"
         )
-        assembly = assemble_player_user_entry_for_viewer(
+        assembly = assemble_viewer_player_perception_for_session(
+            fixture,
             latest_user,
             viewer_character=character_id,
             present_characters=present,

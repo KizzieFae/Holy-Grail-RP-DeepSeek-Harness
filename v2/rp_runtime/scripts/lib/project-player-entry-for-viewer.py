@@ -14,6 +14,7 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
+from perceptual_scene_context import PerceptualSceneContextV1  # noqa: E402
 from player_perceptual_projection import assemble_player_user_entry_for_viewer  # noqa: E402
 
 
@@ -34,7 +35,14 @@ def _serialize_result(result: Any) -> dict[str, Any]:
         "legacy_metadata_key": result.legacy_metadata_key,
         "projector_id": result.projector_id,
         "projector_version": result.projector_version,
+        "unit_entitlement_decisions": list(result.unit_entitlement_decisions),
     }
+
+
+def _parse_scene_context(raw: Any) -> PerceptualSceneContextV1 | None:
+    if not isinstance(raw, dict) or not raw:
+        return None
+    return PerceptualSceneContextV1.from_dict(raw)
 
 
 def main() -> None:
@@ -42,10 +50,17 @@ def main() -> None:
     entry = payload["entry"]
     viewer_character = str(payload["viewer_character"])
     present_characters = [str(name) for name in payload.get("present_characters") or []]
+    scene_context = _parse_scene_context(payload.get("perceptual_scene_context"))
+    player_character = payload.get("player_character")
+    player_character_name = (
+        str(player_character).strip() if player_character is not None else None
+    )
     result = assemble_player_user_entry_for_viewer(
         entry,
         viewer_character=viewer_character,
         present_characters=present_characters,
+        perceptual_scene_context=scene_context,
+        player_character=player_character_name,
     )
     json.dump(_serialize_result(result), sys.stdout)
 

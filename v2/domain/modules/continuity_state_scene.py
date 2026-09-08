@@ -93,9 +93,12 @@ class SceneState:
     current_tension_level: str = "low"  # 'low', 'moderate', 'high', 'extreme'
     recent_environment_events: list[str] = field(default_factory=list)
 
+    # Optional authoritative spatial/perceptual substrate (#155)
+    perceptual_scene_context: dict[str, Any] | None = None
+
     def to_dict(self) -> dict:
         """Serialize the scene state for persistence."""
-        return {
+        payload = {
             "location": self.location,
             "time_of_day": self.time_of_day,
             "environment_description": self.environment_description,
@@ -119,6 +122,9 @@ class SceneState:
             "current_tension_level": self.current_tension_level,
             "recent_environment_events": self.recent_environment_events,
         }
+        if isinstance(self.perceptual_scene_context, dict) and self.perceptual_scene_context:
+            payload["perceptual_scene_context"] = dict(self.perceptual_scene_context)
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict) -> "SceneState":
@@ -197,6 +203,11 @@ class SceneState:
             recent_environment_events=[
                 str(item) for item in data.get("recent_environment_events", [])
             ],
+            perceptual_scene_context=(
+                dict(data.get("perceptual_scene_context"))
+                if isinstance(data.get("perceptual_scene_context"), dict)
+                else None
+            ),
         )
 
 

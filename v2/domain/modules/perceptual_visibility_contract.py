@@ -61,6 +61,7 @@ class PerceptualVisibilityUnit:
     authority: dict[str, Any] | None = None
     source_provenance: dict[str, Any] = field(default_factory=dict)
     source: str = "narrator_generation"
+    perception_channel: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -70,6 +71,8 @@ class PerceptualVisibilityUnit:
             "recipients": dict(self.recipients),
             "source": self.source,
         }
+        if self.perception_channel:
+            payload["perception_channel"] = self.perception_channel
         if self.authority is not None:
             payload["authority"] = dict(self.authority)
         if self.source_provenance:
@@ -93,6 +96,12 @@ class PerceptualVisibilityUnit:
         beat_raw = data.get("beat_index")
         if beat_raw is not None and "beat_index" not in provenance:
             provenance["beat_index"] = int(beat_raw)
+        channel_raw = data.get("perception_channel")
+        perception_channel = (
+            str(channel_raw).strip()
+            if channel_raw is not None and str(channel_raw).strip()
+            else None
+        )
         return cls(
             unit_id=unit_id,
             kind=kind,
@@ -101,6 +110,7 @@ class PerceptualVisibilityUnit:
             authority=authority,
             source_provenance=provenance,
             source=str(data.get("source", "narrator_generation") or "narrator_generation"),
+            perception_channel=perception_channel,
         )
 
 

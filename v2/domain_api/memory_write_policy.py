@@ -28,9 +28,7 @@ from memory_layer.writes import (  # noqa: E402
     commit_user_message_memory,
     resolve_present_characters,
 )
-from player_perceptual_projection import assemble_player_user_entry_for_viewer  # noqa: E402
-
-from .session_state import LiveSession  # noqa: E402
+from .viewer_player_perception import assemble_viewer_player_perception_for_session  # noqa: E402
 
 
 def snapshot_character_states(
@@ -125,7 +123,8 @@ def apply_user_turn_memory(
         return
 
     for character_name in present:
-        assembly = assemble_player_user_entry_for_viewer(
+        assembly = assemble_viewer_player_perception_for_session(
+            fixture,
             user_entry,
             viewer_character=character_name,
             present_characters=present,

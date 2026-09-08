@@ -110,6 +110,8 @@ export async function projectPlayerUserTurnForAyame({
     entry,
     viewerCharacter,
     presentCharacters,
+    perceptualSceneContext: payload.perceptual_scene_context ?? null,
+    playerCharacter: payload.player_character ?? speaker,
   });
   return {
     entry,

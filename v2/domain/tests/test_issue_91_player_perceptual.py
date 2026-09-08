@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 
+from domain.tests.perceptual_test_helpers import co_present_zone_context
 from perceptual_visibility_contract import (
     METADATA_KEY,
     PLAYER_PERCEPT_UNAVAILABLE_MARKER,
@@ -249,6 +250,8 @@ class Issue91PlayerPerceptualTests(unittest.TestCase):
             viewer_character="Bob",
             present_characters=["Alice", "Bob"],
             source_kind="player",
+            perceptual_scene_context=co_present_zone_context(["Alice", "Bob"]),
+            player_character="Alice",
         )
         audit = build_perceptual_visibility_audit_metadata(assembly, record=record)[
             "perceptual_visibility_projection"
@@ -319,6 +322,9 @@ class Issue88MixedTurnRegressionTests(unittest.TestCase):
             )
         )
         fixture = kernel.store.require(scene_id)
+        cast = ["Harley", "Celina", "Ayame"]
+        shared_context = co_present_zone_context(cast, extra_characters=["Traveler"])
+        fixture.manager.scene_state.perceptual_scene_context = shared_context.to_dict()
 
         self.assertEqual(entry["content"], content)
 
@@ -353,8 +359,10 @@ class Issue88MixedTurnRegressionTests(unittest.TestCase):
         assembly = assemble_perceptual_history_entry_for_viewer(
             entry,
             viewer_character="Harley",
-            present_characters=["Harley", "Celina", "Ayame"],
+            present_characters=cast,
             source_kind="player",
+            perceptual_scene_context=shared_context,
+            player_character="Traveler",
         )
         self.assertIsNotNone(assembly.content)
         harley_text = str(assembly.content)

@@ -135,6 +135,7 @@ def _resolve_scene_setup(
         "sleeping_surface_slots": list(template.sleeping_surface_slots),
         "location_entry_slots": list(template.location_entry_slots),
         "role_private_knowledge": dict(template.role_private_knowledge),
+        "perceptual_scene_context": dict(template.perceptual_scene_context),
     }, ""
 
 

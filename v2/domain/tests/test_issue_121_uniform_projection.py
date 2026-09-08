@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 
+from domain.tests.perceptual_test_helpers import co_present_zone_context
 from perceptual_visibility_contract import PLAYER_SOURCE_KIND
 from perceptual_visibility_projection import (
     assemble_perceptual_history_entry_for_viewer,
@@ -53,12 +54,16 @@ class Issue121UniformProjectionTests(unittest.TestCase):
                 session_cast=["Ayame", "Harley", "Kizzie"],
             ),
         }
+        cast = ["Ayame", "Harley", "Kizzie"]
+        shared_context = co_present_zone_context(cast)
         for viewer in ("Ayame", "Harley"):
             assembly = assemble_perceptual_history_entry_for_viewer(
                 entry,
                 viewer_character=viewer,
-                present_characters=["Ayame", "Harley", "Kizzie"],
+                present_characters=cast,
                 source_kind=PLAYER_SOURCE_KIND,
+                perceptual_scene_context=shared_context,
+                player_character="Kizzie",
             )
             self.assertEqual(assembly.content, content)
             self.assertIn("u_uniform", assembly.included_unit_ids)

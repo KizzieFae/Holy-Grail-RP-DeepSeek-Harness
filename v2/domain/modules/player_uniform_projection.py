@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from perception_channel import infer_channel_from_text, text_has_mixed_perception_modalities
 from player_source_accounting import (
     SOURCE_ACCOUNTING_NORMALIZATION,
     normalize_source_for_indexing,
@@ -88,6 +89,13 @@ def build_uniform_projection_decomposition(
                         "order_index": 0,
                     },
                     "source": UNIFORM_PROJECTION_SYNTHESIS_SOURCE,
+                    **(
+                        {}
+                        if text_has_mixed_perception_modalities(normalized)
+                        else {
+                            "perception_channel": infer_channel_from_text(normalized).channel
+                        }
+                    ),
                 }
             ]
         },
