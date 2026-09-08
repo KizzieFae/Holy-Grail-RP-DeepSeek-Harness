@@ -387,6 +387,7 @@ class PlotCognitionUpdateService:
                 success=False,
                 code=code,
                 message="update proposal failed objective validation",
+                violations=validation.violations,
             )
 
         authority = build_assimilated_authority_from_snapshot(current_sources)
@@ -422,6 +423,7 @@ class PlotCognitionUpdateService:
                     success=False,
                     code=code,
                     message="replan proposal failed objective validation",
+                    violations=replan_validation.violations,
                 )
             materialized, materialize_validation = materialize_replan_overlay(
                 materialized,

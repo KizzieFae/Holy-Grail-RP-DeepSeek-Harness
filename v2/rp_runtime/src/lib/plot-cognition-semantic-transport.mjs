@@ -1,5 +1,17 @@
 export const PLANNING_HORIZONS = Object.freeze(['LONG', 'MEDIUM', 'SHORT']);
 
+export function plotCognitionApplicabilitySemanticsPromptLines() {
+  return [
+    'Applicability semantics (#58 / #162 — involved_character_ids is projection scope, not everyone mentioned in text):',
+    '- character: cognition owned by ONE Character. primary_character_id = owner; involved_character_ids = [owner] only.',
+    '  A character-specific goal ABOUT another Character still lists only its owner in involved_character_ids;',
+    '  mention the other Character in intended_direction or pressure_text instead.',
+    '- relational: genuinely multi-character cognition. involved_character_ids must include two or more Characters;',
+    '  primary_character_id must be one of them. Merely interacting with another Character does not make cognition relational.',
+    '- global: scene-wide cognition. primary_character_id = null; involved_character_ids = [].',
+  ];
+}
+
 export function plotCognitionSemanticTransportPromptLines() {
   return [
     'Cognition item semantic transport (#68 Part C — model supplies semantic content only):',
@@ -8,6 +20,7 @@ export function plotCognitionSemanticTransportPromptLines() {
     'Each pressure object must include: pressure_id, pressure_text, dramatic_rationale, applicability.',
     'applicability object: applicability_kind (character|relational|global), primary_character_id, involved_character_ids.',
     'dramatic_rationale is per-pressure semantic rationale; do not substitute package-level replan_rationale.',
+    ...plotCognitionApplicabilitySemanticsPromptLines(),
   ];
 }
 
@@ -81,6 +94,7 @@ export function plotCognitionSemanticTransportCorrectionGuidance(structuralError
     lines.push('- Each pressure must include applicability with applicability_kind.');
   }
   if (lines.length > 0) {
+    lines.push(...plotCognitionApplicabilitySemanticsPromptLines());
     lines.push('- Do NOT add schema, creation_provenance, or activity_state; runtime supplies those.');
   }
   return lines;

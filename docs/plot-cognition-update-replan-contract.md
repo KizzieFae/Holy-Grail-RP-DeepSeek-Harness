@@ -192,6 +192,8 @@ Storyteller inference emits **semantic proposal items**; the persisted #58 overl
 
 Enrichment is fill-only: explicit non-Storyteller provenance and explicit lifecycle values are preserved. Correction may request missing **semantic** transport fields; it must not request `schema`, `creation_provenance`, or `activity_state`.
 
+Applicability semantics and safe canonicalization boundary: see [plot-cognition-overlay-contract.md](./plot-cognition-overlay-contract.md) §Applicability (#162). Model-facing transport guidance lives in `plot-cognition-semantic-transport.mjs`.
+
 ### Supported top-level aliases (bounded, deterministic)
 
 When canonical and alias are both present, **canonical wins** (aliases are not merged).

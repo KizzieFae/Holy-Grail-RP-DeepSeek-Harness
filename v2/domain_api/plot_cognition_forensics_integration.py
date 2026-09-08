@@ -24,19 +24,23 @@ def format_plot_cognition_wafi_finalize_response(
     persistence_message: str,
 ) -> dict[str, Any]:
     """Map WAFI/update outcomes to public finalize responses (#68)."""
+    violations = tuple(getattr(result, "violations", ()) or ())
+    base: dict[str, Any] = {
+        "accepted": bool(getattr(result, "success", False)),
+        "code": getattr(result, "code", None),
+        "message": getattr(result, "message", None),
+        "store_revision": getattr(result, "store_revision", None),
+    }
+    if violations:
+        base["violations"] = list(violations)
     if forensic_ok:
-        return {
-            "accepted": bool(getattr(result, "success", False)),
-            "code": getattr(result, "code", None),
-            "message": getattr(result, "message", None),
-            "store_revision": getattr(result, "store_revision", None),
-        }
+        return base
     if wafi is not None and wafi.code == "mutation_failed" and result is not None:
         return {
+            **base,
             "accepted": False,
             "code": getattr(result, "code", "integrity_invalid"),
             "message": getattr(result, "message", "plot cognition update rejected"),
-            "store_revision": getattr(result, "store_revision", None),
             "forensic_stage": wafi.code,
             "forensic_message": wafi.message,
         }
@@ -47,6 +51,7 @@ def format_plot_cognition_wafi_finalize_response(
         "store_revision": getattr(result, "store_revision", None) if result is not None else None,
         "forensic_stage": wafi.code if wafi is not None else None,
         "forensic_message": wafi.message if wafi is not None else None,
+        **({"violations": list(violations)} if violations else {}),
     }
 
 
@@ -250,6 +255,9 @@ def wafi_update_like(
             "code": getattr(result, "code", None),
             "message": getattr(result, "message", None),
         }
+        violations = tuple(getattr(result, "violations", ()) or ())
+        if violations:
+            payload["violations"] = list(violations)
         if completion_extra:
             payload.update(completion_extra)
         return payload

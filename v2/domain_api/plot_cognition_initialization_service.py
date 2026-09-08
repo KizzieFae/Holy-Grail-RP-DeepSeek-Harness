@@ -103,6 +103,7 @@ class PlotCognitionInitializationService:
                 success=False,
                 code=code,
                 message="proposal failed objective validation",
+                violations=validation.violations,
             )
 
         store, materialize_validation = self.materialize(

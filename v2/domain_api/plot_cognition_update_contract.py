@@ -453,6 +453,7 @@ class UpdateCommitResult:
     prior_revision: int | None = None
     load_status: str | None = None
     forensic_outcome: ForensicOutcome | None = None
+    violations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

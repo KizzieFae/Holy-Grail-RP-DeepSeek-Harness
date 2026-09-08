@@ -16,6 +16,7 @@ from domain_api.plot_cognition_overlay_contract import (
     validate_plot_goal,
 )
 from domain_api.plot_cognition_proposal_enrichment import (
+    canonicalize_applicability_dict,
     enrich_initialization_proposal,
     enrich_replan_proposal,
     enrich_storyteller_proposed_goal,
@@ -178,6 +179,105 @@ class PlotCognitionProposalEnrichmentTests(unittest.TestCase):
             policy_max_active_pressures=10,
         )
         self.assertTrue(result.ok, result.violations)
+
+    def test_character_goal_with_extra_participants_canonicalizes_to_primary_only(self) -> None:
+        raw = {
+            **_thin_goal(goal_id="g-ayame"),
+            "applicability": {
+                "applicability_kind": "character",
+                "primary_character_id": "Ayame",
+                "involved_character_ids": ["Ayame", "Kizzie"],
+            },
+        }
+        enriched = enrich_storyteller_proposed_goal(raw)
+        self.assertEqual(enriched["applicability"]["applicability_kind"], "character")
+        self.assertEqual(enriched["applicability"]["involved_character_ids"], ["Ayame"])
+
+    def test_character_goal_with_empty_involved_canonicalizes_to_primary(self) -> None:
+        raw = {
+            **_thin_goal(goal_id="g-alice"),
+            "applicability": {
+                "applicability_kind": "character",
+                "primary_character_id": "Alice",
+                "involved_character_ids": [],
+            },
+        }
+        enriched = enrich_storyteller_proposed_goal(raw)
+        self.assertEqual(enriched["applicability"]["involved_character_ids"], ["Alice"])
+
+    def test_character_goal_with_wrong_sole_involved_canonicalizes_to_primary(self) -> None:
+        raw = {
+            **_thin_goal(goal_id="g-ayame2"),
+            "applicability": {
+                "applicability_kind": "character",
+                "primary_character_id": "Ayame",
+                "involved_character_ids": ["Kizzie"],
+            },
+        }
+        enriched = enrich_storyteller_proposed_goal(raw)
+        self.assertEqual(enriched["applicability"]["involved_character_ids"], ["Ayame"])
+        self.assertEqual(enriched["applicability"]["applicability_kind"], "character")
+
+    def test_relational_missing_primary_in_involved_adds_primary(self) -> None:
+        raw = {
+            **_thin_pressure(pressure_id="p-rel"),
+            "applicability": {
+                "applicability_kind": "relational",
+                "primary_character_id": "Ayame",
+                "involved_character_ids": ["Kizzie"],
+            },
+        }
+        enriched = enrich_storyteller_proposed_pressure(raw)
+        self.assertEqual(enriched["applicability"]["applicability_kind"], "relational")
+        self.assertEqual(enriched["applicability"]["involved_character_ids"], ["Ayame", "Kizzie"])
+
+    def test_relational_with_one_character_still_fails_objective_validation(self) -> None:
+        raw = {
+            **_thin_pressure(pressure_id="p-rel-one"),
+            "applicability": {
+                "applicability_kind": "relational",
+                "primary_character_id": "Alice",
+                "involved_character_ids": ["Alice"],
+            },
+        }
+        enriched = enrich_storyteller_proposed_pressure(raw)
+        proposal = PlotCognitionUpdateProposal(
+            schema=UPDATE_PROPOSAL_SCHEMA,
+            proposal_id="p-rel-fail",
+            source_snapshot_id="snap",
+            source_snapshot_fingerprint="fp",
+            plot_cognition_scope_id="scope",
+            prior_store_revision=1,
+            assimilation_rationale="Test relational failure.",
+            goals=(),
+            pressures=(enriched,),
+            global_frame=None,
+        )
+        result = validate_update_proposal_objective(
+            enrich_update_proposal(proposal),
+            policy_max_active_goals=10,
+            policy_max_active_pressures=10,
+        )
+        self.assertFalse(result.ok)
+        self.assertTrue(
+            any("relational_applicability_requires_two_or_more_characters" in item for item in result.violations)
+        )
+
+    def test_global_applicability_canonicalizes_to_empty_scope(self) -> None:
+        canonical = canonicalize_applicability_dict(
+            {
+                "applicability_kind": "global",
+                "primary_character_id": "Alice",
+                "involved_character_ids": ["Alice"],
+            }
+        )
+        self.assertIsNone(canonical["primary_character_id"])
+        self.assertEqual(canonical["involved_character_ids"], [])
+
+    def test_valid_applicability_unchanged(self) -> None:
+        raw = _thin_goal()
+        enriched = enrich_storyteller_proposed_goal(raw)
+        self.assertEqual(enriched["applicability"], raw["applicability"])
 
 
 if __name__ == "__main__":
