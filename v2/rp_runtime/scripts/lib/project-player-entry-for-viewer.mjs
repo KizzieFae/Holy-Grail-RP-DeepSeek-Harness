@@ -18,6 +18,8 @@ export function projectPlayerEntryForViewer({
   entry,
   viewerCharacter,
   presentCharacters,
+  perceptualSceneContext = null,
+  playerCharacter = null,
   pythonExecutable = defaultPythonExecutable(),
 } = {}) {
   const result = spawnSync(
@@ -28,6 +30,8 @@ export function projectPlayerEntryForViewer({
         entry,
         viewer_character: viewerCharacter,
         present_characters: presentCharacters,
+        perceptual_scene_context: perceptualSceneContext,
+        player_character: playerCharacter,
       }),
       encoding: 'utf8',
       env: domainHostSpawnEnv(),

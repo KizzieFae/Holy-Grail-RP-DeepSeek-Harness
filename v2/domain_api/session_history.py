@@ -262,6 +262,8 @@ def project_history_to_character_context_chat(
     character_names: list[str],
     present_characters: list[str],
     get_character_display_name_fn: Any,
+    perceptual_scene_context: Any | None = None,
+    player_character: str | None = None,
 ) -> list[dict[str, Any]]:
     """Build perception-oriented chat history for character manifest transcript projection."""
     _ = character_names
@@ -306,6 +308,8 @@ def project_history_to_character_context_chat(
                 viewer_character=character_id,
                 present_characters=present_characters,
                 source_kind="player",
+                perceptual_scene_context=perceptual_scene_context,
+                player_character=player_character,
             )
             record, _ = perceptual_visibility_record_from_entry_metadata(
                 entry.metadata if isinstance(entry.metadata, dict) else {}

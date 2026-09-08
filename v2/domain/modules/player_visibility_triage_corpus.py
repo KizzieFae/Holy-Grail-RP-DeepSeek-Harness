@@ -111,4 +111,31 @@ def build_issue_121_checker_corpus() -> list[CheckerCorpusCase]:
             category="mandatory_negative",
             safety_critical=True,
         ),
+        CheckerCorpusCase(
+            case_id="neg_exterior_threshold_visual_155",
+            content=(
+                "Kizzie checks the address on the gatepost, looks around the quiet street, "
+                "and hesitates at the front door."
+            ),
+            expected_route="full_pvr",
+            category="mandatory_negative",
+            safety_critical=True,
+        ),
+        CheckerCorpusCase(
+            case_id="neg_exterior_address_check_155",
+            content="The player studies the house number and smooths their skirt nervously.",
+            expected_route="full_pvr",
+            category="mandatory_negative",
+            safety_critical=True,
+        ),
+        CheckerCorpusCase(
+            case_id="neg_mixed_visual_knock_speech_155",
+            content=(
+                "Kizzie looks at the house number, nervously smooths her skirt, knocks three times, "
+                'then calls through the door, "Ayame? It\'s Kizzie. I\'m here for the interview."'
+            ),
+            expected_route="full_pvr",
+            category="mandatory_negative",
+            safety_critical=True,
+        ),
     ]

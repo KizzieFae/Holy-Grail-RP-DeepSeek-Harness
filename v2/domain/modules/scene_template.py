@@ -97,6 +97,7 @@ class SceneTemplate:
     sleeping_surface_slots: list[str] = field(default_factory=list)
     location_entry_slots: list[str] = field(default_factory=list)
     role_private_knowledge: dict[str, str] = field(default_factory=dict)
+    perceptual_scene_context: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -112,6 +113,8 @@ class SceneTemplate:
         }
         if self.role_private_knowledge:
             out["role_private_knowledge"] = dict(self.role_private_knowledge)
+        if self.perceptual_scene_context:
+            out["perceptual_scene_context"] = dict(self.perceptual_scene_context)
         return out
 
     def get_role_slot(self, role_name: str) -> SceneRoleSlot | None:
@@ -162,6 +165,10 @@ class SceneTemplate:
                 knowledge_text = str(knowledge or "").strip()
                 if role_key and knowledge_text:
                     role_private_knowledge[role_key] = knowledge_text
+        perceptual_scene_context: dict[str, Any] = {}
+        raw_perceptual = data.get("perceptual_scene_context")
+        if isinstance(raw_perceptual, dict):
+            perceptual_scene_context = dict(raw_perceptual)
         anchor_raw = str(data.get("anchor_role_name", "") or "").strip()
         if not anchor_raw:
             raise ValueError(
@@ -188,6 +195,7 @@ class SceneTemplate:
             sleeping_surface_slots=sleeping_surface_slots,
             location_entry_slots=location_entry_slots,
             role_private_knowledge=role_private_knowledge,
+            perceptual_scene_context=perceptual_scene_context,
         )
         validate_template_cohesion(template)
         return template

@@ -15,10 +15,14 @@ def assemble_player_user_entry_for_viewer(
     *,
     viewer_character: str,
     present_characters: list[str],
+    perceptual_scene_context: Any | None = None,
+    player_character: str | None = None,
 ) -> PerceptualVisibilityAssemblyResult:
     return assemble_perceptual_history_entry_for_viewer(
         entry,
         viewer_character=viewer_character,
         present_characters=present_characters,
         source_kind="player",
+        perceptual_scene_context=perceptual_scene_context,
+        player_character=player_character,
     )

@@ -6,6 +6,7 @@ import unittest
 
 from perceptual_visibility_contract import METADATA_KEY
 from perceptual_visibility_projection import assemble_perceptual_history_entry_for_viewer
+from perceptual_test_helpers import co_present_zone_context
 from player_decomposition_fixtures import (
     ISSUE_120_JAPAN_TOKEN,
     ISSUE_120_UNIT_HESITATION,
@@ -48,11 +49,15 @@ class Issue120GeneralizedInternalTests(unittest.TestCase):
                 session_cast=["Ayame", "Kizzie", "Harley", "Celina"],
             ),
         }
+        cast = ["Ayame", "Kizzie", "Harley", "Celina"]
+        shared_context = co_present_zone_context(cast)
         ayame = assemble_perceptual_history_entry_for_viewer(
             entry,
             viewer_character="Ayame",
-            present_characters=["Ayame", "Kizzie", "Harley", "Celina"],
+            present_characters=cast,
             source_kind="player",
+            perceptual_scene_context=shared_context,
+            player_character="Kizzie",
         )
         self.assertIn(ISSUE_120_UNIT_SEIZA, ayame.included_unit_ids)
         self.assertIn(ISSUE_120_UNIT_SPEECH_1, ayame.included_unit_ids)
@@ -168,11 +173,15 @@ class Issue120GeneralizedInternalTests(unittest.TestCase):
                 session_cast=["Ayame", "Kizzie"],
             ),
         }
+        cast = ["Ayame", "Kizzie"]
+        shared_context = co_present_zone_context(cast)
         ayame = assemble_perceptual_history_entry_for_viewer(
             entry,
             viewer_character="Ayame",
-            present_characters=["Ayame", "Kizzie"],
+            present_characters=cast,
             source_kind="player",
+            perceptual_scene_context=shared_context,
+            player_character="Kizzie",
         )
         self.assertIn("seiza", ayame.content or "")
         self.assertNotIn("Japan", ayame.content or "")
