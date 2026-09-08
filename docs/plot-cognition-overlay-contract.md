@@ -196,6 +196,18 @@ CognitionApplicability
 
 This is **not** a relationship graph. Relational applicability supports multi-character cognition without misclassifying it as global.
 
+`involved_character_ids` is **applicability/projection scope** — who owns or shares the cognition for downstream consumption — **not** every Character mentioned in `intended_direction`, `pressure_text`, or scene context. A character-specific goal about another Character lists only its owner in `involved_character_ids`; mention the other Character in semantic text instead.
+
+### Safe canonicalization (#162)
+
+Before objective validation, proposal enrichment may apply **representation-preserving** applicability canonicalization for the **declared** `applicability_kind`:
+
+- **character** with a valid primary: `involved_character_ids = [primary_character_id]` (fill empty, remove extra scene participants, correct wrong sole involved id).
+- **relational** with a valid primary: ensure primary is present in `involved_character_ids`; dedupe/strip blanks.
+- **global**: enforce null primary and empty involved.
+
+Enrichment **must not** reclassify kinds (`character` ↔ `relational`) based on participant counts. Unresolved ambiguity fails closed at objective validation.
+
 ---
 
 ## Creation provenance

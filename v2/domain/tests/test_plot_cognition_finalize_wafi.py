@@ -67,11 +67,12 @@ class FaultInjectForensicsRepository(PlotCognitionForensicsRepository):
 
 
 class PlotCognitionFinalizeWafiTests(unittest.TestCase):
-    def test_format_mutation_failure_preserves_domain_code(self) -> None:
+    def test_format_mutation_failure_preserves_domain_code_and_violations(self) -> None:
         result = UpdateCommitResult(
             success=False,
             code="integrity_invalid",
             message="replan proposal failed objective validation",
+            violations=("goal[0].character_applicability_requires_one_involved_character",),
         )
         response = format_plot_cognition_wafi_finalize_response(
             result,
@@ -87,6 +88,7 @@ class PlotCognitionFinalizeWafiTests(unittest.TestCase):
         self.assertFalse(response["accepted"])
         self.assertEqual(response["code"], "integrity_invalid")
         self.assertEqual(response["forensic_stage"], "mutation_failed")
+        self.assertIn("violations", response)
 
     def test_format_stale_revision_mutation_failure(self) -> None:
         result = UpdateCommitResult(

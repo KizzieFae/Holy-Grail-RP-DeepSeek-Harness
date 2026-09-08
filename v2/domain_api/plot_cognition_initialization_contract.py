@@ -195,6 +195,7 @@ class InitializationCommitResult:
     store_revision: int | None = None
     prior_revision: int | None = None
     load_status: str | None = None
+    violations: tuple[str, ...] = ()
 
 
 @dataclass
