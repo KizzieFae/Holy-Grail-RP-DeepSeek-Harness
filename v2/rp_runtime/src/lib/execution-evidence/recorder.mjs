@@ -82,6 +82,8 @@ export class ExecutionEvidenceRecorder {
     assistantText,
     inferenceSessionId,
     inferenceWallClockMs = null,
+    turnBoundaryTiming = null,
+    idleBoundaryDiagnostic = null,
   }) {
     if (!this.enabled) return null;
     const hgSessionId = evidenceContext?.hgSessionId;
@@ -121,6 +123,8 @@ export class ExecutionEvidenceRecorder {
         evidenceContext,
         correlation,
         decision: evidenceContext?.initialDecision ?? null,
+        turnBoundaryTiming,
+        idleBoundaryDiagnostic,
         inferenceWallClockMs,
       }),
     };
@@ -250,6 +254,68 @@ export class ExecutionEvidenceRecorder {
     };
     this.store.writeAttempt(attempt);
     return evidenceId;
+  }
+
+  /**
+   * Durable orchestration/non-LLM execution span (#158).
+   */
+  recordExecutionSpan({
+    hgSessionId,
+    spanId,
+    parentSpanId = null,
+    operationId = null,
+    hgRoundId = null,
+    phaseId,
+    role = null,
+    startedAt,
+    endedAt,
+    wallMs,
+    evidenceIds = [],
+    triggerInferenceId = null,
+  }) {
+    if (!this.enabled || !hgSessionId || !spanId || !phaseId) return null;
+    const evidenceId = spanId;
+    const attempt = {
+      evidence_id: evidenceId,
+      correlation: {
+        evidence_id: evidenceId,
+        span_id: spanId,
+        parent_span_id: parentSpanId,
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSessionId,
+        hg_round_id: hgRoundId,
+        role: 'execution_span',
+        operation_id: operationId,
+        phase_id: phaseId,
+        attempt_index: 0,
+      },
+      request: null,
+      response: null,
+      execution: {
+        started_at: startedAt,
+        ended_at: endedAt,
+        wall_ms: wallMs,
+      },
+      decision: {
+        phase_id: phaseId,
+        role,
+        operation_id: operationId,
+        hg_round_id: hgRoundId,
+      },
+      associations: {
+        operation_id: operationId,
+        hg_round_id: hgRoundId,
+        evidence_ids: [...evidenceIds],
+        trigger_inference_id: triggerInferenceId,
+      },
+    };
+    this.store.writeAttempt(attempt);
+    return evidenceId;
+  }
+
+  patchOperationRoundAssociation(hgSessionId, operationId, hgRoundId) {
+    if (!this.enabled || !hgSessionId || !operationId || !hgRoundId) return;
+    this.store.patchOperationRoundAssociation(hgSessionId, operationId, hgRoundId);
   }
 
   recordNarratorPhaseFailure({

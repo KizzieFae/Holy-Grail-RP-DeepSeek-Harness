@@ -17,6 +17,10 @@ import {
 } from './application-settings.mjs';
 import { AuditTagService } from '../lib/audit-tags/service.mjs';
 import { patchNarratorTerminalPresentationEvidence } from '../lib/execution-evidence/narrator-terminal-evidence.mjs';
+import {
+  createExecutionSpanTracker,
+  wrapDomainClientWithSpans,
+} from '../lib/execution-span-tracker.mjs';
 import { agentOptionsFromProfile, mockInferenceProfile } from '../lib/inference-profile.mjs';
 import { HolyGrailRuntimeSupervisor } from '../runtime-supervisor/supervisor.mjs';
 import { SessionId } from '@deepseek-ai/dsh-session';
@@ -288,7 +292,7 @@ export class HolyGrailApplicationClient {
         });
       }
 
-      const api = this.orchestrator._domainClient();
+      const api = this._domainApi();
       let playerDecomposition = input.playerDecomposition ?? input.player_decomposition ?? null;
       if (!playerDecomposition) {
         const phaseExecutors = this.supervisor.runtime?.phaseExecutors;
@@ -383,7 +387,7 @@ export class HolyGrailApplicationClient {
     this._beginRoundOperation(operationId, 'skip_turn');
 
     try {
-      const api = this.orchestrator._domainClient();
+      const api = this._domainApi();
       await api.recordPlayerSkip({
         hg_session_id: this.activeSessionId,
         speaker: input.userName ?? input.user_name ?? this.userPersonaId ?? 'Player',
@@ -403,7 +407,7 @@ export class HolyGrailApplicationClient {
   }
 
   async _runActiveRound({ forcedDesignation, inferenceInput = {}, operationId }) {
-    const api = this.orchestrator._domainClient();
+    const api = this._domainApi();
     const resolvedOperationId = operationId ?? this.activeRoundOperation?.operation_id;
     this.lastError = null;
 
@@ -432,9 +436,12 @@ export class HolyGrailApplicationClient {
           failure: { category: 'round_failure', message: 'forced test round failure' },
         });
       }
-      const roundResult = await this.orchestrator.runRound(roundOptions);
+      const roundResult = await (this.activeSpanTracker
+        ? this.activeSpanTracker.measure('application_round_orchestration', () => this.orchestrator.runRound(roundOptions))
+        : this.orchestrator.runRound(roundOptions));
       if (this.activeRoundOperation && roundResult.hg_round_id) {
         this.activeRoundOperation.hg_round_id = roundResult.hg_round_id;
+        this.activeSpanTracker?.setHgRoundId(roundResult.hg_round_id);
       }
       await this._recordRoundPresentations(api, roundResult);
       await this._refreshTranscript();
@@ -481,6 +488,7 @@ export class HolyGrailApplicationClient {
     } finally {
       this.roundInProgress = false;
       this.activeRoundOperation = null;
+      this.activeSpanTracker = null;
     }
   }
 
@@ -522,6 +530,11 @@ export class HolyGrailApplicationClient {
 
   _executionEvidenceRecorder() {
     return this.supervisor.runtime?.phaseExecutors?.executionEvidenceRecorder ?? null;
+  }
+
+  _domainApi() {
+    const api = this.orchestrator._domainClient();
+    return wrapDomainClientWithSpans(api, this.activeSpanTracker);
   }
 
   _recordLifecycleMilestone(milestone, {
@@ -566,11 +579,21 @@ export class HolyGrailApplicationClient {
       started_at: new Date().toISOString(),
       hg_round_id: null,
     };
+    this.activeSpanTracker = createExecutionSpanTracker(this._executionEvidenceRecorder(), {
+      hgSessionId: this.activeSessionId,
+      operationId,
+      hgRoundId: null,
+    });
+    this._recordLifecycleMilestone(LIFECYCLE_MILESTONES.OPERATION_BEGAN, {
+      operationId,
+      details: { kind },
+    });
   }
 
   _abortRoundOperation(err) {
     this.roundInProgress = false;
     this.activeRoundOperation = null;
+    this.activeSpanTracker = null;
     this.status = 'ready';
     this.lastError = classifyFailure(err);
   }

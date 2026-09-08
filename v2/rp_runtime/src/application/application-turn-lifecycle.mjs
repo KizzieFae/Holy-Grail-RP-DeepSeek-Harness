@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 export const APPLICATION_LIFECYCLE_ROLE = 'application_lifecycle';
 
 export const LIFECYCLE_MILESTONES = {
+  OPERATION_BEGAN: 'operation_began',
   ROUND_BEGAN: 'round_began',
   ROUND_TERMINAL_SUCCEEDED: 'round_terminal_succeeded',
   ROUND_TERMINAL_FAILED: 'round_terminal_failed',

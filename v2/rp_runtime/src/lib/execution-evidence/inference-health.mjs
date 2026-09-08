@@ -323,6 +323,8 @@ export function buildInferenceHealth({
   decision = null,
   existingHealth = null,
   inferenceWallClockMs = null,
+  turnBoundaryTiming = null,
+  idleBoundaryDiagnostic = null,
 }) {
   const configuredFromProfile = resolveConfiguredMaxTokens(profile);
   const configuredFromRequest = resolveConfiguredMaxTokens(requestProfile);
@@ -420,13 +422,74 @@ export function buildInferenceHealth({
     structural_valid,
     structural_error,
     recovery,
-    timing: Number.isFinite(Number(inferenceWallClockMs)) && Number(inferenceWallClockMs) >= 0
-      ? {
-        inference_wall_clock_ms: Number(inferenceWallClockMs),
-        measurement: 'substrate_runEphemeralInference_idle_boundary',
-      }
-      : existingHealth?.timing ?? null,
+    timing: buildInferenceTiming({
+      turnBoundaryTiming,
+      inferenceWallClockMs,
+      existingTiming: existingHealth?.timing ?? null,
+      idleBoundaryDiagnostic,
+    }),
   };
+}
+
+/**
+ * @param {object} params
+ */
+export function buildInferenceTiming({
+  turnBoundaryTiming = null,
+  inferenceWallClockMs = null,
+  existingTiming = null,
+  idleBoundaryDiagnostic = null,
+}) {
+  if (existingTiming?.timing_observed === true
+    && existingTiming?.measurement === 'dsh_session_turn_boundary') {
+    const next = { ...existingTiming };
+    if (idleBoundaryDiagnostic && !next.diagnostics) {
+      next.diagnostics = { idle_boundary: idleBoundaryDiagnostic };
+    }
+    return next;
+  }
+  if (turnBoundaryTiming && typeof turnBoundaryTiming === 'object') {
+    if (turnBoundaryTiming.timing_observed === true) {
+      const timing = {
+        timing_observed: true,
+        measurement: turnBoundaryTiming.measurement ?? 'dsh_session_turn_boundary',
+        started_at: turnBoundaryTiming.started_at ?? null,
+        ended_at: turnBoundaryTiming.ended_at ?? null,
+        inference_wall_clock_ms: Number(turnBoundaryTiming.inference_wall_clock_ms),
+        dsh_turn: turnBoundaryTiming.dsh_turn ?? null,
+        dsh_inference_session_id: turnBoundaryTiming.dsh_inference_session_id ?? null,
+        turn_start_seq: turnBoundaryTiming.turn_start_seq ?? null,
+        turn_end_seq: turnBoundaryTiming.turn_end_seq ?? null,
+      };
+      if (idleBoundaryDiagnostic) {
+        timing.diagnostics = { idle_boundary: idleBoundaryDiagnostic };
+      }
+      return timing;
+    }
+    const unavailable = {
+      timing_observed: false,
+      measurement: turnBoundaryTiming.measurement ?? 'dsh_session_turn_boundary',
+      unavailable_reason: turnBoundaryTiming.unavailable_reason ?? 'turn_boundary_not_observed',
+      dsh_turn: turnBoundaryTiming.dsh_turn ?? null,
+      dsh_inference_session_id: turnBoundaryTiming.dsh_inference_session_id ?? null,
+    };
+    if (idleBoundaryDiagnostic) {
+      unavailable.diagnostics = { idle_boundary: idleBoundaryDiagnostic };
+    }
+    return unavailable;
+  }
+  if (existingTiming) {
+    return existingTiming;
+  }
+  if (Number.isFinite(Number(inferenceWallClockMs)) && Number(inferenceWallClockMs) >= 0) {
+    return {
+      timing_observed: true,
+      inference_wall_clock_ms: Number(inferenceWallClockMs),
+      measurement: 'substrate_runEphemeralInference_idle_boundary',
+      legacy_idle_boundary: true,
+    };
+  }
+  return null;
 }
 
 /**
