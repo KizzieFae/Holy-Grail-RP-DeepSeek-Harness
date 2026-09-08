@@ -201,7 +201,7 @@ data/execution_evidence/<hg_session_id>/
 | `plot_cognition.by_round` / `by_commit` / `by_inference_kind` | Derived Plot Cognition inference navigation (#64; rebuildable) |
 | `inference_health` (#114) | Rebuildable Level-2 inference-health aggregates (counts + rates by `inference_kind` else `role`; utilization only when configured ceiling exists) |
 | `timing` (#158) | Rebuildable indexes: `by_operation`, `by_round` — evidence ids for lifecycle, spans, and inference attempts |
-| `round_activity` (#158) | Per-round rollups: roles, inference kinds, token totals, ordered evidence references (no payload duplication) |
+| `round_activity` (#158) | Per-round rollups: roles, inference kinds, token totals, ordered evidence references (no payload duplication). **Derived from authoritative attempts** — counts and token totals must reconcile with unique `evidence_ids`; re-indexing must be idempotent. |
 
 **Inference timing (#158, observational):** Authoritative LLM duration lives on `inference_health.timing` with `measurement: dsh_session_turn_boundary` — elapsed wall time between paired DSH session events `turn/start` and `turn/end` for the turn opened by the ephemeral inference `followup()`. `timing_observed: false` records `unavailable_reason` and **must not** include `inference_wall_clock_ms`. Observed zero (`timing_observed: true`, `inference_wall_clock_ms: 0`) is valid only when both boundaries exist with identical event times. Substrate idle/`agent/status: idle` timing may appear only under `timing.diagnostics.idle_boundary` and is **not** authoritative. Forensic association fields: `dsh_turn`, `dsh_inference_session_id`, `turn_start_seq`, `turn_end_seq`, `started_at`, `ended_at` (DSH event times; distinct from `recorded_at` / `updated_at`).
 

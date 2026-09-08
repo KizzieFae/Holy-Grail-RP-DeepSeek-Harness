@@ -370,19 +370,25 @@ export class ExecutionEvidenceStore {
       this._pushUnique(activity.evidence_ids, evidenceId);
       if (role && role !== 'execution_span' && role !== 'application_lifecycle') {
         const roleEntry = activity.roles[role] ?? { count: 0, evidence_ids: [] };
-        roleEntry.count += 1;
+        const wasNewRole = !roleEntry.evidence_ids.includes(evidenceId);
         this._pushUnique(roleEntry.evidence_ids, evidenceId);
+        if (wasNewRole) {
+          roleEntry.count += 1;
+        }
         activity.roles[role] = roleEntry;
       }
       const kind = correlation.inference_kind;
       if (kind) {
         const kindEntry = activity.inference_kinds[kind] ?? { count: 0, evidence_ids: [], total_tokens: 0 };
-        kindEntry.count += 1;
+        const wasNewKind = !kindEntry.evidence_ids.includes(evidenceId);
         this._pushUnique(kindEntry.evidence_ids, evidenceId);
-        const tokens = Number(attempt.inference_health?.usage?.total_tokens);
-        if (Number.isFinite(tokens)) {
-          kindEntry.total_tokens += tokens;
-          activity.total_tokens = Number(activity.total_tokens ?? 0) + tokens;
+        if (wasNewKind) {
+          kindEntry.count += 1;
+          const tokens = Number(attempt.inference_health?.usage?.total_tokens);
+          if (Number.isFinite(tokens)) {
+            kindEntry.total_tokens += tokens;
+            activity.total_tokens = Number(activity.total_tokens ?? 0) + tokens;
+          }
         }
         activity.inference_kinds[kind] = kindEntry;
       }
