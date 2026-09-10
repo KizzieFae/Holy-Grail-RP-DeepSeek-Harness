@@ -26,6 +26,7 @@ from domain_api.kernel import DomainKernel  # noqa: E402
 from domain_api.librarian_proposal_contract import (  # noqa: E402
     LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
     S4A_ACTIVE_PROPOSAL_KINDS,
+    S4B_LEGACY_MUTATING_PROPOSAL_KINDS,
     S4B_MUTATING_PROPOSAL_KINDS,
     S4_DURABLE_MUTATION_SURFACES,
     S4_DURABLE_MUTATION_SURFACES_BY_KIND,
@@ -485,12 +486,12 @@ class S4MutationEnvelopeTests(unittest.TestCase):
     def test_contract_mapping_keys_match_mutating_kinds(self) -> None:
         self.assertEqual(
             frozenset(S4_DURABLE_MUTATION_SURFACES_BY_KIND.keys()),
-            S4B_MUTATING_PROPOSAL_KINDS,
+            S4B_LEGACY_MUTATING_PROPOSAL_KINDS,
         )
 
     def test_contract_mapping_excludes_non_mutating_kinds(self) -> None:
         non_mutating = set(S4A_ACTIVE_PROPOSAL_KINDS) - set(S4B_MUTATING_PROPOSAL_KINDS)
-        self.assertTrue(non_mutating)
+        self.assertEqual(non_mutating, set())
         for kind in non_mutating:
             self.assertNotIn(kind, S4_DURABLE_MUTATION_SURFACES_BY_KIND)
 
@@ -511,7 +512,7 @@ class S4MutationEnvelopeTests(unittest.TestCase):
         )
 
     def test_layer1_mutating_kinds_match_dispatcher(self) -> None:
-        self.assertEqual(_dispatcher_mutating_kinds(), set(S4B_MUTATING_PROPOSAL_KINDS))
+        self.assertEqual(_dispatcher_mutating_kinds(), set(S4B_LEGACY_MUTATING_PROPOSAL_KINDS))
 
     def test_layer2_s4b_mutates_only_mapped_surface(self) -> None:
         fixture, request, event = _session_s4b()
@@ -521,6 +522,7 @@ class S4MutationEnvelopeTests(unittest.TestCase):
             request,
             fixture,
             proposal_result=_s4b_result(commit_id=request.domain_commit_id, event_id=event.event_id),
+            allow_legacy_kinds=True,
         )
         after = canonical_manager_state(fixture.manager)
         assert_s4_mutating_envelope(
@@ -577,6 +579,7 @@ class S4MutationEnvelopeTests(unittest.TestCase):
             request,
             fixture,
             proposal_result=_salience_result(commit_id=request.domain_commit_id),
+            allow_legacy_kinds=True,
         )
         after = canonical_manager_state(fixture.manager)
         self.assertEqual(before, after)
@@ -615,6 +618,7 @@ class S4MutationEnvelopeTests(unittest.TestCase):
                 "domain_commit_id": request.domain_commit_id,
             },
             proposal_result=proposal_result,
+            allow_legacy_kinds=True,
         )
         after_first = canonical_manager_state(fixture.manager)
         assert_s4_mutating_envelope(
@@ -660,6 +664,7 @@ class S4MutationEnvelopeTests(unittest.TestCase):
                     commit_id=request.domain_commit_id,
                     event_id=event.event_id,
                 ),
+                allow_legacy_kinds=True,
             )
             reloaded = repo.open_session(fixture.hg_scene_id)
             annotations = reloaded.manager.public_events[0].revelation_significance_by_character

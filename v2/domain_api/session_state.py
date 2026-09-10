@@ -15,9 +15,12 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
+from datetime import datetime, timezone
+
 from character_state_model import CharacterState  # noqa: E402
 from continuity_manager import ContinuityManager  # noqa: E402
 from continuity_setup_seam_v77 import finalize_continuity_setup_seam  # noqa: E402
+from continuity_state import IssueState, IssueStatus  # noqa: E402
 
 from .memory_scope import resolve_memory_scope_id  # noqa: E402
 from .plot_cognition_scope import resolve_plot_cognition_scope_id  # noqa: E402
@@ -85,6 +88,30 @@ class LiveSession:
 SceneFixture = LiveSession
 
 
+def seed_test_active_issue(
+    manager: ContinuityManager,
+    cast: list[str],
+    *,
+    issue_id: str = "issue-contract-test-1",
+) -> IssueState:
+    """Seed one ACTIVE issue for integration tests (e.g. #164 eligibility)."""
+    issue = IssueState(
+        issue_id=issue_id,
+        description="Integration test active issue pressure.",
+        participants=list(cast),
+        status=IssueStatus.ACTIVE,
+        created_at=datetime.now(timezone.utc),
+        pressure_kind="access_conflict",
+        blocked_what="Test objective remains unresolved.",
+        required_next_step="A character must act.",
+        last_change="Scene opened with unresolved pressure.",
+    )
+    manager.issues[issue.issue_id] = issue
+    assert manager.scene_state is not None
+    manager.scene_state.active_issue_ids = [issue.issue_id]
+    return issue
+
+
 def initialize_live_session(
     *,
     hg_session_id: str | None = None,
@@ -93,6 +120,7 @@ def initialize_live_session(
     opening_description: str = "A quiet workshop for boundary prototype tests.",
     memory_scope_id: str | None = None,
     plot_cognition_scope_id: str | None = None,
+    seed_active_issue: bool = False,
 ) -> LiveSession:
     cast = cast or ["Alice", "Bob"]
     session_id = hg_session_id or f"hg-session-{uuid.uuid4()}"
@@ -109,6 +137,8 @@ def initialize_live_session(
         name: roles[index % len(roles)] for index, name in enumerate(cast)
     }
     finalize_continuity_setup_seam(mgr, cast=list(cast))
+    if seed_active_issue:
+        seed_test_active_issue(mgr, list(cast))
     secrets = {name: f"private-{name}-{uuid.uuid4().hex[:8]}" for name in cast}
     character_states: dict[str, CharacterState] = {}
     for name in cast:

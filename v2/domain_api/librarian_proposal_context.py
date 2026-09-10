@@ -20,7 +20,6 @@ from .librarian_proposal_epistemic import (
     _MAX_PREMISE_EXCERPT,
     _MAX_ROLE_PRIVATE_EXCERPT,
     authority_metadata_for_class,
-    sanitize_revelation_significance_by_character,
 )
 from .session_history import history_entries
 from .session_state import LiveSession
@@ -223,7 +222,6 @@ def build_post_commit_evidence_catalog(
         event_id = str(getattr(event, "event_id", "") or "").strip()
         if not event_id:
             continue
-        raw_annotations = getattr(event, "revelation_significance_by_character", None)
         event_payload = {
             "event_id": event_id,
             "event_type": getattr(event, "event_type", "action"),
@@ -232,9 +230,6 @@ def build_post_commit_evidence_catalog(
             "known_by": list(getattr(event, "known_by", []) or []),
             "observed_by": list(getattr(event, "observed_by", []) or []),
             "turn_index": event_turn,
-            "revelation_significance_by_character": sanitize_revelation_significance_by_character(
-                raw_annotations if isinstance(raw_annotations, dict) else None
-            ),
         }
         catalog.append(
             _catalog_item(
@@ -386,15 +381,11 @@ def build_proposal_manifest_contributions(
         for item in catalog
     ]
     epistemic_instruction = (
-        "Occurrence truth ≠ proposition truth (docs/story-knowledge.md §2). "
+        "Post-commit semantic assessment (#164): propose issue_tension_pressure only when "
+        "grounded by continuity_issue and committed_move anchors. "
         "Occurrence/public_event/committed_move anchors prove what was said or occurred; "
         "they do NOT establish objective world truth of claims inside dialogue. "
-        "For knowledge_revelation_significance: set interpretation_scope to utterance_occurrence "
-        "when marking significance of a claim/utterance without endorsing its proposition; "
-        "use referenced_authoritative_proposition only when citing proposition_authority_refs "
-        "to anchors with world_truth_eligible metadata (e.g. scenario_premise). "
-        "authored_role_private anchors prove private role knowledge alignment only — not sole world truth. "
-        "derivation_summary is an interpretation note, not proposition authority."
+        "derivation_summary is a narrative interpretation note, not proposition authority."
     )
     return [
         PromptContribution(
@@ -404,7 +395,7 @@ def build_proposal_manifest_contributions(
             knowledge_ids=(f"librarian_proposal_request:{request.request_id}",),
             priority=10,
             content=(
-                "Post-commit Librarian proposal request (information interpretation only):\n"
+                "Post-commit semantic proposal request (Storyteller narrow issue-pressure assessment):\n"
                 f"{json.dumps(request_block, ensure_ascii=False, indent=2)}"
             ),
             provenance={
@@ -447,9 +438,9 @@ def build_proposal_manifest_contributions(
             knowledge_ids=tuple(item.anchor_id for item in catalog),
             priority=12,
             content=(
-                "Bounded post-commit evidence catalog. Proposals MUST cite anchor_id values "
-                "from this catalog only. Do NOT invent facts or use Storyteller PreservationSignal "
-                "attention refs as evidence.\n"
+                "Bounded post-commit evidence catalog. issue_tension_pressure proposals MUST cite "
+                "anchor_id values from this catalog only (continuity_issue + committed_move). "
+                "Do NOT invent facts or use PreservationSignal attention refs as evidence.\n"
                 f"{json.dumps(catalog_block, ensure_ascii=False, indent=2)}"
             ),
             provenance={

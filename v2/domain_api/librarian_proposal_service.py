@@ -35,12 +35,14 @@ from .librarian_proposal_contract import (
     LibrarianProposalContextRequest,
     LibrarianProposalPrepareResponse,
     ProposalBatchAudit,
+    ProposalBatchDegradationMode,
     ProposalCommitBinding,
     ProposalEvidenceCatalogItem,
     compute_proposal_batch_hash,
     new_proposal_batch_id,
     new_proposal_request_id,
 )
+from .post_commit_semantic_eligibility import evaluate_post_commit_semantic_eligibility
 from .librarian_proposal_validate import (
     parse_librarian_proposal_result,
     validate_host_proposal_batch,
@@ -132,6 +134,8 @@ class LibrarianProposalService:
         proposal_result: dict[str, Any] | None,
         evidence_catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
         proposal_generation_failure: str | None = None,
+        proposal_generation_skip_reason: str | None = None,
+        allow_legacy_kinds: bool = False,
     ) -> LibrarianProposalBatchResult:
         batch_id = new_proposal_batch_id()
         commit_binding = ProposalCommitBinding(
@@ -143,6 +147,49 @@ class LibrarianProposalService:
             evidence_catalog, _commit = build_post_commit_evidence_catalog(request, fixture)
         if evidence_catalog is None:
             evidence_catalog = ()
+
+        if proposal_generation_skip_reason:
+            host_validation = HostProposalBatchValidation(
+                accepted=True,
+                reason=proposal_generation_skip_reason,
+                item_results=(),
+                rejection_codes=(),
+            )
+            degradation_mode: ProposalBatchDegradationMode = "eligibility_skipped"
+            audit = ProposalBatchAudit(
+                batch_id=batch_id,
+                batch_hash=compute_proposal_batch_hash(
+                    {
+                        "batch_id": batch_id,
+                        "skip_reason": proposal_generation_skip_reason,
+                        "proposals": [],
+                    }
+                ),
+                request_id=request.request_id,
+                domain_commit_id=request.domain_commit_id,
+                librarian_inference_id=request.librarian_inference_id,
+                host_validation=host_validation,
+                continuity_decision=None,
+                degradation_mode=degradation_mode,
+                proposals_considered=(),
+            )
+            self._record_audit(
+                fixture,
+                request,
+                audit,
+                None,
+                skip_reason=proposal_generation_skip_reason,
+            )
+            return LibrarianProposalBatchResult(
+                batch_id=batch_id,
+                request_id=request.request_id,
+                domain_commit_id=request.domain_commit_id,
+                proposals=(),
+                host_validation=host_validation,
+                continuity_decision=None,
+                audit=audit,
+                degradation_mode=degradation_mode,
+            )
 
         if proposal_result is None:
             if proposal_generation_failure == "structural_parse_failed":
@@ -186,6 +233,7 @@ class LibrarianProposalService:
             batch_id=batch_id,
             commit_binding=commit_binding,
             librarian_inference_id=request.librarian_inference_id,
+            semantic_producer_role=request.semantic_producer_role,
         )
         if parsed is None:
             host_validation = HostProposalBatchValidation(
@@ -219,6 +267,7 @@ class LibrarianProposalService:
             parsed,
             catalog=evidence_catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=allow_legacy_kinds,
         )
         host_accepted_by_id = {
             item.proposal_id: item.accepted for item in host_validation.item_results
@@ -235,6 +284,7 @@ class LibrarianProposalService:
             host_accepted_by_id=host_accepted_by_id,
             batch_id=batch_id,
             catalog=evidence_catalog,
+            allow_legacy_kinds=allow_legacy_kinds,
         )
         from continuity_librarian_issue_pressure import (  # noqa: WPS433
             apply_accepted_librarian_proposals,
@@ -292,6 +342,9 @@ class LibrarianProposalService:
             degradation_mode=audit.degradation_mode,
         )
 
+    def evaluate_eligibility(self, fixture: LiveSession) -> tuple[bool, str]:
+        return evaluate_post_commit_semantic_eligibility(fixture)
+
     def _record_audit(
         self,
         fixture: LiveSession,
@@ -301,6 +354,7 @@ class LibrarianProposalService:
         *,
         apply_results: list[Any] | None = None,
         b2_apply_results: list[Any] | None = None,
+        skip_reason: str | None = None,
     ) -> None:
         metadata = librarian_proposal_audit_metadata(
             batch_id=audit.batch_id,
@@ -308,6 +362,8 @@ class LibrarianProposalService:
             librarian_inference_id=request.librarian_inference_id,
             host_validation=audit.host_validation,
             continuity_decision=continuity_decision,
+            semantic_producer_role=request.semantic_producer_role,
+            eligibility_skip_reason=skip_reason,
         )
         metadata["batch_hash"] = audit.batch_hash
         metadata["host_validation"] = asdict(audit.host_validation)

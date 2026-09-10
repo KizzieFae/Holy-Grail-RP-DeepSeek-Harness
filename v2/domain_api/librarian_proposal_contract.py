@@ -17,6 +17,9 @@ from .librarian_contract import VisibilityEnvelope
 
 LIBRARIAN_PROPOSAL_RESULT_SCHEMA = "hg_librarian_proposal_result_v1"
 LIBRARIAN_PROPOSAL_ORIGIN = "librarian"
+STORYTELLER_PROPOSAL_ORIGIN = "storyteller"
+POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER = "storyteller"
+POST_COMMIT_SEMANTIC_PRODUCER_LIBRARIAN = "librarian"
 
 ProposalKind = Literal[
     "consequence_meaning",
@@ -53,18 +56,35 @@ ProposalBatchDegradationMode = Literal[
     "continuity_rejected_all",
     "malformed_result",
     "unavailable",
+    "eligibility_skipped",
 ]
 
 S4A_ACTIVE_PROPOSAL_KINDS: frozenset[str] = frozenset(
     {
-        "consequence_meaning",
-        "information_salience",
-        "knowledge_revelation_significance",
         "issue_tension_pressure",
     }
 )
 
+S4A_RETIRED_PROPOSAL_KINDS: frozenset[str] = frozenset(
+    {
+        "consequence_meaning",
+        "information_salience",
+    }
+)
+
+S4A_LEGACY_PARSE_PROPOSAL_KINDS: frozenset[str] = frozenset(
+    {
+        "knowledge_revelation_significance",
+    }
+)
+
 S4B_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
+    {
+        "issue_tension_pressure",
+    }
+)
+
+S4B_LEGACY_MUTATING_PROPOSAL_KINDS: frozenset[str] = frozenset(
     {
         "knowledge_revelation_significance",
         "issue_tension_pressure",
@@ -136,13 +156,14 @@ class ProposalCommitBinding:
 class ProposalProvenance:
     librarian_inference_id: str
     source_bundle_id: str | None = None
+    producer_role: Literal["librarian", "storyteller"] = POST_COMMIT_SEMANTIC_PRODUCER_LIBRARIAN
 
 
 @dataclass(frozen=True)
 class LibrarianSemanticProposal:
     proposal_id: str
     proposal_batch_id: str
-    proposal_origin: Literal["librarian"]
+    proposal_origin: Literal["librarian", "storyteller"]
     proposal_kind: ProposalKind | str
     evidence_anchors: tuple[EvidenceAnchor, ...]
     derivation_summary: str
@@ -181,6 +202,9 @@ class LibrarianProposalContextRequest:
     visibility_envelope: VisibilityEnvelope
     librarian_inference_id: str
     audit_reason: str = "post_commit_semantic_interpretation"
+    semantic_producer_role: Literal["librarian", "storyteller"] = (
+        POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER
+    )
 
 
 @dataclass(frozen=True)
@@ -275,8 +299,25 @@ def compute_proposal_batch_hash(payload: dict[str, Any]) -> str:
 def validate_proposal_payload_schema(
     proposal_kind: str,
     payload: dict[str, Any],
+    *,
+    allow_legacy_kinds: bool = False,
 ) -> tuple[bool, str, tuple[str, ...]]:
-    if proposal_kind not in S4A_ACTIVE_PROPOSAL_KINDS:
+    if proposal_kind in S4A_RETIRED_PROPOSAL_KINDS and not allow_legacy_kinds:
+        return False, f"retired_proposal_kind:{proposal_kind}", ("retired_proposal_kind",)
+    if proposal_kind in S4A_LEGACY_PARSE_PROPOSAL_KINDS and not allow_legacy_kinds:
+        return (
+            False,
+            f"legacy_proposal_kind_not_in_sync_path:{proposal_kind}",
+            ("legacy_proposal_kind_not_in_sync_path",),
+        )
+    known_kinds = (
+        S4A_ACTIVE_PROPOSAL_KINDS
+        | S4A_RETIRED_PROPOSAL_KINDS
+        | S4A_LEGACY_PARSE_PROPOSAL_KINDS
+    )
+    if proposal_kind not in known_kinds:
+        return False, f"unsupported_proposal_kind:{proposal_kind}", ("invalid_proposal_kind",)
+    if proposal_kind not in S4A_ACTIVE_PROPOSAL_KINDS and not allow_legacy_kinds:
         return False, f"unsupported_proposal_kind:{proposal_kind}", ("invalid_proposal_kind",)
     if payload.get("manufactured_fact"):
         return False, "manufactured_fact_ungrounded", ("manufactured_fact_ungrounded",)
@@ -389,4 +430,7 @@ def proposal_context_request_from_dict(data: dict[str, Any]) -> LibrarianProposa
         ),
         librarian_inference_id=str(data.get("librarian_inference_id") or data.get("inference_id") or ""),
         audit_reason=str(data.get("audit_reason") or "post_commit_semantic_interpretation"),
+        semantic_producer_role=str(
+            data.get("semantic_producer_role") or POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER
+        ),  # type: ignore[arg-type]
     )

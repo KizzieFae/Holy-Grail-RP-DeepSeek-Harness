@@ -167,6 +167,7 @@ class Issue80EpistemicTests(unittest.TestCase):
                 "subject_character": "Ayame",
                 "revelation_significance_level": "major",
             },
+            allow_legacy_kinds=True,
         )
         self.assertFalse(ok)
         self.assertIn("invalid_interpretation_scope", detail)
@@ -180,6 +181,7 @@ class Issue80EpistemicTests(unittest.TestCase):
                 "revelation_significance_level": "major",
                 "interpretation_scope": INTERPRETATION_SCOPE_UTTERANCE_OCCURRENCE,
             },
+            allow_legacy_kinds=True,
         )
         self.assertTrue(ok)
 
@@ -192,6 +194,7 @@ class Issue80EpistemicTests(unittest.TestCase):
                 "revelation_significance_level": "major",
                 "interpretation_scope": INTERPRETATION_SCOPE_REFERENCED_AUTHORITATIVE,
             },
+            allow_legacy_kinds=True,
         )
         self.assertFalse(ok)
         self.assertIn("missing_proposition_authority", codes)
@@ -209,6 +212,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertFalse(host.accepted)
         self.assertIn(REASON_PROPOSITION_TRUTH_UNSUPPORTED, host.rejection_codes)
@@ -227,6 +231,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertTrue(host.accepted)
         result = apply_knowledge_revelation_significance(fixture.manager, proposal)
@@ -249,6 +254,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertTrue(host.accepted)
 
@@ -264,6 +270,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertFalse(host.accepted)
         self.assertIn(REASON_PROPOSITION_TRUTH_UNSUPPORTED, host.rejection_codes)
@@ -283,6 +290,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertTrue(host.accepted)
 
@@ -297,6 +305,7 @@ class Issue80EpistemicTests(unittest.TestCase):
             proposal,
             catalog=catalog,
             domain_commit_id=request.domain_commit_id,
+            allow_legacy_kinds=True,
         )
         self.assertFalse(host.accepted)
         self.assertIn(REASON_INVALID_INTERPRETATION_SCOPE, host.rejection_codes)
@@ -346,14 +355,7 @@ class Issue80EpistemicTests(unittest.TestCase):
         payload = json.loads(
             next(item for item in catalog if item.evidence_kind == "public_event").content
         )
-        annotations = payload.get("revelation_significance_by_character") or {}
-        self.assertNotIn("Ayame", annotations)
-        self.assertIn("Guest", annotations)
-        self.assertEqual(
-            annotations["Guest"]["interpretation_scope"],
-            INTERPRETATION_SCOPE_UTTERANCE_OCCURRENCE,
-        )
-        self.assertNotIn("derivation_summary", annotations["Guest"])
+        self.assertNotIn("revelation_significance_by_character", payload)
 
     def test_scenario_premise_anchor_in_catalog(self) -> None:
         fixture, request, _event = _session_with_premise()
@@ -382,13 +384,13 @@ class Issue80EpistemicTests(unittest.TestCase):
         payload = json.loads(
             next(item for item in catalog if item.evidence_kind == "public_event").content
         )
-        ann = payload["revelation_significance_by_character"]["Ayame"]
+        self.assertNotIn("revelation_significance_by_character", payload)
+        ann = event.revelation_significance_by_character["Ayame"]
         self.assertEqual(
             ann["interpretation_scope"],
             INTERPRETATION_SCOPE_REFERENCED_AUTHORITATIVE,
         )
         self.assertEqual(ann["proposition_authority_refs"], ["scenario_premise:test_template"])
-        self.assertNotIn("derivation_summary", ann)
 
     def test_sanitize_scoped_keeps_annotation_note_not_derivation_summary(self) -> None:
         cleaned = sanitize_revelation_annotation_for_catalog(

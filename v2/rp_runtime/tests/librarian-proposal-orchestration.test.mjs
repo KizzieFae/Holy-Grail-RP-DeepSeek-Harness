@@ -39,8 +39,9 @@ function buildValidLibrarianProposal(commitId) {
     proposals: [
       {
         proposal_id: 'prop-live-1',
-        proposal_kind: 'information_salience',
-        derivation_summary: 'Committed move advances the scene objective.',
+        proposal_kind: 'issue_tension_pressure',
+        proposal_origin: 'storyteller',
+        derivation_summary: 'Committed move leaves active issue pressure unmet.',
         confidence: 'likely',
         evidence_anchors: [
           {
@@ -48,10 +49,15 @@ function buildValidLibrarianProposal(commitId) {
             evidence_kind: 'committed_move',
             anchor_commit_id: commitId,
           },
+          {
+            anchor_id: 'continuity_issue:issue-live-1',
+            evidence_kind: 'continuity_issue',
+            anchor_commit_id: commitId,
+          },
         ],
         proposed_payload: {
-          subject_ref: `commit:${commitId}`,
-          salience_level: 'major',
+          issue_ref: 'issue-live-1',
+          semantic_unmet_condition: 'The move does not resolve the active issue.',
         },
       },
     ],

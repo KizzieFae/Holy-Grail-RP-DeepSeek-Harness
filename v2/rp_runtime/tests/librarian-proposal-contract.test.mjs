@@ -15,12 +15,15 @@ import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { makeTempSessionsDir, reserveLocalPort, startDomainApi } from './helpers/domain-api.mjs';
 
 const COMMIT_ID = 'commit-contract-test-1';
-const CATALOG = new Set([`committed_move:${COMMIT_ID}`]);
+const TEST_ISSUE_ID = 'issue-contract-test-1';
+const CATALOG = new Set([`committed_move:${COMMIT_ID}`, `continuity_issue:${TEST_ISSUE_ID}`]);
 const PARSE_CONTEXT = {
   catalogIds: CATALOG,
   sampleAnchorId: `committed_move:${COMMIT_ID}`,
   domainCommitId: COMMIT_ID,
 };
+const PRIMARY_INFERENCE_KIND = 'storyteller_post_commit_issue_pressure';
+const CORRECTION_INFERENCE_KIND = 'storyteller_post_commit_issue_pressure_contract_correction';
 
 function validProposal(overrides = {}) {
   return JSON.stringify({
@@ -28,8 +31,9 @@ function validProposal(overrides = {}) {
     proposals: [
       {
         proposal_id: 'prop-valid-1',
-        proposal_kind: 'information_salience',
-        derivation_summary: 'Committed move advances the scene.',
+        proposal_kind: 'issue_tension_pressure',
+        proposal_origin: 'storyteller',
+        derivation_summary: 'Committed move leaves active issue pressure unmet.',
         confidence: 'likely',
         evidence_anchors: [
           {
@@ -37,10 +41,15 @@ function validProposal(overrides = {}) {
             evidence_kind: 'committed_move',
             anchor_commit_id: COMMIT_ID,
           },
+          {
+            anchor_id: `continuity_issue:${TEST_ISSUE_ID}`,
+            evidence_kind: 'continuity_issue',
+            anchor_commit_id: COMMIT_ID,
+          },
         ],
         proposed_payload: {
-          subject_ref: `commit:${COMMIT_ID}`,
-          salience_level: 'major',
+          issue_ref: TEST_ISSUE_ID,
+          semantic_unmet_condition: 'The move does not resolve the active issue.',
         },
         ...overrides,
       },
@@ -139,8 +148,8 @@ test('contract correction repairs historical malformed shape with exactly one ex
       };
     },
     primaryInferenceId: 'inf-lib-primary',
-    primaryInferenceKind: 'librarian_proposal',
-    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    primaryInferenceKind: PRIMARY_INFERENCE_KIND,
+    correctionInferenceKind: CORRECTION_INFERENCE_KIND,
     buildPrimaryPrompt: () => buildLibrarianProposalPrompt(PARSE_CONTEXT),
     buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
     parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
@@ -158,7 +167,7 @@ test('manifest-backed contract correction accepts registered correction inferenc
   const hostManifest = {
     manifest_id: 'manifest-librarian-req-1',
     inference_id: 'inf-librarian-0',
-    inference_kind: 'librarian_proposal',
+    inference_kind: PRIMARY_INFERENCE_KIND,
     contributions: [
       {
         contribution_id: 'manifest-req',
@@ -195,7 +204,7 @@ test('manifest-backed contract correction accepts registered correction inferenc
         inferenceKind: evidenceContext?.inferenceKind ?? null,
       });
       kinds.push(evidenceContext?.inferenceKind);
-      if (evidenceContext?.inferenceKind === 'librarian_proposal_contract_correction') {
+      if (evidenceContext?.inferenceKind === CORRECTION_INFERENCE_KIND) {
         correctionManifest = manifest;
       }
       return {
@@ -206,8 +215,8 @@ test('manifest-backed contract correction accepts registered correction inferenc
       };
     },
     primaryInferenceId: 'inf-lib-manifest',
-    primaryInferenceKind: 'librarian_proposal',
-    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    primaryInferenceKind: PRIMARY_INFERENCE_KIND,
+    correctionInferenceKind: CORRECTION_INFERENCE_KIND,
     buildPrimaryPrompt: () => buildLibrarianProposalPrompt(PARSE_CONTEXT),
     buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
     parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
@@ -215,11 +224,11 @@ test('manifest-backed contract correction accepts registered correction inferenc
     manifest: hostManifest,
     maxCorrections: 1,
   });
-  assert.deepEqual(kinds, ['librarian_proposal', 'librarian_proposal_contract_correction']);
+  assert.deepEqual(kinds, [PRIMARY_INFERENCE_KIND, CORRECTION_INFERENCE_KIND]);
   assert.equal(inference.ok, true);
   assert.equal(inference.correctionUsed, true);
   assert.equal(correctionManifest?.manifest_id, hostManifest.manifest_id);
-  assert.equal(correctionManifest?.inference_kind, 'librarian_proposal_contract_correction');
+  assert.equal(correctionManifest?.inference_kind, CORRECTION_INFERENCE_KIND);
   assert.deepEqual(correctionManifest?.contributions, hostManifest.contributions);
 });
 
@@ -232,8 +241,8 @@ test('contract correction stops after second malformed response', async () => {
       trace: { finish: { kind: 'stop' } },
     }),
     primaryInferenceId: 'inf-lib-fail',
-    primaryInferenceKind: 'librarian_proposal',
-    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    primaryInferenceKind: PRIMARY_INFERENCE_KIND,
+    correctionInferenceKind: CORRECTION_INFERENCE_KIND,
     buildPrimaryPrompt: () => buildLibrarianProposalPrompt(PARSE_CONTEXT),
     buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
     parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
@@ -251,7 +260,7 @@ test('host semantic rejection does not trigger contract correction', async (t) =
   const port = await reserveLocalPort();
   const host = await startDomainApi(port, { t });
   const api = createDomainApiClient(host.baseUrl);
-  const session = await api.createSession({ cast: ['Alice'] });
+  const session = await api.createSession({ cast: ['Alice'], seed_active_issue: true });
   const round = await api.startRound({ hg_scene_id: session.hg_scene_id });
   const validation = await api.validateDirectorDecision({
     hg_scene_id: session.hg_scene_id,
@@ -286,7 +295,8 @@ test('host semantic rejection does not trigger contract correction', async (t) =
     schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
     proposals: [
       {
-        proposal_kind: 'information_salience',
+        proposal_kind: 'issue_tension_pressure',
+        proposal_origin: 'storyteller',
         derivation_summary: 'Manufactured fact attempt.',
         confidence: 'likely',
         evidence_anchors: [
@@ -295,10 +305,15 @@ test('host semantic rejection does not trigger contract correction', async (t) =
             evidence_kind: 'committed_move',
             anchor_commit_id: commitId,
           },
+          {
+            anchor_id: `continuity_issue:${TEST_ISSUE_ID}`,
+            evidence_kind: 'continuity_issue',
+            anchor_commit_id: commitId,
+          },
         ],
         proposed_payload: {
-          subject_ref: `commit:${commitId}`,
-          salience_level: 'major',
+          issue_ref: TEST_ISSUE_ID,
+          semantic_unmet_condition: 'Unmet pressure.',
           manufactured_fact: true,
         },
       },
@@ -344,7 +359,11 @@ test('structural parse failure is classified separately from provider inference 
   const api = createDomainApiClient(host.baseUrl);
 
   async function commitAlice(prefix) {
-    const session = await api.createSession({ cast: ['Alice'], hg_session_id: `sess-${prefix}` });
+    const session = await api.createSession({
+      cast: ['Alice'],
+      hg_session_id: `sess-${prefix}`,
+      seed_active_issue: true,
+    });
     const round = await api.startRound({ hg_scene_id: session.hg_scene_id });
     const validation = await api.validateDirectorDecision({
       hg_scene_id: session.hg_scene_id,
@@ -441,7 +460,7 @@ test('live generation accepts valid proposal through Host validation', async (t)
   const host = await startDomainApi(port);
   const api = createDomainApiClient(host.baseUrl);
   t.after(() => host.stop());
-  const session = await api.createSession({ cast: ['Alice'] });
+  const session = await api.createSession({ cast: ['Alice'], seed_active_issue: true });
   const round = await api.startRound({ hg_scene_id: session.hg_scene_id });
   const validation = await api.validateDirectorDecision({
     hg_scene_id: session.hg_scene_id,
@@ -491,15 +510,27 @@ test('live generation accepts valid proposal through Host validation', async (t)
     runEphemeralInference: async ({ mockResponses }) => ({
       evidenceId: 'ev-live-valid',
       raw: mockResponses?.[0] ?? validProposal({
-        evidence_anchors: [{ anchor_id: `committed_move:${commitId}`, evidence_kind: 'committed_move', anchor_commit_id: commitId }],
-        proposed_payload: { subject_ref: `commit:${commitId}`, salience_level: 'major' },
+        evidence_anchors: [
+          { anchor_id: `committed_move:${commitId}`, evidence_kind: 'committed_move', anchor_commit_id: commitId },
+          { anchor_id: `continuity_issue:${TEST_ISSUE_ID}`, evidence_kind: 'continuity_issue', anchor_commit_id: commitId },
+        ],
+        proposed_payload: {
+          issue_ref: TEST_ISSUE_ID,
+          semantic_unmet_condition: 'The move does not resolve the active issue.',
+        },
       }),
       failed: false,
       trace: { finish: { kind: 'stop' } },
     }),
     mockResponse: validProposal({
-      evidence_anchors: [{ anchor_id: `committed_move:${commitId}`, evidence_kind: 'committed_move', anchor_commit_id: commitId }],
-      proposed_payload: { subject_ref: `commit:${commitId}`, salience_level: 'major' },
+      evidence_anchors: [
+        { anchor_id: `committed_move:${commitId}`, evidence_kind: 'committed_move', anchor_commit_id: commitId },
+        { anchor_id: `continuity_issue:${TEST_ISSUE_ID}`, evidence_kind: 'continuity_issue', anchor_commit_id: commitId },
+      ],
+      proposed_payload: {
+        issue_ref: TEST_ISSUE_ID,
+        semantic_unmet_condition: 'The move does not resolve the active issue.',
+      },
     }),
   });
   assert.equal(result.ok, true);

@@ -495,6 +495,7 @@ class SessionCreateRequest:
     memory_scope_id: str | None = None
     player_character_file_id: str | None = None
     user_persona_id: str | None = None
+    seed_active_issue: bool = False
 
 
 @dataclass(frozen=True)

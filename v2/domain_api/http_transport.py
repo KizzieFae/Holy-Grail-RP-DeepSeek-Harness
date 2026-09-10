@@ -109,6 +109,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     memory_scope_id=data.get("memory_scope_id"),
                     player_character_file_id=data.get("player_character_file_id"),
                     user_persona_id=data.get("user_persona_id"),
+                    seed_active_issue=bool(data.get("seed_active_issue")),
                 )
                 self._send_json(
                     201,
@@ -123,6 +124,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         memory_scope_id=req.memory_scope_id,
                         player_character_file_id=req.player_character_file_id,
                         user_persona_id=req.user_persona_id,
+                        seed_active_issue=req.seed_active_issue,
                     ),
                 )
                 return
@@ -356,6 +358,7 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         ),
                         evidence_catalog=body.get("evidence_catalog"),
                         proposal_generation_failure=body.get("proposal_generation_failure"),
+                        proposal_generation_skip_reason=body.get("proposal_generation_skip_reason"),
                     ),
                 )
                 return
