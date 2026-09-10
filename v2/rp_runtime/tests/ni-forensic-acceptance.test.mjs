@@ -95,6 +95,7 @@ async function createAcceptanceSession(baseUrl) {
     body: JSON.stringify({
       cast: ['Alice'],
       memory_scope_id: MEMORY_SCOPE_ID,
+      seed_active_issue: true,
     }),
   });
   if (!res.ok) throw new Error(`sessions/create failed: ${res.status}`);
@@ -144,22 +145,32 @@ const MOCK_STORYTELLER_ASSESSMENT = JSON.stringify({
   evidence_refs: [{ ref_kind: 'bundle_entry', stable_ref: 'entry-alice' }],
 });
 
+const TEST_ISSUE_ID = 'issue-contract-test-1';
+
 function buildValidLibrarianProposal(commitId) {
   return JSON.stringify({
     schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
     proposals: [{
       proposal_id: 'prop-ni-acc-1',
-      proposal_kind: 'information_salience',
-      derivation_summary: 'Committed move advances the scene objective.',
+      proposal_kind: 'issue_tension_pressure',
+      proposal_origin: 'storyteller',
+      derivation_summary: 'Committed move leaves active issue pressure unmet.',
       confidence: 'likely',
-      evidence_anchors: [{
-        anchor_id: `committed_move:${commitId}`,
-        evidence_kind: 'committed_move',
-        anchor_commit_id: commitId,
-      }],
+      evidence_anchors: [
+        {
+          anchor_id: `committed_move:${commitId}`,
+          evidence_kind: 'committed_move',
+          anchor_commit_id: commitId,
+        },
+        {
+          anchor_id: `continuity_issue:${TEST_ISSUE_ID}`,
+          evidence_kind: 'continuity_issue',
+          anchor_commit_id: commitId,
+        },
+      ],
       proposed_payload: {
-        subject_ref: `commit:${commitId}`,
-        salience_level: 'major',
+        issue_ref: TEST_ISSUE_ID,
+        semantic_unmet_condition: 'The move does not resolve the active issue.',
       },
     }],
   });
@@ -382,7 +393,7 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   const storytellerOrientation = findByInferenceKind(attempts, 'storyteller_orientation')[0];
   const director = findDirectorDecision(attempts);
   const characterMove = findCharacterMove(attempts);
-  const proposal = findByInferenceKind(attempts, 'librarian_proposal')[0];
+  const proposal = findByInferenceKind(attempts, 'storyteller_post_commit_issue_pressure')[0];
 
   assert.ok(orientation, 'character orientation evidence');
   assert.ok(mediation, 'librarian mediation evidence');
@@ -390,7 +401,7 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   assert.ok(storytellerOrientation, 'storyteller orientation evidence');
   assert.ok(director, 'director decision evidence');
   assert.ok(characterMove, 'committed character move evidence');
-  assert.ok(proposal, 'librarian proposal evidence');
+  assert.ok(proposal, 'post-commit semantic proposal evidence');
 
   const fChain = reconstructNegativeLineageF(mediation);
   const gChain = reconstructPositiveLineageG(mediation, characterMove);
@@ -462,7 +473,7 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   reconstructPositiveLineageG(restartedMediation, restartedMove);
   reconstructFromTag(tag, dataDir, hgSessionId);
 
-  const proposals = findByInferenceKind(restartedAttempts, 'librarian_proposal');
+  const proposals = findByInferenceKind(restartedAttempts, 'storyteller_post_commit_issue_pressure');
   assert.equal(proposals.length, 1, 'exactly one proposal evidence attempt after restart');
   const proposalMatch = proposals[0];
   assert.equal(proposalMatch.decision?.librarian_proposal?.batch_id, batchId);

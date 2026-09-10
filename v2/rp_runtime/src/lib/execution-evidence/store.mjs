@@ -633,7 +633,11 @@ export class ExecutionEvidenceStore {
 
     const proposalCommitId = attempt?.associations?.domain_commit_id
       ?? attempt?.decision?.librarian_proposal?.batch_id;
-    if (inferenceKind === 'librarian_proposal' && proposalCommitId) {
+    if (
+      (inferenceKind === 'librarian_proposal'
+        || inferenceKind === 'storyteller_post_commit_issue_pressure')
+      && proposalCommitId
+    ) {
       ni.by_commit = {
         ...(ni.by_commit ?? {}),
         [String(proposalCommitId)]: {
