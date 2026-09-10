@@ -142,6 +142,14 @@ export const ALLOWED_SOURCE_KINDS = {
     COMMON_INSTRUCTION,
     new Set(['active_constraints', 'librarian_knowledge']),
   ),
+  storyteller_post_commit_issue_pressure: union(
+    COMMON_INSTRUCTION,
+    new Set(['active_constraints', 'librarian_knowledge']),
+  ),
+  storyteller_post_commit_issue_pressure_contract_correction: union(
+    COMMON_INSTRUCTION,
+    new Set(['active_constraints', 'librarian_knowledge']),
+  ),
   opening: union(
     SCENE_AUTHORITY,
     COMMON_INSTRUCTION,

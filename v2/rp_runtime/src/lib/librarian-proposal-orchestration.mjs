@@ -19,6 +19,7 @@ export function buildPostCommitProposalContextRequest({
     turn_index: turnIndex,
     domain_commit_id: domainCommitId,
     librarian_inference_id: librarianInferenceId,
+    semantic_producer_role: 'storyteller',
     visibility_envelope: {
       viewer_role: 'host_internal',
       authority_ceiling_enforced: 'derived',
@@ -127,9 +128,11 @@ export async function runPostCommitLibrarianLifecycle({
   const batch = generationResult.batch ?? {};
   const blockingPersistenceFailure = hasBlockingPersistenceFailure(batch);
   const terminal = generationResult.skipped === true
+    || generationResult.stage === 'eligibility_skipped'
     || batch.skipped === true
     || batch.orchestration_status === 'already_terminal'
     || batch.orchestration_status === 'finalized'
+    || batch.degradation_mode === 'eligibility_skipped'
     || Boolean(batch.batch_id)
     || Boolean(batch.existing_audit);
 

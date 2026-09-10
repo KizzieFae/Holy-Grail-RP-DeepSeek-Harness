@@ -1029,16 +1029,22 @@ class DomainKernel:
                     "contributions": [],
                     "evidence_catalog": [],
                 }
+            inference_required, eligibility_outcome = (
+                self.cognition.librarian_proposals.evaluate_eligibility(fixture)
+            )
             response = self.cognition.librarian_proposals.prepare_proposal_context(request, fixture)
             from .manifest_validation import validate_contribution_package
 
-            validate_contribution_package("librarian_proposal", response.contributions)
+            inference_kind = "storyteller_post_commit_issue_pressure"
+            validate_contribution_package(inference_kind, response.contributions)
             return {
                 "skipped": False,
                 "orchestration_status": "prepared",
                 "manifest_id": response.manifest_id,
                 "inference_id": response.inference_id,
-                "inference_kind": "librarian_proposal",
+                "inference_kind": inference_kind,
+                "inference_required": inference_required,
+                "eligibility_outcome": eligibility_outcome,
                 "request_id": response.request_id,
                 "hg_scene_id": response.hg_scene_id,
                 "hg_round_id": response.hg_round_id,
@@ -1081,6 +1087,8 @@ class DomainKernel:
         proposal_result: dict[str, Any] | None = None,
         evidence_catalog: list[dict[str, Any]] | None = None,
         proposal_generation_failure: str | None = None,
+        proposal_generation_skip_reason: str | None = None,
+        allow_legacy_kinds: bool | None = None,
     ) -> dict[str, Any]:
         from dataclasses import asdict
 
@@ -1125,15 +1133,23 @@ class DomainKernel:
                     )
                     for item in evidence_catalog
                 )
+            resolved_allow_legacy = (
+                bool(allow_legacy_kinds)
+                if allow_legacy_kinds is not None
+                else False
+            )
             result = self.cognition.librarian_proposals.finalize_proposals(
                 request,
                 fixture,
                 proposal_result=proposal_result,
                 evidence_catalog=catalog,
                 proposal_generation_failure=proposal_generation_failure,
+                proposal_generation_skip_reason=proposal_generation_skip_reason,
+                allow_legacy_kinds=resolved_allow_legacy,
             )
             payload = asdict(result)
             payload["proposal_generation_failure"] = proposal_generation_failure
+            payload["proposal_generation_skip_reason"] = proposal_generation_skip_reason
             if isinstance(self.store, SessionRepository):
                 try:
                     if os.environ.get("HG_TEST_LIBRARIAN_PERSIST_FAIL") == "1":

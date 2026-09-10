@@ -78,6 +78,35 @@ export async function runLibrarianProposalGeneration({
     };
   }
 
+  if (prepareResponse.inference_required === false) {
+    const skipReason = prepareResponse.eligibility_outcome ?? 'no_eligible_active_issues';
+    const batch = await domainApi.finalizeLibrarianProposals({
+      hg_scene_id: hgSceneId,
+      inference_id: inferenceId,
+      proposal_context_request: proposalContextRequest,
+      proposal_result: null,
+      evidence_catalog: prepareResponse.evidence_catalog,
+      proposal_generation_skip_reason: skipReason,
+    });
+    return {
+      ok: true,
+      skipped: false,
+      stage: 'eligibility_skipped',
+      inferenceError: null,
+      prepareResponse,
+      inferRun: null,
+      inferRuns: [],
+      parsed: null,
+      contractLineage: null,
+      batch,
+      proposalEvidenceId: null,
+      eligibilitySkipped: true,
+    };
+  }
+
+  const inferenceKind = prepareResponse.inference_kind ?? 'storyteller_post_commit_issue_pressure';
+  const correctionKind = `${inferenceKind}_contract_correction`;
+
   const catalogIds = new Set(
     (prepareResponse.evidence_catalog ?? []).map((item) => String(item.anchor_id)),
   );
@@ -88,21 +117,21 @@ export async function runLibrarianProposalGeneration({
     domainCommitId: proposalContextRequest.domain_commit_id,
   };
   const manifest = manifestFromLibrarianProposalPrepareResponse(prepareResponse);
-  const proposalInferenceId = `${inferenceId}-librarian-proposal`;
+  const proposalInferenceId = `${inferenceId}-post-commit-semantic`;
   const mockList = mockResponse
     ? (Array.isArray(mockResponse) ? mockResponse : [mockResponse])
     : [];
 
   const resolvedModelProfile = modelProfileForInferenceKind(
     modelProfile,
-    'librarian_proposal',
+    inferenceKind,
   );
 
   const inference = await runInferenceWithContractCorrection({
     runEphemeralInference,
     primaryInferenceId: proposalInferenceId,
-    primaryInferenceKind: 'librarian_proposal',
-    correctionInferenceKind: 'librarian_proposal_contract_correction',
+    primaryInferenceKind: inferenceKind,
+    correctionInferenceKind: correctionKind,
     buildPrimaryPrompt: () => buildLibrarianProposalPrompt(parseContext),
     buildCorrectionPrompt: buildLibrarianProposalCorrectionPrompt,
     parseFn: (raw, ctx) => parseLibrarianProposalResult(raw, ctx.catalogIds),
@@ -112,12 +141,13 @@ export async function runLibrarianProposalGeneration({
     modelProfile: resolvedModelProfile,
     evidenceContextBase: {
       ...evidenceContextBase,
-      role: 'librarian',
+      role: 'storyteller',
       parentInferenceId: inferenceId,
       niForensics: true,
       requestId: prepareResponse.request_id,
-      proposalPhase: 'post_commit_semantic',
+      proposalPhase: 'post_commit_issue_pressure',
       domainCommitId: proposalContextRequest.domain_commit_id,
+      semanticProducerRole: 'storyteller',
     },
     maxCorrections: 1,
   });

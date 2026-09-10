@@ -5,25 +5,7 @@ export const LIBRARIAN_PROPOSAL_RESULT_SCHEMA = 'hg_librarian_proposal_result_v1
 export const LIBRARIAN_PROPOSAL_CONFIG_ID = 'librarian_proposal_v1';
 
 const VALID_CONFIDENCE = new Set(['confirmed', 'likely', 'speculative']);
-const VALID_KINDS = new Set([
-  'consequence_meaning',
-  'information_salience',
-  'knowledge_revelation_significance',
-  'issue_tension_pressure',
-]);
-
-const CONSEQUENCE_TAGS = [
-  'advancement',
-  'complication',
-  'revelation',
-  'resolution_candidate',
-  'relationship_shift',
-  'tension_escalation',
-  'tension_release',
-];
-
-const SALIENCE_LEVELS = ['minor', 'major', 'pivotal'];
-const INTERPRETATION_SCOPES = ['utterance_occurrence', 'referenced_authoritative_proposition'];
+const ACTIVE_PROPOSAL_KINDS = new Set(['issue_tension_pressure']);
 
 const FORBIDDEN_PROPOSAL_FIELD_ALIASES = [
   'change_kind',
@@ -39,8 +21,8 @@ function asStringArray(value) {
 }
 
 /**
- * Canonical machine-readable Librarian proposal output contract (#72).
- * Single source for prompts and correction prompts.
+ * Canonical machine-readable post-commit semantic proposal contract (#164).
+ * Production sync path accepts issue_tension_pressure only.
  */
 export function buildLibrarianProposalContractSpec({
   sampleAnchorId = 'committed_move:COMMIT_ID',
@@ -55,20 +37,18 @@ export function buildLibrarianProposalContractSpec({
       proposals: 'array (required; may be empty when no grounded proposal exists)',
     },
     proposal_fields: {
-      proposal_kind: [...VALID_KINDS].join(' | '),
+      proposal_kind: [...ACTIVE_PROPOSAL_KINDS].join(' | '),
       derivation_summary: 'non-empty string',
       confidence: [...VALID_CONFIDENCE].join(' | '),
       proposed_payload: 'object (per-kind shape below)',
       evidence_anchors: 'non-empty array of objects: { anchor_id, evidence_kind, anchor_commit_id?, anchor_path? }',
       proposal_id: 'optional string',
+      proposal_origin: 'optional string (storyteller for new production)',
       affected_entities: 'optional string[]',
       affected_state_classes: 'optional string[]',
       source_bundle_id: 'optional string',
     },
     payload_by_kind: {
-      consequence_meaning: `{ tags: non-empty string[] from ${CONSEQUENCE_TAGS.join('|')} }`,
-      information_salience: `{ subject_ref: string, salience_level: ${SALIENCE_LEVELS.join('|')} }`,
-      knowledge_revelation_significance: `{ event_ref, subject_character, revelation_significance_level: ${SALIENCE_LEVELS.join('|')}, interpretation_scope: ${INTERPRETATION_SCOPES.join('|')}, proposition_authority_refs?: string[] (required when interpretation_scope=referenced_authoritative_proposition; must cite world_truth_eligible catalog anchors) }`,
       issue_tension_pressure: '{ issue_ref, semantic_unmet_condition, stakes_summary? }',
     },
     forbidden: [
@@ -77,14 +57,16 @@ export function buildLibrarianProposalContractSpec({
       'Do NOT omit the top-level schema field.',
       'Do NOT use preservation_signal anchors.',
       'Do NOT invent anchor_id values outside the evidence catalog.',
+      'Do NOT emit consequence_meaning, information_salience, or knowledge_revelation_significance.',
     ],
     minimal_example: {
       schema: LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
       proposals: [
         {
           proposal_id: 'prop-example-1',
-          proposal_kind: 'information_salience',
-          derivation_summary: 'Committed move advances scene salience.',
+          proposal_kind: 'issue_tension_pressure',
+          proposal_origin: 'storyteller',
+          derivation_summary: 'The committed move leaves the active issue condition unmet.',
           confidence: 'likely',
           evidence_anchors: [
             {
@@ -94,8 +76,9 @@ export function buildLibrarianProposalContractSpec({
             },
           ],
           proposed_payload: {
-            subject_ref: `commit:${commitId}`,
-            salience_level: 'major',
+            issue_ref: 'issue-1',
+            semantic_unmet_condition: 'Vault access remains blocked after the move.',
+            stakes_summary: 'Party cannot proceed without resolving access.',
           },
         },
       ],
@@ -118,9 +101,6 @@ export function librarianProposalContractPromptLines(context = {}) {
     '- evidence_anchors: non-empty array of objects with anchor_id and evidence_kind from the catalog only',
     '',
     'proposed_payload by proposal_kind:',
-    `- consequence_meaning: ${spec.payload_by_kind.consequence_meaning}`,
-    `- information_salience: ${spec.payload_by_kind.information_salience}`,
-    `- knowledge_revelation_significance: ${spec.payload_by_kind.knowledge_revelation_significance}`,
     `- issue_tension_pressure: ${spec.payload_by_kind.issue_tension_pressure}`,
     '',
     'Forbidden:',
@@ -133,15 +113,11 @@ export function librarianProposalContractPromptLines(context = {}) {
 
 export function buildLibrarianProposalPrompt(context = {}) {
   return [
-    'You are the Holy Grail Librarian post-commit semantic interpreter.',
-    'Propose grounded information-level persistence/change candidates ONLY from evidence catalog anchor_id values.',
+    'You are the Holy Grail Storyteller performing a narrow post-commit issue-pressure assessment (#164).',
+    'Propose grounded issue_tension_pressure semantic overlays ONLY from evidence catalog anchor_id values.',
+    'Cite continuity_issue anchors for issue_ref and committed_move anchors for move grounding.',
     'Do NOT invent facts, authority, or continuity commits.',
-    'Do NOT use Storyteller PreservationSignal or attention refs as evidence.',
-    'Occurrence truth ≠ proposition truth: public_event and committed_move anchors prove what occurred or was said; they do NOT establish objective world truth of claims inside dialogue.',
-    'For knowledge_revelation_significance:',
-    '- interpretation_scope utterance_occurrence: mark significance of what the Character said/claimed/expressed without endorsing the proposition as world truth. derivation_summary must frame significance of the utterance/claim, not objective ontology.',
-    '- interpretation_scope referenced_authoritative_proposition: connect the occurrence to a proposition that already has independent world authority; cite proposition_authority_refs to catalog anchors with world_truth_eligible metadata (e.g. scenario_premise).',
-    '- authored_role_private anchors support private epistemic alignment only; they cannot be the sole world-truth authority.',
+    'Do NOT use PreservationSignal or attention refs as evidence.',
     'Return ONLY one JSON object (no markdown fences, no commentary).',
     '',
     ...librarianProposalContractPromptLines(context),
@@ -152,7 +128,7 @@ export function buildLibrarianProposalCorrectionPrompt({ priorRaw, structuralErr
   const prior = typeof priorRaw === 'string' ? priorRaw : JSON.stringify(priorRaw ?? {});
   const contractPrompt = buildLibrarianProposalPrompt(context ?? {});
   return [
-    'CONTRACT CORRECTION: Your previous response did not satisfy the required Librarian proposal machine contract.',
+    'CONTRACT CORRECTION: Your previous response did not satisfy the required post-commit semantic proposal machine contract.',
     'Preserve the intended proposal meaning and cited evidence from that response unless satisfying the contract logically requires otherwise.',
     'Correct ONLY representation/serialization. Do NOT invent new evidence, anchors, or unrelated proposals.',
     'Output JSON only — no markdown, no commentary.',
@@ -193,7 +169,7 @@ export function parseLibrarianProposalResult(raw, catalogAnchorIds = new Set()) 
     if (!proposalKind || !derivationSummary || !VALID_CONFIDENCE.has(confidence)) {
       return { ok: false, error: `proposals[${index}].required_fields`, result: null };
     }
-    if (!VALID_KINDS.has(proposalKind)) {
+    if (!ACTIVE_PROPOSAL_KINDS.has(proposalKind)) {
       return { ok: false, error: `proposals[${index}].proposal_kind`, result: null };
     }
     const anchors = [];
@@ -228,6 +204,7 @@ export function parseLibrarianProposalResult(raw, catalogAnchorIds = new Set()) 
     proposals.push({
       proposal_id: String(item.proposal_id ?? '').trim() || null,
       proposal_kind: proposalKind,
+      proposal_origin: String(item.proposal_origin ?? 'storyteller').trim(),
       derivation_summary: derivationSummary,
       confidence,
       evidence_anchors: anchors,

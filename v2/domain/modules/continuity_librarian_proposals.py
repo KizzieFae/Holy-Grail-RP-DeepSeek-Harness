@@ -282,6 +282,7 @@ def evaluate_librarian_proposal_continuity(
     closure: ContinuityEvidenceClosure,
     host_accepted: bool,
     catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
+    allow_legacy_kinds: bool = False,
 ) -> ContinuityProposalItemDecision:
     if not host_accepted:
         return ContinuityProposalItemDecision(
@@ -357,6 +358,7 @@ def evaluate_librarian_proposal_continuity(
     ok, detail, _codes = validate_proposal_payload_schema(
         str(proposal.proposal_kind),
         proposal.proposed_payload,
+        allow_legacy_kinds=allow_legacy_kinds,
     )
     if not ok:
         code = REASON_AUTHORITY_ELEVATION if "authority_elevation" in detail else REASON_INVALID_PAYLOAD
@@ -412,6 +414,7 @@ def evaluate_librarian_proposal_batch(
     host_accepted_by_id: dict[str, bool],
     batch_id: str,
     catalog: tuple[ProposalEvidenceCatalogItem, ...] | None = None,
+    allow_legacy_kinds: bool = False,
 ) -> ContinuityProposalBatchDecision:
     decisions: list[ContinuityProposalItemDecision] = []
     accepted = 0
@@ -422,6 +425,7 @@ def evaluate_librarian_proposal_batch(
             closure=closure,
             host_accepted=host_accepted_by_id.get(proposal.proposal_id, False),
             catalog=catalog,
+            allow_legacy_kinds=allow_legacy_kinds,
         )
         decisions.append(decision)
         if decision.outcome == "accept":
@@ -444,11 +448,14 @@ def librarian_proposal_audit_metadata(
     librarian_inference_id: str,
     host_validation: Any,
     continuity_decision: ContinuityProposalBatchDecision | None,
+    semantic_producer_role: str = "storyteller",
+    eligibility_skip_reason: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    metadata = {
         "librarian_proposal_batch_id": batch_id,
         "librarian_proposal_domain_commit_id": domain_commit_id,
         "librarian_inference_id": librarian_inference_id,
+        "semantic_producer_role": semantic_producer_role,
         "librarian_proposal_host_accepted": bool(getattr(host_validation, "accepted", False)),
         "librarian_proposal_host_rejection_codes": list(
             getattr(host_validation, "rejection_codes", ()) or ()
@@ -467,3 +474,6 @@ def librarian_proposal_audit_metadata(
             )
         ),
     }
+    if eligibility_skip_reason:
+        metadata["semantic_eligibility_skip_reason"] = eligibility_skip_reason
+    return metadata

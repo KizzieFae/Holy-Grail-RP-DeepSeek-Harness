@@ -23,6 +23,8 @@ InferenceKind = Literal[
     "librarian_mediation",
     "librarian_proposal",
     "librarian_proposal_contract_correction",
+    "storyteller_post_commit_issue_pressure",
+    "storyteller_post_commit_issue_pressure_contract_correction",
     "opening",
     "opening_segmentation",
     "player_decomposition",
@@ -52,6 +54,8 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "librarian_mediation",
     "librarian_proposal",
     "librarian_proposal_contract_correction",
+    "storyteller_post_commit_issue_pressure",
+    "storyteller_post_commit_issue_pressure_contract_correction",
     "opening",
     "opening_segmentation",
     "player_decomposition",
@@ -224,6 +228,12 @@ ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
         _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
     ),
     "librarian_proposal_contract_correction": (
+        _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
+    ),
+    "storyteller_post_commit_issue_pressure": (
+        _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
+    ),
+    "storyteller_post_commit_issue_pressure_contract_correction": (
         _COMMON_INSTRUCTION | frozenset({"active_constraints", "librarian_knowledge"})
     ),
     "opening": (

@@ -87,8 +87,8 @@ Narrative: state + bundle → Storyteller → StorytellerAdvisoryPackage → Pac
 | **Story knowledge** (#50, validated) | Occurrence-first JSONL corpus per `memory_scope_id`; `story_occurrence`/`story_derived` classes; evidence-budget selection; rebuildable TF-IDF index; live `PublicEvent.known_by` eligibility; Librarian `mediation_outcome`; `evidence_projection` manifest on occurrence rows (#51 audit observability) | Neo4j; cross-session aggregation beyond `memory_scope_id` |
 | **Narrator environmental response** (#49, implemented) | `EnvironmentalCurrentView`; `narrator_environment_baseline` packet; pre-render N1/N2 cognition; targeted Librarian (`consumer_role=narrator`); B2 via `submit_derived_record`; B1 non-persistent; C via separate establishment | Unrestricted worldbuilding; persistent B1 ledger; authored canon mutation |
 | **Committed occurrence evidence** (#51) | Bounded `PublicEvent.occurrence_evidence` + `summary_selection_source` turn metadata; session `continuity_state` forensic substrate; #50 globally eligible projection only | Duplicate Continuity registries; promotion coverage expansion; per-query retrieval candidate ledger |
-| **Librarian** (#34, closed) | Read mediation (S2a), Packaging mapper (S2b), grounded proposal seam (S4a), per-knower `knowledge_revelation_significance` (S4b); **live post-commit S4 orchestration (#39)** — concurrent Narrator ∥ Librarian with per-commit join, session locks, durable audit | Additional proposal-class migrations; Character direct `prepare_context` wiring; cache/scheduling |
-| **Storyteller** (#32, closed) | Model A advisory cognition (S3a/S3b/S3c); consumes Librarian bundles; suggestive `storyteller_*` lanes | Narrator policy socket; post-commit refresh |
+| **Librarian** (#34, closed) | Read mediation (S2a), Packaging mapper (S2b), producer-neutral post-commit proposal seam (Host finalize/audit); per-knower `knowledge_revelation_significance` validators (S4b, separately invoked); **live post-commit orchestration (#39, #164)** — concurrent Narrator ∥ semantic path with per-commit join | Post-commit narrative-semantic production (#164 moved to Storyteller); Character direct `prepare_context` wiring; cache/scheduling |
+| **Storyteller** (#32, closed) | Model A advisory cognition (S3a/S3b/S3c); narrow post-commit `issue_tension_pressure` assessment (#164, 0–1 LLM/commit when eligible); consumes Librarian bundles; suggestive `storyteller_*` lanes | General `post_commit_refresh` / Model A re-bind |
 | **Packaging** | `kernel.prepare_*` deterministic assembly; Librarian bundle mapper; Storyteller lane projection | Character adapter retirement (future integration decision) |
 
 Recommended implementation sequencing (child Issues): **S0** shared contracts → **S1** #31 façade → **S2** #34 read + Packaging mapper → **S3** #32 advisory → **S4** #34 write/proposals → **S5** selective Continuity heuristic migrations. **S4 does not block S3.**
@@ -115,18 +115,18 @@ Three distinct Continuity mutation authority seams exist:
 |------|-----------|-------|
 | **Normal turn-commit** | `ContinuityManager.process_turn` via Host `commit_move` → `execute_commit_move` | Authoritative completed-turn mutations (`turn_counter`, `IssueState`, `PublicEvent` core fields including `known_by`, scene/issue/interpretation/excursion state, pipeline audit origin) |
 | **Scene setup / initialization** | `initialize_scene`, `finalize_continuity_setup_seam`, session bootstrap | Legitimate pre-turn bootstrap; not turn-commit; not S4 |
-| **S4 post-commit derived-state** | `finalize_librarian_proposals` → `apply_accepted_librarian_proposals` | Bounded derived annotations/overlays after successful normal commit; **not** a second unrestricted turn-commit authority |
+| **S4 post-commit derived-state** | `finalize_librarian_proposals` → `apply_accepted_librarian_proposals` | Bounded derived annotations/overlays after successful normal commit; **not** a second unrestricted turn-commit authority; **#164:** Storyteller semantic proposer for routine sync `issue_tension_pressure`; eligibility gate skips LLM when no ACTIVE/ESCALATING issues |
 
 **Positive S4 durable mutation allowlist** (machine-readable: `S4_DURABLE_MUTATION_SURFACES_BY_KIND`, `S4_DURABLE_MUTATION_SURFACES`, and `S4B_MUTATING_PROPOSAL_KINDS` in `v2/domain_api/librarian_proposal_contract.py`):
 
-1. `PublicEvent.revelation_significance_by_character` — proposal kind `knowledge_revelation_significance`
-2. `ContinuityManager.issue_pressure_semantic_overlays` — proposal kind `issue_tension_pressure`
+1. `PublicEvent.revelation_significance_by_character` — proposal kind `knowledge_revelation_significance` (legacy/separate invocation; not routine sync #164)
+2. `ContinuityManager.issue_pressure_semantic_overlays` — proposal kind `issue_tension_pressure` (routine sync #164)
 
 S4 **must not** modify `turn_counter`, authoritative `IssueState`, or `known_by`; must not manufacture authoritative events; must not mutate other manager-owned authoritative surfaces; must not reopen or replace a completed normal turn transaction.
 
-Accepted `consequence_meaning` and `information_salience` proposals remain audit/interpretive only (no durable Continuity mutation).
+**#164:** `consequence_meaning` and `information_salience` are retired as post-commit LLM kinds; routine sync does not emit `knowledge_revelation_significance`.
 
-**Persistence:** normal character commit persists first; S4 finalize uses a separate persist seam. DSH joins Librarian finalize (including persist) before subsequent turn eligibility. Terminal `librarian_proposal_audit_log` per `domain_commit_id` provides at-most-once protection. Forensic correlation: `domain_commit_id`, Librarian batch/audit identifiers, and derived-state provenance fields on overlays/annotations.
+**Persistence:** normal character commit persists first; S4 finalize uses a separate persist seam. DSH joins post-commit semantic finalize (including persist) before subsequent turn eligibility. Terminal `librarian_proposal_audit_log` per `domain_commit_id` provides at-most-once protection. Forensic correlation: `domain_commit_id`, batch/audit identifiers, `semantic_producer_role`, and derived-state provenance fields on overlays/annotations.
 
 ### Continuity and evidence lanes
 

@@ -134,6 +134,7 @@ class SessionRepository:
         plot_cognition_scope_id: str | None = None,
         player_character_file_id: str | None = None,
         user_persona_id: str | None = None,
+        seed_active_issue: bool = False,
     ) -> LiveSession:
         if characters:
             session = create_live_session_from_setup(
@@ -158,6 +159,7 @@ class SessionRepository:
                 or "A quiet workshop for Holy Grail domain host sessions.",
                 memory_scope_id=memory_scope_id,
                 plot_cognition_scope_id=plot_cognition_scope_id,
+                seed_active_issue=seed_active_issue,
             )
         self._cache[session.hg_scene_id] = session
         self.persist(session)

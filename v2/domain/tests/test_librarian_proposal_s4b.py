@@ -283,6 +283,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "revelation_significance_level": "major",
                 "interpretation_scope": "utterance_occurrence",
             },
+            allow_legacy_kinds=True,
         )
         self.assertTrue(ok)
 
@@ -296,6 +297,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 commit_id="commit-s4b-1",
                 event_id=event.event_id,
             ),
+            allow_legacy_kinds=True,
         )
         self.assertTrue(result.host_validation.accepted)
         assert result.continuity_decision is not None
@@ -355,6 +357,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 event_id=event.event_id,
                 subject_character="Bob",
             ),
+            allow_legacy_kinds=True,
         )
         assert result.continuity_decision is not None
         self.assertEqual(result.continuity_decision.accepted_count, 0)
@@ -370,6 +373,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 commit_id="commit-s4b-1",
                 event_id="evt-does-not-exist",
             ),
+            allow_legacy_kinds=True,
         )
         assert result.continuity_decision is not None
         self.assertEqual(result.continuity_decision.accepted_count, 0)
@@ -385,6 +389,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 "interpretation_scope": "utterance_occurrence",
                 "grant_knowledge": True,
             },
+            allow_legacy_kinds=True,
         )
         self.assertFalse(ok)
         self.assertIn("authority_elevation_attempt", codes)
@@ -397,8 +402,8 @@ class LibrarianProposalS4bTests(unittest.TestCase):
             event_id=event.event_id,
             proposal_id="prop-idem-1",
         )
-        first = service.finalize_proposals(request, fixture, proposal_result=proposal)
-        second = service.finalize_proposals(request, fixture, proposal_result=proposal)
+        first = service.finalize_proposals(request, fixture, proposal_result=proposal, allow_legacy_kinds=True)
+        second = service.finalize_proposals(request, fixture, proposal_result=proposal, allow_legacy_kinds=True)
         assert first.continuity_decision is not None
         assert second.continuity_decision is not None
         self.assertTrue(first.continuity_decision.item_decisions[0].durable_mutation_applied)
@@ -420,6 +425,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 proposal_id="prop-high",
                 level="pivotal",
             ),
+            allow_legacy_kinds=True,
         )
         self.assertEqual(high.continuity_decision.accepted_count, 1)
         low = service.finalize_proposals(
@@ -431,6 +437,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 proposal_id="prop-low",
                 level="minor",
             ),
+            allow_legacy_kinds=True,
         )
         assert low.continuity_decision is not None
         self.assertEqual(low.continuity_decision.accepted_count, 0)
@@ -510,7 +517,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
     def test_inference_failure_leaves_baseline(self) -> None:
         fixture, request, event = _session_with_event()
         service = LibrarianProposalService()
-        result = service.finalize_proposals(request, fixture, proposal_result=None)
+        result = service.finalize_proposals(request, fixture, proposal_result=None, allow_legacy_kinds=True)
         self.assertEqual(result.degradation_mode, "inference_failed")
         self.assertIsNone(event.revelation_significance_by_character)
 
@@ -533,6 +540,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                 commit_id="commit-s4b-1",
                 event_id=event.event_id,
             ),
+            allow_legacy_kinds=True,
         )
         stored = fixture.manager.public_events[0].to_dict()
         self.assertIn("Alice", stored["known_by"])
@@ -622,6 +630,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
                     }
                 ],
             },
+            allow_legacy_kinds=True,
         )
         assert result.continuity_decision is not None
         self.assertFalse(result.continuity_decision.item_decisions[0].durable_mutation_applied)
@@ -771,6 +780,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
             proposal,
             closure=closure,
             host_accepted=True,
+            allow_legacy_kinds=True,
             catalog=catalog,
         )
         self.assertEqual(decision.outcome, "reject")

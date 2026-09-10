@@ -7,6 +7,8 @@ from typing import Any
 from .librarian_proposal_contract import (
     LIBRARIAN_PROPOSAL_ORIGIN,
     LIBRARIAN_PROPOSAL_RESULT_SCHEMA,
+    POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER,
+    STORYTELLER_PROPOSAL_ORIGIN,
     EvidenceAnchor,
     HostProposalBatchValidation,
     HostProposalItemValidation,
@@ -15,6 +17,8 @@ from .librarian_proposal_contract import (
     ProposalEvidenceCatalogItem,
     ProposalProvenance,
     S4A_ACTIVE_PROPOSAL_KINDS,
+    S4A_LEGACY_PARSE_PROPOSAL_KINDS,
+    S4A_RETIRED_PROPOSAL_KINDS,
     new_proposal_id,
     validate_proposal_payload_schema,
 )
@@ -56,6 +60,7 @@ def parse_librarian_proposal_result(
     batch_id: str,
     commit_binding: ProposalCommitBinding,
     librarian_inference_id: str,
+    semantic_producer_role: str = POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER,
 ) -> tuple[tuple[LibrarianSemanticProposal, ...] | None, str]:
     if isinstance(raw, str):
         import json
@@ -92,11 +97,23 @@ def parse_librarian_proposal_result(
             for x in (item.get("affected_state_classes") or [])
             if str(x).strip()
         )
+        origin_raw = str(item.get("proposal_origin", "") or "").strip()
+        if origin_raw in {LIBRARIAN_PROPOSAL_ORIGIN, STORYTELLER_PROPOSAL_ORIGIN}:
+            proposal_origin = origin_raw  # type: ignore[assignment]
+        elif semantic_producer_role == POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER:
+            proposal_origin = STORYTELLER_PROPOSAL_ORIGIN
+        else:
+            proposal_origin = LIBRARIAN_PROPOSAL_ORIGIN
+        producer_role = (
+            POST_COMMIT_SEMANTIC_PRODUCER_STORYTELLER
+            if proposal_origin == STORYTELLER_PROPOSAL_ORIGIN
+            else semantic_producer_role
+        )
         proposals.append(
             LibrarianSemanticProposal(
                 proposal_id=proposal_id,
                 proposal_batch_id=batch_id,
-                proposal_origin=LIBRARIAN_PROPOSAL_ORIGIN,
+                proposal_origin=proposal_origin,
                 proposal_kind=proposal_kind,  # type: ignore[arg-type]
                 evidence_anchors=anchors,
                 derivation_summary=derivation,
@@ -108,6 +125,7 @@ def parse_librarian_proposal_result(
                     source_bundle_id=(
                         str(item.get("source_bundle_id", "") or "").strip() or None
                     ),
+                    producer_role=producer_role,  # type: ignore[arg-type]
                 ),
                 affected_entities=affected_entities,
                 affected_state_classes=affected_state_classes,
@@ -139,6 +157,7 @@ def validate_host_proposal_item(
     *,
     catalog: tuple[ProposalEvidenceCatalogItem, ...],
     domain_commit_id: str,
+    allow_legacy_kinds: bool = False,
 ) -> HostProposalItemValidation:
     codes: list[str] = []
     if not proposal.evidence_anchors:
@@ -164,13 +183,24 @@ def validate_host_proposal_item(
                 "knowledge_propagation_augmentation",
             }:
                 codes.append("authority_elevation_attempt")
+    kind = str(proposal.proposal_kind)
     ok, reason, payload_codes = validate_proposal_payload_schema(
-        str(proposal.proposal_kind),
+        kind,
         proposal.proposed_payload,
+        allow_legacy_kinds=allow_legacy_kinds,
     )
     if not ok:
         codes.extend(payload_codes)
-    if proposal.proposal_kind not in S4A_ACTIVE_PROPOSAL_KINDS:
+    if not allow_legacy_kinds:
+        if kind in S4A_RETIRED_PROPOSAL_KINDS:
+            codes.append("retired_proposal_kind")
+        elif kind in S4A_LEGACY_PARSE_PROPOSAL_KINDS:
+            codes.append("legacy_proposal_kind_not_in_sync_path")
+        elif kind not in S4A_ACTIVE_PROPOSAL_KINDS:
+            codes.append("invalid_proposal_kind")
+    elif kind not in (
+        S4A_ACTIVE_PROPOSAL_KINDS | S4A_RETIRED_PROPOSAL_KINDS | S4A_LEGACY_PARSE_PROPOSAL_KINDS
+    ):
         codes.append("invalid_proposal_kind")
     if proposal.proposed_payload.get("direct_continuity_mutation") is True:
         codes.append("direct_mutation_attempt")
@@ -225,12 +255,14 @@ def validate_host_proposal_batch(
     *,
     catalog: tuple[ProposalEvidenceCatalogItem, ...],
     domain_commit_id: str,
+    allow_legacy_kinds: bool = False,
 ) -> HostProposalBatchValidation:
     item_results = tuple(
         validate_host_proposal_item(
             proposal,
             catalog=catalog,
             domain_commit_id=domain_commit_id,
+            allow_legacy_kinds=allow_legacy_kinds,
         )
         for proposal in proposals
     )
