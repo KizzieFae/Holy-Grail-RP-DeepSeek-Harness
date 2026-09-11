@@ -9,7 +9,7 @@ import {
   manifestFromLibrarianProposalPrepareResponse,
   parseLibrarianProposalResult,
 } from './librarian-proposal-envelope.mjs';
-import { buildLibrarianProposalDecisionPatch } from './execution-evidence/ni-evidence.mjs';
+import { buildPostCommitSemanticDecisionPatch } from './execution-evidence/ni-evidence.mjs';
 
 function proposalContentHash(raw) {
   if (!raw) return null;
@@ -88,6 +88,25 @@ export async function runLibrarianProposalGeneration({
       evidence_catalog: prepareResponse.evidence_catalog,
       proposal_generation_skip_reason: skipReason,
     });
+    const dispositionEvidenceId = recorder?.recordPostCommitSemanticDisposition?.({
+      hgSessionId,
+      hgSceneId,
+      hgRoundId: evidenceContextBase?.hgRoundId ?? proposalContextRequest.hg_round_id,
+      domainCommitId: proposalContextRequest.domain_commit_id,
+      continuityTurnIndex: evidenceContextBase?.continuityTurnIndex ?? proposalContextRequest.turn_index,
+      postCommitSemanticInferenceId: inferenceId,
+      batch,
+      eligibilityOutcome: skipReason,
+      degradationMode: batch?.degradation_mode ?? 'eligibility_skipped',
+      orchestrationStatus: batch?.orchestration_status ?? 'finalized',
+      effectiveConfigurationEpochId: evidenceContextBase?.effectiveConfigurationEpochId ?? null,
+    }) ?? null;
+    if (dispositionEvidenceId && characterMoveEvidenceId) {
+      recorder?.linkNiAssociation?.(hgSessionId, characterMoveEvidenceId, dispositionEvidenceId, {
+        leftKey: 'semantic_disposition_evidence_id',
+        rightKey: 'character_move_evidence_id',
+      });
+    }
     return {
       ok: true,
       skipped: false,
@@ -100,6 +119,7 @@ export async function runLibrarianProposalGeneration({
       contractLineage: null,
       batch,
       proposalEvidenceId: null,
+      dispositionEvidenceId,
       eligibilitySkipped: true,
     };
   }
@@ -170,7 +190,7 @@ export async function runLibrarianProposalGeneration({
     recorder.patchDecision(
       targetRun.evidenceId,
       hgSessionId,
-      buildLibrarianProposalDecisionPatch({
+      buildPostCommitSemanticDecisionPatch({
         batch,
         proposalContentHash: proposalContentHash(targetRun.raw),
         characterMoveEvidenceId,
@@ -233,7 +253,7 @@ export async function runLibrarianProposalGeneration({
       recorder?.patchDecision?.(
         primaryRun.evidenceId,
         hgSessionId,
-        buildLibrarianProposalDecisionPatch({
+        buildPostCommitSemanticDecisionPatch({
           proposalContentHash: proposalContentHash(primaryRun.raw),
           characterMoveEvidenceId,
           contractLineage,

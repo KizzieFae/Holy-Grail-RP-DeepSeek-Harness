@@ -57,7 +57,7 @@ def test_commit_reconstruction_success():
     contracts = {surface["contract"] for surface in envelope["surfaces"]}
     assert "session_rp_history" in contracts
     assert "execution_evidence" in contracts
-    assert "librarian_proposal_audit" in contracts
+    assert "post_commit_semantic_audit" in contracts
     assert "story_knowledge" in contracts
     assert "plot_cognition_chronicle" in contracts
     assert envelope["resolved"]["domain_commit_ids"] == ["commit-ni-1"]
@@ -145,7 +145,7 @@ def test_s4_librarian_correlation():
     )
     mediated = [surface for surface in envelope["surfaces"] if surface["authority"] == AUTHORITY_MEDIATED]
     assert mediated
-    assert mediated[0]["contract"] == "librarian_proposal_audit"
+    assert mediated[0]["contract"] == "post_commit_semantic_audit"
 
 
 def test_story_knowledge_correlation():

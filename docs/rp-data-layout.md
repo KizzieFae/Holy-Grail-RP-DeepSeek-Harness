@@ -97,7 +97,15 @@ New sessions use opaque UUIDv4 filenames. Exact JSON keys follow code-defined se
 
 **`continuity_state` (authoritative truth):** includes `public_events[]` (optional `occurrence_evidence` companion per Issue #51), `turn_metadata_by_index` (classifier/promotion observational record including `summary_selection_source`), `resolved_outcomes`, and related Continuity structures. This is the primary forensic substrate for occurrence-evidence lifecycle reconstruction — not a separate #51 audit log.
 
-**`metadata.v2_host_state`:** `rp_history`, `commit_ids`, and per-entry `domain_commit_id` correlate producer inputs to promoted occurrences.
+**`metadata.v2_host_state`:** `rp_history`, `commit_ids`, and per-entry `domain_commit_id` correlate producer inputs to promoted occurrences. **#164 runtime provenance** (durable after session save/reopen):
+
+| Field | Schema | Role |
+|-------|--------|------|
+| `runtime_build_provenance` | `hg_runtime_build_provenance_v1` | Descriptive build/source metadata (repository slug/commit SHA, capture time, commit SHA source). Secrets excluded. |
+| `runtime_effective_configuration` | `hg_runtime_effective_configuration_v1` | Append-only `epochs[]` of resolved effective configuration snapshots + `current_epoch_id`. Each epoch carries `epoch_id`, `effective_from` (`session_open` \| `settings_update` \| `round_options_override`), `effective_configuration_fingerprint` (SHA-256 over canonical resolved snapshot), `capture_status`, `unavailable_fields`, and bounded `resolved` settings. |
+| `librarian_proposal_audit_log` | *(legacy container name)* | Terminal post-commit semantic audit entries keyed by `domain_commit_id`; canonical fields use `post_commit_semantic_*` + `semantic_producer_role`. Historical Librarian-era field names remain readable. |
+
+Per-attempt **`request.inference_profile`** in execution evidence remains authoritative for actual model/provider/reasoning used. Session provenance epochs supply surrounding effective-configuration context; they do not override per-attempt inference truth.
 
 ### Audit identity in `metadata`
 
@@ -227,7 +235,11 @@ Session JSON may include a lightweight pointer under `metadata.execution_evidenc
 
 **Cleanup / retention:** Evidence trees are keyed by `hg_session_id` under `execution_evidence/`. Operators may delete a session's evidence tree manually (`ExecutionEvidenceStore.deleteSession()` exists; **not** wired to production session-delete). Deleting evidence does not corrupt canonical session JSON. No automatic pruning or session-delete-triggered cleanup. Pre-#15 sessions have no evidence (non-fatal).
 
-**NI forensic contract (#45, forward-only):** Post-#45 attempts that participate in narrative-intelligence lineage carry `evidence_contract: hg_ni_forensics_v1` and `correlation.inference_kind` (additive; `role` unchanged). Structured NI outcomes live in `decision.character_orientation`, `decision.librarian_mediation`, `decision.storyteller_advisory`, and `decision.librarian_proposal`. Candidate disposition uses the complete mediation catalog in the attempt `request` plus ID-level fields in `decision.librarian_mediation` (`catalog_source_ids`, `selected_source_ids`, `retrieval_disposition`, `source_id_to_entry_id`); Librarian omission is derived as set difference — no arbitrary evidence-layer truncation. Derived navigation: `index.ni.by_round`, `index.ni.by_commit`, `index.ni.by_tag` (rebuildable; non-authoritative). Pre-#45 evidence is not backfilled.
+**NI forensic contract (#45, forward-only):** Post-#45 attempts that participate in narrative-intelligence lineage carry `evidence_contract: hg_ni_forensics_v1` and `correlation.inference_kind` (additive; `role` unchanged). Structured NI outcomes live in `decision.character_orientation`, `decision.librarian_mediation`, `decision.storyteller_advisory`, and `decision.post_commit_semantic` (historical read: `decision.librarian_proposal`). Candidate disposition uses the complete mediation catalog in the attempt `request` plus ID-level fields in `decision.librarian_mediation` (`catalog_source_ids`, `selected_source_ids`, `retrieval_disposition`, `source_id_to_entry_id`); Librarian omission is derived as set difference — no arbitrary evidence-layer truncation. Derived navigation: `index.ni.by_round`, `index.ni.by_commit`, `index.ni.by_tag` (rebuildable; non-authoritative). Pre-#45 evidence is not backfilled.
+
+**#164 post-commit semantic forensics:** Canonical writes use `decision.post_commit_semantic` on inference attempts. Eligibility skips without semantic LLM produce deterministic `post_commit_semantic_disposition` attempts (`correlation.role: post_commit_semantic_disposition`, `record_class: deterministic_disposition`, no `request`/`response`, excluded from utilization rollups). `index.ni.by_commit[domain_commit_id].semantic_disposition_evidence_id` links skip evidence; producer inference ids remain on the commit bucket when present.
+
+**#164 effective-configuration correlation:** LLM inference attempts and deterministic disposition records may carry `correlation.effective_configuration_epoch_id` referencing `metadata.v2_host_state.runtime_effective_configuration.epochs[].epoch_id` that governed the round/attempt. Join session epoch snapshots for resolved settings fingerprint/context; join attempt `request.inference_profile` for actual model usage.
 
 ---
 

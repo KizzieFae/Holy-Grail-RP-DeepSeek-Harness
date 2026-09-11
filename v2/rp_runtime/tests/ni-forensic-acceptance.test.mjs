@@ -454,9 +454,12 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   const auditLog = loadSessionAuditLog(sessionsDir, hgSceneId);
   assert.equal(auditLog.length, 1);
   const auditEntry = auditLog[0];
-  const batchId = auditEntry.librarian_proposal_batch_id;
+  const batchId = auditEntry.post_commit_semantic_batch_id ?? auditEntry.librarian_proposal_batch_id;
   assert.ok(batchId);
-  assert.equal(auditEntry.librarian_proposal_domain_commit_id, domainCommitId);
+  assert.equal(
+    auditEntry.post_commit_semantic_domain_commit_id ?? auditEntry.librarian_proposal_domain_commit_id,
+    domainCommitId,
+  );
 
   const restartedStore = new ExecutionEvidenceStore(evidenceRoot(dataDir));
   const restartedRecorder = createExecutionEvidenceRecorder({
@@ -476,7 +479,11 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   const proposals = findByInferenceKind(restartedAttempts, 'storyteller_post_commit_issue_pressure');
   assert.equal(proposals.length, 1, 'exactly one proposal evidence attempt after restart');
   const proposalMatch = proposals[0];
-  assert.equal(proposalMatch.decision?.librarian_proposal?.batch_id, batchId);
+  assert.equal(
+    proposalMatch.decision?.post_commit_semantic?.batch_id
+      ?? proposalMatch.decision?.librarian_proposal?.batch_id,
+    batchId,
+  );
   assert.equal(
     restartedIndex.ni?.by_commit?.[domainCommitId]?.proposal_evidence_id,
     proposalMatch.evidence_id,
@@ -484,6 +491,7 @@ test('NI forensic acceptance: retained F/G scenario, tag-origin, restart, S4 joi
   assert.ok(
     proposalMatch.associations?.domain_commit_id === domainCommitId
     || proposalMatch.correlation?.domain_commit_id === domainCommitId
+    || auditEntry.post_commit_semantic_domain_commit_id === domainCommitId
     || auditEntry.librarian_proposal_domain_commit_id === domainCommitId,
   );
 

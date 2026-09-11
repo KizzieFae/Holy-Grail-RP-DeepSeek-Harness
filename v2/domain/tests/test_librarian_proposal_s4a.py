@@ -184,7 +184,9 @@ class LibrarianProposalS4aTests(unittest.TestCase):
         self.assertEqual(result.continuity_decision.accepted_count, 1)
         self.assertFalse(result.audit.host_validation.rejection_codes)
         self.assertEqual(len(fixture.librarian_proposal_audit_log), 1)
-        self.assertTrue(fixture.librarian_proposal_audit_log[0]["librarian_proposal_durable_mutation_applied"])
+        self.assertTrue(
+            fixture.librarian_proposal_audit_log[0]["post_commit_semantic_durable_mutation_applied"]
+        )
 
     def test_missing_evidence_anchors_rejected(self) -> None:
         commit_id = "commit-1"

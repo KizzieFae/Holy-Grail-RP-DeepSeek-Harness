@@ -309,7 +309,7 @@ class LibrarianProposalS4bTests(unittest.TestCase):
         self.assertEqual(annotations["Alice"]["revelation_significance_level"], "major")
         self.assertEqual(event.significance, "minor")
         self.assertTrue(
-            fixture.librarian_proposal_audit_log[-1]["librarian_proposal_durable_mutation_applied"]
+            fixture.librarian_proposal_audit_log[-1]["post_commit_semantic_durable_mutation_applied"]
         )
 
     def test_multi_knower_independent_significance(self) -> None:

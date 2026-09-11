@@ -185,6 +185,77 @@ export function buildStorytellerAdvisoryDecisionPatch({
   return patch;
 }
 
+export function resolvePostCommitSemanticDecision(decision = {}) {
+  return decision.post_commit_semantic ?? decision.librarian_proposal ?? null;
+}
+
+export function buildPostCommitSemanticDecisionPatch({
+  batch,
+  proposalContentHash = null,
+  characterMoveEvidenceId = null,
+  contractLineage = null,
+  structuralParseError = null,
+  proposalGenerationStage = null,
+  proposalGenerationFailure = null,
+}) {
+  const hostValidation = batch?.host_validation ?? batch?.audit?.host_validation ?? {};
+  const continuity = batch?.continuity_decision
+    ?? batch?.continuityDecision
+    ?? batch?.audit?.continuity_decision
+    ?? null;
+  const batchId = batch?.batch_id
+    ?? batch?.post_commit_semantic_batch_id
+    ?? batch?.audit?.batch_id
+    ?? null;
+  const domainCommitId = batch?.domain_commit_id
+    ?? batch?.audit?.domain_commit_id
+    ?? null;
+  const itemDispositions = (continuity?.item_decisions ?? batch?.item_dispositions ?? [])
+    .slice(0, 64)
+    .map((item) => ({
+      proposal_id: item.proposal_id ?? item.proposalId ?? null,
+      outcome: item.outcome ?? item.decision ?? null,
+      reason_code: item.reason_code ?? item.reason ?? null,
+    }));
+  return {
+    decision: {
+      post_commit_semantic: {
+        schema: 'hg_post_commit_semantic_v1',
+        batch_id: batchId,
+        host_accepted: Boolean(hostValidation.accepted ?? batch?.host_accepted),
+        host_rejection_codes: [
+          ...(hostValidation.rejection_codes ?? batch?.host_rejection_codes ?? []),
+        ],
+        orchestration_status: batch?.orchestration_status ?? null,
+        continuity_accepted_count: continuity?.accepted_count
+          ?? batch?.continuity_accepted_count
+          ?? 0,
+        continuity_rejected_count: continuity?.rejected_count
+          ?? batch?.continuity_rejected_count
+          ?? 0,
+        durable_mutation_applied: Boolean(
+          batch?.durable_mutation_applied ?? batch?.post_commit_semantic_durable_mutation_applied,
+        ),
+        item_dispositions: itemDispositions,
+        proposal_content_hash: proposalContentHash ?? null,
+        proposal_generation_failure: proposalGenerationFailure
+          ?? batch?.proposal_generation_failure
+          ?? null,
+        structural_parse_error: structuralParseError ?? null,
+        proposal_generation_stage: proposalGenerationStage ?? null,
+        contract_correction_used: contractLineage?.correction_used === true,
+        contract_lineage: contractLineage ?? null,
+        semantic_producer_role: 'storyteller',
+      },
+    },
+    associations: {
+      domain_commit_id: domainCommitId,
+      character_move_evidence_id: characterMoveEvidenceId ?? null,
+    },
+  };
+}
+
+/** @deprecated Historical read helper — new writes use buildPostCommitSemanticDecisionPatch */
 export function buildLibrarianProposalDecisionPatch({
   batch,
   proposalContentHash = null,

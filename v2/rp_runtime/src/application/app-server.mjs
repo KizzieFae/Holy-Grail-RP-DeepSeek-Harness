@@ -61,7 +61,7 @@ export function createHolyGrailAppServer(applicationClient, options = {}) {
       if (req.method === 'PUT' && path === '/api/settings/runtime') {
         const body = await readJson(req);
         try {
-          const runtime = applicationClient.updateRuntimeSettings(body);
+          const runtime = await applicationClient.updateRuntimeSettings(body);
           return sendJson(res, 200, { runtime });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

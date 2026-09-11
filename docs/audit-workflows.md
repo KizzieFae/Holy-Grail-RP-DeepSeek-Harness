@@ -188,6 +188,19 @@ For post-hoc model/orchestration reconstruction:
 
 CLI helper: `python tools/investigation/list_execution_evidence.py <hg_session_id>`
 
+**#164 forensic remediation (canonical current-run vocabulary):**
+
+| Surface | Canonical new write | Historical read |
+|---------|---------------------|-----------------|
+| Inference decision block | `decision.post_commit_semantic` | `decision.librarian_proposal` |
+| Eligibility skip evidence | `post_commit_semantic_disposition` attempt (`role: post_commit_semantic_disposition`, no request/response) | *(none — pre-#164 skip lacked durable execution evidence)* |
+| Session audit container | `metadata.v2_host_state.librarian_proposal_audit_log` (legacy container name) | same |
+| Audit entry fields | `post_commit_semantic_*` + `semantic_producer_role` | `librarian_proposal_*` / `librarian_inference_id` |
+| Trace events | `hg/post-commit-semantic-*` | `hg/librarian-proposal-*` |
+| NI stage label | `post_commit_semantic` | `librarian_proposal` |
+
+`scene_events` remains **ephemeral** orchestration telemetry only. Durable replacements: execution-evidence attempts/index, `librarian_proposal_audit_log` entries, and execution-span records.
+
 **Round latency reconstruction (#158):** `python tools/investigation/reconstruct_round_latency.py <hg_session_id> [--operation <operation_id>]` rebuilds Player-operation elapsed time, authoritative inference timings (`dsh_session_turn_boundary`), non-LLM execution spans, and token rollups from durable evidence. Use DSH turn event times and span `execution.*` fields for ordering — not evidence write order (`recorded_at`). Unattributed remainder is a valid analytical output.
 
 **Causal-chain investigation (#28):** Prefer role workflow flags over raw index topology:

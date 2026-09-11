@@ -475,9 +475,40 @@ class TurnForensicsSession:
                 record_ids.append(str(record.get("record_id") or ""))
         return sorted(record_id for record_id in record_ids if record_id)
 
+    def _audit_domain_commit_id(self, entry: dict[str, Any]) -> str:
+        return str(
+            entry.get("post_commit_semantic_domain_commit_id")
+            or entry.get("librarian_proposal_domain_commit_id")
+            or ""
+        ).strip()
+
+    def _post_commit_semantic_audit_summary(self, audit: dict[str, Any]) -> dict[str, Any]:
+        skip_reason = audit.get("semantic_eligibility_skip_reason")
+        return {
+            "semantic_producer_role": audit.get("semantic_producer_role"),
+            "inference_required": False if skip_reason else True,
+            "inference_skipped": bool(skip_reason),
+            "semantic_eligibility_skip_reason": skip_reason,
+            "post_commit_semantic_host_accepted": audit.get("post_commit_semantic_host_accepted")
+            if "post_commit_semantic_host_accepted" in audit
+            else audit.get("librarian_proposal_host_accepted"),
+            "post_commit_semantic_continuity_accepted_count": audit.get(
+                "post_commit_semantic_continuity_accepted_count",
+                audit.get("librarian_proposal_continuity_accepted_count"),
+            ),
+            "post_commit_semantic_continuity_rejected_count": audit.get(
+                "post_commit_semantic_continuity_rejected_count",
+                audit.get("librarian_proposal_continuity_rejected_count"),
+            ),
+            "post_commit_semantic_durable_mutation_applied": audit.get(
+                "post_commit_semantic_durable_mutation_applied",
+                audit.get("librarian_proposal_durable_mutation_applied"),
+            ),
+        }
+
     def _librarian_audit_for_commit(self, domain_commit_id: str) -> dict[str, Any] | None:
         for entry in reversed(self.host_state.get("librarian_proposal_audit_log") or []):
-            if str(entry.get("librarian_proposal_domain_commit_id") or "") == str(domain_commit_id):
+            if self._audit_domain_commit_id(entry) == str(domain_commit_id):
                 return dict(entry)
         return None
 
@@ -612,18 +643,15 @@ class TurnForensicsSession:
         if audit:
             surfaces.append(
                 self._surface(
-                    contract="librarian_proposal_audit",
+                    contract="post_commit_semantic_audit",
                     authority=AUTHORITY_MEDIATED,
                     reference=(
                         f"data/sessions/{self.hg_session_id}.json#"
                         f"metadata.v2_host_state.librarian_proposal_audit_log"
                     ),
-                    correlation={"librarian_proposal_domain_commit_id": commit_id},
-                    establishes="Host-mediated S4 finalize/apply terminal disposition for this commit",
-                    summary={
-                        "durable_mutation_applied": audit.get("librarian_proposal_durable_mutation_applied"),
-                        "continuity_accepted_count": audit.get("continuity_accepted_count"),
-                    },
+                    correlation={"post_commit_semantic_domain_commit_id": commit_id},
+                    establishes="Host-mediated post-commit semantic finalize/apply terminal disposition for this commit",
+                    summary=self._post_commit_semantic_audit_summary(audit),
                 )
             )
 
@@ -804,17 +832,18 @@ class TurnForensicsSession:
             if audit:
                 surfaces.append(
                     self._surface(
-                        contract="librarian_proposal_audit",
+                        contract="post_commit_semantic_audit",
                         authority=AUTHORITY_MEDIATED,
                         reference=(
                             f"data/sessions/{self.hg_session_id}.json#"
                             f"metadata.v2_host_state.librarian_proposal_audit_log"
                         ),
-                        correlation={"librarian_proposal_domain_commit_id": commit_id, "hg_round_id": round_id},
-                        establishes="Host-mediated S4 audit entry for a commit within this round",
-                        summary={
-                            "durable_mutation_applied": audit.get("librarian_proposal_durable_mutation_applied"),
+                        correlation={
+                            "post_commit_semantic_domain_commit_id": commit_id,
+                            "hg_round_id": round_id,
                         },
+                        establishes="Host-mediated post-commit semantic audit entry for a commit within this round",
+                        summary=self._post_commit_semantic_audit_summary(audit),
                     )
                 )
 

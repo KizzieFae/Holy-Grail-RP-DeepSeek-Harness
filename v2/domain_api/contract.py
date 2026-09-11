@@ -581,6 +581,8 @@ class SessionInfoResponse:
     setup_provenance: dict[str, Any] | None = None
     character_file_ids: dict[str, str] | None = None
     memory_scope_id: str | None = None
+    runtime_build_provenance: dict[str, Any] | None = None
+    runtime_effective_configuration: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

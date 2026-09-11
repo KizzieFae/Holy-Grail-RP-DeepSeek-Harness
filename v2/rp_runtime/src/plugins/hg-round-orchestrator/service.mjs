@@ -95,6 +95,9 @@ export default class HgRoundOrchestrator extends Service {
       findings: [],
     });
     const roleProfiles = resolveRoleProfiles(options, this.config.inference);
+    phaseExecutors.setRoundEffectiveConfigurationEpochId?.(
+      options.effectiveConfigurationEpochId ?? null,
+    );
     const liveMaxAttempts = Number(options.liveMaxAttempts ?? 3);
     const testRoundDelayMs = Number(options.testRoundDelayMs ?? 0);
     if (testRoundDelayMs > 0) {
@@ -526,6 +529,7 @@ export default class HgRoundOrchestrator extends Service {
             hgSceneId,
             hgRoundId,
             sceneSessionId,
+            effectiveConfigurationEpochId: options.effectiveConfigurationEpochId ?? null,
           },
           delayMs: librarianProposalDelayMs,
           recorder: phaseExecutors.executionEvidenceRecorder,
@@ -611,7 +615,7 @@ export default class HgRoundOrchestrator extends Service {
         pending_preserved: plotCognitionResult.pendingPreserved === true,
       });
 
-      trace.emit(sceneAgent.session, 'hg/librarian-proposal-join', scope, {
+      trace.emit(sceneAgent.session, 'hg/post-commit-semantic-join', scope, {
         domain_commit_id: domainCommitId,
         character_turn_index: characterTurnIndex,
         librarian_inference_id: librarianInferenceId,

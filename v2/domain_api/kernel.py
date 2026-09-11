@@ -308,6 +308,27 @@ class DomainKernel:
         session = self.store.open_session(hg_session_id)
         return self._session_info(session)
 
+    def update_runtime_provenance(
+        self,
+        hg_session_id: str,
+        *,
+        runtime_build_provenance: dict[str, Any] | None = None,
+        runtime_effective_configuration: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        fixture = self.store.require(hg_session_id)
+        if runtime_build_provenance is not None:
+            fixture.runtime_build_provenance = dict(runtime_build_provenance)
+        if runtime_effective_configuration is not None:
+            fixture.runtime_effective_configuration = dict(runtime_effective_configuration)
+        if isinstance(self.store, SessionRepository):
+            self.store.persist(fixture)
+        return {
+            "hg_session_id": hg_session_id,
+            "runtime_build_provenance": fixture.runtime_build_provenance,
+            "runtime_effective_configuration": fixture.runtime_effective_configuration,
+            "persisted": isinstance(self.store, SessionRepository),
+        }
+
     def record_user_turn(self, req: UserTurnRecordRequest) -> dict[str, Any]:
         from player_entitlement_authority import build_entitlement_authority_snapshot_from_fixture
         from player_perceptual_service import (
@@ -532,6 +553,12 @@ class DomainKernel:
             setup_provenance=setup_provenance_for_ui(session.setup_snapshot) or None,
             character_file_ids=dict(session.character_file_ids) or None,
             memory_scope_id=session.memory_scope_id or None,
+            runtime_build_provenance=dict(session.runtime_build_provenance or {})
+            if session.runtime_build_provenance
+            else None,
+            runtime_effective_configuration=dict(session.runtime_effective_configuration or {})
+            if session.runtime_effective_configuration
+            else None,
         )
 
     def list_memory_scopes(self) -> list[dict[str, str]]:

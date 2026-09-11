@@ -233,6 +233,7 @@ export function extractStructuralSignals(decision, options = {}) {
   const treatAsCorrection = isContractCorrectionKind(correlation?.inference_kind);
 
   const blocks = [
+    decision.post_commit_semantic,
     decision.librarian_proposal,
     decision.plot_cognition,
     decision.character_orientation,
@@ -264,7 +265,8 @@ export function deriveRecoveryState({
     related_evidence_id: null,
   };
 
-  const lineage = decision?.librarian_proposal?.contract_lineage
+  const lineage = decision?.post_commit_semantic?.contract_lineage
+    ?? decision?.librarian_proposal?.contract_lineage
     ?? decision?.plot_cognition?.contract_lineage
     ?? decision?.character_orientation?.contract_lineage
     ?? decision?.librarian_mediation?.contract_lineage

@@ -78,6 +78,9 @@ class PostCommitSemanticEligibilityTests(unittest.TestCase):
         audit = fixture.librarian_proposal_audit_log[-1]
         self.assertEqual(audit.get("semantic_eligibility_skip_reason"), outcome)
         self.assertEqual(audit.get("semantic_producer_role"), "storyteller")
+        self.assertEqual(audit.get("post_commit_semantic_domain_commit_id"), "commit-elig-1")
+        self.assertEqual(audit.get("post_commit_semantic_inference_id"), "inf-semantic-1")
+        self.assertNotIn("librarian_inference_id", audit)
 
     def test_retired_kinds_rejected_on_new_runs(self) -> None:
         from domain_api.librarian_proposal_contract import validate_proposal_payload_schema

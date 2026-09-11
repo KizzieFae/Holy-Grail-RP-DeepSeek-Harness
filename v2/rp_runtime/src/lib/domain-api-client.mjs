@@ -106,6 +106,15 @@ export function createDomainApiClient(baseUrl) {
         'openSession',
       );
     },
+    updateRuntimeProvenance(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/runtime-provenance',
+        body,
+        'updateRuntimeProvenance',
+      );
+    },
     recordUserTurn(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/history/user-turn', body, 'recordUserTurn');
     },
