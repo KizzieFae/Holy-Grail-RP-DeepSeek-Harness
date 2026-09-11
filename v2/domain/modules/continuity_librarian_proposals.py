@@ -441,6 +441,15 @@ def evaluate_librarian_proposal_batch(
     )
 
 
+def audit_domain_commit_id(entry: dict[str, Any]) -> str:
+    """Resolve domain commit id from canonical or historical audit entry fields."""
+    return str(
+        entry.get("post_commit_semantic_domain_commit_id")
+        or entry.get("librarian_proposal_domain_commit_id")
+        or ""
+    ).strip()
+
+
 def librarian_proposal_audit_metadata(
     *,
     batch_id: str,
@@ -452,21 +461,21 @@ def librarian_proposal_audit_metadata(
     eligibility_skip_reason: str | None = None,
 ) -> dict[str, Any]:
     metadata = {
-        "librarian_proposal_batch_id": batch_id,
-        "librarian_proposal_domain_commit_id": domain_commit_id,
-        "librarian_inference_id": librarian_inference_id,
+        "post_commit_semantic_batch_id": batch_id,
+        "post_commit_semantic_domain_commit_id": domain_commit_id,
+        "post_commit_semantic_inference_id": librarian_inference_id,
         "semantic_producer_role": semantic_producer_role,
-        "librarian_proposal_host_accepted": bool(getattr(host_validation, "accepted", False)),
-        "librarian_proposal_host_rejection_codes": list(
+        "post_commit_semantic_host_accepted": bool(getattr(host_validation, "accepted", False)),
+        "post_commit_semantic_host_rejection_codes": list(
             getattr(host_validation, "rejection_codes", ()) or ()
         ),
-        "librarian_proposal_continuity_accepted_count": (
+        "post_commit_semantic_continuity_accepted_count": (
             continuity_decision.accepted_count if continuity_decision else 0
         ),
-        "librarian_proposal_continuity_rejected_count": (
+        "post_commit_semantic_continuity_rejected_count": (
             continuity_decision.rejected_count if continuity_decision else 0
         ),
-        "librarian_proposal_durable_mutation_applied": bool(
+        "post_commit_semantic_durable_mutation_applied": bool(
             continuity_decision
             and any(
                 item.durable_mutation_applied

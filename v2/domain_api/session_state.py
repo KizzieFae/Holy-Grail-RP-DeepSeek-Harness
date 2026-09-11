@@ -78,6 +78,8 @@ class LiveSession:
     memory_scope_id: str = ""
     plot_cognition_scope_id: str = ""
     librarian_proposal_audit_log: list[dict[str, Any]] = field(default_factory=list)
+    runtime_build_provenance: dict[str, Any] | None = None
+    runtime_effective_configuration: dict[str, Any] | None = None
 
     @property
     def session_id(self) -> str:

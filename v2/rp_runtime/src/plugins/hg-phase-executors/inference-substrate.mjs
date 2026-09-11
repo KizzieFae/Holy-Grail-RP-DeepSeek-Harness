@@ -104,6 +104,11 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     root: inferenceConfig.executionEvidence?.root,
     systemPersona: inferenceConfig.systemPersona ?? 'Holy Grail RP runtime.',
   });
+  let roundEffectiveConfigurationEpochId = null;
+
+  function setRoundEffectiveConfigurationEpochId(epochId) {
+    roundEffectiveConfigurationEpochId = epochId ?? null;
+  }
 
   async function runEphemeralInference(ctx, {
     inferenceId,
@@ -130,6 +135,10 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
       applicationTokenQuotasEnforced: isApplicationTokenQuotaEnforced(),
       inferenceKind: evidenceContext?.inferenceKind
         ?? manifest?.inference_kind
+        ?? null,
+      effectiveConfigurationEpochId:
+        evidenceContext?.effectiveConfigurationEpochId
+        ?? roundEffectiveConfigurationEpochId
         ?? null,
     };
     validateBridgeManifest({
@@ -241,5 +250,9 @@ export function createInferenceSubstrate(inferenceConfig = {}) {
     return executeInference();
   }
 
-  return { runEphemeralInference, recorder };
+  return {
+    runEphemeralInference,
+    recorder,
+    setRoundEffectiveConfigurationEpochId,
+  };
 }

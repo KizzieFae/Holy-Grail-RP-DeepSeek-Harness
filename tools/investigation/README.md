@@ -13,8 +13,9 @@ Offline utilities that operate on **current** repository paths (`data/`, audit J
 | `list_audit_tags.py` | List V2 human audit tags for a session (`data/audit_tags/`) |
 | `trace_turn_forensics.py` | Unified read-only turn/commit forensic navigator (`hg_turn_investigator_v1`, #101). Commit view includes only EE explicitly correlated to the queried commit; commitless EE is round-scoped. |
 | `_turn_forensics.py` | Shared turn/commit correlation library (not invoked directly) |
-| `trace_ni_forensics.py` | Read-only NI forensic investigator over `hg_ni_forensics_v1` (#46 Package B) |
+| `trace_ni_forensics.py` | Read-only NI forensic investigator over `hg_ni_forensics_v1` (#46 Package B; #164 post-commit semantic + disposition indexes) |
 | `_ni_forensics.py` | Shared NI traversal/reconstruction library (not invoked directly) |
+| `_turn_forensics.py` | Turn/commit navigator library (#101; #164 `post_commit_semantic_audit` producer/skip/disposition summary) |
 | `trace_plot_cognition_forensics.py` | Read-only Plot Cognition chronicle investigator (#64) |
 | `_plot_cognition_forensics.py` | Shared Plot Cognition forensics helpers (not invoked directly) |
 | `_issue240_*.py` | Offline Issue #240 audit analysis helpers (read audit trees only) |

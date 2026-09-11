@@ -107,6 +107,8 @@ Negative lineage should identify the **evidence-backed owning seam** where possi
 
 Example (NI, post-#45): Librarian omission derived as set difference between mediation catalog and selected source IDs — not inferred from missing downstream text alone.
 
+**#164 negative-event example:** When post-commit semantic eligibility skips inference (no ACTIVE/ESCALATING issues), a deterministic `post_commit_semantic_disposition` execution-evidence attempt records the skip (`eligibility_outcome`, `degradation_mode`, linked `domain_commit_id`, optional `effective_configuration_epoch_id`) without fabricating a model request/response.
+
 ### 4. Actual semantic content
 
 Where semantic information matters to forensic interpretation, preserve or reference the **actual text / content** that participated in the decision.
@@ -130,6 +132,8 @@ The standard requires observability of what reached the model context, not autom
 Required forensic reconstruction must **survive process restart** using retained artifacts under `data/` (see `docs/rp-data-layout.md`).
 
 Do not make essential reconstruction depend solely on transient in-memory state.
+
+**#164 additions:** Build/source provenance (`runtime_build_provenance`) and effective-configuration epochs (`runtime_effective_configuration.epochs[]`, `current_epoch_id`) persist under `metadata.v2_host_state` and survive session save/reopen. Ordinary LLM inference attempts and post-commit semantic disposition records carry `correlation.effective_configuration_epoch_id` when captured, enabling deterministic joins to the governing epoch without inferring from timestamps alone. Per-attempt `request.inference_profile` remains authoritative for actual model/provider/reasoning used; epoch references supply surrounding effective-configuration provenance only.
 
 ### 7. Human audit tags
 

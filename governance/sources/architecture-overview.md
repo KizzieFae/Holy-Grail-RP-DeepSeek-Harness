@@ -128,6 +128,8 @@ S4 **must not** modify `turn_counter`, authoritative `IssueState`, or `known_by`
 
 **Persistence:** normal character commit persists first; S4 finalize uses a separate persist seam. DSH joins post-commit semantic finalize (including persist) before subsequent turn eligibility. Terminal `librarian_proposal_audit_log` per `domain_commit_id` provides at-most-once protection. Forensic correlation: `domain_commit_id`, batch/audit identifiers, `semantic_producer_role`, and derived-state provenance fields on overlays/annotations.
 
+**#164 forensic correlation/provenance:** Canonical post-commit semantic vocabulary (`post_commit_semantic_*`, `decision.post_commit_semantic`) with historical Librarian-era read compatibility; deterministic non-inference disposition evidence for eligibility skips; durable runtime build + effective-configuration epoch provenance on `metadata.v2_host_state`; `correlation.effective_configuration_epoch_id` on inference attempts and disposition records for epoch joins (per-attempt `inference_profile` remains authoritative for actual model usage). `scene_events` stays ephemeral orchestration telemetry — durable reconstruction uses execution evidence, session audit containers, and persisted provenance epochs.
+
 ### Continuity and evidence lanes
 
 - **`ContinuityManager`**, **`SceneState`**, and **`process_turn`** define **committed** narrative truth for normal turn commitment. Host `commit_move` delegates to the bounded commit transaction module, which invokes `process_turn` as the normal turn-commit authority (#55 C3-F). The bounded S4 post-commit seam above is an explicit, governed exception for derived state only.

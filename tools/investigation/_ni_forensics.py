@@ -236,6 +236,7 @@ class NiSession:
             correlation.get("domain_commit_id")
             or (attempt.get("associations") or {}).get("domain_commit_id")
             or (attempt.get("decision") or {}).get("commit", {}).get("domain_commit_id")
+            or (attempt.get("decision") or {}).get("post_commit_semantic", {}).get("batch_id")
             or (attempt.get("decision") or {}).get("librarian_proposal", {}).get("batch_id")
         )
         ni = index["ni"]
@@ -249,12 +250,24 @@ class NiSession:
 
         proposal_commit_id = (attempt.get("associations") or {}).get(
             "domain_commit_id"
-        ) or (attempt.get("decision") or {}).get("librarian_proposal", {}).get("batch_id")
-        if inference_kind == "librarian_proposal" and proposal_commit_id:
+        ) or (attempt.get("decision") or {}).get("post_commit_semantic", {}).get("batch_id") or (
+            attempt.get("decision") or {}
+        ).get("librarian_proposal", {}).get("batch_id")
+        if (
+            inference_kind in {"librarian_proposal", "storyteller_post_commit_issue_pressure"}
+            and proposal_commit_id
+        ):
             ni.setdefault("by_commit", {}).setdefault(str(proposal_commit_id), {})[
                 "proposal_evidence_id"
             ] = evidence_id
             ni["by_commit"][str(proposal_commit_id)]["domain_commit_id"] = correlation.get(
+                "domain_commit_id"
+            )
+        if inference_kind == "post_commit_semantic_disposition" and commit_id:
+            ni.setdefault("by_commit", {}).setdefault(str(commit_id), {})[
+                "semantic_disposition_evidence_id"
+            ] = evidence_id
+            ni["by_commit"][str(commit_id)]["domain_commit_id"] = correlation.get(
                 "domain_commit_id"
             )
 
@@ -808,13 +821,26 @@ class NiSession:
             limitations.append(
                 limitation("missing_artifact", f"Proposal evidence not found: {proposal_id}")
             )
-        proposal_decision = (proposal or {}).get("decision", {}).get("librarian_proposal") or {}
+        disposition_id = commit_chain.get("semantic_disposition_evidence_id")
+        disposition = self.load_attempt(disposition_id) if disposition_id else None
+        proposal_decision = (
+            (proposal or {}).get("decision", {}).get("post_commit_semantic")
+            or (proposal or {}).get("decision", {}).get("librarian_proposal")
+            or {}
+        )
         chain_steps = []
         if move:
             chain_steps.append({"stage": "character_move", "summary": self.summarize_attempt(move)})
+        if disposition:
+            chain_steps.append(
+                {
+                    "stage": "post_commit_semantic_disposition",
+                    "summary": self.summarize_attempt(disposition),
+                }
+            )
         if proposal:
             chain_steps.append(
-                {"stage": "librarian_proposal", "summary": self.summarize_attempt(proposal)}
+                {"stage": "post_commit_semantic", "summary": self.summarize_attempt(proposal)}
             )
             chain_steps.append(
                 {

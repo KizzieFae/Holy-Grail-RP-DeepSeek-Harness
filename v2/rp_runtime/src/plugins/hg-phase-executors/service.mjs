@@ -26,6 +26,11 @@ export default class HgPhaseExecutors extends Service {
     const substrate = createInferenceSubstrate(config.inference);
     this._runEphemeralInference = substrate.runEphemeralInference;
     this.executionEvidenceRecorder = substrate.recorder;
+    this._setRoundEffectiveConfigurationEpochId = substrate.setRoundEffectiveConfigurationEpochId;
+  }
+
+  setRoundEffectiveConfigurationEpochId(epochId) {
+    this._setRoundEffectiveConfigurationEpochId?.(epochId ?? null);
   }
 
   runEphemeralInference(params) {

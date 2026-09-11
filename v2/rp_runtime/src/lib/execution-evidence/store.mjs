@@ -101,6 +101,8 @@ function mergeDecision(currentDecision, patchDecision) {
     'librarian_mediation',
     'storyteller_advisory',
     'librarian_proposal',
+    'post_commit_semantic',
+    'post_commit_semantic_disposition',
     'plot_cognition',
   ];
   for (const key of nestedKeys) {
@@ -164,7 +166,10 @@ export class ExecutionEvidenceStore {
     if (attempt.correlation?.role === 'participation') {
       this._indexParticipation(hgSessionId, evidenceId, attempt.correlation);
     }
-    if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
+    if (
+      attempt.evidence_contract === NI_FORENSICS_CONTRACT
+      || attempt.correlation?.role === 'post_commit_semantic_disposition'
+    ) {
       this._indexNi(hgSessionId, evidenceId, attempt);
     }
     if (this._isPlotCognitionInference(attempt)) {
@@ -217,7 +222,10 @@ export class ExecutionEvidenceStore {
     writeJsonAtomic(filePath, next);
     this._indexSemanticDecision(hgSessionId, evidenceId, next);
     this._indexSemanticQa(hgSessionId, evidenceId, next);
-    if (next.evidence_contract === NI_FORENSICS_CONTRACT) {
+    if (
+      next.evidence_contract === NI_FORENSICS_CONTRACT
+      || next.correlation?.role === 'post_commit_semantic_disposition'
+    ) {
       this._indexNi(hgSessionId, evidenceId, next);
     }
     if (this._isPlotCognitionInference(next)) {
@@ -268,7 +276,10 @@ export class ExecutionEvidenceStore {
       }
       this._indexSemanticDecision(hgSessionId, evidenceId, attempt, index);
       this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
-      if (attempt.evidence_contract === NI_FORENSICS_CONTRACT) {
+      if (
+        attempt.evidence_contract === NI_FORENSICS_CONTRACT
+        || attempt.correlation?.role === 'post_commit_semantic_disposition'
+      ) {
         this._indexNi(hgSessionId, evidenceId, attempt, index);
       }
       if (this._isPlotCognitionInference(attempt)) {
@@ -368,7 +379,12 @@ export class ExecutionEvidenceStore {
         total_tokens: 0,
       };
       this._pushUnique(activity.evidence_ids, evidenceId);
-      if (role && role !== 'execution_span' && role !== 'application_lifecycle') {
+      if (
+        role
+        && role !== 'execution_span'
+        && role !== 'application_lifecycle'
+        && role !== 'post_commit_semantic_disposition'
+      ) {
         const roleEntry = activity.roles[role] ?? { count: 0, evidence_ids: [] };
         const wasNewRole = !roleEntry.evidence_ids.includes(evidenceId);
         this._pushUnique(roleEntry.evidence_ids, evidenceId);
@@ -378,7 +394,11 @@ export class ExecutionEvidenceStore {
         activity.roles[role] = roleEntry;
       }
       const kind = correlation.inference_kind;
-      if (kind) {
+      if (
+        kind
+        && role !== 'post_commit_semantic_disposition'
+        && kind !== 'post_commit_semantic_disposition'
+      ) {
         const kindEntry = activity.inference_kinds[kind] ?? { count: 0, evidence_ids: [], total_tokens: 0 };
         const wasNewKind = !kindEntry.evidence_ids.includes(evidenceId);
         this._pushUnique(kindEntry.evidence_ids, evidenceId);
@@ -613,6 +633,7 @@ export class ExecutionEvidenceStore {
     const commitId = correlation.domain_commit_id
       ?? attempt?.associations?.domain_commit_id
       ?? attempt?.decision?.commit?.domain_commit_id
+      ?? attempt?.decision?.post_commit_semantic?.batch_id
       ?? attempt?.decision?.librarian_proposal?.batch_id;
     const indexPath = this.indexPath(hgSessionId);
     const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
@@ -632,6 +653,10 @@ export class ExecutionEvidenceStore {
     }
 
     const proposalCommitId = attempt?.associations?.domain_commit_id
+      ?? correlation.domain_commit_id
+      ?? attempt?.decision?.post_commit_semantic?.domain_commit_id
+      ?? attempt?.decision?.librarian_proposal?.domain_commit_id
+      ?? attempt?.decision?.post_commit_semantic?.batch_id
       ?? attempt?.decision?.librarian_proposal?.batch_id;
     if (
       (inferenceKind === 'librarian_proposal'
@@ -644,6 +669,16 @@ export class ExecutionEvidenceStore {
           ...(ni.by_commit?.[String(proposalCommitId)] ?? {}),
           proposal_evidence_id: evidenceId,
           domain_commit_id: correlation.domain_commit_id ?? null,
+        },
+      };
+    }
+    if (inferenceKind === 'post_commit_semantic_disposition' && commitId) {
+      ni.by_commit = {
+        ...(ni.by_commit ?? {}),
+        [String(commitId)]: {
+          ...(ni.by_commit?.[String(commitId)] ?? {}),
+          semantic_disposition_evidence_id: evidenceId,
+          domain_commit_id: correlation.domain_commit_id ?? commitId,
         },
       };
     }

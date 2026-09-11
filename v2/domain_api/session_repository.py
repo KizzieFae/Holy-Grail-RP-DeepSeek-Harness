@@ -288,6 +288,12 @@ class SessionRepository:
                 "librarian_proposal_audit_log": list(
                     getattr(session, "librarian_proposal_audit_log", []) or []
                 ),
+                "runtime_build_provenance": copy.deepcopy(
+                    getattr(session, "runtime_build_provenance", None)
+                ),
+                "runtime_effective_configuration": copy.deepcopy(
+                    getattr(session, "runtime_effective_configuration", None)
+                ),
             },
             "scene_role_assignments": dict(
                 getattr(session.manager.scene_state, "role_assignments", {}) or {}
@@ -375,6 +381,14 @@ class SessionRepository:
             librarian_proposal_audit_log=list(
                 host_state.get("librarian_proposal_audit_log") or []
             ),
+            runtime_build_provenance=dict(host_state.get("runtime_build_provenance") or {})
+            if host_state.get("runtime_build_provenance")
+            else None,
+            runtime_effective_configuration=dict(
+                host_state.get("runtime_effective_configuration") or {}
+            )
+            if host_state.get("runtime_effective_configuration")
+            else None,
             rounds=[],
         )
 

@@ -46,6 +46,9 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
   if (context.parentInferenceId) {
     correlation.parent_inference_id = context.parentInferenceId;
   }
+  if (context.effectiveConfigurationEpochId) {
+    correlation.effective_configuration_epoch_id = context.effectiveConfigurationEpochId;
+  }
   return correlation;
 }
 
@@ -139,6 +142,61 @@ export class ExecutionEvidenceRecorder {
   /**
    * Record a participation-direct deterministic selection (#28).
    */
+  recordPostCommitSemanticDisposition({
+    hgSessionId,
+    hgSceneId = null,
+    hgRoundId = null,
+    domainCommitId,
+    continuityTurnIndex = null,
+    postCommitSemanticInferenceId,
+    batch = null,
+    eligibilityOutcome = null,
+    degradationMode = 'eligibility_skipped',
+    orchestrationStatus = 'finalized',
+    effectiveConfigurationEpochId = null,
+  }) {
+    if (!this.enabled || !hgSessionId || !domainCommitId) return null;
+    const evidenceId = crypto.randomUUID();
+    const attempt = {
+      evidence_id: evidenceId,
+      correlation: {
+        evidence_id: evidenceId,
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId ?? hgSessionId,
+        hg_round_id: hgRoundId,
+        role: 'post_commit_semantic_disposition',
+        inference_kind: 'post_commit_semantic_disposition',
+        record_class: 'deterministic_disposition',
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+        post_commit_semantic_inference_id: postCommitSemanticInferenceId ?? null,
+        effective_configuration_epoch_id: effectiveConfigurationEpochId,
+        attempt_index: 0,
+      },
+      request: null,
+      response: null,
+      decision: {
+        post_commit_semantic_disposition: {
+          schema: 'hg_post_commit_semantic_disposition_v1',
+          inference_required: false,
+          eligibility_outcome: eligibilityOutcome ?? batch?.degradation_mode ?? null,
+          degradation_mode: degradationMode,
+          semantic_producer_role: 'storyteller',
+          orchestration_status: orchestrationStatus,
+          post_commit_semantic_batch_id: batch?.batch_id ?? batch?.post_commit_semantic_batch_id ?? null,
+          request_id: batch?.request_id ?? null,
+          terminal: true,
+        },
+      },
+      associations: {
+        domain_commit_id: domainCommitId,
+        post_commit_semantic_inference_id: postCommitSemanticInferenceId ?? null,
+      },
+    };
+    this.store.writeAttempt(attempt);
+    return evidenceId;
+  }
+
   recordParticipationDecision({
     hgSessionId,
     hgSceneId,

@@ -91,8 +91,8 @@ test('live S4: narrator completes before slow librarian join', async (t) => {
   assert.ok(result.round_timing_ms.narrator[0] < result.round_timing_ms.librarian[0]);
 
   const narratorCompletedIdx = eventIndex(result.scene_events, 'hg/narrator-completed');
-  const librarianCompletedIdx = eventIndex(result.scene_events, 'hg/librarian-proposal-completed');
-  const joinIdx = eventIndex(result.scene_events, 'hg/librarian-proposal-join');
+  const librarianCompletedIdx = eventIndex(result.scene_events, 'hg/post-commit-semantic-completed');
+  const joinIdx = eventIndex(result.scene_events, 'hg/post-commit-semantic-join');
   assert.ok(narratorCompletedIdx >= 0);
   assert.ok(librarianCompletedIdx >= 0);
   assert.ok(joinIdx >= 0);
@@ -219,7 +219,7 @@ test('live S4: skip hook suppresses orchestration without production disable', a
     result.boundary_metrics.calls.some((call) => call.label === 'prepareLibrarianProposalContext'),
     false,
   );
-  assert.equal(result.scene_events.some((event) => event.type === 'hg/librarian-proposal-started'), false);
+  assert.equal(result.scene_events.some((event) => event.type === 'hg/post-commit-semantic-started'), false);
   assert.equal(result.committed, true);
 });
 
@@ -266,8 +266,8 @@ test('live S4: Host persistence failure blocks next turn without undoing commit 
   assert.equal(eligibilityCalls.length, 1);
 
   const narratorCompletedIdx = eventIndex(result.scene_events, 'hg/narrator-completed');
-  const librarianFailedIdx = eventIndex(result.scene_events, 'hg/librarian-proposal-failed');
-  const joinIdx = eventIndex(result.scene_events, 'hg/librarian-proposal-join');
+  const librarianFailedIdx = eventIndex(result.scene_events, 'hg/post-commit-semantic-failed');
+  const joinIdx = eventIndex(result.scene_events, 'hg/post-commit-semantic-join');
   assert.ok(narratorCompletedIdx >= 0);
   assert.ok(librarianFailedIdx >= 0);
   assert.ok(joinIdx >= 0);
@@ -302,5 +302,5 @@ test('live S4: Host persistence failure blocks next turn without undoing commit 
   assert.equal(failOpenResult.completion_status, 'completed');
   assert.equal(failOpenResult.completion_reason, 'no_eligible_actors');
   assert.equal(failOpenResult.character_turn_count, 2);
-  assert.equal(failOpenResult.scene_events.some((event) => event.type === 'hg/librarian-proposal-failed'), false);
+  assert.equal(failOpenResult.scene_events.some((event) => event.type === 'hg/post-commit-semantic-failed'), false);
 });

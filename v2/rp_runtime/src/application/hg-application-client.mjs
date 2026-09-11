@@ -16,6 +16,12 @@ import {
   validateSessionSetup,
 } from './application-settings.mjs';
 import { AuditTagService } from '../lib/audit-tags/service.mjs';
+import {
+  appendEffectiveConfigurationEpoch,
+  captureBuildProvenance,
+  createEffectiveConfigurationEpoch,
+  currentEffectiveConfigurationEpoch,
+} from '../lib/runtime-configuration-provenance.mjs';
 import { patchNarratorTerminalPresentationEvidence } from '../lib/execution-evidence/narrator-terminal-evidence.mjs';
 import {
   createExecutionSpanTracker,
@@ -78,6 +84,9 @@ export class HolyGrailApplicationClient {
     this.activeRoundOperation = null;
     this.lastRoundTerminal = null;
     this.auditTags = new AuditTagService({ env: options.env });
+    this.runtimeBuildProvenance = null;
+    this.runtimeEffectiveConfiguration = null;
+    this.currentEffectiveConfigurationEpochId = null;
   }
 
   get orchestrator() {
@@ -178,6 +187,7 @@ export class HolyGrailApplicationClient {
     }
     const created = await api.createSession(body);
     this._applySessionPayload(created);
+    await this._syncRuntimeProvenance({ effectiveFrom: 'session_open' });
     const openingMode = String(body.opening?.mode ?? '').toLowerCase();
     if (openingMode === 'generated') {
       await this._generateAndPersistOpening({
@@ -199,6 +209,12 @@ export class HolyGrailApplicationClient {
     const api = this.orchestrator._domainClient();
     const opened = await api.openSession(hgSessionId);
     this._applySessionPayload(opened);
+    if (!this.runtimeBuildProvenance || !this.runtimeEffectiveConfiguration) {
+      await this._syncRuntimeProvenance({ effectiveFrom: 'session_open' });
+    } else {
+      const currentEpoch = currentEffectiveConfigurationEpoch(this.runtimeEffectiveConfiguration);
+      this.currentEffectiveConfigurationEpochId = currentEpoch?.epoch_id ?? null;
+    }
     await this._refreshTranscript();
     return this._sessionView(opened);
   }
@@ -207,13 +223,14 @@ export class HolyGrailApplicationClient {
     return { ...this.runtimeSettings };
   }
 
-  updateRuntimeSettings(patch = {}) {
+  async updateRuntimeSettings(patch = {}) {
     const merged = { ...this.runtimeSettings, ...patch };
     const validation = validateRuntimeSettings(merged);
     if (!validation.valid) {
       throw new Error(validation.errors.join('; '));
     }
     this.runtimeSettings = merged;
+    await this._syncRuntimeProvenance({ effectiveFrom: 'settings_update' });
     return this.getRuntimeSettings();
   }
 
@@ -417,10 +434,15 @@ export class HolyGrailApplicationClient {
         details: { kind: this.activeRoundOperation?.kind ?? null },
       });
 
+      await this._syncRuntimeProvenance({
+        effectiveFrom: 'round_options_override',
+        settings: { ...this.runtimeSettings, ...inferenceInput },
+      });
       const roundOptions = {
         session: { mode: 'open', hg_session_id: this.activeSessionId },
         forcedDesignation,
         ...this._resolveInferenceOptions(inferenceInput),
+        effectiveConfigurationEpochId: this.currentEffectiveConfigurationEpochId,
         testRoundDelayMs: inferenceInput.testRoundDelayMs,
       };
       if (inferenceInput.testRoundDelayMs) {
@@ -514,6 +536,43 @@ export class HolyGrailApplicationClient {
     this.setupProvenance = payload.setup_provenance ?? null;
     this.memoryScopeId = payload.memory_scope_id ?? null;
     this.userPersonaId = this.setupProvenance?.user_persona_id ?? 'Player';
+    const hostState = payload.metadata?.v2_host_state ?? {};
+    this.runtimeBuildProvenance = payload.runtime_build_provenance
+      ?? hostState.runtime_build_provenance
+      ?? null;
+    this.runtimeEffectiveConfiguration = payload.runtime_effective_configuration
+      ?? hostState.runtime_effective_configuration
+      ?? null;
+    const currentEpoch = currentEffectiveConfigurationEpoch(this.runtimeEffectiveConfiguration);
+    this.currentEffectiveConfigurationEpochId = currentEpoch?.epoch_id ?? null;
+  }
+
+  async _syncRuntimeProvenance({
+    effectiveFrom = 'session_open',
+    settings = this.runtimeSettings,
+  } = {}) {
+    if (!this.activeSessionId) return null;
+    const api = this._domainApi();
+    if (!this.runtimeBuildProvenance) {
+      this.runtimeBuildProvenance = captureBuildProvenance(this.options.env ?? process.env);
+    }
+    const epoch = createEffectiveConfigurationEpoch({
+      settings,
+      options: { inferenceMode: this.options.inferenceMode, env: this.options.env },
+      effectiveFrom,
+    });
+    this.runtimeEffectiveConfiguration = appendEffectiveConfigurationEpoch(
+      this.runtimeEffectiveConfiguration,
+      epoch,
+    );
+    this.currentEffectiveConfigurationEpochId =
+      currentEffectiveConfigurationEpoch(this.runtimeEffectiveConfiguration)?.epoch_id
+      ?? epoch.epoch_id;
+    return api.updateRuntimeProvenance({
+      hg_session_id: this.activeSessionId,
+      runtime_build_provenance: this.runtimeBuildProvenance,
+      runtime_effective_configuration: this.runtimeEffectiveConfiguration,
+    });
   }
 
   _requireReady() {

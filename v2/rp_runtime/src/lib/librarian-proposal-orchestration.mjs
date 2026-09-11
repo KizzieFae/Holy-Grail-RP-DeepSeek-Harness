@@ -72,7 +72,7 @@ export async function runPostCommitLibrarianLifecycle({
     hg_round_id: hgRoundId,
   };
 
-  trace.emit(sceneAgent.session, 'hg/librarian-proposal-started', scope, correlation);
+  trace.emit(sceneAgent.session, 'hg/post-commit-semantic-started', scope, correlation);
 
   if (delayMs > 0) {
     await new Promise((resolve) => {
@@ -109,7 +109,7 @@ export async function runPostCommitLibrarianLifecycle({
       characterMoveEvidenceId,
     });
   } catch (error) {
-    trace.emit(sceneAgent.session, 'hg/librarian-proposal-failed', scope, {
+    trace.emit(sceneAgent.session, 'hg/post-commit-semantic-failed', scope, {
       ...correlation,
       stage: 'orchestration_error',
       error: String(error?.message ?? error ?? 'librarian_orchestration_error'),
@@ -136,14 +136,17 @@ export async function runPostCommitLibrarianLifecycle({
     || Boolean(batch.batch_id)
     || Boolean(batch.existing_audit);
 
-  trace.emit(sceneAgent.session, 'hg/librarian-proposal-completed', scope, {
+  trace.emit(sceneAgent.session, 'hg/post-commit-semantic-completed', scope, {
     ...correlation,
     stage: generationResult.stage ?? null,
     ok: generationResult.ok === true,
     skipped: generationResult.skipped === true || batch.skipped === true,
     orchestration_status: batch.orchestration_status ?? generationResult.stage ?? null,
     degradation_mode: batch.degradation_mode ?? batch.audit?.degradation_mode ?? null,
-    batch_id: batch.batch_id ?? batch.existing_audit?.librarian_proposal_batch_id ?? null,
+    batch_id: batch.batch_id
+      ?? batch.existing_audit?.post_commit_semantic_batch_id
+      ?? batch.existing_audit?.librarian_proposal_batch_id
+      ?? null,
     request_id: batch.request_id ?? batch.existing_audit?.request_id ?? null,
     persisted: batch.persisted === true,
     blocking_persistence_failure: blockingPersistenceFailure,

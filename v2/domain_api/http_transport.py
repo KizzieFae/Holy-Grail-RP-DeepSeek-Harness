@@ -132,6 +132,27 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 req = SessionOpenRequest(hg_session_id=str(data["hg_session_id"]))
                 self._send_json(200, self.kernel.open_session(req.hg_session_id))
                 return
+            if path == "/v1/sessions/runtime-provenance":
+                hg_session_id = str(data["hg_session_id"])
+                build_provenance = (
+                    dict(data["runtime_build_provenance"])
+                    if isinstance(data.get("runtime_build_provenance"), dict)
+                    else None
+                )
+                effective_configuration = (
+                    dict(data["runtime_effective_configuration"])
+                    if isinstance(data.get("runtime_effective_configuration"), dict)
+                    else None
+                )
+                self._send_json(
+                    200,
+                    self.kernel.update_runtime_provenance(
+                        hg_session_id,
+                        runtime_build_provenance=build_provenance,
+                        runtime_effective_configuration=effective_configuration,
+                    ),
+                )
+                return
             if path == "/v1/rounds/start":
                 req = RoundStartRequest(hg_scene_id=str(data["hg_scene_id"]))
                 self._send_json(200, self.kernel.start_round(req))

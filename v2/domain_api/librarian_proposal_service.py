@@ -19,6 +19,7 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 ensure_domain_paths()
 
 from continuity_librarian_proposals import (  # noqa: E402
+    audit_domain_commit_id,
     build_evidence_closure,
     evaluate_librarian_proposal_batch,
     librarian_proposal_audit_metadata,
@@ -61,7 +62,7 @@ def find_terminal_audit_for_commit(
     if not commit_id:
         return None
     for entry in reversed(getattr(fixture, "librarian_proposal_audit_log", []) or []):
-        if str(entry.get("librarian_proposal_domain_commit_id") or "") != commit_id:
+        if audit_domain_commit_id(entry) != commit_id:
             continue
         return dict(entry)
     return None

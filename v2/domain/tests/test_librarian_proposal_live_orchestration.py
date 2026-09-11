@@ -111,7 +111,10 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
         audit = find_terminal_audit_for_commit(fixture, request.domain_commit_id)
         self.assertIsNotNone(audit)
         assert audit is not None
-        self.assertEqual(audit["librarian_proposal_domain_commit_id"], request.domain_commit_id)
+        self.assertEqual(
+            audit.get("post_commit_semantic_domain_commit_id", audit.get("librarian_proposal_domain_commit_id")),
+            request.domain_commit_id,
+        )
 
     def test_prepare_skips_when_audit_terminal(self) -> None:
         fixture, request = _session_with_commit()
@@ -167,7 +170,10 @@ class LibrarianLiveOrchestrationHostTests(unittest.TestCase):
             reloaded = repo.open_session(fixture.hg_session_id)
             self.assertEqual(len(reloaded.librarian_proposal_audit_log), 1)
             self.assertEqual(
-                reloaded.librarian_proposal_audit_log[0]["librarian_proposal_domain_commit_id"],
+                reloaded.librarian_proposal_audit_log[0].get(
+                    "post_commit_semantic_domain_commit_id",
+                    reloaded.librarian_proposal_audit_log[0].get("librarian_proposal_domain_commit_id"),
+                ),
                 request.domain_commit_id,
             )
             self.assertIsNotNone(find_terminal_audit_for_commit(reloaded, request.domain_commit_id))
