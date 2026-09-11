@@ -105,6 +105,10 @@ export function buildLibrarianMediationDecisionPatch({
   hostReason = null,
   hostRejectionCodes = [],
   mediationMode = null,
+  contractLineage = null,
+  structuralParseError = null,
+  mediationGenerationStage = null,
+  primaryRawSelectedCount = null,
 }) {
   const catalogFromPrepare = (prepareResponse?.mediation_catalog ?? [])
     .map((item) => String(item?.source_id ?? '').trim())
@@ -137,6 +141,11 @@ export function buildLibrarianMediationDecisionPatch({
         host_accepted: Boolean(hostAccepted),
         host_reason: hostReason ?? null,
         host_rejection_codes: [...(hostRejectionCodes ?? [])],
+        structural_parse_error: structuralParseError ?? null,
+        mediation_generation_stage: mediationGenerationStage ?? null,
+        contract_correction_used: contractLineage?.correction_used === true,
+        contract_lineage: contractLineage ?? null,
+        primary_raw_selected_count: primaryRawSelectedCount ?? null,
       },
     },
   };

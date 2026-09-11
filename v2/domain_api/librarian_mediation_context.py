@@ -7,6 +7,7 @@ from typing import Any
 
 from .contract import PromptContribution
 from .librarian_contract import KnowledgeAccessRequest, MediationCatalogItem
+from .librarian_mediation_inference_contract import render_mediation_inference_contract_lines
 
 
 def build_mediation_manifest_contributions(
@@ -113,14 +114,24 @@ def build_mediation_manifest_contributions(
             provenance={"inference_id": inference_id, "catalog_count": len(catalog_block)},
         ),
         PromptContribution(
+            contribution_id=f"{manifest_id}-contract",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(f"librarian_mediation_contract:{request.request_id}",),
+            priority=29,
+            content=render_mediation_inference_contract_lines(
+                sample_source_id=catalog[0].source_id if catalog else "lmi:cand:example-source",
+            ),
+            provenance={"inference_id": inference_id, "contract_kind": "hg_librarian_mediation_result_v1"},
+        ),
+        PromptContribution(
             contribution_id=f"{manifest_id}-instruction",
             source_kind="inference_instruction",
             authority_class="derived",
             knowledge_ids=(f"librarian_mediation:{request.request_id}",),
             priority=30,
             content=(
-                "Return ONLY one JSON object matching schema "
-                f"{json.dumps({'schema': 'hg_librarian_mediation_result_v1'})}. "
+                "Return ONLY one JSON object satisfying the mediation output contract above. "
                 "Use selected_items[].source_id from the catalog only. "
                 "Do not introduce new source identities or authoritative facts. "
                 "Synthesis entries must cite source_ids from the catalog. "

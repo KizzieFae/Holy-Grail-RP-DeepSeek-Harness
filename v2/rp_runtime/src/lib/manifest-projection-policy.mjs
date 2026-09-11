@@ -134,6 +134,7 @@ export const ALLOWED_SOURCE_KINDS = {
     new Set(['active_constraints']),
   ),
   librarian_mediation: union(COMMON_INSTRUCTION, new Set(['active_constraints'])),
+  librarian_mediation_contract_correction: union(COMMON_INSTRUCTION, new Set(['active_constraints'])),
   librarian_proposal: union(
     COMMON_INSTRUCTION,
     new Set(['active_constraints', 'librarian_knowledge']),

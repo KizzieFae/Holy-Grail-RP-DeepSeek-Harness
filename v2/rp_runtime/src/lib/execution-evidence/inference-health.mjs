@@ -186,7 +186,7 @@ export function isContractCorrectionKind(inferenceKind) {
 function structuralFromDecisionBlock(block, { treatAsCorrection }) {
   if (!block || typeof block !== 'object') return null;
   const lineage = block.contract_lineage ?? null;
-  const stage = String(block.proposal_generation_stage ?? '');
+  const stage = String(block.proposal_generation_stage ?? block.mediation_generation_stage ?? '');
 
   if (treatAsCorrection || stage === 'contract_correction') {
     // Correction attempt: own structural result only — never primary_parse_error.

@@ -235,7 +235,7 @@ Start from `--chain narrator --round <hg_round_id> --summary`, then drill indivi
 
 1. Tag → `forensic_scope.evidence_entry_points` (or intrinsic anchors → `index.ni.by_round` / `by_commit`)
 2. Character chain: `character_orientation` → `librarian_mediation` → `character_move` (via `associations` / `index.ni`)
-3. Mediation disposition: `decision.librarian_mediation.catalog_source_ids` vs `selected_source_ids` (omission = set difference; catalog text in `request`)
+3. Mediation disposition: `decision.librarian_mediation.catalog_source_ids` vs `selected_source_ids` (omission = set difference; catalog text in `request`). For S2a contract correction (#169), also inspect `structural_parse_error`, `mediation_generation_stage`, `contract_correction_used`, `contract_lineage`, and `primary_raw_selected_count` — distinguish structural conformance from `host_accepted` and `mediation_mode`.
 4. Retrieval boundary: `decision.librarian_mediation.retrieval_disposition[*].candidate_ids_returned`
 5. Consumer packaging: `associations.packaging_disposition` on Director/Character attempts
 6. S4: `librarian_proposal` decision + `index.ni.by_commit[domain_commit_id]`

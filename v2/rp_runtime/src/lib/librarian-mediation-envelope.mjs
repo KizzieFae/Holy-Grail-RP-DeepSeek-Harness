@@ -3,9 +3,13 @@ import {
   bridgeManifestFromHostPrepare,
   normalizeBridgeContributions,
 } from './bridge-manifest.mjs';
+import {
+  librarianMediationContractPromptLines,
+} from './librarian-mediation-inference-contract.mjs';
 
 export const LIBRARIAN_MEDIATION_RESULT_SCHEMA = 'hg_librarian_mediation_result_v1';
 export const LIBRARIAN_MEDIATION_CONFIG_ID = 'librarian_mediator_v1';
+export const LIBRARIAN_MEDIATION_CORRECTION_KIND = 'librarian_mediation_contract_correction';
 
 const VALID_EDGE = new Set(['supports', 'contradicts', 'same_entity', 'causal_candidate']);
 const VALID_SYNTH = new Set(['summary', 'connection_bridge', 'consolidated_fact_view']);
@@ -17,7 +21,10 @@ function asStringArray(value) {
   return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 }
 
-export function buildLibrarianMediationPrompt({ schema = LIBRARIAN_MEDIATION_RESULT_SCHEMA } = {}) {
+export function buildLibrarianMediationPrompt({
+  schema = LIBRARIAN_MEDIATION_RESULT_SCHEMA,
+  sampleSourceId = 'lmi:cand:example-source',
+} = {}) {
   return [
     'You are the Holy Grail Librarian information mediator.',
     'Select and rank ONLY catalog source_id values that contextually help answer the focus questions.',
@@ -26,6 +33,32 @@ export function buildLibrarianMediationPrompt({ schema = LIBRARIAN_MEDIATION_RES
     'Indirect causal relevance, cross-relationship explanation, and late-emerging significance are in scope.',
     'Lexical overlap alone is insufficient when another supplied item better explains the need.',
     `Return ONLY one JSON object matching schema ${schema}.`,
+    '',
+    ...librarianMediationContractPromptLines({ sampleSourceId }),
+  ].join('\n');
+}
+
+export function buildLibrarianMediationCorrectionPrompt({ priorRaw, structuralError, context }) {
+  const prior = typeof priorRaw === 'string' ? priorRaw : JSON.stringify(priorRaw ?? {});
+  const sampleSourceId = context?.sampleSourceId ?? [...(context?.catalogIds ?? [])][0] ?? 'lmi:cand:example-source';
+  const contractPrompt = buildLibrarianMediationPrompt({
+    sampleSourceId,
+  });
+  return [
+    'CONTRACT CORRECTION: Your previous Librarian mediation response did not satisfy the required machine contract.',
+    'Preserve the intended semantic selections and synthesis meaning from that response unless satisfying the contract logically requires otherwise.',
+    'Correct ONLY representation/serialization. Do NOT independently redo knowledge selection.',
+    'Do NOT invent new source_id values outside the mediation catalog.',
+    'Output JSON only — no markdown, no commentary.',
+    '',
+    `Previous response:\n${prior}`,
+    '',
+    `Structural validation error: ${structuralError}`,
+    '',
+    'Required contract:',
+    contractPrompt,
+    '',
+    'Re-emit the result using exactly the required JSON contract.',
   ].join('\n');
 }
 
