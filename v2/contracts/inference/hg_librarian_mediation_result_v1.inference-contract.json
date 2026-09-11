@@ -1,0 +1,104 @@
+{
+  "schema_id": "hg_librarian_mediation_result_v1",
+  "version": 1,
+  "required_top_level": ["schema", "selected_items"],
+  "optional_top_level": ["synthesis_entries", "connections", "focus_question_outcomes"],
+  "field_specs": {
+    "schema": {
+      "type": "string",
+      "required": true,
+      "exact": "hg_librarian_mediation_result_v1"
+    },
+    "selected_items": {
+      "type": "array",
+      "required": true,
+      "item_fields": {
+        "source_id": { "type": "string", "required": true, "catalog_only": true },
+        "relevance_rank": { "type": "positive_integer", "required": true },
+        "relevance_band": { "type": "enum", "required": false, "values": ["high", "medium", "low"] },
+        "interpretive_status": { "type": "enum", "required": false, "values": ["confirmed", "likely", "speculative"] },
+        "salience_note": { "type": "string", "required": false },
+        "answers_focus_questions": { "type": "string_array", "required": false }
+      }
+    },
+    "synthesis_entries": {
+      "type": "array",
+      "required": false,
+      "item_fields": {
+        "synthesis_id": { "type": "string", "required": false },
+        "synthesis_kind": { "type": "enum", "required": true, "values": ["summary", "connection_bridge", "consolidated_fact_view"] },
+        "content": { "type": "non_empty_string", "required": true },
+        "source_ids": { "type": "non_empty_string_array", "required": true, "catalog_only": true },
+        "interpretive_status": { "type": "enum", "required": false, "values": ["confirmed", "likely", "speculative"] }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "required": false,
+      "item_fields": {
+        "connection_id": { "type": "string", "required": false },
+        "edge_kind": { "type": "enum", "required": true, "values": ["supports", "contradicts", "same_entity", "causal_candidate"] },
+        "from_source_id": { "type": "string", "required": true, "catalog_only": true },
+        "to_source_id": { "type": "string", "required": true, "catalog_only": true },
+        "note": { "type": "string", "required": false }
+      }
+    },
+    "focus_question_outcomes": {
+      "type": "array",
+      "required": false,
+      "item_fields": {
+        "question": { "type": "non_empty_string", "required": true },
+        "status": { "type": "enum", "required": true, "values": ["answered", "partial", "unanswered", "not_applicable"] },
+        "supporting_source_ids": { "type": "string_array", "required": false },
+        "note": { "type": "string", "required": false }
+      }
+    }
+  },
+  "forbidden_field_aliases": [
+    {
+      "path": "selected_items[].rank",
+      "use_instead": "selected_items[].relevance_rank",
+      "reason": "rank is not a contract field"
+    },
+    {
+      "path": "selected_items[].relevance",
+      "use_instead": "selected_items[].salience_note and selected_items[].relevance_rank",
+      "reason": "relevance is not a substitute for relevance_rank"
+    },
+    {
+      "path": "synthesis",
+      "use_instead": "synthesis_entries",
+      "reason": "top-level synthesis array is not the contract shape"
+    }
+  ],
+  "forbidden_behaviors": [
+    "Do NOT invent new source_id values outside the mediation catalog.",
+    "Do NOT introduce new authoritative facts.",
+    "Do NOT omit the top-level schema field.",
+    "Do NOT use field aliases listed in forbidden_field_aliases."
+  ],
+  "minimal_valid_example": {
+    "schema": "hg_librarian_mediation_result_v1",
+    "selected_items": [
+      {
+        "source_id": "lmi:cand:example-source",
+        "relevance_rank": 1,
+        "relevance_band": "high",
+        "interpretive_status": "likely",
+        "salience_note": "Directly answers the focus question.",
+        "answers_focus_questions": ["What is the current scene state?"]
+      }
+    ],
+    "synthesis_entries": [
+      {
+        "synthesis_id": "synth-1",
+        "synthesis_kind": "summary",
+        "content": "Bounded synthesis citing catalog sources only.",
+        "source_ids": ["lmi:cand:example-source"],
+        "interpretive_status": "likely"
+      }
+    ],
+    "connections": [],
+    "focus_question_outcomes": []
+  }
+}
