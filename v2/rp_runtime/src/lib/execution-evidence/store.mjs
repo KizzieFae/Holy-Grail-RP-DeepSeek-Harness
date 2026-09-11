@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { ATTEMPT_SCHEMA, INDEX_SCHEMA, NI_FORENSICS_CONTRACT, PLOT_COGNITION_FORENSICS_INDEX_CONTRACT } from './config.mjs';
+import { withSessionIndexLockSync } from './session-index-lock.mjs';
 import {
   beginInferenceHealthAccumulation,
   deriveInferenceHealthFromAttempt,
@@ -138,6 +139,22 @@ export class ExecutionEvidenceStore {
     return path.join(this.sessionDir(hgSessionId), 'index.json');
   }
 
+  /**
+   * Serialize read-modify-write on session index.json (#165).
+   * @param {string} hgSessionId
+   * @param {(index: object) => void} mutator
+   * @returns {object}
+   */
+  _mutateSessionIndexSync(hgSessionId, mutator) {
+    return withSessionIndexLockSync(this.sessionDir(hgSessionId), () => {
+      const current = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
+      mutator(current);
+      current.updated_at = new Date().toISOString();
+      writeJsonAtomic(this.indexPath(hgSessionId), current);
+      return current;
+    });
+  }
+
   attemptPath(hgSessionId, evidenceId) {
     return path.join(this.sessionDir(hgSessionId), 'attempts', `${evidenceId}.json`);
   }
@@ -162,20 +179,25 @@ export class ExecutionEvidenceStore {
     }
     delete payload.semantic_qa;
     writeJsonAtomic(this.attemptPath(hgSessionId, evidenceId), payload);
-    this._indexAttempt(hgSessionId, evidenceId, attempt.correlation, null, attempt);
-    if (attempt.correlation?.role === 'participation') {
-      this._indexParticipation(hgSessionId, evidenceId, attempt.correlation);
-    }
-    if (
-      attempt.evidence_contract === NI_FORENSICS_CONTRACT
-      || attempt.correlation?.role === 'post_commit_semantic_disposition'
-    ) {
-      this._indexNi(hgSessionId, evidenceId, attempt);
-    }
-    if (this._isPlotCognitionInference(attempt)) {
-      this._indexPlotCognition(hgSessionId, evidenceId, attempt);
-    }
-    this._rebuildInferenceHealthIndex(hgSessionId);
+    this._mutateSessionIndexSync(hgSessionId, (index) => {
+      this._indexAttempt(hgSessionId, evidenceId, attempt.correlation, index, attempt);
+      if (attempt.correlation?.role === 'participation') {
+        this._indexParticipation(hgSessionId, evidenceId, attempt.correlation, index);
+      }
+      if (
+        attempt.evidence_contract === NI_FORENSICS_CONTRACT
+        || attempt.correlation?.role === 'post_commit_semantic_disposition'
+      ) {
+        this._indexNi(hgSessionId, evidenceId, attempt, index);
+      }
+      if (this._isPlotCognitionInference(attempt)) {
+        this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
+      }
+      index.inference_health = this._buildInferenceHealthIndex(
+        hgSessionId,
+        index.attempt_ids ?? [],
+      );
+    });
     return evidenceId;
   }
 
@@ -220,18 +242,23 @@ export class ExecutionEvidenceStore {
       next.execution = current.execution;
     }
     writeJsonAtomic(filePath, next);
-    this._indexSemanticDecision(hgSessionId, evidenceId, next);
-    this._indexSemanticQa(hgSessionId, evidenceId, next);
-    if (
-      next.evidence_contract === NI_FORENSICS_CONTRACT
-      || next.correlation?.role === 'post_commit_semantic_disposition'
-    ) {
-      this._indexNi(hgSessionId, evidenceId, next);
-    }
-    if (this._isPlotCognitionInference(next)) {
-      this._indexPlotCognition(hgSessionId, evidenceId, next);
-    }
-    this._rebuildInferenceHealthIndex(hgSessionId);
+    this._mutateSessionIndexSync(hgSessionId, (index) => {
+      this._indexSemanticDecision(hgSessionId, evidenceId, next, index);
+      this._indexSemanticQa(hgSessionId, evidenceId, next, index);
+      if (
+        next.evidence_contract === NI_FORENSICS_CONTRACT
+        || next.correlation?.role === 'post_commit_semantic_disposition'
+      ) {
+        this._indexNi(hgSessionId, evidenceId, next, index);
+      }
+      if (this._isPlotCognitionInference(next)) {
+        this._indexPlotCognition(hgSessionId, evidenceId, next, index);
+      }
+      index.inference_health = this._buildInferenceHealthIndex(
+        hgSessionId,
+        index.attempt_ids ?? [],
+      );
+    });
   }
 
   readAttempt(hgSessionId, evidenceId) {
@@ -261,35 +288,33 @@ export class ExecutionEvidenceStore {
    * Rebuild derived semantic navigation indexes from authoritative attempts.
    */
   rebuildSemanticNavigationIndexes(hgSessionId) {
-    const index = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
-    index.semantic = emptySemanticIndex();
-    index.participation_by_round = {};
-    index.ni = emptyNiIndex();
-    index.plot_cognition = emptyPlotCognitionIndex();
-    index.inference_health = emptyInferenceHealthIndex();
-    for (const evidenceId of index.attempt_ids ?? []) {
-      const attempt = this.readAttempt(hgSessionId, evidenceId);
-      if (!attempt) continue;
-      if (attempt.correlation?.role === 'participation') {
-        this._indexParticipation(hgSessionId, evidenceId, attempt.correlation, index);
-        continue;
+    return this._mutateSessionIndexSync(hgSessionId, (index) => {
+      index.semantic = emptySemanticIndex();
+      index.participation_by_round = {};
+      index.ni = emptyNiIndex();
+      index.plot_cognition = emptyPlotCognitionIndex();
+      index.inference_health = emptyInferenceHealthIndex();
+      for (const evidenceId of index.attempt_ids ?? []) {
+        const attempt = this.readAttempt(hgSessionId, evidenceId);
+        if (!attempt) continue;
+        if (attempt.correlation?.role === 'participation') {
+          this._indexParticipation(hgSessionId, evidenceId, attempt.correlation, index);
+          continue;
+        }
+        this._indexSemanticDecision(hgSessionId, evidenceId, attempt, index);
+        this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
+        if (
+          attempt.evidence_contract === NI_FORENSICS_CONTRACT
+          || attempt.correlation?.role === 'post_commit_semantic_disposition'
+        ) {
+          this._indexNi(hgSessionId, evidenceId, attempt, index);
+        }
+        if (this._isPlotCognitionInference(attempt)) {
+          this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
+        }
       }
-      this._indexSemanticDecision(hgSessionId, evidenceId, attempt, index);
-      this._indexSemanticQa(hgSessionId, evidenceId, attempt, index);
-      if (
-        attempt.evidence_contract === NI_FORENSICS_CONTRACT
-        || attempt.correlation?.role === 'post_commit_semantic_disposition'
-      ) {
-        this._indexNi(hgSessionId, evidenceId, attempt, index);
-      }
-      if (this._isPlotCognitionInference(attempt)) {
-        this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
-      }
-    }
-    index.inference_health = this._buildInferenceHealthIndex(hgSessionId, index.attempt_ids ?? []);
-    index.updated_at = new Date().toISOString();
-    writeJsonAtomic(this.indexPath(hgSessionId), index);
-    return index;
+      index.inference_health = this._buildInferenceHealthIndex(hgSessionId, index.attempt_ids ?? []);
+    });
   }
 
   _buildInferenceHealthIndex(hgSessionId, attemptIds) {
@@ -306,14 +331,12 @@ export class ExecutionEvidenceStore {
   }
 
   _rebuildInferenceHealthIndex(hgSessionId) {
-    const indexPath = this.indexPath(hgSessionId);
-    const current = readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
-    current.inference_health = this._buildInferenceHealthIndex(
-      hgSessionId,
-      current.attempt_ids ?? [],
-    );
-    current.updated_at = new Date().toISOString();
-    writeJsonAtomic(indexPath, current);
+    this._mutateSessionIndexSync(hgSessionId, (current) => {
+      current.inference_health = this._buildInferenceHealthIndex(
+        hgSessionId,
+        current.attempt_ids ?? [],
+      );
+    });
   }
 
   _indexAttempt(hgSessionId, evidenceId, correlation, indexOverride = null, attempt = null) {
@@ -346,10 +369,6 @@ export class ExecutionEvidenceStore {
     }
     if (attempt) {
       this._indexTimingAndActivity(hgSessionId, evidenceId, attempt, current);
-    }
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
     }
   }
 
@@ -450,33 +469,32 @@ export class ExecutionEvidenceStore {
         decision: nextDecision,
       });
     }
-    const index = readJsonIfExists(this.indexPath(hgSessionId)) ?? emptyIndex(hgSessionId);
-    for (const evidenceId of index.attempt_ids ?? []) {
-      const attempt = this.readAttempt(hgSessionId, evidenceId);
-      if (!attempt) continue;
-      this._indexTimingAndActivity(hgSessionId, evidenceId, attempt, index);
-    }
-    index.updated_at = new Date().toISOString();
-    writeJsonAtomic(this.indexPath(hgSessionId), index);
+    this._mutateSessionIndexSync(hgSessionId, (index) => {
+      for (const evidenceId of index.attempt_ids ?? []) {
+        const attempt = this.readAttempt(hgSessionId, evidenceId);
+        if (!attempt) continue;
+        this._indexTimingAndActivity(hgSessionId, evidenceId, attempt, index);
+      }
+    });
   }
 
   _indexParticipation(hgSessionId, evidenceId, correlation, indexOverride = null) {
     const roundId = correlation?.hg_round_id;
     if (!roundId) return;
-    const indexPath = this.indexPath(hgSessionId);
-    const current = indexOverride ?? readJsonIfExists(indexPath);
-    if (!current) return;
-    if (!current.participation_by_round) {
-      current.participation_by_round = {};
+    const apply = (current) => {
+      if (!current.participation_by_round) {
+        current.participation_by_round = {};
+      }
+      const key = String(roundId);
+      const bucket = current.participation_by_round[key] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      current.participation_by_round[key] = bucket;
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
     }
-    const key = String(roundId);
-    const bucket = current.participation_by_round[key] ?? [];
-    this._pushUnique(bucket, evidenceId);
-    current.participation_by_round[key] = bucket;
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
-    }
+    this._mutateSessionIndexSync(hgSessionId, apply);
   }
 
   _pushUnique(list, value) {
@@ -490,13 +508,11 @@ export class ExecutionEvidenceStore {
     const inferenceId = correlation.inference_id;
     const semantic = decision.semantic_evaluation;
     const outcome = String(decision.outcome ?? '');
-    const indexPath = this.indexPath(hgSessionId);
-    const current = indexOverride ?? readJsonIfExists(indexPath);
-    if (!current) return;
-    if (!current.semantic) {
-      current.semantic = emptySemanticIndex();
-    }
-    const sem = current.semantic;
+    const apply = (current) => {
+      if (!current.semantic) {
+        current.semantic = emptySemanticIndex();
+      }
+      const sem = current.semantic;
 
     if (inferenceId) {
       const chainKey = String(inferenceId);
@@ -536,11 +552,12 @@ export class ExecutionEvidenceStore {
     if (inferenceId && sem.evaluation_chains[inferenceId]?.length > 2) {
       this._pushUnique(sem.multi_candidate_inferences, inferenceId);
     }
-
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
     }
+    this._mutateSessionIndexSync(hgSessionId, apply);
   }
 
   _indexSemanticQa(hgSessionId, evidenceId, attempt, indexOverride = null) {
@@ -549,80 +566,77 @@ export class ExecutionEvidenceStore {
 
     const correlation = attempt?.correlation ?? {};
     const inferenceId = correlation.inference_id;
-    const indexPath = this.indexPath(hgSessionId);
-    const current = indexOverride ?? readJsonIfExists(indexPath);
-    if (!current?.semantic) return;
-
     const targetRole = String(semanticQa.evaluation_target_role ?? '').trim();
     if (!targetRole) return;
 
-    if (!current.semantic.qa_by_target_role) {
-      current.semantic.qa_by_target_role = {};
-    }
-    const bucket = current.semantic.qa_by_target_role[targetRole] ?? [];
-    this._pushUnique(bucket, evidenceId);
-    current.semantic.qa_by_target_role[targetRole] = bucket;
-
-    if (!current.semantic.qa_pass_chains) {
-      current.semantic.qa_pass_chains = {};
-    }
-    if (inferenceId && semanticQa.evaluation_pass_id) {
-      const chainKey = String(inferenceId);
-      const chain = [...(current.semantic.qa_pass_chains[chainKey] ?? [])];
-      const entry = {
-        candidate_evidence_id: evidenceId,
-        evaluator_evidence_id: semanticQa.evaluator_evidence_id ?? null,
-        evaluation_pass_id: semanticQa.evaluation_pass_id,
-        policy_action: semanticQa.policy_action ?? null,
-      };
-      const existingIndex = chain.findIndex(
-        (item) => item.evaluation_pass_id === entry.evaluation_pass_id,
-      );
-      if (existingIndex >= 0) {
-        chain[existingIndex] = entry;
-      } else {
-        chain.push(entry);
+    const apply = (current) => {
+      if (!current.semantic) return;
+      if (!current.semantic.qa_by_target_role) {
+        current.semantic.qa_by_target_role = {};
       }
-      chain.sort((left, right) => String(left.evaluation_pass_id)
-        .localeCompare(String(right.evaluation_pass_id)));
-      current.semantic.qa_pass_chains[chainKey] = chain;
-    }
+      const bucket = current.semantic.qa_by_target_role[targetRole] ?? [];
+      this._pushUnique(bucket, evidenceId);
+      current.semantic.qa_by_target_role[targetRole] = bucket;
 
-    if (semanticQa.infrastructure_failure) {
-      this._pushUnique(current.semantic.evaluator_failures, evidenceId);
-    }
-
-    const evalResult = semanticQa.result ?? {};
-    const findings = Array.isArray(evalResult.findings) ? evalResult.findings : [];
-    for (const finding of findings) {
-      const dimension = String(finding?.dimension ?? '').trim();
-      if (!dimension) continue;
-      const dimBucket = current.semantic.by_dimension[dimension] ?? [];
-      this._pushUnique(dimBucket, evidenceId);
-      current.semantic.by_dimension[dimension] = dimBucket;
-      if (finding.severity === 'hard') {
-        this._pushUnique(current.semantic.hard_findings, evidenceId);
-      } else if (finding.severity === 'soft') {
-        this._pushUnique(current.semantic.soft_findings, evidenceId);
+      if (!current.semantic.qa_pass_chains) {
+        current.semantic.qa_pass_chains = {};
       }
-    }
+      if (inferenceId && semanticQa.evaluation_pass_id) {
+        const chainKey = String(inferenceId);
+        const chain = [...(current.semantic.qa_pass_chains[chainKey] ?? [])];
+        const entry = {
+          candidate_evidence_id: evidenceId,
+          evaluator_evidence_id: semanticQa.evaluator_evidence_id ?? null,
+          evaluation_pass_id: semanticQa.evaluation_pass_id,
+          policy_action: semanticQa.policy_action ?? null,
+        };
+        const existingIndex = chain.findIndex(
+          (item) => item.evaluation_pass_id === entry.evaluation_pass_id,
+        );
+        if (existingIndex >= 0) {
+          chain[existingIndex] = entry;
+        } else {
+          chain.push(entry);
+        }
+        chain.sort((left, right) => String(left.evaluation_pass_id)
+          .localeCompare(String(right.evaluation_pass_id)));
+        current.semantic.qa_pass_chains[chainKey] = chain;
+      }
 
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
+      if (semanticQa.infrastructure_failure) {
+        this._pushUnique(current.semantic.evaluator_failures, evidenceId);
+      }
+
+      const evalResult = semanticQa.result ?? {};
+      const findings = Array.isArray(evalResult.findings) ? evalResult.findings : [];
+      for (const finding of findings) {
+        const dimension = String(finding?.dimension ?? '').trim();
+        if (!dimension) continue;
+        const dimBucket = current.semantic.by_dimension[dimension] ?? [];
+        this._pushUnique(dimBucket, evidenceId);
+        current.semantic.by_dimension[dimension] = dimBucket;
+        if (finding.severity === 'hard') {
+          this._pushUnique(current.semantic.hard_findings, evidenceId);
+        } else if (finding.severity === 'soft') {
+          this._pushUnique(current.semantic.soft_findings, evidenceId);
+        }
+      }
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
     }
+    this._mutateSessionIndexSync(hgSessionId, apply);
   }
 
   indexTagForensicScope(hgSessionId, tagId, forensicScope) {
-    const indexPath = this.indexPath(hgSessionId);
-    const current = readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
-    if (!current.ni) current.ni = emptyNiIndex();
-    current.ni.by_tag = {
-      ...(current.ni.by_tag ?? {}),
-      [String(tagId)]: forensicScope,
-    };
-    current.updated_at = new Date().toISOString();
-    writeJsonAtomic(indexPath, current);
+    this._mutateSessionIndexSync(hgSessionId, (current) => {
+      if (!current.ni) current.ni = emptyNiIndex();
+      current.ni.by_tag = {
+        ...(current.ni.by_tag ?? {}),
+        [String(tagId)]: forensicScope,
+      };
+    });
   }
 
   _indexNi(hgSessionId, evidenceId, attempt, indexOverride = null) {
@@ -635,67 +649,67 @@ export class ExecutionEvidenceStore {
       ?? attempt?.decision?.commit?.domain_commit_id
       ?? attempt?.decision?.post_commit_semantic?.batch_id
       ?? attempt?.decision?.librarian_proposal?.batch_id;
-    const indexPath = this.indexPath(hgSessionId);
-    const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
-    if (!current.ni) current.ni = emptyNiIndex();
-    const ni = current.ni;
+    const apply = (current) => {
+      if (!current.ni) current.ni = emptyNiIndex();
+      const ni = current.ni;
 
-    if (roundId && parentInferenceId && inferenceKind) {
-      const roundKey = String(roundId);
-      const parentKey = String(parentInferenceId);
-      ni.by_round[roundKey] = {
-        ...(ni.by_round[roundKey] ?? {}),
-        [parentKey]: {
-          ...(ni.by_round[roundKey]?.[parentKey] ?? {}),
-          [inferenceKind]: evidenceId,
-        },
-      };
-    }
+      if (roundId && parentInferenceId && inferenceKind) {
+        const roundKey = String(roundId);
+        const parentKey = String(parentInferenceId);
+        ni.by_round[roundKey] = {
+          ...(ni.by_round[roundKey] ?? {}),
+          [parentKey]: {
+            ...(ni.by_round[roundKey]?.[parentKey] ?? {}),
+            [inferenceKind]: evidenceId,
+          },
+        };
+      }
 
-    const proposalCommitId = attempt?.associations?.domain_commit_id
-      ?? correlation.domain_commit_id
-      ?? attempt?.decision?.post_commit_semantic?.domain_commit_id
-      ?? attempt?.decision?.librarian_proposal?.domain_commit_id
-      ?? attempt?.decision?.post_commit_semantic?.batch_id
-      ?? attempt?.decision?.librarian_proposal?.batch_id;
-    if (
-      (inferenceKind === 'librarian_proposal'
-        || inferenceKind === 'storyteller_post_commit_issue_pressure')
-      && proposalCommitId
-    ) {
-      ni.by_commit = {
-        ...(ni.by_commit ?? {}),
-        [String(proposalCommitId)]: {
-          ...(ni.by_commit?.[String(proposalCommitId)] ?? {}),
-          proposal_evidence_id: evidenceId,
-          domain_commit_id: correlation.domain_commit_id ?? null,
-        },
-      };
+      const proposalCommitId = attempt?.associations?.domain_commit_id
+        ?? correlation.domain_commit_id
+        ?? attempt?.decision?.post_commit_semantic?.domain_commit_id
+        ?? attempt?.decision?.librarian_proposal?.domain_commit_id
+        ?? attempt?.decision?.post_commit_semantic?.batch_id
+        ?? attempt?.decision?.librarian_proposal?.batch_id;
+      if (
+        (inferenceKind === 'librarian_proposal'
+          || inferenceKind === 'storyteller_post_commit_issue_pressure')
+        && proposalCommitId
+      ) {
+        ni.by_commit = {
+          ...(ni.by_commit ?? {}),
+          [String(proposalCommitId)]: {
+            ...(ni.by_commit?.[String(proposalCommitId)] ?? {}),
+            proposal_evidence_id: evidenceId,
+            domain_commit_id: correlation.domain_commit_id ?? null,
+          },
+        };
+      }
+      if (inferenceKind === 'post_commit_semantic_disposition' && commitId) {
+        ni.by_commit = {
+          ...(ni.by_commit ?? {}),
+          [String(commitId)]: {
+            ...(ni.by_commit?.[String(commitId)] ?? {}),
+            semantic_disposition_evidence_id: evidenceId,
+            domain_commit_id: correlation.domain_commit_id ?? commitId,
+          },
+        };
+      }
+      if (commitId && inferenceKind === 'character_move' && attempt?.decision?.commit?.committed) {
+        ni.by_commit = {
+          ...(ni.by_commit ?? {}),
+          [String(correlation.domain_commit_id ?? commitId)]: {
+            ...(ni.by_commit?.[String(correlation.domain_commit_id ?? commitId)] ?? {}),
+            move_evidence_id: evidenceId,
+          },
+        };
+      }
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
     }
-    if (inferenceKind === 'post_commit_semantic_disposition' && commitId) {
-      ni.by_commit = {
-        ...(ni.by_commit ?? {}),
-        [String(commitId)]: {
-          ...(ni.by_commit?.[String(commitId)] ?? {}),
-          semantic_disposition_evidence_id: evidenceId,
-          domain_commit_id: correlation.domain_commit_id ?? commitId,
-        },
-      };
-    }
-    if (commitId && inferenceKind === 'character_move' && attempt?.decision?.commit?.committed) {
-      ni.by_commit = {
-        ...(ni.by_commit ?? {}),
-        [String(correlation.domain_commit_id ?? commitId)]: {
-          ...(ni.by_commit?.[String(correlation.domain_commit_id ?? commitId)] ?? {}),
-          move_evidence_id: evidenceId,
-        },
-      };
-    }
-
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
-    }
+    this._mutateSessionIndexSync(hgSessionId, apply);
   }
 
   _isPlotCognitionInference(attempt) {
@@ -711,45 +725,45 @@ export class ExecutionEvidenceStore {
     const commitId = correlation.domain_commit_id ?? associations.domain_commit_id;
     const scopeId = associations.plot_cognition_scope_id ?? correlation.plot_cognition_scope_id;
     const candidateId = associations.candidate_id ?? correlation.candidate_id;
-    const indexPath = this.indexPath(hgSessionId);
-    const current = indexOverride ?? readJsonIfExists(indexPath) ?? emptyIndex(hgSessionId);
-    if (!current.plot_cognition) current.plot_cognition = emptyPlotCognitionIndex();
-    const pc = current.plot_cognition;
+    const apply = (current) => {
+      if (!current.plot_cognition) current.plot_cognition = emptyPlotCognitionIndex();
+      const pc = current.plot_cognition;
 
-    if (inferenceKind) {
-      const kindKey = String(inferenceKind);
-      const bucket = pc.by_inference_kind[kindKey] ?? [];
-      this._pushUnique(bucket, evidenceId);
-      pc.by_inference_kind[kindKey] = bucket;
+      if (inferenceKind) {
+        const kindKey = String(inferenceKind);
+        const bucket = pc.by_inference_kind[kindKey] ?? [];
+        this._pushUnique(bucket, evidenceId);
+        pc.by_inference_kind[kindKey] = bucket;
+      }
+      if (roundId) {
+        const roundKey = String(roundId);
+        const bucket = pc.by_round[roundKey] ?? [];
+        this._pushUnique(bucket, evidenceId);
+        pc.by_round[roundKey] = bucket;
+      }
+      if (commitId) {
+        const commitKey = String(commitId);
+        const bucket = pc.by_commit[commitKey] ?? [];
+        this._pushUnique(bucket, evidenceId);
+        pc.by_commit[commitKey] = bucket;
+      }
+      if (scopeId) {
+        const scopeKey = String(scopeId);
+        const bucket = pc.by_scope[scopeKey] ?? [];
+        this._pushUnique(bucket, evidenceId);
+        pc.by_scope[scopeKey] = bucket;
+      }
+      if (candidateId) {
+        const candidateKey = String(candidateId);
+        const bucket = pc.by_candidate[candidateKey] ?? [];
+        this._pushUnique(bucket, evidenceId);
+        pc.by_candidate[candidateKey] = bucket;
+      }
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
     }
-    if (roundId) {
-      const roundKey = String(roundId);
-      const bucket = pc.by_round[roundKey] ?? [];
-      this._pushUnique(bucket, evidenceId);
-      pc.by_round[roundKey] = bucket;
-    }
-    if (commitId) {
-      const commitKey = String(commitId);
-      const bucket = pc.by_commit[commitKey] ?? [];
-      this._pushUnique(bucket, evidenceId);
-      pc.by_commit[commitKey] = bucket;
-    }
-    if (scopeId) {
-      const scopeKey = String(scopeId);
-      const bucket = pc.by_scope[scopeKey] ?? [];
-      this._pushUnique(bucket, evidenceId);
-      pc.by_scope[scopeKey] = bucket;
-    }
-    if (candidateId) {
-      const candidateKey = String(candidateId);
-      const bucket = pc.by_candidate[candidateKey] ?? [];
-      this._pushUnique(bucket, evidenceId);
-      pc.by_candidate[candidateKey] = bucket;
-    }
-
-    current.updated_at = new Date().toISOString();
-    if (!indexOverride) {
-      writeJsonAtomic(indexPath, current);
-    }
+    this._mutateSessionIndexSync(hgSessionId, apply);
   }
 }

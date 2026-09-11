@@ -23,6 +23,7 @@ export default class HgPhaseExecutors extends Service {
   constructor(ctx, config = {}) {
     super(ctx, HgPhaseExecutors.name);
     this.config = config;
+    this.inferenceConfig = config.inference ?? {};
     const substrate = createInferenceSubstrate(config.inference);
     this._runEphemeralInference = substrate.runEphemeralInference;
     this.executionEvidenceRecorder = substrate.recorder;
@@ -62,6 +63,7 @@ export default class HgPhaseExecutors extends Service {
   runNarrator(params) {
     return runNarratorPhase({
       ...this._phaseDeps(),
+      inferenceConfig: this.inferenceConfig,
       ...params,
     });
   }

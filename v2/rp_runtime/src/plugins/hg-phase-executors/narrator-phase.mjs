@@ -170,6 +170,7 @@ export async function runNarratorPhase({
   semanticEvaluatorProfile,
   narratorSemanticQaEnabled = true,
   prompt,
+  inferenceConfig = {},
 }) {
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   let lastFailureReason = 'narrator presentation failed';
@@ -205,6 +206,7 @@ export async function runNarratorPhase({
       continuityTurnIndex,
       modelProfile,
       mockCognitionResponse: mockNarratorEnvironmentCognitionResponse,
+      inferenceConfig,
     });
     if (!envCognition.ok) {
       environmentCognitionAudit = {

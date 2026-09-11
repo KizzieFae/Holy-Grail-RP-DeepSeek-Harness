@@ -185,8 +185,11 @@ data/plot_cognition_forensics/{plot_cognition_scope_id}/
 ```text
 data/execution_evidence/<hg_session_id>/
   index.json                    # semantic + participation navigation indexes
+  .index-write.lock             # ephemeral exclusive lock for concurrent index mutations (#165)
   attempts/<evidence_id>.json
 ```
+
+**Index concurrency (#165):** `index.json` mutations are serialized per session via an exclusive lock file at the mutation boundary so concurrent inference completions cannot lose entries or corrupt the derived index.
 
 **Forensic completeness contract (#28):** Sessions produced **after #28 lands** are expected to satisfy the post-#28 forensic contract below. Older pre-#28 session trees may remain on disk in historical form and are **not** required to satisfy this contract. There is no schema version gate and no historical migration/backfill.
 
