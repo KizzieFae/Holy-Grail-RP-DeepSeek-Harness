@@ -46,9 +46,21 @@ Never conflate objective authority unchanged with semantic no-change.
 
 Digest fields (`summary_digest`, `move_digest`, etc.) establish deterministic identity for `authority_source_fingerprint`.
 
-**Runtime semantic inference** additionally receives `semantic_authority_excerpts` on the update source snapshot: bounded verbatim text from existing authoritative Continuity/Domain state (`PublicEvent.summary`, issue descriptions, scene-grounding statements, committed-move excerpts when no public-event summary exists). This parallel transport is **not** included in the fingerprint; it supplies readable context for Storyteller update/replan reasoning without digest interpretation or Chronicle runtime reads.
+**Runtime semantic inference** additionally receives bounded verbatim authority through `model_facing_transport` (schema `hg_plot_cognition_model_facing_transport_v1`, Issue **#175**). The transport separates:
 
-**Prior operative cognition** (`prior_operative_cognition`, schema `hg_plot_cognition_prior_operative_cognition_v1`) is also supplied on the update source snapshot and production inference manifest. It is a bounded, active-only projection of the operative Plot Cognition overlay (active goals with `goal_id`, `intended_direction`, `planning_horizon`, `grounding`, and applicability scope; active pressures with `pressure_id` and `pressure_text`; operative global frame with `frame_id` and `ensemble_context` when present). It is **advisory comparison context only** — not authoritative evidence and **not** included in `authority_source_fingerprint`. Authoritative Continuity-derived excerpts remain authoritative over prior Storyteller cognition.
+| Lane | Purpose |
+|------|---------|
+| `deterministic_identity` | Provenance/freshness binding (`authority_source_fingerprint`, snapshot/commit lineage, scope, revision) — not verbose semantic prose |
+| `stable_semantic_frame` | Unchanged authority needed to interpret new events: scene state, **all active issues**, scene grounding, deterministic contextual anchor events, character-state context |
+| `incremental_change_evidence` | Structurally new/changed authority since last assimilation: new moves/events, materially changed issues, grounding changes |
+
+Domain still computes `canonical_body` and `authority_source_fingerprint` from the full projection. Digest bodies are **not** sent to the model when verbatim lanes already supply readable context. `semantic_authority_excerpts` remains on the source snapshot for forensic helpers and fail-safe expansion; it is **not** included in the fingerprint.
+
+**Fail-safe:** When fingerprint changed but incremental extraction is empty, transport expands stable frame with supplemental verbatim authority rather than slimming context.
+
+**Prior operative cognition** (`prior_operative_cognition`, schema `hg_plot_cognition_prior_operative_cognition_v1`) is supplied once in the production inference manifest (self-contained; not delta-encoded). It is a bounded, active-only projection of the operative Plot Cognition overlay. It is **advisory comparison context only** — not authoritative evidence and **not** included in `authority_source_fingerprint`. Authoritative Continuity-derived excerpts remain authoritative over prior Storyteller cognition.
+
+**Output shaping (#175):** On the non-replan path, models should emit only semantic changes (changed goals/pressures, inactivations, frame changes when applicable). Domain materialization merges against the authoritative store; empty change arrays remain valid where contract semantics permit.
 
 Excluded from authority projection: presentation-only history, skip/audit metadata, rejected B2, K2 occurrence duplicates of already-represented public events.
 
@@ -113,7 +125,7 @@ Identity is preserved when pursuit remains semantically the same. Lineage fields
 
 ## Source snapshot
 
-`CognitionUpdateSourceSnapshot` captures scope, contributors, prior revision, prior authority vector, current lineage targets, continuity versions, fingerprints, committed-move refs, catch-up mode, `semantic_authority_excerpts`, and bounded `prior_operative_cognition`.
+`CognitionUpdateSourceSnapshot` captures scope, contributors, prior revision, prior authority vector, current lineage targets, continuity versions, fingerprints, committed-move refs, catch-up mode, `canonical_body`, `semantic_authority_excerpts`, `model_facing_transport`, and bounded `prior_operative_cognition`.
 
 Catch-up modes:
 

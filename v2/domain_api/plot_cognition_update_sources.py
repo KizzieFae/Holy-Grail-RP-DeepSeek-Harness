@@ -21,6 +21,7 @@ from continuity_scene_pressure_projection import (  # noqa: E402
 )
 from scene_grounding import rebuild_scene_grounding_from_continuity  # noqa: E402
 
+from .plot_cognition_model_facing_transport import build_model_facing_transport
 from .plot_cognition_semantic_authority import build_semantic_authority_excerpts
 from .plot_cognition_overlay_store import (
     AssimilatedAuthority,
@@ -410,6 +411,20 @@ def gather_update_source_snapshot(
     from .plot_cognition_forensics_capture import bounded_prior_operative_cognition
 
     prior_operative_cognition = bounded_prior_operative_cognition(store)
+    snapshot_id = new_snapshot_id()
+    model_facing_transport = build_model_facing_transport(
+        fixture,
+        store,
+        story_records,
+        semantic_authority_excerpts=semantic_authority_excerpts,
+        canonical_body=canonical_body,
+        authority_source_fingerprint=fingerprint,
+        snapshot_id=snapshot_id,
+        through_domain_commit_id=through_commit,
+        continuity_version=int(fixture.continuity_version),
+        prior_store_revision=int(store.store_revision),
+        plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
+    )
     contributor_bodies: list[dict[str, Any]] = []
     for scene_id in contributors:
         if scene_id != fixture.hg_scene_id:
@@ -433,7 +448,7 @@ def gather_update_source_snapshot(
         )
     return CognitionUpdateSourceSnapshot(
         schema=UPDATE_SOURCE_SNAPSHOT_SCHEMA,
-        snapshot_id=new_snapshot_id(),
+        snapshot_id=snapshot_id,
         plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
         prior_store_revision=int(store.store_revision),
         prior_assimilated_authority=_contributor_snapshots_from_store(store),
@@ -452,6 +467,7 @@ def gather_update_source_snapshot(
         canonical_body=canonical_body,
         semantic_authority_excerpts=semantic_authority_excerpts,
         prior_operative_cognition=prior_operative_cognition,
+        model_facing_transport=model_facing_transport,
     )
 
 

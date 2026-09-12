@@ -118,6 +118,7 @@ class CognitionUpdateSourceSnapshot:
     canonical_body: dict[str, Any]
     semantic_authority_excerpts: dict[str, Any] = field(default_factory=dict)
     prior_operative_cognition: dict[str, Any] = field(default_factory=dict)
+    model_facing_transport: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -139,6 +140,7 @@ class CognitionUpdateSourceSnapshot:
             "canonical_body": self.canonical_body,
             "semantic_authority_excerpts": self.semantic_authority_excerpts,
             "prior_operative_cognition": self.prior_operative_cognition,
+            "model_facing_transport": self.model_facing_transport,
         }
 
     @classmethod
@@ -170,6 +172,7 @@ class CognitionUpdateSourceSnapshot:
             canonical_body=dict(data.get("canonical_body") or {}),
             semantic_authority_excerpts=dict(data.get("semantic_authority_excerpts") or {}),
             prior_operative_cognition=dict(data.get("prior_operative_cognition") or {}),
+            model_facing_transport=dict(data.get("model_facing_transport") or {}),
         )
 
     def contributor_authority_targets(self) -> tuple[ContributorAuthoritySnapshot, ...]:
