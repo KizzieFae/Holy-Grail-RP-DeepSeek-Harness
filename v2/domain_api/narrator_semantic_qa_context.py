@@ -14,11 +14,9 @@ from domain.bootstrap import ensure_domain_paths  # noqa: E402
 
 ensure_domain_paths()
 
-from character_move_adapters import iter_speech_beats  # noqa: E402
 from domain.modules.authority_reference import validate_authority_references  # noqa: E402
 from perception_audibility_structured import redact_structured_move_for_orchestration  # noqa: E402
 
-from .context_substrate import auth_projections_to_contributions
 from .contract import (
     NarratorSemanticQaContextPrepareRequest,
     PromptContribution,
@@ -33,13 +31,32 @@ from .semantic_qa_context import (
 from .session_state import LiveSession, RoundFixture
 
 MAX_REF_CHARS = 1200
-MAX_BEAT_CHARS = 400
+
+NARRATOR_SEMANTIC_QA_CORE_DIMENSIONS: tuple[str, ...] = (
+    "nar_attribution_error",
+    "nar_committed_contradiction",
+    "nar_action_intention_distortion",
+    "nar_psychological_invention",
+    "nar_framing_distortion",
+)
+
+NARRATOR_SEMANTIC_QA_ENVIRONMENTAL_DIMENSIONS: tuple[str, ...] = (
+    "nar_environmental_contradiction",
+    "nar_environmental_under_description",
+    "nar_environmental_repetition",
+    "nar_environmental_invention",
+)
+
+NARRATOR_SEMANTIC_QA_DIMENSIONS: tuple[str, ...] = (
+    *NARRATOR_SEMANTIC_QA_CORE_DIMENSIONS,
+    *NARRATOR_SEMANTIC_QA_ENVIRONMENTAL_DIMENSIONS,
+)
 
 NARRATOR_SEMANTIC_QA_RUBRIC = (
     "Evaluate the Narrator presentation candidate for fidelity to bounded committed source "
     "evidence. This is presentation-fidelity review, not style optimization or continuity "
     "authority. Do not duplicate F1/F2 speech verbatim/order checks.\n"
-    "Judge only these five dimensions:\n"
+    "Judge only these dimensions:\n"
     "- nar_attribution_error: material misassignment of speaker, actor, addressee, or "
     "ownership of an action/dialogue beat. Hard when contradicted by authoritative committed "
     "evidence. Not for preferred dialogue framing or POV style.\n"
@@ -106,10 +123,12 @@ def _authority_ref(
 
 
 def _refs_from_auth_projections(projections: list[Any]) -> list[dict[str, Any]]:
+    """One citeable ref per projection knowledge id (deduped by ref_id)."""
     refs: list[dict[str, Any]] = []
     seen: set[str] = set()
     for proj in projections:
         content = _truncate(str(getattr(proj, "content", "") or ""))
+        source_kind = str(getattr(proj, "source_kind", "") or "scene_reference")
         for kid in getattr(proj, "knowledge_ids", ()) or ():
             ref_id = str(kid or "").strip()
             if not ref_id or ref_id in seen:
@@ -118,9 +137,9 @@ def _refs_from_auth_projections(projections: list[Any]) -> list[dict[str, Any]]:
             refs.append(
                 _authority_ref(
                     ref_id=ref_id,
-                    kind=str(getattr(proj, "source_kind", "") or "scene_reference"),
+                    kind=source_kind,
                     authority_class=str(getattr(proj, "authority_class", "") or "authoritative"),
-                    label=f"{getattr(proj, 'source_kind', 'scene')} ({ref_id})",
+                    label=f"{source_kind} ({ref_id})",
                     text=content,
                     provenance=dict(getattr(proj, "provenance", {}) or {}),
                 )
@@ -135,7 +154,7 @@ def build_narrator_authority_references(
     turn_record: Any,
     auth_projections: list[Any],
 ) -> list[dict[str, Any]]:
-    """Bounded citeable refs mirroring legitimate Narrator source surface."""
+    """Bounded citeable refs for semantic QA (single surface; no lane duplication)."""
     mgr = fixture.manager
     assert mgr.scene_state is not None
     present_labels = list(
@@ -164,52 +183,6 @@ def build_narrator_authority_references(
                 },
             )
         )
-        beats = move.get("beats")
-        if isinstance(beats, list):
-            for index, beat in enumerate(beats):
-                if not isinstance(beat, dict):
-                    continue
-                refs.append(
-                    _authority_ref(
-                        ref_id=f"commit:{commit_id}:beat:{index}",
-                        kind="committed_beat",
-                        authority_class="authoritative",
-                        label=f"Committed beat {index}",
-                        text=_truncate(json.dumps(beat, ensure_ascii=False), MAX_BEAT_CHARS),
-                        provenance={
-                            "domain_commit_id": commit_id,
-                            "beat_index": index,
-                        },
-                    )
-                )
-        motivation = move.get("motivation")
-        if isinstance(motivation, dict) and motivation:
-            refs.append(
-                _authority_ref(
-                    ref_id=f"commit:{commit_id}:motivation",
-                    kind="committed_motivation",
-                    authority_class="authoritative",
-                    label="Committed motivation",
-                    text=_truncate(json.dumps(motivation, ensure_ascii=False), MAX_BEAT_CHARS),
-                    provenance={"domain_commit_id": commit_id},
-                )
-            )
-        for speech_index, beat in iter_speech_beats(move):
-            dialogue = str(beat.get("dialogue", "") or "").strip()
-            if dialogue:
-                refs.append(
-                    _authority_ref(
-                        ref_id=f"commit:{commit_id}:speech:{speech_index}",
-                        kind="committed_speech",
-                        authority_class="authoritative",
-                        label=f"Committed speech beat {speech_index}",
-                        text=_truncate(dialogue, MAX_BEAT_CHARS),
-                        provenance={
-                            "domain_commit_id": commit_id,
-                            "beat_index": speech_index,
-                        },
-                    )
-                )
 
     director_decision = dict(turn_record.director_decision or {})
     refs.append(
@@ -243,26 +216,6 @@ def build_narrator_authority_references(
     except (ValueError, AttributeError):
         pass
 
-    event_limit = max(1, int(getattr(mgr, "recent_event_window", 8)))
-    for event in mgr.retrieve_public_events(limit=event_limit):
-        event_id = str(getattr(event, "event_id", "") or "").strip()
-        summary = str(getattr(event, "summary", "") or "").strip()
-        if not event_id or not summary:
-            continue
-        refs.append(
-            _authority_ref(
-                ref_id=f"public_event:{event_id}",
-                kind="public_event",
-                authority_class="authoritative",
-                label=f"Public event ({event_id})",
-                text=_truncate(summary),
-                provenance={
-                    "event_id": event_id,
-                    "event_type": str(getattr(event, "event_type", "") or ""),
-                },
-            )
-        )
-
     merged: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     for ref in refs:
@@ -272,6 +225,20 @@ def build_narrator_authority_references(
         seen_ids.add(ref_id)
         merged.append(ref)
     return merged
+
+
+def build_narrator_semantic_qa_candidate_transport(
+    *,
+    candidate_presentation: str,
+    domain_commit_id: str,
+    character_id: str,
+) -> dict[str, Any]:
+    """QA transport payload: presentation under review plus correlation ids only."""
+    return {
+        "candidate_presentation": candidate_presentation,
+        "domain_commit_id": domain_commit_id,
+        "character_id": character_id,
+    }
 
 
 def prepare_narrator_semantic_qa_context(
@@ -298,7 +265,6 @@ def prepare_narrator_semantic_qa_context(
         hg_round_id=req.hg_round_id,
         continuity_turn_index=turn_record.continuity_turn_index,
     )
-    auth_contributions = auth_projections_to_contributions(manifest_id, auth_projections)
     authority_refs = build_narrator_authority_references(
         fixture,
         rnd,
@@ -306,62 +272,17 @@ def prepare_narrator_semantic_qa_context(
         auth_projections=auth_projections,
     )
 
-    mgr = fixture.manager
-    assert mgr.scene_state is not None
-    present_labels = list(
-        getattr(mgr.scene_state, "present_characters", None) or fixture.cast
-    )
-    narrate_move = redact_structured_move_for_orchestration(
-        dict(turn_record.committed_move or {}),
-        present_characters=present_labels,
-    )
-    committed_move_json = json.dumps(narrate_move, ensure_ascii=False, indent=2)
-
-    role_contributions: list[PromptContribution] = list(auth_contributions)
-    role_contributions.extend(
-        (
-            PromptContribution(
-                contribution_id=f"{manifest_id}-committed-move",
-                source_kind="committed_move",
-                authority_class="authoritative",
-                knowledge_ids=(f"commit:{req.domain_commit_id}",),
-                priority=20,
-                content=(
-                    f"Committed character move for {req.character_id} "
-                    f"(domain_commit_id={req.domain_commit_id}):\n{committed_move_json}"
-                ),
-                provenance={
-                    "character_id": req.character_id,
-                    "domain_commit_id": req.domain_commit_id,
-                    "visibility": "presentation",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-director-decision",
-                source_kind="director_decision",
-                authority_class="derived",
-                knowledge_ids=(f"orch:round:{req.hg_round_id}",),
-                priority=25,
-                content=(
-                    "Accepted director decision for this round (derived orchestration evidence): "
-                    f"{json.dumps(dict(turn_record.director_decision or {}), ensure_ascii=False)}"
-                ),
-                provenance={
-                    "hg_round_id": req.hg_round_id,
-                    "visibility": "orchestration_projection",
-                },
-            ),
-            PromptContribution(
-                contribution_id=f"{manifest_id}-narrator-semantic-qa-instruction",
-                source_kind="inference_instruction",
-                authority_class="derived",
-                knowledge_ids=(f"semantic_qa:narrator:{req.evaluation_pass_id}",),
-                priority=30,
-                content=NARRATOR_SEMANTIC_QA_RUBRIC,
-                provenance={"evaluation_pass_id": req.evaluation_pass_id},
-            ),
-        )
-    )
+    role_contributions: list[PromptContribution] = [
+        PromptContribution(
+            contribution_id=f"{manifest_id}-narrator-semantic-qa-instruction",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(f"semantic_qa:narrator:{req.evaluation_pass_id}",),
+            priority=30,
+            content=NARRATOR_SEMANTIC_QA_RUBRIC,
+            provenance={"evaluation_pass_id": req.evaluation_pass_id},
+        ),
+    ]
 
     candidate_package = {
         "candidate_presentation": req.candidate_presentation,
@@ -392,6 +313,12 @@ def build_narrator_semantic_qa_context_response(
             + "; ".join(ref_errors)
         )
 
+    candidate_transport = build_narrator_semantic_qa_candidate_transport(
+        candidate_presentation=str(candidate_package.get("candidate_presentation") or ""),
+        domain_commit_id=str(candidate_package.get("domain_commit_id") or ""),
+        character_id=str(candidate_package.get("character_id") or ""),
+    )
+
     _, assemble_errors = assemble_semantic_qa_context(
         manifest_id=manifest_id,
         evaluation_pass_id=evaluation_pass_id,
@@ -406,6 +333,7 @@ def build_narrator_semantic_qa_context_response(
         candidate_label="Narrator presentation candidate",
         character_id=character_id,
         include_default_transport=True,
+        candidate_transport_package=candidate_transport,
     )
     if assemble_errors:
         raise ValueError(
@@ -428,4 +356,5 @@ def build_narrator_semantic_qa_context_response(
         candidate_label="Narrator presentation candidate",
         character_id=character_id,
         include_default_transport=True,
+        candidate_transport_package=candidate_transport,
     )
