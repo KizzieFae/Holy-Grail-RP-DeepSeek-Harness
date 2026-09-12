@@ -9,6 +9,10 @@ export const VALID_DIMENSIONS = new Set([
   'nar_action_intention_distortion',
   'nar_psychological_invention',
   'nar_framing_distortion',
+  'nar_environmental_contradiction',
+  'nar_environmental_under_description',
+  'nar_environmental_repetition',
+  'nar_environmental_invention',
 ]);
 
 function findingHasAuthoritativeHardSupport(finding, findingIndex, citationValidations) {
@@ -46,21 +50,12 @@ export function buildNarratorEvaluatorPrompt({
   evaluationTargetRole = 'narrator',
   evaluationPassId,
 }) {
-  const dimensions = [...VALID_DIMENSIONS].join(', ');
   return [
     'You are a bounded semantic QA evaluator for a Narrator presentation candidate.',
     `Return ONLY one JSON object (no markdown) with schema ${schema}.`,
     `Set evaluation_target_role to "${evaluationTargetRole}" and evaluation_pass_id to "${evaluationPassId}".`,
-    `Use overall_result pass|reject_soft|reject_hard and findings[] with dimensions: ${dimensions}.`,
-    'Rubric:',
-    '- nar_attribution_error: material speaker/actor/addressee/action-beat misassignment.',
-    '  Hard only with authoritative commit:* or scene refs; not for dialogue framing preference.',
-    '- nar_committed_contradiction: material contradiction of committed move or authoritative scene evidence.',
-    '- nar_action_intention_distortion: material inversion/replacement of committed action or motivation.',
-    '- nar_psychological_invention: unsupported affirmative interior claims (closed-world rule).',
-    '- nar_framing_distortion: material meaning inversion via tone/metaphor/causal framing; soft by default.',
-    'Authority rules:',
-    '- Hard findings require authoritative_citation.ref_id with authority_class authoritative.',
+    'Apply the rubric and authority references supplied in the manifest contributions.',
+    'Hard findings require authoritative_citation.ref_id with authority_class authoritative from the authority references block.',
     '- orch:* and derived refs cannot support hard rejection.',
     '- Do not duplicate F1/F2 speech verbatim/order checks.',
     '- Do not emit replacement Narrator prose.',

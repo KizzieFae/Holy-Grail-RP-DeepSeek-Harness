@@ -45,9 +45,11 @@ def append_candidate_package_contribution(
     evaluation_pass_id: str,
     candidate_label: str = "Candidate under evaluation",
     priority: int = 25,
+    transport_package: dict[str, Any] | None = None,
 ) -> list[PromptContribution]:
     """Append a transport contribution for the candidate payload metadata."""
-    candidate_json = json.dumps(candidate_package, ensure_ascii=False, indent=2)
+    payload = transport_package if transport_package is not None else candidate_package
+    candidate_json = json.dumps(payload, ensure_ascii=False, indent=2)
     return [
         *contributions,
         PromptContribution(
@@ -77,6 +79,7 @@ def assemble_semantic_qa_context(
     candidate_label: str = "Candidate under evaluation",
     character_id: str | None = None,
     include_default_transport: bool = True,
+    candidate_transport_package: dict[str, Any] | None = None,
 ) -> tuple[list[PromptContribution], list[str]]:
     """Assemble role-neutral semantic-QA manifest contributions."""
     normalized_refs, ref_errors = validate_authority_references(authority_references)
@@ -94,6 +97,7 @@ def assemble_semantic_qa_context(
             candidate_package=candidate_package,
             evaluation_pass_id=evaluation_pass_id,
             candidate_label=candidate_label,
+            transport_package=candidate_transport_package,
         )
     return contributions, ref_errors
 
@@ -114,6 +118,7 @@ def build_semantic_qa_context_response(
     candidate_label: str = "Candidate under evaluation",
     character_id: str | None = None,
     include_default_transport: bool = True,
+    candidate_transport_package: dict[str, Any] | None = None,
 ) -> SemanticQaContextPrepareResponse:
     contributions, _ref_errors = assemble_semantic_qa_context(
         manifest_id=manifest_id,
@@ -129,6 +134,7 @@ def build_semantic_qa_context_response(
         candidate_label=candidate_label,
         character_id=character_id,
         include_default_transport=include_default_transport,
+        candidate_transport_package=candidate_transport_package,
     )
     from .manifest_validation import validate_contribution_package
 

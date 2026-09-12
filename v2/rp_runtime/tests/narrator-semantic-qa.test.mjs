@@ -11,14 +11,14 @@ import {
   classifySemanticQaResult,
 } from '../src/plugins/hg-phase-executors/narrator-semantic-qa.mjs';
 
-test('buildNarratorEvaluatorPrompt includes all narrator dimensions', () => {
+test('buildNarratorEvaluatorPrompt delegates rubric to manifest contributions', () => {
   const prompt = buildNarratorEvaluatorPrompt({
     evaluationPassId: 'eval-1',
   });
-  for (const dimension of VALID_DIMENSIONS) {
-    assert.match(prompt, new RegExp(dimension));
-  }
+  assert.match(prompt, /manifest contributions/i);
+  assert.match(prompt, /evaluation_pass_id to "eval-1"/);
   assert.match(prompt, /narrator/i);
+  assert.doesNotMatch(prompt, /nar_environmental_contradiction/);
 });
 
 test('buildCorrectionContextFromNarratorQa excludes replacement prose binding', () => {
@@ -128,7 +128,7 @@ test('applyNarratorSemanticPolicy reports infrastructure failure', () => {
 
 test('narrator QA config id and dimensions are stable', () => {
   assert.equal(NARRATOR_QA_CONFIG_ID, 'narrator_semantic_qa_v1');
-  assert.equal(VALID_DIMENSIONS.size, 5);
+  assert.equal(VALID_DIMENSIONS.size, 9);
 });
 
 test('classifySemanticQaResult downgrades derived-only hard citations to soft', () => {
