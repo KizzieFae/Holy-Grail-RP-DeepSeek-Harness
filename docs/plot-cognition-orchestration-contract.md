@@ -102,6 +102,44 @@ When pending Plot Cognition work exists:
 - No warning/banner exposure of stale strategic cognition.
 - Prepared projection batches fail closed on stale binding.
 
+## Deterministic no-inference boundary (#166 Lane 1)
+
+Post-commit routing (`POST /v1/plot-cognition/pending-work/plan`) may skip semantic inference only when authoritative structural identity proves that no new Plot-relevant semantic material requires interpretation:
+
+| Plan operation | Inference | Notes |
+|----------------|-----------|-------|
+| `none` | No | Pure orchestration skip; Chronicle `semantic_decision` only (no WAFI mutation lifecycle) |
+| `clear_pending` | No | Stale pending flag when authority already fresh |
+| `reconciliation` | No | Domain finalize when assimilated authority missing |
+| `authority_advance` | No | CV-only advancement with unchanged `authority_source_fingerprint` |
+| `semantic_update` | Yes | Required when assimilated authority fingerprint changed |
+
+`authority_source_fingerprint` change because Plot-relevant authoritative material changed **always** requires semantic inference. Production must not use excerpt-diff heuristics, deterministic semantic-relevance classifiers, or prompt-level skip heuristics as substitutes.
+
+Projection prepare binds assimilated `authority_source_fingerprint` from Domain-owned Plot state when the client omits `authority_fingerprint` (`resolve_assimilated_authority_source_fingerprint`).
+
+## Layer B epistemic evaluation reuse (#166 Lane 2)
+
+Session-scoped, **non-authoritative** reuse of a prior Layer B epistemic evaluation is permitted only when the complete reuse identity matches:
+
+- `plot_cognition_scope_id`
+- `character_id`
+- `candidate_id`
+- `visibility_digest`
+- relevant `withheld_basis_index` identity/content
+- `known_by_snapshot_id`
+- `overlay_revision`
+- assimilated `authority_source_fingerprint`
+
+Reuse key: SHA-256 of canonical JSON over those fields (`compute_layer_b_eval_reuse_key`).
+
+| Endpoint | Role |
+|----------|------|
+| `POST /v1/plot-cognition/projection/resolve-layer-b-reuse` | Consult registry; fail closed to fresh eval on mismatch |
+| `POST /v1/plot-cognition/projection/register-semantic-result` | Populate registry after first-pass (`evaluation_attempt == 1`) |
+
+Regeneration / `evaluation_attempt > 1` **must not** reuse. Any relevant-key mismatch fails closed to fresh Layer B evaluation. Registry is transient per Domain process / scope and is not durable authority.
+
 ## Layer B concurrency
 
 Production Layer B evaluation is **sequential** for #66 (`plot-cognition-character-projection.mjs`). Bounded parallel evaluation remains **#65** ownership; do not enable `max_parallel_epistemic_evals` in production wiring until #65 certifies a baseline.

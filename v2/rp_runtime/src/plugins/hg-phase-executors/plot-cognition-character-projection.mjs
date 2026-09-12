@@ -193,19 +193,44 @@ export async function runCharacterProjectionLifecycle({
     const evaluationPassId = String(item.evaluation_pass_id);
     const candidateId = String(item.candidate_id);
     const manifest = prepare.evaluator_manifests?.[evaluationPassId] ?? [];
-    const firstEval = await runEpistemicEval({
-      api,
-      runEphemeralInference,
-      scope,
-      hgSceneId,
-      hgRoundId,
-      inferenceId,
-      evaluationPassId,
-      manifestContributions: manifest,
-      modelProfile,
-      mockResponse: mockEpistemicResponses[mockEpistemicIndex++] ?? null,
+    const reuseResolve = await api.resolvePlotCognitionLayerBEpistemicReuse({
+      hg_scene_id: hgSceneId,
+      hg_round_id: hgRoundId,
+      batch_id: batchId,
+      evaluation_pass_id: evaluationPassId,
+      evaluation_attempt: 1,
     });
-    callLog.push(`eval:${evaluationPassId}:1`);
+    callLog.push(`resolve_layer_b:${evaluationPassId}:1`);
+    let firstEval;
+    if (reuseResolve?.accepted && reuseResolve.action === 'reuse' && reuseResolve.semantic) {
+      firstEval = {
+        ok: true,
+        verdict: reuseResolve.semantic.verdict ?? 'pass',
+        semantic: reuseResolve.semantic,
+        evidenceId: reuseResolve.prior_inference_evidence_id ?? null,
+        raw: null,
+        contractLineage: null,
+        correctionUsed: false,
+        inferRuns: [],
+        reused: true,
+        reuseKeyDigest: reuseResolve.reuse_key_digest ?? null,
+      };
+      callLog.push(`reuse:${evaluationPassId}:1`);
+    } else {
+      firstEval = await runEpistemicEval({
+        api,
+        runEphemeralInference,
+        scope,
+        hgSceneId,
+        hgRoundId,
+        inferenceId,
+        evaluationPassId,
+        manifestContributions: manifest,
+        modelProfile,
+        mockResponse: mockEpistemicResponses[mockEpistemicIndex++] ?? null,
+      });
+      callLog.push(`eval:${evaluationPassId}:1`);
+    }
     const registerFirst = await api.registerPlotCognitionProjectionSemanticResult({
       hg_scene_id: hgSceneId,
       hg_round_id: hgRoundId,

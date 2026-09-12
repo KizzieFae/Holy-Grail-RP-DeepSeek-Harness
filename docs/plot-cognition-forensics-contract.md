@@ -68,6 +68,19 @@ Truncation limits are recorded in artifact `truncation_policy` metadata.
 
 Chronicle references DSH execution evidence by stable `evidence_id` in `inference_evidence_refs`. The session execution-evidence index exposes a derived `plot_cognition` navigation bucket (`hg_plot_cognition_forensics_index_v1`) — rebuildable, not authoritative.
 
+## Orchestration and Layer B reuse forensics (#166)
+
+Pure orchestration decisions that never enter a mutation lifecycle (for example `plan → none`) record **`semantic_decision`** via `POST /v1/plot-cognition/orchestration/record-gate` with `mutation_lifecycle_entered: false`. Do not fabricate WAFI mutation intent/completion for no-work paths.
+
+Layer B reuse records **`consumer_decision`** on `projection_evaluate` with payload distinguishing:
+
+| `decision` | Meaning |
+|------------|---------|
+| `invoke` | Fresh Layer B evaluation required (cache miss or regeneration) |
+| `reused` | Prior evaluation reused; includes `reuse_key_digest` and `prior_inference_evidence_id` |
+
+These observability records are non-authoritative and must remain reconstructable alongside DSH execution evidence.
+
 ## Runtime privilege boundary
 
 Modules that assemble Character / Storyteller / DSH role context must not import Chronicle repositories or services. Investigator tooling under `tools/investigation/` is the intended reader.

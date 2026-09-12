@@ -671,3 +671,39 @@ test('projection seam: execution evidence links eval and generator kinds', async
   );
   assert.equal(kinds.filter((k) => k === 'character_advisory_generation').length, 1);
 });
+
+test('projection seam: identical Layer B state reuses prior epistemic eval (#166)', async (t) => {
+  const { api, sessionsDir } = await startProjectionDomainHost(t);
+  const ctx = await setupProjectionSession(api, sessionsDir);
+  const { runEphemeralInference, calls } = createTrackingInference([epistemicPass(), epistemicPass()]);
+
+  const first = await runCharacterProjectionLifecycle({
+    api,
+    runEphemeralInference,
+    scope: {},
+    hgSceneId: ctx.hgSceneId,
+    hgRoundId: ctx.hgRoundId,
+    characterId: 'Alice',
+    inferenceId: 'inf-proj-reuse-1',
+    turnIndex: ctx.turnIndex,
+  });
+  assert.equal(first.ok, true, JSON.stringify(first));
+  assert.ok((first.prepare?.items?.length ?? first.prepare?.candidate_count ?? 0) > 0);
+  assert.ok(first.callLog.some((entry) => entry.startsWith('eval:')));
+
+  const second = await runCharacterProjectionLifecycle({
+    api,
+    runEphemeralInference,
+    scope: {},
+    hgSceneId: ctx.hgSceneId,
+    hgRoundId: ctx.hgRoundId,
+    characterId: 'Alice',
+    inferenceId: 'inf-proj-reuse-2',
+    turnIndex: ctx.turnIndex,
+  });
+  assert.equal(second.ok, true, JSON.stringify(second));
+  assert.ok(second.callLog.some((entry) => entry.startsWith('reuse:')));
+
+  const evalCalls = calls.filter((c) => c.inferenceKind === 'plot_cognition_epistemic_eval');
+  assert.equal(evalCalls.length, 1, 'expected one Layer B inference across two identical lifecycles');
+});

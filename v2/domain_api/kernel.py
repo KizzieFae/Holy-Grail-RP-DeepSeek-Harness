@@ -1931,6 +1931,19 @@ class DomainKernel:
         rnd = self._require_round(fixture, str(data["hg_round_id"]))
         return register_plot_cognition_projection_semantic_result(fixture, rnd, data)
 
+    def resolve_plot_cognition_layer_b_epistemic_reuse(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import resolve_plot_cognition_layer_b_epistemic_reuse
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        rnd = self._require_round(fixture, str(data["hg_round_id"]))
+        return resolve_plot_cognition_layer_b_epistemic_reuse(self, fixture, rnd, data)
+
+    def record_plot_cognition_orchestration_gate(self, data: dict[str, Any]) -> dict[str, Any]:
+        from .plot_cognition_orchestration_api import record_plot_cognition_orchestration_gate
+
+        fixture = self.store.require(str(data["hg_scene_id"]))
+        return record_plot_cognition_orchestration_gate(self, fixture, data)
+
     def prepare_plot_cognition_projection_regeneration(self, data: dict[str, Any]) -> dict[str, Any]:
         from .plot_cognition_orchestration_api import prepare_plot_cognition_projection_regeneration
 

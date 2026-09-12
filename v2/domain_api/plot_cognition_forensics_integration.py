@@ -289,6 +289,110 @@ def wafi_update_like(
     return mutation_holder["result"], True, wafi
 
 
+def record_plot_cognition_orchestration_decision(
+    kernel: Any,
+    fixture: LiveSession,
+    *,
+    plan_operation: str,
+    reason: str,
+    freshness_status: str | None = None,
+    inference_id: str | None = None,
+    domain_commit_id: str | None = None,
+) -> bool:
+    """Record non-mutation orchestration gate decisions (#166 Lane 1)."""
+    forensics = get_forensics_service(kernel)
+    scope_id = str(fixture.plot_cognition_scope_id or "")
+    if forensics is None or not scope_id:
+        return True
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    from .plot_cognition_overlay_store import BoundednessPolicy
+
+    policy = BoundednessPolicy(max_active_goals=8, max_active_pressures=8)
+    loaded = overlay.load(scope_id, policy=policy) if overlay else None
+    ensure_activation(kernel, fixture, loaded.store.to_dict() if loaded and loaded.store else None)
+    correlation = _base_correlation(
+        fixture,
+        domain_commit_id=domain_commit_id,
+        overlay_revision_before=loaded.store.store_revision if loaded and loaded.store else None,
+    )
+    suffix = inference_id or plan_operation or "orchestration"
+    idempotency_key = f"{scope_id}:orchestration:{suffix}:{plan_operation}"
+    result = forensics.record_semantic_decision(
+        plot_cognition_scope_id=scope_id,
+        idempotency_key=idempotency_key,
+        record_class="semantic_decision",
+        operation_kind="freshness_barrier",
+        correlation=correlation,
+        payload={
+            "decision": "deterministic_skip",
+            "plan_operation": plan_operation,
+            "reason": reason,
+            "freshness_status": freshness_status,
+            "mutation_lifecycle_entered": False,
+        },
+        inference_evidence_refs=[],
+    )
+    return result.ok
+
+
+def record_layer_b_reuse_decision(
+    kernel: Any,
+    fixture: LiveSession,
+    rnd: RoundFixture,
+    *,
+    batch_id: str,
+    evaluation_pass_id: str,
+    candidate_id: str,
+    reuse_key_digest: str,
+    decision: str,
+    prior_inference_evidence_id: str | None = None,
+    inference_evidence_id: str | None = None,
+) -> str | None:
+    """Record invoke/reuse/invalidation for Layer B epistemic evaluation (#166 Lane 2)."""
+    forensics = get_forensics_service(kernel)
+    scope_id = str(fixture.plot_cognition_scope_id or "")
+    if forensics is None or not scope_id:
+        return None
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    from .plot_cognition_overlay_store import BoundednessPolicy
+
+    policy = BoundednessPolicy(max_active_goals=8, max_active_pressures=8)
+    loaded = overlay.load(scope_id, policy=policy) if overlay else None
+    ensure_activation(kernel, fixture, loaded.store.to_dict() if loaded and loaded.store else None)
+    correlation = _base_correlation(
+        fixture,
+        hg_round_id=rnd.hg_round_id,
+        turn_index=int(rnd.turn_index),
+        batch_id=batch_id,
+        candidate_id=candidate_id,
+        overlay_revision_before=loaded.store.store_revision if loaded and loaded.store else None,
+    )
+    idempotency_key = f"{scope_id}:layer_b:{batch_id}:{evaluation_pass_id}:{decision}"
+    inference_refs = []
+    if prior_inference_evidence_id:
+        inference_refs.append(
+            {"evidence_id": prior_inference_evidence_id, "role": "layer_b_reuse_source"}
+        )
+    if inference_evidence_id:
+        inference_refs.append({"evidence_id": inference_evidence_id, "role": "layer_b_eval"})
+    result = forensics.record_semantic_decision(
+        plot_cognition_scope_id=scope_id,
+        idempotency_key=idempotency_key,
+        record_class="consumer_decision",
+        operation_kind="projection_evaluate",
+        correlation=correlation,
+        payload={
+            "decision": decision,
+            "reuse_key_digest": reuse_key_digest,
+            "evaluation_pass_id": evaluation_pass_id,
+            "candidate_id": candidate_id,
+            "prior_inference_evidence_id": prior_inference_evidence_id,
+        },
+        inference_evidence_refs=inference_refs,
+    )
+    return result.record_id if result.ok else None
+
+
 def record_projection_decisions(
     kernel: Any,
     fixture: LiveSession,

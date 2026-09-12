@@ -71,13 +71,28 @@ class PlotCognitionOrchestrationService:
         scope_id = str(fixture.plot_cognition_scope_id or "").strip()
         if not scope_id or self._overlay is None:
             return None
+        resolved_fingerprint = str(authority_source_fingerprint or "").strip()
+        if not resolved_fingerprint:
+            from .plot_cognition_update_service import PlotCognitionUpdateService
+
+            loaded = self._overlay.load(scope_id, policy=self._DEFAULT_POLICY)
+            if loaded.store is not None:
+                snapshot = PlotCognitionUpdateService(self._overlay).gather_sources(
+                    fixture,
+                    loaded.store,
+                    None,
+                    (fixture.hg_scene_id,),
+                )
+                resolved_fingerprint = str(snapshot.authority_source_fingerprint or "").strip()
+        if not resolved_fingerprint:
+            resolved_fingerprint = domain_commit_id
         return PlotCognitionPendingWork(
             schema=PLOT_COGNITION_PENDING_WORK_SCHEMA,
             plot_cognition_scope_id=scope_id,
             trigger_domain_commit_id=domain_commit_id,
             work_kind=work_kind,  # type: ignore[arg-type]
             recorded_at_continuity_version=int(fixture.continuity_version),
-            authority_source_fingerprint=authority_source_fingerprint or domain_commit_id,
+            authority_source_fingerprint=resolved_fingerprint,
         )
 
     def apply_post_commit_pending_work(
