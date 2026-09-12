@@ -111,6 +111,33 @@ domain_commit_id + continuity_turn_index
   → semantic QA nar_environmental_* findings (if evaluated)
 ```
 
+**Parallel Narrator Librarian mediation (#165):** When `n1.information_needs` produced multiple S2a mediations, each `librarian_queries[]` row carries:
+
+| Field | Meaning |
+|-------|---------|
+| `need_index` | Authoritative **logical/semantic** need order (0-based) |
+| `need_id` | Cognition need identifier (join to `n1.information_needs`) |
+| `parallel_group_id` | Cognition inference identity (`{narrator_inference_id}-narrator-env-cog`) |
+| `mediation_execution_mode` | `serial` (0–1 needs) or `parallel` (2+ needs with parallelism > 1) |
+
+**Ordering rule:** `need_index` and `librarian_queries[]` array order represent authoritative semantic need order. The following are **not** semantic ordering authorities — do not infer Narrator need ordering from them:
+
+- physical completion order (when sibling mediations overlapped);
+- execution-evidence `recorded_at` timestamp order;
+- execution-evidence `index.json` insertion order.
+
+**Per-need evidence join:** From session audit to individual `librarian_mediation` attempts:
+
+```text
+turn_metadata_by_index[turn].narrator_environment_audit.librarian_queries[]
+  → need_index / need_id / parallel_group_id
+  → execution_evidence attempt where inference_kind = librarian_mediation
+      and parent_inference_id = {parallel_group_id}-lib-{need_index}
+      (inference_id = {parallel_group_id}-lib-{need_index}-librarian-mediation)
+```
+
+`list_execution_evidence.py --chain narrator` surfaces the environment-cognition inference (`…-narrator-env-cog`) and the Narrator render/retry chain; it does **not** enumerate every per-need `librarian_mediation` sibling. Use the session-audit join above (or search execution evidence by `parent_inference_id` / `parallel_group_id`) to reach individual mediation attempts.
+
 **Cognition failure path:** When `cognition_failed=true`, audit records `failure_stage` / `failure_reason` (and, post-#70, optional `failure_boundary` when attributed by DSH); Narrator may still render but no B2 establishment authority is created. Turn-level obligation `cognition_unavailable` signals pipeline unavailability.
 
 **Cognition status (#151):** Join `cognition_status`, `status_reason`, nullable `n1.baseline_sufficient`, inference attempt finish kind, and `environmental_response_obligations[].render_behavior`. Indeterminate cognition uses `sufficiency_undetermined` (not `no_material_obligation`). Legacy `parse_fallback_*` notes are historical defect-era evidence.
