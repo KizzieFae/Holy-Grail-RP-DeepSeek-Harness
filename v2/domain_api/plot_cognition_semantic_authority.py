@@ -90,12 +90,18 @@ def build_semantic_authority_excerpts(
         )
         if not summary:
             continue
+        related_issue_ids = sorted(
+            str(item)
+            for item in (getattr(event, "related_issue_ids", None) or [])
+            if str(item).strip()
+        )
         public_events.append(
             {
                 "event_id": str(getattr(event, "event_id", "") or ""),
                 "turn_index": turn_index,
                 "event_type": str(getattr(event, "event_type", "") or ""),
                 "summary": summary,
+                "related_issue_ids": related_issue_ids,
             }
         )
 
