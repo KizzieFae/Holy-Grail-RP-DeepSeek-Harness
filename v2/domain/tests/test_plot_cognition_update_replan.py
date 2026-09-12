@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import tempfile
@@ -103,6 +104,9 @@ from domain_api.plot_cognition_forensics_capture import (  # noqa: E402
     PRIOR_OPERATIVE_COGNITION_SCHEMA,
     bounded_overlay_snapshot,
     bounded_prior_operative_cognition,
+)
+from domain_api.plot_cognition_model_facing_transport import (  # noqa: E402
+    MODEL_FACING_TRANSPORT_SCHEMA,
 )
 from domain_api.plot_cognition_semantic_authority import (  # noqa: E402
     DEFAULT_MAX_EVENT_SUMMARY_CHARS,
@@ -656,6 +660,41 @@ class PlotCognitionSemanticAuthorityTests(unittest.TestCase):
         }
         excerpt = extract_bounded_move_excerpt(move)
         self.assertIn("treaty", excerpt.lower())
+
+    def test_snapshot_includes_model_facing_transport_without_changing_fingerprint(self) -> None:
+        fixture = _session()
+        store = empty_store(fixture.plot_cognition_scope_id)
+        store.store_revision = 1
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        transport = snapshot.model_facing_transport
+        self.assertEqual(transport["schema"], MODEL_FACING_TRANSPORT_SCHEMA)
+        self.assertIn("stable_semantic_frame", transport)
+        self.assertIn("incremental_change_evidence", transport)
+        self.assertIn("deterministic_identity", transport)
+        self.assertEqual(
+            transport["deterministic_identity"]["authority_source_fingerprint"],
+            snapshot.authority_source_fingerprint,
+        )
+        fingerprint_from_body = compute_authority_source_fingerprint(snapshot.canonical_body)
+        self.assertEqual(snapshot.authority_source_fingerprint, fingerprint_from_body)
+
+    def test_model_facing_transport_omits_digest_bodies_from_stable_frame(self) -> None:
+        fixture = _session()
+        fixture.manager.public_events.append(
+            PublicEvent(
+                event_id="evt-treaty",
+                timestamp=datetime.now(timezone.utc),
+                event_type="dialogue",
+                participants=["Alice"],
+                summary="The treaty is finished.",
+                turn_index=1,
+            )
+        )
+        store = empty_store(fixture.plot_cognition_scope_id)
+        snapshot = gather_update_source_snapshot(fixture, store, [], (fixture.hg_scene_id,))
+        transport_json = json.dumps(snapshot.model_facing_transport)
+        self.assertNotIn("summary_digest", transport_json)
+        self.assertIn("The treaty is finished", transport_json)
 
 
 class PlotCognitionUpdateServiceTests(unittest.TestCase):

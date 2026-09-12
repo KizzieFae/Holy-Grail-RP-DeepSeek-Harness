@@ -10,7 +10,7 @@ import {
 } from '../src/scenario-harness/production-capture.mjs';
 import { loadTruthFixture } from '../src/scenario-harness/fixture-truth.mjs';
 
-test('update manifest includes readable semantic authority excerpts', () => {
+test('update manifest uses model-facing transport without digest duplication', () => {
   const prepareResponse = {
     manifest_id: 'manifest-test',
     authority_source_fingerprint: 'fp-test',
@@ -21,12 +21,25 @@ test('update manifest includes readable semantic authority excerpts', () => {
           public_events: [{ event_id: 'evt-1', summary_digest: 'abc123' }],
         },
       },
-      semantic_authority_excerpts: {
-        schema: 'hg_plot_cognition_semantic_authority_excerpts_v1',
-        public_events: [{
-          event_id: 'evt-1',
-          summary: 'The treaty is finished. Everyone here saw what happened.',
-        }],
+      model_facing_transport: {
+        schema: 'hg_plot_cognition_model_facing_transport_v1',
+        deterministic_identity: {
+          authority_source_fingerprint: 'fp-test',
+          snapshot_id: 'snap-1',
+        },
+        stable_semantic_frame: {
+          contextual_anchor_events: [{
+            event_id: 'evt-1',
+            summary: 'The treaty is finished. Everyone here saw what happened.',
+          }],
+          active_issues: [],
+        },
+        incremental_change_evidence: {
+          public_events: [],
+          committed_moves: [],
+          changed_issues: [],
+          grounding_changes: [],
+        },
       },
       prior_operative_cognition: {
         schema: 'hg_plot_cognition_prior_operative_cognition_v1',
@@ -44,18 +57,18 @@ test('update manifest includes readable semantic authority excerpts', () => {
     },
   };
   const manifest = manifestFromPlotCognitionUpdatePrepare(prepareResponse);
-  const authorityContent = manifest.contributions[0].content;
-  assert.ok(authorityContent.includes('semantic_authority_excerpts'));
-  assert.ok(authorityContent.includes('prior_operative_cognition'));
-  assert.ok(authorityContent.includes('The treaty is finished'));
-  assert.ok(authorityContent.includes('summary_digest'));
-  assert.ok(authorityContent.includes('Pursue reconciliation'));
-  const priorContribution = manifest.contributions.find(
-    (item) => item.contribution_id === 'manifest-test-prior-operative-cognition',
+  assert.equal(manifest.contributions.length, 1);
+  const transportContent = manifest.contributions[0].content;
+  assert.ok(transportContent.includes('model_facing_transport'));
+  assert.ok(transportContent.includes('prior_operative_cognition'));
+  assert.ok(transportContent.includes('The treaty is finished'));
+  assert.ok(!transportContent.includes('summary_digest'));
+  assert.ok(!transportContent.includes('authority_projection'));
+  assert.ok(transportContent.includes('Pursue reconciliation'));
+  assert.equal(
+    manifest.contributions[0].contribution_id,
+    'manifest-test-semantic-transport',
   );
-  assert.ok(priorContribution);
-  assert.equal(priorContribution.authority_class, 'advisory');
-  assert.ok(priorContribution.content.includes('goal-1'));
 });
 
 test('assertSemanticAuthorityInPrepare detects readable treaty semantics', () => {

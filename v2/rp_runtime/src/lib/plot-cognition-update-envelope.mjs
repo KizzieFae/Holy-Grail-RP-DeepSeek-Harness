@@ -16,6 +16,37 @@ export const UPDATE_EVALUATION_SCHEMA = 'hg_plot_cognition_update_eval_v1';
 export const REPLAN_PROPOSAL_SCHEMA = 'hg_plot_cognition_replan_proposal_v1';
 export const REPLAN_EVALUATION_SCHEMA = 'hg_plot_cognition_replan_eval_v1';
 export const PRIOR_OPERATIVE_COGNITION_SCHEMA = 'hg_plot_cognition_prior_operative_cognition_v1';
+export const MODEL_FACING_TRANSPORT_SCHEMA = 'hg_plot_cognition_model_facing_transport_v1';
+
+const PLOT_COGNITION_UPDATE_INVARIANT_CONTRACT_LINES = [
+  'You are the Plot Cognition update/replan semantic producer.',
+  'Compare new authoritative semantic evidence in the manifest against prior_operative_cognition.',
+  'prior_operative_cognition is advisory comparison context only — not authoritative evidence.',
+  'Authoritative Continuity-derived excerpts override prior Storyteller cognition when they conflict.',
+  '',
+  'Semantic decision criteria (#61):',
+  '- no_change: authoritative change does not materially require cognition alteration;',
+  '  set update_evaluation.overall_result to no_change with no_change_rationale and replan_required false.',
+  '- assimilable update: new authority changes relevant cognition but the operative strategic',
+  '  direction remains viable; set replan_required false and propose incremental goal/pressure/frame',
+  '  adjustments with overall_result accept.',
+  '- invalidation replan: new authoritative developments materially invalidate assumptions,',
+  '  trajectories, targets, or strategic direction such that prior cognition is no longer adequate;',
+  '  set replan_required true, set update_evaluation.overall_result to accept when the package is',
+  '  complete, and include complete replan_proposal and replan_evaluation with accepted replan.',
+  'Base these judgments on semantic comparison — not keyword lists, event types, or pattern rules.',
+];
+
+const PLOT_COGNITION_UPDATE_SPARSE_OUTPUT_LINES = [
+  'Output shaping (#175 — non-replan path):',
+  '- When replan_required is false, emit only semantic changes that need application:',
+  '  changed/new goals, changed/new pressures, explicit inactivations, changed frame when applicable.',
+  '- Unchanged operative cognition need not be restated; Domain merges against the authoritative store.',
+  '- Empty goals/pressures arrays remain valid when no item changes are required.',
+  '- assimilation_rationale and no_change_rationale must remain semantically useful but concise',
+  '  (roughly 1-4 sentences; avoid repeating manifest content verbatim).',
+  '- When replan_required is true, include the full replan envelope with substantive replacement cognition.',
+];
 
 function plotCognitionUpdateEnvelopeSemantics() {
   return [
@@ -137,25 +168,17 @@ export function buildPlotCognitionUpdatePrompt(prepareResponse = null) {
   const priorRevision = prepareResponse?.prior_store_revision ?? snapshot.prior_store_revision ?? 0;
 
   return [
-    'You are the Plot Cognition update/replan semantic producer.',
-    'Compare new authoritative semantic evidence (authority_projection and semantic_authority_excerpts)',
-    'against prior_operative_cognition supplied in the manifest.',
-    'prior_operative_cognition is advisory comparison context only — not authoritative evidence.',
-    'Authoritative Continuity-derived excerpts override prior Storyteller cognition when they conflict.',
+    ...PLOT_COGNITION_UPDATE_INVARIANT_CONTRACT_LINES,
     '',
-    'Semantic decision criteria (#61):',
-    '- no_change: authoritative change does not materially require cognition alteration;',
-    '  set update_evaluation.overall_result to no_change with no_change_rationale and replan_required false.',
-    '- assimilable update: new authority changes relevant cognition but the operative strategic',
-    '  direction remains viable; set replan_required false and propose incremental goal/pressure/frame',
-    '  adjustments with overall_result accept.',
-    '- invalidation replan: new authoritative developments materially invalidate assumptions,',
-    '  trajectories, targets, or strategic direction such that prior cognition is no longer adequate;',
-    '  set replan_required true, set update_evaluation.overall_result to accept when the package is',
-    '  complete, and include complete replan_proposal and replan_evaluation with accepted replan.',
-    'Base these judgments on semantic comparison — not keyword lists, event types, or pattern rules.',
+    'Manifest transport (#175):',
+    '- stable_semantic_frame: unchanged authority needed to interpret new events (scene, active issues,',
+    '  grounding, contextual anchor events, character-state context).',
+    '- incremental_change_evidence: structurally new/changed authority since last assimilation.',
+    '- deterministic_identity fields are binding provenance; copy fingerprint and ids verbatim below.',
     '',
     ...plotCognitionUpdateEnvelopeSemantics(),
+    '',
+    ...PLOT_COGNITION_UPDATE_SPARSE_OUTPUT_LINES,
     '',
     ...plotCognitionSemanticTransportPromptLines(),
     '',
@@ -220,42 +243,27 @@ export function buildPlotCognitionUpdateCorrectionPrompt({ priorRaw, structuralE
 
 export function manifestFromPlotCognitionUpdatePrepare(prepareResponse) {
   const snapshot = prepareResponse?.source_snapshot ?? {};
-  const body = snapshot.canonical_body ?? {};
-  const excerpts = snapshot.semantic_authority_excerpts ?? {};
+  const modelFacingTransport = snapshot.model_facing_transport ?? {};
   const priorOperativeCognition = snapshot.prior_operative_cognition ?? {};
   const payload = {
-    authority_projection: body,
-    semantic_authority_excerpts: excerpts,
+    model_facing_transport: modelFacingTransport,
     prior_operative_cognition: priorOperativeCognition,
   };
   const contributions = [
     {
-      contribution_id: `${prepareResponse.manifest_id}-authority`,
+      contribution_id: `${prepareResponse.manifest_id}-semantic-transport`,
       source_kind: 'active_constraints',
       authority_class: 'derived',
-      knowledge_ids: ['plot_cognition:authority_projection'],
+      knowledge_ids: ['plot_cognition:model_facing_transport'],
       priority: 10,
       content: JSON.stringify(payload).slice(0, 12000),
       provenance: {
         snapshot_id: snapshot.snapshot_id ?? null,
         authority_source_fingerprint: prepareResponse.authority_source_fingerprint ?? null,
+        transport_schema: modelFacingTransport.schema ?? MODEL_FACING_TRANSPORT_SCHEMA,
       },
     },
   ];
-  if (priorOperativeCognition && Object.keys(priorOperativeCognition).length > 0) {
-    contributions.push({
-      contribution_id: `${prepareResponse.manifest_id}-prior-operative-cognition`,
-      source_kind: 'advisory_context',
-      authority_class: 'advisory',
-      knowledge_ids: ['plot_cognition:prior_operative_cognition'],
-      priority: 20,
-      content: JSON.stringify(priorOperativeCognition).slice(0, 8000),
-      provenance: {
-        snapshot_id: snapshot.snapshot_id ?? null,
-        store_revision: priorOperativeCognition.store_revision ?? snapshot.prior_store_revision ?? null,
-      },
-    });
-  }
   return bridgeManifestFromHostPrepare(prepareResponse, contributions);
 }
 
