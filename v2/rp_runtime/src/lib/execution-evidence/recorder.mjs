@@ -32,6 +32,9 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
     participation_decision_id: context.participationDecisionId ?? null,
     character_turn_index: context.characterTurnIndex ?? null,
   };
+  if (context.operationId) {
+    correlation.operation_id = context.operationId;
+  }
   if (context.inferenceKind) {
     correlation.inference_kind = context.inferenceKind;
   } else if (manifest?.inference_kind) {
@@ -330,9 +333,19 @@ export class ExecutionEvidenceRecorder {
     wallMs,
     evidenceIds = [],
     triggerInferenceId = null,
+    orchestrationGraph = null,
   }) {
     if (!this.enabled || !hgSessionId || !spanId || !phaseId) return null;
     const evidenceId = spanId;
+    const decision = {
+      phase_id: phaseId,
+      role,
+      operation_id: operationId,
+      hg_round_id: hgRoundId,
+    };
+    if (orchestrationGraph) {
+      decision.orchestration_graph = orchestrationGraph;
+    }
     const attempt = {
       evidence_id: evidenceId,
       correlation: {
@@ -354,12 +367,7 @@ export class ExecutionEvidenceRecorder {
         ended_at: endedAt,
         wall_ms: wallMs,
       },
-      decision: {
-        phase_id: phaseId,
-        role,
-        operation_id: operationId,
-        hg_round_id: hgRoundId,
-      },
+      decision,
       associations: {
         operation_id: operationId,
         hg_round_id: hgRoundId,

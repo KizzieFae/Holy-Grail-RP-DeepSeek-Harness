@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Reconstruct Player-operation latency from execution evidence (#158)."""
+"""Reconstruct orchestration timing and attribution from execution evidence (#158, #173)."""
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
+
+from orchestration_critical_path import reconstruct_attribution
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_EVIDENCE = REPO / "data" / "execution_evidence"
@@ -75,16 +77,32 @@ def inference_rows(attempts, operation_id=None, round_id=None):
 def main(argv=None):
     argv = argv or sys.argv[1:]
     if not argv:
-        print("usage: reconstruct_round_latency.py <hg_session_id> [--operation <id>] [--evidence-root path]")
+        print(
+            "usage: reconstruct_round_latency.py <hg_session_id> "
+            "[--operation <id>] [--round <hg_round_id>] [--commit <domain_commit_id>] "
+            "[--attribution] [--evidence-root path]",
+        )
         return 2
     session_id = argv[0]
     operation_id = None
+    hg_round_id = None
+    domain_commit_id = None
+    show_attribution = False
     evidence_root = DEFAULT_EVIDENCE
     i = 1
     while i < len(argv):
         if argv[i] == "--operation" and i + 1 < len(argv):
             operation_id = argv[i + 1]
             i += 2
+        elif argv[i] == "--round" and i + 1 < len(argv):
+            hg_round_id = argv[i + 1]
+            i += 2
+        elif argv[i] == "--commit" and i + 1 < len(argv):
+            domain_commit_id = argv[i + 1]
+            i += 2
+        elif argv[i] == "--attribution":
+            show_attribution = True
+            i += 1
         elif argv[i] == "--evidence-root" and i + 1 < len(argv):
             evidence_root = Path(argv[i + 1])
             i += 2
@@ -93,6 +111,16 @@ def main(argv=None):
     index, attempts = load_session(session_id, evidence_root)
     ops = operation_records(attempts)
     print(f"session={session_id} attempts={len(attempts)}")
+    if show_attribution:
+        print(json.dumps(
+            reconstruct_attribution(
+                attempts,
+                operation_id=operation_id,
+                hg_round_id=hg_round_id,
+                domain_commit_id=domain_commit_id,
+            ),
+            indent=2,
+        ))
     print(json.dumps({"timing_index": index.get("timing"), "round_activity": index.get("round_activity")}, indent=2))
     for op_id, rec in sorted(ops.items()):
         if operation_id and op_id != operation_id:

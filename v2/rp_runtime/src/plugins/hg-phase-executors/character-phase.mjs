@@ -151,6 +151,7 @@ export async function runCharacterPhase({
   let librarianBundle = null;
   let librarianKnowledgeAudit = null;
   let cognitionAudit = null;
+  const orchestrationEvidenceIds = [];
   const state = await api.getSceneState(hgSceneId);
   const cognitionTurnIndex = Number(state.turn_counter ?? 0);
   const cognition = await runCharacterKnowledgeCognition({
@@ -177,6 +178,15 @@ export async function runCharacterPhase({
     hgSessionId,
   });
   cognitionAudit = cognition.audit ?? null;
+  if (cognition?.orientationRun?.evidenceId) {
+    orchestrationEvidenceIds.push(cognition.orientationRun.evidenceId);
+  }
+  if (cognition?.mediation?.mediationEvidenceId) {
+    orchestrationEvidenceIds.push(cognition.mediation.mediationEvidenceId);
+  }
+  if (cognition?.audit?.mediation_evidence_id) {
+    orchestrationEvidenceIds.push(cognition.audit.mediation_evidence_id);
+  }
   librarianBundle = cognition.bundle;
   librarianKnowledgeAudit = {
     ...(cognition.audit ?? {}),
@@ -220,6 +230,9 @@ export async function runCharacterPhase({
         binding: projection.finalized.binding,
         contributions: projection.finalized.contributions,
       };
+    }
+    for (const evidenceId of projection.orchestrationEvidenceIds ?? []) {
+      if (evidenceId) orchestrationEvidenceIds.push(evidenceId);
     }
   }
 
@@ -265,6 +278,9 @@ export async function runCharacterPhase({
     characterManifestId = String(manifest.manifest_id);
     characterInferenceSessionId = characterRun.inferenceSessionId;
     characterInferenceTrace = characterRun.trace;
+    if (characterRun.evidenceId) {
+      orchestrationEvidenceIds.push(characterRun.evidenceId);
+    }
 
     if (participationEvidenceId && candidateSlotIndex === 0 && characterRun.evidenceId) {
       recorder?.linkParticipationCharacter(hgSessionId, participationEvidenceId, {
@@ -374,6 +390,10 @@ export async function runCharacterPhase({
           infrastructureAttempt: evalInfra,
         });
         if (!evalOutcome.infrastructureFailure) break;
+      }
+
+      if (evalOutcome?.evidenceId) {
+        orchestrationEvidenceIds.push(evalOutcome.evidenceId);
       }
 
       if (!evalOutcome || evalOutcome.infrastructureFailure) {
@@ -555,5 +575,6 @@ export async function runCharacterPhase({
     terminalDisposition: budget.terminalDisposition,
     generatedCandidateCount: budget.generatedCount,
     residualSoftConcerns: budget.residualSoftConcerns,
+    orchestrationEvidenceIds: [...new Set(orchestrationEvidenceIds.filter(Boolean))],
   };
 }

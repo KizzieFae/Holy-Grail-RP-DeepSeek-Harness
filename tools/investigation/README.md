@@ -10,6 +10,8 @@ Offline utilities that operate on **current** repository paths (`data/`, audit J
 | `aggregate_*.py` | Roll up architecture-quality experiment outputs |
 | `audit_episodic_issue_mismatch_scan.py` | Read-only scan of character audit `*_full.json` files |
 | `list_execution_evidence.py` | List V2 execution evidence for a session (`data/execution_evidence/`) |
+| `reconstruct_round_latency.py` | Reconstruct orchestration timing, attribution confidence, and Player-visible latency (#158, #173) |
+| `orchestration_critical_path.py` | Shared library for scoped critical-path derivation (`attribution_scope`: `post_commit_section`, `character_turn`, `round_internal`, `player_visible_operation`) |
 | `list_audit_tags.py` | List V2 human audit tags for a session (`data/audit_tags/`) |
 | `trace_turn_forensics.py` | Unified read-only turn/commit forensic navigator (`hg_turn_investigator_v1`, #101). Commit view includes only EE explicitly correlated to the queried commit; commitless EE is round-scoped. |
 | `_turn_forensics.py` | Shared turn/commit correlation library (not invoked directly) |
@@ -33,6 +35,7 @@ Run from repository root:
 python tools/investigation/compare_participation_calibration_ab.py --help
 python tools/investigation/audit_episodic_issue_mismatch_scan.py --help
 python tools/investigation/list_execution_evidence.py <hg_session_id>
+python tools/investigation/reconstruct_round_latency.py <hg_session_id> --attribution [--operation <operation_id>] [--round <hg_round_id>] [--commit <domain_commit_id>]
 python tools/investigation/list_audit_tags.py <hg_session_id>
 python tools/investigation/trace_turn_forensics.py <hg_session_id> commit <domain_commit_id> [--json]
 python tools/investigation/trace_turn_forensics.py <hg_session_id> round <hg_round_id> [--json]

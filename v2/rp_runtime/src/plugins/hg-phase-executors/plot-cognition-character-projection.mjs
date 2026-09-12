@@ -161,6 +161,7 @@ export async function runCharacterProjectionLifecycle({
   const batchId = String(prepare.batch_id ?? prepare.batch?.batch_id ?? '');
   const items = orderedBatchItems(prepare);
   const callLog = ['prepare'];
+  const orchestrationEvidenceIds = [];
   if (!items.length) {
     const finalizeEmpty = await api.finalizePlotCognitionProjection({
       hg_scene_id: hgSceneId,
@@ -231,6 +232,10 @@ export async function runCharacterProjectionLifecycle({
       });
       callLog.push(`eval:${evaluationPassId}:1`);
     }
+    if (firstEval?.evidenceId) orchestrationEvidenceIds.push(firstEval.evidenceId);
+    for (const run of firstEval?.inferRuns ?? []) {
+      if (run?.evidenceId) orchestrationEvidenceIds.push(run.evidenceId);
+    }
     const registerFirst = await api.registerPlotCognitionProjectionSemanticResult({
       hg_scene_id: hgSceneId,
       hg_round_id: hgRoundId,
@@ -274,8 +279,16 @@ export async function runCharacterProjectionLifecycle({
         parentEvidenceId: firstEval.evidenceId,
       });
       callLog.push(`regen_infer:${evaluationPassId}`);
+      if (generation.evidenceId) orchestrationEvidenceIds.push(generation.evidenceId);
       if (!generation.ok) {
-        return { ok: false, stage: 'regen_infer', prepare, finalized: null, callLog };
+        return {
+          ok: false,
+          stage: 'regen_infer',
+          prepare,
+          finalized: null,
+          callLog,
+          orchestrationEvidenceIds: [...new Set(orchestrationEvidenceIds.filter(Boolean))],
+        };
       }
       const regenFinalize = await api.finalizePlotCognitionProjectionRegeneration({
         hg_scene_id: hgSceneId,
@@ -307,6 +320,10 @@ export async function runCharacterProjectionLifecycle({
         evaluationAttempt: 2,
       });
       callLog.push(`eval:${evaluationPassId}:2`);
+      if (secondEval?.evidenceId) orchestrationEvidenceIds.push(secondEval.evidenceId);
+      for (const run of secondEval?.inferRuns ?? []) {
+        if (run?.evidenceId) orchestrationEvidenceIds.push(run.evidenceId);
+      }
       const registerSecond = await api.registerPlotCognitionProjectionSemanticResult({
         hg_scene_id: hgSceneId,
         hg_round_id: hgRoundId,
@@ -346,5 +363,6 @@ export async function runCharacterProjectionLifecycle({
       forensic: finalize.forensic ?? null,
     },
     callLog,
+    orchestrationEvidenceIds: [...new Set(orchestrationEvidenceIds.filter(Boolean))],
   };
 }
