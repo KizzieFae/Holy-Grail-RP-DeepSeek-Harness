@@ -1,4 +1,10 @@
+import { runBoundedConcurrency } from './bounded-concurrency.mjs';
 import { runLibrarianMediation } from './librarian-mediation-substrate.mjs';
+import {
+  effectiveNarratorMediationParallelism,
+  narratorMediationExecutionMode,
+  resolveMaxParallelNarratorMediationInferences,
+} from './narrator-mediation-concurrency.mjs';
 import {
   ENV_COGNITION_STAGES,
   FORENSIC_BOUNDARIES,
@@ -114,6 +120,40 @@ function buildInferenceEnvelope({
   };
 }
 
+function buildLibrarianOutcome({
+  needId,
+  needIndex,
+  kar,
+  mediation,
+  parallelGroupId,
+  mediationExecutionMode,
+}) {
+  return {
+    need_id: needId,
+    need_index: needIndex,
+    parallel_group_id: parallelGroupId,
+    mediation_execution_mode: mediationExecutionMode,
+    mediation_outcome: mediation?.bundle?.mediation_outcome ?? 'mediation_failure',
+    request_id: kar?.request_id ?? null,
+    composed_grounding: extractComposedGrounding(mediation),
+    rationale: mediation?.parsed?.rationale ?? null,
+    entries: (mediation?.bundle?.entries ?? []).map((entry) => ({
+      content: entry?.content ?? entry?.text ?? '',
+    })),
+  };
+}
+
+function patchResolutionMediationOutcomes(cognitionResult, librarianOutcomes) {
+  for (const outcome of librarianOutcomes) {
+    const resolution = (cognitionResult.resolutions ?? []).find(
+      (item) => item.need_id === outcome.need_id,
+    );
+    if (resolution && !resolution.mediation_outcome) {
+      resolution.mediation_outcome = outcome.mediation_outcome;
+    }
+  }
+}
+
 function environmentCognitionEvidenceFromFinalize(finalize, inferenceEnvelope) {
   const audit = finalize?.audit ?? {};
   return {
@@ -143,6 +183,7 @@ export async function runNarratorEnvironmentCognition({
   continuityTurnIndex,
   modelProfile = null,
   mockCognitionResponse = null,
+  inferenceConfig = {},
 }) {
   const evidenceContextBase = {
     hgSessionId,
@@ -221,43 +262,52 @@ export async function runNarratorEnvironmentCognition({
     }),
   );
 
-  const librarianOutcomes = [];
   const requests = karResponse?.knowledge_access_requests ?? [];
-  for (const [index, kar] of requests.entries()) {
-    const needId = cognitionResult.information_needs?.[index]?.need_id ?? `need-${index + 1}`;
-    const mediation = await runEnvironmentCognitionStage(
-      ENV_COGNITION_STAGES.LIBRARIAN_MEDIATION,
-      FORENSIC_BOUNDARIES.DOMAIN_API,
-      () => runLibrarianMediation({
-        domainApi: api,
-        hgSceneId,
-        hgSessionId,
-        inferenceId: `${cognitionInferenceId}-lib-${index}`,
-        knowledgeAccessRequest: kar,
-        runEphemeralInference,
-        allowDeterministicFallback: true,
-        modelProfile,
-        evidenceContextBase: {
-          ...evidenceContextBase,
-          inferenceId: cognitionInferenceId,
-        },
-      }),
+  const maxParallel = resolveMaxParallelNarratorMediationInferences(inferenceConfig);
+  const parallelGroupId = cognitionInferenceId;
+  const mediationExecutionMode = narratorMediationExecutionMode(requests.length, maxParallel);
+  const parallelism = effectiveNarratorMediationParallelism(requests.length, maxParallel);
+
+  const mediationResults = requests.length === 0
+    ? []
+    : await runBoundedConcurrency(
+      requests,
+      parallelism,
+      async (kar, index) => {
+        const needId = cognitionResult.information_needs?.[index]?.need_id ?? `need-${index + 1}`;
+        const mediation = await runEnvironmentCognitionStage(
+          ENV_COGNITION_STAGES.LIBRARIAN_MEDIATION,
+          FORENSIC_BOUNDARIES.DOMAIN_API,
+          () => runLibrarianMediation({
+            domainApi: api,
+            hgSceneId,
+            hgSessionId,
+            inferenceId: `${cognitionInferenceId}-lib-${index}`,
+            knowledgeAccessRequest: kar,
+            runEphemeralInference,
+            allowDeterministicFallback: true,
+            modelProfile,
+            evidenceContextBase: {
+              ...evidenceContextBase,
+              inferenceId: cognitionInferenceId,
+            },
+          }),
+        );
+        return { needId, index, kar, mediation };
+      },
     );
-    librarianOutcomes.push({
-      need_id: needId,
-      mediation_outcome: mediation?.bundle?.mediation_outcome ?? 'mediation_failure',
-      request_id: kar?.request_id ?? null,
-      composed_grounding: extractComposedGrounding(mediation),
-      rationale: mediation?.parsed?.rationale ?? null,
-      entries: (mediation?.bundle?.entries ?? []).map((entry) => ({
-        content: entry?.content ?? entry?.text ?? '',
-      })),
-    });
-    const resolution = (cognitionResult.resolutions ?? []).find((item) => item.need_id === needId);
-    if (resolution && !resolution.mediation_outcome) {
-      resolution.mediation_outcome = librarianOutcomes[librarianOutcomes.length - 1].mediation_outcome;
-    }
-  }
+
+  const librarianOutcomes = mediationResults.map(({ needId, index, kar, mediation }) => (
+    buildLibrarianOutcome({
+      needId,
+      needIndex: index,
+      kar,
+      mediation,
+      parallelGroupId,
+      mediationExecutionMode,
+    })
+  ));
+  patchResolutionMediationOutcomes(cognitionResult, librarianOutcomes);
 
   const finalize = await runEnvironmentCognitionStage(
     ENV_COGNITION_STAGES.FINALIZE,
