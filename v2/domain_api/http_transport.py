@@ -482,6 +482,18 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     self.kernel.register_plot_cognition_projection_semantic_result(data),
                 )
                 return
+            if path == "/v1/plot-cognition/projection/resolve-layer-b-reuse":
+                self._send_json(
+                    200,
+                    self.kernel.resolve_plot_cognition_layer_b_epistemic_reuse(data),
+                )
+                return
+            if path == "/v1/plot-cognition/orchestration/record-gate":
+                self._send_json(
+                    200,
+                    self.kernel.record_plot_cognition_orchestration_gate(data),
+                )
+                return
             if path == "/v1/plot-cognition/projection/regeneration/prepare":
                 self._send_json(
                     200,

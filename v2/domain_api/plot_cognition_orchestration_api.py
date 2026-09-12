@@ -54,11 +54,16 @@ def prepare_plot_cognition_projection(
     overlay_revision: int | None = None
     loaded = None
     overlay = kernel.cognition.plot_cognition_overlay
+    assimilated_fingerprint: str | None = None
     if overlay is not None:
+        from .plot_cognition_assimilated_fingerprint import (
+            resolve_assimilated_authority_source_fingerprint,
+        )
         from .plot_cognition_overlay_store import BoundednessPolicy, LoadStatus
 
         scope_id = str(fixture.plot_cognition_scope_id or "")
         loaded = overlay.load(scope_id, policy=BoundednessPolicy(max_active_goals=8, max_active_pressures=8))
+        assimilated_fingerprint = resolve_assimilated_authority_source_fingerprint(fixture, overlay)
         if loaded.status == LoadStatus.READY and loaded.store is not None:
             view = overlay.operative_view(
                 loaded.store,
@@ -73,6 +78,9 @@ def prepare_plot_cognition_projection(
         overlay_view=view,
         include_model_a=bool(data.get("include_model_a", True)),
     )
+    authority_fingerprint = data.get("authority_fingerprint")
+    if not authority_fingerprint and assimilated_fingerprint:
+        authority_fingerprint = assimilated_fingerprint
     prepared = orch.prepare_projection(
         fixture,
         rnd,
@@ -81,7 +89,7 @@ def prepare_plot_cognition_projection(
         candidates=candidates,
         budget=budget,
         overlay_revision=overlay_revision,
-        authority_fingerprint=data.get("authority_fingerprint"),
+        authority_fingerprint=authority_fingerprint,
     )
     return {
         "accepted": True,
@@ -95,14 +103,131 @@ def prepare_plot_cognition_projection(
         },
         "evaluator_manifests": prepared.evaluator_manifests,
         "candidate_count": len(prepared.batch.items),
+        "assimilated_authority_source_fingerprint": assimilated_fingerprint,
         "items": [
             {
                 "evaluation_pass_id": item.evaluation_pass_id,
                 "candidate_id": item.candidate.candidate_id,
+                "layer_b_reuse_key_digest": _layer_b_reuse_key_for_item(
+                    fixture,
+                    item,
+                    assimilated_fingerprint or authority_fingerprint,
+                ),
             }
             for item in prepared.batch.items
         ],
     }
+
+
+def _layer_b_reuse_key_for_item(
+    fixture: LiveSession,
+    item: Any,
+    assimilated_fingerprint: str | None,
+) -> str:
+    from .plot_cognition_layer_b_reuse import compute_layer_b_eval_reuse_key_from_envelope
+
+    return compute_layer_b_eval_reuse_key_from_envelope(
+        item.epistemic_context,
+        plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
+        assimilated_authority_source_fingerprint=assimilated_fingerprint,
+    )
+
+
+def resolve_plot_cognition_layer_b_epistemic_reuse(
+    kernel: Any,
+    fixture: LiveSession,
+    rnd: RoundFixture,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    from .plot_cognition_assimilated_fingerprint import (
+        resolve_assimilated_authority_source_fingerprint,
+    )
+    from .plot_cognition_layer_b_reuse import consult_layer_b_reuse
+    from .plot_cognition_projection_batch import get_prepared_batch
+
+    batch_id = str(data.get("batch_id", ""))
+    evaluation_pass_id = str(data.get("evaluation_pass_id", ""))
+    evaluation_attempt = int(data.get("evaluation_attempt", 1))
+    batch = get_prepared_batch(batch_id)
+    if batch is None:
+        return {"accepted": False, "action": "invoke", "reason": "unknown_or_expired_batch"}
+    if evaluation_attempt != 1:
+        return {
+            "accepted": True,
+            "action": "invoke",
+            "reason": "regeneration_or_second_pass_requires_fresh_eval",
+        }
+    item = next((entry for entry in batch.items if entry.evaluation_pass_id == evaluation_pass_id), None)
+    if item is None:
+        return {"accepted": False, "action": "invoke", "reason": "evaluation_pass_not_found"}
+    overlay = getattr(kernel.cognition, "plot_cognition_overlay", None)
+    assimilated = resolve_assimilated_authority_source_fingerprint(fixture, overlay)
+    if not assimilated:
+        assimilated = batch.authority_fingerprint
+    reuse_key = _layer_b_reuse_key_for_item(fixture, item, assimilated)
+    cached = consult_layer_b_reuse(
+        plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
+        reuse_key_digest=reuse_key,
+    )
+    if cached is None:
+        from .plot_cognition_forensics_integration import record_layer_b_reuse_decision
+
+        record_layer_b_reuse_decision(
+            kernel,
+            fixture,
+            rnd,
+            batch_id=batch_id,
+            evaluation_pass_id=evaluation_pass_id,
+            candidate_id=item.candidate.candidate_id,
+            reuse_key_digest=reuse_key,
+            decision="invoke",
+        )
+        return {
+            "accepted": True,
+            "action": "invoke",
+            "reuse_key_digest": reuse_key,
+            "reason": "no_cached_eval",
+        }
+    from .plot_cognition_forensics_integration import record_layer_b_reuse_decision
+
+    record_layer_b_reuse_decision(
+        kernel,
+        fixture,
+        rnd,
+        batch_id=batch_id,
+        evaluation_pass_id=evaluation_pass_id,
+        candidate_id=item.candidate.candidate_id,
+        reuse_key_digest=reuse_key,
+        decision="reused",
+        prior_inference_evidence_id=cached.inference_evidence_id,
+    )
+    return {
+        "accepted": True,
+        "action": "reuse",
+        "reuse_key_digest": reuse_key,
+        "semantic": dict(cached.semantic),
+        "prior_inference_evidence_id": cached.inference_evidence_id,
+        "reason": "layer_b_eval_cache_hit",
+    }
+
+
+def record_plot_cognition_orchestration_gate(
+    kernel: Any,
+    fixture: LiveSession,
+    data: dict[str, Any],
+) -> dict[str, Any]:
+    from .plot_cognition_forensics_integration import record_plot_cognition_orchestration_decision
+
+    ok = record_plot_cognition_orchestration_decision(
+        kernel,
+        fixture,
+        plan_operation=str(data.get("plan_operation", "")),
+        reason=str(data.get("reason", "")),
+        freshness_status=data.get("freshness_status"),
+        inference_id=data.get("inference_id"),
+        domain_commit_id=data.get("domain_commit_id"),
+    )
+    return {"accepted": ok}
 
 
 def register_plot_cognition_projection_semantic_result(
@@ -443,6 +568,8 @@ def plan_post_commit_plot_cognition_work(kernel: Any, fixture: LiveSession) -> d
 __all__ = [
     "prepare_plot_cognition_projection",
     "register_plot_cognition_projection_semantic_result",
+    "resolve_plot_cognition_layer_b_epistemic_reuse",
+    "record_plot_cognition_orchestration_gate",
     "prepare_plot_cognition_projection_regeneration",
     "finalize_plot_cognition_projection_regeneration",
     "finalize_plot_cognition_projection",

@@ -77,6 +77,13 @@ export async function runPlotCognitionPendingWorkLifecycle({
   }
 
   if (operation === 'none') {
+    await domainApi.recordPlotCognitionOrchestrationGate?.({
+      hg_scene_id: hgSceneId,
+      plan_operation: 'none',
+      reason: plan?.reason ?? 'no_pending_work',
+      freshness_status: plan?.freshness_status ?? null,
+      inference_id: inferenceId,
+    });
     trace?.emit?.(sceneAgent?.session, 'hg/plot-cognition-completed', scope, {
       ...correlation,
       operation: 'none',

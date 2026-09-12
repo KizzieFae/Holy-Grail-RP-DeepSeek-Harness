@@ -200,6 +200,23 @@ def register_projection_semantic_result(
     runtime.evaluation_attempt_by_pass[evaluation_pass_id] = attempt
     runtime.evaluation_count_by_candidate[candidate_id] = prior_count + 1
     runtime.semantic_payload_fingerprints[storage_key] = fp
+    if attempt == 1:
+        from .plot_cognition_layer_b_reuse import (
+            compute_layer_b_eval_reuse_key_from_envelope,
+            store_layer_b_reuse,
+        )
+
+        reuse_key = compute_layer_b_eval_reuse_key_from_envelope(
+            item.epistemic_context,
+            plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
+            assimilated_authority_source_fingerprint=batch.authority_fingerprint,
+        )
+        store_layer_b_reuse(
+            plot_cognition_scope_id=str(fixture.plot_cognition_scope_id or ""),
+            reuse_key_digest=reuse_key,
+            semantic=semantic_raw,
+            inference_evidence_id=inference_evidence_id,
+        )
     second_pass_manifest: list[dict[str, Any]] | None = None
     if attempt == 2 and candidate_id in runtime.regeneration_cycle_inputs:
         regen_input = runtime.regeneration_cycle_inputs[candidate_id]

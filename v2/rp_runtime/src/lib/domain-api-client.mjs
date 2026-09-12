@@ -307,6 +307,24 @@ export function createDomainApiClient(baseUrl) {
         'registerPlotCognitionProjectionSemanticResult',
       );
     },
+    resolvePlotCognitionLayerBEpistemicReuse(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/projection/resolve-layer-b-reuse',
+        body,
+        'resolvePlotCognitionLayerBEpistemicReuse',
+      );
+    },
+    recordPlotCognitionOrchestrationGate(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/plot-cognition/orchestration/record-gate',
+        body,
+        'recordPlotCognitionOrchestrationGate',
+      );
+    },
     preparePlotCognitionProjectionRegeneration(body) {
       return postJson(
         metrics,
