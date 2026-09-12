@@ -25,12 +25,19 @@ import {
   buildNarratorSummary,
   finalizeRoleInferenceSummary,
 } from '../../lib/role-inference-summary.mjs';
+import { createExecutionSpanTracker } from '../../lib/execution-span-tracker.mjs';
+import { RoundOrchestrationSpanCoordinator } from '../../lib/round-orchestration-span-coordinator.mjs';
 import {
   classifyRoundCompletion,
   eligibilityTrace,
   participationDirectorDecision,
   participationTrace,
 } from './round-helpers.mjs';
+
+function resolveClientOperationId(options = {}) {
+  const raw = options.clientOperationId ?? options.client_operation_id ?? null;
+  return raw && String(raw).trim() ? String(raw).trim() : null;
+}
 
 /**
  * Round lifecycle orchestrator: eligibility, participation, phase sequencing,
@@ -122,7 +129,12 @@ export default class HgRoundOrchestrator extends Service {
     const hgSessionId = sessionInfo.hgSessionId;
     const hgSceneId = sessionInfo.hgSceneId;
     const continuityVersion = sessionInfo.continuityVersion;
-
+    const clientOperationId = resolveClientOperationId(options);
+    const spanTracker = options.spanTracker
+      ?? createExecutionSpanTracker(phaseExecutors.executionEvidenceRecorder, {
+        hgSessionId,
+        operationId: clientOperationId,
+      });
     const round = await api.startRound({ hg_scene_id: hgSceneId });
     const hgRoundId = String(round.hg_round_id);
     const initialTurnIndex = Number(round.turn_index ?? 0);
@@ -141,7 +153,16 @@ export default class HgRoundOrchestrator extends Service {
       sceneSessionId,
       agentOptionsFromProfile(mockInferenceProfile()),
     );
-    const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
+    const scope = {
+      hgSessionId,
+      hgSceneId,
+      hgRoundId,
+      sceneSessionId,
+      ...(clientOperationId ? { operationId: clientOperationId } : {}),
+    };
+    spanTracker?.setHgRoundId(hgRoundId);
+    const roundSpanCoordinator = new RoundOrchestrationSpanCoordinator(spanTracker, { hgRoundId });
+    roundSpanCoordinator.beginRound();
 
     trace.emit(sceneAgent.session, 'hg/round-started', scope, {
       turn_index: initialTurnIndex,
@@ -156,7 +177,7 @@ export default class HgRoundOrchestrator extends Service {
       const storytellerInferenceId = `inf-storyteller-${hgRoundId}`;
       let storytellerResult;
       try {
-        storytellerResult = await runStorytellerCognition({
+        storytellerResult = await roundSpanCoordinator.measureStoryteller(() => runStorytellerCognition({
           domainApi: api,
           hgSceneId,
           hgRoundId,
@@ -166,16 +187,11 @@ export default class HgRoundOrchestrator extends Service {
           mockMediationResponse: options.mockStorytellerMediationResponse ?? null,
           mockAssessmentResponse: options.mockStorytellerAssessmentResponse ?? null,
           modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
-          evidenceContextBase: {
-            hgSessionId,
-            hgSceneId,
-            hgRoundId,
-            sceneSessionId,
-          },
+          evidenceContextBase: { ...scope },
           allowDeterministicFallback: options.storytellerAllowDeterministicFallback !== false,
           recorder: phaseExecutors.executionEvidenceRecorder,
           hgSessionId,
-        });
+        }));
       } catch (error) {
         storytellerResult = {
           ok: false,
@@ -252,7 +268,7 @@ export default class HgRoundOrchestrator extends Service {
 
     if (options.skipPlotCognitionOrchestration !== true) {
       const resumeStartedAt = Date.now();
-      plotCognitionResumeSummary = await runPlotCognitionPendingWorkLifecycle({
+      plotCognitionResumeSummary = await roundSpanCoordinator.measurePlotResume(() => runPlotCognitionPendingWorkLifecycle({
         domainApi: api,
         trace,
         sceneAgent,
@@ -263,13 +279,8 @@ export default class HgRoundOrchestrator extends Service {
         mockUpdateResponse: mockPlotCognitionUpdateResponses[0] ?? null,
         mockInitResponse: mockPlotCognitionInitResponse,
         modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
-        evidenceContextBase: {
-          hgSessionId,
-          hgSceneId,
-          hgRoundId,
-          sceneSessionId,
-        },
-      });
+        evidenceContextBase: { ...scope },
+      }));
       roleTimings.plot_cognition_ms.push(Date.now() - resumeStartedAt);
       trace.emit(sceneAgent.session, 'hg/plot-cognition-resume', scope, {
         ok: plotCognitionResumeSummary.ok === true,
@@ -322,12 +333,20 @@ export default class HgRoundOrchestrator extends Service {
         eligibility_snapshot: eligibilitySnapshot,
       });
 
+      const turnSpanCoordinator = roundSpanCoordinator.beginCharacterTurn(characterTurns.length);
+      let turnGraphFinalized = false;
+      const finalizeTurnGraph = (terminalSpanId = null) => {
+        if (turnGraphFinalized) return;
+        turnGraphFinalized = true;
+        const turnTerminalSpanId = turnSpanCoordinator.endTurn(terminalSpanId);
+        roundSpanCoordinator.completeCharacterTurn(turnTerminalSpanId);
+      };
       let directorPhase;
       if (participation.selection_mode === 'direct' && participation.selected_actor) {
         if ((participation.participation_sources ?? []).includes('forced_designation')) {
           forcedDesignationConsumed = true;
         }
-        directorPhase = {
+        directorPhase = await turnSpanCoordinator.measureDirectorPhase(async () => ({
           accepted: true,
           endRound: false,
           directorDecision: participationDirectorDecision(
@@ -340,7 +359,8 @@ export default class HgRoundOrchestrator extends Service {
           directorAttempt: directorAttemptSeed,
           directorResponseIndex,
           participationDirect: true,
-        };
+          orchestrationEvidenceIds: [],
+        }));
         directorSummary = buildDirectorBypassSummary();
       } else {
         const directorInferenceId = `inf-director-${characterTurns.length}-${crypto.randomUUID()}`;
@@ -348,7 +368,7 @@ export default class HgRoundOrchestrator extends Service {
         const directorSemanticMocks = mockDirectorSemanticQaResponses.length
           ? mockDirectorSemanticQaResponses
           : mockDirectorResponses.map(() => DEFAULT_DIRECTOR_SEMANTIC_PASS);
-        directorPhase = await phaseExecutors.runDirector({
+        directorPhase = await turnSpanCoordinator.measureDirectorPhase(() => phaseExecutors.runDirector({
           api,
           sceneAgent,
           sceneSessionId,
@@ -376,7 +396,7 @@ export default class HgRoundOrchestrator extends Service {
           storytellerAssessmentEvidenceId: storytellerRoundSummary?.bound
             ? storytellerAssessmentEvidenceId
             : null,
-        });
+        }));
         roleTimings.director_ms.push(Date.now() - directorStartedAt);
         directorSummary = buildDirectorInferenceSummary(directorPhase);
         directorPhase.participationDirect = false;
@@ -389,14 +409,17 @@ export default class HgRoundOrchestrator extends Service {
 
       if (!directorPhase.accepted) {
         completionReason = 'director_failure';
+        finalizeTurnGraph();
         break;
       }
       if (directorPhase.endRound) {
         completionReason = 'director_end_round';
+        finalizeTurnGraph();
         break;
       }
       if (!directorPhase.selectedCharacterId) {
         completionReason = 'director_failure';
+        finalizeTurnGraph();
         break;
       }
 
@@ -420,7 +443,7 @@ export default class HgRoundOrchestrator extends Service {
       const semanticMocks = mockSemanticEvaluatorTurnResponses[characterTurnIndex]
         ?? characterResponses.map(() => DEFAULT_SEMANTIC_PASS);
       const characterStartedAt = Date.now();
-      const characterTurn = await phaseExecutors.runCharacter({
+      const characterTurn = await turnSpanCoordinator.measureCharacterPrepPhase(() => phaseExecutors.runCharacter({
         api,
         sceneAgent,
         sceneSessionId,
@@ -441,12 +464,13 @@ export default class HgRoundOrchestrator extends Service {
         participationEvidenceId,
         mockCharacterOrientationResponse: mockCharacterOrientationResponses[characterTurnIndex] ?? null,
         mockCharacterMediationResponse: mockCharacterMediationResponses[characterTurnIndex] ?? null,
-      });
+      }));
       roleTimings.character_ms.push(Date.now() - characterStartedAt);
       characterSummary = buildCharacterSummary(characterTurn);
 
       if (!characterTurn.committed) {
         completionReason = 'character_failure';
+        finalizeTurnGraph();
         break;
       }
 
@@ -475,13 +499,16 @@ export default class HgRoundOrchestrator extends Service {
       const librarianInferenceId = `inf-librarian-${characterTurnIndex}-${crypto.randomUUID()}`;
       const plotCognitionInferenceId = `inf-plot-cog-${characterTurnIndex}-${crypto.randomUUID()}`;
       const domainCommitId = characterTurn.domainCommitId;
+      turnSpanCoordinator.measureCommitBoundary(domainCommitId);
 
       if (librarianOrchestrationByCommit.has(domainCommitId)) {
         completionReason = 'librarian_orchestration_duplicate';
+        finalizeTurnGraph();
         break;
       }
       if (plotCognitionOrchestrationByCommit.has(domainCommitId)) {
         completionReason = 'plot_cognition_orchestration_duplicate';
+        finalizeTurnGraph();
         break;
       }
 
@@ -525,10 +552,7 @@ export default class HgRoundOrchestrator extends Service {
           mockResponse: librarianMockResponse,
           modelProfile: roleProfiles.librarian ?? roleProfiles.director,
           evidenceContextBase: {
-            hgSessionId,
-            hgSceneId,
-            hgRoundId,
-            sceneSessionId,
+            ...scope,
             effectiveConfigurationEpochId: options.effectiveConfigurationEpochId ?? null,
           },
           delayMs: librarianProposalDelayMs,
@@ -562,10 +586,7 @@ export default class HgRoundOrchestrator extends Service {
           mockUpdateResponse: plotCognitionMockResponse,
           modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
           evidenceContextBase: {
-            hgSessionId,
-            hgSceneId,
-            hgRoundId,
-            sceneSessionId,
+            ...scope,
             domainCommitId,
           },
           delayMs: plotCognitionDelayMs,
@@ -594,14 +615,24 @@ export default class HgRoundOrchestrator extends Service {
         prompt: livePrompts.narrator ?? LIVE_NARRATOR_PROMPT,
       });
 
-      const narratorResult = await narratorPromise;
+      const postCommitCoordinator = turnSpanCoordinator.createPostCommitCoordinator({
+        domainCommitId,
+        characterTurnIndex,
+      });
+      const {
+        narratorResult,
+        librarianResult,
+        plotCognitionResult,
+        terminalSpanId,
+      } = await postCommitCoordinator.run({
+        librarianJoinPromise,
+        plotCognitionJoinPromise,
+        narratorPromise,
+      });
+      finalizeTurnGraph(terminalSpanId);
       roleTimings.narrator_ms.push(Date.now() - narratorStartedAt);
       narratorSummary = buildNarratorSummary(narratorResult);
-
-      const librarianResult = await librarianJoinPromise;
       roleTimings.librarian_ms.push(Date.now() - librarianStartedAt);
-
-      const plotCognitionResult = await plotCognitionJoinPromise;
       roleTimings.plot_cognition_ms.push(Date.now() - plotCognitionStartedAt);
 
       trace.emit(sceneAgent.session, 'hg/plot-cognition-join', scope, {
@@ -677,6 +708,8 @@ export default class HgRoundOrchestrator extends Service {
     if (completionReason === null) {
       completionReason = 'no_eligible_actors';
     }
+
+    roundSpanCoordinator.endRound();
 
     const { completion_status: completionStatus, completion_class: completionClass } =
       classifyRoundCompletion(completionReason);

@@ -150,6 +150,8 @@ export async function runDirectorPhase({
   let correctionContext = null;
   let semanticEvalPassIndex = 0;
   let lastDirectorAttempt = directorAttemptSeed;
+  let directorEvidenceId = null;
+  const orchestrationEvidenceIds = [];
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   const evaluatorProfile = semanticEvaluatorProfile ?? modelProfile;
   const useMockDirectorResponses = mockDirectorResponses.length > 0;
@@ -194,6 +196,10 @@ export async function runDirectorPhase({
     directorInferenceSessionId = directorRun.inferenceSessionId;
     directorInferenceTrace = directorRun.trace;
     lastDirectorAttempt = attemptIndex;
+    if (directorRun.evidenceId) {
+      directorEvidenceId = directorRun.evidenceId;
+      orchestrationEvidenceIds.push(directorRun.evidenceId);
+    }
 
     if (!directorRun.failed) {
       patchConsumerNiPackaging(recorder, {
@@ -339,6 +345,10 @@ export async function runDirectorPhase({
           infrastructureAttempt: evalInfra,
         });
         if (!evalOutcome.infrastructureFailure) break;
+      }
+
+      if (evalOutcome?.evidenceId) {
+        orchestrationEvidenceIds.push(evalOutcome.evidenceId);
       }
 
       if (!evalOutcome || evalOutcome.infrastructureFailure) {
@@ -612,5 +622,7 @@ export async function runDirectorPhase({
     directorResponseIndex: responseIndex,
     terminalDisposition: terminalDisposition ?? budget.terminalDisposition,
     residualSoftConcerns: budget.residualSoftConcerns,
+    directorEvidenceId,
+    orchestrationEvidenceIds: [...new Set(orchestrationEvidenceIds.filter(Boolean))],
   };
 }

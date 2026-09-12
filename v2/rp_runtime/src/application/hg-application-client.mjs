@@ -444,6 +444,8 @@ export class HolyGrailApplicationClient {
         ...this._resolveInferenceOptions(inferenceInput),
         effectiveConfigurationEpochId: this.currentEffectiveConfigurationEpochId,
         testRoundDelayMs: inferenceInput.testRoundDelayMs,
+        clientOperationId: resolvedOperationId,
+        spanTracker: this.activeSpanTracker,
       };
       if (inferenceInput.testRoundDelayMs) {
         await new Promise((resolve) => {

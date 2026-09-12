@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 
 /**
- * Lightweight execution-span tracker for observational evidence (#158).
+ * Lightweight execution-span tracker for observational evidence (#158, #173).
  * Records non-LLM/orchestration intervals in the existing execution-evidence store.
  */
 export class ExecutionSpanTracker {
@@ -17,6 +17,14 @@ export class ExecutionSpanTracker {
     this.hgRoundId = scope.hgRoundId ?? null;
     this.parentSpanId = scope.parentSpanId ?? null;
     this.openSpans = new Map();
+  }
+
+  setHgSessionId(hgSessionId) {
+    this.hgSessionId = hgSessionId ?? null;
+  }
+
+  setOperationId(operationId) {
+    this.operationId = operationId ?? null;
   }
 
   setHgRoundId(hgRoundId) {
@@ -43,6 +51,7 @@ export class ExecutionSpanTracker {
       parentSpanId: options.parentSpanId ?? this.parentSpanId ?? null,
       evidenceIds: [...(options.evidenceIds ?? [])],
       triggerInferenceId: options.triggerInferenceId ?? null,
+      orchestrationGraph: options.orchestrationGraph ?? null,
     });
     return spanId;
   }
@@ -76,6 +85,7 @@ export class ExecutionSpanTracker {
       wallMs,
       evidenceIds,
       triggerInferenceId: open.triggerInferenceId ?? options.triggerInferenceId ?? null,
+      orchestrationGraph: open.orchestrationGraph ?? options.orchestrationGraph ?? null,
     });
   }
 
@@ -102,6 +112,18 @@ export class ExecutionSpanTracker {
       }
       throw err;
     }
+  }
+
+  /**
+   * Join/barrier wait interval — orchestration authority (#173).
+   * @param {string} phaseId
+   * @param {() => Promise<T>|T} fn
+   * @param {object} [options]
+   * @returns {Promise<T>}
+   * @template T
+   */
+  async measureJoinBarrier(phaseId, fn, options = {}) {
+    return this.measure(phaseId, fn, options);
   }
 
   /**
