@@ -6,12 +6,22 @@ import test from 'node:test';
 
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
 import { runInferenceWithContractCorrection } from '../src/lib/contract-correction-substrate.mjs';
+import { CharacterTurnSpanCoordinator } from '../src/lib/character-turn-span-coordinator.mjs';
 import { ExecutionEvidenceStore } from '../src/lib/execution-evidence/store.mjs';
 import { ExecutionEvidenceRecorder } from '../src/lib/execution-evidence/recorder.mjs';
+import { createExecutionSpanTracker } from '../src/lib/execution-span-tracker.mjs';
 import { ORCHESTRATION_GRAPH_SCHEMA } from '../src/lib/orchestration-graph.mjs';
 import { HolyGrailApplicationClient } from '../src/application/hg-application-client.mjs';
 import { LIFECYCLE_MILESTONES } from '../src/application/application-turn-lifecycle.mjs';
+import { runCharacterPhase } from '../src/plugins/hg-phase-executors/character-phase.mjs';
 import { makeTempSessionsDir, startDomainApi } from './helpers/domain-api.mjs';
+import {
+  createTrackingInference,
+  epistemicPass,
+  instrumentProjectionApi,
+  setupProjectionSession,
+  startProjectionDomainHost,
+} from './helpers/plot-cognition-projection-fixtures.mjs';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -76,6 +86,34 @@ function readAttemptsAtEvidenceRoot(evidenceRoot, hgSessionId) {
 function graphSpans(attempts) {
   return attempts.filter((entry) => entry.correlation?.role === 'execution_span'
     && entry.decision?.orchestration_graph?.schema === ORCHESTRATION_GRAPH_SCHEMA);
+}
+
+function executionSpans(attempts) {
+  return attempts.filter((entry) => entry.correlation?.role === 'execution_span');
+}
+
+function assertCharacterPrepSpanLinkage(attempts) {
+  const spans = executionSpans(attempts);
+  const prepPhase = spans.find((span) => phaseId(span) === 'character_prep_phase');
+  assert.ok(prepPhase, 'expected character_prep_phase span');
+  const prepSpanId = prepPhase.correlation?.span_id;
+  assert.ok(prepSpanId);
+  const prepEvidenceIds = prepPhase.associations?.evidence_ids ?? [];
+  assert.ok(prepEvidenceIds.length > 0, 'expected rolled-up prep-phase evidence_ids');
+
+  const prepInferenceSpans = spans.filter((span) => phaseId(span) === 'character_prep_inference');
+  assert.ok(prepInferenceSpans.length > 0, 'expected character_prep_inference child spans');
+  for (const child of prepInferenceSpans) {
+    assert.equal(child.correlation?.parent_span_id, prepSpanId);
+    const childEvidenceIds = child.associations?.evidence_ids ?? [];
+    assert.ok(childEvidenceIds.length > 0);
+    assert.equal(child.decision?.orchestration_graph?.schema, ORCHESTRATION_GRAPH_SCHEMA);
+    assert.equal(child.decision?.orchestration_graph?.node_kind, 'inference_reference');
+    for (const evidenceId of childEvidenceIds) {
+      assert.ok(prepEvidenceIds.includes(evidenceId));
+    }
+  }
+  return { prepPhase, prepInferenceSpans, prepEvidenceIds };
 }
 
 const REQUIRED_CHARACTER_TURN_PHASES = [
@@ -346,6 +384,87 @@ test('T7: complete character-turn causal graph and proven attribution', async (t
     (span) => (span.associations?.evidence_ids ?? []).length > 0,
   );
   assert.ok(linkedInference.length > 0);
+});
+
+test('T10: character prep inference graph membership and rollup (#183)', async (t) => {
+  const { dataDir, sessionsDir } = tempDataEnv(t);
+  const port = 41765 + Math.floor(Math.random() * 1000);
+  const host = await startDomainApi(port, { sessionsDir });
+  t.after(() => host.stop());
+
+  const { ctx, orchestrator } = await createHolyGrailRpContext({ domainApi: { baseUrl: host.baseUrl } });
+  t.after(async () => {
+    await ctx.fiber.dispose();
+  });
+
+  const result = await orchestrator.runRound({
+    domainApi: { baseUrl: host.baseUrl },
+    session: { mode: 'create', cast: ['Alice'] },
+    skipStorytellerCognition: true,
+    skipPlotCognitionOrchestration: true,
+    mockDirectorResponses: [JSON.stringify(VALID_DIRECTOR)],
+    mockCharacterTurnResponses: [[JSON.stringify(VALID_MOVE)]],
+    mockNarratorTurnResponses: [['Narrator prose.']],
+    librarianProposalDelayMs: 40,
+  });
+
+  const { attempts } = readAttempts(dataDir, result.hg_session_id);
+  assertCharacterPrepSpanLinkage(attempts);
+
+  const {
+    host: projectionHost,
+    api,
+    sessionsDir: projectionSessionsDir,
+    dataDir: projectionDataDir,
+  } = await startProjectionDomainHost(t, {
+    hostEnv: { HG_EXECUTION_EVIDENCE: 'on' },
+  });
+  t.after(() => projectionHost.stop());
+  const projectionCtx = await setupProjectionSession(api, projectionSessionsDir);
+  const evidenceRoot = path.join(projectionDataDir, 'execution_evidence');
+  const recorder = new ExecutionEvidenceRecorder({ enabled: true, root: evidenceRoot });
+  const tracker = createExecutionSpanTracker(recorder, {
+    hgSessionId: projectionCtx.session.hg_session_id,
+    hgRoundId: projectionCtx.hgRoundId,
+  });
+  const coordinator = new CharacterTurnSpanCoordinator(tracker, { characterTurnIndex: 0 });
+  coordinator.beginTurn();
+  const instrumentedApi = instrumentProjectionApi(api);
+  const { runEphemeralInference, calls } = createTrackingInference([epistemicPass()]);
+  const semanticPass = JSON.stringify({
+    schema: 'hg_semantic_evaluation_result_v1',
+    overall_result: 'pass',
+    findings: [],
+  });
+
+  await coordinator.measureCharacterPrepPhase(() => runCharacterPhase({
+    api: instrumentedApi,
+    runEphemeralInference,
+    recorder,
+    trace: { emit: () => {} },
+    sceneAgent: { session: {} },
+    sceneSessionId: 'scene-projection-test',
+    hgSessionId: projectionCtx.session.hg_session_id,
+    hgSceneId: projectionCtx.hgSceneId,
+    hgRoundId: projectionCtx.hgRoundId,
+    characterId: 'Alice',
+    directorDecision: VALID_DIRECTOR,
+    characterInferenceId: 'inf-character-0-layerb',
+    mockResponses: [JSON.stringify(VALID_MOVE)],
+    mockSemanticEvaluatorResponses: [semanticPass],
+    characterTurnIndex: 0,
+    mockProjectionEpistemicResponses: [epistemicPass()],
+  }));
+
+  const { attempts: projectionAttempts } = readAttemptsAtEvidenceRoot(
+    evidenceRoot,
+    projectionCtx.session.hg_session_id,
+  );
+  const { prepEvidenceIds } = assertCharacterPrepSpanLinkage(projectionAttempts);
+  const layerBEvalCalls = calls.filter((call) => call.inferenceKind === 'plot_cognition_epistemic_eval');
+  assert.ok(layerBEvalCalls.length > 0, 'expected Layer B epistemic eval during projection lifecycle');
+  const layerBEvidenceId = `ev-${layerBEvalCalls[0].inferenceId}`;
+  assert.ok(prepEvidenceIds.includes(layerBEvidenceId));
 });
 
 test('T8: multi-turn round-internal graph chaining', async (t) => {
