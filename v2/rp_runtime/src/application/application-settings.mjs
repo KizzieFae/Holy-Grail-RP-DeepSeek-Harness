@@ -86,6 +86,8 @@ export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
 
   storyteller_post_commit_issue_pressure_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
 
+  librarian_mediation_contract_correction: PRODUCTION_MAX_TOKEN_CEILING,
+
 };
 
 

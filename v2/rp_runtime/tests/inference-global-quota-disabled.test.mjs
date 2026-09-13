@@ -57,8 +57,8 @@ test('global quota policy: advanced role-profile maxTokens cannot bypass uncappi
   assert.equal(profiles.narrator.maxTokens, undefined);
 });
 
-test('global quota policy: all 25 primary catalog identities resolve uncapped at runtime', () => {
-  assert.equal(PRIMARY_RUNTIME_CALL_IDS.length, 25);
+test('global quota policy: all 26 primary catalog identities resolve uncapped at runtime', () => {
+  assert.equal(PRIMARY_RUNTIME_CALL_IDS.length, 26);
   for (const entry of PRIMARY_RUNTIME_CATALOG) {
     const profile = resolveCatalogProductionProfile(entry, { inferenceMode: 'live' }, {});
     assert.equal(profile.maxTokens, undefined, `${entry.call_id} must be uncapped`);

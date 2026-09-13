@@ -131,6 +131,7 @@ export function listPrimaryCharacterizationFixtures() {
     'character_orientation',
     'librarian_mediation@character',
     'librarian_mediation@narrator',
+    'librarian_mediation_contract_correction',
     'storyteller_post_commit_issue_pressure',
     'storyteller_post_commit_issue_pressure_contract_correction',
     'narrator_presentation',
