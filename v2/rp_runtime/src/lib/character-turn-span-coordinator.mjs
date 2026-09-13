@@ -14,6 +14,26 @@ function linkEvidenceIds(tracker, phaseId, evidenceIds, parentSpanId) {
   }
 }
 
+function linkCharacterPrepInferenceEvidenceIds(
+  tracker,
+  evidenceIds,
+  parentSpanId,
+  graphScope,
+) {
+  if (!tracker || !parentSpanId) return;
+  for (const evidenceId of evidenceIds) {
+    tracker.linkInferenceEvidence('character_prep_inference', evidenceId, {
+      parentSpanId,
+      orchestrationGraph: buildOrchestrationGraph({
+        nodeKind: 'inference_reference',
+        graphId: graphScope.graphId,
+        characterTurnIndex: graphScope.characterTurnIndex,
+        predecessorSpanIds: [parentSpanId],
+      }),
+    });
+  }
+}
+
 /**
  * Serial pre-commit + post-commit causal graph for one Character turn (#173).
  */
@@ -98,13 +118,14 @@ export class CharacterTurnSpanCoordinator {
       }),
     });
     const result = await fn();
-    linkEvidenceIds(
+    const evidenceIds = collectCharacterPrepEvidenceIds(result);
+    linkCharacterPrepInferenceEvidenceIds(
       this.tracker,
-      'character_prep_inference',
-      collectCharacterPrepEvidenceIds(result),
+      evidenceIds,
       this.characterPrepSpanId,
+      { graphId: this.graphId, characterTurnIndex: this.characterTurnIndex },
     );
-    this.tracker.endSpan(this.characterPrepSpanId);
+    this.tracker.endSpan(this.characterPrepSpanId, { evidenceIds });
     this.lastSerialSpanId = this.characterPrepSpanId;
     return result;
   }
