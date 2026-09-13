@@ -13,14 +13,26 @@ import {
   resolveCatalogReferenceApplicationTokenQuota,
 } from '../src/application/llm-call-catalog-policy.mjs';
 import { generateLlmCallCatalog } from '../scripts/generate-llm-call-catalog.mjs';
+import { listPrimaryCharacterizationFixtures } from '../src/lib/llm-characterization/fixtures.mjs';
 import { INFERENCE_KINDS } from '../src/lib/manifest-projection-policy.mjs';
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
 const repoRoot = path.resolve(srcRoot, '..', '..', '..');
+const EXPECTED_PRIMARY_RUNTIME_ROW_COUNT = 26;
 
-test('llm call catalog: primary runtime row count is 25', () => {
-  assert.equal(PRIMARY_RUNTIME_CATALOG.length, 25);
-  assert.equal(new Set(PRIMARY_RUNTIME_CALL_IDS).size, 25);
+test('llm call catalog: primary runtime row count is 26', () => {
+  assert.equal(PRIMARY_RUNTIME_CATALOG.length, EXPECTED_PRIMARY_RUNTIME_ROW_COUNT);
+  assert.equal(new Set(PRIMARY_RUNTIME_CALL_IDS).size, EXPECTED_PRIMARY_RUNTIME_ROW_COUNT);
+});
+
+test('llm call catalog: primary characterization fixtures cover every primary catalog call_id', () => {
+  const fixtureIds = listPrimaryCharacterizationFixtures();
+  assert.equal(fixtureIds.length, EXPECTED_PRIMARY_RUNTIME_ROW_COUNT);
+  assert.deepEqual(
+    [...fixtureIds].sort(),
+    [...PRIMARY_RUNTIME_CALL_IDS].sort(),
+    'primary characterization batch must include every PRIMARY_RUNTIME_CATALOG call_id',
+  );
 });
 
 test('llm call catalog: production kinds are subset of INFERENCE_KINDS', () => {
@@ -48,6 +60,18 @@ test('llm call catalog: quota resolution succeeds for all primary rows', () => {
   }
 });
 
+test('llm call catalog: librarian_mediation_contract_correction reference ceiling is 8192', () => {
+  const entry = PRIMARY_RUNTIME_CATALOG.find(
+    (row) => row.call_id === 'librarian_mediation_contract_correction',
+  );
+  assert.ok(entry);
+  assert.equal(
+    resolveCatalogReferenceApplicationTokenQuota(entry, {}, {}),
+    8192,
+  );
+  assert.equal(resolveCatalogApplicationTokenQuota(entry, {}, {}), 'UNCAPPED');
+});
+
 test('llm call catalog: generated document is deterministic for fixed empirical input', () => {
   const first = generateLlmCallCatalog({
     generatedAt: '2026-09-07T00:00:00.000Z',
@@ -60,7 +84,7 @@ test('llm call catalog: generated document is deterministic for fixed empirical 
     empiricalByCall: {},
   });
   assert.deepEqual(first, second);
-  assert.equal(first.primary_runtime.length, 25);
+  assert.equal(first.primary_runtime.length, EXPECTED_PRIMARY_RUNTIME_ROW_COUNT);
   assert.equal(first.harness_annex.length, 2);
 });
 

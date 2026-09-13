@@ -7,14 +7,14 @@ import test from 'node:test';
 import { listPrimaryCharacterizationFixtures } from '../src/lib/llm-characterization/fixtures.mjs';
 import { runCharacterizationBatch } from '../scripts/run-llm-characterization-batch.mjs';
 
-test('issue152: mock characterization batch covers all 25 primary identities', async () => {
+test('issue152: mock characterization batch covers all 26 primary identities', async () => {
   const charRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-char-summary-'));
   const result = await runCharacterizationBatch({
     characterizationRoot: charRoot,
     inferenceMode: 'mock',
   });
-  assert.equal(listPrimaryCharacterizationFixtures().length, 25);
-  assert.equal(Object.keys(result.summaries).length, 25);
+  assert.equal(listPrimaryCharacterizationFixtures().length, 26);
+  assert.equal(Object.keys(result.summaries).length, 26);
   for (const callId of listPrimaryCharacterizationFixtures()) {
     const summary = result.summaries[callId];
     assert.ok(summary, `missing summary for ${callId}`);

@@ -221,12 +221,12 @@ Default character prompt topology uses harmonized teaching blocks. Environment r
 | Artifact | Role |
 |----------|------|
 | `v2/rp_runtime/src/application/application-settings.mjs` | **Executable authority** for reference token ceilings, global enforcement flag, and reasoning overrides |
-| `v2/rp_runtime/src/application/llm-call-catalog.mjs` | **Metadata registry** (25 primary runtime rows + 2 harness annex rows) |
+| `v2/rp_runtime/src/application/llm-call-catalog.mjs` | **Metadata registry** (26 primary runtime rows + 2 harness annex rows) |
 | `v2/rp_runtime/src/application/llm-call-catalog-policy.mjs` | Derives reference/enforced quota fields for catalog export |
 | `v2/rp_runtime/scripts/generate-llm-call-catalog.mjs` | Deterministic generator |
 | `docs/llm-call-catalog.json` | **Committed generated view** (regenerate after policy or characterization changes) |
 
-**Population terminology (do not conflate):** 26 canonical `INFERENCE_KINDS`; 24 production-utilized unique kinds; **25 primary runtime configuration identity rows** (includes distinct `librarian_mediation@character` and `@narrator` quota resolution); 2 harness/test annex identities (visible, non-blocking).
+**Population terminology (do not conflate):** 26 canonical `INFERENCE_KINDS`; 24 production-utilized unique kinds; **26 primary runtime configuration identity rows** (includes distinct `librarian_mediation@character` and `@narrator` quota resolution plus `librarian_mediation_contract_correction`); 2 harness/test annex identities (visible, non-blocking).
 
 **Global application quota policy (present development period):** Holy-Grail application `maxTokens` ceilings are **globally disabled** (`APPLICATION_TOKEN_QUOTAS_ENFORCED = false`). Ordinary runtime inference omits HG token quotas so natural-completion token and latency evidence can accumulate during LLM/prompt-efficiency work. This is intentional and temporary; restoring or replacing production quotas is deferred to separate governed work. Provider/model-native limits and non-token safeguards (attempt bounds, operator cancellation, retry/recovery boundaries) still apply.
 
