@@ -11,6 +11,10 @@ from .context_substrate import auth_projections_to_contributions
 from .contract import PromptContribution, SemanticEvaluationContextPrepareRequest
 from perceptual_visibility_legacy import perceptual_visibility_record_from_entry_metadata
 
+from .player_action_completion_authority import (
+    PLAYER_ACTION_COMPLETION_GUARDRAIL_ID,
+    merge_player_action_completion_authority_references,
+)
 from .player_authorship_authority import (
     PLAYER_AUTHORSHIP_GUARDRAIL_ID,
     merge_player_authorship_authority_references,
@@ -191,7 +195,8 @@ def build_authority_references(
         )
     )
     _ = hg_round_id
-    return merge_player_authorship_authority_references(refs, fixture)
+    refs = merge_player_authorship_authority_references(refs, fixture)
+    return merge_player_action_completion_authority_references(refs)
 
 
 def prepare_semantic_evaluation_context(
@@ -304,11 +309,17 @@ def prepare_semantic_evaluation_context(
                 "Evaluate the candidate for R02b Player authorship (is an asserted Player fact "
                 "authoritatively established?), R11 repetition/stagnation, R12 character "
                 "fidelity, R14 knowledge/perception entitlement (may this Character know/use an "
-                "otherwise-established fact?), R15 binding continuity. "
+                "otherwise-established fact?), R15 binding continuity, R16 player action "
+                "completion (does the candidate represent a Player action or positional state "
+                "as accomplished without sufficient authoritative support?). "
                 "Unsupported objective Player assertion/sensation/amplification → R02b hard with "
                 "guardrail:player_authorship; established-but-not-entitled → R14 hard with "
                 "perception_fact:entitlement:* or perception_fact:player_internal_entitlement "
                 "(not guardrail:player_authorship alone). "
+                "Unsupported assumed Player acceptance/entry/agreement/positional completion "
+                "→ R16 hard with guardrail:player_action_completion and cite offending beat "
+                "evidence; invitation/permission/threat/attempt without established completion "
+                "must not be treated as accomplished Player movement. "
                 "Output only JSON matching schema hg_semantic_evaluation_result_v1. "
                 "Use overall_result pass|reject_soft|reject_hard only. "
                 "Hard findings require a valid authority ref_id from the references block. "

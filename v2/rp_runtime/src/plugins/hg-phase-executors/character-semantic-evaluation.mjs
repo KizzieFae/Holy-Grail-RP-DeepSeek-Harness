@@ -7,7 +7,7 @@ import {
 export const SEMANTIC_EVAL_RESULT_SCHEMA = 'hg_semantic_evaluation_result_v1';
 export const SEMANTIC_EVAL_CONFIG_ID = 'semantic_evaluator_v1';
 
-const VALID_DIMENSIONS = new Set(['R02b', 'R11', 'R12', 'R14', 'R15']);
+const VALID_DIMENSIONS = new Set(['R02b', 'R11', 'R12', 'R14', 'R15', 'R16']);
 const VALID_SEVERITIES = new Set(['hard', 'soft']);
 
 export const DEFAULT_PASS_RESULT = {
@@ -196,8 +196,11 @@ export async function runSemanticEvaluation({
       'You are a bounded semantic evaluator for a Character move candidate.',
       'Return ONLY one JSON object (no markdown) with schema hg_semantic_evaluation_result_v1.',
       'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension '
-      + 'R02b|R11|R12|R14|R15. R02b=Player authorship; R14=entitlement.',
-      'Hard R14 requires authoritative_citation.ref_id using perception_fact:entitlement:* '
+      + 'R02b|R11|R12|R14|R15|R16. R02b=Player authorship; R14=entitlement; '
+      + 'R16=player action completion.',
+      'Hard R16 requires authoritative_citation.ref_id guardrail:player_action_completion '
+      + 'and candidate_evidence for the offending beat when practical. '
+      + 'Hard R14 requires authoritative_citation.ref_id using perception_fact:entitlement:* '
       + 'or perception_fact:player_internal_entitlement from the authority references block '
       + '(not guardrail:player_authorship alone).',
       'If no issues, return {"schema":"hg_semantic_evaluation_result_v1","overall_result":"pass","findings":[]}.',

@@ -10,6 +10,68 @@ import { createExecutionEvidenceRecorder } from '../src/lib/execution-evidence/r
 import { attachCharacterCognitionApiStubs, findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
 const player_authorship_GUARDRAIL_ID = 'guardrail:player_authorship';
+const PLAYER_ACTION_COMPLETION_GUARDRAIL_ID = 'guardrail:player_action_completion';
+
+const MOTIVATION = {
+  goal: 'respond',
+  tactic: 'doorway exchange',
+  emotional_driver: 'formal',
+  risk_level: 'medium',
+};
+
+const HEALTHY_INVITATION_MOVE = {
+  move_schema_version: 2,
+  beats: [
+    { type: 'action', action: 'opens the door and studies the applicant on the step' },
+    { type: 'speech', dialogue: 'Punctual. That is a promising beginning.' },
+    { type: 'action', action: 'gestures toward the foyer' },
+    { type: 'speech', dialogue: 'Come in when you are ready.' },
+  ],
+  motivation: MOTIVATION,
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+const F06_ASSUMED_ENTRY_MOVE = {
+  move_schema_version: 2,
+  beats: [
+    { type: 'action', action: 'opens the door and studies the applicant on the step' },
+    { type: 'speech', dialogue: 'Punctual. That is a promising beginning.' },
+    { type: 'action', action: 'gestures inside' },
+    { type: 'speech', dialogue: 'Come in. Mind the rug.' },
+    { type: 'action', action: 'closes the door behind Kizzie' },
+    { type: 'speech', dialogue: 'Before we begin, tell me how you found your way to my notice.' },
+  ],
+  motivation: MOTIVATION,
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+const F06_CORRECTED_INVITATION_MOVE = {
+  ...HEALTHY_INVITATION_MOVE,
+  beats: [
+    ...HEALTHY_INVITATION_MOVE.beats,
+    { type: 'speech', dialogue: 'Before we begin, tell me how you found your way to my notice.' },
+  ],
+};
+
+const UNRESOLVED_COERCION_MOVE = {
+  move_schema_version: 2,
+  beats: [
+    { type: 'action', action: 'reaches for Kizzie and tries to drag her inside' },
+    { type: 'speech', dialogue: 'Inside. Now.' },
+  ],
+  motivation: MOTIVATION,
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
+
+const ASSUMED_AGREEMENT_MOVE = {
+  move_schema_version: 2,
+  beats: [
+    { type: 'speech', dialogue: 'Will you accept the terms?' },
+    { type: 'speech', dialogue: 'Good. I knew you would agree.' },
+  ],
+  motivation: MOTIVATION,
+  semantic_evaluation: { decision: 'no_covered_change' },
+};
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -50,6 +112,30 @@ function semanticHard(refId = player_authorship_GUARDRAIL_ID) {
       },
     ],
     correction_request: { summary: 'Remove invented player speech', dimensions: ['R02b'] },
+  });
+}
+
+function semanticHardR16({
+  finding = 'Assumed Player entry without authority',
+  beatIndex = 4,
+} = {}) {
+  return JSON.stringify({
+    schema: 'hg_semantic_evaluation_result_v1',
+    overall_result: 'reject_hard',
+    findings: [
+      {
+        dimension: 'R16',
+        severity: 'hard',
+        finding,
+        rationale: 'Player knock does not establish entry; beat assumes completion',
+        candidate_evidence: { beat_index: beatIndex, beat_type: 'action' },
+        authoritative_citation: { ref_id: PLAYER_ACTION_COMPLETION_GUARDRAIL_ID },
+      },
+    ],
+    correction_request: {
+      summary: 'Remove assumed Player entry; preserve invitation only',
+      dimensions: ['R16'],
+    },
   });
 }
 
@@ -117,7 +203,10 @@ function createMockApi({
         character_id: body.character_id,
         turn_index: body.turn_index,
         evaluation_pass_id: body.evaluation_pass_id,
-        authority_references: [{ ref_id: player_authorship_GUARDRAIL_ID }],
+        authority_references: [
+          { ref_id: player_authorship_GUARDRAIL_ID },
+          { ref_id: PLAYER_ACTION_COMPLETION_GUARDRAIL_ID },
+        ],
         candidate_package: {
           candidate_move: body.candidate_move,
           raw_model_output: body.raw_model_output,
@@ -590,6 +679,172 @@ test('character phase: respects liveMaxAttempts ceiling of three', async () => {
   });
   assert.equal(result.committed, false);
   assert.equal(result.generatedCandidateCount, 3);
+});
+
+test('character phase: healthy multi-beat invitation passes', async () => {
+  const api = createMockApi({
+    validationSequence: [{ accepted: true, normalized_move: HEALTHY_INVITATION_MOVE, retryable: false }],
+  });
+  const result = await runCharacterPhase({
+    runEphemeralInference: createMockInference([JSON.stringify(HEALTHY_INVITATION_MOVE)]),
+    recorder: null,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId: 'sess-1',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Ayame',
+    directorDecision: { next_actor: 'Ayame' },
+    characterInferenceId: 'inf-char-invite',
+    mockResponses: [JSON.stringify(HEALTHY_INVITATION_MOVE)],
+    mockSemanticEvaluatorResponses: [semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+  });
+  assert.equal(result.committed, true);
+  assert.equal(result.generatedCandidateCount, 1);
+});
+
+test('character phase: F06 assumed entry R16 hard then correction then commit', async () => {
+  const api = createMockApi({
+    validationSequence: [
+      { accepted: true, normalized_move: F06_ASSUMED_ENTRY_MOVE, retryable: false },
+      { accepted: true, normalized_move: F06_CORRECTED_INVITATION_MOVE, retryable: false },
+    ],
+  });
+  const result = await runCharacterPhase({
+    runEphemeralInference: createMockInference([
+      JSON.stringify(F06_ASSUMED_ENTRY_MOVE),
+      JSON.stringify(F06_CORRECTED_INVITATION_MOVE),
+    ]),
+    recorder: null,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId: 'sess-f06',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'hg-round-4e1765c6-b3a6-4d2b-b8e6-b748ac96e53a',
+    characterId: 'Ayame',
+    directorDecision: { next_actor: 'Ayame' },
+    characterInferenceId: 'inf-char-f06',
+    mockResponses: [
+      JSON.stringify(F06_ASSUMED_ENTRY_MOVE),
+      JSON.stringify(F06_CORRECTED_INVITATION_MOVE),
+    ],
+    mockSemanticEvaluatorResponses: [semanticHardR16(), semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+  });
+  assert.equal(result.committed, true);
+  assert.equal(result.generatedCandidateCount, 2);
+  assert.ok(api.prepareCalls[1].correction_context);
+  assert.match(
+    JSON.stringify(api.prepareCalls[1].correction_context),
+    /R16|assumed Player entry/i,
+  );
+  assert.equal(F06_CORRECTED_INVITATION_MOVE.beats.length, 5);
+  assert.ok(
+    !F06_CORRECTED_INVITATION_MOVE.beats.some((beat) => /closes the door behind/i.test(beat.action ?? '')),
+  );
+});
+
+test('character phase: unresolved coercion attempt passes without assuming success', async () => {
+  const api = createMockApi({
+    validationSequence: [{ accepted: true, normalized_move: UNRESOLVED_COERCION_MOVE, retryable: false }],
+  });
+  const result = await runCharacterPhase({
+    runEphemeralInference: createMockInference([JSON.stringify(UNRESOLVED_COERCION_MOVE)]),
+    recorder: null,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId: 'sess-1',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Ayame',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-coerce-attempt',
+    mockResponses: [JSON.stringify(UNRESOLVED_COERCION_MOVE)],
+    mockSemanticEvaluatorResponses: [semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+  });
+  assert.equal(result.committed, true);
+  assert.match(UNRESOLVED_COERCION_MOVE.beats[0].action, /tries to drag/i);
+});
+
+test('character phase: assumed agreement R16 hard rejects', async () => {
+  const api = createMockApi({
+    validationSequence: [
+      { accepted: true, normalized_move: ASSUMED_AGREEMENT_MOVE, retryable: false },
+      { accepted: true, normalized_move: VALID_MOVE_2, retryable: false },
+    ],
+  });
+  const result = await runCharacterPhase({
+    runEphemeralInference: createMockInference([
+      JSON.stringify(ASSUMED_AGREEMENT_MOVE),
+      JSON.stringify(VALID_MOVE_2),
+    ]),
+    recorder: null,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId: 'sess-1',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Ayame',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-agreement',
+    mockResponses: [JSON.stringify(ASSUMED_AGREEMENT_MOVE), JSON.stringify(VALID_MOVE_2)],
+    mockSemanticEvaluatorResponses: [
+      semanticHardR16({ finding: 'Assumed Player agreement without authority', beatIndex: 1 }),
+      semanticPass(),
+    ],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+  });
+  assert.equal(result.committed, true);
+  assert.equal(result.generatedCandidateCount, 2);
+});
+
+test('character phase: R02b hard path remains independent of R16', async () => {
+  const api = createMockApi({
+    validationSequence: [
+      { accepted: true, normalized_move: VALID_MOVE, retryable: false },
+      { accepted: true, normalized_move: VALID_MOVE_2, retryable: false },
+    ],
+  });
+  const result = await runCharacterPhase({
+    runEphemeralInference: createMockInference([
+      JSON.stringify(VALID_MOVE),
+      JSON.stringify(VALID_MOVE_2),
+    ]),
+    recorder: null,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId: 'sess-1',
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-r02b',
+    mockResponses: [JSON.stringify(VALID_MOVE), JSON.stringify(VALID_MOVE_2)],
+    mockSemanticEvaluatorResponses: [semanticHard(), semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+  });
+  assert.equal(result.committed, true);
+  assert.match(
+    JSON.stringify(api.prepareCalls[1].correction_context),
+    /R02b|invented player speech/i,
+  );
 });
 
 test('execution evidence index: semantic hard finding is discoverable', () => {

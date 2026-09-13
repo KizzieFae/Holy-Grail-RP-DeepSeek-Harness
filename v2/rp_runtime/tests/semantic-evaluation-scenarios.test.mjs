@@ -4,6 +4,7 @@ import test from 'node:test';
 import { parseSemanticEvaluationResult } from '../src/plugins/hg-phase-executors/character-semantic-evaluation.mjs';
 
 const PLAYER_AUTHORSHIP_GUARDRAIL_ID = 'guardrail:player_authorship';
+const PLAYER_ACTION_COMPLETION_GUARDRAIL_ID = 'guardrail:player_action_completion';
 
 function parseScenario({ dimension, severity, finding, refId, authorityRefs }) {
   const raw = JSON.stringify({
@@ -24,6 +25,7 @@ function parseScenario({ dimension, severity, finding, refId, authorityRefs }) {
 
 const authorityRefs = [
   { ref_id: PLAYER_AUTHORSHIP_GUARDRAIL_ID },
+  { ref_id: PLAYER_ACTION_COMPLETION_GUARDRAIL_ID },
   { ref_id: 'character_fact:Alice:identity' },
   { ref_id: 'continuity_fact:scene:location' },
   { ref_id: 'perception_fact:scene:present_characters' },
@@ -73,6 +75,18 @@ test('scenario R14 perception hard with perception_fact citation', () => {
     authorityRefs,
   });
   assert.equal(parsed.result.findings[0].severity, 'hard');
+});
+
+test('scenario R16 player action completion hard with guardrail citation', () => {
+  const parsed = parseScenario({
+    dimension: 'R16',
+    severity: 'hard',
+    finding: 'Assumed Player entry without authority',
+    refId: PLAYER_ACTION_COMPLETION_GUARDRAIL_ID,
+    authorityRefs,
+  });
+  assert.equal(parsed.result.findings[0].severity, 'hard');
+  assert.equal(parsed.result.findings[0].dimension, 'R16');
 });
 
 test('scenario R15 binding contradiction hard with binding_fact citation', () => {
