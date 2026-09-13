@@ -88,6 +88,17 @@ export function evaluateAyameProjection({
   };
 }
 
+function coPresentSceneContextFromCast(presentCharacters = []) {
+  const characterZones = {};
+  for (const name of presentCharacters) {
+    const key = String(name ?? '').trim();
+    if (key) {
+      characterZones[key] = 'shared_room';
+    }
+  }
+  return { character_zones: characterZones, portals: {} };
+}
+
 export async function projectPlayerUserTurnForAyame({
   api,
   sessionId,
@@ -96,6 +107,8 @@ export async function projectPlayerUserTurnForAyame({
   speaker = 'Kizzie',
   viewerCharacter = 'Ayame',
   presentCharacters,
+  perceptualSceneContext,
+  playerCharacter,
 }) {
   const entry = await api.recordUserTurn({
     hg_session_id: sessionId,
@@ -106,12 +119,15 @@ export async function projectPlayerUserTurnForAyame({
   const metadata = entry.metadata ?? {};
   const pvr = metadata.perceptual_visibility ?? {};
   const audit = metadata.perceptual_visibility_validation ?? metadata.validation_audit ?? {};
+  const resolvedSceneContext = perceptualSceneContext
+    ?? coPresentSceneContextFromCast(presentCharacters);
+  const resolvedPlayerCharacter = playerCharacter ?? speaker;
   const assembly = projectPlayerEntryForViewer({
     entry,
     viewerCharacter,
     presentCharacters,
-    perceptualSceneContext: payload.perceptual_scene_context ?? null,
-    playerCharacter: payload.player_character ?? speaker,
+    perceptualSceneContext: resolvedSceneContext,
+    playerCharacter: resolvedPlayerCharacter,
   });
   return {
     entry,
