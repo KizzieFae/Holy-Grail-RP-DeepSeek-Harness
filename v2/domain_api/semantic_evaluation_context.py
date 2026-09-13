@@ -9,20 +9,83 @@ from .continuity_context_projector import project_authoritative_context
 from .character_conversation_projection import project_character_conversation_for_manifest
 from .context_substrate import auth_projections_to_contributions
 from .contract import PromptContribution, SemanticEvaluationContextPrepareRequest
+from perceptual_visibility_legacy import perceptual_visibility_record_from_entry_metadata
 
-PLAYER_AGENCY_GUARDRAIL_ID = "guardrail:player_agency"
+from .player_authorship_authority import (
+    PLAYER_AUTHORSHIP_GUARDRAIL_ID,
+    merge_player_authorship_authority_references,
+)
+from .viewer_player_perception import assemble_viewer_player_perception_for_session
+
+PERCEPTION_FACT_PLAYER_INTERNAL_ENTITLEMENT = "perception_fact:player_internal_entitlement"
 
 
-def _player_agency_guardrail() -> dict[str, Any]:
-    return {
-        "ref_id": PLAYER_AGENCY_GUARDRAIL_ID,
-        "kind": "guardrail",
-        "label": "Player agency",
-        "text": (
-            "Do not invent player dialogue, voluntary action, thoughts, emotions, "
-            "intentions, decisions, or equivalent player-controlled behavior."
-        ),
-    }
+def project_perception_entitlement_authority_references(
+    fixture: Any,
+    *,
+    character_id: str,
+) -> list[dict[str, Any]]:
+    """#155 perception/entitlement refs citeable for hard R14 findings."""
+    refs: list[dict[str, Any]] = [
+        {
+            "ref_id": PERCEPTION_FACT_PLAYER_INTERNAL_ENTITLEMENT,
+            "kind": "perception_fact",
+            "label": "Player internal-unit entitlement (#155)",
+            "text": (
+                "Per #155 perceptual visibility: Player decomposition units with kind "
+                "'internal' are never perceivable by other Characters. They may establish "
+                "Player authorship (R02b) but not viewer entitlement (R14). Hard R14 "
+                "findings for established-but-not-entitled Player facts must cite "
+                "perception_fact:entitlement:{entry_id}:{unit_id} when present."
+            ),
+        }
+    ]
+    mgr = getattr(fixture, "manager", None)
+    present = list(
+        getattr(getattr(mgr, "scene_state", None), "present_characters", None)
+        or getattr(fixture, "cast", None)
+        or []
+    )
+    history = list(getattr(fixture, "rp_history", None) or [])
+    for entry in history:
+        if str(entry.get("kind") or "") != "user":
+            continue
+        entry_id = str(entry.get("entry_id") or "").strip()
+        if not entry_id:
+            continue
+        assembly = assemble_viewer_player_perception_for_session(
+            fixture,
+            entry,
+            viewer_character=character_id,
+            present_characters=present,
+        )
+        unit_text: dict[str, str] = {}
+        metadata = entry.get("metadata") if isinstance(entry.get("metadata"), dict) else {}
+        record, _ = perceptual_visibility_record_from_entry_metadata(metadata)
+        if record is not None:
+            for unit in record.units:
+                unit_text[str(unit.unit_id)] = str(unit.text or "").strip()
+        seen_unit_ids: set[str] = set()
+        for unit_id in assembly.excluded_unit_ids:
+            if unit_id in seen_unit_ids:
+                continue
+            seen_unit_ids.add(unit_id)
+            reason = str(assembly.exclusion_reasons.get(unit_id) or "recipient_ineligible")
+            snippet = unit_text.get(unit_id, "")
+            refs.append(
+                {
+                    "ref_id": f"perception_fact:entitlement:{entry_id}:{unit_id}",
+                    "kind": "perception_fact",
+                    "label": f"Perception entitlement ({character_id} excluded: {unit_id})",
+                    "text": (
+                        f"Viewer Character {character_id} is NOT entitled to perceive "
+                        f"Player unit {unit_id} from entry {entry_id} "
+                        f"(exclusion: {reason})."
+                        + (f" Unit: {snippet}" if snippet else "")
+                    ),
+                }
+            )
+    return refs
 
 
 def build_authority_references(
@@ -32,7 +95,7 @@ def build_authority_references(
     hg_round_id: str,
 ) -> list[dict[str, Any]]:
     """Stable authority references the semantic evaluator may cite for hard findings."""
-    refs: list[dict[str, Any]] = [_player_agency_guardrail()]
+    refs: list[dict[str, Any]] = []
     mgr = fixture.manager
     state = getattr(fixture, "character_states", {}).get(character_id)
     if state is not None:
@@ -121,8 +184,14 @@ def build_authority_references(
             ),
         }
     )
+    refs.extend(
+        project_perception_entitlement_authority_references(
+            fixture,
+            character_id=character_id,
+        )
+    )
     _ = hg_round_id
-    return refs
+    return merge_player_authorship_authority_references(refs, fixture)
 
 
 def prepare_semantic_evaluation_context(
@@ -232,11 +301,19 @@ def prepare_semantic_evaluation_context(
             knowledge_ids=(f"semantic_eval:{req.evaluation_pass_id}",),
             priority=30,
             content=(
-                "Evaluate the candidate for R02b player agency, R11 repetition/stagnation, "
-                "R12 character fidelity, R14 knowledge/perception, R15 binding continuity. "
+                "Evaluate the candidate for R02b Player authorship (is an asserted Player fact "
+                "authoritatively established?), R11 repetition/stagnation, R12 character "
+                "fidelity, R14 knowledge/perception entitlement (may this Character know/use an "
+                "otherwise-established fact?), R15 binding continuity. "
+                "Unsupported objective Player assertion/sensation/amplification → R02b hard with "
+                "guardrail:player_authorship; established-but-not-entitled → R14 hard with "
+                "perception_fact:entitlement:* or perception_fact:player_internal_entitlement "
+                "(not guardrail:player_authorship alone). "
                 "Output only JSON matching schema hg_semantic_evaluation_result_v1. "
+                "Use overall_result pass|reject_soft|reject_hard only. "
                 "Hard findings require a valid authority ref_id from the references block. "
-                "Do not supply replacement RP prose."
+                "Do not fabricate player_fact:* refs for unsupported assertions; cite the "
+                "guardrail and inventory absence. Do not supply replacement RP prose."
             ),
             provenance={"evaluation_pass_id": req.evaluation_pass_id},
         )

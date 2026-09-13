@@ -128,7 +128,7 @@ test('applyNarratorSemanticPolicy reports infrastructure failure', () => {
 
 test('narrator QA config id and dimensions are stable', () => {
   assert.equal(NARRATOR_QA_CONFIG_ID, 'narrator_semantic_qa_v1');
-  assert.equal(VALID_DIMENSIONS.size, 9);
+  assert.equal(VALID_DIMENSIONS.size, 10);
 });
 
 test('classifySemanticQaResult downgrades derived-only hard citations to soft', () => {

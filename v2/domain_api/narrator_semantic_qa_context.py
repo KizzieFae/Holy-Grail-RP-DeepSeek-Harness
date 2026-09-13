@@ -24,6 +24,7 @@ from .contract import (
 )
 from .continuity_context_projector import project_authoritative_context
 from .narrator_environment_packet import assemble_narrator_environment_packet
+from .player_authorship_authority import merge_player_authorship_authority_references
 from .semantic_qa_context import (
     assemble_semantic_qa_context,
     build_semantic_qa_context_response,
@@ -36,6 +37,7 @@ NARRATOR_SEMANTIC_QA_CORE_DIMENSIONS: tuple[str, ...] = (
     "nar_attribution_error",
     "nar_committed_contradiction",
     "nar_action_intention_distortion",
+    "nar_player_authorship",
     "nar_psychological_invention",
     "nar_framing_distortion",
 )
@@ -66,6 +68,12 @@ NARRATOR_SEMANTIC_QA_RUBRIC = (
     "- nar_action_intention_distortion: material alteration of what a character did, attempted, "
     "intended, pursued, refused, or risked relative to committed action/motivation evidence. "
     "Hard for substantive inversion or replacement.\n"
+    "- nar_player_authorship: unsupported objective Player appearance/wardrobe/state, Player "
+    "sensation/embodiment, or material Player-behavior amplification. Tier-1 Player authority "
+    "requires traceable user post, decomposition, card, or tagged derived lineage. Hard when "
+    "guardrail:player_authorship applies and no supporting player_fact:* inventory exists. "
+    "Subtypes belong in finding/rationale/candidate_evidence. Faithful paraphrase, subjective "
+    "framing, and world invention without Player-body attribution are permissible.\n"
     "- nar_psychological_invention: material unsupported affirmative interior claims. Apply the "
     "closed-world rule: affirmative private knowledge, memory, belief, intention, desire, "
     "motivation, or emotional state requires support from legitimate committed source. Hard "
@@ -90,6 +98,7 @@ NARRATOR_SEMANTIC_QA_RUBRIC = (
     "- Accept faithful paraphrase, connective prose, sensory detail, metaphor, moderate emotional "
     "coloring, and harmless embellishment that does not establish consequential new facts.\n"
     "- Do not emit replacement Narrator prose or bind presentation authority.\n"
+    "overall_result must be pass, reject_soft, or reject_hard only (never fail or bare reject).\n"
     "Output only JSON matching schema hg_semantic_qa_result_v1."
 )
 
@@ -216,15 +225,7 @@ def build_narrator_authority_references(
     except (ValueError, AttributeError):
         pass
 
-    merged: list[dict[str, Any]] = []
-    seen_ids: set[str] = set()
-    for ref in refs:
-        ref_id = str(ref.get("ref_id") or "").strip()
-        if not ref_id or ref_id in seen_ids:
-            continue
-        seen_ids.add(ref_id)
-        merged.append(ref)
-    return merged
+    return merge_player_authorship_authority_references(refs, fixture)
 
 
 def build_narrator_semantic_qa_candidate_transport(

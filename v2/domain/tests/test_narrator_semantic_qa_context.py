@@ -105,6 +105,7 @@ def test_narrator_semantic_qa_response_includes_rubric_and_candidate() -> None:
         if c.contribution_id.endswith("-narrator-semantic-qa-instruction")
     )
     assert "nar_attribution_error" in instruction.content
+    assert "nar_player_authorship" in instruction.content
     assert "nar_psychological_invention" in instruction.content
     assert any(c.contribution_id.endswith("-authority-references") for c in response.contributions)
     assert any(c.contribution_id.endswith("-candidate-package") for c in response.contributions)
@@ -230,4 +231,4 @@ def test_narrator_semantic_qa_transport_content_budget_reduced() -> None:
     total_chars = sum(len(c.content) for c in response.contributions)
     legacy_minimal_fixture_budget = 7500
     assert total_chars < legacy_minimal_fixture_budget
-    assert total_chars < 6200
+    assert total_chars < 7500

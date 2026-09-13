@@ -14,7 +14,7 @@ import {
   parseSemanticEvaluationResult,
 } from '../src/plugins/hg-phase-executors/character-semantic-evaluation.mjs';
 
-const PLAYER_AGENCY_GUARDRAIL_ID = 'guardrail:player_agency';
+const player_authorship_GUARDRAIL_ID = 'guardrail:player_authorship';
 
 test('character candidate limit respects ceiling', () => {
   assert.equal(characterCandidateLimit(5), CHARACTER_CANDIDATE_CEILING);
@@ -34,7 +34,7 @@ test('hard correction budget allows two corrections within three candidates', ()
 });
 
 test('unknown hard authority reference is downgraded to soft', () => {
-  const authorityRefs = [{ ref_id: PLAYER_AGENCY_GUARDRAIL_ID }];
+  const authorityRefs = [{ ref_id: player_authorship_GUARDRAIL_ID }];
   const raw = JSON.stringify({
     schema: 'hg_semantic_evaluation_result_v1',
     overall_result: 'reject_hard',
@@ -54,8 +54,8 @@ test('unknown hard authority reference is downgraded to soft', () => {
   assert.equal(parsed.result.findings[0].severity, 'soft');
 });
 
-test('valid player agency hard finding passes with guardrail ref', () => {
-  const authorityRefs = [{ ref_id: PLAYER_AGENCY_GUARDRAIL_ID }];
+test('valid player authorship hard finding passes with guardrail ref', () => {
+  const authorityRefs = [{ ref_id: player_authorship_GUARDRAIL_ID }];
   const raw = JSON.stringify({
     schema: 'hg_semantic_evaluation_result_v1',
     overall_result: 'reject_hard',
@@ -65,7 +65,7 @@ test('valid player agency hard finding passes with guardrail ref', () => {
         severity: 'hard',
         finding: 'Character spoke for the player',
         rationale: 'Invented player dialogue',
-        authoritative_citation: { ref_id: PLAYER_AGENCY_GUARDRAIL_ID },
+        authoritative_citation: { ref_id: player_authorship_GUARDRAIL_ID },
       },
     ],
     correction_request: {

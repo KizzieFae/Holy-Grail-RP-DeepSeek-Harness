@@ -12,6 +12,7 @@ import { narratorDecisionPatch } from '../../lib/execution-evidence/phase-decisi
 import {
   applyNarratorSemanticPolicy,
   buildCorrectionContextFromNarratorQa,
+  buildPlayerAuthorshipRepairObligation,
   runNarratorSemanticEvaluation,
 } from './narrator-semantic-qa.mjs';
 import { runNarratorEnvironmentCognition } from '../../lib/narrator-environment-cognition-substrate.mjs';
@@ -175,10 +176,12 @@ export async function runNarratorPhase({
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   let lastFailureReason = 'narrator presentation failed';
   let lastInferenceOutcome = 'inference_error';
+  let lastTerminalDisposition = 'committed_fallback';
   let lastEvidenceId = null;
   let lastInferenceTrace = null;
   let lastInferenceSessionId = null;
   let correctionContext = null;
+  let pendingPlayerAuthorshipRepair = null;
   let semanticEvalPassIndex = 0;
   let responseIndex = 0;
 
@@ -597,6 +600,7 @@ export async function runNarratorPhase({
             ?? null,
           parentNarratorEvidenceId: narratorRun.evidenceId,
           infrastructureAttempt: evalInfra,
+          playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair,
         });
         if (!evalOutcome.infrastructureFailure) break;
       }
@@ -633,6 +637,16 @@ export async function runNarratorPhase({
             },
           }),
         });
+        trace.emit(sceneAgent.session, 'hg/narrator-semantic-qa', scope, {
+          inference_id: inferenceId,
+          evaluation_pass_id: evaluationPassId,
+          attempt_index: attemptIndex,
+          policy_action: 'infra_fail',
+          overall_result: null,
+          findings: [],
+          infrastructure_failure: true,
+          evaluator_error: evalOutcome?.evaluatorError ?? 'semantic evaluator failed',
+        });
         lastFailureReason = evalOutcome?.evaluatorError ?? 'semantic evaluator failed';
         lastInferenceOutcome = 'inference_error';
         break;
@@ -641,6 +655,7 @@ export async function runNarratorPhase({
       const policy = applyNarratorSemanticPolicy(evalOutcome, {
         attemptIndex,
         maxAttempts: MAX_NARRATOR_ATTEMPTS,
+        pendingPlayerAuthorshipRepair,
       });
 
       const semanticOutcome = policy.action === 'pass'
@@ -653,7 +668,9 @@ export async function runNarratorPhase({
               ? 'semantic_rejected_hard'
               : policy.action === 'exhausted_fallback'
                 ? 'semantic_hard_exhausted'
-                : 'semantic_evaluator_failed';
+                : policy.action === 'player_authorship_fail_closed'
+                  ? 'semantic_player_authorship_rejected'
+                  : 'semantic_evaluator_failed';
 
       recordAttemptEvidence({
         recorder,
@@ -683,7 +700,9 @@ export async function runNarratorPhase({
             ? 'retry'
             : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
               ? 'terminal_fallback'
-              : 'accept',
+              : policy.action === 'player_authorship_fail_closed'
+                ? 'fail_closed'
+                : 'accept',
           rejectedPresentationText: policy.action === 'pass'
             || policy.action === 'accept_with_residuals'
             ? null
@@ -692,6 +711,8 @@ export async function runNarratorPhase({
             ? 'accepted_with_residual_soft_concerns'
             : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
               ? 'committed_fallback'
+              : policy.action === 'player_authorship_fail_closed'
+                ? 'player_authorship_rejected'
               : policy.action === 'pass'
                 ? 'narrator_presented'
                 : null,
@@ -704,6 +725,10 @@ export async function runNarratorPhase({
             citationValidations: evalOutcome.citationValidations,
             parseWarnings: evalOutcome.parseWarnings,
             policyAction: policy.action,
+            playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair,
+            playerAuthorshipRepairVerification: policy.repairVerification ?? null,
+            playerAuthorshipRepairCleared: policy.playerAuthorshipRepairCleared ?? false,
+            playerAuthorshipRepairFailureReason: policy.repairFailureReason ?? null,
           },
           residualSoftConcerns: policy.residualSoftConcerns ?? null,
         }),
@@ -716,6 +741,8 @@ export async function runNarratorPhase({
         policy_action: policy.action,
         overall_result: evalOutcome.result?.overall_result,
         findings: evalOutcome.result?.findings,
+        player_authorship_repair_obligation: pendingPlayerAuthorshipRepair,
+        player_authorship_repair_verification: policy.repairVerification ?? null,
       });
 
       if (policy.action === 'infra_fail') {
@@ -790,8 +817,19 @@ export async function runNarratorPhase({
       }
 
       if (policy.action === 'soft_regen' || policy.action === 'hard_regen') {
+        if (!pendingPlayerAuthorshipRepair) {
+          pendingPlayerAuthorshipRepair = buildPlayerAuthorshipRepairObligation({
+            evalOutcome,
+            evaluationPassId,
+            attemptIndex,
+            candidatePresentation: presentationText,
+          });
+        }
         correctionContext = buildCorrectionContextFromNarratorQa(evalOutcome.result, {
           evaluationPassId,
+          playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair
+            ?? policy.playerAuthorshipRepairObligation
+            ?? null,
         });
         responseIndex += 1;
         continue;
@@ -800,6 +838,13 @@ export async function runNarratorPhase({
       if (policy.action === 'exhausted_fallback') {
         lastFailureReason = 'narrator semantic hard rejection exhausted generation budget';
         lastInferenceOutcome = 'inference_error';
+        break;
+      }
+
+      if (policy.action === 'player_authorship_fail_closed') {
+        lastFailureReason = 'narrator player-authorship hard rejection exhausted; fail-closed';
+        lastInferenceOutcome = 'inference_error';
+        lastTerminalDisposition = 'player_authorship_rejected';
         break;
       }
     } catch (error) {
@@ -897,6 +942,6 @@ export async function runNarratorPhase({
     narrator_inference_trace: lastInferenceTrace,
     narrator_inference_session_id: lastInferenceSessionId,
     narrator_evidence_id: lastEvidenceId,
-    terminal_disposition: 'committed_fallback',
+    terminal_disposition: lastTerminalDisposition,
   };
 }

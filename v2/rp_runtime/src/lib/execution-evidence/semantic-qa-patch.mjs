@@ -12,6 +12,10 @@ export function buildSemanticQaDecisionFields({
   infrastructureFailure = false,
   citationValidations = null,
   parseWarnings = null,
+  playerAuthorshipRepairObligation = null,
+  playerAuthorshipRepairVerification = null,
+  playerAuthorshipRepairCleared = false,
+  playerAuthorshipRepairFailureReason = null,
 }) {
   return {
     evaluation_pass_id: evaluationPassId ?? null,
@@ -23,6 +27,10 @@ export function buildSemanticQaDecisionFields({
     raw_evaluator_output: rawEvaluatorOutput,
     citation_validations: citationValidations ?? null,
     parse_warnings: parseWarnings ?? null,
+    player_authorship_repair_obligation: playerAuthorshipRepairObligation ?? null,
+    player_authorship_repair_verification: playerAuthorshipRepairVerification ?? null,
+    player_authorship_repair_cleared: Boolean(playerAuthorshipRepairCleared),
+    player_authorship_repair_failure_reason: playerAuthorshipRepairFailureReason ?? null,
   };
 }
 

@@ -41,6 +41,6 @@ test('HTTP prepareSemanticEvaluationContext returns authority references and can
   assert.ok(response.manifest_id.startsWith('manifest-semantic-eval-'));
   assert.equal(response.evaluation_pass_id, 'eval-http-1');
   assert.ok(Array.isArray(response.authority_references));
-  assert.ok(response.authority_references.some((ref) => ref.ref_id === 'guardrail:player_agency'));
+  assert.ok(response.authority_references.some((ref) => ref.ref_id === 'guardrail:player_authorship'));
   assert.equal(response.candidate_package.candidate_move.move_schema_version, 2);
 });

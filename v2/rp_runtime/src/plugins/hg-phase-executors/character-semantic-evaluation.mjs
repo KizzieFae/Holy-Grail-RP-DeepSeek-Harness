@@ -31,7 +31,9 @@ export function buildCorrectionContextFromEvaluation(evaluationResult, {
     prior_candidate_summary: priorCandidateSummary ?? null,
     instruction:
       'Revise your Character move JSON. Address the semantic evaluation findings. '
-      + 'Do not invent player-controlled behavior. Output replacement RP as JSON only.',
+      + 'Remove unsupported Player assertions; do not compensate with new Player details. '
+      + 'Clearly framed subjective inference may remain when otherwise permitted. '
+      + 'Output replacement RP as JSON only.',
   };
 }
 
@@ -40,6 +42,25 @@ export function summarizeCandidateForCorrection(proposed, rawModelOutput) {
     proposed_move: proposed,
     raw_model_output_excerpt: String(rawModelOutput ?? '').slice(0, 4000),
   };
+}
+
+function resolveAuthoritativeCitation(raw) {
+  if (raw.authoritative_citation && typeof raw.authoritative_citation === 'object') {
+    return raw.authoritative_citation;
+  }
+  if (raw.authority_citation && typeof raw.authority_citation === 'object') {
+    return raw.authority_citation;
+  }
+  const topLevelRefId = String(
+    raw.ref_id
+    ?? raw.perception_fact
+    ?? raw.authority_ref_id
+    ?? '',
+  ).trim();
+  if (topLevelRefId) {
+    return { ref_id: topLevelRefId };
+  }
+  return null;
 }
 
 function normalizeFinding(raw, authorityRefIds) {
@@ -52,10 +73,10 @@ function normalizeFinding(raw, authorityRefIds) {
   const finding = {
     dimension,
     severity,
-    finding: String(raw.finding ?? ''),
+    finding: String(raw.finding ?? raw.description ?? ''),
     rationale: String(raw.rationale ?? ''),
     candidate_evidence: raw.candidate_evidence ?? null,
-    authoritative_citation: raw.authoritative_citation ?? null,
+    authoritative_citation: resolveAuthoritativeCitation(raw),
   };
   if (severity === 'hard') {
     const refId = String(
@@ -174,7 +195,11 @@ export async function runSemanticEvaluation({
     prompt: [
       'You are a bounded semantic evaluator for a Character move candidate.',
       'Return ONLY one JSON object (no markdown) with schema hg_semantic_evaluation_result_v1.',
-      'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension R02b|R11|R12|R14|R15.',
+      'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension '
+      + 'R02b|R11|R12|R14|R15. R02b=Player authorship; R14=entitlement.',
+      'Hard R14 requires authoritative_citation.ref_id using perception_fact:entitlement:* '
+      + 'or perception_fact:player_internal_entitlement from the authority references block '
+      + '(not guardrail:player_authorship alone).',
       'If no issues, return {"schema":"hg_semantic_evaluation_result_v1","overall_result":"pass","findings":[]}.',
     ].join(' '),
     manifest,
