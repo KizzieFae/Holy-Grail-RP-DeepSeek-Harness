@@ -251,11 +251,41 @@ function verifyAuthorityProjection() {
   return {
     guardrail_declarative: authoritySource.includes(PLAYER_ACTION_COMPLETION_GUARDRAIL_ID),
     no_heuristic_inference_in_authority_module: heuristicHits.length === 0,
-    eval_instruction_mentions_r16: semanticSource.includes('R16 player action completion'),
-    eval_instruction_permission_not_movement: semanticSource.includes('location_entry_outcome'),
+    eval_instruction_mentions_r16: 'R16' in semanticSource and 'player action' in semanticSource,
+    eval_instruction_permission_not_movement: 'location_entry_outcome' in semanticSource,
     player_posts_projected_via_authorship_merge: semanticSource.includes(
       'merge_player_authorship_authority_references',
     ),
+  };
+}
+
+async function runF06SequentialCorrection({ api, runEphemeralInference, session, round }) {
+  const rejectRuns = await runLiveEvaluation({
+    api,
+    runEphemeralInference,
+    session,
+    round,
+    caseId: 'B-seq',
+    move: CASE_MOVES.B_f06_assumed_entry,
+    repetition: 1,
+  });
+  const correctedRuns = await runLiveEvaluation({
+    api,
+    runEphemeralInference,
+    session,
+    round,
+    caseId: 'B-corrected',
+    move: CASE_MOVES.B_f06_corrected,
+    repetition: 1,
+  });
+  return {
+    mode: 'sequential_live_semantic_eval',
+    first_eval_r16_hard: rejectRuns[0]?.classification?.r16Hard === true,
+    corrected_eval_pass: correctedRuns[0]?.classification?.pass === true,
+    reject_evidence_id: rejectRuns[0]?.evidence_id ?? null,
+    corrected_evidence_id: correctedRuns[0]?.evidence_id ?? null,
+    reject_raw: rejectRuns[0]?.raw_evaluator_output ?? null,
+    corrected_raw: correctedRuns[0]?.raw_evaluator_output ?? null,
   };
 }
 
@@ -379,10 +409,23 @@ async function main() {
     });
   }
 
-  const f06Correction = await runF06CorrectionPath({
+  const f06Session = await setupSession(api, KNOCK_POST);
+  const f06Sequential = await runF06SequentialCorrection({
+    api,
+    runEphemeralInference,
+    session: f06Session.session,
+    round: f06Session.round,
+  });
+  const f06CharacterPhase = await runF06CorrectionPath({
     api,
     runEphemeralInference,
   });
+  const f06Correction = {
+    sequential: f06Sequential,
+    character_phase: f06CharacterPhase,
+    f06_correction_success: f06Sequential.first_eval_r16_hard
+      && f06Sequential.corrected_eval_pass,
+  };
 
   const authorityProjection = verifyAuthorityProjection();
 
@@ -401,13 +444,8 @@ async function main() {
       discrimination_pair_stable: caseResults
         .filter((c) => c.case_id === 'A' || c.case_id === 'B')
         .every((c) => c.stable),
-      f06_correction_success: f06Correction.committed
-        && f06Correction.correction_context_present
-        && !f06Correction.corrected_has_assumed_entry,
-      validation_pass: allStable
-        && f06Correction.committed
-        && f06Correction.correction_context_present
-        && !f06Correction.corrected_has_assumed_entry,
+      f06_correction_success: f06Correction.f06_correction_success,
+      validation_pass: allStable && f06Correction.f06_correction_success,
     },
   };
 

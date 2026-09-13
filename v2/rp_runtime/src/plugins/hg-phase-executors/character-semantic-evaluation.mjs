@@ -63,18 +63,27 @@ function resolveAuthoritativeCitation(raw) {
   return null;
 }
 
+function resolveFindingSeverity(raw) {
+  const explicit = String(raw.severity ?? '').trim();
+  if (VALID_SEVERITIES.has(explicit)) return explicit;
+  const alias = String(raw.result ?? '').trim();
+  if (alias === 'reject_hard' || alias === 'hard') return 'hard';
+  if (alias === 'reject_soft' || alias === 'soft') return 'soft';
+  return explicit;
+}
+
 function normalizeFinding(raw, authorityRefIds) {
   if (!raw || typeof raw !== 'object') return null;
   const dimension = String(raw.dimension ?? '').trim();
-  const severity = String(raw.severity ?? '').trim();
+  const severity = resolveFindingSeverity(raw);
   if (!VALID_DIMENSIONS.has(dimension) || !VALID_SEVERITIES.has(severity)) {
     return null;
   }
   const finding = {
     dimension,
     severity,
-    finding: String(raw.finding ?? raw.description ?? ''),
-    rationale: String(raw.rationale ?? ''),
+    finding: String(raw.finding ?? raw.summary ?? raw.description ?? ''),
+    rationale: String(raw.rationale ?? raw.details ?? raw.reason ?? ''),
     candidate_evidence: raw.candidate_evidence ?? null,
     authoritative_citation: resolveAuthoritativeCitation(raw),
   };

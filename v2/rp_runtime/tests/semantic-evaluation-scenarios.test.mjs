@@ -77,6 +77,25 @@ test('scenario R14 perception hard with perception_fact citation', () => {
   assert.equal(parsed.result.findings[0].severity, 'hard');
 });
 
+test('scenario R16 accepts live-model result alias fields', () => {
+  const raw = JSON.stringify({
+    schema: 'hg_semantic_evaluation_result_v1',
+    overall_result: 'reject_hard',
+    findings: [
+      {
+        dimension: 'R16',
+        result: 'reject_hard',
+        summary: 'Assumed Player entry',
+        details: 'No authoritative entry evidence',
+        authoritative_citation: { ref_id: PLAYER_ACTION_COMPLETION_GUARDRAIL_ID },
+      },
+    ],
+  });
+  const parsed = parseSemanticEvaluationResult(raw, authorityRefs);
+  assert.equal(parsed.result.findings[0].severity, 'hard');
+  assert.equal(parsed.result.findings[0].dimension, 'R16');
+});
+
 test('scenario R16 player action completion hard with guardrail citation', () => {
   const parsed = parseScenario({
     dimension: 'R16',
