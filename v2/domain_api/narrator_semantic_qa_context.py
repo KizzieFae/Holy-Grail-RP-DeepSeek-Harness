@@ -98,6 +98,7 @@ NARRATOR_SEMANTIC_QA_RUBRIC = (
     "- Accept faithful paraphrase, connective prose, sensory detail, metaphor, moderate emotional "
     "coloring, and harmless embellishment that does not establish consequential new facts.\n"
     "- Do not emit replacement Narrator prose or bind presentation authority.\n"
+    "overall_result must be pass, reject_soft, or reject_hard only (never fail or bare reject).\n"
     "Output only JSON matching schema hg_semantic_qa_result_v1."
 )
 

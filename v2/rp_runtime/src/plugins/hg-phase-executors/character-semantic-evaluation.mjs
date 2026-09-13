@@ -44,6 +44,25 @@ export function summarizeCandidateForCorrection(proposed, rawModelOutput) {
   };
 }
 
+function resolveAuthoritativeCitation(raw) {
+  if (raw.authoritative_citation && typeof raw.authoritative_citation === 'object') {
+    return raw.authoritative_citation;
+  }
+  if (raw.authority_citation && typeof raw.authority_citation === 'object') {
+    return raw.authority_citation;
+  }
+  const topLevelRefId = String(
+    raw.ref_id
+    ?? raw.perception_fact
+    ?? raw.authority_ref_id
+    ?? '',
+  ).trim();
+  if (topLevelRefId) {
+    return { ref_id: topLevelRefId };
+  }
+  return null;
+}
+
 function normalizeFinding(raw, authorityRefIds) {
   if (!raw || typeof raw !== 'object') return null;
   const dimension = String(raw.dimension ?? '').trim();
@@ -54,10 +73,10 @@ function normalizeFinding(raw, authorityRefIds) {
   const finding = {
     dimension,
     severity,
-    finding: String(raw.finding ?? ''),
+    finding: String(raw.finding ?? raw.description ?? ''),
     rationale: String(raw.rationale ?? ''),
     candidate_evidence: raw.candidate_evidence ?? null,
-    authoritative_citation: raw.authoritative_citation ?? null,
+    authoritative_citation: resolveAuthoritativeCitation(raw),
   };
   if (severity === 'hard') {
     const refId = String(
@@ -178,6 +197,9 @@ export async function runSemanticEvaluation({
       'Return ONLY one JSON object (no markdown) with schema hg_semantic_evaluation_result_v1.',
       'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension '
       + 'R02b|R11|R12|R14|R15. R02b=Player authorship; R14=entitlement.',
+      'Hard R14 requires authoritative_citation.ref_id using perception_fact:entitlement:* '
+      + 'or perception_fact:player_internal_entitlement from the authority references block '
+      + '(not guardrail:player_authorship alone).',
       'If no issues, return {"schema":"hg_semantic_evaluation_result_v1","overall_result":"pass","findings":[]}.',
     ].join(' '),
     manifest,

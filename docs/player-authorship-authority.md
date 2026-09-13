@@ -33,7 +33,7 @@ These do **not** establish Player authority:
 | Dimension | Question | Path |
 |-----------|----------|------|
 | **R02b** | Is the asserted Player fact authoritatively established? | Character semantic evaluation |
-| **R14** | Is this Character entitled to know/use that fact? | Perception / #155 (unchanged) |
+| **R14** | Is this Character entitled to know/use that fact? | Perception / #155; cite `perception_fact:entitlement:{entry_id}:{unit_id}` or `perception_fact:player_internal_entitlement` |
 | **nar_player_authorship** | Does Narrator presentation violate Player authorship? | Narrator semantic QA |
 
 An authoritative Player fact may still be unavailable to a Character under R14.

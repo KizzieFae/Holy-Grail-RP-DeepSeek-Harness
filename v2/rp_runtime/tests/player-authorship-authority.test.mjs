@@ -5,10 +5,33 @@ import { parseSemanticEvaluationResult } from '../src/plugins/hg-phase-executors
 import {
   PLAYER_AUTHORSHIP_DIMENSION,
   applyNarratorSemanticPolicy,
+  buildNarratorEvaluatorPrompt,
   classifySemanticQaResult,
 } from '../src/plugins/hg-phase-executors/narrator-semantic-qa.mjs';
+import { parseSemanticQaResult } from '../src/lib/semantic-qa-envelope.mjs';
 
 const GUARDRAIL = 'guardrail:player_authorship';
+
+test('narrator evaluator prompt enumerates authorized overall_result values', () => {
+  const prompt = buildNarratorEvaluatorPrompt({
+    evaluationPassId: 'eval-1',
+  });
+  assert.match(prompt, /overall_result pass\|reject_soft\|reject_hard/);
+  assert.match(prompt, /nar_player_authorship/);
+  assert.doesNotMatch(prompt, /nar_environmental_contradiction/);
+});
+
+test('parseSemanticQaResult rejects bare fail overall_result', () => {
+  const parsed = parseSemanticQaResult(JSON.stringify({
+    schema: 'hg_semantic_qa_result_v1',
+    evaluation_target_role: 'narrator',
+    evaluation_pass_id: 'eval-1',
+    overall_result: 'fail',
+    findings: [],
+  }), []);
+  assert.equal(parsed.ok, false);
+  assert.match(parsed.error, /overall_result must be pass, reject_soft, or reject_hard/);
+});
 
 test('R02b hard finding cites player authorship guardrail', () => {
   const parsed = parseSemanticEvaluationResult(JSON.stringify({
@@ -39,6 +62,26 @@ test('R02b unsupported fact without fabricated player_fact ref stays hard via gu
     }],
   }), [{ ref_id: GUARDRAIL }, { ref_id: 'player_fact:user_post:u1' }]);
   assert.equal(parsed.result.findings[0].severity, 'hard');
+});
+
+test('R14 hard accepts top-level ref_id citation alias from live evaluator', () => {
+  const parsed = parseSemanticEvaluationResult(JSON.stringify({
+    schema: 'hg_semantic_evaluation_result_v1',
+    overall_result: 'reject_hard',
+    findings: [{
+      dimension: 'R14',
+      severity: 'hard',
+      description: 'Established-but-not-entitled private thought',
+      ref_id: 'perception_fact:entitlement:entry-1:u1',
+    }],
+  }), [
+    { ref_id: 'perception_fact:entitlement:entry-1:u1' },
+  ]);
+  assert.equal(parsed.result.findings[0].severity, 'hard');
+  assert.equal(
+    parsed.result.findings[0].authoritative_citation.ref_id,
+    'perception_fact:entitlement:entry-1:u1',
+  );
 });
 
 test('R14 hard uses perception_fact not authorship guardrail alone for entitlement', () => {
