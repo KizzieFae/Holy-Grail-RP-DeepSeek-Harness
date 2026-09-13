@@ -12,6 +12,7 @@ import { narratorDecisionPatch } from '../../lib/execution-evidence/phase-decisi
 import {
   applyNarratorSemanticPolicy,
   buildCorrectionContextFromNarratorQa,
+  buildPlayerAuthorshipRepairObligation,
   runNarratorSemanticEvaluation,
 } from './narrator-semantic-qa.mjs';
 import { runNarratorEnvironmentCognition } from '../../lib/narrator-environment-cognition-substrate.mjs';
@@ -180,6 +181,7 @@ export async function runNarratorPhase({
   let lastInferenceTrace = null;
   let lastInferenceSessionId = null;
   let correctionContext = null;
+  let pendingPlayerAuthorshipRepair = null;
   let semanticEvalPassIndex = 0;
   let responseIndex = 0;
 
@@ -598,6 +600,7 @@ export async function runNarratorPhase({
             ?? null,
           parentNarratorEvidenceId: narratorRun.evidenceId,
           infrastructureAttempt: evalInfra,
+          playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair,
         });
         if (!evalOutcome.infrastructureFailure) break;
       }
@@ -652,6 +655,7 @@ export async function runNarratorPhase({
       const policy = applyNarratorSemanticPolicy(evalOutcome, {
         attemptIndex,
         maxAttempts: MAX_NARRATOR_ATTEMPTS,
+        pendingPlayerAuthorshipRepair,
       });
 
       const semanticOutcome = policy.action === 'pass'
@@ -721,6 +725,10 @@ export async function runNarratorPhase({
             citationValidations: evalOutcome.citationValidations,
             parseWarnings: evalOutcome.parseWarnings,
             policyAction: policy.action,
+            playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair,
+            playerAuthorshipRepairVerification: policy.repairVerification ?? null,
+            playerAuthorshipRepairCleared: policy.playerAuthorshipRepairCleared ?? false,
+            playerAuthorshipRepairFailureReason: policy.repairFailureReason ?? null,
           },
           residualSoftConcerns: policy.residualSoftConcerns ?? null,
         }),
@@ -733,6 +741,8 @@ export async function runNarratorPhase({
         policy_action: policy.action,
         overall_result: evalOutcome.result?.overall_result,
         findings: evalOutcome.result?.findings,
+        player_authorship_repair_obligation: pendingPlayerAuthorshipRepair,
+        player_authorship_repair_verification: policy.repairVerification ?? null,
       });
 
       if (policy.action === 'infra_fail') {
@@ -807,8 +817,19 @@ export async function runNarratorPhase({
       }
 
       if (policy.action === 'soft_regen' || policy.action === 'hard_regen') {
+        if (!pendingPlayerAuthorshipRepair) {
+          pendingPlayerAuthorshipRepair = buildPlayerAuthorshipRepairObligation({
+            evalOutcome,
+            evaluationPassId,
+            attemptIndex,
+            candidatePresentation: presentationText,
+          });
+        }
         correctionContext = buildCorrectionContextFromNarratorQa(evalOutcome.result, {
           evaluationPassId,
+          playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair
+            ?? policy.playerAuthorshipRepairObligation
+            ?? null,
         });
         responseIndex += 1;
         continue;

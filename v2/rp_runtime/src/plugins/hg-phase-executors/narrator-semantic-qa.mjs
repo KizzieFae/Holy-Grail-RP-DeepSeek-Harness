@@ -48,12 +48,98 @@ export function classifySemanticQaResult(result, citationValidations = []) {
   return { findings, hasHard, hasSoft, hasAuthoritativeHard };
 }
 
+export function extractPlayerAuthorshipHardFinding(findings, citationValidations = []) {
+  const list = Array.isArray(findings) ? findings : [];
+  return list.find(
+    (finding, index) => finding?.dimension === PLAYER_AUTHORSHIP_DIMENSION
+      && findingHasAuthoritativeHardSupport(finding, index, citationValidations),
+  ) ?? null;
+}
+
+export function hasPlayerAuthorshipFinding(findings) {
+  const list = Array.isArray(findings) ? findings : [];
+  return list.some((finding) => finding?.dimension === PLAYER_AUTHORSHIP_DIMENSION);
+}
+
+export function buildPlayerAuthorshipRepairObligation({
+  evalOutcome,
+  evaluationPassId,
+  attemptIndex,
+  candidatePresentation = null,
+}) {
+  const findings = evalOutcome?.result?.findings ?? [];
+  const citationValidations = evalOutcome?.citationValidations ?? [];
+  const hardFinding = extractPlayerAuthorshipHardFinding(findings, citationValidations)
+    ?? findings.find(
+      (finding) => finding?.dimension === PLAYER_AUTHORSHIP_DIMENSION
+        && finding?.severity === 'hard',
+    )
+    ?? null;
+  if (!hardFinding) return null;
+  const findingIndex = findings.indexOf(hardFinding);
+  const citation = citationValidations.find((entry) => entry.finding_index === findingIndex);
+  return {
+    kind: 'nar_player_authorship_hard_repair',
+    dimension: PLAYER_AUTHORSHIP_DIMENSION,
+    status: 'pending',
+    source_evaluation_pass_id: evaluationPassId,
+    source_attempt_index: attemptIndex,
+    offending_assertion: hardFinding.finding
+      ?? hardFinding.candidate_evidence
+      ?? null,
+    rationale: hardFinding.rationale ?? null,
+    authoritative_citation: hardFinding.authoritative_citation ?? null,
+    candidate_presentation_excerpt: candidatePresentation ?? null,
+    citation_status: citation?.status ?? null,
+  };
+}
+
+export function assessPlayerAuthorshipRepairVerification(obligation, evalOutcome) {
+  if (!obligation) {
+    return { status: 'none' };
+  }
+  const { findings, hasHard, hasSoft } = classifySemanticQaResult(
+    evalOutcome?.result,
+    evalOutcome?.citationValidations ?? [],
+  );
+  const citationValidations = evalOutcome?.citationValidations ?? [];
+  const persistingHard = extractPlayerAuthorshipHardFinding(findings, citationValidations);
+  if (persistingHard) {
+    return {
+      status: 'persists',
+      finding: persistingHard,
+      reason: 'hard_nar_player_authorship_remains',
+    };
+  }
+  const softPlayerAuthorship = findings.find(
+    (finding) => finding?.dimension === PLAYER_AUTHORSHIP_DIMENSION
+      && finding.severity === 'soft',
+  );
+  if (softPlayerAuthorship) {
+    return {
+      status: 'unverified',
+      reason: 'soft_nar_player_authorship_insufficient_to_clear_obligation',
+      finding: softPlayerAuthorship,
+    };
+  }
+  if (!hasHard && !hasSoft && !hasPlayerAuthorshipFinding(findings)) {
+    return { status: 'cleared', reason: 'no_nar_player_authorship_findings' };
+  }
+  return {
+    status: 'unverified',
+    reason: 'residual_semantic_concerns_without_player_authorship_repair_proof',
+    hasHard,
+    hasSoft,
+  };
+}
+
 export function buildNarratorEvaluatorPrompt({
   schema = SEMANTIC_QA_RESULT_SCHEMA,
   evaluationTargetRole = 'narrator',
   evaluationPassId,
+  playerAuthorshipRepairObligation = null,
 }) {
-  return [
+  const lines = [
     'You are a bounded semantic QA evaluator for a Narrator presentation candidate.',
     `Return ONLY one JSON object (no markdown) with schema ${schema}.`,
     `Set evaluation_target_role to "${evaluationTargetRole}" and evaluation_pass_id to "${evaluationPassId}".`,
@@ -68,10 +154,26 @@ export function buildNarratorEvaluatorPrompt({
     '- Do not emit replacement Narrator prose.',
     `If no issues, return {"schema":"${schema}","evaluation_target_role":"${evaluationTargetRole}",`,
     `"evaluation_pass_id":"${evaluationPassId}","overall_result":"pass","findings":[]}.`,
-  ].join(' ');
+  ];
+  if (playerAuthorshipRepairObligation) {
+    lines.push(
+      'REPAIR VERIFICATION: a prior attempt produced a hard nar_player_authorship violation.',
+      `Prior evaluation_pass_id: ${playerAuthorshipRepairObligation.source_evaluation_pass_id}.`,
+      `Offending assertion: ${playerAuthorshipRepairObligation.offending_assertion ?? 'see manifest'}.`,
+      `Authority failure: ${playerAuthorshipRepairObligation.rationale ?? 'unsupported Player authorship'}.`,
+      'Verify the candidate removed or permissibly rephrased that unsupported Player attribution.',
+      'If the violation persists, emit hard nar_player_authorship with authoritative citation.',
+      'Soft-only or pass without nar_player_authorship clearance is insufficient when the violation remains.',
+      'Do not invent compensatory Player facts.',
+    );
+  }
+  return lines.join(' ');
 }
 
-export function buildCorrectionContextFromNarratorQa(qaResult, { evaluationPassId }) {
+export function buildCorrectionContextFromNarratorQa(
+  qaResult,
+  { evaluationPassId, playerAuthorshipRepairObligation = null },
+) {
   const findings = (qaResult?.findings ?? []).map((finding) => ({
     dimension: finding.dimension,
     severity: finding.severity,
@@ -81,6 +183,11 @@ export function buildCorrectionContextFromNarratorQa(qaResult, { evaluationPassI
       ? [finding.authoritative_citation.ref_id]
       : [],
   }));
+  const repairInstruction = playerAuthorshipRepairObligation
+    ? ' Remove unsupported Player sensation, embodiment, or material behavioral amplification. '
+      + 'Rephrase into environmental or otherwise non-Player-attributed narration. '
+      + 'Do not invent compensatory Player facts.'
+    : '';
   return {
     source: 'semantic_qa',
     evaluation_pass_id: evaluationPassId,
@@ -88,13 +195,33 @@ export function buildCorrectionContextFromNarratorQa(qaResult, { evaluationPassI
     overall_result: qaResult?.overall_result ?? null,
     findings,
     evaluator_summary: qaResult?.evaluator_summary ?? null,
+    player_authorship_repair_obligation: playerAuthorshipRepairObligation ?? null,
     instruction:
       'Revise your Narrator presentation for fidelity against the semantic QA findings. '
-      + 'Do not invent replacement authoritative prose bindings. Output replacement narration only.',
+      + 'Do not invent replacement authoritative prose bindings. Output replacement narration only.'
+      + repairInstruction,
   };
 }
 
-export function applyNarratorSemanticPolicy(evalOutcome, { attemptIndex, maxAttempts = 2 }) {
+function playerAuthorshipRepairBlockedPolicy(evalOutcome, {
+  findings,
+  repairVerification,
+  repairFailureReason,
+}) {
+  return {
+    action: 'player_authorship_fail_closed',
+    result: evalOutcome.result,
+    findings,
+    repairVerification,
+    repairFailureReason,
+  };
+}
+
+export function applyNarratorSemanticPolicy(evalOutcome, {
+  attemptIndex,
+  maxAttempts = 2,
+  pendingPlayerAuthorshipRepair = null,
+}) {
   if (!evalOutcome || evalOutcome.infrastructureFailure || !evalOutcome.result) {
     return {
       action: 'infra_fail',
@@ -106,6 +233,33 @@ export function applyNarratorSemanticPolicy(evalOutcome, { attemptIndex, maxAtte
     evalOutcome.result,
     evalOutcome.citationValidations,
   );
+
+  let repairVerification = null;
+  if (pendingPlayerAuthorshipRepair) {
+    repairVerification = assessPlayerAuthorshipRepairVerification(
+      pendingPlayerAuthorshipRepair,
+      evalOutcome,
+    );
+    if (repairVerification.status === 'persists' || repairVerification.status === 'unverified') {
+      if (attemptIndex < maxAttempts - 1) {
+        return {
+          action: 'hard_regen',
+          result: evalOutcome.result,
+          findings,
+          repairVerification,
+          playerAuthorshipRepairObligation: pendingPlayerAuthorshipRepair,
+        };
+      }
+      return playerAuthorshipRepairBlockedPolicy(evalOutcome, {
+        findings,
+        repairVerification,
+        repairFailureReason: repairVerification.reason
+          ?? (repairVerification.status === 'persists'
+            ? 'player_authorship_violation_persists'
+            : 'player_authorship_repair_unverified'),
+      });
+    }
+  }
 
   if (!hasHard && !hasSoft) {
     const advisoryFindings = findings.filter((finding) => finding.severity === 'soft');
@@ -124,6 +278,8 @@ export function applyNarratorSemanticPolicy(evalOutcome, { attemptIndex, maxAtte
       action: 'pass',
       result: evalOutcome.result,
       residualSoftConcerns: residual.length ? residual : [],
+      repairVerification,
+      playerAuthorshipRepairCleared: Boolean(pendingPlayerAuthorshipRepair),
     };
   }
 
@@ -161,6 +317,17 @@ export function applyNarratorSemanticPolicy(evalOutcome, { attemptIndex, maxAtte
     };
   }
 
+  if (pendingPlayerAuthorshipRepair) {
+    return playerAuthorshipRepairBlockedPolicy(evalOutcome, {
+      findings,
+      repairVerification: repairVerification ?? assessPlayerAuthorshipRepairVerification(
+        pendingPlayerAuthorshipRepair,
+        evalOutcome,
+      ),
+      repairFailureReason: 'player_authorship_repair_unverified',
+    });
+  }
+
   return {
     action: 'accept_with_residuals',
     result: evalOutcome.result,
@@ -185,6 +352,7 @@ export async function runNarratorSemanticEvaluation({
   mockSemanticResponse,
   parentNarratorEvidenceId,
   infrastructureAttempt = 0,
+  playerAuthorshipRepairObligation = null,
 }) {
   return runSemanticQaEvaluation({
     runEphemeralInference,
@@ -199,7 +367,10 @@ export async function runNarratorSemanticEvaluation({
       candidate_presentation: candidatePresentation,
       raw_model_output: rawModelOutput,
     }),
-    buildEvaluatorPrompt: buildNarratorEvaluatorPrompt,
+    buildEvaluatorPrompt: (args) => buildNarratorEvaluatorPrompt({
+      ...args,
+      playerAuthorshipRepairObligation,
+    }),
     evidenceContextBase: {
       hgSessionId,
       hgSceneId,

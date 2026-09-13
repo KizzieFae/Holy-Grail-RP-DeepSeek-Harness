@@ -49,12 +49,25 @@ An authoritative Player fact may still be unavailable to a Character under R14.
 - **Character:** hard R02b violations remain fail-closed (existing behavior).
 - **Narrator:** hard `nar_player_authorship` exhaustion yields `player_authorship_rejected` — no committed fallback.
 
+## Narrator repair obligation (#157)
+
+When attempt 0 produces a hard authoritative `nar_player_authorship` finding, runtime records a **repair obligation** (not a permanent round poison). Regeneration may succeed only when a later evaluation **clears** that obligation:
+
+| Outcome | Meaning | Renderable |
+|---------|---------|------------|
+| **Cleared** | Later pass with no `nar_player_authorship` findings | Yes (subject to other gates) |
+| **Persists** | Later hard `nar_player_authorship` | No — fail-closed |
+| **Unverified** | Soft-only PA finding, unrelated soft residuals, or otherwise insufficient repair proof | No — fail-closed |
+
+Orchestration enforces obligation existence, verification, and terminal consequences. Semantic equivalence remains the evaluator's responsibility (no keyword matching).
+
 ## Forensic chain
 
 ```
 Player-authoritative source → player_fact:* / guardrail ref
   → evaluator authority context → semantic determination
-  → pass/reject → retry/repair/fail-closed → accepted output
+  → pass/reject → repair obligation (if hard PA) → correction context
+  → regenerated candidate → repair verification → accept / regenerate / fail-closed
 ```
 
 Do not fabricate `player_fact:*` refs for unsupported assertions. Record guardrail citation and inventory absence.
