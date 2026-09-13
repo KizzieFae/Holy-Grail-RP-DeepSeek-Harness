@@ -269,18 +269,7 @@ async function runF06CorrectionPath({ api, runEphemeralInference }) {
     },
     async prepareCharacterContext(body) {
       prepareCalls.push(body);
-      return {
-        manifest_id: `manifest-char-${prepareCalls.length}`,
-        inference_id: body.inference_id,
-        hg_scene_id: body.hg_scene_id,
-        hg_round_id: body.hg_round_id,
-        character_id: body.character_id,
-        turn_index: body.turn_index,
-        attempt_index: body.attempt_index,
-        contributions: body.correction_context
-          ? [{ source_kind: 'semantic_correction', content: JSON.stringify(body.correction_context) }]
-          : [],
-      };
+      return api.prepareCharacterContext(body);
     },
     async validateMove(body) {
       return {
@@ -397,6 +386,7 @@ async function main() {
 
   const authorityProjection = verifyAuthorityProjection();
 
+  const allStable = caseResults.every((c) => c.stable);
   const report = {
     schema: 'issue193_r16_live_validation_v1',
     generated_at: new Date().toISOString(),
@@ -407,10 +397,15 @@ async function main() {
     summary: {
       cases_total: caseResults.length,
       cases_stable: caseResults.filter((c) => c.stable).length,
+      all_cases_stable: allStable,
       discrimination_pair_stable: caseResults
         .filter((c) => c.case_id === 'A' || c.case_id === 'B')
         .every((c) => c.stable),
       f06_correction_success: f06Correction.committed
+        && f06Correction.correction_context_present
+        && !f06Correction.corrected_has_assumed_entry,
+      validation_pass: allStable
+        && f06Correction.committed
         && f06Correction.correction_context_present
         && !f06Correction.corrected_has_assumed_entry,
     },
@@ -430,11 +425,7 @@ async function main() {
   const jsonPath = path.join(outDir, `issue-193-live-validation-${stamp}.json`);
   fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ ok: true, report_path: jsonPath, summary: report.summary }, null, 2));
-  if (!report.summary.discrimination_pair_stable || !report.summary.f06_correction_success) {
-    process.exitCode = 1;
-  }
-  const unstable = caseResults.filter((c) => !c.stable);
-  if (unstable.length > 0) {
+  if (!report.summary.validation_pass) {
     process.exitCode = 1;
   }
 }
