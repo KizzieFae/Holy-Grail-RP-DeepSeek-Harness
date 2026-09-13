@@ -14,7 +14,7 @@ import {
 import { runSemanticQaEvaluation } from '../src/lib/semantic-qa-substrate.mjs';
 
 const SAMPLE_REFS = [{
-  ref_id: 'guardrail:player_agency',
+  ref_id: 'guardrail:player_authorship',
   kind: 'guardrail',
   authority_class: 'authoritative',
   label: 'Player agency',

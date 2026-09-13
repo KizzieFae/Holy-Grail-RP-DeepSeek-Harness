@@ -9,21 +9,10 @@ from .continuity_context_projector import project_authoritative_context
 from .character_conversation_projection import project_character_conversation_for_manifest
 from .context_substrate import auth_projections_to_contributions
 from .contract import PromptContribution, SemanticEvaluationContextPrepareRequest
-
-PLAYER_AGENCY_GUARDRAIL_ID = "guardrail:player_agency"
-
-
-def _player_agency_guardrail() -> dict[str, Any]:
-    return {
-        "ref_id": PLAYER_AGENCY_GUARDRAIL_ID,
-        "kind": "guardrail",
-        "label": "Player agency",
-        "text": (
-            "Do not invent player dialogue, voluntary action, thoughts, emotions, "
-            "intentions, decisions, or equivalent player-controlled behavior."
-        ),
-    }
-
+from .player_authorship_authority import (
+    PLAYER_AUTHORSHIP_GUARDRAIL_ID,
+    merge_player_authorship_authority_references,
+)
 
 def build_authority_references(
     fixture: Any,
@@ -32,7 +21,7 @@ def build_authority_references(
     hg_round_id: str,
 ) -> list[dict[str, Any]]:
     """Stable authority references the semantic evaluator may cite for hard findings."""
-    refs: list[dict[str, Any]] = [_player_agency_guardrail()]
+    refs: list[dict[str, Any]] = []
     mgr = fixture.manager
     state = getattr(fixture, "character_states", {}).get(character_id)
     if state is not None:
@@ -122,7 +111,7 @@ def build_authority_references(
         }
     )
     _ = hg_round_id
-    return refs
+    return merge_player_authorship_authority_references(refs, fixture)
 
 
 def prepare_semantic_evaluation_context(
@@ -232,11 +221,16 @@ def prepare_semantic_evaluation_context(
             knowledge_ids=(f"semantic_eval:{req.evaluation_pass_id}",),
             priority=30,
             content=(
-                "Evaluate the candidate for R02b player agency, R11 repetition/stagnation, "
-                "R12 character fidelity, R14 knowledge/perception, R15 binding continuity. "
+                "Evaluate the candidate for R02b Player authorship (is an asserted Player fact "
+                "authoritatively established?), R11 repetition/stagnation, R12 character "
+                "fidelity, R14 knowledge/perception entitlement (may this Character know/use an "
+                "otherwise-established fact?), R15 binding continuity. "
+                "Unsupported objective Player assertion/sensation/amplification → R02b hard with "
+                "guardrail:player_authorship; established-but-not-entitled → R14. "
                 "Output only JSON matching schema hg_semantic_evaluation_result_v1. "
                 "Hard findings require a valid authority ref_id from the references block. "
-                "Do not supply replacement RP prose."
+                "Do not fabricate player_fact:* refs for unsupported assertions; cite the "
+                "guardrail and inventory absence. Do not supply replacement RP prose."
             ),
             provenance={"evaluation_pass_id": req.evaluation_pass_id},
         )

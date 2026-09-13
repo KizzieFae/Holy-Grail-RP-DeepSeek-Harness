@@ -17,13 +17,11 @@ from domain_api.contract import (  # noqa: E402
 )
 from domain_api.fixture_store import FixtureStore  # noqa: E402
 from domain_api.kernel import DomainKernel  # noqa: E402
-from domain_api.semantic_evaluation_context import (  # noqa: E402
-    PLAYER_AGENCY_GUARDRAIL_ID,
-    build_authority_references,
-)
+from domain_api.semantic_evaluation_context import build_authority_references  # noqa: E402
+from domain_api.player_authorship_authority import PLAYER_AUTHORSHIP_GUARDRAIL_ID  # noqa: E402
 
 
-def test_authority_references_include_player_agency_guardrail() -> None:
+def test_authority_references_include_player_authorship_guardrail() -> None:
     class _State:
         location = "Dorm"
         present_characters = ["Alice"]
@@ -43,7 +41,7 @@ def test_authority_references_include_player_agency_guardrail() -> None:
 
     refs = build_authority_references(_Fixture(), character_id="Alice", hg_round_id="r1")
     ref_ids = {ref["ref_id"] for ref in refs}
-    assert PLAYER_AGENCY_GUARDRAIL_ID in ref_ids
+    assert PLAYER_AUTHORSHIP_GUARDRAIL_ID in ref_ids
 
 
 @pytest.fixture()
@@ -84,5 +82,5 @@ def test_prepare_semantic_evaluation_context_kernel_shape(kernel: DomainKernel) 
     assert response.manifest_id.startswith("manifest-semantic-eval-")
     assert response.evaluation_pass_id == "eval-pass-1"
     assert len(response.authority_references) >= 1
-    assert any(ref["ref_id"] == PLAYER_AGENCY_GUARDRAIL_ID for ref in response.authority_references)
+    assert any(ref["ref_id"] == PLAYER_AUTHORSHIP_GUARDRAIL_ID for ref in response.authority_references)
     assert response.candidate_package["candidate_move"]["move_schema_version"] == 2

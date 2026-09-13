@@ -175,6 +175,7 @@ export async function runNarratorPhase({
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   let lastFailureReason = 'narrator presentation failed';
   let lastInferenceOutcome = 'inference_error';
+  let lastTerminalDisposition = 'committed_fallback';
   let lastEvidenceId = null;
   let lastInferenceTrace = null;
   let lastInferenceSessionId = null;
@@ -633,6 +634,16 @@ export async function runNarratorPhase({
             },
           }),
         });
+        trace.emit(sceneAgent.session, 'hg/narrator-semantic-qa', scope, {
+          inference_id: inferenceId,
+          evaluation_pass_id: evaluationPassId,
+          attempt_index: attemptIndex,
+          policy_action: 'infra_fail',
+          overall_result: null,
+          findings: [],
+          infrastructure_failure: true,
+          evaluator_error: evalOutcome?.evaluatorError ?? 'semantic evaluator failed',
+        });
         lastFailureReason = evalOutcome?.evaluatorError ?? 'semantic evaluator failed';
         lastInferenceOutcome = 'inference_error';
         break;
@@ -653,7 +664,9 @@ export async function runNarratorPhase({
               ? 'semantic_rejected_hard'
               : policy.action === 'exhausted_fallback'
                 ? 'semantic_hard_exhausted'
-                : 'semantic_evaluator_failed';
+                : policy.action === 'player_authorship_fail_closed'
+                  ? 'semantic_player_authorship_rejected'
+                  : 'semantic_evaluator_failed';
 
       recordAttemptEvidence({
         recorder,
@@ -683,7 +696,9 @@ export async function runNarratorPhase({
             ? 'retry'
             : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
               ? 'terminal_fallback'
-              : 'accept',
+              : policy.action === 'player_authorship_fail_closed'
+                ? 'fail_closed'
+                : 'accept',
           rejectedPresentationText: policy.action === 'pass'
             || policy.action === 'accept_with_residuals'
             ? null
@@ -692,6 +707,8 @@ export async function runNarratorPhase({
             ? 'accepted_with_residual_soft_concerns'
             : policy.action === 'exhausted_fallback' || policy.action === 'infra_fail'
               ? 'committed_fallback'
+              : policy.action === 'player_authorship_fail_closed'
+                ? 'player_authorship_rejected'
               : policy.action === 'pass'
                 ? 'narrator_presented'
                 : null,
@@ -802,6 +819,13 @@ export async function runNarratorPhase({
         lastInferenceOutcome = 'inference_error';
         break;
       }
+
+      if (policy.action === 'player_authorship_fail_closed') {
+        lastFailureReason = 'narrator player-authorship hard rejection exhausted; fail-closed';
+        lastInferenceOutcome = 'inference_error';
+        lastTerminalDisposition = 'player_authorship_rejected';
+        break;
+      }
     } catch (error) {
       const failureMessage = String(error?.message ?? error);
       const permanent = isPermanentProviderFailure(failureMessage, narratorRun?.trace);
@@ -897,6 +921,6 @@ export async function runNarratorPhase({
     narrator_inference_trace: lastInferenceTrace,
     narrator_inference_session_id: lastInferenceSessionId,
     narrator_evidence_id: lastEvidenceId,
-    terminal_disposition: 'committed_fallback',
+    terminal_disposition: lastTerminalDisposition,
   };
 }

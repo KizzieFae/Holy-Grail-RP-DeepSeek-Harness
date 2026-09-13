@@ -9,7 +9,7 @@ import { ExecutionEvidenceStore } from '../src/lib/execution-evidence/store.mjs'
 import { createExecutionEvidenceRecorder } from '../src/lib/execution-evidence/recorder.mjs';
 import { attachCharacterCognitionApiStubs, findCharacterMoveAttempt } from './helpers/character-cognition-mock.mjs';
 
-const PLAYER_AGENCY_GUARDRAIL_ID = 'guardrail:player_agency';
+const player_authorship_GUARDRAIL_ID = 'guardrail:player_authorship';
 
 const VALID_MOVE = {
   move_schema_version: 2,
@@ -36,7 +36,7 @@ function semanticPass() {
   });
 }
 
-function semanticHard(refId = PLAYER_AGENCY_GUARDRAIL_ID) {
+function semanticHard(refId = player_authorship_GUARDRAIL_ID) {
   return JSON.stringify({
     schema: 'hg_semantic_evaluation_result_v1',
     overall_result: 'reject_hard',
@@ -117,7 +117,7 @@ function createMockApi({
         character_id: body.character_id,
         turn_index: body.turn_index,
         evaluation_pass_id: body.evaluation_pass_id,
-        authority_references: [{ ref_id: PLAYER_AGENCY_GUARDRAIL_ID }],
+        authority_references: [{ ref_id: player_authorship_GUARDRAIL_ID }],
         candidate_package: {
           candidate_move: body.candidate_move,
           raw_model_output: body.raw_model_output,

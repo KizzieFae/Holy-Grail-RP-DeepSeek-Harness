@@ -31,7 +31,9 @@ export function buildCorrectionContextFromEvaluation(evaluationResult, {
     prior_candidate_summary: priorCandidateSummary ?? null,
     instruction:
       'Revise your Character move JSON. Address the semantic evaluation findings. '
-      + 'Do not invent player-controlled behavior. Output replacement RP as JSON only.',
+      + 'Remove unsupported Player assertions; do not compensate with new Player details. '
+      + 'Clearly framed subjective inference may remain when otherwise permitted. '
+      + 'Output replacement RP as JSON only.',
   };
 }
 
@@ -174,7 +176,8 @@ export async function runSemanticEvaluation({
     prompt: [
       'You are a bounded semantic evaluator for a Character move candidate.',
       'Return ONLY one JSON object (no markdown) with schema hg_semantic_evaluation_result_v1.',
-      'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension R02b|R11|R12|R14|R15.',
+      'Use overall_result pass|reject_soft|reject_hard and findings[] with dimension '
+      + 'R02b|R11|R12|R14|R15. R02b=Player authorship; R14=entitlement.',
       'If no issues, return {"schema":"hg_semantic_evaluation_result_v1","overall_result":"pass","findings":[]}.',
     ].join(' '),
     manifest,

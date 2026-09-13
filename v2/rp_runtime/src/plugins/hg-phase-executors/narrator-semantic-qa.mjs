@@ -3,10 +3,13 @@ import { runSemanticQaEvaluation } from '../../lib/semantic-qa-substrate.mjs';
 
 export const NARRATOR_QA_CONFIG_ID = 'narrator_semantic_qa_v1';
 
+export const PLAYER_AUTHORSHIP_DIMENSION = 'nar_player_authorship';
+
 export const VALID_DIMENSIONS = new Set([
   'nar_attribution_error',
   'nar_committed_contradiction',
   'nar_action_intention_distortion',
+  PLAYER_AUTHORSHIP_DIMENSION,
   'nar_psychological_invention',
   'nar_framing_distortion',
   'nar_environmental_contradiction',
@@ -15,7 +18,7 @@ export const VALID_DIMENSIONS = new Set([
   'nar_environmental_invention',
 ]);
 
-function findingHasAuthoritativeHardSupport(finding, findingIndex, citationValidations) {
+export function findingHasAuthoritativeHardSupport(finding, findingIndex, citationValidations) {
   if (finding?.severity !== 'hard') return false;
   const validations = citationValidations ?? [];
   if (!validations.length) return true;
@@ -121,9 +124,20 @@ export function applyNarratorSemanticPolicy(evalOutcome, { attemptIndex, maxAtte
   }
 
   if (hasHard) {
+    const playerAuthorshipHard = findings.some(
+      (finding, index) => finding?.dimension === PLAYER_AUTHORSHIP_DIMENSION
+        && findingHasAuthoritativeHardSupport(finding, index, evalOutcome.citationValidations),
+    );
     if (attemptIndex < maxAttempts - 1) {
       return {
         action: 'hard_regen',
+        result: evalOutcome.result,
+        findings,
+      };
+    }
+    if (playerAuthorshipHard) {
+      return {
+        action: 'player_authorship_fail_closed',
         result: evalOutcome.result,
         findings,
       };

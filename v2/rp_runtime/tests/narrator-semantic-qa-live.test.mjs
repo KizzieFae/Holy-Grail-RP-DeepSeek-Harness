@@ -363,8 +363,22 @@ test('live narrator semantic QA: unsupported interior claim can hard-reject', {
   const result = await runNarratorPhase({
     api,
     runEphemeralInference: async (args) => {
+      const kind = args.evidenceContext?.inferenceKind;
       if (args.evidenceContext?.role === 'semantic_evaluator') {
         return ctx.hgPhaseExecutors.runEphemeralInference(args);
+      }
+      if (kind === 'narrator_environment_cognition') {
+        return {
+          evidenceId: 'ev-env-cognition',
+          inferenceSessionId: 'is-env',
+          raw: JSON.stringify({
+            cognition_status: 'complete',
+            n1: { baseline_sufficient: true },
+            environmental_response_obligations: [],
+          }),
+          failed: false,
+          trace: { finish: { kind: 'stop' } },
+        };
       }
       return {
         evidenceId: 'ev-narrator',
@@ -391,6 +405,7 @@ test('live narrator semantic QA: unsupported interior claim can hard-reject', {
     modelProfile: deepseekInferenceProfile(),
     semanticEvaluatorProfile: deepseekInferenceProfile(),
     narratorSemanticQaEnabled: true,
+    prompt: 'Render the committed character move as scene narration only.',
   });
 
   const qaEvents = sceneEvents.filter((event) => event.type === 'hg/narrator-semantic-qa');
@@ -402,6 +417,9 @@ test('live narrator semantic QA: unsupported interior claim can hard-reject', {
       'if accepted, evaluator should not have authoritative hard reject',
     );
   } else {
-    assert.equal(result.terminal_disposition, 'committed_fallback');
+    assert.ok(
+      ['committed_fallback', 'player_authorship_rejected'].includes(result.terminal_disposition),
+      `unexpected terminal disposition: ${result.terminal_disposition}`,
+    );
   }
 });

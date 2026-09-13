@@ -22,7 +22,7 @@ from domain.modules.authority_reference import (  # noqa: E402
 
 def test_valid_authority_reference() -> None:
     ref = {
-        "ref_id": "guardrail:player_agency",
+        "ref_id": "guardrail:player_authorship",
         "kind": "guardrail",
         "authority_class": "authoritative",
         "label": "Player agency",
@@ -34,7 +34,7 @@ def test_valid_authority_reference() -> None:
 def test_unknown_citation_reports_without_severity_mutation() -> None:
     refs = [
         {
-            "ref_id": "guardrail:player_agency",
+            "ref_id": "guardrail:player_authorship",
             "kind": "guardrail",
             "authority_class": "authoritative",
             "label": "Player agency",
