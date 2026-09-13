@@ -39,12 +39,32 @@ function spawnEvidenceWrite(root, hgSessionId, evidenceId) {
       [WORKER_SCRIPT, root, hgSessionId, evidenceId],
       { stdio: 'ignore' },
     );
-    child.on('error', reject);
-    child.on('exit', (code) => {
+    child.once('error', reject);
+    child.once('close', (code) => {
       if (code === 0) resolve();
       else reject(new Error(`worker exit ${code} for ${evidenceId}`));
     });
   });
+}
+
+function removeConcurrentTestRoot(root) {
+  fs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+}
+
+async function runConcurrentEvidenceWrites(root, hgSessionId, count) {
+  const evidenceIds = Array.from({ length: count }, (_, index) => `ev-${index}`);
+  const results = await Promise.allSettled(
+    evidenceIds.map((evidenceId) => spawnEvidenceWrite(root, hgSessionId, evidenceId)),
+  );
+  const failures = results
+    .map((result, index) => ({ result, evidenceId: evidenceIds[index] }))
+    .filter(({ result }) => result.status === 'rejected');
+  if (failures.length > 0) {
+    const detail = failures
+      .map(({ result, evidenceId }) => `${evidenceId}: ${result.reason?.message ?? result.reason}`)
+      .join('; ');
+    throw new Error(`concurrent evidence workers failed (${failures.length}/${count}): ${detail}`);
+  }
 }
 
 function buildMultiNeedCognition(needCount) {
@@ -437,9 +457,7 @@ test('execution evidence index: concurrent process writes preserve all entries',
   const hgSessionId = 'sess-concurrent';
   const count = 16;
   try {
-    await Promise.all(
-      Array.from({ length: count }, (_, index) => spawnEvidenceWrite(root, hgSessionId, `ev-${index}`)),
-    );
+    await runConcurrentEvidenceWrites(root, hgSessionId, count);
     const store = new ExecutionEvidenceStore(root);
     const index = store.readIndex(hgSessionId);
     assert.equal(index.attempt_ids.length, count);
@@ -447,6 +465,6 @@ test('execution evidence index: concurrent process writes preserve all entries',
     const parsed = JSON.parse(fs.readFileSync(path.join(root, hgSessionId, 'index.json'), 'utf8'));
     assert.equal(parsed.schema, index.schema);
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    removeConcurrentTestRoot(root);
   }
 });

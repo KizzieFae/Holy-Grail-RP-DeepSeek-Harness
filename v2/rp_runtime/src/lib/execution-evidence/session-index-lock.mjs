@@ -42,7 +42,7 @@ export function withSessionIndexLockSync(sessionDir, task) {
         }
       }
     } catch (error) {
-      if (error?.code !== 'EEXIST') {
+      if (error?.code !== 'EEXIST' && error?.code !== 'EPERM') {
         throw error;
       }
       sleepSync(LOCK_RETRY_MS);
