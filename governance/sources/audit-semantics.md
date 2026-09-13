@@ -224,7 +224,8 @@ A read-only program audit must deliver a **structured report** to Governance (an
 5. **recommended dispositions** for Governance review;
 6. overall assessment;
 7. recommended coherent remediation packages, if any;
-8. **no-mutation attestation**.
+8. **no-mutation attestation**;
+9. **artifact disposition record** (see **Terminal artifact disposition** below).
 
 **Durability rules:**
 
@@ -234,6 +235,22 @@ A read-only program audit must deliver a **structured report** to Governance (an
 - Findings selected for remediation become durable when the corresponding **remediation Issue** is opened and tracked under normal workflow authority.
 - If Governance deliberately wants an audit report persisted for later reference, that requires **separate explicit authorization**; persistence is not mandatory to perform the audit.
 - Later audits may cite accepted read-only conclusions as **`Audit N report, finding ID`** (for example: “B3 per Audit 2 report”). Historical Audit 1 conclusions remain citeable as **`#1` + finding ID** (parent-Issue model).
+
+### Terminal artifact disposition
+
+Every investigation-created artifact (including gitignored diagnostic, harness, and run output under paths such as `data/investigation_runs/`) must receive an **explicit terminal disposition** before the audit completes. The final report must include a disposition record sufficient to verify the resulting filesystem state.
+
+**Valid dispositions**
+
+| Disposition | When |
+|-------------|------|
+| **delete** | Default once purpose is complete and conclusions are durably captured, unless a concrete continuing need exists |
+| **retain/ignore** | Only with a **concrete continuing reason** (forensic hold, reproducibility obligation, active validation rerun, or reusable tooling under separate authorization) |
+| **commit** | Only when **separately authorized** and consistent with repository authority (for example durable harness code under `tools/investigation/`) |
+
+**Not sufficient alone as retention justification:** gitignored status; path written under `data/investigation_runs/`; citation or linkage in a governing Issue (Issue threads normally hold **conclusions**; raw local evidence requires its own continuing need).
+
+**Terminal verification:** Confirm disposition against relevant ignored investigation paths (directory listing or direct read). A clean `git status` for tracked files does **not** satisfy this check.
 
 ### Completion (read-only pathway)
 

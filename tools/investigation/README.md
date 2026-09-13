@@ -47,4 +47,4 @@ python tools/investigation/trace_ni_forensics.py <hg_session_id> lineage --sourc
 ## Notes
 
 - Scenario validation uses domain manifest tests and integration tests; see [SCENARIO_VALIDATION_FRAMEWORK.md](../../SCENARIO_VALIDATION_FRAMEWORK.md).
-- Write investigation output to `data/investigation_runs/` or another gitignored path under `data/`.
+- Write investigation output to `data/investigation_runs/` or another gitignored path under `data/`. Gitignored status does not imply retention; terminal disposition (delete / retain with reason / commit when authorized) is governed by `governance/sources/audit-semantics.md`.

@@ -32,7 +32,7 @@ Operators should distinguish four classes of local artifacts. This table records
 | Class | Typical location | Git | Durable record |
 |-------|------------------|-----|----------------|
 | **Disposable workflow drafts** | `/tmp/` (Issue body/comment staging), `.github/issue_drafts/`, `.tmp_*` | Ignored | None — delete when done |
-| **Reproducible harness summaries** | `v2/rp_runtime/tmp/` (Storyteller harness default); optional `data/investigation_runs/` via CLI path | Ignored | Governing GitHub Issue validation comment |
+| **Reproducible harness summaries** | `v2/rp_runtime/tmp/` (Storyteller harness default); optional `data/investigation_runs/` via CLI path | Ignored | Governing Issue **conclusions** (validation comment); raw local trees are not durable by default — see terminal disposition in `governance/sources/audit-semantics.md` |
 | **Final validation decisions** | Governing GitHub Issue thread | N/A (Issue) | Issue closure / validation record |
 | **Raw campaign / runtime / forensic evidence** | `data/storyteller_tier1_campaign/`, `data/execution_evidence/`, `data/plot_cognition_forensics/`, `data/sessions/`, `data/rp_audits/` | Ignored (`data/*` with fixture whitelists) | On-disk trees under existing `data/*` policies |
 
