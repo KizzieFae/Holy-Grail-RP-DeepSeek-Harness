@@ -142,7 +142,11 @@ Regeneration / `evaluation_attempt > 1` **must not** reuse. Any relevant-key mis
 
 ## Layer B concurrency
 
-Production Layer B evaluation is **sequential** for #66 (`plot-cognition-character-projection.mjs`). Bounded parallel evaluation remains **#65** ownership; do not enable `max_parallel_epistemic_evals` in production wiring until #65 certifies a baseline.
+Production Layer B per-candidate epistemic evaluation is **sequential** (#66; `plot-cognition-character-projection.mjs`). Issue **#176** retained this topology as architecturally correct for the present system. Issue **#182** (Candidate D) investigated bounded per-candidate parallel Layer B evaluation and concluded **not to implement** on cost/benefit grounds: Domain registration/finalization semantics appear compatible with a barriered parallel pattern, but measured Player-visible benefit does not justify production concurrency.
+
+`StorytellerOrchestrationPolicy.max_parallel_epistemic_evals` exists (default 4) but is **dormant** for Character projection Layer B — it is wired for unrelated paths (e.g. Narrator mediation, #165). Do **not** enable Layer B parallel wiring without a new authorized Issue.
+
+Historical note: **#65** closed at program validation without authorizing Layer B concurrency work; it does not govern current Layer B topology decisions.
 
 ## Layer B failure semantics
 
@@ -150,7 +154,7 @@ Provider failure, timeout, malformed result, or missing evaluator → affected c
 
 ## Budgets and concurrency
 
-Orchestration ceilings live in `StorytellerOrchestrationPolicy` (generated candidates, context items/chars, parallel evals, regeneration attempts). #62 `ProjectionBudget` still governs evaluation/projection candidate counts. Layer B evaluations may run in bounded parallel after Layer A; finalize order is deterministic.
+Orchestration ceilings live in `StorytellerOrchestrationPolicy` (generated candidates, context items/chars, parallel evals, regeneration attempts). #62 `ProjectionBudget` still governs evaluation/projection candidate counts. **Production** Layer B evaluation remains sequential after Layer A prepare; finalize contribution order is deterministic (`deterministic_candidate_order_key`).
 
 ## Forensic propagation (#63 → #64)
 
