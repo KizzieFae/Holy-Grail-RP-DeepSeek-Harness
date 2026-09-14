@@ -17,6 +17,30 @@ test('mediation outcome on cognition result classifies deep', () => {
   assert.equal(profile, DELIBERATION_PROFILE_DEEP);
 });
 
+test('pre-mediation placeholder mediation outcome does not force deep', () => {
+  const profile = classifyCognitionResultDeliberationProfile({
+    information_needs: [{ need_id: 'n1' }],
+    resolutions: [{
+      category: 'B2',
+      need_id: 'n1',
+      property_key: 'house_number',
+      mediation_outcome: 'no_librarian_match',
+    }],
+  });
+  assert.equal(profile, DELIBERATION_PROFILE_CONSTRAINED);
+  assert.equal(
+    shouldEscalateConstrainedCognitionToDeep(DELIBERATION_PROFILE_CONSTRAINED, {
+      information_needs: [{ need_id: 'n1' }],
+      resolutions: [{
+        category: 'B2',
+        need_id: 'n1',
+        mediation_outcome: 'no_librarian_match',
+      }],
+    }),
+    false,
+  );
+});
+
 test('constrained probe that reveals multi-need escalates to deep before KAR', async () => {
   const prepareCalls = [];
   const reasoningEfforts = [];

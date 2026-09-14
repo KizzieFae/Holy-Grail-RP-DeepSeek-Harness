@@ -89,6 +89,20 @@ class Issue194EnvironmentDeliberationProfileTests(unittest.TestCase):
         )
         self.assertEqual(profile, DELIBERATION_PROFILE_CONSTRAINED)
 
+    def test_pre_mediation_placeholder_outcome_does_not_force_deep(self) -> None:
+        profile = classify_cognition_result_deliberation_profile(
+            {
+                "information_needs": [{"need_id": "n1"}],
+                "resolutions": [{
+                    "category": "B2",
+                    "need_id": "n1",
+                    "property_key": "house_number",
+                    "mediation_outcome": "no_librarian_match",
+                }],
+            }
+        )
+        self.assertEqual(profile, DELIBERATION_PROFILE_CONSTRAINED)
+
     def test_should_escalate_constrained_probe_to_deep(self) -> None:
         self.assertTrue(
             should_escalate_constrained_cognition_to_deep(

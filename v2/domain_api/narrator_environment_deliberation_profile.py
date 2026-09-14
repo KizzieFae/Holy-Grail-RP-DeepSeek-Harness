@@ -9,6 +9,16 @@ DELIBERATION_PROFILE_CONSTRAINED = "constrained"
 
 DEEP_CATEGORIES = frozenset({"C", "cannot_safely_resolve"})
 
+# Post-mediation outcomes that indicate reconciliation complexity. Pre-mediation model
+# placeholders (e.g. no_librarian_match) are not authoritative mediation results.
+DEEP_MEDIATION_OUTCOMES = frozenset({
+    "match",
+    "ambiguous",
+    "forbidden",
+    "retrieval_failure",
+    "mediation_failure",
+})
+
 _VALID_PROFILE_OVERRIDES = frozenset(
     {DELIBERATION_PROFILE_DEEP, DELIBERATION_PROFILE_CONSTRAINED}
 )
@@ -96,7 +106,8 @@ def classify_cognition_result_deliberation_profile(
     if categories & DEEP_CATEGORIES:
         return DELIBERATION_PROFILE_DEEP
     if any(
-        isinstance(item, dict) and item.get("mediation_outcome") not in (None, "", "no_match")
+        isinstance(item, dict)
+        and str(item.get("mediation_outcome", "") or "").strip() in DEEP_MEDIATION_OUTCOMES
         for item in resolutions
     ):
         return DELIBERATION_PROFILE_DEEP

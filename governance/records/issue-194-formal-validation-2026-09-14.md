@@ -115,6 +115,58 @@ No #194 max-token cap introduced. Constrained profile uses `reasoningEffort: off
 - Run bounded live semantic-decomposition slice with triage forced to semantic path and F06 attempt-0 replay envelope.
 - Run bounded live env-cognition slice on F06-shaped prepare envelope with compliant single-B2 mock/characterization fixture to confirm constrained-no-escalation happy path under production substrate.
 
+## Test-run classification (addendum)
+
+### 1. Targeted #194 Node tests
+
+```bash
+cd v2/rp_runtime
+node --test tests/issue-194-player-decomposition-retry.test.mjs \
+             tests/issue-194-env-cognition-profile-safety.test.mjs
+```
+
+**Result:** 5/5 passed (exit 0).
+
+### 2. Relevant regression suites (targeted)
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| Python #194 + regressions | `pytest` (see Package A) | 105 passed |
+| Node #194 + #151 substrate | `node --test` (see Package A) | 8 passed |
+
+### 3. Repository-wide / accidental full-suite run
+
+```bash
+cd v2/rp_runtime
+npm test -- issue-194-player-decomposition-retry.test.mjs
+```
+
+**Result:** exit 1 (639/640 passed). This is **not** a targeted #194 failure — npm expands `tests/*.test.mjs` and runs the full suite.
+
+### 4. Incidental #193 live failure — causality check
+
+**Test:** `node --test tests/issue193-r16-live-validation.test.mjs` (spawns `scripts/issue193-r16-live-validation.mjs`)
+
+| Anchor | Result | Evidence |
+|--------|--------|----------|
+| Pre-#194 baseline `9548847` | 9/9 stable (2/2 runs) | `issue-193-causality-baseline-9548847.json`, `-rerun.json` |
+| #194 candidate `5e1b726` | 7/9 then 8/9 stable (0/2 full pass) | `issue-193-causality-candidate-5e1b726.json`, `-rerun.json` |
+
+**Unstable cases (candidate):** run 1 — **C** (`explicit_player_entry`, R14 `perception_fact:player_internal_entitlement` false reject), **G** (`unilateral_npc_social_action`, R02b false reject); run 2 — **A** run 1 (`healthy_multi_beat_invitation`, R02b on “applicant” wording).
+
+**#194 diff overlap:** none — `git diff 9548847..5e1b726` touches PVR normalization/decomposition and environmental-cognition profile/substrate only; semantic evaluation / R16 authority paths unchanged.
+
+**Disposition:** **INCONCLUSIVE / STOCHASTIC** — live evaluator variance on non-R16 dimensions; unstable cases differ between runs; no plausible #194 causal mechanism. Not a #194 validation blocker. #193 not mutated.
+
+## Blocker resolution (2026-09-14)
+
+See **`governance/records/issue-194-blocker-resolution-2026-09-14.md`** and JSON evidence.
+
+| Blocker | Resolution |
+|---------|------------|
+| F06 uniform triage misroute | Inputs equivalent; #121 checker stochastic false-simple (not #194). I1 validated on production semantic path (1 attempt, valid PVR). |
+| F06 env-cog escalation | **OVER-SENSITIVE CLASSIFICATION** on non-canonical `mediation_outcome: no_librarian_match`. Bounded classifier fix; post-fix 4/4 constrained no-escalation, probe ~3.1s vs historical ~55.7s. |
+
 ## Chain of custody
 
 #193 and historical Issues unchanged. Issue remains `implemented`.

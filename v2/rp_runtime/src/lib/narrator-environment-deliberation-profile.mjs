@@ -5,6 +5,15 @@ export const DELIBERATION_PROFILE_CONSTRAINED = 'constrained';
 
 const DEEP_CATEGORIES = new Set(['C', 'cannot_safely_resolve']);
 
+/** Post-mediation outcomes indicating reconciliation complexity (not pre-mediation placeholders). */
+const DEEP_MEDIATION_OUTCOMES = new Set([
+  'match',
+  'ambiguous',
+  'forbidden',
+  'retrieval_failure',
+  'mediation_failure',
+]);
+
 /**
  * @param {object|null|undefined} prepareResponse
  * @returns {string}
@@ -50,9 +59,7 @@ export function classifyCognitionResultDeliberationProfile(cognitionResult) {
   if (resolutions.some((item) => (
     item
     && typeof item === 'object'
-    && item.mediation_outcome != null
-    && item.mediation_outcome !== ''
-    && item.mediation_outcome !== 'no_match'
+    && DEEP_MEDIATION_OUTCOMES.has(String(item.mediation_outcome ?? '').trim())
   ))) {
     return DELIBERATION_PROFILE_DEEP;
   }
