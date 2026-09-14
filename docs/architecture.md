@@ -33,7 +33,7 @@ domain library (v2/domain/modules/)
 data/  (HG_DATA_DIR)
 ```
 
-**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH. **Context construction** is Domain Host **`PromptContributionManifest`** projection. Character paths use `kernel.prepare_context` with `character_context_projector.py` identity/scene/Director-advisory lanes plus perception-filtered **`recent_scene_transcript`** and **`user_turn_trigger`** from `rp_history`. DSH passes the accepted Director decision into Character context preparation as advisory `director_context` only. Director paths use `kernel.prepare_director_context` with bounded **`recent_orchestration`**, **`actor_suitability`**, and **`scene_pressures`** digests; authoritative skip-aware **`user_turn_source`**; optional derived **`user_steering_hints`**; plus existing **`scene_setup`**, **`scene_state`**, **`scene_progression`**, **`recent_environment`**, and related authoritative lanes. After deterministic Director acceptance, bounded semantic QA (#26) reviews decision defensibility via the same scene evidence plus the candidate package; the evaluator is subordinate QA and does not bind `next_actor` or emit authoritative replacement Director JSON. **Participation-direct** selections bypass Director inference and Director semantic QA. Narrator additionally receives bounded **`scene_setup`**, live **`scene_state`**, and authoritative **`scene_progression`**. `recent_delta` is internal continuity state and is not a progression prompt lane. `HgContextBridge` only transports manifests. Domain `prompt_builders.py` retains legacy formatting helpers but is not the live V2 composition path. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
+**Domain truth** lives in continuity and Host repositories. **Speaker selection** is Host participation policy plus DSH Director phase. **Inference** runs through DSH (see [Inference transport](#inference-transport-dsh--domain-host)). **Context construction** is Domain Host **`PromptContributionManifest`** projection. Character paths use `kernel.prepare_context` with `character_context_projector.py` identity/scene/Director-advisory lanes plus perception-filtered **`recent_scene_transcript`** and **`user_turn_trigger`** from `rp_history`. DSH passes the accepted Director decision into Character context preparation as advisory `director_context` only. Director paths use `kernel.prepare_director_context` with bounded **`recent_orchestration`**, **`actor_suitability`**, and **`scene_pressures`** digests; authoritative skip-aware **`user_turn_source`**; optional derived **`user_steering_hints`**; plus existing **`scene_setup`**, **`scene_state`**, **`scene_progression`**, **`recent_environment`**, and related authoritative lanes. After deterministic Director acceptance, bounded semantic QA (#26) reviews decision defensibility via the same scene evidence plus the candidate package; the evaluator is subordinate QA and does not bind `next_actor` or emit authoritative replacement Director JSON. **Participation-direct** selections bypass Director inference and Director semantic QA. Narrator additionally receives bounded **`scene_setup`**, live **`scene_state`**, and authoritative **`scene_progression`**. `recent_delta` is internal continuity state and is not a progression prompt lane. `HgContextBridge` only transports manifests. Domain `prompt_builders.py` retains legacy formatting helpers but is not the live V2 composition path. Packaging does not replace continuity authority. Node calls the Domain Host; Python does not call DSH.
 
 ---
 
@@ -70,6 +70,53 @@ S4 **must not** modify `turn_counter`, authoritative `IssueState`, or `known_by`
 ### Implementation sequencing (recorded on #33)
 
 S0 shared contracts → S1 #31 Retrieval façade → S2a #34 Librarian read → S2b Packaging bundle mapper → S3 #32 Storyteller advisory → **S4a #34 write/proposal seam (validated)** → **S4b `knowledge_revelation_significance` (implemented; single class)** → S5 Continuity heuristic migrations (per class). S3 does not require S4.
+
+---
+
+## Plot Cognition (#58–#64)
+
+**Role:** Bounded **advisory** plot-overlay cognition and Character projection gating. Plot Cognition maintains overlay state, freshness, and Character-facing projection contributions. It does **not** own turn selection, continuity truth, or Narrator prose.
+
+**Authority:** Overlay/init/update/replan mutations are **Domain-owned** (`plot_cognition_*` Host services) via prepare → finalize seams. DSH performs **inference only** on prepared manifests. Character move validation and `commit_move` remain Host continuity authority.
+
+**Turn lifecycle placement (actual runtime):**
+
+1. **Round start (synchronous, pre-Director):** `runPlotCognitionPendingWorkLifecycle` in `hg-round-orchestrator/service.mjs` services Domain-planned pending work (init, semantic update, reconciliation, etc.) from durable Domain state — safe across restart.
+2. **Pre-Character (conditional, synchronous on Character path):** `plot-cognition-character-projection.mjs` may run epistemic evaluation + advisory generation before Character move inference when projection is enabled for the binding.
+3. **Post-commit (parallel, joined before next Director cycle):** after each successful Character commit, `runPostCommitPlotCognitionLifecycle` runs **in parallel** with Librarian S4 post-commit semantic work and Narrator presentation; the orchestrator **joins** Plot Cognition (and the semantic branch) before the next eligibility/Director cycle.
+
+Plot Cognition is **not** a single always-on LLM pass: operations are **conditional** on Domain plans (`planPostCommitPlotCognitionWork`, freshness, pending work). Some rounds skip inference entirely.
+
+**Host / DSH boundary:** Normative prepare → infer → finalize model: [plot-cognition-orchestration-contract.md](./plot-cognition-orchestration-contract.md). Detailed overlay, projection, persistence, and forensics contracts: `docs/plot-cognition-*.md` (see [plot-cognition-forensics-contract.md](./plot-cognition-forensics-contract.md)).
+
+**Forensic surface (high level):** scope-keyed chronicle under `data/plot_cognition_forensics/` (gitignored at runtime; rebuildable/read via `tools/investigation/trace_plot_cognition_forensics.py`). Execution evidence carries Plot Cognition inference kinds where captured. **No substitute** for `trace_turn_forensics.py` commit/round navigator — use specialist CLI for chronicle detail.
+
+**Known limits (unchanged):** pressure freshness and Player→Continuity promotion limitations documented in [audit-workflows.md](./audit-workflows.md) apply independently of Plot Cognition.
+
+---
+
+## Inference transport (DSH ↔ Domain Host)
+
+**Purpose:** Move assembled Domain context to ephemeral DSH inference agents, invoke the configured provider/mock, and record execution evidence — without Domain calling DSH or DSH reinterpreting continuity authority.
+
+| Module | Layer | Role |
+|--------|-------|------|
+| `v2/rp_runtime/src/lib/domain-api-client.mjs` | DSH | Typed HTTP client for Host `/v1/*` (prepare, validate, commit, plot-cognition, librarian, storyteller, etc.). Classifies transport vs persistence failures. |
+| `v2/rp_runtime/src/plugins/hg-phase-executors/inference-substrate.mjs` | DSH | **`runEphemeralInference`**: creates ephemeral Cordis agent, validates manifest allowlist, bridges Host `PromptContributionManifest` via `HgContextBridge`, invokes provider/mock, records `execution-evidence` attempts (request/response/decision/correlation/`inference_health`). |
+| `v2/rp_runtime/src/plugins/hg-context-bridge/service.mjs` | DSH | Transport-only manifest → agent system-prompt slots. Does not assemble domain truth. |
+| `v2/rp_runtime/src/lib/contract-correction-substrate.mjs` | DSH | **`runInferenceWithContractCorrection`**: primary infer → structural parse → **at most one** correction infer on parse failure. Used by Plot Cognition init/update paths, Librarian mediation, and other contract-bound producers — **not** every Director/Character/Narrator pass. |
+| Phase executors (`director-phase.mjs`, `character-phase.mjs`, `narrator-phase.mjs`, player phases, etc.) | DSH | Orchestrate Host prepare/validate/commit around substrate calls for their role-specific flows. |
+| Dedicated substrates (`librarian-mediation-substrate.mjs`, `storyteller-cognition-substrate.mjs`, `plot-cognition-*-substrate.mjs`, …) | DSH | Agent-specific prepare/infer/finalize sequences built on the same substrate primitives. |
+
+**Dispatch ownership:** DSH owns provider dispatch and inference sequencing. Domain Host owns context assembly, validation, and authoritative commits. Python does not call DSH.
+
+**Evidence creation:** `execution-evidence/recorder.mjs` (via inference substrate) writes `data/execution_evidence/<hg_session_id>/attempts/<evidence_id>.json` and updates derived indexes. Non-LLM orchestration intervals may appear as `execution_span` attempts with `decision.orchestration_graph` (#173).
+
+**Correction / retry:** Contract correction is **structural parse recovery** (one correction attempt). Character/Narrator/Director phases have **separate** bounded retry/semantic-QA policies — do not conflate with `runInferenceWithContractCorrection`. Recovery lineage is preserved on execution-evidence attempts (`prior_attempt_id`, `inference_health.recovery`).
+
+**Catalog / manifest system:** `llm-call-catalog.mjs` registers inference kinds and quota metadata; `manifest_projection_policy` / `manifest-validation.mjs` enforce per-kind `source_kind` allowlists before bridge registration. See [Runtime LLM call catalog](#runtime-llm-call-catalog-and-characterization-152).
+
+**#201 measurement pointers:** inference count and correction cost → `data/execution_evidence/` per session (`list_execution_evidence.py`, `reconstruct_round_latency.py`); kind inventory → `docs/llm-call-catalog.json` + `llm-call-catalog-consistency.test.mjs`; transport/orchestration overhead → `execution_span` + orchestration graph spans, not prompt prose.
 
 ---
 
@@ -112,7 +159,7 @@ Fresh scenes use one canonical continuity init/apply ordering (`continuity_setup
 - Do not treat Director prompt edits as the default runtime fix.
 - Keep the Domain Host as the composition boundary; keep the UI a presentation client.
 - **Progression advisory** is advisory only — it must not write continuity truth or mutate `CharacterState`.
-- **Scene Grounding** is read-only prompt projection from continuity — not a second authority ([PRD](../Holy%20Grail%20PRD.md) §5.8, [scene-grounding-layer.md](./scene-grounding-layer.md)).
+- **Scene Grounding** is read-only prompt projection from continuity — not a second authority ([PRD](../governance/sources/holy-grail-prd.md) §5.8, [scene-grounding-layer.md](./scene-grounding-layer.md)).
 
 ---
 
