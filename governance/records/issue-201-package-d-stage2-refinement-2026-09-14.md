@@ -35,6 +35,7 @@
 | `governance/records/issue201-stage2-governance-blind-transport.md` | Governance AI transport guide |
 | `v2/rp_runtime/scripts/issue201-package-d-{d0-baseline,stage1,stage2-tranche1}.mjs` | Investigation harnesses |
 | `tools/investigation/forensic_exp2_arkham_r2.py` | EXP-2 forensic helper |
+| `tools/investigation/regen_stage2_scoring_sheet.py` | Blind scoring sheet regeneration |
 | `v2/rp_runtime/src/plugins/hg-phase-executors/character-phase.mjs` | `skipCharacterKnowledgeCognition` hook |
 | `v2/rp_runtime/src/plugins/hg-round-orchestrator/service.mjs` | Pass-through for EXP-3 |
 
@@ -187,7 +188,9 @@ No material change from tranche-1 observe-only assertions. Player promotion / po
 
 ## 22. Repository evidence commit SHA
 
-*Populated after `git commit` in this session — see session comment.*
+**`f272158`** — `docs(#201): durable Package D investigation evidence and harnesses`
+
+Also includes `tools/investigation/regen_stage2_scoring_sheet.py` (blind scoring sheet regeneration helper).
 
 ---
 
@@ -195,7 +198,7 @@ No material change from tranche-1 observe-only assertions. Player promotion / po
 
 - Staging scripts deleted  
 - Blind packet refreshed after EXP-2 replacement (no empty sample in new packet)  
-- Scoring sheet may be regenerated from refreshed packet if labels shifted
+- Scoring sheet regenerated from refreshed packet (`regen_stage2_scoring_sheet.py`)
 
 ---
 
