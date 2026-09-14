@@ -19,6 +19,7 @@ from character_move_response_contract import (  # noqa: E402
     character_move_response_contract_provenance,
     project_character_move_response_contract_text,
 )
+from .player_action_completion_authority import project_player_action_completion_generation_guidance
 
 
 def prepare_character_context(
@@ -96,6 +97,20 @@ def prepare_character_context(
                 }
             )
     contract_provenance = character_move_response_contract_provenance()
+    contributions.append(
+        PromptContribution(
+            contribution_id=f"{manifest_id}-player-action-completion-steering",
+            source_kind="inference_instruction",
+            authority_class="derived",
+            knowledge_ids=(f"inference:{req.inference_id}:player_action_completion",),
+            priority=27,
+            content=project_player_action_completion_generation_guidance(),
+            provenance={
+                "inference_id": req.inference_id,
+                "contract": "player_action_completion_authority_v1",
+            },
+        ),
+    )
     contributions.append(
         PromptContribution(
             contribution_id=f"{manifest_id}-response-contract",

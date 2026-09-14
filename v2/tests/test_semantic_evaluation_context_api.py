@@ -25,6 +25,9 @@ from domain_api.semantic_evaluation_context import (  # noqa: E402
     build_authority_references,
     project_perception_entitlement_authority_references,
 )
+from domain_api.player_action_completion_authority import (  # noqa: E402
+    PLAYER_ACTION_COMPLETION_GUARDRAIL_ID,
+)
 from domain_api.player_authorship_authority import PLAYER_AUTHORSHIP_GUARDRAIL_ID  # noqa: E402
 
 
@@ -49,6 +52,7 @@ def test_authority_references_include_player_authorship_guardrail() -> None:
     refs = build_authority_references(_Fixture(), character_id="Alice", hg_round_id="r1")
     ref_ids = {ref["ref_id"] for ref in refs}
     assert PLAYER_AUTHORSHIP_GUARDRAIL_ID in ref_ids
+    assert PLAYER_ACTION_COMPLETION_GUARDRAIL_ID in ref_ids
 
 
 @pytest.fixture()
@@ -123,4 +127,12 @@ def test_prepare_semantic_evaluation_context_kernel_shape(kernel: DomainKernel) 
     assert response.evaluation_pass_id == "eval-pass-1"
     assert len(response.authority_references) >= 1
     assert any(ref["ref_id"] == PLAYER_AUTHORSHIP_GUARDRAIL_ID for ref in response.authority_references)
+    assert any(
+        ref["ref_id"] == PLAYER_ACTION_COMPLETION_GUARDRAIL_ID
+        for ref in response.authority_references
+    )
+    eval_instruction = next(
+        c for c in response.contributions if c.contribution_id.endswith("-eval-instruction")
+    )
+    assert "R16" in eval_instruction.content
     assert response.candidate_package["candidate_move"]["move_schema_version"] == 2
