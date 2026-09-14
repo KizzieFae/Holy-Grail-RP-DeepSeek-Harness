@@ -31,7 +31,7 @@
 |-----|---------|
 | `f272158` | Primary evidence durability (harnesses, governance records, EXP-3 hook, forensic tools) |
 | `0d861e3` | Refinement report SHA finalize |
-| *(this commit)* | Stage-2 synthesis, locked blind scores, answer-key verification helper |
+| `1268a7e` | Stage-2 synthesis, locked blind scores, answer-key verification helper |
 
 **Gitignored evidence (cited, retained locally):**
 
