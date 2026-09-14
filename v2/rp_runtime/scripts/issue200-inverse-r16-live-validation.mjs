@@ -126,8 +126,8 @@ const EVAL_PROFILE = deepseekInferenceProfile({
 
 function gitIdentity() {
   try {
-    const baseSha = execSync('git merge-base HEAD main', { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
     const candidateSha = execSync('git rev-parse HEAD', { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+    const baseSha = execSync('git rev-parse HEAD^', { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
     const dirty = execSync('git status --porcelain', { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
     return {
       base_sha: baseSha,

@@ -1,0 +1,288 @@
+{
+  "schema": "issue200_inverse_r16_live_validation_v1",
+  "generated_at": "2026-09-14T05:53:26.518Z",
+  "candidate_provenance": {
+    "base_sha": "bf1ac61f85262afa5ac9f64232627b328aec7477",
+    "candidate_sha": "7e5b56698134591c928ea8de149cbb3493725a45",
+    "parent_sha": "bf1ac61f85262afa5ac9f64232627b328aec7477",
+    "working_tree_clean": true,
+    "dirty_paths": []
+  },
+  "evaluator_profile": {
+    "kind": "dsh",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "reasoningEffort": "low",
+    "maxTokens": 1024
+  },
+  "authority_projection": {
+    "guardrail_declarative": true,
+    "inverse_r16_in_guardrail": true,
+    "eval_instruction_objective_regression": true,
+    "eval_instruction_incomplete_perception": true
+  },
+  "cases": [
+    {
+      "case_id": "A",
+      "label": "objective_regression",
+      "expected": "r16_hard",
+      "player_post": "Kizzie smiled, wiping her feet on the mat before stepping toward the doorway.",
+      "epistemic_note": null,
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "speech",
+            "dialogue": "You have not wiped your feet."
+          }
+        ],
+        "motivation": {
+          "goal": "enforce household entry protocol",
+          "tactic": "doorway authority",
+          "emotional_driver": "controlled",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "run": {
+        "ok": true,
+        "infrastructure_failure": false,
+        "evidence_id": "2c2080ac-3fef-458e-9798-ba8ad41a8c2e",
+        "inference_session_id": "hg-inf-inf-issue200-A-semantic-issue200-A-run0",
+        "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"ref_id\":\"guardrail:player_action_completion\",\"summary\":\"The move objectively asserts that an authoritative, Player-authored completed action ('wiping her feet on the mat') did not occur, i.e., regression of established Player action completion without reversal authority.\",\"details\":\"The authoritative player post (player_fact:user_post:hg-hist-54ccb1c1-0fe2-4da8-b5cb-8d55df075844) establishes that Kizzie 'smiled, wiping her feet on the mat before stepping toward the doorway.' The candidate's speech beat states flatly, 'You have not wiped your feet,' denying that completed Player action/positional state. The move does not frame this as Character ignorance, mistaken belief, deliberate deception/manipulation, or a distinct subsequent requirement; it is an objective assertion of non-completion. Commands/demands from incomplete perception would be permissible, but a bare declarative negation of established world truth is not. This is the R16 inverse (objective regression), distinct from R02b authorship and R14 entitlement.\",\"candidate_evidence\":{\"beat_index\":0,\"beat_type\":\"speech\",\"dialogue\":\"You have not wiped your feet.\"}}]}",
+        "result": {
+          "schema": "hg_semantic_evaluation_result_v1",
+          "evaluation_pass_id": "issue200-A-run0",
+          "evaluator_config_id": "semantic_evaluator_v1",
+          "overall_result": "reject_hard",
+          "findings": [
+            {
+              "dimension": "R16",
+              "severity": "hard",
+              "finding": "The move objectively asserts that an authoritative, Player-authored completed action ('wiping her feet on the mat') did not occur, i.e., regression of established Player action completion without reversal authority.",
+              "rationale": "The authoritative player post (player_fact:user_post:hg-hist-54ccb1c1-0fe2-4da8-b5cb-8d55df075844) establishes that Kizzie 'smiled, wiping her feet on the mat before stepping toward the doorway.' The candidate's speech beat states flatly, 'You have not wiped your feet,' denying that completed Player action/positional state. The move does not frame this as Character ignorance, mistaken belief, deliberate deception/manipulation, or a distinct subsequent requirement; it is an objective assertion of non-completion. Commands/demands from incomplete perception would be permissible, but a bare declarative negation of established world truth is not. This is the R16 inverse (objective regression), distinct from R02b authorship and R14 entitlement.",
+              "candidate_evidence": {
+                "beat_index": 0,
+                "beat_type": "speech",
+                "dialogue": "You have not wiped your feet."
+              },
+              "authoritative_citation": {
+                "ref_id": "guardrail:player_action_completion"
+              }
+            }
+          ],
+          "correction_request": {
+            "summary": "The move objectively asserts that an authoritative, Player-authored completed action ('wiping her feet on the mat') did not occur, i.e., regression of established Player action completion without reversal authority.",
+            "dimensions": [
+              "R16"
+            ],
+            "must_not": "Do not supply replacement RP prose; revise JSON only."
+          },
+          "residual_soft_concerns": []
+        },
+        "classification": {
+          "pass": false,
+          "r16Hard": true,
+          "overall": "reject_hard",
+          "findings": [
+            {
+              "dimension": "R16",
+              "severity": "hard",
+              "finding": "The move objectively asserts that an authoritative, Player-authored completed action ('wiping her feet on the mat') did not occur, i.e., regression of established Player action completion without reversal authority.",
+              "rationale": "The authoritative player post (player_fact:user_post:hg-hist-54ccb1c1-0fe2-4da8-b5cb-8d55df075844) establishes that Kizzie 'smiled, wiping her feet on the mat before stepping toward the doorway.' The candidate's speech beat states flatly, 'You have not wiped your feet,' denying that completed Player action/positional state. The move does not frame this as Character ignorance, mistaken belief, deliberate deception/manipulation, or a distinct subsequent requirement; it is an objective assertion of non-completion. Commands/demands from incomplete perception would be permissible, but a bare declarative negation of established world truth is not. This is the R16 inverse (objective regression), distinct from R02b authorship and R14 entitlement.",
+              "candidate_evidence": {
+                "beat_index": 0,
+                "beat_type": "speech",
+                "dialogue": "You have not wiped your feet."
+              },
+              "authoritative_citation": {
+                "ref_id": "guardrail:player_action_completion"
+              }
+            }
+          ]
+        },
+        "usage": {
+          "inputTokens": 2221,
+          "outputTokens": 1142,
+          "cacheReadTokens": 384,
+          "reasoningTokens": 852
+        },
+        "matches_expectation": true
+      }
+    },
+    {
+      "case_id": "B",
+      "label": "ignorance_command",
+      "expected": "pass",
+      "player_post": "Kizzie smiled, wiping her feet on the mat before stepping toward the doorway.",
+      "epistemic_note": "Player wipe is authoritative in player_fact; Character issues command from incomplete perception without objectively denying established completion.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "speech",
+            "dialogue": "Wipe your feet."
+          }
+        ],
+        "motivation": {
+          "goal": "enforce protocol from incomplete perception",
+          "tactic": "command before verifying compliance",
+          "emotional_driver": "controlled",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "run": {
+        "ok": true,
+        "infrastructure_failure": false,
+        "evidence_id": "85f79d0c-c6bd-4bc4-b63b-7cba8c651a6a",
+        "inference_session_id": "hg-inf-inf-issue200-B-semantic-issue200-B-run0",
+        "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+        "result": {
+          "schema": "hg_semantic_evaluation_result_v1",
+          "evaluation_pass_id": "issue200-B-run0",
+          "evaluator_config_id": "semantic_evaluator_v1",
+          "overall_result": "pass",
+          "findings": [],
+          "correction_request": null,
+          "residual_soft_concerns": []
+        },
+        "classification": {
+          "pass": true,
+          "r16Hard": false,
+          "overall": "pass",
+          "findings": []
+        },
+        "usage": {
+          "inputTokens": 1691,
+          "outputTokens": 315,
+          "cacheReadTokens": 896,
+          "reasoningTokens": 290
+        },
+        "matches_expectation": true
+      }
+    },
+    {
+      "case_id": "C",
+      "label": "deliberate_deception",
+      "expected": "pass",
+      "player_post": "Kizzie smiled, wiping her feet on the mat before stepping toward the doorway.",
+      "epistemic_note": "Candidate action/motivation establish deliberate manipulation rather than system factual regression.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "meets Kizzie's eyes with deliberate coldness, choosing to feign ignorance she does not possess"
+          },
+          {
+            "type": "speech",
+            "dialogue": "You have not wiped your feet. Do not pretend otherwise."
+          }
+        ],
+        "motivation": {
+          "goal": "assert dominance through deliberate false accusation",
+          "tactic": "manipulation",
+          "emotional_driver": "control",
+          "risk_level": "high"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "run": {
+        "ok": true,
+        "infrastructure_failure": false,
+        "evidence_id": "b3d63289-7ced-4d7e-b933-0d0ff014a617",
+        "inference_session_id": "hg-inf-inf-issue200-C-semantic-issue200-C-run0",
+        "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+        "result": {
+          "schema": "hg_semantic_evaluation_result_v1",
+          "evaluation_pass_id": "issue200-C-run0",
+          "evaluator_config_id": "semantic_evaluator_v1",
+          "overall_result": "pass",
+          "findings": [],
+          "correction_request": null,
+          "residual_soft_concerns": []
+        },
+        "classification": {
+          "pass": true,
+          "r16Hard": false,
+          "overall": "pass",
+          "findings": []
+        },
+        "usage": {
+          "inputTokens": 1791,
+          "outputTokens": 1551,
+          "cacheReadTokens": 896,
+          "reasoningTokens": 1526
+        },
+        "matches_expectation": true
+      }
+    },
+    {
+      "case_id": "D",
+      "label": "distinct_subsequent_requirement",
+      "expected": "pass",
+      "player_post": "Kizzie smiled, wiping her feet on the mat before stepping toward the doorway.",
+      "epistemic_note": null,
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "speech",
+            "dialogue": "Take your shoes off."
+          }
+        ],
+        "motivation": {
+          "goal": "advance to the next protocol step",
+          "tactic": "distinct subsequent requirement",
+          "emotional_driver": "controlled",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "run": {
+        "ok": true,
+        "infrastructure_failure": false,
+        "evidence_id": "6dac8d0e-0f77-46c0-b279-412c790be7ec",
+        "inference_session_id": "hg-inf-inf-issue200-D-semantic-issue200-D-run0",
+        "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+        "result": {
+          "schema": "hg_semantic_evaluation_result_v1",
+          "evaluation_pass_id": "issue200-D-run0",
+          "evaluator_config_id": "semantic_evaluator_v1",
+          "overall_result": "pass",
+          "findings": [],
+          "correction_request": null,
+          "residual_soft_concerns": []
+        },
+        "classification": {
+          "pass": true,
+          "r16Hard": false,
+          "overall": "pass",
+          "findings": []
+        },
+        "usage": {
+          "inputTokens": 1711,
+          "outputTokens": 89,
+          "cacheReadTokens": 896,
+          "reasoningTokens": 64
+        },
+        "matches_expectation": true
+      }
+    }
+  ],
+  "summary": {
+    "cases_total": 4,
+    "cases_matched": 4,
+    "all_cases_matched": true,
+    "validation_pass": true
+  }
+}
