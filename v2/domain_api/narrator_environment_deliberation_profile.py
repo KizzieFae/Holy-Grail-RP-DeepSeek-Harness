@@ -9,6 +9,35 @@ DELIBERATION_PROFILE_CONSTRAINED = "constrained"
 
 DEEP_CATEGORIES = frozenset({"C", "cannot_safely_resolve"})
 
+_VALID_PROFILE_OVERRIDES = frozenset(
+    {DELIBERATION_PROFILE_DEEP, DELIBERATION_PROFILE_CONSTRAINED}
+)
+
+
+def resolve_environment_cognition_deliberation_profile(
+    context: dict[str, Any],
+    *,
+    profile_override: str | None = None,
+) -> dict[str, Any]:
+    """Prepare-time profile with optional bounded deep-escalation override."""
+    override = str(profile_override or "").strip()
+    if override in _VALID_PROFILE_OVERRIDES:
+        return {"profile": override, "signals": ["profile_override"]}
+    return classify_environment_cognition_deliberation_profile(context)
+
+
+def should_escalate_constrained_cognition_to_deep(
+    initial_profile: str,
+    cognition_result: dict[str, Any] | None,
+) -> bool:
+    """True when constrained cognition output structurally requires deep deliberation."""
+    if initial_profile != DELIBERATION_PROFILE_CONSTRAINED:
+        return False
+    return (
+        classify_cognition_result_deliberation_profile(cognition_result)
+        == DELIBERATION_PROFILE_DEEP
+    )
+
 
 def classify_environment_cognition_deliberation_profile(
     context: dict[str, Any],

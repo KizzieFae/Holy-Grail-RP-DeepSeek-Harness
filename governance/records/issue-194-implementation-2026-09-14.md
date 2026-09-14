@@ -18,7 +18,7 @@
 - `v2/domain_api/narrator_environment_deliberation_profile.py`: structural envelope selector + post-cognition guard helpers
 - `v2/domain_api/narrator_environment_context.py`: constrained rubric + `deliberation_profile` in prepare response
 - `v2/rp_runtime/src/lib/narrator-environment-deliberation-profile.mjs`: profile transport; constrained → `reasoningEffort: off` (no token cap)
-- `v2/rp_runtime/src/lib/narrator-environment-cognition-substrate.mjs`: applies profile at inference
+- `v2/rp_runtime/src/lib/narrator-environment-cognition-substrate.mjs`: applies profile at inference; bounded deep escalation when constrained probe reveals structural complexity (re-prepare with deep rubric before KAR/mediation)
 
 ## Tests
 
@@ -29,6 +29,7 @@
 | `test_issue_124_semantic_normalization.py` | pass (regression) |
 | `test_issue_121_uniform_projection.py` | pass (regression) |
 | `issue-194-player-decomposition-retry.test.mjs` | 3/3 pass |
+| `issue-194-env-cognition-profile-safety.test.mjs` | 2/2 pass |
 
 ## Validation hypotheses (not SLA)
 

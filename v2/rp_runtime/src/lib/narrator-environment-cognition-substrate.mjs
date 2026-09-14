@@ -11,8 +11,10 @@ import {
   runEnvironmentCognitionStage,
 } from './narrator-forensic-attribution.mjs';
 import {
+  DELIBERATION_PROFILE_DEEP,
   modelProfileForDeliberationProfile,
   resolveEnvironmentCognitionDeliberationProfile,
+  shouldEscalateConstrainedCognitionToDeep,
 } from './narrator-environment-deliberation-profile.mjs';
 
 const COGNITION_SCHEMA = {
@@ -197,46 +199,59 @@ export async function runNarratorEnvironmentCognition({
     characterId,
   };
 
-  const prepare = await runEnvironmentCognitionStage(
+  const prepareRequestBase = {
+    hg_scene_id: hgSceneId,
+    hg_round_id: hgRoundId,
+    inference_id: inferenceId,
+    character_id: characterId,
+    domain_commit_id: domainCommitId,
+    continuity_turn_index: continuityTurnIndex,
+  };
+
+  let prepare = await runEnvironmentCognitionStage(
     ENV_COGNITION_STAGES.PREPARE,
     FORENSIC_BOUNDARIES.DOMAIN_API,
-    () => api.prepareNarratorEnvironmentCognitionContext({
-      hg_scene_id: hgSceneId,
-      hg_round_id: hgRoundId,
-      inference_id: inferenceId,
-      character_id: characterId,
-      domain_commit_id: domainCommitId,
-      continuity_turn_index: continuityTurnIndex,
-    }),
+    () => api.prepareNarratorEnvironmentCognitionContext(prepareRequestBase),
   );
 
   const cognitionInferenceId = `${inferenceId}-narrator-env-cog`;
-  const manifest = manifestFromPrepareResponse(prepare);
-  const deliberationProfile = resolveEnvironmentCognitionDeliberationProfile(prepare);
-  const cognitionModelProfile = modelProfileForDeliberationProfile(
-    modelProfile,
-    deliberationProfile,
-  );
+  let manifest = manifestFromPrepareResponse(prepare);
+  let deliberationProfile = resolveEnvironmentCognitionDeliberationProfile(prepare);
+  const initialDeliberationProfile = deliberationProfile;
+  let deliberationProfileEscalated = false;
 
   let cognitionRaw = mockCognitionResponse;
   let inferenceEnvelope = null;
   if (!cognitionRaw) {
-    const run = await runEnvironmentCognitionStage(
+    const runCognitionInference = async ({
+      activeManifest,
+      activeModelProfile,
+      attemptSuffix = '',
+    }) => runEnvironmentCognitionStage(
       ENV_COGNITION_STAGES.INFERENCE,
       FORENSIC_BOUNDARIES.INFERENCE_PROVIDER,
       () => runEphemeralInference({
-        inferenceId: cognitionInferenceId,
+        inferenceId: `${cognitionInferenceId}${attemptSuffix}`,
         prompt: buildCognitionPrompt(),
-        manifest,
+        manifest: activeManifest,
         mockResponses: [],
-        modelProfile: cognitionModelProfile,
+        modelProfile: activeModelProfile,
         evidenceContext: {
           ...evidenceContextBase,
-          inferenceId: cognitionInferenceId,
+          inferenceId: `${cognitionInferenceId}${attemptSuffix}`,
           inferenceKind: 'narrator_environment_cognition',
         },
       }),
     );
+
+    let cognitionModelProfile = modelProfileForDeliberationProfile(
+      modelProfile,
+      deliberationProfile,
+    );
+    let run = await runCognitionInference({
+      activeManifest: manifest,
+      activeModelProfile: cognitionModelProfile,
+    });
     cognitionRaw = run.raw ?? '';
     inferenceEnvelope = buildInferenceEnvelope({
       cognitionInferenceId,
@@ -244,6 +259,38 @@ export async function runNarratorEnvironmentCognition({
       trace: run.trace,
       failed: run.failed,
     });
+
+    const parsedProbe = parseCognitionResult(cognitionRaw);
+    const probeResult = parsedProbe.ok ? parsedProbe.result : {};
+    if (shouldEscalateConstrainedCognitionToDeep(initialDeliberationProfile, probeResult)) {
+      deliberationProfileEscalated = true;
+      deliberationProfile = DELIBERATION_PROFILE_DEEP;
+      prepare = await runEnvironmentCognitionStage(
+        ENV_COGNITION_STAGES.PREPARE,
+        FORENSIC_BOUNDARIES.DOMAIN_API,
+        () => api.prepareNarratorEnvironmentCognitionContext({
+          ...prepareRequestBase,
+          deliberation_profile_override: DELIBERATION_PROFILE_DEEP,
+        }),
+      );
+      manifest = manifestFromPrepareResponse(prepare);
+      cognitionModelProfile = modelProfileForDeliberationProfile(
+        modelProfile,
+        deliberationProfile,
+      );
+      run = await runCognitionInference({
+        activeManifest: manifest,
+        activeModelProfile: cognitionModelProfile,
+        attemptSuffix: '-deep-escalation',
+      });
+      cognitionRaw = run.raw ?? '';
+      inferenceEnvelope = buildInferenceEnvelope({
+        cognitionInferenceId: `${cognitionInferenceId}-deep-escalation`,
+        raw: cognitionRaw,
+        trace: run.trace,
+        failed: run.failed,
+      });
+    }
   } else {
     inferenceEnvelope = buildInferenceEnvelope({
       cognitionInferenceId,
@@ -343,6 +390,8 @@ export async function runNarratorEnvironmentCognition({
     cognitionResult,
     librarianOutcomes,
     deliberationProfile,
+    initialDeliberationProfile,
+    deliberationProfileEscalated,
     environmentCognitionEvidence: environmentCognitionEvidenceFromFinalize(finalize, inferenceEnvelope),
   };
 }

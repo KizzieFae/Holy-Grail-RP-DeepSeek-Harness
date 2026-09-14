@@ -20,7 +20,7 @@ from .narrator_environment_cognition import (
 )
 from .narrator_environment_deliberation_profile import (
     DELIBERATION_PROFILE_CONSTRAINED,
-    classify_environment_cognition_deliberation_profile,
+    resolve_environment_cognition_deliberation_profile,
 )
 from .knowledge_access_request_serialization import knowledge_access_request_to_dict
 from .manifest_validation import finalize_prompt_contribution_manifest
@@ -105,7 +105,10 @@ def prepare_environment_cognition_context(
         story_records=story_records,
     )
     context["continuity_turn_index"] = rnd.turn_index
-    deliberation_profile = classify_environment_cognition_deliberation_profile(context)
+    deliberation_profile = resolve_environment_cognition_deliberation_profile(
+        context,
+        profile_override=req.deliberation_profile_override,
+    )
     cognition_rubric = (
         NARRATOR_ENVIRONMENT_COGNITION_RUBRIC_CONSTRAINED
         if deliberation_profile["profile"] == DELIBERATION_PROFILE_CONSTRAINED

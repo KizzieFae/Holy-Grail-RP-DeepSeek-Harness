@@ -3,6 +3,8 @@
 export const DELIBERATION_PROFILE_DEEP = 'deep';
 export const DELIBERATION_PROFILE_CONSTRAINED = 'constrained';
 
+const DEEP_CATEGORIES = new Set(['C', 'cannot_safely_resolve']);
+
 /**
  * @param {object|null|undefined} prepareResponse
  * @returns {string}
@@ -13,6 +15,63 @@ export function resolveEnvironmentCognitionDeliberationProfile(prepareResponse) 
     return DELIBERATION_PROFILE_CONSTRAINED;
   }
   return DELIBERATION_PROFILE_DEEP;
+}
+
+/**
+ * Post-cognition structural guard (mirrors domain_api narrator_environment_deliberation_profile).
+ *
+ * @param {object|null|undefined} cognitionResult
+ * @returns {string}
+ */
+export function classifyCognitionResultDeliberationProfile(cognitionResult) {
+  if (!cognitionResult || typeof cognitionResult !== 'object') {
+    return DELIBERATION_PROFILE_DEEP;
+  }
+  const needs = Array.isArray(cognitionResult.information_needs)
+    ? cognitionResult.information_needs
+    : [];
+  const resolutions = Array.isArray(cognitionResult.resolutions)
+    ? cognitionResult.resolutions
+    : [];
+  if (needs.length > 1) {
+    return DELIBERATION_PROFILE_DEEP;
+  }
+  const categories = new Set(
+    resolutions
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => String(item.category ?? '').trim())
+      .filter(Boolean),
+  );
+  for (const category of categories) {
+    if (DEEP_CATEGORIES.has(category)) {
+      return DELIBERATION_PROFILE_DEEP;
+    }
+  }
+  if (resolutions.some((item) => (
+    item
+    && typeof item === 'object'
+    && item.mediation_outcome != null
+    && item.mediation_outcome !== ''
+    && item.mediation_outcome !== 'no_match'
+  ))) {
+    return DELIBERATION_PROFILE_DEEP;
+  }
+  if (needs.length === 1 && categories.size > 0 && [...categories].every((c) => c === 'B2')) {
+    return DELIBERATION_PROFILE_CONSTRAINED;
+  }
+  return DELIBERATION_PROFILE_DEEP;
+}
+
+/**
+ * @param {string} initialProfile
+ * @param {object|null|undefined} cognitionResult
+ * @returns {boolean}
+ */
+export function shouldEscalateConstrainedCognitionToDeep(initialProfile, cognitionResult) {
+  if (initialProfile !== DELIBERATION_PROFILE_CONSTRAINED) {
+    return false;
+  }
+  return classifyCognitionResultDeliberationProfile(cognitionResult) === DELIBERATION_PROFILE_DEEP;
 }
 
 /**

@@ -597,6 +597,11 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     character_id=str(data["character_id"]),
                     domain_commit_id=str(data["domain_commit_id"]),
                     continuity_turn_index=int(data["continuity_turn_index"]),
+                    deliberation_profile_override=(
+                        str(data["deliberation_profile_override"])
+                        if data.get("deliberation_profile_override")
+                        else None
+                    ),
                 )
                 result = self.kernel.prepare_narrator_environment_cognition_context(req)
                 self._send_json(200, _to_jsonable(result))

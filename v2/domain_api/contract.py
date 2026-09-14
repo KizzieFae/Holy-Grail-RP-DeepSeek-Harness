@@ -451,6 +451,7 @@ class NarratorEnvironmentCognitionPrepareRequest:
     character_id: str
     domain_commit_id: str
     continuity_turn_index: int
+    deliberation_profile_override: str | None = None
 
 
 @dataclass(frozen=True)
