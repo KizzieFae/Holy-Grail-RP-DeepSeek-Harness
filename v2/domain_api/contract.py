@@ -38,6 +38,7 @@ SourceKind = Literal[
     "continuity_summary",
     "recent_scene_transcript",
     "user_turn_trigger",
+    "authoritative_perceptual_inventory",
     "user_turn_source",
     "user_steering_hints",
     "recent_orchestration",

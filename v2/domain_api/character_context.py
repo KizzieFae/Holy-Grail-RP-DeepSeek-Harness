@@ -20,6 +20,7 @@ from character_move_response_contract import (  # noqa: E402
     project_character_move_response_contract_text,
 )
 from .player_action_completion_authority import project_player_action_completion_generation_guidance
+from .player_authorship_authority import CHARACTER_PERCEPTUAL_GROUNDING_DISCIPLINE
 
 
 def prepare_character_context(
@@ -137,7 +138,8 @@ def prepare_character_context(
                 "Output only valid JSON matching the response contract above. "
                 "Ground this turn's beats and motivation in the authoritative Character and "
                 "scene context already supplied; action, inaction, and change should follow "
-                "from that context."
+                "from that context.\n\n"
+                f"{CHARACTER_PERCEPTUAL_GROUNDING_DISCIPLINE}"
             ),
             provenance={
                 "inference_id": req.inference_id,

@@ -43,7 +43,9 @@ An authoritative Player fact may still be unavailable to a Character under R14.
 
 **Hard violations:** unsupported objective Player assertion; unsupported Player sensation/embodiment; material Player-behavior amplification.
 
-**Permissible:** clearly framed subjective Character interpretation; faithful paraphrase; collaborative world/environment invention without unsupported Player-body attribution.
+**Perceptual grounding (#199):** Character private/scenario knowledge does **not** authorize fabrication of Player physical, physiological, emotional-display, or other sensory evidence. Such claims require support from `perception_fact:authorized_inventory:*`, `perception_fact:entitled:*`, applicable `grounding:*` visible facts, or established `player_fact:*` observable sources. **Subjective phrasing alone does not cure missing perceptual substrate.**
+
+**Permissible:** faithful paraphrase of entitled perceptual evidence; fallible interpretive conclusions explicitly anchored to entitled perceptual evidence; collaborative world/environment invention without unsupported Player-body attribution.
 
 ## Fail-closed
 

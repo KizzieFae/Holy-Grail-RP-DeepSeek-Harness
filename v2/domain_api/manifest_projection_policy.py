@@ -130,6 +130,7 @@ _CHARACTER_LANES: Final[frozenset[str]] = frozenset(
         "character_memory",
         "recent_scene_transcript",
         "user_turn_trigger",
+        "authoritative_perceptual_inventory",
         "continuity_summary",
         "librarian_knowledge",
         "librarian_synthesis",

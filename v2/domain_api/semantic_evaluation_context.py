@@ -19,6 +19,8 @@ from .player_authorship_authority import (
     PLAYER_AUTHORSHIP_GUARDRAIL_ID,
     merge_player_authorship_authority_references,
 )
+from .character_perceptual_inventory import build_character_perceptual_inventory_refs
+from .player_authorship_authority import CHARACTER_PERCEPTUAL_GROUNDING_DISCIPLINE
 from .viewer_player_perception import assemble_viewer_player_perception_for_session
 
 PERCEPTION_FACT_PLAYER_INTERNAL_ENTITLEMENT = "perception_fact:player_internal_entitlement"
@@ -194,7 +196,12 @@ def build_authority_references(
             character_id=character_id,
         )
     )
-    _ = hg_round_id
+    inventory_refs = build_character_perceptual_inventory_refs(
+        fixture,
+        character_id=character_id,
+        hg_round_id=hg_round_id,
+    )
+    refs.extend(inventory_refs)
     refs = merge_player_authorship_authority_references(refs, fixture)
     return merge_player_action_completion_authority_references(refs)
 
@@ -316,6 +323,13 @@ def prepare_semantic_evaluation_context(
                 "guardrail:player_authorship; established-but-not-entitled → R14 hard with "
                 "perception_fact:entitlement:* or perception_fact:player_internal_entitlement "
                 "(not guardrail:player_authorship alone). "
+                "R02b perceptual grounding: Character private/scenario knowledge cannot serve as "
+                "sensory evidence. Player physical/physiological/emotional-display claims require "
+                "support from perception_fact:authorized_inventory:*, perception_fact:entitled:*, "
+                "grounding:*, or established player_fact:* observable sources in the references "
+                "block. Subjective grammar does not cure missing substrate. Fallible interpretation "
+                "from real entitled perceptual evidence remains allowed. "
+                f"{CHARACTER_PERCEPTUAL_GROUNDING_DISCIPLINE} "
                 "Unsupported assumed Player acceptance/entry/agreement/positional completion "
                 "→ R16 hard with guardrail:player_action_completion and cite offending beat "
                 "evidence; invitation/permission/threat/attempt without established completion "

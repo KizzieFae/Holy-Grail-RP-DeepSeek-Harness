@@ -151,6 +151,8 @@ def perceptual_scene_context_from_scene_state(scene_state: Any) -> PerceptualSce
         raw = scene_state.get("perceptual_scene_context")
     else:
         raw = getattr(scene_state, "perceptual_scene_context", None)
+    if isinstance(raw, PerceptualSceneContextV1):
+        return raw
     return PerceptualSceneContextV1.from_dict(raw if isinstance(raw, dict) else None)
 
 
