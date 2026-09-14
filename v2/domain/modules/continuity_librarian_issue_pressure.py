@@ -8,7 +8,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from continuity_scene_pressure_projection import compute_issue_material_fingerprint
+from continuity_scene_pressure_projection import (
+    compute_issue_material_fingerprint,
+    latest_player_authority_sequence_index,
+)
 
 REASON_UNKNOWN_ISSUE = "unknown_issue_reference"
 REASON_ISSUE_NOT_PROJECTABLE = "issue_not_projectable"
@@ -74,6 +77,7 @@ def _build_overlay(
     proposal: Any,
     *,
     issue: Any,
+    manager: Any,
     semantic_unmet_condition: str,
     stakes_summary: str | None,
 ) -> dict[str, Any]:
@@ -90,6 +94,7 @@ def _build_overlay(
         "derivation_summary": proposal.derivation_summary,
         "confidence": proposal.confidence,
         "applied_at_turn_index": proposal.commit_binding.turn_index,
+        "player_authority_sequence_at_apply": latest_player_authority_sequence_index(manager),
         "issue_material_fingerprint": compute_issue_material_fingerprint(issue),
         "accepted_payload": {
             "issue_ref": str(payload.get("issue_ref", "") or issue.issue_id),
@@ -175,6 +180,7 @@ def apply_issue_tension_pressure(
     new_overlay = _build_overlay(
         proposal,
         issue=issue,
+        manager=manager,
         semantic_unmet_condition=semantic,
         stakes_summary=stakes_summary,
     )

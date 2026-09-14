@@ -45,6 +45,8 @@ An authoritative Player fact may still be unavailable to a Character under R14.
 
 **Perceptual grounding (#199):** Character private/scenario knowledge does **not** authorize fabrication of Player physical, physiological, emotional-display, or other sensory evidence. Such claims require support from `perception_fact:authorized_inventory:*`, `perception_fact:entitled:*`, applicable `grounding:*` visible facts, or established `player_fact:*` observable sources. **Subjective phrasing alone does not cure missing perceptual substrate.**
 
+**Explicit empty inventory:** When no entitled Player sensory substrate exists, Character generation still receives an `authoritative_perceptual_inventory` contribution whose master text explicitly states that no authorized perceptual evidence is available (`entitled_count: 0` in provenance). An empty inventory is positive forensic evidence of absent substrate — not omission of the lane.
+
 **Permissible:** faithful paraphrase of entitled perceptual evidence; fallible interpretive conclusions explicitly anchored to entitled perceptual evidence; collaborative world/environment invention without unsupported Player-body attribution.
 
 ## Fail-closed
@@ -79,12 +81,33 @@ Do not fabricate `player_fact:*` refs for unsupported assertions. Record guardra
 
 - **Guardrail ID:** `guardrail:player_action_completion`
 - **R16** enforces that Character moves do not assume Player acceptance, entry, agreement, or positional completion without authoritative support.
+- **R16 inverse (#200):** rejects **objective regression** — asserting an authoritative completed Player action or positional state did not occur, remains unperformed, or was undone without reversal authority. Character ignorance, commands from incomplete perception, deliberate deception/manipulation, and distinct subsequent requirements are **not** objective regression.
 - Invitation, `location_entry_outcome.allowed`, threat, and unresolved coercion do **not** establish accomplished Player movement.
 - **R16** is orthogonal to **R02b** (authorship) and **R14** (entitlement).
+
+## Bidirectional Player-action authority (#200)
+
+Authoritative Player contributions establish world/action truth. Character epistemics remain separately governed by **R14** perception/entitlement.
+
+| Dimension | Contract |
+|-----------|----------|
+| World/action truth | Tier-1 `player_fact:*` and committed continuity |
+| Character epistemics | Perception entitlement (#155, #199) |
+| Character behavior | May be ignorant, mistaken, deceptive, or impose distinct requirements |
+
+Player-authored state must not be **advanced beyond** or **objectively regressed behind** authoritative Player contribution.
+
+## Derived scene-pressure freshness (#200)
+
+Librarian `semantic_unmet_condition` overlays bind `player_authority_sequence_at_apply` at apply time. After a newer tier-1 Player contribution (higher `rp_history` user `sequence_index`), objective semantic fields are withheld until the overlay is refreshed/revalidated. This is structural freshness — not lexical reconciliation against Player prose.
+
+Character packaging includes a compact precedence note: derived scene pressures are dramatic/advisory and do not override newer authoritative Player facts or grant unperceived entitlement.
 
 ## Implementation
 
 - Authorship contract: `v2/domain_api/player_authorship_authority.py`
 - Action-completion contract: `v2/domain_api/player_action_completion_authority.py`
-- Character context: `v2/domain_api/semantic_evaluation_context.py`, `v2/domain_api/character_context.py`
+- Perceptual inventory assembly: `v2/domain_api/character_perceptual_inventory.py` (`authoritative_perceptual_inventory` manifest lane; wired via `character_upstream_context.py`)
+- Scene-pressure freshness projection: `v2/domain/modules/continuity_scene_pressure_projection.py`, `v2/domain/modules/continuity_librarian_issue_pressure.py`
+- Character context: `v2/domain_api/semantic_evaluation_context.py`, `v2/domain_api/character_context.py`, `v2/domain_api/character_context_projector.py` (scene-pressure precedence note)
 - Narrator context: `v2/domain_api/narrator_semantic_qa_context.py`

@@ -405,6 +405,12 @@ class DomainKernel:
                 raise
             if memory_service is not None:
                 memory_service.project_cross_scope_after_persist(fixture, projection_records)
+        from continuity_scene_pressure_projection import note_authoritative_player_contribution
+
+        note_authoritative_player_contribution(
+            fixture.manager,
+            int(entry.get("sequence_index", -1)),
+        )
         return entry
 
     def record_player_skip(self, req: PlayerSkipRecordRequest) -> dict[str, Any]:

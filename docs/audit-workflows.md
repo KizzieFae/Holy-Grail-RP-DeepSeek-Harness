@@ -184,6 +184,101 @@ structured_move (authoritative beats + action recipients / speech audibility)
 
 **Historical boundary:** committed turns without PVR use `historical_partial` recovery from `structured_move` only (speech from audibility/audience; action beats conservative actor-private). **Authority firewall:** projection does not mutate `known_by`, Continuity truth, or Director canonical history.
 
+### Character perceptual grounding join recipe (#199)
+
+Reconstruct why a Character sensory claim was allowed or rejected without parsing arbitrary prompt prose:
+
+```text
+session / round anchor
+  → rp_history user entry (authoritative Player post + metadata.player_decomposition)
+  → metadata.perceptual_visibility (PVR units, entitlement exclusions)
+  → metadata.perceptual_visibility_projection (per-unit entitlement decisions when present)
+  → metadata.entitlement_authority_snapshot (commit-time role assignments; #125)
+  → execution_evidence Character inference attempt
+      request.contributions[source_kind=authoritative_perceptual_inventory]
+        (master summary, entitled_entries[], inventory_ref_id, entitled_count)
+      request.contributions[source_kind=character_private | authored_character_knowledge]
+        (scenario/private knowledge — inference support only, NOT sensory evidence)
+  → execution_evidence semantic_evaluation attempt
+      request.contributions (authority_references incl. perception_fact:authorized_inventory:*,
+        perception_fact:entitled:*, player_fact:*, guardrail:player_authorship)
+      response.assistant_text → hg_semantic_evaluation_result_v1
+        (R02b / R14 findings, authoritative_citation.ref_id, candidate_evidence)
+  → correlation.inference_session_id / evidence_id (inference identity)
+  → decision.overall_result / disposition (pass | reject_hard | …)
+```
+
+**Where to find key artifacts:**
+
+| Element | Location |
+|---------|----------|
+| Authorized inventory | Character attempt `authoritative_perceptual_inventory` contribution; eval `perception_fact:authorized_inventory:{character_id}:{hg_round_id}` |
+| Entitled refs | Inventory `entitled_entries[]`; eval `perception_fact:entitled:{entry_id}:{unit_id}` |
+| Explicit empty inventory | Master text: *"No authorized perceptual evidence…"*; `provenance.entitled_count: 0` |
+| Withheld / excluded Player units | PVR `metadata.perceptual_visibility` + `perceptual_visibility_projection.exclusion_reasons` / `unit_entitlement_decisions` on history lines |
+| Private/scenario knowledge | `character_private`, `authored_character_knowledge` lanes — not inventory substrate |
+| Candidate Character move | Character attempt `response` / parsed structured move |
+| R02b / R14 disposition | Semantic-eval attempt `hg_semantic_evaluation_result_v1.findings[]` |
+
+**Discipline:** Private/scenario knowledge may support Character inference but is **not** sensory evidence. Prefer structured eval findings and authority refs over re-parsing full inference prompts.
+
+**Committed validation fixture (no live session required):** `governance/records/issue-199-supplemental-semantic-validation-2026-09-14.json` — unsupported strain (`reject_hard` R02b+R14) and legitimate trembling (`pass`).
+
+**Historical boundary:** pre-#199 sessions lack `authoritative_perceptual_inventory` in Character manifests.
+
+### Scene-pressure freshness join recipe (#200)
+
+Reconstruct whether Librarian objective semantic fields were projected or withheld:
+
+```text
+session / round anchor
+  → rp_history user entries (kind=user)
+      sequence_index on each committed Player post
+  → recompute latest_player_authority_sequence_index
+      = max(user.sequence_index) across rp_history
+      (NOT persisted as a separate manager field; reconstruct from history)
+  → continuity_state.issue_pressure_semantic_overlays[issue_id]
+      player_authority_sequence_at_apply (bound at overlay apply)
+      semantic_unmet_condition / stakes_summary (when present on overlay)
+      semantic_authority.authority_class: derived (when projected)
+  → freshness rule (structural):
+      latest_player_authority_sequence_index <= player_authority_sequence_at_apply
+        ⇒ objective semantic fields remain current under the freshness contract
+      otherwise ⇒ semantic_unmet_condition and stakes_summary are withheld
+        from scene_pressures projection until overlay refresh/revalidation
+  → projection join surfaces:
+      continuity_scene_pressure_projection.overlay_for_semantic_projection
+      director_context_digests / character_context_projector scene_pressures
+  → execution_evidence Character inference attempt
+      request.contributions[source_kind=scene_pressures]
+        (projected fields + SCENE_PRESSURE_PRECEDENCE_NOTE when packaged post-#200)
+  → optional semantic_evaluation attempt for inverse R16
+      guardrail:player_action_completion findings vs player_fact:user_post:*
+```
+
+**Establishing projection vs suppression:**
+
+| Field | Projected when | Withheld when |
+|-------|----------------|---------------|
+| `semantic_unmet_condition` | Overlay fresh **and** field present on overlay | Stale overlay **or** field absent from manifest `scene_pressures` |
+| `stakes_summary` | Same | Same |
+
+Compare overlay store text to Character manifest `scene_pressures` contribution. Absence after a newer Player post with lower `player_authority_sequence_at_apply` indicates structural suppression — not a dedicated audit event.
+
+**No first-class navigator surface:** `trace_turn_forensics.py` does not currently expose `pressure overlay → freshness inputs → suppression → Character manifest` as a single traversal. Use this join recipe across session JSON + execution evidence. Manual cross-read is required today.
+
+**Known forensic limitations (deferred tooling):**
+
+- No structured `pressure_freshness_decision` audit event — reconstruction is a documented join across structured records (#201 assessment evidence).
+- `latest_player_authority_sequence_index` is in-memory during the session; investigators recompute from `rp_history`.
+- Generalized Player contribution → Continuity/world-state promotion **does not exist** (separate #201 scope).
+- Narrative door-open vs authoritative closed-portal desynchronization remains a known assessment item for #201.
+
+**Committed validation fixtures:**
+
+- Pressure freshness (deterministic): `v2/domain/tests/test_issue_200_scene_pressure_freshness.py`
+- Inverse R16 semantic cases: `governance/records/issue-200-live-validation-2026-09-14.json`
+
 ### V2 human audit-tag workflow
 
 During RP, the operator tags specific visible transcript entries (Streamlit **Tag** control). Tag creation is immediate and does not require a comment. Optional notes are added afterward.
