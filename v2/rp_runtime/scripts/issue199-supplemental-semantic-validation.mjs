@@ -2,10 +2,13 @@
  * Issue #199 supplemental validation — bounded live semantic evaluator checks.
  * Run from v2/rp_runtime: node scripts/issue199-supplemental-semantic-validation.mjs
  */
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { defaultPythonExecutable } from '../tests/helpers/domain-api.mjs';
 
 import { modelProfileForInferenceKind, resolveApplicationRoleProfiles } from '../src/application/application-settings.mjs';
 import { createHolyGrailRpContext } from '../src/bootstrap.mjs';
@@ -107,8 +110,10 @@ async function main() {
   }
 
   const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'issue199-supplemental-'));
+  const sessionsDir = path.join(evidenceRoot, 'sessions');
+  fs.mkdirSync(sessionsDir, { recursive: true });
   const port = 30110 + Math.floor(Math.random() * 20);
-  const host = await startDomainApi(port);
+  const host = await startDomainApi(port, { sessionsDir });
   const api = createDomainApiClient(host.baseUrl);
   const { phaseExecutors } = await createHolyGrailRpContext({
     domainApi: { baseUrl: host.baseUrl },
@@ -136,12 +141,17 @@ async function main() {
     { inferenceMode: 'live' },
   );
 
-  const openers = await api.listTemplateOpeners('ayame_household_entry_evaluation');
+  const openerCatalog = await api.listTemplateOpeners('ayame_household_entry_evaluation');
+  const openers = openerCatalog.openers ?? openerCatalog;
+  const openerId = openers[0]?.opener_id ?? openers[0]?.id;
+  if (!openerId) {
+    throw new Error(`no template opener for ayame_household_entry_evaluation: ${JSON.stringify(openerCatalog)}`);
+  }
   const session = await api.createSession({
     characters: ['ayame', 'kizzie'],
     scene_template_id: 'ayame_household_entry_evaluation',
     role_assignments: { ayame: 'host', kizzie: 'applicant' },
-    opening: { mode: 'template', opener_id: openers[0].opener_id },
+    opening: { mode: 'template', opener_id: openerId },
     player_character_file_id: 'kizzie',
   });
   const round = await api.startRound({ hg_scene_id: session.hg_session_id });
@@ -178,21 +188,20 @@ async function main() {
     );
   const negativeInventory = inventorySummary(negativeEval.contextResponse?.authority_references ?? []);
 
-  const copresentSession = await api.createSession({
-    cast: ['Ayame', 'Kizzie'],
-    location: 'Evaluation room',
-    player_character_file_id: 'kizzie',
-  });
-  const copresentRound = await api.startRound({ hg_scene_id: copresentSession.hg_session_id });
-  const copresentState = await api.getSceneState(copresentSession.hg_session_id);
+  const seedOutput = execFileSync(
+    defaultPythonExecutable(),
+    [
+      path.join(REPO_ROOT, 'tools', 'maintenance', 'seed_issue199_copresent_session.py'),
+      sessionsDir,
+    ],
+    { encoding: 'utf8' },
+  ).trim();
+  const copresentSeed = JSON.parse(seedOutput.split('\n').filter(Boolean).pop());
+  await api.openSession(copresentSeed.hg_session_id);
+  const copresentSession = { hg_session_id: copresentSeed.hg_session_id };
+  const copresentRound = { hg_round_id: copresentSeed.hg_round_id };
+  const copresentState = { turn_counter: copresentSeed.turn_counter };
   const trembleContent = "Kizzie's hands trembled visibly as she waited.";
-  await api.recordUserTurn({
-    hg_session_id: copresentSession.hg_session_id,
-    content: trembleContent,
-    speaker: 'Kizzie',
-    player_decomposition: DECOMPOSITIONS.trembling,
-    hg_round_id: copresentRound.hg_round_id,
-  });
 
   const positiveEval = await runSemanticEvaluation({
     api,

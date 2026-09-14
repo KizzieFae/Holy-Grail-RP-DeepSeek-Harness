@@ -1,0 +1,113 @@
+{
+  "schema": "issue199_supplemental_semantic_validation_v1",
+  "generated_at": "2026-09-14T05:21:01.204Z",
+  "candidate_sha": "3a818aebc373a96a55432d220244d39574627a19",
+  "provenance": {
+    "execution_head": "3a818aebc373a96a55432d220244d39574627a19",
+    "working_tree_dirty": true,
+    "dirty_paths": [
+      "2/rp_runtime/scripts/issue199-supplemental-semantic-validation.mjs"
+    ],
+    "git_sha": "3a818aebc373a96a55432d220244d39574627a19"
+  },
+  "model": "deepseek-v4-flash",
+  "semantic_evaluator_profile": {
+    "reasoningEffort": "low"
+  },
+  "unsupported_perception": {
+    "session_id": "hg-session-ca3a11ec-feea-429d-b20f-d0994db37607",
+    "opening": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+    "inventory": {
+      "master_ref_id": "perception_fact:authorized_inventory:Ayame:hg-round-8393c6b1-8963-4896-8a9f-61211be6d3d8",
+      "master_text": "No authorized perceptual evidence of Player physical display, bodily state, emotional display, or other sensory observables is available to Ayame at this scene point.",
+      "entitled_count": 0,
+      "entitled_sample": []
+    },
+    "parsed": {
+      "ok": true,
+      "result": {
+        "schema": "hg_semantic_evaluation_result_v1",
+        "evaluation_pass_id": "issue199-unsupported-strain",
+        "evaluator_config_id": "semantic_evaluator_v1",
+        "overall_result": "reject_hard",
+        "findings": [
+          {
+            "dimension": "R02b",
+            "severity": "hard",
+            "finding": "Action beat asserts Ayame perceives Player sensory evidence (posture, clothing, faint tells of recent strain) despite an empty authorized perceptual inventory for Kizzie and explicit entitlement exclusions.",
+            "rationale": "The authoritative inventory for Ayame states no authorized perceptual evidence of Player physical display, bodily state, emotional display, or other sensory observables is available (entitled_count 0, player_sensory_count 0). The beat nevertheless claims observation of Kizzie's posture, clothing, and 'faint tells of recent strain' — unsupported Player sensory/physiological attribution with no entitled substrate. Subjective framing ('faint tells') does not manufacture evidence.",
+            "candidate_evidence": {
+              "beat_index": 0,
+              "beat_type": "action",
+              "text": "Her gaze moves over Kizzie from shoes to face, lingering without hurry, cataloguing posture, clothing, and the faint tells of recent strain."
+            },
+            "authoritative_citation": {
+              "ref_id": "guardrail:player_authorship",
+              "kind": "guardrail",
+              "label": "Player authorship",
+              "quote": "Character private/scenario knowledge does NOT authorize fabrication of Player physical, physiological, emotional-display, or other sensory evidence. Such claimed observations require support from perception_fact:authorized_inventory:*, perception_fact:entitled:*, applicable grounding:* visible facts, or established player_fact:* observable sources. Subjective phrasing alone does not cure missing perceptual substrate."
+            }
+          },
+          {
+            "dimension": "R14",
+            "severity": "hard",
+            "finding": "Ayame is not entitled to perceive the only Player-authored units in this scene; the beat leverages those non-entitled Player facts as observed evidence.",
+            "rationale": "Both Player units for this turn are explicitly non-entitled for Ayame (visual glance excluded by barrier_blocks_visual; internal steel excluded as player_internal_ineligible), and the authorized inventory is empty. The move treats Kizzie's embodied state as knowable/usable observation, violating R14 entitlement.",
+            "candidate_evidence": {
+              "beat_index": 0,
+              "beat_type": "action",
+              "text": "Her gaze moves over Kizzie from shoes to face, lingering without hurry, cataloguing posture, clothing, and the faint tells of recent strain."
+            },
+            "authoritative_citation": {
+              "ref_id": "perception_fact:entitlement:hg-hist-256504ca-a2fa-4e8f-ba5b-e67e234c7d8a:u_visual_glance",
+              "kind": "perception_fact",
+              "label": "Perception entitlement (Ayame excluded: u_visual_glance)",
+              "quote": "Viewer Character Ayame is NOT entitled to perceive Player unit u_visual_glance from entry hg-hist-256504ca-a2fa-4e8f-ba5b-e67e234c7d8a (exclusion: barrier_blocks_visual)."
+            }
+          }
+        ],
+        "correction_request": {
+          "summary": "Action beat asserts Ayame perceives Player sensory evidence (posture, clothing, faint tells of recent strain) despite an empty authorized perceptual inventory for Kizzie and explicit entitlement exclusions.; Ayame is not entitled to perceive the only Player-authored units in this scene; the beat leverages those non-entitled Player facts as observed evidence.",
+          "dimensions": [
+            "R02b",
+            "R14"
+          ],
+          "must_not": "Do not supply replacement RP prose; revise JSON only."
+        },
+        "residual_soft_concerns": []
+      }
+    },
+    "evaluator_attempt": null,
+    "pass": true
+  },
+  "legitimate_observable": {
+    "session_id": "hg-session-bfda6641-77ce-4e6b-95d5-c60365700076",
+    "player_content": "Kizzie's hands trembled visibly as she waited.",
+    "inventory": {
+      "master_ref_id": "perception_fact:authorized_inventory:Ayame:hg-round-c4f2bcb7-30e1-4fa7-871d-dc8b7c658ea0",
+      "master_text": "Authorized perceptual evidence available to Ayame at this scene point (1 entitled item(s); 1 Player-targeted sensory item(s)):\n- perception_fact:entitled:hg-hist-7ffe6f98-226d-4a3b-8ccb-fc0e364e9503:u_tremble: Kizzie's hands trembled visibly as she waited.",
+      "entitled_count": 1,
+      "entitled_sample": [
+        {
+          "ref_id": "perception_fact:entitled:hg-hist-7ffe6f98-226d-4a3b-8ccb-fc0e364e9503:u_tremble",
+          "text": "Kizzie's hands trembled visibly as she waited."
+        }
+      ]
+    },
+    "parsed": {
+      "ok": true,
+      "result": {
+        "schema": "hg_semantic_evaluation_result_v1",
+        "evaluation_pass_id": "issue199-legitimate-tremble",
+        "evaluator_config_id": "semantic_evaluator_v1",
+        "overall_result": "pass",
+        "findings": [],
+        "correction_request": null,
+        "residual_soft_concerns": []
+      }
+    },
+    "evaluator_attempt": null,
+    "pass": true
+  },
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue199-supplemental-cLIglr"
+}
