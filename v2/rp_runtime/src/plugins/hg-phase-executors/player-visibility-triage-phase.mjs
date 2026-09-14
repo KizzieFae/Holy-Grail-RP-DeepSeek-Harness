@@ -1,5 +1,6 @@
 import { parsePlayerVisibilityTriageEnvelope } from '../../lib/perceptual-visibility-parse.mjs';
 import { buildUniformProjectionDecomposition } from '../../lib/player-uniform-projection.mjs';
+import { runPlayerUniformEligibilityVerification } from './player-uniform-eligibility-verification.mjs';
 
 export const PLAYER_VISIBILITY_TRIAGE_FAILURE_CLASS_CONTEXT_PREPARE = 'context_prepare';
 
@@ -25,7 +26,9 @@ export async function runPlayerVisibilityTriagePhase({
   inferenceId,
   playerContent,
   mockResponses,
+  mockVerificationResponses,
   modelProfile,
+  verificationModelProfile,
 }) {
   const scope = {
     hgSessionId,
@@ -138,11 +141,58 @@ export async function runPlayerVisibilityTriagePhase({
       };
     }
 
+    const verification = await runPlayerUniformEligibilityVerification({
+      runEphemeralInference,
+      trace,
+      api,
+      sceneAgent,
+      hgSessionId,
+      hgSceneId,
+      hgRoundId,
+      triageInferenceId: inferenceId,
+      playerContent,
+      mockResponses: mockVerificationResponses,
+      modelProfile: verificationModelProfile ?? modelProfile,
+    });
+
+    if (!verification.passed) {
+      trace?.emit?.(sceneAgent?.session, 'hg/player-visibility-triage-completed', scope, {
+        inference_id: inferenceId,
+        route: 'full_pvr',
+        checker_reason: parsed.reason,
+        verification_disposition: verification.disposition,
+        verification_reason: verification.reason,
+        fail_safe: 'uniform_eligibility_verification_blocked',
+      });
+      return {
+        route: 'full_pvr',
+        checkerResult: {
+          uniform_projection_safe: false,
+          reason: verification.reason ?? 'uniform_eligibility_verification_failed',
+          inference_id: inferenceId,
+          triage_affirmative: true,
+          verification: {
+            disposition: verification.disposition,
+            reason: verification.reason,
+            inference_id: verification.verificationInferenceId,
+          },
+          fail_safe: 'uniform_eligibility_verification_blocked',
+        },
+        evidenceId: inferRun.evidenceId,
+        verificationEvidenceId: verification.evidenceId,
+      };
+    }
+
     const uniformDecomposition = buildUniformProjectionDecomposition(playerContent, {
       checkerAudit: {
         uniform_projection_safe: true,
         reason: parsed.reason ?? 'affirmative_uniform_present',
         inference_id: inferenceId,
+        verification: {
+          disposition: verification.disposition,
+          reason: verification.reason,
+          inference_id: verification.verificationInferenceId,
+        },
       },
       inferenceId,
     });
@@ -151,6 +201,8 @@ export async function runPlayerVisibilityTriagePhase({
       inference_id: inferenceId,
       route: 'uniform_projection',
       checker_reason: parsed.reason,
+      verification_disposition: verification.disposition,
+      verification_reason: verification.reason,
     });
 
     return {
@@ -160,8 +212,14 @@ export async function runPlayerVisibilityTriagePhase({
         uniform_projection_safe: true,
         reason: parsed.reason ?? 'affirmative_uniform_present',
         inference_id: inferenceId,
+        verification: {
+          disposition: verification.disposition,
+          reason: verification.reason,
+          inference_id: verification.verificationInferenceId,
+        },
       },
       evidenceId: inferRun.evidenceId,
+      verificationEvidenceId: verification.evidenceId,
     };
   } catch (err) {
     trace?.emit?.(sceneAgent?.session, 'hg/player-visibility-triage-failed', scope, {

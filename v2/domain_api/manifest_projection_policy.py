@@ -30,6 +30,7 @@ InferenceKind = Literal[
     "opening_segmentation",
     "player_decomposition",
     "player_visibility_triage",
+    "player_uniform_eligibility_verification",
     "plot_cognition_init",
     "plot_cognition_init_contract_correction",
     "plot_cognition_update",
@@ -62,6 +63,7 @@ INFERENCE_KINDS: Final[tuple[str, ...]] = (
     "opening_segmentation",
     "player_decomposition",
     "player_visibility_triage",
+    "player_uniform_eligibility_verification",
     "plot_cognition_init",
     "plot_cognition_init_contract_correction",
     "plot_cognition_update",
@@ -255,6 +257,7 @@ ALLOWED_SOURCE_KINDS: Final[dict[str, frozenset[str]]] = {
         _COMMON_INSTRUCTION | frozenset({"player_pvr_entitlement_context"})
     ),
     "player_visibility_triage": _COMMON_INSTRUCTION,
+    "player_uniform_eligibility_verification": _COMMON_INSTRUCTION,
     "storyteller_orientation": (
         _DIRECTOR_DIGESTS
         | _COMMON_INSTRUCTION

@@ -204,3 +204,70 @@ export function parsePlayerVisibilityTriageEnvelope(raw) {
     parseError: null,
   };
 }
+
+/** Parse adversarial uniform-eligibility verification envelopes (#197). */
+export function parsePlayerUniformEligibilityVerificationEnvelope(raw) {
+  if (!raw || !String(raw).trim()) {
+    return {
+      disposition: null,
+      reason: null,
+      auditNote: null,
+      parseError: 'empty output',
+    };
+  }
+
+  let stripped = String(raw).trim();
+  if (stripped.startsWith('```')) {
+    stripped = stripped.replace(/^```(?:json)?\s*/, '');
+    stripped = stripped.replace(/\s*```$/, '');
+    stripped = stripped.trim();
+  }
+
+  if (!stripped.startsWith('{')) {
+    return {
+      disposition: null,
+      reason: null,
+      auditNote: null,
+      parseError: 'not json object',
+    };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(stripped);
+  } catch {
+    return {
+      disposition: null,
+      reason: null,
+      auditNote: null,
+      parseError: 'json parse failed',
+    };
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return {
+      disposition: null,
+      reason: null,
+      auditNote: null,
+      parseError: 'envelope not an object',
+    };
+  }
+
+  const dispositionRaw = payload.uniform_eligibility_disposition;
+  const disposition = dispositionRaw != null ? String(dispositionRaw).trim().toLowerCase() : '';
+  if (!['clear', 'disqualified', 'uncertain'].includes(disposition)) {
+    return {
+      disposition: null,
+      reason: payload.reason ?? null,
+      auditNote: payload.audit_note ?? null,
+      parseError: 'uniform_eligibility_disposition missing or invalid',
+    };
+  }
+
+  return {
+    disposition,
+    reason: payload.reason != null ? String(payload.reason) : null,
+    auditNote: payload.audit_note != null ? String(payload.audit_note) : null,
+    parseError: null,
+  };
+}

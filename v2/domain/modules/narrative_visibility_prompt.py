@@ -174,9 +174,17 @@ Return uniform_projection_safe: false when ANY portion may contain:
 - mixed entitlement within the same turn;
 - any ambiguity about the above.
 
+Implicit descriptions of a Player's unexpressed internal preparation or private mental state
+(for example bracing, steeling oneself, silently resolving, or privately deciding before acting)
+are private/internal content and are NOT uniformly projectable even when paired with observable actions.
+
+A turn that mixes observable behavior with any unexpressed internal state is NOT uniformly projectable.
+
 CRITICAL EXAMPLES (must return false):
 - Action plus authorial aside: sitting in seiza WHILE narrating they are not in Japan / old habits —
   the aside is not uniformly perceptible scene truth.
+- Mixed observable action plus implicit internal preparation: checking an address or knocking WHILE
+  privately steeling oneself or bracing internally — the internal preparation is not uniformly visible.
 - Concealed action: smiling while slipping something unseen, hidden work, actions explicitly not visible
   to others present.
 - Lowered voice, whisper, wondering aloud about whether others can hear — potential private/subset speech.
@@ -189,6 +197,58 @@ SAFE EXAMPLES (may return true only when the ENTIRE source is uniformly present-
 
 Absence of detected complexity is insufficient. Uncertainty requires false.
 The reason field is audit-only and must not be treated as semantic truth.
+"""
+
+
+PLAYER_UNIFORM_ELIGIBILITY_VERIFICATION_OUTPUT_INSTRUCTION = """
+OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
+{
+  "uniform_eligibility_disposition": "clear|disqualified|uncertain",
+  "reason": "<short audit-only code>",
+  "audit_note": "<optional brief note; not semantic truth>"
+}
+
+ROLE: Adversarial uniform-eligibility challenger only. You do NOT independently prove uniformity.
+You do NOT produce PVR units, recipient scopes, or source spans.
+
+Your task: attempt to FALSIFY a proposed uniform projection by finding semantic content
+**explicitly present in the player source text** that disqualifies representing the ENTIRE source
+as ONE uniformly projected unit visible to ALL Characters present without semantic decomposition.
+
+Disqualify ONLY when the submitted Player contribution itself contains semantic content whose
+visibility or entitlement is nonuniform. Judge from what the text states — not from hypothetical
+hidden meaning, conceivable private motivation, imagined unstated cognition, or ordinary viewing
+angle differences.
+
+Return uniform_eligibility_disposition:
+- "disqualified" when the source text itself contains disqualifying semantic content, including:
+  - stated private/internal cognition or unexpressed mental state (explicit or implicit in the
+    wording, e.g. steeling oneself, privately deciding, silently resolving);
+  - concealed or restricted observable actions (explicitly not visible to others present);
+  - nonuniform directed or subset speech entitlement;
+  - mixed entitlement within the same turn;
+  - authorial/off-screen/explanatory narration establishing facts characters cannot uniformly
+    perceive (not ordinary ambient scene description everyone present could perceive).
+- "clear" when the source contains only uniformly perceivable observable action, public speech,
+  or ambient scene description with no stated private, concealed, directed, or mixed entitlement.
+- "uncertain" when the text itself does not let you determine whether disqualifying content is
+  present.
+
+Do NOT disqualify because:
+  - an observable action might hypothetically involve private motivation not stated in the text;
+  - characters might differ in viewing angle, attention, or proximity (ordinary perceptual
+    variation is not nonuniform entitlement);
+  - you can imagine unexpressed mental states not described in the source.
+
+Ordinary observable actions (setting down an object, stepping back, checking a visible house
+number, knocking, ambient rain or candlelight) are not implicit private cognition unless the text
+describes internal, concealed, or subset-entitlement content.
+
+Retain adversarial scrutiny for genuinely mixed or implicit-internal prose (e.g. steeling oneself
+before acting alongside observable action, concealed action, directed whisper).
+
+Return "uncertain" rather than inventing disqualifiers. Uncertainty is not clearance.
+The reason and audit_note fields are audit-only and must not be treated as semantic truth.
 """
 
 

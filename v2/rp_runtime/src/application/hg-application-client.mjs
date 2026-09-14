@@ -335,6 +335,12 @@ export class HolyGrailApplicationClient {
             { ...this.runtimeSettings, ...input },
             { inferenceMode: this.options.inferenceMode },
           );
+          const verificationModelProfile = modelProfileForInferenceKind(
+            modelProfile,
+            'player_uniform_eligibility_verification',
+            { ...this.runtimeSettings, ...input },
+            { inferenceMode: this.options.inferenceMode },
+          );
           const triageResult = await phaseExecutors.runPlayerVisibilityTriage({
             api,
             trace,
@@ -345,7 +351,9 @@ export class HolyGrailApplicationClient {
             inferenceId: triageInferenceId,
             playerContent: userMessage,
             mockResponses: input.mockPlayerVisibilityTriageResponses,
+            mockVerificationResponses: input.mockPlayerUniformEligibilityVerificationResponses,
             modelProfile: triageModelProfile,
+            verificationModelProfile,
           });
           if (triageResult.route === 'uniform_projection' && triageResult.playerDecomposition) {
             playerDecomposition = triageResult.playerDecomposition;

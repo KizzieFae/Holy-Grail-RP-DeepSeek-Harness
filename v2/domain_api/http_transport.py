@@ -23,6 +23,7 @@ from .contract import (
     PlayerDecompositionContextPrepareRequest,
     PlayerDecompositionNormalizeRequest,
     PlayerVisibilityTriageContextPrepareRequest,
+    PlayerUniformEligibilityVerificationContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
@@ -795,6 +796,23 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                     attempt_index=int(data.get("attempt_index", 0)),
                 )
                 self._send_json(200, self.kernel.prepare_player_visibility_triage_context(req))
+                return
+            if path == "/v1/sessions/player-uniform-eligibility-verification/context/prepare":
+                req = PlayerUniformEligibilityVerificationContextPrepareRequest(
+                    hg_session_id=str(data["hg_session_id"]),
+                    inference_id=str(data["inference_id"]),
+                    hg_round_id=(
+                        str(data["hg_round_id"])
+                        if data.get("hg_round_id") is not None
+                        else None
+                    ),
+                    turn_index=int(data.get("turn_index", 0)),
+                    attempt_index=int(data.get("attempt_index", 0)),
+                )
+                self._send_json(
+                    200,
+                    self.kernel.prepare_player_uniform_eligibility_verification_context(req),
+                )
                 return
             if path == "/v1/sessions/opening/persist":
                 req = OpeningPersistRequest(

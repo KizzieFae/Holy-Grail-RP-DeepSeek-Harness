@@ -73,6 +73,7 @@ export const PRODUCTION_INFERENCE_KIND_TOKEN_CEILINGS = {
   opening_segmentation: PRODUCTION_TOKEN_CEILINGS.opening,
 
   player_visibility_triage: 32,
+  player_uniform_eligibility_verification: 64,
 
   plot_cognition_update: PRODUCTION_MAX_TOKEN_CEILING,
 
@@ -105,6 +106,7 @@ export const PRODUCTION_INFERENCE_KIND_REASONING_OVERRIDES = {
   opening_segmentation: 'off',
 
   player_visibility_triage: 'off',
+  player_uniform_eligibility_verification: 'off',
 
 };
 

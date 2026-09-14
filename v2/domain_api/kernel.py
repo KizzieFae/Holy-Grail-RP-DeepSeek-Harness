@@ -53,6 +53,7 @@ from .contract import (  # noqa: E402
     PlayerDecompositionContextPrepareRequest,
     PlayerDecompositionNormalizeRequest,
     PlayerVisibilityTriageContextPrepareRequest,
+    PlayerUniformEligibilityVerificationContextPrepareRequest,
     PerceptualVisibilityValidateRequest,
     NarratorContextPrepareRequest,
     NarratorEnvironmentCognitionFinalizeRequest,
@@ -108,6 +109,9 @@ from .player_decomposition_normalize import (  # noqa: E402
 )
 from .player_visibility_triage_context import (  # noqa: E402
     prepare_player_visibility_triage_context as build_player_visibility_triage_context,
+)
+from .player_uniform_eligibility_verification_context import (  # noqa: E402
+    prepare_player_uniform_eligibility_verification_context as build_player_uniform_eligibility_verification_context,
 )
 from perceptual_visibility_validation import ValidationProfile  # noqa: E402
 from .perceptual_visibility_service import (  # noqa: E402
@@ -1535,6 +1539,12 @@ class DomainKernel:
     ) -> PromptContributionManifest:
         fixture = self.store.require(req.hg_session_id)
         return build_player_visibility_triage_context(fixture, req)
+
+    def prepare_player_uniform_eligibility_verification_context(
+        self, req: PlayerUniformEligibilityVerificationContextPrepareRequest
+    ) -> PromptContributionManifest:
+        fixture = self.store.require(req.hg_session_id)
+        return build_player_uniform_eligibility_verification_context(fixture, req)
 
     def persist_opening_presentation(self, req: OpeningPersistRequest) -> dict[str, Any]:
         fixture = self.store.require(req.hg_session_id)

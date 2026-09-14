@@ -1,0 +1,202 @@
+{
+  "schema": "issue197_formal_validation_v1",
+  "generated_at": "2026-09-14T03:09:31.934Z",
+  "candidate_sha": "3ed4a2db4de03a562808cd4a06f11a2f5112f8cf",
+  "provenance": {
+    "execution_head": "3ed4a2db4de03a562808cd4a06f11a2f5112f8cf",
+    "working_tree_dirty": false,
+    "dirty_paths": [],
+    "git_sha": "3ed4a2db4de03a562808cd4a06f11a2f5112f8cf"
+  },
+  "results": [
+    {
+      "id": "f06_mixed",
+      "content": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "expected": "full_pvr",
+      "category": "mandatory_negative",
+      "triage_disposition": "negative",
+      "triage_reason": "requires_semantic_decomposition",
+      "verifier_invoked": false,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "fail_safe": null,
+      "final_route": "full_pvr",
+      "triage_timing": {
+        "wall_ms": 1694,
+        "input_tokens": 173,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "f06_paraphrase",
+      "content": "Kizzie checked the address by the door, quietly braced herself, and knocked.",
+      "expected": "full_pvr",
+      "category": "mandatory_negative",
+      "triage_disposition": "negative",
+      "triage_reason": "requires_semantic_decomposition",
+      "verifier_invoked": false,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "fail_safe": null,
+      "final_route": "full_pvr",
+      "triage_timing": {
+        "wall_ms": 800,
+        "input_tokens": 171,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "neg_internal",
+      "content": "The player wonders whether anyone here can be trusted, but says nothing.",
+      "expected": "full_pvr",
+      "category": "mandatory_negative",
+      "triage_disposition": "negative",
+      "triage_reason": "requires_semantic_decomposition",
+      "verifier_invoked": false,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "fail_safe": null,
+      "final_route": "full_pvr",
+      "triage_timing": {
+        "wall_ms": 722,
+        "input_tokens": 167,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "neg_concealed",
+      "content": "The player smiles at Harley while slipping a folded note into their sleeve unseen.",
+      "expected": "full_pvr",
+      "category": "mandatory_negative",
+      "triage_disposition": "negative",
+      "triage_reason": "concealed_action_unseen",
+      "verifier_invoked": false,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "fail_safe": null,
+      "final_route": "full_pvr",
+      "triage_timing": {
+        "wall_ms": 988,
+        "input_tokens": 168,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "neg_directed_speech",
+      "content": "The player leans toward Ayame and whispers, \"Meet me after dark.\"",
+      "expected": "full_pvr",
+      "category": "mandatory_negative",
+      "triage_disposition": "negative",
+      "triage_reason": "requires_semantic_decomposition",
+      "verifier_invoked": false,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "fail_safe": null,
+      "final_route": "full_pvr",
+      "triage_timing": {
+        "wall_ms": 926,
+        "input_tokens": 680,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "f06_observable_only",
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected": "uniform_projection",
+      "category": "positive_control",
+      "triage_disposition": "affirmative",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_disqualifying_content_found",
+      "fail_safe": null,
+      "final_route": "uniform_projection",
+      "triage_timing": {
+        "wall_ms": 1037,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 985,
+        "input_tokens": 190,
+        "output_tokens": 68
+      },
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "pos_simple_action",
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected": "uniform_projection",
+      "category": "positive_control",
+      "triage_disposition": "affirmative",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_disqualifying_content_found",
+      "fail_safe": null,
+      "final_route": "uniform_projection",
+      "triage_timing": {
+        "wall_ms": 1013,
+        "input_tokens": 165,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1189,
+        "input_tokens": 186,
+        "output_tokens": 63
+      },
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    },
+    {
+      "id": "pos_simple_speech",
+      "content": "The player says, \"Good evening, everyone.\"",
+      "expected": "uniform_projection",
+      "category": "positive_control",
+      "triage_disposition": "affirmative",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_disqualifying_semantic_content_found",
+      "fail_safe": null,
+      "final_route": "uniform_projection",
+      "triage_timing": {
+        "wall_ms": 553,
+        "input_tokens": 675,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1266,
+        "input_tokens": 440,
+        "output_tokens": 73
+      },
+      "classification": "correct",
+      "false_affirmative_intercepted_by_verifier": false
+    }
+  ],
+  "summary": {
+    "correct": 8,
+    "misroute": 0,
+    "mandatory_negative_false_simple": 0,
+    "positive_false_complex": 0,
+    "verifier_interceptions": 0,
+    "f06_blocked": true
+  },
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue197-formal-val-oXVXPR"
+}

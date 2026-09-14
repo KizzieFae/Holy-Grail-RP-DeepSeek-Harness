@@ -28,6 +28,7 @@ const MINIMUM_CONTRIBUTIONS_BY_KIND = {
   opening: ['inference_instruction', 'scene_reference'],
   opening_segmentation: ['inference_instruction', 'opening_text'],
   player_visibility_triage: ['inference_instruction'],
+  player_uniform_eligibility_verification: ['inference_instruction'],
   player_decomposition: ['inference_instruction', 'player_pvr_entitlement_context'],
   librarian_mediation: ['inference_instruction', 'active_constraints'],
   librarian_mediation_contract_correction: ['inference_instruction', 'active_constraints'],
@@ -88,6 +89,8 @@ const MOCK_BY_KIND = {
   opening: '{"presentation_text":"Rain begins.","perceptual_visibility":{"schema":"hg_perceptual_visibility_v2","units":[]}}',
   opening_segmentation: '{"segments":[{"text":"Rain begins.","unit_type":"speech"}]}',
   player_visibility_triage: '{"uniform_projection_safe":true}',
+  player_uniform_eligibility_verification:
+    '{"uniform_eligibility_disposition":"clear","reason":"no_disqualifier_found"}',
   player_decomposition: '{"schema":"hg_player_decomposition_v1","units":[]}',
   librarian_mediation: '{"schema":"hg_librarian_mediation_result_v1","selected_items":[]}',
   librarian_mediation_contract_correction: '{"schema":"hg_librarian_mediation_result_v1","selected_items":[]}',

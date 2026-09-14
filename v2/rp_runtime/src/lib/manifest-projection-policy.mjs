@@ -166,6 +166,7 @@ export const ALLOWED_SOURCE_KINDS = {
     new Set(['player_pvr_entitlement_context']),
   ),
   player_visibility_triage: COMMON_INSTRUCTION,
+  player_uniform_eligibility_verification: COMMON_INSTRUCTION,
   storyteller_orientation: union(
     DIRECTOR_DIGESTS,
     COMMON_INSTRUCTION,
