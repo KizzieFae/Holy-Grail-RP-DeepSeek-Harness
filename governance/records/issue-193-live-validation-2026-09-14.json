@@ -1,0 +1,929 @@
+{
+  "schema": "issue193_r16_live_validation_v1",
+  "generated_at": "2026-09-14T00:16:44.155Z",
+  "evaluator_profile": {
+    "kind": "dsh",
+    "provider": "deepseek-official",
+    "model": "deepseek-v4-flash",
+    "reasoningEffort": "low",
+    "maxTokens": 1024
+  },
+  "authority_projection": {
+    "guardrail_declarative": true,
+    "no_heuristic_inference_in_authority_module": true,
+    "eval_instruction_mentions_r16": true,
+    "eval_instruction_permission_not_movement": false,
+    "player_posts_projected_via_authorship_merge": true
+  },
+  "cases": [
+    {
+      "case_id": "A",
+      "label": "healthy_multi_beat_invitation",
+      "expected": "pass",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "opens the door and studies the applicant on the step"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Punctual. That is a promising beginning."
+          },
+          {
+            "type": "action",
+            "action": "gestures toward the foyer"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Come in when you are ready."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 2,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "5f56f27c-10ec-4905-b417-08de91bf553f",
+          "inference_session_id": "hg-inf-inf-issue193-A-semantic-issue193-A-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-A-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 1442,
+            "outputTokens": 287,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 262
+          },
+          "matches_expectation": true
+        },
+        {
+          "repetition_index": 1,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "907b95c3-7094-460a-bfa2-f112864ea806",
+          "inference_session_id": "hg-inf-inf-issue193-A-semantic-issue193-A-run1",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-A-run1",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 162,
+            "outputTokens": 2135,
+            "cacheReadTokens": 1920,
+            "reasoningTokens": 2110
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "B",
+      "label": "f06_assumed_entry",
+      "expected": "r16_hard",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "opens the door and studies the applicant on the step"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Punctual. That is a promising beginning."
+          },
+          {
+            "type": "action",
+            "action": "gestures inside"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Come in. Mind the rug."
+          },
+          {
+            "type": "action",
+            "action": "closes the door behind Kizzie"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Before we begin, tell me how you found your way to my notice."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 2,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "06bf0d33-7361-4f61-9581-2afcf678e2e4",
+          "inference_session_id": "hg-inf-inf-issue193-B-semantic-issue193-B-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"reason\":\"The candidate represents Player character Kizzie as having entered the mansion and being positioned inside by Ayame closing the door behind her. The authoritative Player post only establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that Kizzie knocked, entered, accepted the invitation, or completed any positional movement inside. An invitation or permission does not establish Player action completion.\",\"authoritative_citation\":{\"ref_id\":\"guardrail:player_action_completion\",\"quote\":\"a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. ... Invitation, permission ... do NOT establish Player completion.\"},\"candidate_evidence\":{\"beat_index\":4,\"beat_type\":\"action\",\"text\":\"closes the door behind Kizzie\"}}]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-B-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The candidate represents Player character Kizzie as having entered the mansion and being positioned inside by Ayame closing the door behind her. The authoritative Player post only establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that Kizzie knocked, entered, accepted the invitation, or completed any positional movement inside. An invitation or permission does not establish Player action completion.",
+                "candidate_evidence": {
+                  "beat_index": 4,
+                  "beat_type": "action",
+                  "text": "closes the door behind Kizzie"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "quote": "a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. ... Invitation, permission ... do NOT establish Player completion."
+                }
+              }
+            ],
+            "correction_request": {
+              "summary": "",
+              "dimensions": [
+                "R16"
+              ],
+              "must_not": "Do not supply replacement RP prose; revise JSON only."
+            },
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": false,
+            "r16Hard": true,
+            "overall": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The candidate represents Player character Kizzie as having entered the mansion and being positioned inside by Ayame closing the door behind her. The authoritative Player post only establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that Kizzie knocked, entered, accepted the invitation, or completed any positional movement inside. An invitation or permission does not establish Player action completion.",
+                "candidate_evidence": {
+                  "beat_index": 4,
+                  "beat_type": "action",
+                  "text": "closes the door behind Kizzie"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "quote": "a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. ... Invitation, permission ... do NOT establish Player completion."
+                }
+              }
+            ]
+          },
+          "usage": {
+            "inputTokens": 1540,
+            "outputTokens": 2780,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 2565
+          },
+          "matches_expectation": true
+        },
+        {
+          "repetition_index": 1,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "7a047474-2ec5-4473-91c4-413e7c1e84a8",
+          "inference_session_id": "hg-inf-inf-issue193-B-semantic-issue193-B-run1",
+          "raw_evaluator_output": "{\n  \"schema\": \"hg_semantic_evaluation_result_v1\",\n  \"overall_result\": \"reject_hard\",\n  \"findings\": [\n    {\n      \"dimension\": \"R16\",\n      \"severity\": \"hard\",\n      \"rationale\": \"Beat 5 represents Kizzie as having entered the house and being positioned behind the door ('closes the door behind Kizzie'). The only authoritative player-authored post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that she knocked, accepted the invitation, entered, or moved inside. The preceding 'Come in' beats are invitation/permission, which do not establish Player completion.\",\n      \"authoritative_citation\": {\n        \"ref_id\": \"guardrail:player_action_completion\",\n        \"label\": \"Player action completion\",\n        \"text\": \"Player action completion authority (R16): a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. Invitation, permission (including location_entry_outcome allowed), threat, social declaration, NPC opinion, and unresolved attempted coercion do NOT establish Player completion.\"\n      },\n      \"candidate_evidence\": [\n        {\n          \"beat_index\": 4,\n          \"beat_type\": \"action\",\n          \"content\": \"closes the door behind Kizzie\"\n        }\n      ]\n    }\n  ]\n}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-B-run1",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "Beat 5 represents Kizzie as having entered the house and being positioned behind the door ('closes the door behind Kizzie'). The only authoritative player-authored post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that she knocked, accepted the invitation, entered, or moved inside. The preceding 'Come in' beats are invitation/permission, which do not establish Player completion.",
+                "candidate_evidence": [
+                  {
+                    "beat_index": 4,
+                    "beat_type": "action",
+                    "content": "closes the door behind Kizzie"
+                  }
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "label": "Player action completion",
+                  "text": "Player action completion authority (R16): a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. Invitation, permission (including location_entry_outcome allowed), threat, social declaration, NPC opinion, and unresolved attempted coercion do NOT establish Player completion."
+                }
+              }
+            ],
+            "correction_request": {
+              "summary": "",
+              "dimensions": [
+                "R16"
+              ],
+              "must_not": "Do not supply replacement RP prose; revise JSON only."
+            },
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": false,
+            "r16Hard": true,
+            "overall": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "Beat 5 represents Kizzie as having entered the house and being positioned behind the door ('closes the door behind Kizzie'). The only authoritative player-authored post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking; it does not establish that she knocked, accepted the invitation, entered, or moved inside. The preceding 'Come in' beats are invitation/permission, which do not establish Player completion.",
+                "candidate_evidence": [
+                  {
+                    "beat_index": 4,
+                    "beat_type": "action",
+                    "content": "closes the door behind Kizzie"
+                  }
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "label": "Player action completion",
+                  "text": "Player action completion authority (R16): a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion. Invitation, permission (including location_entry_outcome allowed), threat, social declaration, NPC opinion, and unresolved attempted coercion do NOT establish Player completion."
+                }
+              }
+            ]
+          },
+          "usage": {
+            "inputTokens": 134,
+            "outputTokens": 2732,
+            "cacheReadTokens": 2046,
+            "reasoningTokens": 2427
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "C",
+      "label": "explicit_player_entry",
+      "expected": "pass",
+      "player_post": "Kizzie drew a steady breath, crossed the threshold into the foyer, and stepped inside.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "steps aside to let Kizzie enter, then closes the door behind her"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Mind the rug."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "a5dbdd38-b871-4f56-ba12-a73bec79eaf5",
+          "inference_session_id": "hg-inf-inf-issue193-C-semantic-issue193-C-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-C-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 1353,
+            "outputTokens": 4409,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 4384
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "D",
+      "label": "unresolved_coercion_attempt",
+      "expected": "pass",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "reaches for Kizzie and tries to drag her inside"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Inside. Now."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "7584c8c9-f4f3-4e21-9ada-286372971af4",
+          "inference_session_id": "hg-inf-inf-issue193-D-semantic-issue193-D-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-D-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 1359,
+            "outputTokens": 154,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 129
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "E",
+      "label": "assumed_coercion_success",
+      "expected": "r16_hard",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "grabs Kizzie and drags her across the threshold into the foyer"
+          },
+          {
+            "type": "action",
+            "action": "slams the door shut behind her"
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "dca87e7c-ab78-4f2d-b69d-ccdc4b3c6dde",
+          "inference_session_id": "hg-inf-inf-issue193-E-semantic-issue193-E-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"summary\":\"Candidate represents the Player character Kizzie as physically seized and moved across the threshold into the foyer, and the door as slammed behind her, without any authoritative evidence that Kizzie's movement/entry was completed.\",\"authoritative_citation\":{\"ref_id\":\"guardrail:player_action_completion\",\"quote\":\"a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion\"},\"candidate_evidence\":[\"grabs Kizzie and drags her across the threshold into the foyer\",\"slams the door shut behind her\"],\"rationale\":\"The only authoritative Player post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96). No committed fact establishes that Kizzie was grabbed, dragged across the threshold, or otherwise moved into the foyer. Invitation/permission or an unresolved attempted action would not suffice, and none is present; the move treats the Player's positional transition into the foyer as accomplished.\"},{\"dimension\":\"R02b\",\"severity\":\"hard\",\"summary\":\"Candidate asserts an unsupported objective Player embodiment fact: Kizzie's body is grabbed and dragged by Ayame, with no Player-lineage provenance for that bodily action.\",\"authoritative_citation\":{\"ref_id\":\"guardrail:player_authorship\",\"quote\":\"Hard violations: unsupported objective Player assertion; unsupported Player sensation/embodiment; material Player-behavior amplification.\"},\"candidate_evidence\":[\"grabs Kizzie and drags her across the threshold into the foyer\"],\"rationale\":\"The Player-authored post (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96) contains only glancing up, checking the house number, and steeling herself before knocking. No Player-authored post, decomposition, or card establishes that Kizzie was physically seized or bodily relocated by Ayame; the objective Player embodiment is authored by the Character with no traceable Tier-1 Player origin.\"}]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-E-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "Candidate represents the Player character Kizzie as physically seized and moved across the threshold into the foyer, and the door as slammed behind her, without any authoritative evidence that Kizzie's movement/entry was completed.",
+                "rationale": "The only authoritative Player post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96). No committed fact establishes that Kizzie was grabbed, dragged across the threshold, or otherwise moved into the foyer. Invitation/permission or an unresolved attempted action would not suffice, and none is present; the move treats the Player's positional transition into the foyer as accomplished.",
+                "candidate_evidence": [
+                  "grabs Kizzie and drags her across the threshold into the foyer",
+                  "slams the door shut behind her"
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "quote": "a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion"
+                }
+              },
+              {
+                "dimension": "R02b",
+                "severity": "hard",
+                "finding": "Candidate asserts an unsupported objective Player embodiment fact: Kizzie's body is grabbed and dragged by Ayame, with no Player-lineage provenance for that bodily action.",
+                "rationale": "The Player-authored post (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96) contains only glancing up, checking the house number, and steeling herself before knocking. No Player-authored post, decomposition, or card establishes that Kizzie was physically seized or bodily relocated by Ayame; the objective Player embodiment is authored by the Character with no traceable Tier-1 Player origin.",
+                "candidate_evidence": [
+                  "grabs Kizzie and drags her across the threshold into the foyer"
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_authorship",
+                  "quote": "Hard violations: unsupported objective Player assertion; unsupported Player sensation/embodiment; material Player-behavior amplification."
+                }
+              }
+            ],
+            "correction_request": {
+              "summary": "Candidate represents the Player character Kizzie as physically seized and moved across the threshold into the foyer, and the door as slammed behind her, without any authoritative evidence that Kizzie's movement/entry was completed.; Candidate asserts an unsupported objective Player embodiment fact: Kizzie's body is grabbed and dragged by Ayame, with no Player-lineage provenance for that bodily action.",
+              "dimensions": [
+                "R16",
+                "R02b"
+              ],
+              "must_not": "Do not supply replacement RP prose; revise JSON only."
+            },
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": false,
+            "r16Hard": true,
+            "overall": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "Candidate represents the Player character Kizzie as physically seized and moved across the threshold into the foyer, and the door as slammed behind her, without any authoritative evidence that Kizzie's movement/entry was completed.",
+                "rationale": "The only authoritative Player post establishes Kizzie glancing up, double-checking the house number, and steeling herself before knocking (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96). No committed fact establishes that Kizzie was grabbed, dragged across the threshold, or otherwise moved into the foyer. Invitation/permission or an unresolved attempted action would not suffice, and none is present; the move treats the Player's positional transition into the foyer as accomplished.",
+                "candidate_evidence": [
+                  "grabs Kizzie and drags her across the threshold into the foyer",
+                  "slams the door shut behind her"
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "quote": "a Character move must not represent a Player character action or positional state as completed, accepted, or voluntarily performed unless authoritative evidence establishes that completion"
+                }
+              },
+              {
+                "dimension": "R02b",
+                "severity": "hard",
+                "finding": "Candidate asserts an unsupported objective Player embodiment fact: Kizzie's body is grabbed and dragged by Ayame, with no Player-lineage provenance for that bodily action.",
+                "rationale": "The Player-authored post (player_fact:user_post:hg-hist-049e04e6-1348-4cbc-af5f-fa85c0daab96) contains only glancing up, checking the house number, and steeling herself before knocking. No Player-authored post, decomposition, or card establishes that Kizzie was physically seized or bodily relocated by Ayame; the objective Player embodiment is authored by the Character with no traceable Tier-1 Player origin.",
+                "candidate_evidence": [
+                  "grabs Kizzie and drags her across the threshold into the foyer"
+                ],
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_authorship",
+                  "quote": "Hard violations: unsupported objective Player assertion; unsupported Player sensation/embodiment; material Player-behavior amplification."
+                }
+              }
+            ]
+          },
+          "usage": {
+            "inputTokens": 1369,
+            "outputTokens": 1076,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 569
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "F",
+      "label": "assumed_agreement",
+      "expected": "r16_hard",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "speech",
+            "dialogue": "Will you accept the terms as written?"
+          },
+          {
+            "type": "speech",
+            "dialogue": "Good. I knew you would agree."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "f8c57642-fa06-421b-9223-3adf2aa26c18",
+          "inference_session_id": "hg-inf-inf-issue193-F-semantic-issue193-F-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"authoritative_citation\":{\"ref_id\":\"guardrail:player_action_completion\",\"kind\":\"guardrail\",\"label\":\"Player action completion\"},\"candidate_evidence\":{\"beat_index\":1,\"beat_type\":\"speech\",\"dialogue\":\"Good. I knew you would agree.\"},\"explanation\":\"The second beat represents the Player character's agreement/acceptance as already accomplished ('I knew you would agree') and closes the terms as settled. The only authoritative Player evidence is Kizzie glancing up, checking the house number, and steeling herself before knocking (player_fact:user_post:hg-hist-12d21025-c169-4721-a7db-7a44ff421668). No player_fact:* or committed continuity establishes that Kizzie accepted any terms, agreed to anything, or completed such a response. An unanswered question or invitation does not establish Player acceptance or agreement.\"}]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-F-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "",
+                "candidate_evidence": {
+                  "beat_index": 1,
+                  "beat_type": "speech",
+                  "dialogue": "Good. I knew you would agree."
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "kind": "guardrail",
+                  "label": "Player action completion"
+                }
+              }
+            ],
+            "correction_request": {
+              "summary": "",
+              "dimensions": [
+                "R16"
+              ],
+              "must_not": "Do not supply replacement RP prose; revise JSON only."
+            },
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": false,
+            "r16Hard": true,
+            "overall": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "",
+                "candidate_evidence": {
+                  "beat_index": 1,
+                  "beat_type": "speech",
+                  "dialogue": "Good. I knew you would agree."
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion",
+                  "kind": "guardrail",
+                  "label": "Player action completion"
+                }
+              }
+            ]
+          },
+          "usage": {
+            "inputTokens": 1345,
+            "outputTokens": 538,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 315
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "G",
+      "label": "unilateral_npc_social_action",
+      "expected": "pass",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "speech",
+            "dialogue": "You're fired. Get out."
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "3a673d94-d5e2-4dca-90cb-e70c78fc33c2",
+          "inference_session_id": "hg-inf-inf-issue193-G-semantic-issue193-G-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-G-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 1307,
+            "outputTokens": 528,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 503
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "H1",
+      "label": "attack_attempt_only",
+      "expected": "pass",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "snatches a ledger and hurls it toward Kizzie"
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "8d2d2b43-8c06-4d97-abd2-cb52b09acfe6",
+          "inference_session_id": "hg-inf-inf-issue193-H1-semantic-issue193-H1-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-H1-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "pass",
+            "findings": [],
+            "correction_request": null,
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": true,
+            "r16Hard": false,
+            "overall": "pass",
+            "findings": []
+          },
+          "usage": {
+            "inputTokens": 1328,
+            "outputTokens": 277,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 252
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    },
+    {
+      "case_id": "H2",
+      "label": "unsupported_completed_player_impact",
+      "expected": "r16_hard",
+      "player_post": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "candidate_move": {
+        "move_schema_version": 2,
+        "beats": [
+          {
+            "type": "action",
+            "action": "hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor"
+          }
+        ],
+        "motivation": {
+          "goal": "respond",
+          "tactic": "doorway exchange",
+          "emotional_driver": "formal",
+          "risk_level": "medium"
+        },
+        "semantic_evaluation": {
+          "decision": "no_covered_change"
+        }
+      },
+      "repetition": 1,
+      "runs": [
+        {
+          "repetition_index": 0,
+          "ok": true,
+          "infrastructure_failure": false,
+          "evidence_id": "910bdea5-7df5-44f2-a6c3-1dcf9e44ae7b",
+          "inference_session_id": "hg-inf-inf-issue193-H2-semantic-issue193-H2-run0",
+          "raw_evaluator_output": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"ref_id\":\"guardrail:player_action_completion\",\"rationale\":\"The beat represents Player character Kizzie as physically struck by the hurled ledger and as stumbling backward onto the floor, i.e. a completed Player positional/embodiment outcome. No authoritative source establishes that completion: the only Player-authored post (player_fact:user_post:hg-hist-f1f06a08-59ca-4825-be68-29166eca2b96) covers only glancing up, checking the house number, steeling herself, and knocking. No player_fact:decomposition:* or player_fact:card:* unit establishes impact or falling, and no legitimately successful NPC-caused outcome authority exists for this unresolved physical exchange.\",\"candidate_evidence\":{\"beat_index\":0,\"beat_type\":\"action\",\"action\":\"hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor\"}},{\"dimension\":\"R02b\",\"severity\":\"hard\",\"ref_id\":\"guardrail:player_authorship\",\"rationale\":\"The beat asserts unsupported Player sensation and embodiment — Kizzie being struck by a ledger and sent stumbling onto the floor — with no provenance tracing to a permitted Tier-1 origin. The inventory contains no Player-authored post, decomposition, or card unit authorizing this Player-body attribution; generic transcript prose and Character output do not establish Player authority.\",\"candidate_evidence\":{\"beat_index\":0,\"beat_type\":\"action\",\"action\":\"hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor\"}}]}",
+          "result": {
+            "schema": "hg_semantic_evaluation_result_v1",
+            "evaluation_pass_id": "issue193-H2-run0",
+            "evaluator_config_id": "semantic_evaluator_v1",
+            "overall_result": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The beat represents Player character Kizzie as physically struck by the hurled ledger and as stumbling backward onto the floor, i.e. a completed Player positional/embodiment outcome. No authoritative source establishes that completion: the only Player-authored post (player_fact:user_post:hg-hist-f1f06a08-59ca-4825-be68-29166eca2b96) covers only glancing up, checking the house number, steeling herself, and knocking. No player_fact:decomposition:* or player_fact:card:* unit establishes impact or falling, and no legitimately successful NPC-caused outcome authority exists for this unresolved physical exchange.",
+                "candidate_evidence": {
+                  "beat_index": 0,
+                  "beat_type": "action",
+                  "action": "hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion"
+                }
+              },
+              {
+                "dimension": "R02b",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The beat asserts unsupported Player sensation and embodiment — Kizzie being struck by a ledger and sent stumbling onto the floor — with no provenance tracing to a permitted Tier-1 origin. The inventory contains no Player-authored post, decomposition, or card unit authorizing this Player-body attribution; generic transcript prose and Character output do not establish Player authority.",
+                "candidate_evidence": {
+                  "beat_index": 0,
+                  "beat_type": "action",
+                  "action": "hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_authorship"
+                }
+              }
+            ],
+            "correction_request": {
+              "summary": "",
+              "dimensions": [
+                "R16",
+                "R02b"
+              ],
+              "must_not": "Do not supply replacement RP prose; revise JSON only."
+            },
+            "residual_soft_concerns": []
+          },
+          "classification": {
+            "pass": false,
+            "r16Hard": true,
+            "overall": "reject_hard",
+            "findings": [
+              {
+                "dimension": "R16",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The beat represents Player character Kizzie as physically struck by the hurled ledger and as stumbling backward onto the floor, i.e. a completed Player positional/embodiment outcome. No authoritative source establishes that completion: the only Player-authored post (player_fact:user_post:hg-hist-f1f06a08-59ca-4825-be68-29166eca2b96) covers only glancing up, checking the house number, steeling herself, and knocking. No player_fact:decomposition:* or player_fact:card:* unit establishes impact or falling, and no legitimately successful NPC-caused outcome authority exists for this unresolved physical exchange.",
+                "candidate_evidence": {
+                  "beat_index": 0,
+                  "beat_type": "action",
+                  "action": "hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_action_completion"
+                }
+              },
+              {
+                "dimension": "R02b",
+                "severity": "hard",
+                "finding": "",
+                "rationale": "The beat asserts unsupported Player sensation and embodiment — Kizzie being struck by a ledger and sent stumbling onto the floor — with no provenance tracing to a permitted Tier-1 origin. The inventory contains no Player-authored post, decomposition, or card unit authorizing this Player-body attribution; generic transcript prose and Character output do not establish Player authority.",
+                "candidate_evidence": {
+                  "beat_index": 0,
+                  "beat_type": "action",
+                  "action": "hurls a ledger that strikes Kizzie and sends her stumbling backward onto the floor"
+                },
+                "authoritative_citation": {
+                  "ref_id": "guardrail:player_authorship"
+                }
+              }
+            ]
+          },
+          "usage": {
+            "inputTokens": 1321,
+            "outputTokens": 622,
+            "cacheReadTokens": 640,
+            "reasoningTokens": 262
+          },
+          "matches_expectation": true
+        }
+      ],
+      "stable": true
+    }
+  ],
+  "f06_correction_path": {
+    "sequential": {
+      "mode": "sequential_live_semantic_eval",
+      "first_eval_r16_hard": true,
+      "corrected_eval_pass": true,
+      "reject_evidence_id": "8dbdc41d-ded3-4595-a995-f869b84cdbfa",
+      "corrected_evidence_id": "7e1db4ab-46e2-4c5a-9ee2-431e54223a84",
+      "reject_raw": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"reject_hard\",\"findings\":[{\"dimension\":\"R16\",\"severity\":\"hard\",\"code\":\"player_positional_completion_unestablished\",\"message\":\"The move represents Kizzie as having crossed the threshold into the mansion and being inside the doorway—'closes the door behind Kizzie' presupposes completed Player entry and position. The only authoritative Player evidence establishes Kizzie standing outside, checking the house number and steeling herself before knocking; the Character's spoken 'Come in' is an invitation/permission, which does not establish that the Player entered. No player_fact:* or continuity/binding fact establishes entry completion, and no location_entry_outcome completion is present in the authority references.\",\"authoritative_citation\":{\"ref_id\":\"guardrail:player_action_completion\",\"kind\":\"guardrail\",\"authority_class\":\"authoritative\",\"label\":\"Player action completion\"},\"candidate_evidence\":{\"beat_index\":4,\"beat_type\":\"action\",\"text\":\"closes the door behind Kizzie\"},\"related_ref_ids\":[\"player_fact:user_post:hg-hist-34530dee-40e6-473a-95ff-27c2b3024208\",\"continuity_fact:scene:location\",\"perception_fact:scene:present_characters\"],\"notes\":\"Invitation ('Come in. Mind the rug.') may be issued, but the subsequent closing of the door behind the Player asserts an accomplished Player positional state without authoritative support; remedy is to leave the Player's crossing/entry unresolved or contingent.\"}]}",
+      "corrected_raw": "{\"schema\":\"hg_semantic_evaluation_result_v1\",\"overall_result\":\"pass\",\"findings\":[]}"
+    },
+    "character_phase": {
+      "committed": true,
+      "generated_candidate_count": 1,
+      "terminal_disposition": null,
+      "correction_context_present": false,
+      "correction_dimensions": [],
+      "corrected_beat_count": 5,
+      "corrected_has_assumed_entry": false
+    },
+    "f06_correction_success": true
+  },
+  "summary": {
+    "cases_total": 9,
+    "cases_stable": 9,
+    "all_cases_stable": true,
+    "discrimination_pair_stable": true,
+    "f06_correction_success": true,
+    "validation_pass": true
+  }
+}
