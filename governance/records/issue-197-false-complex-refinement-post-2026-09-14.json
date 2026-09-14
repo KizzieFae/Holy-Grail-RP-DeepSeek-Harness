@@ -1,0 +1,570 @@
+{
+  "schema": "issue197_false_complex_refinement_v1",
+  "phase": "post",
+  "generated_at": "2026-09-14T03:44:32.653Z",
+  "candidate_sha": "aff53a41abb082c24c4c424f5fe499814e628c4c",
+  "provenance": {
+    "execution_head": "aff53a41abb082c24c4c424f5fe499814e628c4c",
+    "working_tree_dirty": false,
+    "dirty_paths": [],
+    "git_sha": "aff53a41abb082c24c4c424f5fe499814e628c4c"
+  },
+  "design": {
+    "positive_repeat": 3,
+    "negative_repeat": 1,
+    "design_record": "governance/records/issue-197-false-complex-refinement-design-2026-09-14.md"
+  },
+  "positive_runs": [
+    {
+      "case_id": "pos_simple_speech",
+      "run_index": 1,
+      "content": "\"Hello everyone,\" the player says with a smile.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"public_speech_uniform\",\n  \"audit_note\": \"Source states only an outward greeting with smile; no explicit private, concealed, directed, subset, or mixed entitlement content.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "public_speech_uniform",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1206,
+        "input_tokens": 164,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1198,
+        "input_tokens": 206,
+        "output_tokens": 57
+      }
+    },
+    {
+      "case_id": "pos_simple_speech",
+      "run_index": 2,
+      "content": "\"Hello everyone,\" the player says with a smile.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"public_uniform_speech_only\",\n  \"audit_note\": \"Source is a single public greeting with smile; no stated private cognition, concealment, directed/subset speech, or nonuniform entitlement.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "public_uniform_speech_only",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 943,
+        "input_tokens": 164,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 839,
+        "input_tokens": 206,
+        "output_tokens": 61
+      }
+    },
+    {
+      "case_id": "pos_simple_speech",
+      "run_index": 3,
+      "content": "\"Hello everyone,\" the player says with a smile.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_explicit_nonuniform_content\",\n  \"audit_note\": \"Source is public speech with observable smile; no stated private cognition, concealment, directed entitlement, or subset scope. Ordinary perceptual variation not disqualifying.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_explicit_nonuniform_content",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 896,
+        "input_tokens": 164,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1218,
+        "input_tokens": 206,
+        "output_tokens": 64
+      }
+    },
+    {
+      "case_id": "pos_simple_action",
+      "run_index": 1,
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"only_uniform_observable_action\",\n  \"audit_note\": \"Source states public observable action; no explicit private, concealed, directed, subset, or mixed entitlement content.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "only_uniform_observable_action",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 970,
+        "input_tokens": 165,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1122,
+        "input_tokens": 207,
+        "output_tokens": 56
+      }
+    },
+    {
+      "case_id": "pos_simple_action",
+      "run_index": 2,
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_explicit_nonuniform_content\",\n  \"audit_note\": \"Source states only observable physical action (setting lantern on table, stepping back); no private cognition, concealment, directed speech, or subset entitlement is stated.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_explicit_nonuniform_content",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 948,
+        "input_tokens": 165,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 940,
+        "input_tokens": 207,
+        "output_tokens": 65
+      }
+    },
+    {
+      "case_id": "pos_simple_action",
+      "run_index": 3,
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"only_uniform_observable_action\",\n  \"audit_note\": \"Source states setting a lantern on a table and stepping back; no private cognition, concealment, directed speech, or subset entitlement is explicitly present.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "only_uniform_observable_action",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 814,
+        "input_tokens": 165,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1230,
+        "input_tokens": 207,
+        "output_tokens": 64
+      }
+    },
+    {
+      "case_id": "pos_scene_description",
+      "run_index": 1,
+      "content": "Rain drums against the window while candlelight flickers across the worn floorboards.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"ambient_scene_description_only\",\n  \"audit_note\": \"Rain and candlelight are ambient observable scene content; no stated private cognition, concealed action, directed speech, or mixed entitlement in the text.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "ambient_scene_description_only",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1053,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1213,
+        "input_tokens": 211,
+        "output_tokens": 62
+      }
+    },
+    {
+      "case_id": "pos_scene_description",
+      "run_index": 2,
+      "content": "Rain drums against the window while candlelight flickers across the worn floorboards.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"ambient_scene_description_only\",\n  \"audit_note\": \"Source states only uniformly perceivable ambient environmental description: rain against window, candlelight flickering across floorboards. No private cognition, concealed action, directed speech, or subset entitlement explicitly present.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "ambient_scene_description_only",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1555,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1393,
+        "input_tokens": 211,
+        "output_tokens": 72
+      }
+    },
+    {
+      "case_id": "pos_scene_description",
+      "run_index": 3,
+      "content": "Rain drums against the window while candlelight flickers across the worn floorboards.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"ambient_observable_scene_only\",\n  \"audit_note\": \"Rain and candlelight are ordinary uniformly perceivable environmental description; no stated private cognition, concealment, directed speech, or mixed entitlement.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "ambient_observable_scene_only",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 583,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1220,
+        "input_tokens": 211,
+        "output_tokens": 63
+      }
+    },
+    {
+      "case_id": "pos_mixed_action_speech",
+      "run_index": 1,
+      "content": "The player lifts the crate onto the shelf. \"There—that should hold,\" they say to the room.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_explicit_nonuniform_content\",\n  \"audit_note\": \"Observable action and public speech to the room; no stated private cognition, concealment, directed subset speech, or mixed entitlement.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_explicit_nonuniform_content",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1243,
+        "input_tokens": 175,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1210,
+        "input_tokens": 217,
+        "output_tokens": 60
+      }
+    },
+    {
+      "case_id": "pos_mixed_action_speech",
+      "run_index": 2,
+      "content": "The player lifts the crate onto the shelf. \"There—that should hold,\" they say to the room.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_explicit_nonuniform_content\",\n  \"audit_note\": \"Source shows observable action and public room speech; no stated private cognition, concealment, or subset-directed entitlement.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_explicit_nonuniform_content",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1095,
+        "input_tokens": 175,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 908,
+        "input_tokens": 217,
+        "output_tokens": 56
+      }
+    },
+    {
+      "case_id": "pos_mixed_action_speech",
+      "run_index": 3,
+      "content": "The player lifts the crate onto the shelf. \"There—that should hold,\" they say to the room.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"public_observable_action_and_public_speech\",\n  \"audit_note\": \"Crate-lifting onto shelf is observable; quoted utterance addressed to the room is public speech. No stated private cognition, concealment, directed subset entitlement, or off-screen narration.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "public_observable_action_and_public_speech",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1052,
+        "input_tokens": 175,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1308,
+        "input_tokens": 217,
+        "output_tokens": 74
+      }
+    },
+    {
+      "case_id": "pos_f06_observable_only",
+      "run_index": 1,
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"observable_public_actions_only\",\n  \"audit_note\": \"Glancing, double-checking a house number, and knocking are uniformly perceivable observable actions; no stated private cognition, concealed action, or directed/subset speech.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "observable_public_actions_only",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 926,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1284,
+        "input_tokens": 211,
+        "output_tokens": 68
+      }
+    },
+    {
+      "case_id": "pos_f06_observable_only",
+      "run_index": 2,
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_stated_nonuniform_content\",\n  \"audit_note\": \"Observable actions (glance, check house number, knock) only; no explicit private cognition, concealment, directed speech, or mixed entitlement in source text.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_stated_nonuniform_content",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 568,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1211,
+        "input_tokens": 211,
+        "output_tokens": 67
+      }
+    },
+    {
+      "case_id": "pos_f06_observable_only",
+      "run_index": 3,
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected_route": "uniform_projection",
+      "triage_affirmative": true,
+      "triage_raw": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+      "triage_reason": "affirmative_uniform_present",
+      "verifier_invoked": true,
+      "verifier_raw": "{\n  \"uniform_eligibility_disposition\": \"clear\",\n  \"reason\": \"no_explicit_disqualifier\",\n  \"audit_note\": \"Source states observable actions: glancing up, double-checking house number, knocking. No explicit private cognition, concealed action, directed/subset speech, or mixed entitlement.\"\n}",
+      "verifier_disposition": "clear",
+      "verifier_reason": "no_explicit_disqualifier",
+      "verifier_audit_note": null,
+      "final_route": "uniform_projection",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1012,
+        "input_tokens": 169,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 973,
+        "input_tokens": 211,
+        "output_tokens": 67
+      }
+    }
+  ],
+  "positive_aggregates": [
+    {
+      "case_id": "pos_simple_speech",
+      "runs": 3,
+      "triage_affirmative_rate": 1,
+      "verifier_clear_rate_given_affirmative": 1,
+      "final_uniform_rate": 1,
+      "disqualification_reasons": []
+    },
+    {
+      "case_id": "pos_simple_action",
+      "runs": 3,
+      "triage_affirmative_rate": 1,
+      "verifier_clear_rate_given_affirmative": 1,
+      "final_uniform_rate": 1,
+      "disqualification_reasons": []
+    },
+    {
+      "case_id": "pos_scene_description",
+      "runs": 3,
+      "triage_affirmative_rate": 1,
+      "verifier_clear_rate_given_affirmative": 1,
+      "final_uniform_rate": 1,
+      "disqualification_reasons": []
+    },
+    {
+      "case_id": "pos_mixed_action_speech",
+      "runs": 3,
+      "triage_affirmative_rate": 1,
+      "verifier_clear_rate_given_affirmative": 1,
+      "final_uniform_rate": 1,
+      "disqualification_reasons": []
+    },
+    {
+      "case_id": "pos_f06_observable_only",
+      "runs": 3,
+      "triage_affirmative_rate": 1,
+      "verifier_clear_rate_given_affirmative": 1,
+      "final_uniform_rate": 1,
+      "disqualification_reasons": []
+    }
+  ],
+  "negative_runs": [
+    {
+      "case_id": "f06_mixed",
+      "run_index": 1,
+      "content": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "expected_route": "full_pvr",
+      "triage_affirmative": false,
+      "triage_raw": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"requires_semantic_decomposition\"\n}",
+      "triage_reason": "requires_semantic_decomposition",
+      "verifier_invoked": false,
+      "verifier_raw": null,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "verifier_audit_note": null,
+      "final_route": "full_pvr",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 697,
+        "input_tokens": 173,
+        "output_tokens": 24
+      },
+      "verification_timing": null
+    },
+    {
+      "case_id": "f06_paraphrase",
+      "run_index": 1,
+      "content": "Kizzie checked the address by the door, quietly braced herself, and knocked.",
+      "expected_route": "full_pvr",
+      "triage_affirmative": false,
+      "triage_raw": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"internal_preparation_not_uniformly_perceptible\"\n}",
+      "triage_reason": "internal_preparation_not_uniformly_perceptible",
+      "verifier_invoked": false,
+      "verifier_raw": null,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "verifier_audit_note": null,
+      "final_route": "full_pvr",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 891,
+        "input_tokens": 171,
+        "output_tokens": 28
+      },
+      "verification_timing": null
+    },
+    {
+      "case_id": "neg_internal",
+      "run_index": 1,
+      "content": "The player wonders whether anyone here can be trusted, but says nothing.",
+      "expected_route": "full_pvr",
+      "triage_affirmative": false,
+      "triage_raw": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"unexpressed_internal_cognition\"\n}",
+      "triage_reason": "unexpressed_internal_cognition",
+      "verifier_invoked": false,
+      "verifier_raw": null,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "verifier_audit_note": null,
+      "final_route": "full_pvr",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 1031,
+        "input_tokens": 167,
+        "output_tokens": 24
+      },
+      "verification_timing": null
+    },
+    {
+      "case_id": "neg_concealed",
+      "run_index": 1,
+      "content": "The player smiles at Harley while slipping a folded note into their sleeve unseen.",
+      "expected_route": "full_pvr",
+      "triage_affirmative": false,
+      "triage_raw": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"concealed_action_slipping_note_unseen\"\n}",
+      "triage_reason": "concealed_action_slipping_note_unseen",
+      "verifier_invoked": false,
+      "verifier_raw": null,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "verifier_audit_note": null,
+      "final_route": "full_pvr",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 999,
+        "input_tokens": 168,
+        "output_tokens": 29
+      },
+      "verification_timing": null
+    },
+    {
+      "case_id": "neg_directed_speech",
+      "run_index": 1,
+      "content": "The player leans toward Ayame and whispers, \"Meet me after dark.\"",
+      "expected_route": "full_pvr",
+      "triage_affirmative": false,
+      "triage_raw": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"directed_whisper_private_subset_speech\"\n}",
+      "triage_reason": "directed_whisper_private_subset_speech",
+      "verifier_invoked": false,
+      "verifier_raw": null,
+      "verifier_disposition": null,
+      "verifier_reason": null,
+      "verifier_audit_note": null,
+      "final_route": "full_pvr",
+      "classification": "correct",
+      "triage_timing": {
+        "wall_ms": 595,
+        "input_tokens": 168,
+        "output_tokens": 30
+      },
+      "verification_timing": null
+    }
+  ],
+  "summary": {
+    "positive_total_runs": 15,
+    "positive_uniform_runs": 15,
+    "positive_false_complex_runs": 0,
+    "negative_false_simple_runs": 0
+  },
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue197-fc-post-cZDHQ0"
+}
