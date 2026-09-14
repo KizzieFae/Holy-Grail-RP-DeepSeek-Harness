@@ -1,0 +1,139 @@
+{
+  "schema": "issue197_implementation_characterization_v1",
+  "generated_at": "2026-09-14T02:57:46.840Z",
+  "git_sha": "65512d556b8c6ea3439e47e250824059611a6c12",
+  "results": [
+    {
+      "id": "f06_mixed",
+      "content": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "expected": "full_pvr",
+      "route": "full_pvr",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue197-impl-f06_mixed"
+      },
+      "triage_timing": {
+        "wall_ms": 1220,
+        "input_tokens": 429,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct"
+    },
+    {
+      "id": "f06_paraphrase",
+      "content": "Kizzie checked the address by the door, quietly braced herself, and knocked.",
+      "expected": "full_pvr",
+      "route": "full_pvr",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition",
+        "inference_id": "issue197-impl-f06_paraphrase"
+      },
+      "triage_timing": {
+        "wall_ms": 685,
+        "input_tokens": 683,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct"
+    },
+    {
+      "id": "f06_observable_only",
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected": "uniform_projection",
+      "route": "uniform_projection",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue197-impl-f06_observable_only",
+        "verification": {
+          "disposition": "clear",
+          "reason": "no_disqualifying_semantic_content",
+          "inference_id": "issue197-impl-f06_observable_only-uniform-eligibility-verification"
+        }
+      },
+      "triage_timing": {
+        "wall_ms": 879,
+        "input_tokens": 425,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 1204,
+        "input_tokens": 446,
+        "output_tokens": 68
+      },
+      "classification": "correct"
+    },
+    {
+      "id": "neg_internal",
+      "content": "The player wonders whether anyone here can be trusted, but says nothing.",
+      "expected": "full_pvr",
+      "route": "full_pvr",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "unexpressed_internal_cognition",
+        "inference_id": "issue197-impl-neg_internal"
+      },
+      "triage_timing": {
+        "wall_ms": 1165,
+        "input_tokens": 423,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct"
+    },
+    {
+      "id": "neg_concealed",
+      "content": "The player smiles at Harley while slipping a folded note into their sleeve unseen.",
+      "expected": "full_pvr",
+      "route": "full_pvr",
+      "checker_result": {
+        "uniform_projection_safe": false,
+        "reason": "concealed_action_unseen",
+        "inference_id": "issue197-impl-neg_concealed"
+      },
+      "triage_timing": {
+        "wall_ms": 1184,
+        "input_tokens": 424,
+        "output_tokens": 24
+      },
+      "verification_timing": null,
+      "classification": "correct"
+    },
+    {
+      "id": "pos_simple_action",
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected": "uniform_projection",
+      "route": "uniform_projection",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present",
+        "inference_id": "issue197-impl-pos_simple_action",
+        "verification": {
+          "disposition": "clear",
+          "reason": "no_disqualifying_semantic_content_found",
+          "inference_id": "issue197-impl-pos_simple_action-uniform-eligibility-verification"
+        }
+      },
+      "triage_timing": {
+        "wall_ms": 837,
+        "input_tokens": 421,
+        "output_tokens": 25
+      },
+      "verification_timing": {
+        "wall_ms": 817,
+        "input_tokens": 442,
+        "output_tokens": 81
+      },
+      "classification": "correct"
+    }
+  ],
+  "summary": {
+    "correct": 6,
+    "misroute": 0,
+    "f06_blocked": true
+  },
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue197-impl-char-XHGxzL"
+}

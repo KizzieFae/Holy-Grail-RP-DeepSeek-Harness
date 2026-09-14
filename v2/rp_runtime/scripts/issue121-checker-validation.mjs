@@ -79,6 +79,13 @@ function mockResponseForCase(caseItem) {
   });
 }
 
+function mockVerificationResponseForCase(caseItem) {
+  return JSON.stringify({
+    uniform_eligibility_disposition: 'clear',
+    reason: 'no_disqualifier_found',
+  });
+}
+
 async function main() {
   const repeat = parseRepeat(process.argv);
   const useMock = process.argv.includes('--mock');
@@ -127,6 +134,9 @@ async function main() {
           playerContent: caseItem.content,
           modelProfile,
           mockResponses: useMock ? [mockResponseForCase(caseItem)] : undefined,
+          mockVerificationResponses: useMock && caseItem.expected_route === 'uniform_projection'
+            ? [mockVerificationResponseForCase(caseItem)]
+            : undefined,
         });
         const classification = classifyResult(caseItem, triage.route);
         runs.push({

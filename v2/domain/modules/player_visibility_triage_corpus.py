@@ -75,6 +75,30 @@ def build_issue_121_checker_corpus() -> list[CheckerCorpusCase]:
             safety_critical=True,
         ),
         CheckerCorpusCase(
+            case_id="neg_f06_mixed_implicit_internal",
+            content=(
+                "Kizzie glanced up, double-checking the house number and then steeled herself before knocking."
+            ),
+            expected_route="full_pvr",
+            category="mandatory_negative",
+            safety_critical=True,
+        ),
+        CheckerCorpusCase(
+            case_id="neg_f06_mixed_implicit_internal_paraphrase",
+            content=(
+                "Kizzie checked the address by the door, quietly braced herself, and knocked."
+            ),
+            expected_route="full_pvr",
+            category="mandatory_negative",
+            safety_critical=True,
+        ),
+        CheckerCorpusCase(
+            case_id="pos_f06_observable_only",
+            content="Kizzie glanced up, double-checking the house number, and knocked.",
+            expected_route="uniform_projection",
+            category="uniform_safe_positive",
+        ),
+        CheckerCorpusCase(
             case_id="neg_internal_cognition",
             content="The player wonders whether anyone here can be trusted, but says nothing.",
             expected_route="full_pvr",

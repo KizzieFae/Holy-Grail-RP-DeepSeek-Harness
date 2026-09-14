@@ -89,10 +89,16 @@ test('affirmative checker routes to uniform synthesis', async () => {
   const result = await runPlayerVisibilityTriagePhase({
     api: {
       preparePlayerVisibilityTriageContext: async () => ({ manifest_id: 'm1', contributions: [] }),
+      preparePlayerUniformEligibilityVerificationContext: async () => ({
+        manifest_id: 'm2',
+        contributions: [],
+      }),
     },
-    runEphemeralInference: async () => ({
+    runEphemeralInference: async ({ evidenceContext }) => ({
       failed: false,
-      raw: JSON.stringify({ uniform_projection_safe: true, reason: 'affirmative_uniform_present' }),
+      raw: evidenceContext?.inferenceKind === 'player_uniform_eligibility_verification'
+        ? JSON.stringify({ uniform_eligibility_disposition: 'clear', reason: 'no_disqualifier_found' })
+        : JSON.stringify({ uniform_projection_safe: true, reason: 'affirmative_uniform_present' }),
       evidenceId: 'e1',
     }),
     trace: { emit: () => {} },

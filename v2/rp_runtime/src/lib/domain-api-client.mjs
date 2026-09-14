@@ -532,6 +532,15 @@ export function createDomainApiClient(baseUrl) {
         'preparePlayerVisibilityTriageContext',
       );
     },
+    preparePlayerUniformEligibilityVerificationContext(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/sessions/player-uniform-eligibility-verification/context/prepare',
+        body,
+        'preparePlayerUniformEligibilityVerificationContext',
+      );
+    },
     persistOpening(body) {
       return postJson(metrics, baseUrl, '/v1/sessions/opening/persist', body, 'persistOpening');
     },

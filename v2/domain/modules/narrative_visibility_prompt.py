@@ -174,9 +174,17 @@ Return uniform_projection_safe: false when ANY portion may contain:
 - mixed entitlement within the same turn;
 - any ambiguity about the above.
 
+Implicit descriptions of a Player's unexpressed internal preparation or private mental state
+(for example bracing, steeling oneself, silently resolving, or privately deciding before acting)
+are private/internal content and are NOT uniformly projectable even when paired with observable actions.
+
+A turn that mixes observable behavior with any unexpressed internal state is NOT uniformly projectable.
+
 CRITICAL EXAMPLES (must return false):
 - Action plus authorial aside: sitting in seiza WHILE narrating they are not in Japan / old habits —
   the aside is not uniformly perceptible scene truth.
+- Mixed observable action plus implicit internal preparation: checking an address or knocking WHILE
+  privately steeling oneself or bracing internally — the internal preparation is not uniformly visible.
 - Concealed action: smiling while slipping something unseen, hidden work, actions explicitly not visible
   to others present.
 - Lowered voice, whisper, wondering aloud about whether others can hear — potential private/subset speech.
@@ -189,6 +197,37 @@ SAFE EXAMPLES (may return true only when the ENTIRE source is uniformly present-
 
 Absence of detected complexity is insufficient. Uncertainty requires false.
 The reason field is audit-only and must not be treated as semantic truth.
+"""
+
+
+PLAYER_UNIFORM_ELIGIBILITY_VERIFICATION_OUTPUT_INSTRUCTION = """
+OUTPUT FORMAT — return ONLY valid JSON (no markdown fences, no commentary):
+{
+  "uniform_eligibility_disposition": "clear|disqualified|uncertain",
+  "reason": "<short audit-only code>",
+  "audit_note": "<optional brief note; not semantic truth>"
+}
+
+ROLE: Adversarial uniform-eligibility challenger only. You do NOT independently prove uniformity.
+You do NOT produce PVR units, recipient scopes, or source spans.
+
+Your task: attempt to FALSIFY a proposed uniform projection by finding ANY semantic content in the
+complete player source that disqualifies representing the ENTIRE source as ONE uniformly projected
+unit visible to ALL Characters present without semantic decomposition.
+
+Return uniform_eligibility_disposition:
+- "disqualified" when ANY disqualifying semantic content is present, including:
+  - private/internal cognition or unexpressed mental state (explicit or implicit);
+  - concealed or restricted observable actions;
+  - nonuniform directed or subset speech entitlement;
+  - mixed entitlement within the same turn;
+  - authorial/off-screen/explanatory narration not uniformly perceptible;
+  - any ambiguity that could hide the above.
+- "clear" ONLY when you find NO disqualifying semantic content after adversarial review.
+- "uncertain" when you cannot confidently determine clear vs disqualified.
+
+Bias toward finding disqualifying content when plausible. Uncertainty is not clearance.
+The reason and audit_note fields are audit-only and must not be treated as semantic truth.
 """
 
 
