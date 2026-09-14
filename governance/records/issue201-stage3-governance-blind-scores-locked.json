@@ -1,0 +1,83 @@
+{
+  "schema": "issue201_governance_blind_scores_locked_v1",
+  "issue": 201,
+  "phase": "package_d_stage3_preamble_decomposition",
+  "evaluator": "Governance AI (independent blind pass)",
+  "project_user_pass": "declined",
+  "scored_before_answer_key_reveal": true,
+  "locked_at": "2026-09-14",
+  "packet_path": "data/investigation_runs/issue201-package-d-stage3-2026-09-14T18-16-06-752Z/outputs/issue201-stage3-human-blind-eval-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-package-d-stage3-2026-09-14T18-16-06-752Z/outputs/issue201-stage3-human-blind-eval-answer-key.json",
+  "rubric_dimensions": [
+    "Character fidelity",
+    "Distinctiveness",
+    "Initiative",
+    "Responsiveness",
+    "Dramatic progression",
+    "Coherence",
+    "Prose quality",
+    "Repetitiveness (5=low)",
+    "Stiffness (5=natural)",
+    "Unnecessary exposition (5=lean)",
+    "Emotional/narrative continuity"
+  ],
+  "note": "Per-dimension scores are Governance-held locked detail; this record stores authoritative sample means only. Means MUST NOT be altered post-decode.",
+  "sample_means": {
+    "A": 4.09,
+    "B": 4.45,
+    "C": 4.45,
+    "D": 4.36,
+    "E": 4.36,
+    "F": 4.0,
+    "G": 4.45,
+    "H": 4.36,
+    "I": 3.73,
+    "J": 4.27,
+    "K": 4.45,
+    "L": 4.64,
+    "M": 4.18,
+    "N": 4.09,
+    "O": 3.91,
+    "P": 5.0
+  },
+  "decoded_groups": {
+    "D0_control": {
+      "storyteller": "ON",
+      "plot": "ON",
+      "arkham": { "samples": ["B", "L"], "mean": 4.545 },
+      "ayame": { "samples": ["E", "K"], "mean": 4.405 },
+      "overall": 4.475
+    },
+    "D-01b": {
+      "storyteller": "OFF",
+      "plot": "ON",
+      "arkham": { "samples": ["A", "P"], "mean": 4.545 },
+      "ayame": { "samples": ["C", "O"], "mean": 4.18 },
+      "overall": 4.363
+    },
+    "D-01a": {
+      "storyteller": "ON",
+      "plot": "OFF",
+      "arkham": { "samples": ["D", "M"], "mean": 4.27 },
+      "ayame": { "samples": ["F", "J"], "mean": 4.135 },
+      "overall": 4.203
+    },
+    "D-01_combined": {
+      "storyteller": "OFF",
+      "plot": "OFF",
+      "arkham": { "samples": ["H", "N"], "mean": 4.225 },
+      "ayame": { "samples": ["G", "I"], "mean": 4.09 },
+      "overall": 4.158
+    }
+  },
+  "deltas_vs_d0_overall": {
+    "D-01b": -0.113,
+    "D-01a": -0.272,
+    "D-01_combined": -0.318
+  },
+  "factorial_marginals_overall": {
+    "plot_on_vs_off": 0.239,
+    "storyteller_on_vs_off": 0.079,
+    "interaction_difference_in_differences": 0.068
+  }
+}

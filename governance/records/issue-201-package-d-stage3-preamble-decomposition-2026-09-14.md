@@ -19,7 +19,7 @@
 | Status | OPEN / `investigating` |
 | Project | In Progress / Investigating / **P1** |
 | Stage-3 tranche | **Executed** (D-01a + D-01b) |
-| Blind eval | **Prepared** — not scored/decoded |
+| Blind eval | **Complete, locked, decoded** — see `issue-201-package-d-stage3-decode-synthesis-2026-09-14.md` |
 | Production redesign | **NOT authorized** |
 
 ---
@@ -191,7 +191,7 @@ PVR valid on all committed runs. Ayame portal/door observations consistent with 
 | Transport guide | `governance/records/issue201-stage3-governance-blind-transport.md` |
 
 **16 samples** (A–P): 4× D0 + 4× D-01 + 4× D-01a + 4× D-01b.  
-**Status:** Blinded; **not decoded**. Same rubric as Stage-2.
+**Status:** Governance locked → decoded. Locked means: `issue201-stage3-governance-blind-scores-locked.json`.
 
 ---
 
@@ -265,5 +265,5 @@ No additional repetitions beyond authorized retries.
 ## Session boundary
 
 **Status:** `investigating` — In Progress / Investigating / P1  
-**Completed:** D-01a + D-01b execution, blind packet, durable records  
-**Not executed:** Blind decode, new ablations, synthesis
+**Completed:** D-01a + D-01b execution, blind packet, Governance blind scoring, decode synthesis  
+**Not executed:** D-01-L longitudinal tranche, D-10, new ablations, production tiering
