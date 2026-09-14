@@ -14,7 +14,7 @@ from player_source_accounting import (
     normalized_source_sha256,
 )
 
-NORMALIZER_VERSION = 5
+NORMALIZER_VERSION = 6
 PLAYER_UNIT_SOURCE = "player_decomposition"
 
 # Unified deterministic work budget for normalization (#124 / G-124-03 / G-124-03b).
@@ -128,6 +128,127 @@ class _Span:
 
 def _is_substantive_char(char: str) -> bool:
     return bool(char) and not char.isspace()
+
+
+def _is_punctuation_only_char(char: str) -> bool:
+    """Terminal punctuation absorption (#194): non-whitespace, non-alphanumeric only."""
+    if not char or char.isspace():
+        return False
+    return not char.isalnum()
+
+
+def _uncovered_substantive_spans(
+    source: str,
+    substantive_mask: int,
+    covered_mask: int,
+) -> list[dict[str, Any]]:
+    spans: list[dict[str, Any]] = []
+    uncovered = substantive_mask & ~covered_mask
+    if uncovered == 0:
+        return spans
+    index = 0
+    length = len(source)
+    while index < length:
+        if (uncovered >> index) & 1:
+            start = index
+            while index < length and (uncovered >> index) & 1:
+                index += 1
+            spans.append(
+                {
+                    "char_start": start,
+                    "char_end": index,
+                    "text": source[start:index],
+                }
+            )
+        else:
+            index += 1
+    return spans
+
+
+def _try_terminal_punctuation_absorption(
+    source: str,
+    units: list[_SirUnit],
+    candidates: list[list[_Span]],
+    *,
+    substantive_mask: int,
+    span_substantive_masks: dict[tuple[int, int], int],
+    order: list[int],
+    suffix_capacity: list[int],
+    ledger: _DeterministicWorkLedger,
+) -> list[tuple[_SirUnit, _Span]] | None:
+    """Absorb uncovered terminal punctuation into the rightmost unit span (#194)."""
+    absorbed: list[tuple[_SirUnit, _Span]] | None = None
+
+    def visit(
+        position: int,
+        chosen: list[tuple[_SirUnit, _Span]],
+        occupied: list[_Span],
+        covered_mask: int,
+    ) -> None:
+        nonlocal absorbed
+        if absorbed is not None:
+            return
+        if not ledger.charge(1, "dfs_visit"):
+            return
+        if position >= len(order):
+            uncovered = substantive_mask & ~covered_mask
+            if uncovered == 0:
+                absorbed = list(chosen)
+                return
+            uncovered_spans = _uncovered_substantive_spans(source, substantive_mask, covered_mask)
+            if len(uncovered_spans) != 1:
+                return
+            tail = uncovered_spans[0]
+            if tail["char_end"] != len(source):
+                return
+            if not all(_is_punctuation_only_char(char) for char in tail["text"]):
+                return
+            rightmost_unit, rightmost_span = max(chosen, key=lambda item: item[1].end)
+            if rightmost_span.end > tail["char_start"]:
+                return
+            for index in range(rightmost_span.end, tail["char_start"]):
+                if _is_substantive_char(source[index]):
+                    return
+            if source[rightmost_span.start : rightmost_span.end] != rightmost_unit.text:
+                return
+            extended = _Span(rightmost_span.start, len(source))
+            new_chosen = [
+                (unit, extended if unit.index == rightmost_unit.index else span)
+                for unit, span in chosen
+            ]
+            if _substantive_complete(source, [span for _, span in new_chosen]):
+                absorbed = new_chosen
+            return
+
+        remaining_capacity = suffix_capacity[position]
+        if _uncovered_substantive_count(substantive_mask, covered_mask) > remaining_capacity:
+            return
+
+        unit_index = order[position]
+        unit = units[unit_index]
+        for span in candidates[unit_index]:
+            if absorbed is not None:
+                return
+            if not ledger.charge(1, "candidate_probe"):
+                return
+            overlap_blocked = False
+            for existing in occupied:
+                if not ledger.charge(1, "overlap_check"):
+                    return
+                if span.overlaps(existing):
+                    overlap_blocked = True
+                    break
+            if overlap_blocked:
+                continue
+            span_mask = span_substantive_masks[(span.start, span.end)]
+            chosen.append((unit, span))
+            occupied.append(span)
+            visit(position + 1, chosen, occupied, covered_mask | span_mask)
+            occupied.pop()
+            chosen.pop()
+
+    visit(0, [], [], 0)
+    return absorbed
 
 
 def _find_occurrences(
@@ -473,6 +594,7 @@ def _search_and_resolve_assignment(
     complete_count = 0
     budget_exceeded = False
     material_proven = False
+    best_partial_covered_mask = 0
     fingerprint_best: dict[
         tuple[tuple[str, str, str, int], ...],
         tuple[list[tuple[_SirUnit, _Span]], tuple[tuple[int, int, int], ...]],
@@ -484,7 +606,7 @@ def _search_and_resolve_assignment(
         occupied: list[_Span],
         covered_mask: int,
     ) -> None:
-        nonlocal partial_exists, complete_count, budget_exceeded, material_proven
+        nonlocal partial_exists, complete_count, budget_exceeded, material_proven, best_partial_covered_mask
         if budget_exceeded or material_proven:
             return
 
@@ -504,6 +626,10 @@ def _search_and_resolve_assignment(
                     material_proven = True
             else:
                 partial_exists = True
+                if _uncovered_substantive_count(substantive_mask, covered_mask) < (
+                    _uncovered_substantive_count(substantive_mask, best_partial_covered_mask)
+                ):
+                    best_partial_covered_mask = covered_mask
             return
 
         remaining_capacity = suffix_capacity[position]
@@ -578,8 +704,29 @@ def _search_and_resolve_assignment(
         return chosen, "", "", audit
 
     if partial_exists:
+        absorbed = _try_terminal_punctuation_absorption(
+            source,
+            units,
+            candidates,
+            substantive_mask=substantive_mask,
+            span_substantive_masks=span_substantive_masks,
+            order=order,
+            suffix_capacity=suffix_capacity,
+            ledger=ledger,
+        )
+        if absorbed is not None:
+            audit["terminal_punctuation_absorbed"] = True
+            audit["ambiguity_class"] = "unique"
+            audit.update(ledger.to_audit())
+            return absorbed, "", "", audit
+
         reason = "substantive source not fully covered"
         audit["failure_reason"] = reason
+        audit["uncovered_substantive_spans"] = _uncovered_substantive_spans(
+            source,
+            substantive_mask,
+            best_partial_covered_mask,
+        )
         return None, FAILURE_SIR_SUBSTANTIVE_OMISSION, reason, audit
 
     reason = "no non-overlapping placement for excerpts"

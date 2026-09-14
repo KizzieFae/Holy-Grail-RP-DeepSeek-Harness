@@ -10,6 +10,10 @@ import {
   FORENSIC_BOUNDARIES,
   runEnvironmentCognitionStage,
 } from './narrator-forensic-attribution.mjs';
+import {
+  modelProfileForDeliberationProfile,
+  resolveEnvironmentCognitionDeliberationProfile,
+} from './narrator-environment-deliberation-profile.mjs';
 
 const COGNITION_SCHEMA = {
   type: 'object',
@@ -208,6 +212,11 @@ export async function runNarratorEnvironmentCognition({
 
   const cognitionInferenceId = `${inferenceId}-narrator-env-cog`;
   const manifest = manifestFromPrepareResponse(prepare);
+  const deliberationProfile = resolveEnvironmentCognitionDeliberationProfile(prepare);
+  const cognitionModelProfile = modelProfileForDeliberationProfile(
+    modelProfile,
+    deliberationProfile,
+  );
 
   let cognitionRaw = mockCognitionResponse;
   let inferenceEnvelope = null;
@@ -220,7 +229,7 @@ export async function runNarratorEnvironmentCognition({
         prompt: buildCognitionPrompt(),
         manifest,
         mockResponses: [],
-        modelProfile,
+        modelProfile: cognitionModelProfile,
         evidenceContext: {
           ...evidenceContextBase,
           inferenceId: cognitionInferenceId,
@@ -333,8 +342,15 @@ export async function runNarratorEnvironmentCognition({
     prepare,
     cognitionResult,
     librarianOutcomes,
+    deliberationProfile,
     environmentCognitionEvidence: environmentCognitionEvidenceFromFinalize(finalize, inferenceEnvelope),
   };
 }
 
-export { COGNITION_SCHEMA, buildCognitionPrompt, parseCognitionResult };
+export {
+  COGNITION_SCHEMA,
+  buildCognitionPrompt,
+  parseCognitionResult,
+  resolveEnvironmentCognitionDeliberationProfile,
+  modelProfileForDeliberationProfile,
+};

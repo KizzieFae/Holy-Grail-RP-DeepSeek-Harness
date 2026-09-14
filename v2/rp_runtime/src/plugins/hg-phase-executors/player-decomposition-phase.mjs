@@ -121,15 +121,45 @@ function attachInferenceEvidenceToDecomposition(decomposition, {
   return decomposition;
 }
 
-export function buildPlayerDecompositionUserPrompt(playerContent, { priorFailureCode = null } = {}) {
+function formatUncoveredSubstantiveSpans(normalizationAudit) {
+  const spans = normalizationAudit?.uncovered_substantive_spans;
+  if (!Array.isArray(spans) || spans.length === 0) {
+    return '';
+  }
+  const formatted = spans
+    .map((span) => {
+      const start = span?.char_start;
+      const end = span?.char_end;
+      const text = span?.text ?? '';
+      if (typeof start !== 'number' || typeof end !== 'number') {
+        return null;
+      }
+      return `source[${start}:${end}]="${text}"`;
+    })
+    .filter(Boolean)
+    .join('; ');
+  if (!formatted) {
+    return '';
+  }
+  return `Uncovered substantive source not represented in unit excerpts: ${formatted}. `
+    + 'Include these characters in exactly one verbatim unit excerpt.';
+}
+
+export function buildPlayerDecompositionUserPrompt(
+  playerContent,
+  { priorFailureCode = null, priorNormalizationAudit = null } = {},
+) {
   let prompt = `${PLAYER_DECOMPOSITION_TASK_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`;
   if (priorFailureCode) {
     const guidance = RETRY_GUIDANCE[priorFailureCode]
       ?? 'Respond with ONLY a single JSON object matching the OUTPUT FORMAT in context.';
+    const diagnostic = priorFailureCode === 'sir_substantive_omission'
+      ? formatUncoveredSubstantiveSpans(priorNormalizationAudit)
+      : '';
     prompt += (
       `\n\n${PLAYER_DECOMPOSITION_RETRY_HEADER}\n` +
       `Prior attempt failed semantic contract (${priorFailureCode}).\n` +
-      `${guidance}\n` +
+      `${guidance}${diagnostic ? `\n${diagnostic}` : ''}\n` +
       'Do not include source positions, indices, occurrence numbers, segment IDs, or accounting fields.'
     );
   }
@@ -186,6 +216,7 @@ export async function runPlayerDecompositionPhase({
 
   let priorEvidenceId = null;
   let priorFailureCode = null;
+  let priorNormalizationAudit = null;
   for (let attempt = 0; attempt < MAX_PLAYER_DECOMPOSITION_ATTEMPTS; attempt += 1) {
     const attemptInferenceId =
       attempt === 0 ? inferenceId : `${inferenceId}-retry-${attempt}`;
@@ -219,6 +250,7 @@ export async function runPlayerDecompositionPhase({
         inferenceId: attemptInferenceId,
         prompt: buildPlayerDecompositionUserPrompt(playerContent, {
           priorFailureCode: attempt > 0 ? priorFailureCode : null,
+          priorNormalizationAudit: attempt > 0 ? priorNormalizationAudit : null,
         }),
         manifest,
         mockResponses: mockResponses?.length ? mockResponses : mockFallback,
@@ -326,6 +358,7 @@ export async function runPlayerDecompositionPhase({
 
       const failureClass = normalizeResult.failure_class ?? 'normalization_impossible';
       priorFailureCode = failureClass;
+      priorNormalizationAudit = normalizeResult.normalization_audit ?? null;
       priorEvidenceId = inferRun.evidenceId;
       if (normalizeResult.retry_eligible && attempt + 1 < MAX_PLAYER_DECOMPOSITION_ATTEMPTS) {
         continue;
