@@ -32,8 +32,8 @@ def prepare_player_uniform_eligibility_verification_context(
             priority=30,
             content=(
                 "An affirmative uniform-projection proposal is under adversarial review. "
-                "Find whether ANY semantic content disqualifies uniform projection for the "
-                "player-authored turn in the user message.\n"
+                "Find whether semantic content explicitly stated in the player-authored turn "
+                "disqualifies uniform projection.\n"
                 f"\n{PLAYER_UNIFORM_ELIGIBILITY_VERIFICATION_OUTPUT_INSTRUCTION}\n"
             ),
             provenance={

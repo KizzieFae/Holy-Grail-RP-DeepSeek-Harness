@@ -275,9 +275,9 @@ async function main() {
       negative_repeat: NEGATIVE_REPEAT,
       design_record: 'governance/records/issue-197-false-complex-refinement-design-2026-09-14.md',
     },
-    positive_runs,
+    positive_runs: positiveRuns,
     positive_aggregates: aggregateByCase(positiveRuns),
-    negative_runs,
+    negative_runs: negativeRuns,
     summary: {
       positive_total_runs: positiveRuns.length,
       positive_uniform_runs: positiveRuns.filter((r) => r.final_route === 'uniform_projection').length,

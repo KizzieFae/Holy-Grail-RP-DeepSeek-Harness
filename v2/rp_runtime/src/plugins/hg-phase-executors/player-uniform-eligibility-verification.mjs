@@ -1,7 +1,7 @@
 import { parsePlayerUniformEligibilityVerificationEnvelope } from '../../lib/perceptual-visibility-parse.mjs';
 
 export const PLAYER_UNIFORM_ELIGIBILITY_VERIFICATION_TASK_PROMPT =
-  'Adversarially challenge whether the player-authored turn in the user message contains ANY semantic content that disqualifies uniform projection to all present Characters without semantic decomposition. Attempt to falsify the proposed optimization; do not independently re-prove uniformity.';
+  'Adversarially challenge whether the player-authored turn in the user message contains semantic content explicitly stated in the text that disqualifies uniform projection to all present Characters without semantic decomposition. Disqualify only actual stated nonuniform content; do not invent unstated internal state, hidden motivation, or hypothetical perceptibility differences.';
 
 export function buildPlayerUniformEligibilityVerificationUserPrompt(playerContent) {
   return `${PLAYER_UNIFORM_ELIGIBILITY_VERIFICATION_TASK_PROMPT}\n\nPLAYER SOURCE:\n${playerContent}`;
