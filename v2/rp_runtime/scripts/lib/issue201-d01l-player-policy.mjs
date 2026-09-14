@@ -4,7 +4,21 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const POLICY_ROOT = path.resolve(__dirname, '../../../..', 'data', 'investigation', 'policies');
+const GOVERNANCE_POLICY_ROOT = path.resolve(
+  __dirname,
+  '../../../..',
+  'governance',
+  'records',
+  'issue201-d01l-policies',
+);
+const DATA_POLICY_ROOT = path.resolve(__dirname, '../../../..', 'data', 'investigation', 'policies');
+
+export function resolvePolicyRoot() {
+  if (fs.existsSync(GOVERNANCE_POLICY_ROOT)) return GOVERNANCE_POLICY_ROOT;
+  return DATA_POLICY_ROOT;
+}
+
+export const POLICY_ROOT = resolvePolicyRoot();
 
 export function sha256File(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -126,7 +140,11 @@ export function buildPolicyManifest() {
     frozen_at,
     policies,
   };
-  const manifestPath = path.join(POLICY_ROOT, 'd01l_policy_manifest.json');
+  const manifestPath = path.join(GOVERNANCE_POLICY_ROOT, 'd01l_policy_manifest.json');
+  fs.mkdirSync(GOVERNANCE_POLICY_ROOT, { recursive: true });
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const dataManifestPath = path.join(DATA_POLICY_ROOT, 'd01l_policy_manifest.json');
+  fs.mkdirSync(DATA_POLICY_ROOT, { recursive: true });
+  fs.writeFileSync(dataManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }

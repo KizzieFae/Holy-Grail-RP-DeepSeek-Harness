@@ -1,0 +1,173 @@
+{
+  "schema": "issue201_d01l_player_policy_v1",
+  "policy_id": "arkham_d01l_policy_v1",
+  "scenario_key": "arkham_stress",
+  "scenario_id": "arkham_asylum_mess_hall_arena",
+  "turn_count": 5,
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Establish Magpie watch-focus and murmured provocation without open confrontation",
+      "pressure": "Social visibility; guard watch as object of attention",
+      "prohibited_knowledge": [
+        "guard names",
+        "shift schedules",
+        "off-screen authority decisions"
+      ],
+      "realization": "Magpie keeps her eyes on the guard's gold watch while she pushes food around her tray. When Harley's voice carries across the table, she murmurs just loud enough to be heard: \"Pretty things never stay pretty in here for long.\""
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "predicate",
+      "objective": "Decline table recruitment; test Ivy authority style",
+      "pressure": "Ivy/Harley recruitment pressure after Turn 1 reactions",
+      "prohibited_knowledge": [
+        "invented escape plans",
+        "guard-internal procedures"
+      ],
+      "predicate_source_turn": 1,
+      "predicates": [
+        {
+          "predicate_id": "P2_IVY_DIRECT",
+          "priority": 1,
+          "all_patterns": [
+            "\\b(Ivy|Poison Ivy)\\b",
+            "\\b(Magpie|Margaret|new (girl|leaf|bird))\\b"
+          ]
+        },
+        {
+          "predicate_id": "P2_HARLEY_DOMINANT",
+          "priority": 2,
+          "all_patterns": [
+            "\\bHarley\\b",
+            "\\b(Magpie|birdie|bird|sparkle)\\b"
+          ],
+          "unless_predicate_ids": ["P2_IVY_DIRECT"]
+        },
+        {
+          "predicate_id": "P2_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "P2_IVY_DIRECT": "Magpie doesn't look away from the guard's watch. \"I don't join tables on command. I watch who thinks they're invisible.\"",
+        "P2_HARLEY_DOMINANT": "Magpie's mouth quirks. \"Loud gets you noticed. I prefer knowing who notices back.\"",
+        "P2_DEFAULT": "Magpie keeps her eyes on the gold at the margin. \"Pretty things draw eyes. I'm counting whose.\""
+      }
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "predicate",
+      "objective": "Increase guard-attention risk without physical action",
+      "pressure": "Consequence of prior social positioning",
+      "prohibited_knowledge": [
+        "reaching for watch",
+        "violence"
+      ],
+      "predicate_source_turn": 2,
+      "predicates": [
+        {
+          "predicate_id": "P3_GUARD_ESCALATION",
+          "priority": 1,
+          "any_patterns": [
+            "\\b(guard|watch|margin|sightline|log|paperwork|response)\\b"
+          ]
+        },
+        {
+          "predicate_id": "P3_TABLE_PRESSURE",
+          "priority": 2,
+          "any_patterns": [
+            "\\b(table|recruit|join|sit|bench)\\b"
+          ]
+        },
+        {
+          "predicate_id": "P3_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "P3_GUARD_ESCALATION": "Magpie murmurs, just carrying: \"Wonder how many eyes it takes before even gold stops shining.\"",
+        "P3_TABLE_PRESSURE": "Magpie pushes her tray an inch toward the center. \"If you're selling belonging, price it where I can see the cost.\"",
+        "P3_DEFAULT": "Magpie lets the silence sit, then: \"Quiet rooms still have witnesses.\""
+      }
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "predicate",
+      "objective": "Hold thread open; resist premature closure",
+      "pressure": "Pecking-order consolidation",
+      "prohibited_knowledge": [
+        "confession",
+        "alliance pledge"
+      ],
+      "predicate_source_turn": 3,
+      "predicates": [
+        {
+          "predicate_id": "P4_NAMED_THREAT",
+          "priority": 1,
+          "all_patterns": [
+            "\\b(Magpie|Margaret)\\b",
+            "\\b(fool|stupid|mistake|log|write|reach)\\b"
+          ]
+        },
+        {
+          "predicate_id": "P4_RECRUITMENT",
+          "priority": 2,
+          "any_patterns": [
+            "\\b(join|table|interesting|worth|bird)\\b"
+          ]
+        },
+        {
+          "predicate_id": "P4_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "P4_NAMED_THREAT": "Magpie smiles without warmth. \"Write what you like. I'll still be here when the ink dries.\"",
+        "P4_RECRUITMENT": "Magpie taps her tray once. \"I'm not shopping for family. I'm pricing the room.\"",
+        "P4_DEFAULT": "Magpie finally looks up. \"You all talk like lunch ends the story. It doesn't.\""
+      }
+    },
+    {
+      "turn_index": 5,
+      "branch_mode": "cumulative",
+      "objective": "Reference prior beats without resolving arc",
+      "pressure": "Consequence of earlier social choices",
+      "prohibited_knowledge": [
+        "escape resolution",
+        "guard confrontation outcome"
+      ],
+      "predicate_source_turn": 4,
+      "predicates": [
+        {
+          "predicate_id": "P5_GUARD_THREAD",
+          "priority": 1,
+          "cumulative_any_predicate_ids": ["P3_GUARD_ESCALATION"],
+          "or_source_turn_pattern": {
+            "turn_index": 4,
+            "any_patterns": ["\\bguard\\b"]
+          }
+        },
+        {
+          "predicate_id": "P5_ALLIANCE_THREAD",
+          "priority": 2,
+          "cumulative_any_predicate_ids": ["P2_IVY_DIRECT", "P4_RECRUITMENT"]
+        },
+        {
+          "predicate_id": "P5_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "P5_GUARD_THREAD": "Magpie glances toward the margin again. \"Still shining. Still watching. Still not mine to reach for.\"",
+        "P5_ALLIANCE_THREAD": "Magpie gathers her tray. \"You wanted a shape from me. You got one. Don't mistake it for surrender.\"",
+        "P5_DEFAULT": "Magpie stands slowly. \"Same room tomorrow. Let's see what stuck.\""
+      }
+    }
+  ]
+}
