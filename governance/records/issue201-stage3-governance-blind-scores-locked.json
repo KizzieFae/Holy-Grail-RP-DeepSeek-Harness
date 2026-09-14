@@ -21,7 +21,8 @@
     "Unnecessary exposition (5=lean)",
     "Emotional/narrative continuity"
   ],
-  "note": "Per-dimension scores are Governance-held locked detail; this record stores authoritative sample means only. Means MUST NOT be altered post-decode.",
+  "per_dimension_export_path": "governance/records/issue201-stage3-governance-blind-scores-per-dimension-export.md",
+  "note": "Per-dimension matrix exported in per_dimension_export_path (Governance-assigned, locked before decode). Sample means below must remain unchanged.",
   "sample_means": {
     "A": 4.09,
     "B": 4.45,
