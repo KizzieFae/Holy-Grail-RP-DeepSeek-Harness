@@ -1,0 +1,286 @@
+{
+  "schema": "issue197_investigation_v1",
+  "generated_at": "2026-09-14T02:41:40.187Z",
+  "git_sha": "79cdb5adae681b21e1687ac5550b22eef2eb0f59",
+  "model_profile": {
+    "kind": "dsh",
+    "model": "deepseek-v4-flash",
+    "reasoning_effort": "off",
+    "inference_kind": "player_visibility_triage"
+  },
+  "manifest_scope": "instruction-only (preparePlayerVisibilityTriageContext)",
+  "scenarios": [
+    {
+      "scenario_id": "baseline_f06_mixed",
+      "label": "F06 exact mixed observable/internal",
+      "content": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "expected_route": "full_pvr",
+      "repeats": 3,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nKizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "runs": [
+        {
+          "run_index": 0,
+          "inference_id": "issue197-baseline_f06_mixed-0",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-baseline_f06_mixed-0"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1053,
+            "input_tokens": 197,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "false_simple"
+        },
+        {
+          "run_index": 1,
+          "inference_id": "issue197-baseline_f06_mixed-1",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-baseline_f06_mixed-1"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1157,
+            "input_tokens": 197,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "false_simple"
+        },
+        {
+          "run_index": 2,
+          "inference_id": "issue197-baseline_f06_mixed-2",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-baseline_f06_mixed-2"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 946,
+            "input_tokens": 197,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "false_simple"
+        }
+      ],
+      "false_simple_count": 3,
+      "false_complex_count": 0,
+      "correct_count": 0
+    },
+    {
+      "scenario_id": "positive_simple_action",
+      "label": "Uniform-safe observable action",
+      "content": "The player sets the lantern on the table and steps back.",
+      "expected_route": "uniform_projection",
+      "repeats": 1,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nThe player sets the lantern on the table and steps back.",
+      "runs": [
+        {
+          "run_index": 0,
+          "inference_id": "issue197-positive_simple_action-0",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-positive_simple_action-0"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1055,
+            "input_tokens": 573,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "correct"
+        }
+      ],
+      "false_simple_count": 0,
+      "false_complex_count": 0,
+      "correct_count": 1
+    },
+    {
+      "scenario_id": "stress_neg_internal_cognition",
+      "label": "Corpus mandatory-negative internal cognition",
+      "content": "The player wonders whether anyone here can be trusted, but says nothing.",
+      "expected_route": "full_pvr",
+      "repeats": 1,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nThe player wonders whether anyone here can be trusted, but says nothing.",
+      "runs": [
+        {
+          "run_index": 0,
+          "inference_id": "issue197-stress_neg_internal_cognition-0",
+          "route": "full_pvr",
+          "checker_result": {
+            "uniform_projection_safe": false,
+            "reason": "requires_semantic_decomposition",
+            "inference_id": "issue197-stress_neg_internal_cognition-0"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"requires_semantic_decomposition\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": false,
+            "reason": "requires_semantic_decomposition",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1038,
+            "input_tokens": 575,
+            "output_tokens": 24,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "correct"
+        }
+      ],
+      "false_simple_count": 0,
+      "false_complex_count": 0,
+      "correct_count": 1
+    },
+    {
+      "scenario_id": "variant_f06_observable_only",
+      "label": "F06 variant without internal state",
+      "content": "Kizzie glanced up, double-checking the house number, and knocked.",
+      "expected_route": "uniform_projection",
+      "repeats": 2,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nKizzie glanced up, double-checking the house number, and knocked.",
+      "runs": [
+        {
+          "run_index": 0,
+          "inference_id": "issue197-variant_f06_observable_only-0",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-variant_f06_observable_only-0"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 944,
+            "input_tokens": 577,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "correct"
+        },
+        {
+          "run_index": 1,
+          "inference_id": "issue197-variant_f06_observable_only-1",
+          "route": "uniform_projection",
+          "checker_result": {
+            "uniform_projection_safe": true,
+            "reason": "affirmative_uniform_present",
+            "inference_id": "issue197-variant_f06_observable_only-1"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": true,\n  \"reason\": \"affirmative_uniform_present\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": true,
+            "reason": "affirmative_uniform_present",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1038,
+            "input_tokens": 193,
+            "output_tokens": 25,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "correct"
+        }
+      ],
+      "false_simple_count": 0,
+      "false_complex_count": 0,
+      "correct_count": 2
+    },
+    {
+      "scenario_id": "stress_neg_concealed_action",
+      "label": "Corpus mandatory-negative concealed action",
+      "content": "The player smiles at Harley while slipping a folded note into their sleeve unseen.",
+      "expected_route": "full_pvr",
+      "repeats": 1,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nThe player smiles at Harley while slipping a folded note into their sleeve unseen.",
+      "runs": [
+        {
+          "run_index": 0,
+          "inference_id": "issue197-stress_neg_concealed_action-0",
+          "route": "full_pvr",
+          "checker_result": {
+            "uniform_projection_safe": false,
+            "reason": "requires_semantic_decomposition",
+            "inference_id": "issue197-stress_neg_concealed_action-0"
+          },
+          "raw_output": "{\n  \"uniform_projection_safe\": false,\n  \"reason\": \"requires_semantic_decomposition\"\n}",
+          "parsed": {
+            "uniformProjectionSafe": false,
+            "reason": "requires_semantic_decomposition",
+            "parseError": null
+          },
+          "timing": {
+            "wall_ms": 1161,
+            "input_tokens": 576,
+            "output_tokens": 24,
+            "reasoning_tokens": null,
+            "reasoning_effort": null,
+            "model": null
+          },
+          "classification": "correct"
+        }
+      ],
+      "false_simple_count": 0,
+      "false_complex_count": 0,
+      "correct_count": 1
+    }
+  ],
+  "summary": {
+    "total_runs": 8,
+    "false_simple_total": 3,
+    "false_complex_total": 0,
+    "baseline_f06_uniform_count": 3
+  },
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue197-investigation-GBd432"
+}
