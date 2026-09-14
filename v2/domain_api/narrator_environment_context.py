@@ -12,10 +12,15 @@ from .contract import (
 )
 from .narrator_environment_cognition import (
     NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
+    NARRATOR_ENVIRONMENT_COGNITION_RUBRIC_CONSTRAINED,
     build_cognition_context_payload,
     build_librarian_knowledge_access_request,
     classify_environment_cognition_outcome,
     parse_n1_cognition_result,
+)
+from .narrator_environment_deliberation_profile import (
+    DELIBERATION_PROFILE_CONSTRAINED,
+    resolve_environment_cognition_deliberation_profile,
 )
 from .knowledge_access_request_serialization import knowledge_access_request_to_dict
 from .manifest_validation import finalize_prompt_contribution_manifest
@@ -99,6 +104,16 @@ def prepare_environment_cognition_context(
         turn_record,
         story_records=story_records,
     )
+    context["continuity_turn_index"] = rnd.turn_index
+    deliberation_profile = resolve_environment_cognition_deliberation_profile(
+        context,
+        profile_override=req.deliberation_profile_override,
+    )
+    cognition_rubric = (
+        NARRATOR_ENVIRONMENT_COGNITION_RUBRIC_CONSTRAINED
+        if deliberation_profile["profile"] == DELIBERATION_PROFILE_CONSTRAINED
+        else NARRATOR_ENVIRONMENT_COGNITION_RUBRIC
+    )
     manifest_id = f"manifest-narrator-env-cog-{req.inference_id}-{req.domain_commit_id}"
     contributions = [
         PromptContribution(
@@ -146,8 +161,12 @@ def prepare_environment_cognition_context(
             authority_class="derived",
             knowledge_ids=(f"inference:{req.inference_id}",),
             priority=30,
-            content=NARRATOR_ENVIRONMENT_COGNITION_RUBRIC,
-            provenance={"inference_id": req.inference_id, "role": "narrator"},
+            content=cognition_rubric,
+            provenance={
+                "inference_id": req.inference_id,
+                "role": "narrator",
+                "deliberation_profile": deliberation_profile["profile"],
+            },
         ),
         ]
     )
@@ -183,6 +202,7 @@ def prepare_environment_cognition_context(
         "manifest": manifest,
         "context": context,
         "knowledge_access_requests": knowledge_requests,
+        "deliberation_profile": deliberation_profile,
     }
 
 

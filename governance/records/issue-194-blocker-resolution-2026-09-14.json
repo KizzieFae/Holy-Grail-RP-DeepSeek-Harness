@@ -1,0 +1,496 @@
+{
+  "schema": "issue194_blocker_resolution_v1",
+  "generated_at": "2026-09-14T02:20:30.484Z",
+  "candidate_sha": "988e935661dd719bf713c7925533a340fbb40c58",
+  "evidence_root": "C:\\Users\\kelly\\AppData\\Local\\Temp\\issue194-blocker-Okthcl",
+  "triage_input_equivalence": {
+    "historical": {
+      "player_text": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "normalized_length": 93,
+      "triage_result": {
+        "uniform_projection_safe": false,
+        "reason": "requires_semantic_decomposition"
+      },
+      "note": "Challenge/refinement forensic replay; manifest is instruction-only (#121)."
+    },
+    "validation_live_misfire": {
+      "route": "uniform_projection",
+      "checker_result": {
+        "uniform_projection_safe": true,
+        "reason": "affirmative_uniform_present"
+      },
+      "note": "Prior formal-validation full turn; not reproduced here."
+    },
+    "authoritative_triage_inputs": {
+      "player_text_identical": true,
+      "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nKizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+      "manifest_scope": "instruction-only (no history/perception metadata in manifest)",
+      "corpus_expectation": "full_pvr (neg_internal_cognition / mixed observable+internal)"
+    }
+  },
+  "triage_characterization": {
+    "player_text": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+    "player_text_length": 93,
+    "triage_user_prompt": "Evaluate whether the player-authored turn is affirmatively safe for uniform projection to all present Characters without semantic decomposition. When any span may be internal, concealed, directed, private, authorial exposition, or ambiguous, answer false.\n\nPLAYER SOURCE:\nKizzie glanced up, double-checking the house number and then steeled herself before knocking.",
+    "triage_user_prompt_length": 365,
+    "historical_reference": {
+      "uniform_projection_safe": false,
+      "reason": "requires_semantic_decomposition"
+    },
+    "runs": [
+      {
+        "run_index": 0,
+        "route": "uniform_projection",
+        "checker_result": {
+          "uniform_projection_safe": true,
+          "reason": "affirmative_uniform_present",
+          "inference_id": "issue194-triage-0"
+        }
+      },
+      {
+        "run_index": 1,
+        "route": "uniform_projection",
+        "checker_result": {
+          "uniform_projection_safe": true,
+          "reason": "affirmative_uniform_present",
+          "inference_id": "issue194-triage-1"
+        }
+      },
+      {
+        "run_index": 2,
+        "route": "uniform_projection",
+        "checker_result": {
+          "uniform_projection_safe": true,
+          "reason": "affirmative_uniform_present",
+          "inference_id": "issue194-triage-2"
+        }
+      },
+      {
+        "run_index": 3,
+        "route": "uniform_projection",
+        "checker_result": {
+          "uniform_projection_safe": true,
+          "reason": "affirmative_uniform_present",
+          "inference_id": "issue194-triage-3"
+        }
+      },
+      {
+        "run_index": 4,
+        "route": "uniform_projection",
+        "checker_result": {
+          "uniform_projection_safe": true,
+          "reason": "affirmative_uniform_present",
+          "inference_id": "issue194-triage-4"
+        }
+      }
+    ],
+    "uniform_count": 5,
+    "semantic_count": 0
+  },
+  "f06_semantic_decomposition": {
+    "path": "production runPlayerDecompositionPhase (semantic decomposition; triage bypassed)",
+    "attempt_count": 1,
+    "retry_used": false,
+    "wall_ms_observed": 46595,
+    "accepted": true,
+    "failure_class": null,
+    "normalization_audit": {
+      "version": 6,
+      "deterministic_work_budget": 350000,
+      "work_consumed": 203,
+      "work_occurrence_scan": 6,
+      "work_candidates_generated": 3,
+      "work_substantive_mask": 184,
+      "work_candidate_probes": 3,
+      "work_overlap_checks": 3,
+      "search_nodes_visited": 4,
+      "work_exhaustion_stage": null,
+      "search_budget": 350000,
+      "assignment_count": 1,
+      "ambiguity_class": "unique",
+      "assignments": [
+        {
+          "sir_index": 0,
+          "char_start": 0,
+          "char_end": 18,
+          "kind": "observable_event"
+        },
+        {
+          "sir_index": 1,
+          "char_start": 19,
+          "char_end": 51,
+          "kind": "observable_event"
+        },
+        {
+          "sir_index": 2,
+          "char_start": 52,
+          "char_end": 93,
+          "kind": "internal"
+        }
+      ]
+    },
+    "unit_count": 3,
+    "units": [
+      {
+        "kind": "observable_event",
+        "scope": "present",
+        "text": "Kizzie glanced up,"
+      },
+      {
+        "kind": "observable_event",
+        "scope": "present",
+        "text": "double-checking the house number"
+      },
+      {
+        "kind": "internal",
+        "scope": "private",
+        "text": "and then steeled herself before knocking."
+      }
+    ],
+    "attempts": [
+      {
+        "evidence_id": "1340f5cb-32d5-4b74-b242-4b1187744f8c",
+        "inference_id": "issue194-f06-semantic-decomposition",
+        "wall_ms": 46557,
+        "input_tokens": 178,
+        "output_tokens": 9859,
+        "reasoning_tokens": 9710,
+        "reasoning_effort": null,
+        "assistant_text": "{\n  \"semantic_decomposition\": {\n    \"units\": [\n      {\n        \"kind\": \"observable_event\",\n        \"text\": \"Kizzie glanced up,\",\n        \"recipients\": {\n          \"scope\": \"present\"\n        }\n      },\n      {\n        \"kind\": \"observable_event\",\n        \"text\": \"double-checking the house number\",\n        \"recipients\": {\n          \"scope\": \"present\"\n        }\n      },\n      {\n        \"kind\": \"internal\",\n        \"text\": \"and then steeled herself before knocking.\",\n        \"recipients\": {\n          \"scope\": \"private\",\n          \"characters\": [\"Kizzie\"]\n        }\n      }\n    ]\n  }\n}",
+        "request_user_prompt": null
+      }
+    ]
+  },
+  "f06_environmental_cognition": {
+    "label": "f06-opening",
+    "wall_ms_total": 12058,
+    "initial_deliberation_profile": "constrained",
+    "final_deliberation_profile": "constrained",
+    "deliberation_profile_escalated": false,
+    "prepare_time_profile": {
+      "profile": "deep",
+      "signals": [
+        "recent_environmental_changes"
+      ]
+    },
+    "probe": {
+      "evidence_id": "afeb15d8-4d7a-42c6-8a07-f67462a91eed",
+      "inference_id": "issue194-env-f06-opening-narrator-env-cog",
+      "wall_ms": 3119,
+      "input_tokens": 653,
+      "output_tokens": 469,
+      "reasoning_tokens": null,
+      "reasoning_effort": null,
+      "assistant_text": "{\n  \"baseline_sufficient\": false,\n  \"information_needs\": [\n    {\n      \"need_id\": \"need:mansion_steps_knock_surface\",\n      \"question\": \"What is the material/density of the entrance door (or nearest knockable surface) at location:mansion_steps, so the sound of Kizzie's knock renders consistently?\",\n      \"referent_refs\": [\n        \"location:mansion_steps\"\n      ]\n    }\n  ],\n  \"resolutions\": [\n    {\n      \"need_id\": \"need:mansion_steps_knock_surface\",\n      \"category\": \"B2\",\n      \"detail\": \"The environmental baseline for location:mansion_steps has zero effective_descriptors and no stable_sub_referents. The immediate user action centers on Kizzie knocking at the door; rendering the resulting sound requires at least one minimum persistent property of the knockable surface. No authored or story-derived descriptor is present, so this cannot be resolved from the baseline alone.\",\n      \"property_key\": \"location:mansion_steps.door_surface_material\",\n      \"value\": \"heavy wooden door\",\n      \"stable_refs\": [\n        \"location:mansion_steps\"\n      ],\n      \"mediation_outcome\": \"No librarian or authored descriptor retrieval available for manor steps door surface; emitting a single minimal B2 property so the knock can be rendered pending Host validation.\",\n      \"response_sufficient\": false,\n      \"reasoning_summary\": \"Baseline for location:mansion_steps is empty, so the knock's acoustic/tactile rendering is underdetermined. A minimal persistent property (door surface material) is the single most material gap and is resolved as B2; Host B2 validation still applies.\"\n    }\n  ],\n  \"assessment_notes\": \"Location is established (location:mansion_steps) but carries no effective descriptors, no stable sub-referents, and no recent changes. The immediate action (knocking) requires a knockable-surface property to render sound. Because no authored or story-derived property exists, the need is resolved as a single minimal B2 candidate rather than inferred from the environment. No multi-need reconciliation, C, or cannot_safely_resolve categories are emitted under this constrained profile.\"\n}",
+      "request_user_prompt": null,
+      "escalation_analysis": {
+        "need_count": 1,
+        "resolution_count": 1,
+        "categories": [
+          "B2"
+        ],
+        "mediation_hits": [
+          {
+            "need_id": "need:mansion_steps_knock_surface",
+            "category": "B2",
+            "detail": "The environmental baseline for location:mansion_steps has zero effective_descriptors and no stable_sub_referents. The immediate user action centers on Kizzie knocking at the door; rendering the resulting sound requires at least one minimum persistent property of the knockable surface. No authored or story-derived descriptor is present, so this cannot be resolved from the baseline alone.",
+            "property_key": "location:mansion_steps.door_surface_material",
+            "value": "heavy wooden door",
+            "stable_refs": [
+              "location:mansion_steps"
+            ],
+            "mediation_outcome": "No librarian or authored descriptor retrieval available for manor steps door surface; emitting a single minimal B2 property so the knock can be rendered pending Host validation.",
+            "response_sufficient": false,
+            "reasoning_summary": "Baseline for location:mansion_steps is empty, so the knock's acoustic/tactile rendering is underdetermined. A minimal persistent property (door surface material) is the single most material gap and is resolved as B2; Host B2 validation still applies."
+          }
+        ],
+        "classified_profile": "constrained",
+        "escalation_predicates": [
+          "mediation_outcome present (No librarian or authored descriptor retrieval available for manor steps door surface; emitting a single minimal B2 property so the knock can be rendered pending Host validation.)",
+          "compliant single-B2 (no escalation)"
+        ],
+        "should_escalate": false
+      },
+      "cognition_result": {
+        "baseline_sufficient": false,
+        "information_needs": [
+          {
+            "need_id": "need:mansion_steps_knock_surface",
+            "question": "What is the material/density of the entrance door (or nearest knockable surface) at location:mansion_steps, so the sound of Kizzie's knock renders consistently?",
+            "referent_refs": [
+              "location:mansion_steps"
+            ]
+          }
+        ],
+        "resolutions": [
+          {
+            "need_id": "need:mansion_steps_knock_surface",
+            "category": "B2",
+            "detail": "The environmental baseline for location:mansion_steps has zero effective_descriptors and no stable_sub_referents. The immediate user action centers on Kizzie knocking at the door; rendering the resulting sound requires at least one minimum persistent property of the knockable surface. No authored or story-derived descriptor is present, so this cannot be resolved from the baseline alone.",
+            "property_key": "location:mansion_steps.door_surface_material",
+            "value": "heavy wooden door",
+            "stable_refs": [
+              "location:mansion_steps"
+            ],
+            "mediation_outcome": "No librarian or authored descriptor retrieval available for manor steps door surface; emitting a single minimal B2 property so the knock can be rendered pending Host validation.",
+            "response_sufficient": false,
+            "reasoning_summary": "Baseline for location:mansion_steps is empty, so the knock's acoustic/tactile rendering is underdetermined. A minimal persistent property (door surface material) is the single most material gap and is resolved as B2; Host B2 validation still applies."
+          }
+        ],
+        "assessment_notes": "Location is established (location:mansion_steps) but carries no effective descriptors, no stable sub-referents, and no recent changes. The immediate action (knocking) requires a knockable-surface property to render sound. Because no authored or story-derived property exists, the need is resolved as a single minimal B2 candidate rather than inferred from the environment. No multi-need reconciliation, C, or cannot_safely_resolve categories are emitted under this constrained profile."
+      }
+    },
+    "deep_retry": null,
+    "combined_probe_deep_wall_ms": 3119,
+    "combined_probe_deep_reasoning_tokens": 0,
+    "cognition_status": "determined"
+  },
+  "narrow_no_escalation_characterization": {
+    "runs": [
+      {
+        "label": "narrow-char-0",
+        "wall_ms_total": 14862,
+        "initial_deliberation_profile": "constrained",
+        "final_deliberation_profile": "constrained",
+        "deliberation_profile_escalated": false,
+        "prepare_time_profile": {
+          "profile": "deep",
+          "signals": [
+            "recent_environmental_changes"
+          ]
+        },
+        "probe": {
+          "evidence_id": "92852297-e651-4dbe-871f-ce5e9c1ffb13",
+          "inference_id": "issue194-env-narrow-char-0-narrator-env-cog",
+          "wall_ms": 3862,
+          "input_tokens": 644,
+          "output_tokens": 569,
+          "reasoning_tokens": null,
+          "reasoning_effort": null,
+          "assistant_text": "{\n  \"baseline_sufficient\": false,\n  \"information_needs\": [\n    {\n      \"need_id\": \"need-001\",\n      \"question\": \"Does the mansion at location:mansion_steps present anything at the doorstep/steps that materially affects Kizzie's approach and knock — e.g. is the house number present and visible, and what does the entrance immediately present?\",\n      \"referent_refs\": [\n        \"location:mansion_steps\"\n      ]\n    }\n  ],\n  \"resolutions\": [\n    {\n      \"need_id\": \"need-001\",\n      \"category\": \"B2\",\n      \"detail\": \"The environmental packet for location:mansion_steps carries zero effective descriptors, stable sub-referents, and no recent changes (authored_count 0, story_derived_count 0). The immediate user action depends on two environmental facts: (1) the house number Kizzie double-checks, and (2) the knockable entrance surface itself. Nothing in the baseline or authoritative inputs establishes either, so the minimum persistent property required is the fixed exterior identity/presentation of the mansion steps consistent with the established setting. A minimum B2 may follow Host validation to bind a stable exterior descriptor set (e.g. numbered plaque and a door/knocker at the steps) rather than inventing it unilaterally.\",\n      \"property_key\": \"location:mansion_steps.exterior_presentation\",\n      \"value\": \"Mansion steps present a numbered entrance with a door (and its knockable face/hardware) at the top of the steps.\",\n      \"stable_refs\": [\n        \"location:mansion_steps\"\n      ],\n      \"mediation_outcome\": \"no_match\",\n      \"response_sufficient\": false,\n      \"reasoning_summary\": \"Baseline supplies only the location label 'Mansion steps' with no effective descriptors. The user action ('double-checking the house number' and 'knocking') references specific environmental objects the baseline does not establish, so echo/librarian match cannot be claimed and the single most material gap is the stable exterior presentation of the entrance. Resolved as the minimum persistent property (B2), pending Host validation.\"\n    }\n  ],\n  \"assessment_notes\": \"Environmental baseline for location:mansion_steps is empty of effective descriptors, sub-referents, and recent changes (authored_count 0, story_derived_count 0). Kizzie's action requires a house number and a knockable entrance, neither of which is established. One need emitted, resolved as B2 minimum persistent property. No category C or cannot_safely_resolve used; no match reinterpreted as no_match beyond the genuinely absent retrieval. response_sufficient=false pending Host B2 validation.\"\n}",
+          "request_user_prompt": null,
+          "escalation_analysis": {
+            "need_count": 1,
+            "resolution_count": 1,
+            "categories": [
+              "B2"
+            ],
+            "mediation_hits": [],
+            "classified_profile": "constrained",
+            "escalation_predicates": [
+              "compliant single-B2 (no escalation)"
+            ],
+            "should_escalate": false
+          },
+          "cognition_result": {
+            "baseline_sufficient": false,
+            "information_needs": [
+              {
+                "need_id": "need-001",
+                "question": "Does the mansion at location:mansion_steps present anything at the doorstep/steps that materially affects Kizzie's approach and knock — e.g. is the house number present and visible, and what does the entrance immediately present?",
+                "referent_refs": [
+                  "location:mansion_steps"
+                ]
+              }
+            ],
+            "resolutions": [
+              {
+                "need_id": "need-001",
+                "category": "B2",
+                "detail": "The environmental packet for location:mansion_steps carries zero effective descriptors, stable sub-referents, and no recent changes (authored_count 0, story_derived_count 0). The immediate user action depends on two environmental facts: (1) the house number Kizzie double-checks, and (2) the knockable entrance surface itself. Nothing in the baseline or authoritative inputs establishes either, so the minimum persistent property required is the fixed exterior identity/presentation of the mansion steps consistent with the established setting. A minimum B2 may follow Host validation to bind a stable exterior descriptor set (e.g. numbered plaque and a door/knocker at the steps) rather than inventing it unilaterally.",
+                "property_key": "location:mansion_steps.exterior_presentation",
+                "value": "Mansion steps present a numbered entrance with a door (and its knockable face/hardware) at the top of the steps.",
+                "stable_refs": [
+                  "location:mansion_steps"
+                ],
+                "mediation_outcome": "no_match",
+                "response_sufficient": false,
+                "reasoning_summary": "Baseline supplies only the location label 'Mansion steps' with no effective descriptors. The user action ('double-checking the house number' and 'knocking') references specific environmental objects the baseline does not establish, so echo/librarian match cannot be claimed and the single most material gap is the stable exterior presentation of the entrance. Resolved as the minimum persistent property (B2), pending Host validation."
+              }
+            ],
+            "assessment_notes": "Environmental baseline for location:mansion_steps is empty of effective descriptors, sub-referents, and recent changes (authored_count 0, story_derived_count 0). Kizzie's action requires a house number and a knockable entrance, neither of which is established. One need emitted, resolved as B2 minimum persistent property. No category C or cannot_safely_resolve used; no match reinterpreted as no_match beyond the genuinely absent retrieval. response_sufficient=false pending Host B2 validation."
+          }
+        },
+        "deep_retry": null,
+        "combined_probe_deep_wall_ms": 3862,
+        "combined_probe_deep_reasoning_tokens": 0,
+        "cognition_status": "determined"
+      },
+      {
+        "label": "narrow-char-1",
+        "wall_ms_total": 14600,
+        "initial_deliberation_profile": "constrained",
+        "final_deliberation_profile": "constrained",
+        "deliberation_profile_escalated": false,
+        "prepare_time_profile": {
+          "profile": "deep",
+          "signals": [
+            "recent_environmental_changes"
+          ]
+        },
+        "probe": {
+          "evidence_id": "49ce1b39-2d9e-4e75-96be-046f38575ad2",
+          "inference_id": "issue194-env-narrow-char-1-narrator-env-cog",
+          "wall_ms": 2947,
+          "input_tokens": 635,
+          "output_tokens": 498,
+          "reasoning_tokens": null,
+          "reasoning_effort": null,
+          "assistant_text": "{\n  \"baseline_sufficient\": false,\n  \"information_needs\": [\n    {\n      \"need_id\": \"need:mansion_steps_visual_identity\",\n      \"question\": \"What does the mansion at location:mansion_steps look like — its facade, entrance, and immediate surroundings — so Kizzie's approach and knock can be rendered against a concrete environment?\",\n      \"referent_refs\": [\n        \"location:mansion_steps\"\n      ]\n    }\n  ],\n  \"resolutions\": [\n    {\n      \"need_id\": \"need:mansion_steps_visual_identity\",\n      \"category\": \"B2\",\n      \"detail\": \"The environmental packet carries location_ref location:mansion_steps but zero effective_descriptors, stable_sub_referents, or authored/story-derived descriptors. No persistent property describing the mansion's appearance, entrance structure, or immediate environs is available. To render Kizzie double-checking the house number and knocking, a minimum persistent descriptor set for location:mansion_steps (e.g., facade style, door type, step material, adjacent features) must be resolved as B2 knowledge. Awaiting Host validation per constraint; no invention on retrieval gap.\",\n      \"property_key\": \"location:mansion_steps.descriptors\",\n      \"value\": \"pending_host_b2_minimum\",\n      \"stable_refs\": [\n        \"location:mansion_steps\"\n      ],\n      \"mediation_outcome\": \"no_persistent_descriptor_found_in_environmental_packet\",\n      \"response_sufficient\": false,\n      \"reasoning_summary\": \"Baseline lists the location but supplies no effective or stable descriptors, leaving the mansion's visual identity undefined. Kizzie's action (checking house number, knocking) requires a concrete exterior to be renderable; minimum B2 persistent property is the single material gap.\"\n    }\n  ],\n  \"assessment_notes\": \"Environmental baseline is insufficient: location_ref location:mansion_steps is present but carries zero effective_descriptors, stable_sub_referents, and zero authored/story-derived counts. The immediate user turn has Kizzie approaching and knocking at a mansion, which requires at least a minimal persistent exterior descriptor set. One B2 need emitted; no C or cannot_safely_resolve categories used per constrained profile. Host B2 validation required before render sufficiency can be asserted.\"\n}",
+          "request_user_prompt": null,
+          "escalation_analysis": {
+            "need_count": 1,
+            "resolution_count": 1,
+            "categories": [
+              "B2"
+            ],
+            "mediation_hits": [
+              {
+                "need_id": "need:mansion_steps_visual_identity",
+                "category": "B2",
+                "detail": "The environmental packet carries location_ref location:mansion_steps but zero effective_descriptors, stable_sub_referents, or authored/story-derived descriptors. No persistent property describing the mansion's appearance, entrance structure, or immediate environs is available. To render Kizzie double-checking the house number and knocking, a minimum persistent descriptor set for location:mansion_steps (e.g., facade style, door type, step material, adjacent features) must be resolved as B2 knowledge. Awaiting Host validation per constraint; no invention on retrieval gap.",
+                "property_key": "location:mansion_steps.descriptors",
+                "value": "pending_host_b2_minimum",
+                "stable_refs": [
+                  "location:mansion_steps"
+                ],
+                "mediation_outcome": "no_persistent_descriptor_found_in_environmental_packet",
+                "response_sufficient": false,
+                "reasoning_summary": "Baseline lists the location but supplies no effective or stable descriptors, leaving the mansion's visual identity undefined. Kizzie's action (checking house number, knocking) requires a concrete exterior to be renderable; minimum B2 persistent property is the single material gap."
+              }
+            ],
+            "classified_profile": "constrained",
+            "escalation_predicates": [
+              "mediation_outcome present (no_persistent_descriptor_found_in_environmental_packet)",
+              "compliant single-B2 (no escalation)"
+            ],
+            "should_escalate": false
+          },
+          "cognition_result": {
+            "baseline_sufficient": false,
+            "information_needs": [
+              {
+                "need_id": "need:mansion_steps_visual_identity",
+                "question": "What does the mansion at location:mansion_steps look like — its facade, entrance, and immediate surroundings — so Kizzie's approach and knock can be rendered against a concrete environment?",
+                "referent_refs": [
+                  "location:mansion_steps"
+                ]
+              }
+            ],
+            "resolutions": [
+              {
+                "need_id": "need:mansion_steps_visual_identity",
+                "category": "B2",
+                "detail": "The environmental packet carries location_ref location:mansion_steps but zero effective_descriptors, stable_sub_referents, or authored/story-derived descriptors. No persistent property describing the mansion's appearance, entrance structure, or immediate environs is available. To render Kizzie double-checking the house number and knocking, a minimum persistent descriptor set for location:mansion_steps (e.g., facade style, door type, step material, adjacent features) must be resolved as B2 knowledge. Awaiting Host validation per constraint; no invention on retrieval gap.",
+                "property_key": "location:mansion_steps.descriptors",
+                "value": "pending_host_b2_minimum",
+                "stable_refs": [
+                  "location:mansion_steps"
+                ],
+                "mediation_outcome": "no_persistent_descriptor_found_in_environmental_packet",
+                "response_sufficient": false,
+                "reasoning_summary": "Baseline lists the location but supplies no effective or stable descriptors, leaving the mansion's visual identity undefined. Kizzie's action (checking house number, knocking) requires a concrete exterior to be renderable; minimum B2 persistent property is the single material gap."
+              }
+            ],
+            "assessment_notes": "Environmental baseline is insufficient: location_ref location:mansion_steps is present but carries zero effective_descriptors, stable_sub_referents, and zero authored/story-derived counts. The immediate user turn has Kizzie approaching and knocking at a mansion, which requires at least a minimal persistent exterior descriptor set. One B2 need emitted; no C or cannot_safely_resolve categories used per constrained profile. Host B2 validation required before render sufficiency can be asserted."
+          }
+        },
+        "deep_retry": null,
+        "combined_probe_deep_wall_ms": 2947,
+        "combined_probe_deep_reasoning_tokens": 0,
+        "cognition_status": "determined"
+      },
+      {
+        "label": "narrow-char-2",
+        "wall_ms_total": 12581,
+        "initial_deliberation_profile": "constrained",
+        "final_deliberation_profile": "constrained",
+        "deliberation_profile_escalated": false,
+        "prepare_time_profile": {
+          "profile": "deep",
+          "signals": [
+            "recent_environmental_changes"
+          ]
+        },
+        "probe": {
+          "evidence_id": "06cd74d1-8c66-49cf-9b17-9f36548c5509",
+          "inference_id": "issue194-env-narrow-char-2-narrator-env-cog",
+          "wall_ms": 3191,
+          "input_tokens": 638,
+          "output_tokens": 444,
+          "reasoning_tokens": null,
+          "reasoning_effort": null,
+          "assistant_text": "{\n  \"baseline_sufficient\": false,\n  \"information_needs\": [\n    {\n      \"need_id\": \"need:mansion_steps_appearance\",\n      \"question\": \"What does the mansion and its steps look like at the moment Kizzie approaches — architecture, condition, door, lighting, immediate surroundings — sufficient to describe her vantage and the knock?\",\n      \"referent_refs\": [\n        \"location:mansion_steps\"\n      ]\n    }\n  ],\n  \"resolutions\": [\n    {\n      \"need_id\": \"need:mansion_steps_appearance\",\n      \"category\": \"B2\",\n      \"detail\": \"Environmental packet for location:mansion_steps carries zero effective descriptors, stable sub-referents, or recent changes in both the packet and the current view. No authoritative source supplies the mansion's appearance, so the minimum persistent property set (exterior character, door/entry, lighting, immediate approach surroundings) must be established once and retained for re-render. Minimum B2 followup pending Host validation.\",\n      \"property_key\": \"location:mansion_steps.appearance_baseline\",\n      \"value\": \"pending_minimum_b2\",\n      \"stable_refs\": [\n        \"location:mansion_steps\"\n      ],\n      \"mediation_outcome\": \"no_persistent_environmental_knowledge_available\",\n      \"response_sufficient\": false,\n      \"reasoning_summary\": \"Baseline descriptors are empty; the immediate user action (checking the house number, steeling herself, knocking) requires a stable exterior baseline for the mansion steps. Single most material gap emitted and resolved as a minimum B2 for Host validation.\"\n    }\n  ],\n  \"assessment_notes\": \"Environmental baseline is insufficient: location:mansion_steps has no authored or story-derived descriptors, sub-referents, or recent changes (authored_count 0, story_derived_count 0). One material gap emitted for the minimal persistent appearance of the mansion steps needed to render Kizzie's approach and knock. Category B2 chosen as the only safe resolution; B2 validation by Host still required, and no content was invented.\"\n}",
+          "request_user_prompt": null,
+          "escalation_analysis": {
+            "need_count": 1,
+            "resolution_count": 1,
+            "categories": [
+              "B2"
+            ],
+            "mediation_hits": [
+              {
+                "need_id": "need:mansion_steps_appearance",
+                "category": "B2",
+                "detail": "Environmental packet for location:mansion_steps carries zero effective descriptors, stable sub-referents, or recent changes in both the packet and the current view. No authoritative source supplies the mansion's appearance, so the minimum persistent property set (exterior character, door/entry, lighting, immediate approach surroundings) must be established once and retained for re-render. Minimum B2 followup pending Host validation.",
+                "property_key": "location:mansion_steps.appearance_baseline",
+                "value": "pending_minimum_b2",
+                "stable_refs": [
+                  "location:mansion_steps"
+                ],
+                "mediation_outcome": "no_persistent_environmental_knowledge_available",
+                "response_sufficient": false,
+                "reasoning_summary": "Baseline descriptors are empty; the immediate user action (checking the house number, steeling herself, knocking) requires a stable exterior baseline for the mansion steps. Single most material gap emitted and resolved as a minimum B2 for Host validation."
+              }
+            ],
+            "classified_profile": "constrained",
+            "escalation_predicates": [
+              "mediation_outcome present (no_persistent_environmental_knowledge_available)",
+              "compliant single-B2 (no escalation)"
+            ],
+            "should_escalate": false
+          },
+          "cognition_result": {
+            "baseline_sufficient": false,
+            "information_needs": [
+              {
+                "need_id": "need:mansion_steps_appearance",
+                "question": "What does the mansion and its steps look like at the moment Kizzie approaches — architecture, condition, door, lighting, immediate surroundings — sufficient to describe her vantage and the knock?",
+                "referent_refs": [
+                  "location:mansion_steps"
+                ]
+              }
+            ],
+            "resolutions": [
+              {
+                "need_id": "need:mansion_steps_appearance",
+                "category": "B2",
+                "detail": "Environmental packet for location:mansion_steps carries zero effective descriptors, stable sub-referents, or recent changes in both the packet and the current view. No authoritative source supplies the mansion's appearance, so the minimum persistent property set (exterior character, door/entry, lighting, immediate approach surroundings) must be established once and retained for re-render. Minimum B2 followup pending Host validation.",
+                "property_key": "location:mansion_steps.appearance_baseline",
+                "value": "pending_minimum_b2",
+                "stable_refs": [
+                  "location:mansion_steps"
+                ],
+                "mediation_outcome": "no_persistent_environmental_knowledge_available",
+                "response_sufficient": false,
+                "reasoning_summary": "Baseline descriptors are empty; the immediate user action (checking the house number, steeling herself, knocking) requires a stable exterior baseline for the mansion steps. Single most material gap emitted and resolved as a minimum B2 for Host validation."
+              }
+            ],
+            "assessment_notes": "Environmental baseline is insufficient: location:mansion_steps has no authored or story-derived descriptors, sub-referents, or recent changes (authored_count 0, story_derived_count 0). One material gap emitted for the minimal persistent appearance of the mansion steps needed to render Kizzie's approach and knock. Category B2 chosen as the only safe resolution; B2 validation by Host still required, and no content was invented."
+          }
+        },
+        "deep_retry": null,
+        "combined_probe_deep_wall_ms": 3191,
+        "combined_probe_deep_reasoning_tokens": 0,
+        "cognition_status": "determined"
+      }
+    ],
+    "no_escalation_count": 3,
+    "escalation_count": 0
+  },
+  "historical_env_cognition_baseline": {
+    "wall_ms_approx": 55728,
+    "reasoning_tokens_approx": 11454,
+    "note": "Historical F06 single deep cognition call; approximate from investigation record."
+  }
+}

@@ -643,6 +643,18 @@ def record_environment_cognition_failure(
     return audit_dict
 
 
+NARRATOR_ENVIRONMENT_COGNITION_RUBRIC_CONSTRAINED = (
+    "Structured Narrator environmental cognition (#49 / #194 constrained profile).\n"
+    "Assess whether the environmental baseline plus authoritative inputs already answer "
+    "the immediate rendering need.\n"
+    "When baseline is insufficient, emit at most ONE information_need for the single most "
+    "material gap required to render the immediate user action.\n"
+    "Resolve with category B2 only when a minimum persistent property is required; "
+    "do not emit category C, cannot_safely_resolve, or multi-need reconciliation.\n"
+    "Set response_sufficient per resolution. Host B2 validation still applies.\n"
+    "Output JSON: {baseline_sufficient, information_needs[], resolutions[], assessment_notes}.\n"
+)
+
 NARRATOR_ENVIRONMENT_COGNITION_RUBRIC = (
     "Structured Narrator environmental cognition (#49). Two stages in one JSON object.\n"
     "Input authority (#71 dual-input):\n"
