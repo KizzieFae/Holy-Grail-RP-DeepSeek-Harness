@@ -4,7 +4,7 @@
 **Issue:** [#194](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/194)  
 **Transition:** `consensus_reached` → `implemented`  
 **Consensus record:** `governance/records/issue-194-consensus-2026-09-14.md`  
-**Implementation anchor:** `c40cbd82a01d088de3b31ed4c43be16b068fc4d4`
+**Implementation anchor:** `0ee7fbe` (profile-safety deep escalation); prior `c40cbd8`
 
 ## Implemented interventions
 
