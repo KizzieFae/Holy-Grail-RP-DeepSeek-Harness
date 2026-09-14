@@ -64,6 +64,9 @@ When changing Character phase or semantic evaluation:
 - Run `node --test tests/semantic-evaluation*.test.mjs` from `v2/rp_runtime/`.
 - Run integration round tests (`two-character-round.test.mjs`, `execution-evidence.test.mjs`) when trace or evidence indexing changes.
 - Bounded real-provider semantic validation: `semantic-evaluation-live-pass.test.mjs` (requires `DEEPSEEK_API_KEY`; run from `v2/rp_runtime/` with `node --test tests/semantic-evaluation-live-pass.test.mjs`).
+- **Perceptual-grounding semantic validation** (R02b/R14 against authorized inventory): `node scripts/issue199-supplemental-semantic-validation.mjs` from `v2/rp_runtime/` (requires `DEEPSEEK_API_KEY`; durable report under `governance/records/`).
+- **Inverse Player-action-authority semantic validation** (R16 objective regression vs ignorance/deception/distinct requirement): `node scripts/issue200-inverse-r16-live-validation.mjs` from `v2/rp_runtime/` (requires `DEEPSEEK_API_KEY`; durable report under `governance/records/`).
+- Deterministic pressure-freshness regression (no provider): `python -m pytest v2/domain/tests/test_issue_200_scene_pressure_freshness.py -q`.
 
 Post-#28 forensic completeness (#28):
 

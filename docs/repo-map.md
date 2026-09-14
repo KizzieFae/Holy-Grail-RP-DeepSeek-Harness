@@ -75,6 +75,8 @@ Details: [rp-data-layout.md](./rp-data-layout.md).
 | DSH round orchestration | `v2/rp_runtime/src/plugins/hg-round-orchestrator/` |
 | UI-only behavior | `v2/ui/streamlit_app.py` |
 | Audits / traces | `v2/rp_runtime/src/plugins/hg-trace-emitter/`, Host `session_history.py`, [audit-workflows.md](./audit-workflows.md) |
+| Character perceptual inventory / unsupported Player sensory claims (#199) | Host `character_perceptual_inventory.py`, `character_upstream_context.py`; [player-authorship-authority.md](./player-authorship-authority.md) |
+| Scene-pressure freshness / stale Librarian objective fields (#200) | `continuity_scene_pressure_projection.py`, `continuity_librarian_issue_pressure.py`, `player_action_completion_authority.py` |
 
 Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 
