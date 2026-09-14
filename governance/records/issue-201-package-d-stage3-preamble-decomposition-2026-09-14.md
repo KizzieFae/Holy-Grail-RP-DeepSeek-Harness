@@ -4,6 +4,7 @@
 **Issue:** [#201](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/201)  
 **Phase:** `investigating` — In Progress / Investigating / **P1**  
 **Execution SHA:** `b391336ced019c409fb1499db8636fd18e6424f9`  
+**Evidence commit:** `42be339`  
 **Harness:** `v2/rp_runtime/scripts/issue201-package-d-stage3-preamble-decomposition.mjs`  
 **Evidence root:** `data/investigation_runs/issue201-package-d-stage3-2026-09-14T18-16-06-752Z/`  
 **D0 reused:** `issue201-d0-baseline-2026-09-14T07-46-14-584Z/`  
