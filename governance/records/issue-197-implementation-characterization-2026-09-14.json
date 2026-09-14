@@ -2,6 +2,21 @@
   "schema": "issue197_implementation_characterization_v1",
   "generated_at": "2026-09-14T02:57:46.840Z",
   "git_sha": "65512d556b8c6ea3439e47e250824059611a6c12",
+  "provenance": {
+    "resolution": "outcome_a_reconstructable",
+    "execution_head_at_run": "65512d556b8c6ea3439e47e250824059611a6c12",
+    "working_tree_dirty_at_run": true,
+    "implementation_content_commit": "adac09caa9672e474c243e85061e8e9acd17849b",
+    "sha_field_meaning": "execution HEAD at run time via git rev-parse HEAD; did not capture dirty working tree in original script",
+    "forensic_evidence": [
+      "affirmative scenarios record checker_result.verification with -uniform-eligibility-verification inference ids",
+      "player-uniform-eligibility-verification.mjs absent from 65512d5",
+      "characterization executed in Implementation-AI session before adac09c commit"
+    ],
+    "provenance_record": "governance/records/issue-197-characterization-provenance-2026-09-14.md",
+    "provenance_remediated_at": "2026-09-14T03:15:00.000Z",
+    "rerun_required": false
+  },
   "results": [
     {
       "id": "f06_mixed",
