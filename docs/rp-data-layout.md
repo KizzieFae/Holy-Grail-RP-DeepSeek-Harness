@@ -97,7 +97,11 @@ New sessions use opaque UUIDv4 filenames. Exact JSON keys follow code-defined se
 
 **`continuity_state` (authoritative truth):** includes `public_events[]` (optional `occurrence_evidence` companion per Issue #51), `turn_metadata_by_index` (classifier/promotion observational record including `summary_selection_source`), `resolved_outcomes`, and related Continuity structures. This is the primary forensic substrate for occurrence-evidence lifecycle reconstruction — not a separate #51 audit log.
 
-**`metadata.v2_host_state`:** `rp_history`, `commit_ids`, and per-entry `domain_commit_id` correlate producer inputs to promoted occurrences. **#164 runtime provenance** (durable after session save/reopen):
+**`metadata.v2_host_state`:** Host-owned durable session state nested under `metadata.v2_host_state` on the session JSON file. **Authoritative RP transcript/history for investigation lives here** — not at the session JSON root. The primary array is **`metadata.v2_host_state.rp_history`**. Use **`metadata.v2_host_state.commit_ids`** and per-entry **`domain_commit_id`** on history lines to correlate producer inputs to promoted occurrences and to join execution evidence.
+
+**`rp_history` entry shape (investigator note):** entries may **omit** a convenient `entry_type` field. Do not assume `entry_type=committed_turn` filtering will find all commits. Prefer stable join keys actually populated by runtime: **`entry_id`**, **`domain_commit_id`**, **`continuity_turn_index`**, **`sequence_index`** (user posts), **`character_id`**, and role-specific metadata blocks documented in [audit-workflows.md](./audit-workflows.md). When a field is absent on a historical entry, report **not observable** — do not infer schema guarantees the runtime does not provide.
+
+**#164 runtime provenance** (durable after session save/reopen):
 
 | Field | Schema | Role |
 |-------|--------|------|

@@ -77,6 +77,8 @@ Details: [rp-data-layout.md](./rp-data-layout.md).
 | Audits / traces | `v2/rp_runtime/src/plugins/hg-trace-emitter/`, Host `session_history.py`, [audit-workflows.md](./audit-workflows.md) |
 | Character perceptual inventory / unsupported Player sensory claims (#199) | Host `character_perceptual_inventory.py`, `character_upstream_context.py`; [player-authorship-authority.md](./player-authorship-authority.md) |
 | Scene-pressure freshness / stale Librarian objective fields (#200) | `continuity_scene_pressure_projection.py`, `continuity_librarian_issue_pressure.py`, `player_action_completion_authority.py` |
+| Plot Cognition overlay / projection / lifecycle (#58–#64) | DSH `v2/rp_runtime/src/lib/plot-cognition-orchestration.mjs`; Host `v2/domain_api/plot_cognition_*.py`; [plot-cognition-orchestration-contract.md](./plot-cognition-orchestration-contract.md) |
+| Inference transport (DSH ↔ Host) | `v2/rp_runtime/src/lib/domain-api-client.mjs`, `inference-substrate.mjs`, `hg-context-bridge/`; [architecture.md](./architecture.md) |
 
 Full symptom routing: [MODULE_INDEX.md](../MODULE_INDEX.md).
 
