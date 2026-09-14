@@ -42,6 +42,19 @@ Live inference tests require `DEEPSEEK_API_KEY` when exercising real provider pa
 
 ---
 
+## Manifest projection policy parity (#134, #206)
+
+Python `manifest_projection_policy.py` and Node `manifest-projection-policy.mjs` must stay synchronized. The parity invariant is enforced in **both** normal validation paths:
+
+| Path | Command |
+|------|---------|
+| Domain suite | `python -m pytest v2/domain/tests/test_manifest_policy_parity.py -q` |
+| RP runtime suite | `cd v2/rp_runtime && node --test tests/manifest-policy-parity.test.mjs` (also runs under `npm test`) |
+
+Run the relevant path (or both) when editing either policy module.
+
+---
+
 ## Domain library guidance
 
 When changing `v2/domain/modules/`:
