@@ -45,6 +45,7 @@ const CHARACTER_LANES = new Set([
   'character_memory',
   'recent_scene_transcript',
   'user_turn_trigger',
+  'authoritative_perceptual_inventory',
   'continuity_summary',
   'librarian_knowledge',
   'librarian_synthesis',
