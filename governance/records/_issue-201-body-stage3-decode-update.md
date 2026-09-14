@@ -39,7 +39,9 @@ investigating
 - Package D Stage-3 evidence: `data/investigation_runs/issue201-package-d-stage3-2026-09-14T18-16-06-752Z/`
 - Stage-2 synthesis: `b391336` — `governance/records/issue-201-package-d-stage2-synthesis-2026-09-14.md`
 - Stage-3 execution SHA: `42be339` — `governance/records/issue-201-package-d-stage3-preamble-decomposition-2026-09-14.md`
-- Stage-3 decode synthesis: `governance/records/issue-201-package-d-stage3-decode-synthesis-2026-09-14.md` (pending commit SHA)
+- Stage-3 decode synthesis SHA: `da70fc7` — `governance/records/issue-201-package-d-stage3-decode-synthesis-2026-09-14.md`
+- D-01-L consensus refinement SHA: `da70fc7` — `governance/records/issue-201-package-d-d01l-consensus-refinement-2026-09-14.md`
+- Locked Stage-3 scores: `governance/records/issue201-stage3-governance-blind-scores-locked.json` (Governance locked before decode)
 - Packages A–C record: `governance/records/issue-201-packages-abc-investigation-2026-09-14.md`
 
 ## Execution snapshot
@@ -76,7 +78,7 @@ investigating
 - **EXP-2 / D-06:** Unchanged — combine/remove candidate
 - **EXP-3 / D-03:** Unchanged — complexity-tier candidate
 
-**Next proposed tranche (NOT authorized):** **D-01-L** — longitudinal Storyteller value test (Plot ON; Storyteller ON vs OFF; multi-turn Arkham + Ayame arcs). See decode synthesis record.
+**Next proposed tranche (NOT authorized):** **D-01-L** — longitudinal Storyteller value test with semantic player policy, sequence-primary blind rubric. Consensus refinement: `da70fc7`.
 
 **Deferred:** D-10 post-commit join — pending longitudinal Storyteller gate.
 
@@ -160,4 +162,4 @@ End-to-end RP turn pipeline: `v2/rp_runtime/`, `v2/domain/`, `v2/domain_api/`, e
 
 ## Next step
 
-Governance review of Stage-3 decode synthesis; authorize or revise **D-01-L** longitudinal Storyteller proposal. Remain at `investigating`. No production redesign.
+Governance review of D-01-L consensus refinement (`da70fc7`); authorize execution or request revision. Remain at `investigating`. No production redesign.
