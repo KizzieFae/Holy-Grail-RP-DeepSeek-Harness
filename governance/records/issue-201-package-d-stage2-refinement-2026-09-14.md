@@ -103,9 +103,9 @@ Per Task B (**unrelated/transient**): **replacement matched Arkham EXP-2 samples
 
 Original contaminated r2 **superseded** for architectural comparison; retained in session evidence for forensics only.
 
-### Updated EXP-2 classification: **inconclusive**
+### Updated EXP-2 classification (post-blind-decode): **Strong combine/remove candidate; no demonstrated marginal value so far**
 
-Director QA removal is **not demonstrated** as the cause of the original Arkham failure. With replacement data, EXP-2 Arkham is **4/4 committed** (both reps) under QA-off. **Cannot** conclude QA is necessary from this tranche; **cannot** conclude QA is removable without further designed tests.
+Director QA removal is **not demonstrated** as the cause of the original Arkham failure. With replacement data, EXP-2 Arkham is **4/4 committed** under QA-off. Blind semantic overall ~4.59 vs D0 ~4.48 (small-N). See synthesis record for bounded interpretation.
 
 ### Updated architectural-work accounting (EXP-2, post-replacement Arkham)
 
@@ -130,7 +130,7 @@ Director QA removal is **not demonstrated** as the cause of the original Arkham 
 
 **Human scoring instructions:** 11 dimensions, 1–5; use scenario briefings (Arkham vs Ayame); no architecture/latency/inference data; primary evaluator = project user; Governance second pass optional after primary lock.
 
-**Status:** Ready for user scoring; **not yet scored.**
+**Status:** **Scored and decoded** — see `issue-201-package-d-stage2-synthesis-2026-09-14.md` and `issue201-stage2-governance-blind-scores-locked.json`.
 
 ---
 
@@ -164,7 +164,7 @@ See `governance/records/issue201-experiment-nomenclature-d01-d10.md`.
 - `prepareCharacterOrientationContext` domain round-trip (if still invoked elsewhere in graph — **not** invoked when cognition skipped)  
 - Character prep orchestration spans, projection lifecycle, character semantic evaluation, multi-inference librarian fan-out from **other** lanes (storyteller, narrator env, etc.)
 
-### Updated EXP-3 interpretation (**inconclusive**, architecturally informative)
+### Updated EXP-3 interpretation (**conditional retain / complexity-tier candidate**)
 
 - **Orientation LLM:** Removed cleanly (count = 0); 4/4 commits prove path viability.  
 - **Orientation subsystem / information train:** Librarian fan-out and wall time **not** cleanly reduced — marginal LLM cost is **small vs coordination noise**.  
@@ -176,7 +176,7 @@ See `governance/records/issue201-experiment-nomenclature-d01-d10.md`.
 
 ## 20. Updated EXP-1 interpretation (no production implementation)
 
-Governance alignment: **strong candidate for conditional/tiered use**, not always-on. Evidence unchanged: 4/4 commit, ~9–15 inference reduction, low confound. **No** complexity-gated production behavior authorized.
+Post-blind-decode: **Retain function; architecture unresolved. Strong decomposition/consolidation candidate.** Evidence: 4/4 commit, ~9–15 inference reduction, blind delta −0.32 overall. **No** production tiering authorized.
 
 ---
 

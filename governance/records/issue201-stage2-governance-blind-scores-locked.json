@@ -1,0 +1,75 @@
+{
+  "schema": "issue201_governance_blind_scores_locked_v1",
+  "issue": 201,
+  "phase": "package_d_stage2_tranche1",
+  "evaluator": "Governance AI (independent blind pass)",
+  "project_user_pass": "declined",
+  "scored_before_answer_key_reveal": true,
+  "locked_at": "2026-09-14",
+  "packet_path": "data/investigation_runs/issue201-package-d-stage2-2026-09-14T08-09-42-791Z/outputs/issue201-stage2-human-blind-eval-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-package-d-stage2-2026-09-14T08-09-42-791Z/outputs/issue201-stage2-human-blind-eval-answer-key.json",
+  "rubric_dimensions": [
+    "Character fidelity",
+    "Distinctiveness",
+    "Initiative",
+    "Responsiveness",
+    "Dramatic progression",
+    "Coherence",
+    "Prose quality",
+    "Repetitiveness (5=low)",
+    "Stiffness (5=natural)",
+    "Unnecessary exposition (5=lean)",
+    "Emotional/narrative continuity"
+  ],
+  "note": "Per-dimension scores are Governance-held locked detail; this record stores authoritative sample means only. Means MUST NOT be altered post-decode.",
+  "sample_means": {
+    "A": 4.73,
+    "B": 3.73,
+    "C": 4.36,
+    "D": 4.45,
+    "E": 4.27,
+    "F": 4.27,
+    "G": 4.36,
+    "H": 4.45,
+    "I": 4.64,
+    "J": 4.64,
+    "K": 4.36,
+    "L": 4.09,
+    "M": 4.73,
+    "N": 4.09,
+    "O": 4.45,
+    "P": 4.64
+  },
+  "decoded_groups": {
+    "D0_control": {
+      "arkham": { "samples": ["I", "H"], "mean": 4.545 },
+      "ayame": { "samples": ["K", "D"], "mean": 4.405 },
+      "overall": 4.475
+    },
+    "EXP-1_D-01": {
+      "arkham": { "samples": ["G", "L"], "mean": 4.225 },
+      "ayame": { "samples": ["B", "O"], "mean": 4.09 },
+      "overall": 4.158
+    },
+    "EXP-2_D-06": {
+      "arkham": { "samples": ["A", "M"], "mean": 4.73 },
+      "ayame": { "samples": ["J", "F"], "mean": 4.455 },
+      "overall": 4.593
+    },
+    "EXP-3_D-03": {
+      "arkham": { "samples": ["N", "C"], "mean": 4.225 },
+      "ayame": { "samples": ["P", "E"], "mean": 4.455 },
+      "overall": 4.34
+    }
+  },
+  "deltas_vs_d0_overall": {
+    "EXP-1": -0.32,
+    "EXP-2": 0.12,
+    "EXP-3": -0.14
+  },
+  "excluded_from_comparison": {
+    "case_id": "EXP-2-arkham_stress-r2",
+    "session_id": "hg-session-a92735ee-709d-4d00-a79a-7b41f0ee8652",
+    "reason": "superseded failed run; replacement sample M used"
+  }
+}
