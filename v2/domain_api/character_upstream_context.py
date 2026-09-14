@@ -9,6 +9,7 @@ from typing import Any
 
 from .character_context_projector import build_character_lane_contributions
 from .character_conversation_projection import project_character_conversation_for_manifest
+from .character_perceptual_inventory import project_perceptual_inventory_contribution
 from .contract import PromptContribution
 from .continuity_context_projector import project_authoritative_context
 from .context_substrate import auth_projections_to_contributions, semantic_correction_contribution
@@ -142,6 +143,14 @@ def assemble_character_upstream_contributions(
                 },
             )
         )
+    contributions.append(
+        project_perceptual_inventory_contribution(
+            fixture,
+            manifest_id=manifest_id,
+            character_id=character_id,
+            hg_round_id=hg_round_id,
+        )
+    )
     contributions.extend(
         build_character_lane_contributions(
             fixture,

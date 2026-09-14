@@ -32,10 +32,27 @@ PLAYER_AUTHORSHIP_GUARDRAIL_TEXT = (
     "continuity/canon/grounding, and unknown provenance do NOT establish Player authority. "
     "Hard violations: unsupported objective Player assertion; unsupported Player "
     "sensation/embodiment; material Player-behavior amplification. "
-    "Permissible: clearly framed subjective Character interpretation; faithful paraphrase; "
+    "Character private/scenario knowledge does NOT authorize fabrication of Player physical, "
+    "physiological, emotional-display, or other sensory evidence. Such claimed observations "
+    "require support from perception_fact:authorized_inventory:*, perception_fact:entitled:*, "
+    "applicable grounding:* visible facts, or established player_fact:* observable sources. "
+    "Subjective phrasing alone does not cure missing perceptual substrate. "
+    "Permissible: faithful paraphrase of entitled perceptual evidence; fallible interpretive "
+    "conclusions explicitly anchored to entitled perceptual evidence in the same move; "
     "collaborative world/environment invention without unsupported Player-body attribution. "
     "R02b (authorship: is the Player fact established?) is orthogonal to R14 (entitlement: "
     "may this Character know/use an established fact?)."
+)
+
+CHARACTER_PERCEPTUAL_GROUNDING_DISCIPLINE = (
+    "PERCEPTUAL GROUNDING (Character move): Scenario premise, character-private knowledge, "
+    "canon, and other context may inform private reasoning, motivation, tactics, dialogue, "
+    "and decisions. Claims in action beats that the Character perceives Player sensory "
+    "evidence (posture, expression, fatigue, trembling, bodily tells, emotional display, "
+    "or similar) must be grounded in the AUTHORITATIVE PERCEPTUAL INVENTORY. "
+    "Knowledge alone does not create evidence. An empty Player-targeted sensory inventory "
+    "does not authorize inventing plausible observables. Subjective wording does not "
+    "manufacture evidence."
 )
 
 

@@ -1,0 +1,117 @@
+{
+  "f06_opening": {
+    "perceptual_visibility": {
+      "units": [
+        {
+          "unit_id": "u_visual_glance",
+          "kind": "observable_event",
+          "text": "Kizzie glanced up, double-checking the house number",
+          "perception_channel": "visual",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          },
+          "source": "player_decomposition"
+        },
+        {
+          "unit_id": "u_internal_steel",
+          "kind": "internal",
+          "text": "and then steeled herself before knocking.",
+          "perception_channel": "non_perceptual",
+          "recipients": {
+            "scope": "private",
+            "characters": [
+              "Kizzie"
+            ],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s2"
+            ],
+            "order_index": 1
+          },
+          "source": "player_decomposition"
+        }
+      ]
+    },
+    "source_accounting": {
+      "source_length": 93,
+      "source_sha256": "a4eeeedbf31fc1570179ace8ddfa98bfca2d9c01100a36a282fd09bfae7cb258",
+      "normalization": "nfc_nfkc_ws_collapse",
+      "segments": [
+        {
+          "segment_id": "s1",
+          "char_start": 0,
+          "char_end": 51,
+          "disposition": "projects",
+          "unit_ids": [
+            "u_visual_glance"
+          ]
+        },
+        {
+          "segment_id": "s2",
+          "char_start": 51,
+          "char_end": 93,
+          "disposition": "projects",
+          "unit_ids": [
+            "u_internal_steel"
+          ]
+        }
+      ]
+    },
+    "generation": {
+      "inference_id": "issue199-supplemental-f06-decomposition"
+    }
+  },
+  "trembling": {
+    "perceptual_visibility": {
+      "units": [
+        {
+          "unit_id": "u_tremble",
+          "kind": "observable_event",
+          "text": "Kizzie's hands trembled visibly as she waited.",
+          "perception_channel": "visual",
+          "recipients": {
+            "scope": "present",
+            "characters": [],
+            "roles": []
+          },
+          "source_provenance": {
+            "segment_ids": [
+              "s1"
+            ],
+            "order_index": 0
+          },
+          "source": "player_decomposition"
+        }
+      ]
+    },
+    "source_accounting": {
+      "source_length": 46,
+      "source_sha256": "0da53813aafce993abf896d87c842b21e555944a2071af30e8d5b6806e1706db",
+      "normalization": "nfc_nfkc_ws_collapse",
+      "segments": [
+        {
+          "segment_id": "s1",
+          "char_start": 0,
+          "char_end": 46,
+          "disposition": "projects",
+          "unit_ids": [
+            "u_tremble"
+          ]
+        }
+      ]
+    },
+    "generation": {
+      "inference_id": "issue199-supplemental-tremble-decomposition"
+    }
+  }
+}
