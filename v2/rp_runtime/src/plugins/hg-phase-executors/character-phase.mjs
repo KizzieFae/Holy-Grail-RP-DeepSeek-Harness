@@ -132,6 +132,7 @@ export async function runCharacterPhase({
   mockProjectionRegenerationResponses = [],
   plotCognitionEpistemicEvaluatorProfile = null,
   projectionLifecycleEnabled = true,
+  skipCharacterKnowledgeCognition = false,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
   let committed = false;
@@ -154,52 +155,72 @@ export async function runCharacterPhase({
   const orchestrationEvidenceIds = [];
   const state = await api.getSceneState(hgSceneId);
   const cognitionTurnIndex = Number(state.turn_counter ?? 0);
-  const cognition = await runCharacterKnowledgeCognition({
-    domainApi: api,
-    hgSceneId,
-    hgRoundId,
-    characterId,
-    role,
-    turnIndex: cognitionTurnIndex,
-    inferenceId: characterInferenceId,
-    directorDecision,
-    correctionContext: null,
-    runEphemeralInference,
-    mockOrientationResponse: mockCharacterOrientationResponse,
-    mockMediationResponse: mockCharacterMediationResponse,
-    modelProfile,
-    evidenceContextBase: {
-      hgSessionId,
+  if (skipCharacterKnowledgeCognition !== true) {
+    const cognition = await runCharacterKnowledgeCognition({
+      domainApi: api,
       hgSceneId,
       hgRoundId,
-      sceneSessionId,
-    },
-    recorder,
-    hgSessionId,
-  });
-  cognitionAudit = cognition.audit ?? null;
-  if (cognition?.orientationRun?.evidenceId) {
-    orchestrationEvidenceIds.push(cognition.orientationRun.evidenceId);
+      characterId,
+      role,
+      turnIndex: cognitionTurnIndex,
+      inferenceId: characterInferenceId,
+      directorDecision,
+      correctionContext: null,
+      runEphemeralInference,
+      mockOrientationResponse: mockCharacterOrientationResponse,
+      mockMediationResponse: mockCharacterMediationResponse,
+      modelProfile,
+      evidenceContextBase: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        sceneSessionId,
+      },
+      recorder,
+      hgSessionId,
+    });
+    cognitionAudit = cognition.audit ?? null;
+    if (cognition?.orientationRun?.evidenceId) {
+      orchestrationEvidenceIds.push(cognition.orientationRun.evidenceId);
+    }
+    if (cognition?.mediation?.mediationEvidenceId) {
+      orchestrationEvidenceIds.push(cognition.mediation.mediationEvidenceId);
+    }
+    if (cognition?.audit?.mediation_evidence_id) {
+      orchestrationEvidenceIds.push(cognition.audit.mediation_evidence_id);
+    }
+    librarianBundle = cognition.bundle;
+    librarianKnowledgeAudit = {
+      ...(cognition.audit ?? {}),
+      stage: cognition.stage,
+      ok: cognition.ok,
+    };
+    trace?.emit(sceneAgent.session, 'hg/character-knowledge-cognition', scope, {
+      inference_id: characterInferenceId,
+      character_id: characterId,
+      cognition_stage: cognition.stage,
+      cognition_ok: cognition.ok,
+      audit: cognitionAudit,
+    });
+  } else {
+    cognitionAudit = {
+      skipped: true,
+      reason: 'skipCharacterKnowledgeCognition',
+      note: 'Character orientation inference and orientation-mediated librarian bundle bypassed; character move uses prepareCharacterContext authoritative manifest only.',
+    };
+    librarianKnowledgeAudit = {
+      skipped: true,
+      stage: 'skipped',
+      ok: true,
+    };
+    trace?.emit(sceneAgent.session, 'hg/character-knowledge-cognition', scope, {
+      inference_id: characterInferenceId,
+      character_id: characterId,
+      cognition_stage: 'skipped',
+      cognition_ok: true,
+      audit: cognitionAudit,
+    });
   }
-  if (cognition?.mediation?.mediationEvidenceId) {
-    orchestrationEvidenceIds.push(cognition.mediation.mediationEvidenceId);
-  }
-  if (cognition?.audit?.mediation_evidence_id) {
-    orchestrationEvidenceIds.push(cognition.audit.mediation_evidence_id);
-  }
-  librarianBundle = cognition.bundle;
-  librarianKnowledgeAudit = {
-    ...(cognition.audit ?? {}),
-    stage: cognition.stage,
-    ok: cognition.ok,
-  };
-  trace?.emit(sceneAgent.session, 'hg/character-knowledge-cognition', scope, {
-    inference_id: characterInferenceId,
-    character_id: characterId,
-    cognition_stage: cognition.stage,
-    cognition_ok: cognition.ok,
-    audit: cognitionAudit,
-  });
 
   let finalizedProjection = null;
   if (projectionLifecycleEnabled) {

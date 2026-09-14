@@ -464,6 +464,7 @@ export default class HgRoundOrchestrator extends Service {
         participationEvidenceId,
         mockCharacterOrientationResponse: mockCharacterOrientationResponses[characterTurnIndex] ?? null,
         mockCharacterMediationResponse: mockCharacterMediationResponses[characterTurnIndex] ?? null,
+        skipCharacterKnowledgeCognition: options.skipCharacterKnowledgeCognition === true,
       }));
       roleTimings.character_ms.push(Date.now() - characterStartedAt);
       characterSummary = buildCharacterSummary(characterTurn);
