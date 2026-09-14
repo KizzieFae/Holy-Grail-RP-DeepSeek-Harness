@@ -24,6 +24,8 @@ def test_guardrail_contract_is_declarative_only() -> None:
     assert "R16" in text
     assert "location_entry_outcome" in text
     assert "R02b" in text
+    assert "R16 inverse" in text
+    assert "objective regression" in text
 
 
 def test_merge_inserts_guardrail_without_duplication() -> None:

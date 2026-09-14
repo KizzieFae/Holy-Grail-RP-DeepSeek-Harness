@@ -20,6 +20,7 @@ from continuity_issue_retrieval import get_active_issues  # noqa: E402
 from continuity_scene_pressure_projection import (  # noqa: E402
     build_scene_pressure_entry,
     get_projectable_issue_pressure_overlay,
+    overlay_for_semantic_projection,
 )
 from continuity_state import IssueStatus  # noqa: E402
 
@@ -244,7 +245,8 @@ def project_scene_pressures_digest(
     for issue in active_issues:
         issue_id = str(issue.issue_id)
         overlay = get_projectable_issue_pressure_overlay(mgr, issue_id)
-        entry = build_scene_pressure_entry(issue, overlay)
+        entry = build_scene_pressure_entry(issue, overlay, manager=mgr)
+        semantic_overlay = overlay_for_semantic_projection(mgr, overlay)
         entries.append(entry)
         refs.extend(
             [
@@ -314,24 +316,27 @@ def project_scene_pressures_digest(
                     text=issue.description,
                 )
             )
-        if overlay:
-            refs.append(
-                _authority_ref(
-                    ref_id=f"issue:{issue_id}:semantic_unmet_condition",
-                    kind="librarian_issue_pressure_overlay",
-                    authority_class="derived",
-                    label=f"Librarian semantic unmet condition ({issue_id})",
-                    text=str(overlay.get("semantic_unmet_condition", "") or ""),
+        if semantic_overlay:
+            semantic = str(semantic_overlay.get("semantic_unmet_condition", "") or "").strip()
+            if semantic:
+                refs.append(
+                    _authority_ref(
+                        ref_id=f"issue:{issue_id}:semantic_unmet_condition",
+                        kind="librarian_issue_pressure_overlay",
+                        authority_class="derived",
+                        label=f"Librarian semantic unmet condition ({issue_id})",
+                        text=semantic,
+                    )
                 )
-            )
-            if overlay.get("stakes_summary"):
+            stakes = str(semantic_overlay.get("stakes_summary", "") or "").strip()
+            if stakes:
                 refs.append(
                     _authority_ref(
                         ref_id=f"issue:{issue_id}:stakes_summary",
                         kind="librarian_issue_pressure_overlay",
                         authority_class="derived",
                         label=f"Librarian stakes summary ({issue_id})",
-                        text=str(overlay.get("stakes_summary", "") or ""),
+                        text=stakes,
                     )
                 )
 

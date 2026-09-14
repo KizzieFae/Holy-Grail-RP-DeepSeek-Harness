@@ -79,8 +79,27 @@ Do not fabricate `player_fact:*` refs for unsupported assertions. Record guardra
 
 - **Guardrail ID:** `guardrail:player_action_completion`
 - **R16** enforces that Character moves do not assume Player acceptance, entry, agreement, or positional completion without authoritative support.
+- **R16 inverse (#200):** rejects **objective regression** — asserting an authoritative completed Player action or positional state did not occur, remains unperformed, or was undone without reversal authority. Character ignorance, commands from incomplete perception, deliberate deception/manipulation, and distinct subsequent requirements are **not** objective regression.
 - Invitation, `location_entry_outcome.allowed`, threat, and unresolved coercion do **not** establish accomplished Player movement.
 - **R16** is orthogonal to **R02b** (authorship) and **R14** (entitlement).
+
+## Bidirectional Player-action authority (#200)
+
+Authoritative Player contributions establish world/action truth. Character epistemics remain separately governed by **R14** perception/entitlement.
+
+| Dimension | Contract |
+|-----------|----------|
+| World/action truth | Tier-1 `player_fact:*` and committed continuity |
+| Character epistemics | Perception entitlement (#155, #199) |
+| Character behavior | May be ignorant, mistaken, deceptive, or impose distinct requirements |
+
+Player-authored state must not be **advanced beyond** or **objectively regressed behind** authoritative Player contribution.
+
+## Derived scene-pressure freshness (#200)
+
+Librarian `semantic_unmet_condition` overlays bind `player_authority_sequence_at_apply` at apply time. After a newer tier-1 Player contribution (higher `rp_history` user `sequence_index`), objective semantic fields are withheld until the overlay is refreshed/revalidated. This is structural freshness — not lexical reconciliation against Player prose.
+
+Character packaging includes a compact precedence note: derived scene pressures are dramatic/advisory and do not override newer authoritative Player facts or grant unperceived entitlement.
 
 ## Implementation
 

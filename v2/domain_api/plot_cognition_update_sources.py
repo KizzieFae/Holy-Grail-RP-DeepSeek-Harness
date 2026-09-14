@@ -18,6 +18,7 @@ ensure_domain_paths()
 from continuity_scene_pressure_projection import (  # noqa: E402
     compute_issue_material_fingerprint,
     get_projectable_issue_pressure_overlay,
+    overlay_for_semantic_projection,
 )
 from scene_grounding import rebuild_scene_grounding_from_continuity  # noqa: E402
 
@@ -105,11 +106,12 @@ def _issue_digest(fixture: LiveSession) -> list[dict[str, Any]]:
             "required_next_step_digest": _digest_text(getattr(issue, "required_next_step", "")),
             "material_fingerprint": compute_issue_material_fingerprint(issue),
         }
-        if overlay is not None:
+        semantic_overlay = overlay_for_semantic_projection(mgr, overlay)
+        if semantic_overlay is not None and semantic_overlay.get("semantic_unmet_condition"):
             entry["librarian_overlay_digest"] = _digest_json(
                 {
-                    "semantic_unmet_condition": overlay.get("semantic_unmet_condition"),
-                    "semantic_authority": overlay.get("semantic_authority"),
+                    "semantic_unmet_condition": semantic_overlay.get("semantic_unmet_condition"),
+                    "semantic_authority": semantic_overlay.get("semantic_authority"),
                 }
             )
         entries.append(entry)

@@ -16,8 +16,14 @@ PLAYER_ACTION_COMPLETION_GUARDRAIL_TEXT = (
     "Invitation, permission (including location_entry_outcome allowed), threat, social "
     "declaration, NPC opinion, and unresolved attempted coercion do NOT establish Player "
     "completion. location_entry_outcome.allowed means the Player MAY enter, not that they "
-    "DID enter. R16 (completion: was the Player action/position accomplished?) is "
-    "orthogonal to R02b (authorship: is an asserted Player fact established?) and R14 "
+    "DID enter. R16 inverse (objective regression): a Character move must not objectively "
+    "assert that an authoritative completed Player action or positional state did not occur, "
+    "remains unperformed, or was undone unless later authoritative evidence establishes "
+    "reversal, or the move clearly expresses Character ignorance, mistaken belief, deliberate "
+    "deception/manipulation, or a distinct subsequent requirement rather than denying "
+    "established world truth. Commands or demands from incomplete perception are not "
+    "objective regression. R16 (completion: was the Player action/position accomplished?) "
+    "is orthogonal to R02b (authorship: is an asserted Player fact established?) and R14 "
     "(entitlement: may this Character know/use an established fact?)."
 )
 

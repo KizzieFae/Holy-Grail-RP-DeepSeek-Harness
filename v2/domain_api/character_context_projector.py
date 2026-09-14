@@ -21,6 +21,11 @@ from continuity_scene_pressure_projection import (  # noqa: E402
     build_scene_pressure_entry,
     get_projectable_issue_pressure_overlay,
 )
+
+SCENE_PRESSURE_PRECEDENCE_NOTE = (
+    "Derived scene pressures are dramatic/advisory context. They do not override newer "
+    "authoritative Player facts or grant entitlement to unperceived Player actions."
+)
 from continuity_state import IssueStatus  # noqa: E402
 
 from .continuity_context_projector import (  # noqa: E402
@@ -252,12 +257,13 @@ def project_character_scene_pressures(
         if participants and character_id not in participants:
             continue
         overlay = get_projectable_issue_pressure_overlay(mgr, str(issue.issue_id))
-        entries.append(build_scene_pressure_entry(issue, overlay))
+        entries.append(build_scene_pressure_entry(issue, overlay, manager=mgr))
     if not entries:
         entries = [
             build_scene_pressure_entry(
                 issue,
                 get_projectable_issue_pressure_overlay(mgr, str(issue.issue_id)),
+                manager=mgr,
             )
             for issue in active_issues
         ]
@@ -269,6 +275,7 @@ def project_character_scene_pressures(
         priority=20,
         content=(
             "SCENE PRESSURES (bounded active issues relevant to this Character):\n"
+            f"{SCENE_PRESSURE_PRECEDENCE_NOTE}\n"
             + json.dumps({"active_issues": entries}, ensure_ascii=False, indent=2)
         ),
         provenance={
