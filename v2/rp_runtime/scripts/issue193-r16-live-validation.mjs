@@ -251,8 +251,8 @@ function verifyAuthorityProjection() {
   return {
     guardrail_declarative: authoritySource.includes(PLAYER_ACTION_COMPLETION_GUARDRAIL_ID),
     no_heuristic_inference_in_authority_module: heuristicHits.length === 0,
-    eval_instruction_mentions_r16: 'R16' in semanticSource and 'player action' in semanticSource,
-    eval_instruction_permission_not_movement: 'location_entry_outcome' in semanticSource,
+    eval_instruction_mentions_r16: semanticSource.includes('R16') && semanticSource.includes('player action'),
+    eval_instruction_permission_not_movement: semanticSource.includes('location_entry_outcome'),
     player_posts_projected_via_authorship_merge: semanticSource.includes(
       'merge_player_authorship_authority_references',
     ),
