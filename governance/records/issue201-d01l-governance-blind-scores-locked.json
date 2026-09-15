@@ -9,6 +9,8 @@
   "answer_key_path": "data/investigation_runs/issue201-package-d-d01l-2026-09-14T22-12-05-873Z/outputs/issue201-d01l-blind-sequence-answer-key.json",
   "execution_record_path": "governance/records/issue-201-package-d-d01l-execution-2026-09-14.md",
   "decode_synthesis_path": "governance/records/issue-201-package-d-d01l-primary-decode-synthesis-2026-09-14.md",
+  "governance_verdict_path": "governance/records/issue-201-package-d-post-d01l-voi-lineage-reassessment-2026-09-14.md",
+  "governance_verdict": "Synchronous preamble Storyteller cognition has not demonstrated sufficient marginal value to justify its current unconditional every-turn critical-path placement.",
   "endpoint": "primary_longitudinal_10_dimension",
   "secondary_per_turn_rubric": "not_performed",
   "rubric_dimensions": [
