@@ -1,0 +1,205 @@
+{
+  "schema": "issue201_d07_governance_blind_scores_locked_v1",
+  "issue": 201,
+  "phase": "package_d_d07_narrator_semantic_qa",
+  "evaluator": "Governance (independent blind pass)",
+  "scored_before_answer_key_reveal": true,
+  "locked_at": "2026-09-15",
+  "execution_anchor_sha": "921b127",
+  "design_anchor_sha": "b88333b",
+  "packet_path": "data/investigation_runs/issue201-package-d-d07-2026-09-15T04-25-04-321Z/outputs/issue201-d07-blind-eval-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-package-d-d07-2026-09-15T04-25-04-321Z/outputs/issue201-d07-blind-eval-answer-key.json",
+  "execution_record_path": "governance/records/issue-201-package-d-d07-execution-2026-09-15.md",
+  "endpoint": "primary_stage2_11_dimension_per_turn",
+  "adjunct_dimensions": [
+    "environmental_grounding",
+    "overall_rp_usefulness"
+  ],
+  "rubric_dimensions": [
+    "character fidelity",
+    "distinctiveness",
+    "initiative",
+    "responsiveness",
+    "dramatic progression",
+    "coherence",
+    "prose quality",
+    "repetitiveness",
+    "stiffness",
+    "unnecessary exposition",
+    "emotional/narrative continuity"
+  ],
+  "note": "Governance assigned and locked all scores while sample identities were anonymous. Means and per-dimension values must not be rescored or recomputed after decode.",
+  "cross_sample_blind_observations": [
+    "No sample constitutes a broken-output population.",
+    "All eight are broadly playable.",
+    "Differences are mostly in naturalness, grounding, characterization richness, and state discipline.",
+    "The strongest outputs tend to make environmental state support character behavior rather than narrating environmental machinery for its own sake.",
+    "Some weaker outputs add unsupported or weakly supported environmental/choreographic detail.",
+    "Sample E contains the clearest state/spatial inconsistency.",
+    "No architecture/QA-state inference was used to score the samples."
+  ],
+  "blind_qualitative_observations": {
+    "A": {
+      "mean": 4.18,
+      "summary": "Competent but over-composed. Phrases such as the room being reset and the extended gardening/pruning metaphor feel somewhat like the model demonstrating Ivy's strategic intelligence rather than simply letting Ivy act."
+    },
+    "B": {
+      "mean": 4.45,
+      "summary": "Strongest Arkham sample. Ivy feels deliberate rather than merely described as strategic. Environmental information supports her behavior rather than becoming exposition. Good control of physical action and institutional setting."
+    },
+    "C": {
+      "mean": 4.36,
+      "summary": "Clean and playable. Some environmental details — citrus polish, old wood, cold, brass handle — appear more confidently invented than grounded by the supplied briefing."
+    },
+    "D": {
+      "mean": 4.55,
+      "summary": "Also strong Ayame. More overtly domineering than H. The threshold behavior works well, but the remark about the applicant's previous apartment asserts something Ayame is not established to know."
+    },
+    "E": {
+      "mean": 4.18,
+      "summary": "Good prose but the most consequential coherence/state problem in the blind set. The scenario briefing places Magpie at another table, while the presentation describes her as the new arrival at the table. This spatial/state slippage reduces environmental grounding and overall RP usefulness."
+    },
+    "F": {
+      "mean": 4.18,
+      "summary": "Competent but adds substantial choreography and apparent prior Harley behavior around the supplied stimulus. No catastrophic problem, but more authored machinery is visible than in B."
+    },
+    "G": {
+      "mean": 4.36,
+      "summary": "Simpler and less character-rich than the strongest Ayame samples, but unusually clean and natural. It does not strain to make the knock dramatic."
+    },
+    "H": {
+      "mean": 4.64,
+      "summary": "Strongest Ayame presentation. Restrained and controlling without announcing that Ayame is controlling. The threshold itself becomes part of her characterization. Natural, playable, and strongly grounded."
+    }
+  },
+  "per_sample_scores": {
+    "A": {
+      "character_fidelity": 4,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 5,
+      "prose_quality": 4,
+      "repetitiveness": 4,
+      "stiffness": 4,
+      "unnecessary_exposition": 3,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.18,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    },
+    "B": {
+      "character_fidelity": 5,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 4,
+      "dramatic_progression": 4,
+      "coherence": 5,
+      "prose_quality": 4,
+      "repetitiveness": 5,
+      "stiffness": 5,
+      "unnecessary_exposition": 4,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.45,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    },
+    "C": {
+      "character_fidelity": 4,
+      "distinctiveness": 4,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 5,
+      "prose_quality": 4,
+      "repetitiveness": 5,
+      "stiffness": 5,
+      "unnecessary_exposition": 4,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.36,
+      "environmental_grounding": 3,
+      "overall_rp_usefulness": 4
+    },
+    "D": {
+      "character_fidelity": 5,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 4,
+      "prose_quality": 4,
+      "repetitiveness": 5,
+      "stiffness": 5,
+      "unnecessary_exposition": 5,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.55,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 5
+    },
+    "E": {
+      "character_fidelity": 4,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 3,
+      "prose_quality": 4,
+      "repetitiveness": 4,
+      "stiffness": 5,
+      "unnecessary_exposition": 4,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.18,
+      "environmental_grounding": 3,
+      "overall_rp_usefulness": 3
+    },
+    "F": {
+      "character_fidelity": 4,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 4,
+      "prose_quality": 4,
+      "repetitiveness": 4,
+      "stiffness": 4,
+      "unnecessary_exposition": 4,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.18,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    },
+    "G": {
+      "character_fidelity": 4,
+      "distinctiveness": 4,
+      "initiative": 3,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 5,
+      "prose_quality": 4,
+      "repetitiveness": 5,
+      "stiffness": 5,
+      "unnecessary_exposition": 5,
+      "emotional_narrative_continuity": 4,
+      "mean": 4.36,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    },
+    "H": {
+      "character_fidelity": 5,
+      "distinctiveness": 5,
+      "initiative": 4,
+      "responsiveness": 5,
+      "dramatic_progression": 4,
+      "coherence": 5,
+      "prose_quality": 4,
+      "repetitiveness": 5,
+      "stiffness": 5,
+      "unnecessary_exposition": 4,
+      "emotional_narrative_continuity": 5,
+      "mean": 4.64,
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 5
+    }
+  }
+}
