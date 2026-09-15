@@ -25,6 +25,7 @@ import {
   captureActorContextPackages,
   auditPrivateKnowledgeIsolation,
 } from './a2-actor-isolation-audit.mjs';
+import { runPostCommitPlotCognitionLifecycle } from './plot-cognition-orchestration.mjs';
 
 export const A2_TOPOLOGY_ABSENT = [
   'storyteller_preamble',
@@ -378,11 +379,33 @@ export async function runA2BeatRound({
   }));
 
   let plotPostCommit = { skipped: true, reason: 'g3a_default_off' };
+  let plotPostCommitWallMs = 0;
   if (!skipPostCommitPlot && options.runPostCommitPlot === true) {
-    plotPostCommit = {
-      skipped: true,
-      reason: 'post_commit_plot_not_wired_in_g3a',
-    };
+    const plotStartedAt = Date.now();
+    plotPostCommit = await runPostCommitPlotCognitionLifecycle({
+      domainApi: api,
+      trace,
+      sceneAgent,
+      scope: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        domainCommitId: characterTurn.domainCommitId,
+      },
+      hgSceneId,
+      inferenceId: `inf-plot-a2-${crypto.randomUUID()}`,
+      runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+      modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
+      evidenceContextBase: {
+        hgSessionId,
+        hgSceneId,
+        hgRoundId,
+        domainCommitId: characterTurn.domainCommitId,
+      },
+    });
+    plotPostCommitWallMs = Date.now() - plotStartedAt;
+    plotPostCommit.wall_ms = plotPostCommitWallMs;
+    plotPostCommit.outside_critical_path = true;
     auditSteps.push(createAuditStep('plot_post_commit', plotPostCommit));
   } else {
     auditSteps.push(createAuditStep('plot_post_commit', plotPostCommit));
@@ -429,8 +452,10 @@ export async function runA2BeatRound({
     topology_proof: topologyProof,
     audit_steps: auditSteps,
     decision_value: decisionValue.toJSON(),
+    plot_post_commit: plotPostCommit,
     efficiency: {
       critical_path_wall_ms: criticalPathWallMs,
+      plot_post_commit_wall_ms: plotPostCommitWallMs,
       llm_call_count: decisionValue.records.length,
     },
   };
