@@ -1,0 +1,86 @@
+{
+  "schema": "issue201_g3b_f1_blind_score_lock_v1",
+  "issue": 201,
+  "experiment": "G3-B F1 simple-beat A2 vs lean-A4",
+  "execution_record_sha": "777001b",
+  "evidence_root": "data/investigation_runs/issue201-g3b-f1-2026-09-15T05-37-17-818Z",
+  "blind_packet_path": "data/investigation_runs/issue201-g3b-f1-2026-09-15T05-37-17-818Z/outputs/issue201-g3b-f1-blind-eval-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-g3b-f1-2026-09-15T05-37-17-818Z/outputs/issue201-g3b-f1-blind-eval-answer-key.json",
+  "locked_at": "2026-09-15T06:00:00Z",
+  "locked_by": "Governance",
+  "rubric": "governance/records/issue201-stage2-human-evaluator-worksheet.md",
+  "dimension_order": [
+    "character_fidelity",
+    "distinctiveness",
+    "initiative",
+    "responsiveness",
+    "dramatic_progression",
+    "coherence",
+    "prose_quality",
+    "repetitiveness",
+    "naturalness_stiffness",
+    "unnecessary_exposition",
+    "emotional_narrative_continuity"
+  ],
+  "dimension_scale_notes": {
+    "repetitiveness": "5 = low repetition",
+    "naturalness_stiffness": "5 = natural",
+    "unnecessary_exposition": "5 = lean"
+  },
+  "adjunct_dimensions": [
+    "environmental_grounding",
+    "overall_rp_usefulness"
+  ],
+  "samples": [
+    {
+      "blind_label": "A",
+      "primary_scores": [4, 4, 4, 5, 4, 4, 4, 4, 4, 3, 4],
+      "primary_mean": 4.0,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4,
+      "locked_notes": "coherent, responsive and usable; overconstructs a very small beat; desk/pen/blouse/marble foyer/doorway positioning/study/temperature/open-palm gesture create substantial composition; \"house rewards people who pay attention to it\" feels like characterization being demonstrated rather than naturally inhabited; phrase also edges toward an unnecessary agentic/sentient-house implication."
+    },
+    {
+      "blind_label": "B",
+      "primary_scores": [5, 5, 4, 5, 4, 5, 5, 5, 5, 5, 4],
+      "primary_mean": 4.73,
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "strongest sample; Ayame's control is expressed through behavior rather than explanation; measured half-step, withheld welcome and \"weighed rather than welcomed\" are especially effective; cold/warmth environmental contrast supports the threshold interaction rather than decorating it; concise, natural and highly playable."
+    },
+    {
+      "blind_label": "C",
+      "primary_scores": [5, 5, 4, 5, 4, 5, 4, 5, 5, 5, 4],
+      "primary_mean": 4.64,
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "extremely playable and character-specific; \"Wipe your feet. I dislike untidiness\" turns characterization into an immediate demand on Kizzie; reflection/polished-floor detail is somewhat composed but not materially harmful; strong restraint and naturalness."
+    },
+    {
+      "blind_label": "D",
+      "primary_scores": [5, 5, 4, 5, 4, 4, 4, 5, 5, 4, 4],
+      "primary_mean": 4.45,
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 4,
+      "locked_notes": "strong Ayame characterization; furniture-appraisal metaphor is effective; \"spent the morning making immaculate for precisely this arrival\" asserts preparation/history not established by the briefing; beeswax, flowers and brass are additional invented environmental specifics; plausible rather than contradictory, but less disciplined grounding than B/C."
+    }
+  ],
+  "locked_blind_ordering": [
+    { "blind_label": "B", "primary_mean": 4.73 },
+    { "blind_label": "C", "primary_mean": 4.64 },
+    { "blind_label": "D", "primary_mean": 4.45 },
+    { "blind_label": "A", "primary_mean": 4.0 }
+  ],
+  "locked_cross_sample_observations": [
+    "No broken or obviously cognition-deprived population is visible.",
+    "All four are coherent, responsive and usable RP.",
+    "Environmental grounding is present throughout.",
+    "No sample visibly demonstrates that environment cognition, Character semantic evaluation, orientation, Librarian mediation or Plot is obviously required for this simple beat.",
+    "The principal quality distinction is how much the presentation invents/elaborates beyond what the small beat requires.",
+    "B and C are strongest partly because they appear not to work as hard.",
+    "No architecture identity was inferred when scoring."
+  ],
+  "answer_key_accessed": false,
+  "decode_authorized": false,
+  "status": "blind_scores_locked_pending_decode"
+}
