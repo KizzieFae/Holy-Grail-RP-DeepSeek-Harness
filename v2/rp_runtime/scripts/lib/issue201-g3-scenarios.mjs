@@ -1,0 +1,30 @@
+/** Frozen G3 scenario definitions (Package D parity). */
+
+export const G3_SCENARIOS = {
+  ayame_controlled: {
+    id: 'ayame_household_entry_evaluation',
+    scenario_key: 'ayame_controlled',
+    characters: ['ayame', 'kizzie'],
+    roleAssignments: { ayame: 'host', kizzie: 'applicant' },
+    playerCharacterFileId: 'kizzie',
+    userName: 'Kizzie',
+    openerPreference: null,
+    playerPost:
+      'Kizzie glanced up, double-checking the house number and then steeled herself before knocking.',
+  },
+  arkham_stress: {
+    id: 'arkham_asylum_mess_hall_arena',
+    scenario_key: 'arkham_stress',
+    characters: ['harley_quinn', 'poison_ivy', 'magpie'],
+    roleAssignments: {
+      harley_quinn: 'instigator',
+      poison_ivy: 'instigator_accomplice',
+      magpie: 'new_arrival',
+    },
+    playerCharacterFileId: 'magpie',
+    userName: 'Magpie',
+    openerPreference: 'mess_hall_magpie',
+    playerPost:
+      'Magpie keeps her eyes on the guard\'s gold watch while she pushes food around her tray.',
+  },
+};

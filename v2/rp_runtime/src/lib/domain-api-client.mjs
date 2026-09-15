@@ -475,6 +475,15 @@ export function createDomainApiClient(baseUrl) {
         'validateNarratorPresentation',
       );
     },
+    validatePresentationSpatialClaims(body) {
+      return postJson(
+        metrics,
+        baseUrl,
+        '/v1/presentation/spatial-claims/validate',
+        body,
+        'validatePresentationSpatialClaims',
+      );
+    },
     validatePerceptualVisibility(body) {
       return postJson(
         metrics,

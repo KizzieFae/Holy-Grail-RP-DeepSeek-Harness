@@ -170,6 +170,7 @@ export async function runNarratorPhase({
   modelProfile,
   semanticEvaluatorProfile,
   narratorSemanticQaEnabled = true,
+  skipNarratorEnvironmentCognition = false,
   prompt,
   inferenceConfig = {},
 }) {
@@ -196,7 +197,16 @@ export async function runNarratorPhase({
 
   let environmentCognitionAudit = null;
   let environmentCognitionEvidence = null;
-  try {
+  if (skipNarratorEnvironmentCognition === true) {
+    environmentCognitionAudit = {
+      skipped: true,
+      reason: 'skipNarratorEnvironmentCognition',
+      cognition_status: 'skipped',
+      baseline_sufficient: true,
+      domain_commit_id: domainCommitId,
+    };
+    environmentCognitionEvidence = environmentCognitionAudit;
+  } else try {
     const envCognition = await runNarratorEnvironmentCognition({
       api,
       runEphemeralInference,

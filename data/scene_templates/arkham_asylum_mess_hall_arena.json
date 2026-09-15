@@ -50,5 +50,18 @@
     }
   ],
   "sleeping_surface_slots": [],
-  "location_entry_slots": []
+  "location_entry_slots": [],
+  "perceptual_scene_context": {
+    "schema_version": 1,
+    "character_zones_by_role": {
+      "instigator": "harley_ivy_table",
+      "instigator_accomplice": "harley_ivy_table",
+      "new_arrival": "across_room",
+      "impulse_disruptor": "across_room",
+      "witness_or_intervenor": "mess_hall_general",
+      "guard_or_staff_response": "staff_margin"
+    },
+    "portals": {},
+    "observation_channels": []
+  }
 }

@@ -495,6 +495,20 @@ class NarratorPresentationValidationResponse:
 
 
 @dataclass(frozen=True)
+class PresentationSpatialClaimsValidationRequest:
+    hg_scene_id: str
+    spatial_claims: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class PresentationSpatialClaimsValidationResponse:
+    accepted: bool
+    validation_class: str
+    reason: str
+    findings: tuple[dict[str, Any], ...] = ()
+
+
+@dataclass(frozen=True)
 class SessionCreateRequest:
     cast: tuple[str, ...] | None = None
     characters: tuple[str, ...] | None = None

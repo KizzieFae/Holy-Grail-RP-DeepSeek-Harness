@@ -688,6 +688,15 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                 )
                 self._send_json(200, self.kernel.validate_narrator_presentation(req))
                 return
+            if path == "/v1/presentation/spatial-claims/validate":
+                from domain_api.contract import PresentationSpatialClaimsValidationRequest
+
+                req = PresentationSpatialClaimsValidationRequest(
+                    hg_scene_id=str(data["hg_scene_id"]),
+                    spatial_claims=data.get("spatial_claims"),
+                )
+                self._send_json(200, self.kernel.validate_presentation_spatial_claims(req))
+                return
             if path == "/v1/sessions/history/user-turn":
                 req = UserTurnRecordRequest(
                     hg_session_id=str(data["hg_session_id"]),

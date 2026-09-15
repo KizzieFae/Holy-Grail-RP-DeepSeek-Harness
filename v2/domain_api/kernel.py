@@ -60,6 +60,8 @@ from .contract import (  # noqa: E402
     NarratorEnvironmentCognitionPrepareRequest,
     NarratorPresentationValidationRequest,
     NarratorPresentationValidationResponse,
+    PresentationSpatialClaimsValidationRequest,
+    PresentationSpatialClaimsValidationResponse,
     NarratorSemanticQaContextPrepareRequest,
     ParticipationDecision,
     ParticipationDecisionRequest,
@@ -1924,6 +1926,61 @@ class DomainKernel:
             validation_class=result.validation_class,
             reason=result.reason,
             retryable=result.retryable,
+        )
+
+    def validate_presentation_spatial_claims(
+        self, req: PresentationSpatialClaimsValidationRequest
+    ) -> PresentationSpatialClaimsValidationResponse:
+        from domain.modules.perceptual_scene_context import (
+            perceptual_scene_context_from_scene_state,
+            resolve_template_perceptual_scene_context,
+        )
+        from domain.modules.scenario_spatial_validator import (
+            validate_presentation_spatial_claims as validate_spatial_claims,
+        )
+
+        fixture = self.store.require(req.hg_scene_id)
+        mgr = fixture.manager
+        scene_state = getattr(mgr, "scene_state", None) if mgr is not None else None
+        role_assignments = dict(getattr(scene_state, "role_assignments", {}) or {})
+        character_zones: dict[str, str] = {}
+        role_zones: dict[str, str] = {}
+        context = perceptual_scene_context_from_scene_state(scene_state)
+        if context is not None:
+            character_zones = dict(context.character_zones)
+        template_context = getattr(scene_state, "perceptual_scene_context", None)
+        if isinstance(template_context, dict):
+            if template_context.get("character_zones_by_role"):
+                resolved = resolve_template_perceptual_scene_context(
+                    template_context,
+                    role_assignments=role_assignments,
+                )
+                if isinstance(resolved, dict):
+                    character_zones = dict(resolved.get("character_zones") or character_zones)
+            elif template_context.get("character_zones"):
+                character_zones = {
+                    str(k).strip(): str(v).strip()
+                    for k, v in template_context.get("character_zones", {}).items()
+                    if str(k).strip() and str(v).strip()
+                }
+            zones_by_role = template_context.get("character_zones_by_role")
+            if isinstance(zones_by_role, dict):
+                role_zones = {
+                    str(role).strip(): str(zone).strip()
+                    for role, zone in zones_by_role.items()
+                    if str(role).strip() and str(zone).strip()
+                }
+        result = validate_spatial_claims(
+            spatial_claims=req.spatial_claims,
+            authoritative_character_zones=character_zones,
+            authoritative_role_zones=role_zones,
+            entity_role_map=role_assignments,
+        )
+        return PresentationSpatialClaimsValidationResponse(
+            accepted=result.accepted,
+            validation_class=result.validation_class,
+            reason=result.reason,
+            findings=tuple(item.to_dict() for item in result.findings),
         )
 
     def prepare_plot_cognition_projection(self, data: dict[str, Any]) -> dict[str, Any]:
