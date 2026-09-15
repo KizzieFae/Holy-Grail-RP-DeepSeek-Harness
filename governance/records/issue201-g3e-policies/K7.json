@@ -1,0 +1,10 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K7",
+  "stimulus": "Open-ended household policy question with large eligible surface.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["household policy", "archive", "staff", "tenant"],
+  "optional_required_record_id": "g3e-k7-household-open-policy",
+  "max_projected_items": 8,
+  "max_projected_chars": 8000
+}

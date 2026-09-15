@@ -1,0 +1,11 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K6",
+  "stimulus": "Ask whether a tenant may host guests overnight.",
+  "viewer_character_id": "ayame",
+  "query_terms": [
+    "lease clause §4 overnight guests prohibition",
+    "witness-notification requirement guest exception signature"
+  ],
+  "required_record_ids": ["g3e-lease-guests", "g3e-witness-rule"]
+}

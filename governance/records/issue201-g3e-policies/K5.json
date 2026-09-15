@@ -1,0 +1,9 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K5",
+  "stimulus": "Ask the current weeknight curfew.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["weeknight curfew", "current", "tenant"],
+  "authoritative_record_id": "g3e-curfew-2024-11pm",
+  "superseded_record_id": "g3e-curfew-2019-9pm"
+}

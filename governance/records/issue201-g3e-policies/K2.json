@@ -1,0 +1,9 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K2",
+  "stimulus": "Ask which estate policy governs tenant curfew disputes.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["tenant curfew dispute", "estate policy", "Ayame"],
+  "required_record_id": "g3e-k2-ayame-curfew-policy",
+  "forbidden_distractor_ids": ["g3e-distract-riverside-curfew", "g3e-distract-annex-guest-policy"]
+}

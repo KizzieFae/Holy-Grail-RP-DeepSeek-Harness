@@ -26,6 +26,7 @@ import {
   auditPrivateKnowledgeIsolation,
 } from './a2-actor-isolation-audit.mjs';
 import { runPostCommitPlotCognitionLifecycle } from './plot-cognition-orchestration.mjs';
+import { runA2IndexedRetrievalStep } from './a2-indexed-retrieval.mjs';
 
 export const A2_TOPOLOGY_ABSENT = [
   'storyteller_preamble',
@@ -105,12 +106,13 @@ export async function runA2BeatRound({
     eligible_count: eligibleActors.length,
   }));
 
+  const enableIndexedRetrieval = options.enableIndexedRetrieval === true;
   const obligationDispatch = deriveObligationSignals({
     scenarioKey,
     eligibleActors,
     roleAssignments,
     uniformProjectionEligible,
-    retrievalManifestGap: options.retrievalManifestGap === true,
+    retrievalManifestGap: options.retrievalManifestGap === true || enableIndexedRetrieval,
   });
   auditSteps.push(createAuditStep('obligation_dispatch', obligationDispatch));
 
@@ -221,6 +223,21 @@ export async function runA2BeatRound({
   }
 
   const characterId = directorPhase.selectedCharacterId;
+  let indexedRetrieval = null;
+  if (enableIndexedRetrieval) {
+    indexedRetrieval = runA2IndexedRetrievalStep({
+      caseId: options.g3eCaseId ?? 'K1',
+      viewerCharacterId: characterId,
+    });
+    auditSteps.push(createAuditStep('indexed_retrieval', {
+      case_id: indexedRetrieval.case_id,
+      ok: indexedRetrieval.ok === true,
+      selection_path: indexedRetrieval.selection_path,
+      ranked_count: (indexedRetrieval.ranked_ids ?? []).length,
+      librarian_invocation_count: 0,
+      hard_access_rejected: indexedRetrieval.hard_access_rejected,
+    }));
+  }
   const characterInferenceId = `inf-a2-character-${crypto.randomUUID()}`;
   const characterStartedAt = Date.now();
   const characterTurn = await phaseExecutors.runCharacter({
@@ -411,15 +428,25 @@ export async function runA2BeatRound({
     auditSteps.push(createAuditStep('plot_post_commit', plotPostCommit));
   }
 
-  const topologyProof = {
-    absent: A2_TOPOLOGY_ABSENT,
-    present_sequence: [
+  const presentSequence = enableIndexedRetrieval
+    ? [
+      'indexed_retrieval',
       'character_move',
       'deterministic_move_validation',
       'authoritative_commit',
       'narrator_presentation',
       'deterministic_presentation_validation',
-    ],
+    ]
+    : [
+      'character_move',
+      'deterministic_move_validation',
+      'authoritative_commit',
+      'narrator_presentation',
+      'deterministic_presentation_validation',
+    ];
+  const topologyProof = {
+    absent: A2_TOPOLOGY_ABSENT,
+    present_sequence: presentSequence,
     director_llm_invoked: directorPhase.director_llm_invoked === true,
     character_semantic_evaluation_enabled: characterSemanticEvaluationEnabled,
     two_call_contract: true,
@@ -449,6 +476,7 @@ export async function runA2BeatRound({
     structured_spatial_surface_present: Boolean(spatialClaims),
     actor_context_audit: actorContextAudit,
     obligation_dispatch: obligationDispatch,
+    indexed_retrieval: indexedRetrieval,
     topology_proof: topologyProof,
     audit_steps: auditSteps,
     decision_value: decisionValue.toJSON(),

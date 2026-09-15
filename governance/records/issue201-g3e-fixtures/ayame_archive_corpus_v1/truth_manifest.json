@@ -1,0 +1,75 @@
+{
+  "schema": "issue201_g3e_truth_manifest_v1",
+  "corpus_id": "ayame_archive_corpus_v1",
+  "memory_scope_id": "g3e_ayame_archive_v1",
+  "record_count": 307,
+  "k_cases": {
+    "K1": {
+      "required_record_id": "g3e-k1-silver-2019",
+      "query_relevance_terms": [
+        "silver service",
+        "weekend staff",
+        "2019"
+      ],
+      "depth_class": "deep_index"
+    },
+    "K2": {
+      "required_record_id": "g3e-k2-ayame-curfew-policy",
+      "forbidden_distractor_ids": [
+        "g3e-distract-riverside-curfew",
+        "g3e-distract-annex-guest-policy"
+      ],
+      "distractor_similarity_class": "high_semantic_overlap"
+    },
+    "K3": {
+      "forbidden_record_id": "g3e-private-kizzie-debt",
+      "kizzie_entitled": true,
+      "ayame_entitled": false,
+      "expected_query_relevance": "high",
+      "expected_referent_match": true,
+      "forbidden_in_projection": true,
+      "forbidden_in_character_manifest": true,
+      "forbidden_in_presentation": true,
+      "k3_relevance_set": [
+        "financial",
+        "prior tenancy",
+        "debt",
+        "judgment"
+      ]
+    },
+    "K4": {
+      "required_record_id": "g3e-private-ayame-master-key",
+      "ayame_entitled": true
+    },
+    "K5": {
+      "authoritative_record_id": "g3e-curfew-2024-11pm",
+      "superseded_record_id": "g3e-curfew-2019-9pm",
+      "supersedes_link": "g3e-curfew-2024-11pm supersedes g3e-curfew-2019-9pm"
+    },
+    "K6": {
+      "required_record_ids": [
+        "g3e-lease-guests",
+        "g3e-witness-rule"
+      ]
+    },
+    "K7": {
+      "optional_required_record_id": "g3e-k7-household-open-policy",
+      "max_projected_items": 8,
+      "max_projected_chars": 8000,
+      "irrelevant_ratio_threshold": "logged_not_gating"
+    }
+  },
+  "required_anchor_ids": [
+    "g3e-k1-silver-2019",
+    "g3e-k2-ayame-curfew-policy",
+    "g3e-distract-riverside-curfew",
+    "g3e-distract-annex-guest-policy",
+    "g3e-private-kizzie-debt",
+    "g3e-private-ayame-master-key",
+    "g3e-curfew-2019-9pm",
+    "g3e-curfew-2024-11pm",
+    "g3e-lease-guests",
+    "g3e-witness-rule",
+    "g3e-k7-household-open-policy"
+  ]
+}

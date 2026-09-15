@@ -12,6 +12,19 @@ export const G3_SCENARIOS = {
     playerPost:
       'Kizzie glanced up, double-checking the house number and then steeled herself before knocking.',
   },
+  ayame_archive_interview: {
+    id: 'ayame_archive_interview',
+    scenario_key: 'ayame_archive_interview',
+    characters: ['ayame', 'kizzie'],
+    roleAssignments: { ayame: 'host', kizzie: 'applicant' },
+    playerCharacterFileId: 'kizzie',
+    userName: 'Kizzie',
+    openerPreference: null,
+    playerPost:
+      'Kizzie steadied herself at the archive consultation table. '
+      + '"Could you explain the household policies that would apply to my tenancy interview?"',
+    g3e: true,
+  },
   arkham_stress: {
     id: 'arkham_asylum_mess_hall_arena',
     scenario_key: 'arkham_stress',

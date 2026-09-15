@@ -1,0 +1,9 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K1",
+  "stimulus": "Ask Ayame to cite the 2019 silver-service rule for weekend staff.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["silver service", "weekend staff", "2019"],
+  "required_record_id": "g3e-k1-silver-2019",
+  "depth_class": "deep_index"
+}

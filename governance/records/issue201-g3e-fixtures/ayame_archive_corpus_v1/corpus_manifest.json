@@ -1,0 +1,10 @@
+{
+  "schema": "issue201_g3e_corpus_manifest_v1",
+  "corpus_id": "ayame_archive_corpus_v1",
+  "memory_scope_id": "g3e_ayame_archive_v1",
+  "record_count": 307,
+  "records_sha256": "0cb74db3f507e8d4333582da9dec16f5a31f07acb1bdc6e1244c437cfa6f5e7c",
+  "built_at": "2026-09-15T00:00:00.000Z",
+  "builder": "tools/investigation/issue201-g3e-corpus-build.mjs",
+  "reproducible": true
+}

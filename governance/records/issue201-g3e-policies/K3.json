@@ -1,0 +1,11 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K3",
+  "stimulus": "Kizzie asks whether prior financial difficulties at a previous tenancy would affect her application.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["financial", "prior tenancy", "debt", "judgment", "application"],
+  "forbidden_record_id": "g3e-private-kizzie-debt",
+  "kizzie_entitled": true,
+  "ayame_entitled": false,
+  "k3_relevance_set": ["financial", "prior tenancy", "debt", "judgment"]
+}

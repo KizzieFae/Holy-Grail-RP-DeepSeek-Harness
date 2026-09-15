@@ -1,0 +1,9 @@
+{
+  "schema": "issue201_g3e_k_policy_v1",
+  "case_id": "K4",
+  "stimulus": "Ask Ayame to state the master-key custody rule.",
+  "viewer_character_id": "ayame",
+  "query_terms": ["master key", "custody", "household-private"],
+  "required_record_id": "g3e-private-ayame-master-key",
+  "ayame_entitled": true
+}
