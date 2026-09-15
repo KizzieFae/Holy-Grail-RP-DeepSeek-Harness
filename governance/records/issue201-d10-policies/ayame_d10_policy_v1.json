@@ -1,0 +1,130 @@
+{
+  "schema": "issue201_d10_player_policy_v1",
+  "policy_id": "ayame_d10_policy_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turn_count": 4,
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Arrive; knock; begin interview threshold",
+      "pressure": "Employment evaluation entry",
+      "prohibited_knowledge": [
+        "household private affairs beyond applicant card"
+      ],
+      "realization": "Kizzie glanced up, double-checking the house number and then steeled herself before knocking."
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "predicate",
+      "objective": "Answer evaluative probe with deliberate partial truth",
+      "pressure": "Employment terms / household rules",
+      "prohibited_knowledge": [
+        "invented prior employment history beyond applicant card"
+      ],
+      "predicate_source_turn": 1,
+      "predicates": [
+        {
+          "predicate_id": "A2_FORMAL_CONTROL",
+          "priority": 1,
+          "any_patterns": [
+            "\\b(interview|parlor|study|sitting room|terms|punctual|house)\\b"
+          ]
+        },
+        {
+          "predicate_id": "A2_WARM_WELCOME",
+          "priority": 2,
+          "all_patterns": [
+            "\\b(welcome|cold|come in|discuss)\\b"
+          ],
+          "unless_predicate_ids": ["A2_FORMAL_CONTROL"]
+        },
+        {
+          "predicate_id": "A2_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "A2_FORMAL_CONTROL": "Kizzie meets her eyes. \"I'm reliable. I don't blur lines between work and personal.\"",
+        "A2_WARM_WELCOME": "Kizzie steps inside carefully. \"I keep households orderly. I ask when I'm unsure.\"",
+        "A2_DEFAULT": "Kizzie nods once. \"I'm here about the live-in position. I'd rather hear expectations plainly.\""
+      }
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "predicate",
+      "objective": "Challenge or accept household boundary; leave decision open",
+      "pressure": "Persistent host/applicant asymmetry",
+      "prohibited_knowledge": [
+        "signed agreement",
+        "private area access"
+      ],
+      "predicate_source_turn": 2,
+      "predicates": [
+        {
+          "predicate_id": "A3_RULES_STATED",
+          "priority": 1,
+          "any_patterns": [
+            "\\b(rule|expect|standard|tolerate|otherwise|household)\\b"
+          ]
+        },
+        {
+          "predicate_id": "A3_EVALUATIVE",
+          "priority": 2,
+          "any_patterns": [
+            "\\b(reliable|orderly|carry|room|see how)\\b"
+          ]
+        },
+        {
+          "predicate_id": "A3_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "A3_RULES_STATED": "Kizzie pauses at the threshold of the next room. \"If curfew and privacy are fixed, say so now. I won't guess.\"",
+        "A3_EVALUATIVE": "Kizzie folds her hands. \"You wanted to see how I carry myself. Is there a rule you'd break for the right tenant?\"",
+        "A3_DEFAULT": "Kizzie waits. \"I'd like to know what failure looks like here before I promise success.\""
+      }
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "predicate",
+      "objective": "Probe delayed household consequence without resolving employment",
+      "pressure": "Boundary and evaluation persistence across interview",
+      "prohibited_knowledge": [
+        "signed agreement",
+        "salary terms not yet offered"
+      ],
+      "predicate_source_turn": 3,
+      "predicates": [
+        {
+          "predicate_id": "A4_BOUNDARY_HELD",
+          "priority": 1,
+          "any_patterns": [
+            "\\b(rule|boundary|privacy|threshold|curfew|expect|household)\\b"
+          ]
+        },
+        {
+          "predicate_id": "A4_EVALUATION_OPEN",
+          "priority": 2,
+          "any_patterns": [
+            "\\b(see how|carry|reliable|position|tenant|interview)\\b"
+          ]
+        },
+        {
+          "predicate_id": "A4_DEFAULT",
+          "priority": 3,
+          "default": true
+        }
+      ],
+      "realizations": {
+        "A4_BOUNDARY_HELD": "Kizzie holds the doorframe without crossing. \"I'll accept boundaries I can name. I won't pretend invisible lines don't exist.\"",
+        "A4_EVALUATION_OPEN": "Kizzie meets her gaze steadily. \"You wanted a shape from me. You have one. I'm still listening for the terms.\"",
+        "A4_DEFAULT": "Kizzie waits by the threshold. \"I'd rather leave with clarity than stay with guesses.\""
+      }
+    }
+  ]
+}

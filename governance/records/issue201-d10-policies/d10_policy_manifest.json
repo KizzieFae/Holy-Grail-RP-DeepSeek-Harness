@@ -1,0 +1,20 @@
+{
+  "schema": "issue201_d10_policy_manifest_v1",
+  "frozen_at": "2026-09-15T01:20:34.831Z",
+  "policies": [
+    {
+      "policy_id": "arkham_d10_policy_v1",
+      "policy_path": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\governance\\records\\issue201-d10-policies\\arkham_d10_policy_v1.json",
+      "policy_hash": "2533ab9d0addb3b0b14f10af5cd138e14b0f9429157b2077cd32ba681db95ce6",
+      "scenario_key": "arkham_stress",
+      "turn_count": 5
+    },
+    {
+      "policy_id": "ayame_d10_policy_v1",
+      "policy_path": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\governance\\records\\issue201-d10-policies\\ayame_d10_policy_v1.json",
+      "policy_hash": "be5836d7099fc58547e1e8753fee62f2433ce73677c90f6976797ff104fae26b",
+      "scenario_key": "ayame_controlled",
+      "turn_count": 4
+    }
+  ]
+}
