@@ -495,7 +495,7 @@ Requires **all:**
 | Item | Value |
 |------|-------|
 | **This design record** | `governance/records/issue-201-package-d-d10-experimental-design-2026-09-14.md` |
-| **Commit SHA** | *pending commit* |
+| **Commit SHA** | `d13f2a0` |
 | Harness (future) | Extend `issue201-package-d-d01l-longitudinal.mjs` → `issue201-package-d-d10-post-commit.mjs` (not implemented) |
 | Policies (future) | `governance/records/issue201-d10-policies/` (not created) |
 
