@@ -1,0 +1,105 @@
+{
+  "schema": "issue201_g3d_plot_consumer_causal_trace_v1",
+  "issue": 201,
+  "investigation_type": "read_only_causal_trace",
+  "decode_record_sha": "0980194",
+  "evidence_root": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z",
+  "mutation_live_run": false,
+  "instrumentation_repair": false,
+  "governance_adjudication_carried_forward": "Plot/Scribe has not earned retention as a required A2 component; evidence favors remove/consolidate pending this trace",
+  "declared_plot_consumer_contract": {
+    "production_character": "plot_cognition_finalized_projection via runCharacterProjectionLifecycle → prepareCharacterContext",
+    "production_director": "project_director_overlay / director_overlay_contributions when overlay fresh",
+    "production_narrator": "not a Plot cognition consumer in A2/G3 path",
+    "g3d_f3_a2_actual": "post-commit overlay sidecar only; projectionLifecycleEnabled=false; skipCharacterKnowledgeCognition=true; character packaging fail-closed without finalized_projection"
+  },
+  "observed_consumer_classes": {
+    "director": "not_observed — A2 obligation-driven actor selection; no plot overlay packaging in executed path",
+    "character": "not_observed — projection lifecycle disabled; storyteller_round_packaging fail-closed without finalized_projection",
+    "narrator": "not_observed — not a declared consumer",
+    "deterministic_router": "not_observed",
+    "next_turn_advisory_substrate": "declared_only — overlay sidecar written; no L2 projection evidence"
+  },
+  "forensic_extractor_gap_corrected": {
+    "harness_reported_overlay_found": false,
+    "runtime_overlay_files_exist": true,
+    "root_cause": "session JSON lacked plot_cognition_scope_id; extractPlotForensics(null) returned overlay_found:false despite persisted sidecars resolvable from plot proposal lineage",
+    "impact_on_prior_decode": "causality_unknown_forensic_gap overstated transport absence; L1 persistence evidence recoverable from sidecar files"
+  },
+  "t1_init_failure_interpretation": {
+    "sequences": ["SEQ-E", "SEQ-H"],
+    "surface_code": "forensic_persistence_failed",
+    "surface_message": "proposal failed objective validation",
+    "meaning": "first init proposal failed objective validation inside WAFI-wrapped finalize; overlay not established on T1; T2 init retry committed successfully",
+    "not_proven": "post-commit runtime persistence failure after accepted commit",
+    "overlay_after_recovery": true
+  },
+  "twelve_inference_table": [
+    {"sequence": "SEQ-A", "turn": 1, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "Arkham mess-hall goals/pressures (watch, Harley/Ivy bond, surveillance heat)", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "compressed_duplicate_of_transcript", "consequential": false, "evidence": "initFinalize committed store_revision=1; overlay file hg-memory-scope-7d64e82c… exists; no character projection"},
+    {"sequence": "SEQ-A", "turn": 3, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update (post-T3 commit)", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation_of_committed_events", "consequential": false, "evidence": "updateResult finalize committed; overlay store_revision advanced; no projection"},
+    {"sequence": "SEQ-A", "turn": 4, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update (post-T4 commit)", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation_of_committed_events", "consequential": false, "evidence": "updateResult finalize committed; terminal turn"},
+    {"sequence": "SEQ-B", "turn": 1, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "Ayame household-entry evaluation pressures/goals", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "compressed_duplicate_of_interview_transcript", "consequential": false, "evidence": "init committed; overlay hg-memory-scope-a005cba2… exists"},
+    {"sequence": "SEQ-B", "turn": 3, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation", "consequential": false, "evidence": "update committed; weakest blind sequence (4.40)"},
+    {"sequence": "SEQ-B", "turn": 4, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation", "consequential": false, "evidence": "update committed; terminal turn"},
+    {"sequence": "SEQ-E", "turn": 1, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "hg-pressure-magpie-fixation-crosses-harley; guard observation", "L": "L0", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "n/a_not_persisted", "consequential": false, "evidence": "initFinalize forensic_persistence_failed / objective validation; proposal discarded"},
+    {"sequence": "SEQ-E", "turn": 2, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "hg-pressure-global-003 shared watch attention; Harley/Ivy/Magpie pressures", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "duplicate_of_transcript_social_knowledge", "consequential": false, "evidence": "recovery init committed; overlay hg-memory-scope-ff310f25… contains watch-attention pressure; still not projected to Ivy T4 cognition"},
+    {"sequence": "SEQ-E", "turn": 4, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation", "consequential": false, "evidence": "update committed before Ivy T4 contradiction; overlay held correct social-attention info but Character cognition miss occurred without Plot input"},
+    {"sequence": "SEQ-H", "turn": 1, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "Ayame entry-evaluation pressures/goals", "L": "L0", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "n/a_not_persisted", "consequential": false, "evidence": "initFinalize forensic_persistence_failed / objective validation"},
+    {"sequence": "SEQ-H", "turn": 2, "lifecycle": "initialization", "inference_kind": "plot_cognition_init", "key_advisory": "household-entry evaluation pressures/goals", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "compressed_duplicate_of_transcript", "consequential": false, "evidence": "recovery init committed; overlay hg-memory-scope-469f9b42… exists"},
+    {"sequence": "SEQ-H", "turn": 4, "lifecycle": "semantic_update", "inference_kind": "plot_cognition_update", "key_advisory": "overlay_revision_or_frame_update", "L": "L1", "consumer_declared": "next_turn_advisory_substrate", "consumer_observed": "none", "duplicate_class": "synthesized_interpretation", "consequential": false, "evidence": "update committed; tied Plot-OFF rep-2 (4.70)"}
+  ],
+  "transport_level_counts": {
+    "L0_generated_only": 2,
+    "L1_persisted": 10,
+    "L2_projected": 0,
+    "L3_decision_relevant": 0,
+    "L4_consequential": 0
+  },
+  "duplicate_information_counts": {
+    "exact_duplicate": 0,
+    "compressed_duplicate": 4,
+    "synthesized_interpretation": 5,
+    "genuinely_new_narrative_inference": 0,
+    "not_persisted": 2,
+    "not_applicable_no_L2": 1
+  },
+  "consumer_results": {
+    "director": "no_plot_overlay_consumption_observed",
+    "character": "no_plot_projection_observed — projectionLifecycleEnabled=false blocks storyteller_round_packaging character path",
+    "narrator": "not_applicable"
+  },
+  "sequence_findings": {
+    "SEQ-A": "Strong Arkham blind score (4.90) not attributable to Plot consumption; watch/Ivy-restraint themes duplicated in transcript; paired Plot-OFF SEQ-D (4.80) on identical branch",
+    "SEQ-B": "Weakest Plot-ON sequence (4.40); Plot advised household/boundary framing already present in transcript; paired Plot-OFF SEQ-G (5.00)",
+    "SEQ-E": "Persisted overlay after T2 contained shared watch-attention pressure (hg-pressure-global-003); Ivy T4 social-knowledge miss is Character cognition without Plot projection; failed T1 proposal actually contained fixation-crosses-harley pressure but was discarded",
+    "SEQ-H": "Conventional interview progression available from transcript/Continuity; Plot not consumed; tied Plot-OFF SEQ-C"
+  },
+  "plot_off_comparison": {
+    "SEQ-G_5_00": "exceptional unresolved-thread persistence without Plot — proves longitudinal function not Plot-exclusive",
+    "SEQ-D_4_80": "Harley/Ivy continuity without Plot on paired Arkham branch",
+    "SEQ-C_4_70": "Ayame interview arc without Plot tied Plot-ON SEQ-H",
+    "SEQ-F_4_50": "retention-with-looping without Plot",
+    "plot_on_unique_longitudinal_function_demonstrated": false
+  },
+  "topology_assessment": {
+    "generation": "executes (12 LLM plot inferences)",
+    "persistence": "mostly succeeds (10/12); 2 T1 validation failures recovered T2; sidecars exist but harness scope lookup broken",
+    "reconciliation": "domain bookkeeping only; no plot inference",
+    "projection": "disabled in executed A2 G3-D path",
+    "consumption": "fail-closed without projection lifecycle",
+    "complexity_justified": false,
+    "separate_function_vs_topology": "even if Plot function were hypothetically valuable, current init→reconcile→update→overlay→projection handoff is not delivering advisory state to Primary-RP cognition in the executed topology"
+  },
+  "prospective_causal_classification_evidence": {
+    "consumed_but_low_value": "not_supported — zero L2+ transport",
+    "generated_but_not_consumed": "strongly_supported",
+    "consumed_and_consequential": "not_supported",
+    "causally_unresolved": "not_supported — execution evidence sufficient"
+  },
+  "g3_e_readiness": {
+    "plot_decision_sufficiently_resolved_for_g3_e": true,
+    "recommendation": "Governance may authorize G3-E (massive-knowledge validation) without carrying ambiguous Plot-retention decision; Plot remove/consolidate evidence is now causally grounded",
+    "g3_e_execution": false
+  },
+  "status": "causal_trace_complete_pending_governance_verdict"
+}
