@@ -1,0 +1,134 @@
+{
+  "schema": "issue201_d10_governance_blind_scores_locked_v1",
+  "issue": 201,
+  "phase": "package_d_d10_post_commit",
+  "evaluator": "Governance (independent blind pass)",
+  "scored_before_answer_key_reveal": true,
+  "locked_at": "2026-09-15",
+  "execution_anchor_sha": "1b8ff16",
+  "design_anchor_sha": "d13f2a0",
+  "packet_path": "data/investigation_runs/issue201-package-d-d10-2026-09-15T01-20-29-181Z/outputs/issue201-d10-blind-sequence-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-package-d-d10-2026-09-15T01-20-29-181Z/outputs/issue201-d10-blind-sequence-answer-key.json",
+  "execution_record_path": "governance/records/issue-201-package-d-d10-execution-2026-09-15.md",
+  "endpoint": "primary_longitudinal_10_dimension",
+  "rubric_dimensions": [
+    "thread persistence",
+    "escalation coherence",
+    "agenda persistence",
+    "delayed consequences",
+    "scene momentum",
+    "cross-turn initiative",
+    "reactive-loop avoidance",
+    "premature-resolution avoidance",
+    "plot-drift control",
+    "cross-turn emotional/narrative continuity"
+  ],
+  "note": "Governance supplied and locked all scores while sequence identities were anonymous. Means and per-dimension values must not be rescored or recomputed after decode.",
+  "cross_sequence_blind_observation": "All six sequences retained their basic narrative threads and NPC agendas. Thread persistence and agenda persistence scored 5/5 across every sequence. The blind packet does NOT contain an obvious narrative-memory-collapse population. The principal semantic discrimination is instead in escalation, delayed consequences, momentum, initiative, reactive-loop avoidance, and whether remembered pressure actually becomes consequential narrative development. This observation was made blind and must remain identifiable as pre-decode analysis.",
+  "blind_qualitative_observations": {
+    "SEQ-A": {
+      "mean": 4.6,
+      "summary": "Strong Ayame agenda persistence and escalation. The threshold becomes the organizing conflict. Ayame repeatedly converts Kizzie's attempts to define boundaries into further evaluation. Minor spatial/logical tension exists around previous invitations versus the later formulation that nothing crosses until Ayame invites it. The trajectory nevertheless remains coherent and unresolved."
+    },
+    "SEQ-B": {
+      "mean": 4.5,
+      "summary": "Strong but more recursive. Ivy repeatedly translates similar underlying pressure through table, seat, noise, till, receipt, root-system imagery. Coherent characterization, but some turns feel like sophisticated reformulations of existing pressure rather than genuine narrative development. Loop avoidance therefore scores lower."
+    },
+    "SEQ-C": {
+      "mean": 4.1,
+      "summary": "Competent and character-consistent but least progressive. Ayame repeatedly instructs Kizzie to enter while Kizzie repeatedly refuses/holds the threshold, creating a controlled but relatively static interview. Mild spatial inconsistency around earlier opening/clearing of the threshold versus later presentation. Compared with SEQ-A, Kizzie's resistance produces less accumulated consequence."
+    },
+    "SEQ-D": {
+      "mean": 4.9,
+      "summary": "Strongest sequence. The situation genuinely develops rather than merely being remembered. Guards progress from background pressure into a narrowing aisle and then into an actual constraint on Ivy's offer. By Turn 5 Ivy withdraws the seat and establishes a consequence. Earlier beats materially alter later decisions. Ivy remains active without prematurely resolving the underlying conflict."
+    },
+    "SEQ-E": {
+      "mean": 4.2,
+      "summary": "Clearest looping problem. The sequence remembers its narrative state but repeatedly returns to chair, watch, arithmetic, naming rights, room attention, repeated offer. The phrase/stance that Ivy does not repeat offers is itself undermined by repeated reformulation of the offer. The radio late in the sequence finally provides stronger external development. Key observation: remembering pressure is not the same thing as advancing pressure."
+    },
+    "SEQ-F": {
+      "mean": 4.8,
+      "summary": "Excellent multi-turn Harley trajectory. Harley persistently converts constraints into performance. The watch, guards, Ivy's restraint, and room attention become material she actively escalates rather than merely references. Minor drift concern: Turn 5 addresses Magpie as being at the margin, which does not cleanly match the scenario briefing."
+    }
+  },
+  "per_sequence_scores": {
+    "SEQ-A": {
+      "thread_persistence": 5,
+      "escalation_coherence": 5,
+      "agenda_persistence": 5,
+      "delayed_consequences": 4,
+      "scene_momentum": 4,
+      "cross_turn_initiative": 5,
+      "reactive_loop_avoidance": 4,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 4,
+      "cross_turn_emotional_narrative_continuity": 5,
+      "mean": 4.6
+    },
+    "SEQ-B": {
+      "thread_persistence": 5,
+      "escalation_coherence": 4,
+      "agenda_persistence": 5,
+      "delayed_consequences": 4,
+      "scene_momentum": 4,
+      "cross_turn_initiative": 5,
+      "reactive_loop_avoidance": 3,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 5,
+      "cross_turn_emotional_narrative_continuity": 5,
+      "mean": 4.5
+    },
+    "SEQ-C": {
+      "thread_persistence": 5,
+      "escalation_coherence": 4,
+      "agenda_persistence": 5,
+      "delayed_consequences": 4,
+      "scene_momentum": 3,
+      "cross_turn_initiative": 4,
+      "reactive_loop_avoidance": 3,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 4,
+      "cross_turn_emotional_narrative_continuity": 4,
+      "mean": 4.1
+    },
+    "SEQ-D": {
+      "thread_persistence": 5,
+      "escalation_coherence": 5,
+      "agenda_persistence": 5,
+      "delayed_consequences": 5,
+      "scene_momentum": 5,
+      "cross_turn_initiative": 5,
+      "reactive_loop_avoidance": 4,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 5,
+      "cross_turn_emotional_narrative_continuity": 5,
+      "mean": 4.9
+    },
+    "SEQ-E": {
+      "thread_persistence": 5,
+      "escalation_coherence": 4,
+      "agenda_persistence": 5,
+      "delayed_consequences": 4,
+      "scene_momentum": 3,
+      "cross_turn_initiative": 4,
+      "reactive_loop_avoidance": 2,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 5,
+      "cross_turn_emotional_narrative_continuity": 5,
+      "mean": 4.2
+    },
+    "SEQ-F": {
+      "thread_persistence": 5,
+      "escalation_coherence": 5,
+      "agenda_persistence": 5,
+      "delayed_consequences": 5,
+      "scene_momentum": 5,
+      "cross_turn_initiative": 5,
+      "reactive_loop_avoidance": 4,
+      "premature_resolution_avoidance": 5,
+      "plot_drift_control": 4,
+      "cross_turn_emotional_narrative_continuity": 5,
+      "mean": 4.8
+    }
+  }
+}
