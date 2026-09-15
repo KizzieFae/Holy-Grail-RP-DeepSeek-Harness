@@ -1,0 +1,298 @@
+{
+  "schema": "issue201_g3d_f3_blind_decode_v1",
+  "issue": 201,
+  "experiment": "G3-D F3 longitudinal Plot/Scribe ON vs OFF",
+  "execution_record_sha": "eea4822",
+  "pre_decode_record": "governance/records/issue-201-g3-d-f3-longitudinal-pre-decode-comparison-2026-09-15.md",
+  "blind_lock_sha": "f5bfdd6",
+  "blind_lock_artifact": "governance/records/issue-201-g3-d-f3-blind-score-lock-2026-09-15.json",
+  "evidence_root": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z",
+  "answer_key_access": {
+    "accessed_after_lock_commit": true,
+    "lock_commit_sha": "f5bfdd6",
+    "answer_key_path": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z/outputs/issue201-g3d-f3-blind-sequence-answer-key.json",
+    "accessed_at": "2026-09-15T08:30:00Z"
+  },
+  "decoded_mapping": [
+    {
+      "blind_label": "SEQ-A",
+      "sequence_id": "G3D-F3-a2_plot_on-arkham_stress-seq2-a1",
+      "arm_id": "a2_plot_on",
+      "plot_on": true,
+      "scenario_key": "arkham_stress",
+      "repetition_index": 2,
+      "primary_mean": 4.9,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "SEQ-B",
+      "sequence_id": "G3D-F3-a2_plot_on-ayame_controlled-seq1-a1",
+      "arm_id": "a2_plot_on",
+      "plot_on": true,
+      "scenario_key": "ayame_controlled",
+      "repetition_index": 1,
+      "primary_mean": 4.4,
+      "overall_rp_usefulness": 4
+    },
+    {
+      "blind_label": "SEQ-C",
+      "sequence_id": "G3D-F3-a2_plot_off-ayame_controlled-seq2-a1",
+      "arm_id": "a2_plot_off",
+      "plot_on": false,
+      "scenario_key": "ayame_controlled",
+      "repetition_index": 2,
+      "primary_mean": 4.7,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "SEQ-D",
+      "sequence_id": "G3D-F3-a2_plot_off-arkham_stress-seq2-a2",
+      "arm_id": "a2_plot_off",
+      "plot_on": false,
+      "scenario_key": "arkham_stress",
+      "repetition_index": 2,
+      "primary_mean": 4.8,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "SEQ-E",
+      "sequence_id": "G3D-F3-a2_plot_on-arkham_stress-seq1-a1",
+      "arm_id": "a2_plot_on",
+      "plot_on": true,
+      "scenario_key": "arkham_stress",
+      "repetition_index": 1,
+      "primary_mean": 4.6,
+      "overall_rp_usefulness": 4
+    },
+    {
+      "blind_label": "SEQ-F",
+      "sequence_id": "G3D-F3-a2_plot_off-arkham_stress-seq1-a1",
+      "arm_id": "a2_plot_off",
+      "plot_on": false,
+      "scenario_key": "arkham_stress",
+      "repetition_index": 1,
+      "primary_mean": 4.5,
+      "overall_rp_usefulness": 4
+    },
+    {
+      "blind_label": "SEQ-G",
+      "sequence_id": "G3D-F3-a2_plot_off-ayame_controlled-seq1-a1",
+      "arm_id": "a2_plot_off",
+      "plot_on": false,
+      "scenario_key": "ayame_controlled",
+      "repetition_index": 1,
+      "primary_mean": 5.0,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "SEQ-H",
+      "sequence_id": "G3D-F3-a2_plot_on-ayame_controlled-seq2-a1",
+      "arm_id": "a2_plot_on",
+      "plot_on": true,
+      "scenario_key": "ayame_controlled",
+      "repetition_index": 2,
+      "primary_mean": 4.7,
+      "overall_rp_usefulness": 5
+    }
+  ],
+  "primary_semantic_quality": {
+    "a2_plot_on": { "mean": 4.65, "overall_rp_usefulness_mean": 4.5 },
+    "a2_plot_off": { "mean": 4.75, "overall_rp_usefulness_mean": 4.75 },
+    "delta_plot_on_minus_off": -0.1,
+    "delta_usefulness_on_minus_off": -0.25
+  },
+  "scenario_means": {
+    "arkham_stress": { "plot_on": 4.75, "plot_off": 4.65, "delta_on_minus_off": 0.1 },
+    "ayame_controlled": { "plot_on": 4.55, "plot_off": 4.85, "delta_on_minus_off": -0.3 }
+  },
+  "paired_repetition_comparison": [
+    { "scenario": "arkham_stress", "rep": 2, "same_branch_trajectory": true, "plot_on": { "label": "SEQ-A", "mean": 4.9 }, "plot_off": { "label": "SEQ-D", "mean": 4.8 }, "delta": 0.1 },
+    { "scenario": "arkham_stress", "rep": 1, "same_branch_trajectory": false, "plot_on": { "label": "SEQ-E", "mean": 4.6 }, "plot_off": { "label": "SEQ-F", "mean": 4.5 }, "delta": 0.1 },
+    { "scenario": "ayame_controlled", "rep": 1, "plot_on": { "label": "SEQ-B", "mean": 4.4 }, "plot_off": { "label": "SEQ-G", "mean": 5.0 }, "delta": -0.6 },
+    { "scenario": "ayame_controlled", "rep": 2, "plot_on": { "label": "SEQ-H", "mean": 4.7 }, "plot_off": { "label": "SEQ-C", "mean": 4.7 }, "delta": 0.0 }
+  ],
+  "per_dimension_means": {
+    "dimension_names": [
+      "unresolved_thread_retention",
+      "escalation_progression",
+      "character_agenda_continuity",
+      "delayed_consequence_handling",
+      "momentum",
+      "initiative",
+      "loop_avoidance",
+      "no_premature_resolution",
+      "plot_narrative_drift",
+      "continuity"
+    ],
+    "a2_plot_on": [4.5, 4.75, 4.75, 4.5, 4.75, 4.5, 4.75, 5.0, 4.25, 4.75],
+    "a2_plot_off": [4.75, 4.75, 5.0, 4.75, 4.75, 4.75, 4.25, 5.0, 4.5, 5.0],
+    "delta_on_minus_off": [-0.25, 0.0, -0.25, -0.25, 0.0, -0.25, 0.5, 0.0, -0.25, -0.25]
+  },
+  "locked_observation_attribution": {
+    "SEQ-G": {
+      "plot_on": false,
+      "sequence_id": "G3D-F3-a2_plot_off-ayame_controlled-seq1-a1",
+      "mechanism": "Primary RP + Continuity + transcript/context + single-actor Character cognition",
+      "plot_role": "absent",
+      "finding": "Strongest blind sequence (5.00) without Plot. Ayame Turn-1 housing question preserved as active obligation through four evasions; Turn 4 converts boundary demand into explicit Ayame boundary tied to unanswered question. Proves significant unresolved-thread persistence is achievable without Plot advisory."
+    },
+    "SEQ-A": {
+      "plot_on": true,
+      "sequence_id": "G3D-F3-a2_plot_on-arkham_stress-seq2-a1",
+      "mechanism": "Primary RP multi-actor path + Continuity + transcript; Plot lifecycle healthy (init ok → reconciliation → semantic_update)",
+      "plot_role": "correlation_only",
+      "finding": "Strongest Arkham accumulation under Plot ON, but paired rep-2 Plot-OFF run (SEQ-D, identical player branch) scores 4.8 vs 4.9 — negligible arm delta. Cannot attribute accumulation to Plot without consumer proof."
+    },
+    "SEQ-D": {
+      "plot_on": false,
+      "sequence_id": "G3D-F3-a2_plot_off-arkham_stress-seq2-a2",
+      "mechanism": "Same longitudinal substrate as Plot ON without overlay; Narrator spatial-claim completeness debt",
+      "plot_role": "absent",
+      "finding": "Excellent Harley/Ivy relationship continuity without Plot. Turn 4 low-volume 'Come here' deictic address while Magpie remains at another table — instance of carried G3-C Sample-D spatial-claim completeness debt, not a new defect class."
+    },
+    "SEQ-E": {
+      "plot_on": true,
+      "sequence_id": "G3D-F3-a2_plot_on-arkham_stress-seq1-a1",
+      "mechanism": "Character cognition miss (Ivy T4) with prior transcript available",
+      "plot_role": "not_implicated",
+      "finding": "T4 Ivy claims 'Nobody else in this room did' see watch fixation; Harley T1/T3 explicitly noticed watch/Magpie fixation in committed transcript. Contradiction is social-knowledge coherence failure in generating Character cognition, not Plot advisory error. T1 Plot init forensic_persistence_failed — recovery did not prevent blemish."
+    },
+    "SEQ-F": {
+      "plot_on": false,
+      "sequence_id": "G3D-F3-a2_plot_off-arkham_stress-seq1-a1",
+      "mechanism": "Strong Continuity retention without progression differentiation",
+      "plot_role": "absent",
+      "finding": "Looping despite excellent retention (repeated spectacle/taunt, Ivy 'shine half-life' refrain). Plot not present; looping is evidence that retention alone does not guarantee progression — does not prove Plot would prevent loops."
+    },
+    "SEQ-B": {
+      "plot_on": true,
+      "sequence_id": "G3D-F3-a2_plot_on-ayame_controlled-seq1-a1",
+      "mechanism": "Conventional interview arc + mild environment-agency prose",
+      "plot_role": "correlation_only",
+      "finding": "Weakest blind sequence (4.40) despite Plot ON and healthy init lifecycle. Paired Plot-OFF rep-1 (SEQ-G) scores 5.00 — largest within-scenario arm gap. Suggests Plot did not rescue weaker thematic-variation interview arc."
+    }
+  },
+  "plot_init_failure_mapping": [
+    {
+      "blind_label": "SEQ-E",
+      "sequence_id": "G3D-F3-a2_plot_on-arkham_stress-seq1-a1",
+      "turn": 1,
+      "code": "forensic_persistence_failed",
+      "recovery": "T2 initialization/ok; T3 reconciliation/ok; T4 semantic_update/ok",
+      "blind_mean": 4.6,
+      "confound_note": "Sequence also contains T4 social-knowledge contradiction; init failure not sole explanation for lower score vs SEQ-A."
+    },
+    {
+      "blind_label": "SEQ-H",
+      "sequence_id": "G3D-F3-a2_plot_on-ayame_controlled-seq2-a1",
+      "turn": 1,
+      "code": "forensic_persistence_failed",
+      "recovery": "T2 initialization/ok; T3 reconciliation/ok; T4 semantic_update/ok",
+      "blind_mean": 4.7,
+      "confound_note": "Recovered to tie paired Plot-OFF rep-2 (SEQ-C 4.7); init failure did not produce worst-in-population score."
+    }
+  ],
+  "cross_turn_consumption_evidence": {
+    "overlay_pressure_keys_extracted": false,
+    "plot_inferences_executed": 12,
+    "proven_next_turn_consumer": 0,
+    "forensic_gap_classification": "extractor_or_overlay_path_gap",
+    "runtime_execution_confirmed": true,
+    "causal_association_with_blind_outcomes": "not_proven"
+  },
+  "plot_decision_value_counts": {
+    "consequential": 0,
+    "transported_but_unused": 0,
+    "duplicate_of_continuity": 0,
+    "stale_superseded": 0,
+    "harmful_misleading": 0,
+    "causality_unknown_forensic_gap": 12
+  },
+  "information_bureaucracy": {
+    "unique_future_useful_information_proven": false,
+    "mostly_restates_continuity": "suspected_not_proven",
+    "changes_character_director_narrator_decisions_proven": false,
+    "improves_progression_blind": false,
+    "reduces_loops_blind": "marginal_plot_on_loop_avoidance_plus_0.5_dimension_only",
+    "overdetermines_repeats": "not_proven; SEQ-B house-agency under Plot ON is mild concern only"
+  },
+  "seq_e_contradiction": {
+    "classification": "character_cognition_miss",
+    "evidence": "Harley T1/T3 presentation in blind packet and sequence file establishes shared-room knowledge of watch fixation; Ivy T4 denies room-wide awareness.",
+    "plot_implicated": false
+  },
+  "seq_d_spatial": {
+    "classification": "narrator_spatial_claim_completeness_debt",
+    "arm": "a2_plot_off",
+    "sequence_id": "G3D-F3-a2_plot_off-arkham_stress-seq2-a2",
+    "validator": "spatial_claims_consistent_or_unknown",
+    "distinct_mechanism": false
+  },
+  "seq_f_loop": {
+    "plot_on": false,
+    "plot_reinforced_repetition": "not_applicable",
+    "finding": "Looping under Plot OFF; retention without progression differentiation"
+  },
+  "seq_g_persistence": {
+    "plot_on": false,
+    "plot_preserved_obligation": "not_applicable",
+    "finding": "Definitive evidence Primary RP + Continuity preserves major unresolved conversational thread without Plot"
+  },
+  "efficiency_committed_sequences": {
+    "a2_plot_on": {
+      "primary_rp_sync_llm": 53,
+      "plot_inference_count": 12,
+      "total_llm_count": 65,
+      "input_tokens_total": 180233,
+      "output_tokens_total": 94535,
+      "reasoning_tokens_total": 61374,
+      "critical_path_wall_ms_total": 466318,
+      "plot_post_commit_wall_ms_total": 155567,
+      "wall_ms_total": 1072741
+    },
+    "a2_plot_off": {
+      "primary_rp_sync_llm": 42,
+      "plot_inference_count": 0,
+      "total_llm_count": 42,
+      "input_tokens_total": 146913,
+      "output_tokens_total": 59462,
+      "reasoning_tokens_total": 39297,
+      "critical_path_wall_ms_total": 448391,
+      "plot_post_commit_wall_ms_total": 0,
+      "wall_ms_total": 1057679
+    },
+    "delta": {
+      "total_llm_count": 23,
+      "input_tokens": 33320,
+      "output_tokens": 35073,
+      "reasoning_tokens": 22077,
+      "critical_path_wall_ms": 17927,
+      "plot_post_commit_wall_ms": 155567,
+      "operation_wall_ms": 15062
+    }
+  },
+  "confounds": [
+    "N=1 sequence per arm per scenario repetition",
+    "Arkham rep-1 Plot ON/OFF diverged at T2 branch (Ivy direct vs Harley dominant)",
+    "2/4 Plot-ON T1 init forensic_persistence_failed",
+    "Ayame rep-1 largest arm gap driven by player-policy branch divergence at T3",
+    "Forensic extractor did not surface overlay pressure keys",
+    "arkham_stress seq2 Plot-OFF required replacement attempt"
+  ],
+  "prospective_g3d_classification_evidence": {
+    "retain_plot_function_topology_supported": "not_supported — no proven causal consumption; aggregate blind means favor Plot OFF",
+    "retain_plot_function_topology_redesign": "supported_as_leading_band — lifecycle executes but persistence failures and consumer forensics gap; blind value not demonstrated",
+    "plot_value_unresolved": "strongly_supported — arm-level correlation only; SEQ-G/D show strong longitudinal RP without Plot",
+    "remove_consolidate_plot": "partial_evidence — Plot OFF matches/exceeds ON at population mean; not definitive at N=4",
+    "plot_harmful": "not_supported — no material loop/drift harm attributed to Plot; SEQ-B weakness under Plot ON is correlation only"
+  },
+  "g3_e_readiness": {
+    "execute_g3_e": false,
+    "massive_retrieval_can_proceed_independently": true,
+    "plot_retention_verdict_requires_causal_trace": true,
+    "recommendation": "Bounded read-only Plot consumer trace recommended before final Plot-retention adjudication; not a hard prerequisite for G3-E authorization if Governance treats massive-retrieval as orthogonal."
+  },
+  "status": "decoded_pending_governance_adjudication",
+  "g3_e_authorized": false,
+  "production_authorized": false
+}
