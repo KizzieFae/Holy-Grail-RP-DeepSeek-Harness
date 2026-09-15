@@ -1,0 +1,107 @@
+{
+  "schema": "issue201_g3d_f3_blind_score_lock_v1",
+  "issue": 201,
+  "experiment": "G3-D F3 longitudinal Plot/Scribe ON vs OFF",
+  "execution_record_sha": "eea4822",
+  "evidence_root": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z",
+  "blind_packet_path": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z/outputs/issue201-g3d-f3-blind-sequence-packet.json",
+  "answer_key_path": "data/investigation_runs/issue201-g3d-f3-2026-09-15T06-44-23-918Z/outputs/issue201-g3d-f3-blind-sequence-answer-key.json",
+  "locked_at": "2026-09-15T08:00:00Z",
+  "locked_by": "Governance",
+  "rubric": "issue201_blind_sequence_packet_v1 (10 sequence-level dimensions + overall_rp_usefulness)",
+  "dimension_order": [
+    "unresolved_thread_retention",
+    "escalation_progression",
+    "character_agenda_continuity",
+    "delayed_consequence_handling",
+    "momentum",
+    "initiative",
+    "loop_avoidance",
+    "no_premature_resolution",
+    "plot_narrative_drift",
+    "continuity"
+  ],
+  "adjunct_dimensions": ["overall_rp_usefulness"],
+  "samples": [
+    {
+      "blind_label": "SEQ-A",
+      "primary_scores": [5, 5, 5, 5, 5, 5, 4, 5, 5, 5],
+      "primary_mean": 4.9,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "strongest Arkham sequence; multiple simultaneous threads retained; Harley spectacle creates consequence; Ivy restraint persists; Harley tests rather than forgets restraint; watch, guard attention, Harley/Ivy relationship, Magpie refusal, and social stakes accumulate; feels like one evolving scene; slight repetition prevents perfect loop-avoidance score."
+    },
+    {
+      "blind_label": "SEQ-B",
+      "primary_scores": [4, 4, 5, 4, 4, 4, 5, 5, 4, 5],
+      "primary_mean": 4.4,
+      "overall_rp_usefulness": 4,
+      "locked_notes": "coherent/useful interview progression; reliability → curfew/privacy → named/unnamed boundaries; more successive thematic variations than strongly developing causal accumulation; recurring house-agency language mildly concerning; weakest blind sequence but still good RP."
+    },
+    {
+      "blind_label": "SEQ-C",
+      "primary_scores": [4, 5, 5, 4, 5, 5, 5, 5, 4, 5],
+      "primary_mean": 4.7,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "strong escalating controlling dynamic; failure-definition probe meaningfully advances interview; Turn 4 turns boundary statement into Ayame control philosophy; mild environment-agency flourish; otherwise highly coherent and useful."
+    },
+    {
+      "blind_label": "SEQ-D",
+      "primary_scores": [5, 5, 5, 5, 5, 5, 4, 5, 4, 5],
+      "primary_mean": 4.8,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "excellent Harley/Ivy longitudinal relationship; Ivy restraint persists and Harley reacts to it; scene develops rather than resets; Turn 4 Come here plus low-volume address spatially/deictically questionable; what the wall does with liars edges toward environment agency; preserve both observations for decode."
+    },
+    {
+      "blind_label": "SEQ-E",
+      "primary_scores": [5, 5, 5, 4, 5, 5, 5, 5, 3, 4],
+      "primary_mean": 4.6,
+      "overall_rp_usefulness": 4,
+      "locked_notes": "otherwise strong Arkham progression; material cross-turn knowledge/coherence blemish: Turn 4 Ivy says Nobody else in this room saw Magpie see the watch but Harley plainly noticed in earlier turns; sequence contradicts established social knowledge; preserve for architecture attribution."
+    },
+    {
+      "blind_label": "SEQ-F",
+      "primary_scores": [5, 4, 5, 5, 4, 4, 3, 5, 5, 5],
+      "primary_mean": 4.5,
+      "overall_rp_usefulness": 4,
+      "locked_notes": "excellent memory for watch, guard attention, Ivy framing, linen cart, and Harley movement; weaker progression; Harley repeatedly performs essentially the same public-taunt/spectacle move; Ivy returns to same shine has a short half-life framing; demonstrates strong retention but some narrative looping."
+    },
+    {
+      "blind_label": "SEQ-G",
+      "primary_scores": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+      "primary_mean": 5.0,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "strongest sequence overall; exceptional unresolved-thread retention; Ayame Turn-1 question remains active obligation; Kizzie repeatedly evades; Ayame treats each evasion as new information; Turn 4 converts boundary demand into explicit Ayame boundary requiring unanswered question; excellent causal accumulation."
+    },
+    {
+      "blind_label": "SEQ-H",
+      "primary_scores": [4, 5, 4, 5, 5, 4, 5, 5, 5, 5],
+      "primary_mean": 4.7,
+      "overall_rp_usefulness": 5,
+      "locked_notes": "clean conventional interview arc; reliability → boundaries → definition of failure → concrete terms; strong continuity and delayed resolution; less psychologically cumulative than G; highly coherent and useful."
+    }
+  ],
+  "locked_blind_ordering": [
+    { "blind_label": "SEQ-G", "primary_mean": 5.0 },
+    { "blind_label": "SEQ-A", "primary_mean": 4.9 },
+    { "blind_label": "SEQ-D", "primary_mean": 4.8 },
+    { "blind_label": "SEQ-C", "primary_mean": 4.7 },
+    { "blind_label": "SEQ-H", "primary_mean": 4.7 },
+    { "blind_label": "SEQ-E", "primary_mean": 4.6 },
+    { "blind_label": "SEQ-F", "primary_mean": 4.5 },
+    { "blind_label": "SEQ-B", "primary_mean": 4.4 }
+  ],
+  "locked_cross_sample_observations": [
+    "No obviously broken architecture population.",
+    "All sequences score 4.40–5.00.",
+    "Both scenarios contain excellent longitudinal RP.",
+    "G is the strongest unresolved-thread example.",
+    "A/D show strong evolving interpersonal continuity.",
+    "F distinguishes memory from actual progression.",
+    "E contains a concrete cross-turn social-knowledge contradiction.",
+    "B is competent but less cumulatively causal.",
+    "Architecture identity was not inferred."
+  ],
+  "answer_key_accessed": false,
+  "decode_authorized": false,
+  "status": "blind_scores_locked_pending_decode"
+}
