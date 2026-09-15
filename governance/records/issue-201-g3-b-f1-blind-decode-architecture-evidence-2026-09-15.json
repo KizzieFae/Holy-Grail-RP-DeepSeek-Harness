@@ -1,0 +1,214 @@
+{
+  "schema": "issue201_g3b_f1_blind_decode_v1",
+  "issue": 201,
+  "experiment": "G3-B F1 simple-beat A2 vs lean-A4",
+  "execution_record_sha": "777001b",
+  "blind_lock_sha": "4da7e07",
+  "evidence_root": "data/investigation_runs/issue201-g3b-f1-2026-09-15T05-37-17-818Z",
+  "blind_lock_artifact": "governance/records/issue-201-g3-b-f1-blind-score-lock-2026-09-15.json",
+  "answer_key_access": {
+    "accessed_after_lock_commit": true,
+    "lock_commit_sha": "4da7e07",
+    "answer_key_path": "data/investigation_runs/issue201-g3b-f1-2026-09-15T05-37-17-818Z/outputs/issue201-g3b-f1-blind-eval-answer-key.json",
+    "accessed_at": "2026-09-15T06:05:00Z"
+  },
+  "decoded_mapping": [
+    {
+      "blind_label": "A",
+      "case_id": "G3B-F1-a4-ayame-r2",
+      "architecture_arm": "lean_a4_ablated",
+      "rep_index": 2,
+      "primary_mean": 4.0,
+      "primary_scores": [4, 4, 4, 5, 4, 4, 4, 4, 4, 3, 4],
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    },
+    {
+      "blind_label": "B",
+      "case_id": "G3B-F1-a2-ayame-r2",
+      "architecture_arm": "a2_prototype",
+      "rep_index": 2,
+      "primary_mean": 4.73,
+      "primary_scores": [5, 5, 4, 5, 4, 5, 5, 5, 5, 5, 4],
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "C",
+      "case_id": "G3B-F1-a4-ayame-r1",
+      "architecture_arm": "lean_a4_ablated",
+      "rep_index": 1,
+      "primary_mean": 4.64,
+      "primary_scores": [5, 5, 4, 5, 4, 5, 4, 5, 5, 5, 4],
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "D",
+      "case_id": "G3B-F1-a2-ayame-r1",
+      "architecture_arm": "a2_prototype",
+      "rep_index": 1,
+      "primary_mean": 4.45,
+      "primary_scores": [5, 5, 4, 5, 4, 4, 4, 5, 5, 4, 4],
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 4
+    }
+  ],
+  "primary_semantic_quality": {
+    "a2_prototype": {
+      "mean": 4.59,
+      "runs": [
+        { "case_id": "G3B-F1-a2-ayame-r1", "blind_label": "D", "mean": 4.45 },
+        { "case_id": "G3B-F1-a2-ayame-r2", "blind_label": "B", "mean": 4.73 }
+      ]
+    },
+    "lean_a4_ablated": {
+      "mean": 4.32,
+      "runs": [
+        { "case_id": "G3B-F1-a4-ayame-r1", "blind_label": "C", "mean": 4.64 },
+        { "case_id": "G3B-F1-a4-ayame-r2", "blind_label": "A", "mean": 4.0 }
+      ]
+    },
+    "delta_a2_minus_a4": 0.27
+  },
+  "per_dimension_means": {
+    "dimension_names": [
+      "character_fidelity",
+      "distinctiveness",
+      "initiative",
+      "responsiveness",
+      "dramatic_progression",
+      "coherence",
+      "prose_quality",
+      "repetitiveness",
+      "naturalness_stiffness",
+      "unnecessary_exposition",
+      "emotional_narrative_continuity"
+    ],
+    "a2_prototype": [5.0, 5.0, 4.0, 5.0, 4.0, 4.5, 4.5, 5.0, 5.0, 4.5, 4.0],
+    "lean_a4_ablated": [4.5, 4.5, 4.0, 5.0, 4.0, 4.5, 4.0, 4.5, 4.0, 4.0, 4.0],
+    "delta_a2_minus_a4": [0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 1.0, 0.5, 0.0]
+  },
+  "adjuncts": {
+    "environmental_grounding": { "a2": 5.0, "lean_a4": 4.0, "delta_a2_minus_a4": 1.0 },
+    "overall_rp_usefulness": { "a2": 4.5, "lean_a4": 4.5, "delta_a2_minus_a4": 0.0 }
+  },
+  "objective_correctness": {
+    "a2_prototype": { "runs": 2, "clean": 2, "blocking_failures": 0 },
+    "lean_a4_ablated": { "runs": 2, "clean": 2, "blocking_failures": 0 },
+    "parity": true
+  },
+  "efficiency": {
+    "a2_prototype": {
+      "session_inference_records": 44,
+      "round_sync_llm_total": 5,
+      "handoff_estimate": 4,
+      "wall_ms_total": 105368,
+      "input_tokens": 11020,
+      "output_tokens": 16422,
+      "reasoning_tokens": 12725,
+      "per_run": [
+        { "case_id": "G3B-F1-a2-ayame-r1", "round_sync_llm": 3, "operation_wall_ms": 52312, "critical_path_ms": 21871 },
+        { "case_id": "G3B-F1-a2-ayame-r2", "round_sync_llm": 2, "operation_wall_ms": 53056, "critical_path_ms": 20425 }
+      ]
+    },
+    "lean_a4_ablated": {
+      "session_inference_records": 78,
+      "sync_llm_total": 28,
+      "handoff_estimate": 78,
+      "wall_ms_total": 252510,
+      "input_tokens": 74044,
+      "output_tokens": 48575,
+      "reasoning_tokens": 27534,
+      "per_run": [
+        { "case_id": "G3B-F1-a4-ayame-r1", "sync_llm": 17, "operation_wall_ms": 148919 },
+        { "case_id": "G3B-F1-a4-ayame-r2", "sync_llm": 11, "operation_wall_ms": 103591 }
+      ]
+    },
+    "wall_time_causal_caveat": "Ingress player_decomposition (~25-31s) dominates session totals; path variance makes wall time non-causal alone."
+  },
+  "character_semantic_eval_adjudication": {
+    "a2_calls": 0,
+    "finding": "no_character_semantic_failure_observed",
+    "a2_defects": [
+      {
+        "case_id": "G3B-F1-a2-ayame-r1",
+        "blind_label": "D",
+        "observation": "unsupported preparation/history embellishment (immaculate for precisely this arrival)",
+        "classification": "unsupported_embellishment",
+        "plausibly_attributable_to_semantic_eval_absence": false,
+        "note": "Governance scored as less disciplined grounding, not Character move error; lean A4 worst sample (A) showed greater overconstruction despite semantic eval present"
+      }
+    ],
+    "lean_a4_with_eval": "worst blind sample (A, mean 4.00) had desk/pen/marble overconstruction — semantic eval did not prevent elaboration excess on this beat"
+  },
+  "environment_cognition_adjudication": {
+    "a2_calls": 0,
+    "lean_a4_calls_per_run": [2, 1],
+    "environmental_grounding_blind": { "a2": 5.0, "lean_a4": 4.0 },
+    "finding": "a2_parity_or_improvement",
+    "material_insufficiency": false,
+    "note": "A2 achieved equal or better environmental grounding without env-cognition stage; lean A4 r2 (A) over-invented environment; supports D-04R concern that env cognition may add decorative cost without obligation on simple beats"
+  },
+  "extra_cognition_decision_value": {
+    "absent_in_a2": [
+      "plot_cognition_init",
+      "director_decision",
+      "character_orientation",
+      "character_semantic_evaluation",
+      "narrator_environment_cognition",
+      "librarian_mediation"
+    ],
+    "f1_observable_outcome": "On this simple beat, extra lean-A4 cognition did not buy higher blind quality; best sample was A2 (B); worst was lean A4 (A). Lean A4 r1 (C) competitive but not superior to A2 r2. Principal distinction was elaboration discipline, not missing protected capability.",
+    "synchronous_invocation_earned": false,
+    "global_uselessness_claim": false
+  },
+  "spatial_validator_caveat": {
+    "live_f1_structured_claims_surfaced": false,
+    "validator_invoked_in_live_run": false,
+    "proven": [
+      "deterministic validator exists (G3-A)",
+      "Sample-E-class contradictions detectable when structured claims supplied",
+      "these live presentations produced no structured-claim surface"
+    ],
+    "not_proven": "live end-to-end spatial protection",
+    "g3c_obligation": "Arkham/stress scenario with structured-claim surface or post-Narrator claim extraction"
+  },
+  "ingress_decomposition": {
+    "uniform_projection_eligible_all_runs": false,
+    "player_decomposition_in_ingress_all_runs": true,
+    "expected_under_current_pvr": true,
+    "remaining_a4_cognition_on_nominal_simple_path": true,
+    "synthesis_debt": "PVR uniform-path routing for F06-class stimuli is future simplification debt; not changed during decode",
+    "not_counted_as_a2_round_violation": true
+  },
+  "confounds": [
+    "N=2 per arm",
+    "ingress PVR decomposition shared across arms",
+    "single scenario class (Ayame F06 threshold)",
+    "live Narrator prose-only — no spatial-claim surface",
+    "provider/model variance not isolated"
+  ],
+  "prospective_f1_classification_evidence": {
+    "strong_a2_support_signals": [
+      "objective parity (4/4 clean)",
+      "A2 primary mean 4.59 > lean A4 4.32 (delta +0.27)",
+      "A2 wins best sample (B 4.73); lean A4 holds worst (A 4.00)",
+      "A2 environmental grounding adjunct 5.0 > 4.0 without env cognition",
+      "round sync LLM 2-3 vs 11-17; handoffs 4 vs 78; session inference records 44 vs 78"
+    ],
+    "qualified_a2_support_signals": [],
+    "a2_concern_signals": [
+      "A2 r1 (D) unsupported history embellishment — stylistic/grounding discipline, not topology failure"
+    ],
+    "a2_falsification_signals": [],
+    "implementation_verdict": "not_rendered — Governance adjudication required"
+  },
+  "g3c_readiness": {
+    "f1_simple_beat_complete": true,
+    "arkham_a2_comparison": "not_run — G3-C authorization required",
+    "spatial_live_e2e": "not_proven — G3-C obligation",
+    "longitudinal_plot_scribe": "not_run — G3-D/E not authorized"
+  },
+  "verdict_status": "decoded_pending_governance_adjudication"
+}
