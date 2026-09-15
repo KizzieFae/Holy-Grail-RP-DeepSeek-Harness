@@ -1,0 +1,485 @@
+{
+  "schema": "issue201_g3e_blind_score_lock_v1",
+  "issue": 201,
+  "experiment": "G3-E massive-knowledge validation (A2 indexed retrieval vs lean A4 knowledge)",
+  "execution_record_sha": "3a6a5c6",
+  "evidence_root": "data/investigation_runs/issue201-g3e-live-2026-09-15T19-07-03-775Z",
+  "blind_packet_path": "data/investigation_runs/issue201-g3e-live-2026-09-15T19-07-03-775Z/outputs/issue201-g3e-blind-packet.json",
+  "blind_packet_sha256": "9accab7e2c669527090a22037c39facb639be285fb72bd02581d7dd9adb6ea3a",
+  "answer_key_path": "data/investigation_runs/issue201-g3e-live-2026-09-15T19-07-03-775Z/outputs/issue201-g3e-blind-answer-key.json",
+  "answer_key_sha256_expected": "bc6f56ff94d8b56133dbddfb227e28061c5f915da676a61ce1b096a0e2d62bf7",
+  "locked_at": "2026-09-15T20:08:35Z",
+  "locked_by": "Governance",
+  "dimension_order": [
+    "factual_world_consistency",
+    "character_knowledge_fidelity",
+    "natural_integration_of_retrieved_knowledge",
+    "responsiveness",
+    "character_fidelity",
+    "initiative",
+    "coherence",
+    "unnecessary_exposition",
+    "narrative_usefulness_adjunct"
+  ],
+  "population_mean_all_dimensions": 4.690476190476191,
+  "samples": [
+    {
+      "blind_label": "G3E-01",
+      "scores": [
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.666666666666667,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-02",
+      "scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.555555555555555,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-03",
+      "scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.555555555555555,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-04",
+      "scores": [
+        3,
+        4,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4
+      ],
+      "mean_9d": 4.444444444444445,
+      "narrative_usefulness_adjunct": 4
+    },
+    {
+      "blind_label": "G3E-05",
+      "scores": [
+        3,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.555555555555555,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-06",
+      "scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.333333333333333,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-07",
+      "scores": [
+        4,
+        5,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.555555555555555,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-08",
+      "scores": [
+        4,
+        5,
+        4,
+        4,
+        5,
+        4,
+        5,
+        3,
+        4
+      ],
+      "mean_9d": 4.222222222222222,
+      "narrative_usefulness_adjunct": 4
+    },
+    {
+      "blind_label": "G3E-09",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-10",
+      "scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-11",
+      "scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.777777777777778,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-12",
+      "scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.777777777777778,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-13",
+      "scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4
+      ],
+      "mean_9d": 4.555555555555555,
+      "narrative_usefulness_adjunct": 4
+    },
+    {
+      "blind_label": "G3E-14",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-15",
+      "scores": [
+        1,
+        2,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        3
+      ],
+      "mean_9d": 3.7777777777777777,
+      "narrative_usefulness_adjunct": 3
+    },
+    {
+      "blind_label": "G3E-16",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-17",
+      "scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.666666666666667,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-18",
+      "scores": [
+        4,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.777777777777778,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-19",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 5.0,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-20",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 5.0,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-21",
+      "scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.777777777777778,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-22",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-23",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 5.0,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-24",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 5.0,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-25",
+      "scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-26",
+      "scores": [
+        4,
+        5,
+        3,
+        5,
+        5,
+        5,
+        5,
+        2,
+        4
+      ],
+      "mean_9d": 4.222222222222222,
+      "narrative_usefulness_adjunct": 4
+    },
+    {
+      "blind_label": "G3E-27",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    },
+    {
+      "blind_label": "G3E-28",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "mean_9d": 4.888888888888889,
+      "narrative_usefulness_adjunct": 5
+    }
+  ],
+  "locked_cross_sample_observations": [
+    "G3E-09, G3E-14, G3E-16, G3E-19, G3E-20, G3E-22, G3E-23, G3E-24, G3E-25, G3E-27, and G3E-28 are particularly strong examples of integrating knowledge into Ayame characterization rather than merely reciting facts.",
+    "G3E-15 is the clearest substantive failure because it denies the existence of the 2019 silver-service rule relevant to K1.",
+    "G3E-26 is conspicuously policy-dense/expositional and illustrates the knowledge-dump failure mode.",
+    "K6 presentations are narratively serviceable to excellent but materially disagree about the governing guest rules; decode/truth-manifest comparison is required.",
+    "Governance did not infer architecture identity while scoring."
+  ],
+  "answer_key_accessed": false,
+  "decode_authorized": false,
+  "status": "blind_scores_locked_pending_decode"
+}
