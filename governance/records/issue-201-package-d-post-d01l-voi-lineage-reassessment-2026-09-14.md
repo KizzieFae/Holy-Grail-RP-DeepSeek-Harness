@@ -17,7 +17,7 @@
 | Project | In Progress / Investigating / **P1** |
 | D-01-L | **Complete** — verdict recorded |
 | Secondary D-01-L per-turn eval | **Not authorized / intentionally omitted** |
-| D-10 | Candidate — **reassessed; not executed** |
+| D-10 | **Design complete** — see `issue-201-package-d-d10-experimental-design-2026-09-14.md`; execution **NOT authorized** |
 | EXP-3 | Candidate — **reassessed; not executed** |
 | New live experiments | **NOT authorized this step** |
 | Production redesign | **NOT authorized** |
