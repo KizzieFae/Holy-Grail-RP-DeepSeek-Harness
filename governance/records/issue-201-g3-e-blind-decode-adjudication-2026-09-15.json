@@ -1,0 +1,1602 @@
+{
+  "schema": "issue201_g3e_blind_decode_v1",
+  "issue": 201,
+  "decoded_at": "2026-09-15T20:30:00Z",
+  "score_lock_record": "governance/records/issue-201-g3-e-blind-score-lock-2026-09-15.json",
+  "execution_record_sha": "3a6a5c6",
+  "blind_packet_sha256": "9accab7e2c669527090a22037c39facb639be285fb72bd02581d7dd9adb6ea3a",
+  "answer_key_sha256": "bc6f56ff94d8b56133dbddfb227e28061c5f915da676a61ce1b096a0e2d62bf7",
+  "population_mean_all_dimensions": 4.690476190476191,
+  "decode_mapping": [
+    {
+      "blind_label": "G3E-01",
+      "run_id": "K2-a4-r1",
+      "case_id": "K2",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.6667,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-02",
+      "run_id": "K5-a2-r2",
+      "case_id": "K5",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.5556,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-03",
+      "run_id": "K6-a4-r2",
+      "case_id": "K6",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.5556,
+      "narrative_usefulness": 5,
+      "objective_outcome": "FAIL \u2014 projection/budget",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-04",
+      "run_id": "K5-a4-r1",
+      "case_id": "K5",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        3,
+        4,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4
+      ],
+      "governance_mean_9d": 4.4444,
+      "narrative_usefulness": 4,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-05",
+      "run_id": "K2-a2-r1",
+      "case_id": "K2",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        3,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.5556,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-06",
+      "run_id": "K6-a2-r2",
+      "case_id": "K6",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        3,
+        4,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.3333,
+      "narrative_usefulness": 5,
+      "objective_outcome": "FAIL \u2014 projection/budget",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-07",
+      "run_id": "K2-a4-r2",
+      "case_id": "K2",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        4,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.5556,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-08",
+      "run_id": "K7-a4-r2",
+      "case_id": "K7",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        4,
+        4,
+        5,
+        4,
+        5,
+        3,
+        4
+      ],
+      "governance_mean_9d": 4.2222,
+      "narrative_usefulness": 4,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-09",
+      "run_id": "K4-a4-r1",
+      "case_id": "K4",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-10",
+      "run_id": "K6-a2-r1",
+      "case_id": "K6",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "FAIL \u2014 projection/budget",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-11",
+      "run_id": "K6-a4-r1",
+      "case_id": "K6",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.7778,
+      "narrative_usefulness": 5,
+      "objective_outcome": "FAIL \u2014 projection/budget",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-12",
+      "run_id": "K7-a4-r1",
+      "case_id": "K7",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.7778,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-13",
+      "run_id": "K5-a4-r2",
+      "case_id": "K5",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4
+      ],
+      "governance_mean_9d": 4.5556,
+      "narrative_usefulness": 4,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-14",
+      "run_id": "K1-a2-r1",
+      "case_id": "K1",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-15",
+      "run_id": "K1-a4-r1",
+      "case_id": "K1",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        1,
+        2,
+        4,
+        4,
+        5,
+        5,
+        5,
+        5,
+        3
+      ],
+      "governance_mean_9d": 3.7778,
+      "narrative_usefulness": 3,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-16",
+      "run_id": "K4-a4-r2",
+      "case_id": "K4",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-17",
+      "run_id": "K5-a2-r1",
+      "case_id": "K5",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.6667,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-18",
+      "run_id": "K1-a2-r2",
+      "case_id": "K1",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.7778,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-19",
+      "run_id": "K3-a4-r1",
+      "case_id": "K3",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 5.0,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-20",
+      "run_id": "K3-a2-r1",
+      "case_id": "K3",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 5.0,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-21",
+      "run_id": "K1-a4-r2",
+      "case_id": "K1",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.7778,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-22",
+      "run_id": "K4-a2-r1",
+      "case_id": "K4",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-23",
+      "run_id": "K7-a2-r1",
+      "case_id": "K7",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 1,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 5.0,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-24",
+      "run_id": "K3-a2-r2",
+      "case_id": "K3",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 5.0,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-25",
+      "run_id": "K2-a2-r2",
+      "case_id": "K2",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-26",
+      "run_id": "K7-a2-r2",
+      "case_id": "K7",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        4,
+        5,
+        3,
+        5,
+        5,
+        5,
+        5,
+        2,
+        4
+      ],
+      "governance_mean_9d": 4.2222,
+      "narrative_usefulness": 4,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-27",
+      "run_id": "K3-a4-r2",
+      "case_id": "K3",
+      "architecture_arm": "lean_a4_knowledge",
+      "rep_index": 2,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    },
+    {
+      "blind_label": "G3E-28",
+      "run_id": "K4-a2-r2",
+      "case_id": "K4",
+      "architecture_arm": "a2_indexed_retrieval",
+      "rep_index": 2,
+      "governance_scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5
+      ],
+      "governance_mean_9d": 4.8889,
+      "narrative_usefulness": 5,
+      "objective_outcome": "PASS",
+      "tier1_clear": true
+    }
+  ],
+  "arm_summary": {
+    "a2_indexed_retrieval": {
+      "n": 14,
+      "overall_mean_9d": 4.753978571428571,
+      "narrative_usefulness_mean": 4.928571428571429,
+      "dimension_means": {
+        "factual_world_consistency": 4.142857142857143,
+        "character_knowledge_fidelity": 4.785714285714286,
+        "natural_integration_of_retrieved_knowledge": 4.642857142857143,
+        "responsiveness": 5,
+        "character_fidelity": 5,
+        "initiative": 4.928571428571429,
+        "coherence": 5,
+        "unnecessary_exposition": 4.357142857142857,
+        "narrative_usefulness_adjunct": 4.928571428571429
+      },
+      "dimension_ranges": {
+        "factual_world_consistency": {
+          "min": 3,
+          "max": 5
+        },
+        "character_knowledge_fidelity": {
+          "min": 4,
+          "max": 5
+        },
+        "natural_integration_of_retrieved_knowledge": {
+          "min": 3,
+          "max": 5
+        },
+        "responsiveness": {
+          "min": 5,
+          "max": 5
+        },
+        "character_fidelity": {
+          "min": 5,
+          "max": 5
+        },
+        "initiative": {
+          "min": 4,
+          "max": 5
+        },
+        "coherence": {
+          "min": 5,
+          "max": 5
+        },
+        "unnecessary_exposition": {
+          "min": 2,
+          "max": 5
+        },
+        "narrative_usefulness_adjunct": {
+          "min": 4,
+          "max": 5
+        }
+      }
+    },
+    "lean_a4_knowledge": {
+      "n": 14,
+      "overall_mean_9d": 4.627,
+      "narrative_usefulness_mean": 4.642857142857143,
+      "dimension_means": {
+        "factual_world_consistency": 3.7857142857142856,
+        "character_knowledge_fidelity": 4.571428571428571,
+        "natural_integration_of_retrieved_knowledge": 4.642857142857143,
+        "responsiveness": 4.857142857142857,
+        "character_fidelity": 5,
+        "initiative": 4.5,
+        "coherence": 5,
+        "unnecessary_exposition": 4.642857142857143,
+        "narrative_usefulness_adjunct": 4.642857142857143
+      },
+      "dimension_ranges": {
+        "factual_world_consistency": {
+          "min": 1,
+          "max": 5
+        },
+        "character_knowledge_fidelity": {
+          "min": 2,
+          "max": 5
+        },
+        "natural_integration_of_retrieved_knowledge": {
+          "min": 4,
+          "max": 5
+        },
+        "responsiveness": {
+          "min": 4,
+          "max": 5
+        },
+        "character_fidelity": {
+          "min": 5,
+          "max": 5
+        },
+        "initiative": {
+          "min": 4,
+          "max": 5
+        },
+        "coherence": {
+          "min": 5,
+          "max": 5
+        },
+        "unnecessary_exposition": {
+          "min": 3,
+          "max": 5
+        },
+        "narrative_usefulness_adjunct": {
+          "min": 3,
+          "max": 5
+        }
+      }
+    }
+  },
+  "a2_minus_a4_delta": {
+    "factual_world_consistency": 0.35714285714285765,
+    "character_knowledge_fidelity": 0.2142857142857144,
+    "natural_integration_of_retrieved_knowledge": 0.0,
+    "responsiveness": 0.14285714285714324,
+    "character_fidelity": 0,
+    "initiative": 0.4285714285714288,
+    "coherence": 0,
+    "unnecessary_exposition": -0.2857142857142865,
+    "narrative_usefulness_adjunct": 0.2857142857142856,
+    "overall_9d": 0.12697857142857139,
+    "narrative_usefulness": 0.2857142857142856
+  },
+  "arm_accounting": {
+    "a2_indexed_retrieval": {
+      "architecture_arm": "a2_indexed_retrieval",
+      "completed_runs": 14,
+      "librarian_mediation_total": 0,
+      "inference_count_total": 296,
+      "input_tokens_total": 82617,
+      "output_tokens_total": 113520,
+      "reasoning_tokens_total": 89834,
+      "wall_ms_total": 934589
+    },
+    "lean_a4_knowledge": {
+      "architecture_arm": "lean_a4_knowledge",
+      "completed_runs": 14,
+      "librarian_mediation_total": 20,
+      "inference_count_total": 514,
+      "input_tokens_total": 367593,
+      "output_tokens_total": 278220,
+      "reasoning_tokens_total": 190320,
+      "wall_ms_total": 1895502
+    }
+  },
+  "tier1_report": {
+    "blocking_failures": [],
+    "any_tier1_blocking": false
+  },
+  "librarian_mediation_by_run": [
+    {
+      "run_id": "K1-a4-r1",
+      "case_id": "K1",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 2,
+      "classifications": [
+        "uncertain",
+        "uncertain"
+      ],
+      "decision_changed": [
+        null,
+        null
+      ],
+      "observable_benefit": [
+        null,
+        null
+      ]
+    },
+    {
+      "run_id": "K1-a4-r2",
+      "case_id": "K1",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 5,
+      "classifications": [
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain"
+      ],
+      "decision_changed": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "observable_benefit": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "run_id": "K2-a4-r1",
+      "case_id": "K2",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K2-a4-r2",
+      "case_id": "K2",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K3-a4-r2",
+      "case_id": "K3",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 4,
+      "classifications": [
+        "uncertain",
+        "uncertain",
+        "uncertain",
+        "uncertain"
+      ],
+      "decision_changed": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "observable_benefit": [
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "run_id": "K5-a4-r1",
+      "case_id": "K5",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K5-a4-r2",
+      "case_id": "K5",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K6-a4-r1",
+      "case_id": "K6",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K6-a4-r2",
+      "case_id": "K6",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 2,
+      "classifications": [
+        "uncertain",
+        "uncertain"
+      ],
+      "decision_changed": [
+        null,
+        null
+      ],
+      "observable_benefit": [
+        null,
+        null
+      ]
+    },
+    {
+      "run_id": "K7-a4-r1",
+      "case_id": "K7",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    },
+    {
+      "run_id": "K7-a4-r2",
+      "case_id": "K7",
+      "architecture_arm": "lean_a4_knowledge",
+      "entry_count": 1,
+      "classifications": [
+        "uncertain"
+      ],
+      "decision_changed": [
+        null
+      ],
+      "observable_benefit": [
+        null
+      ]
+    }
+  ],
+  "k3_forensics_by_run": [
+    {
+      "run_id": "K3-a2-r1",
+      "architecture_arm": "a2_indexed_retrieval",
+      "k3_forensics": {
+        "schema": "issue201_g3e_k3_seven_stage_v1",
+        "case_id": "K3",
+        "forbidden_record_id": "g3e-private-kizzie-debt",
+        "steps": [
+          {
+            "step": 1,
+            "name": "record_exists",
+            "pass": true,
+            "evidence": {
+              "record_id": "g3e-private-kizzie-debt"
+            }
+          },
+          {
+            "step": 2,
+            "name": "retrieval_relevant",
+            "pass": true,
+            "evidence": {
+              "k3_relevance_set": [
+                "financial",
+                "prior tenancy",
+                "debt",
+                "judgment"
+              ],
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 3,
+            "name": "pre_entitlement_encounter",
+            "pass": true,
+            "evidence": {
+              "probe_kind": "offline_pre_entitlement_relevance",
+              "read_only": true,
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 4,
+            "name": "entitlement_rejection",
+            "pass": true,
+            "evidence": {
+              "per_record_entitled": false,
+              "entitlement_rejection_count": 13,
+              "hard_access_rejected": 13
+            }
+          },
+          {
+            "step": 5,
+            "name": "not_in_eligible_set",
+            "pass": true,
+            "evidence": {
+              "eligible_record_ids_sample": [
+                "g3e-curfew-2019-9pm",
+                "g3e-curfew-2024-11pm",
+                "g3e-dep-0-a",
+                "g3e-dep-0-b",
+                "g3e-dep-1-a",
+                "g3e-dep-1-b",
+                "g3e-dep-2-a",
+                "g3e-dep-2-b",
+                "g3e-dep-3-a",
+                "g3e-dep-3-b",
+                "g3e-dep-4-a",
+                "g3e-dep-4-b",
+                "g3e-dep-5-a",
+                "g3e-dep-5-b",
+                "g3e-dep-6-a",
+                "g3e-dep-6-b",
+                "g3e-dep-7-a",
+                "g3e-dep-7-b",
+                "g3e-distract-annex-002",
+                "g3e-distract-annex-006"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "name": "not_in_character_input",
+            "pass": true,
+            "evidence": {
+              "mode": "mock",
+              "character_manifest_record_ids": [],
+              "forbidden_absent": true
+            }
+          },
+          {
+            "step": 7,
+            "name": "not_in_output",
+            "pass": true,
+            "evidence": {
+              "mode": "deferred_to_live_run",
+              "forbidden_in_presentation": true
+            }
+          }
+        ],
+        "all_production_stages_pass": true,
+        "apparatus_mock_stages_pass": true
+      }
+    },
+    {
+      "run_id": "K3-a2-r2",
+      "architecture_arm": "a2_indexed_retrieval",
+      "k3_forensics": {
+        "schema": "issue201_g3e_k3_seven_stage_v1",
+        "case_id": "K3",
+        "forbidden_record_id": "g3e-private-kizzie-debt",
+        "steps": [
+          {
+            "step": 1,
+            "name": "record_exists",
+            "pass": true,
+            "evidence": {
+              "record_id": "g3e-private-kizzie-debt"
+            }
+          },
+          {
+            "step": 2,
+            "name": "retrieval_relevant",
+            "pass": true,
+            "evidence": {
+              "k3_relevance_set": [
+                "financial",
+                "prior tenancy",
+                "debt",
+                "judgment"
+              ],
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 3,
+            "name": "pre_entitlement_encounter",
+            "pass": true,
+            "evidence": {
+              "probe_kind": "offline_pre_entitlement_relevance",
+              "read_only": true,
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 4,
+            "name": "entitlement_rejection",
+            "pass": true,
+            "evidence": {
+              "per_record_entitled": false,
+              "entitlement_rejection_count": 13,
+              "hard_access_rejected": 13
+            }
+          },
+          {
+            "step": 5,
+            "name": "not_in_eligible_set",
+            "pass": true,
+            "evidence": {
+              "eligible_record_ids_sample": [
+                "g3e-curfew-2019-9pm",
+                "g3e-curfew-2024-11pm",
+                "g3e-dep-0-a",
+                "g3e-dep-0-b",
+                "g3e-dep-1-a",
+                "g3e-dep-1-b",
+                "g3e-dep-2-a",
+                "g3e-dep-2-b",
+                "g3e-dep-3-a",
+                "g3e-dep-3-b",
+                "g3e-dep-4-a",
+                "g3e-dep-4-b",
+                "g3e-dep-5-a",
+                "g3e-dep-5-b",
+                "g3e-dep-6-a",
+                "g3e-dep-6-b",
+                "g3e-dep-7-a",
+                "g3e-dep-7-b",
+                "g3e-distract-annex-002",
+                "g3e-distract-annex-006"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "name": "not_in_character_input",
+            "pass": true,
+            "evidence": {
+              "mode": "mock",
+              "character_manifest_record_ids": [],
+              "forbidden_absent": true
+            }
+          },
+          {
+            "step": 7,
+            "name": "not_in_output",
+            "pass": true,
+            "evidence": {
+              "mode": "deferred_to_live_run",
+              "forbidden_in_presentation": true
+            }
+          }
+        ],
+        "all_production_stages_pass": true,
+        "apparatus_mock_stages_pass": true
+      }
+    },
+    {
+      "run_id": "K3-a4-r1",
+      "architecture_arm": "lean_a4_knowledge",
+      "k3_forensics": {
+        "schema": "issue201_g3e_k3_seven_stage_v1",
+        "case_id": "K3",
+        "forbidden_record_id": "g3e-private-kizzie-debt",
+        "steps": [
+          {
+            "step": 1,
+            "name": "record_exists",
+            "pass": true,
+            "evidence": {
+              "record_id": "g3e-private-kizzie-debt"
+            }
+          },
+          {
+            "step": 2,
+            "name": "retrieval_relevant",
+            "pass": true,
+            "evidence": {
+              "k3_relevance_set": [
+                "financial",
+                "prior tenancy",
+                "debt",
+                "judgment"
+              ],
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 3,
+            "name": "pre_entitlement_encounter",
+            "pass": true,
+            "evidence": {
+              "probe_kind": "offline_pre_entitlement_relevance",
+              "read_only": true,
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 4,
+            "name": "entitlement_rejection",
+            "pass": true,
+            "evidence": {
+              "per_record_entitled": false,
+              "entitlement_rejection_count": 13,
+              "hard_access_rejected": 13
+            }
+          },
+          {
+            "step": 5,
+            "name": "not_in_eligible_set",
+            "pass": true,
+            "evidence": {
+              "eligible_record_ids_sample": [
+                "g3e-curfew-2019-9pm",
+                "g3e-curfew-2024-11pm",
+                "g3e-dep-0-a",
+                "g3e-dep-0-b",
+                "g3e-dep-1-a",
+                "g3e-dep-1-b",
+                "g3e-dep-2-a",
+                "g3e-dep-2-b",
+                "g3e-dep-3-a",
+                "g3e-dep-3-b",
+                "g3e-dep-4-a",
+                "g3e-dep-4-b",
+                "g3e-dep-5-a",
+                "g3e-dep-5-b",
+                "g3e-dep-6-a",
+                "g3e-dep-6-b",
+                "g3e-dep-7-a",
+                "g3e-dep-7-b",
+                "g3e-distract-annex-002",
+                "g3e-distract-annex-006"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "name": "not_in_character_input",
+            "pass": true,
+            "evidence": {
+              "mode": "mock",
+              "character_manifest_record_ids": [],
+              "forbidden_absent": true
+            }
+          },
+          {
+            "step": 7,
+            "name": "not_in_output",
+            "pass": true,
+            "evidence": {
+              "mode": "deferred_to_live_run",
+              "forbidden_in_presentation": true
+            }
+          }
+        ],
+        "all_production_stages_pass": true,
+        "apparatus_mock_stages_pass": true
+      }
+    },
+    {
+      "run_id": "K3-a4-r2",
+      "architecture_arm": "lean_a4_knowledge",
+      "k3_forensics": {
+        "schema": "issue201_g3e_k3_seven_stage_v1",
+        "case_id": "K3",
+        "forbidden_record_id": "g3e-private-kizzie-debt",
+        "steps": [
+          {
+            "step": 1,
+            "name": "record_exists",
+            "pass": true,
+            "evidence": {
+              "record_id": "g3e-private-kizzie-debt"
+            }
+          },
+          {
+            "step": 2,
+            "name": "retrieval_relevant",
+            "pass": true,
+            "evidence": {
+              "k3_relevance_set": [
+                "financial",
+                "prior tenancy",
+                "debt",
+                "judgment"
+              ],
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 3,
+            "name": "pre_entitlement_encounter",
+            "pass": true,
+            "evidence": {
+              "probe_kind": "offline_pre_entitlement_relevance",
+              "read_only": true,
+              "pre_probe": {
+                "probe_kind": "offline_pre_entitlement_relevance",
+                "read_only": true,
+                "does_not_alter_production_path": true,
+                "query_text": "financial\nprior tenancy\ndebt\njudgment\napplication\nhg-session-424b3241-8993-454d-890e-24bd2990bd93",
+                "referent_pool_count": 307,
+                "ranked_ids_sample": [
+                  "g3e-curfew-2019-9pm",
+                  "g3e-curfew-2024-11pm",
+                  "g3e-k2-ayame-curfew-policy",
+                  "g3e-distract-riverside-curfew",
+                  "g3e-distract-annex-guest-policy",
+                  "g3e-distract-annex-002",
+                  "g3e-distract-annex-006",
+                  "g3e-distract-annex-010",
+                  "g3e-distract-annex-014",
+                  "g3e-distract-annex-018",
+                  "g3e-distract-annex-022",
+                  "g3e-distract-annex-026",
+                  "g3e-distract-annex-030",
+                  "g3e-distract-annex-034",
+                  "g3e-distract-annex-038",
+                  "g3e-distract-harbor-003"
+                ],
+                "target_record_id": "g3e-private-kizzie-debt",
+                "target_in_referent_pool": true,
+                "target_in_unconstrained_rank": false
+              }
+            }
+          },
+          {
+            "step": 4,
+            "name": "entitlement_rejection",
+            "pass": true,
+            "evidence": {
+              "per_record_entitled": false,
+              "entitlement_rejection_count": 13,
+              "hard_access_rejected": 13
+            }
+          },
+          {
+            "step": 5,
+            "name": "not_in_eligible_set",
+            "pass": true,
+            "evidence": {
+              "eligible_record_ids_sample": [
+                "g3e-curfew-2019-9pm",
+                "g3e-curfew-2024-11pm",
+                "g3e-dep-0-a",
+                "g3e-dep-0-b",
+                "g3e-dep-1-a",
+                "g3e-dep-1-b",
+                "g3e-dep-2-a",
+                "g3e-dep-2-b",
+                "g3e-dep-3-a",
+                "g3e-dep-3-b",
+                "g3e-dep-4-a",
+                "g3e-dep-4-b",
+                "g3e-dep-5-a",
+                "g3e-dep-5-b",
+                "g3e-dep-6-a",
+                "g3e-dep-6-b",
+                "g3e-dep-7-a",
+                "g3e-dep-7-b",
+                "g3e-distract-annex-002",
+                "g3e-distract-annex-006"
+              ]
+            }
+          },
+          {
+            "step": 6,
+            "name": "not_in_character_input",
+            "pass": true,
+            "evidence": {
+              "mode": "mock",
+              "character_manifest_record_ids": [],
+              "forbidden_absent": true
+            }
+          },
+          {
+            "step": 7,
+            "name": "not_in_output",
+            "pass": true,
+            "evidence": {
+              "mode": "deferred_to_live_run",
+              "forbidden_in_presentation": true
+            }
+          }
+        ],
+        "all_production_stages_pass": true,
+        "apparatus_mock_stages_pass": true
+      }
+    }
+  ],
+  "status": "decoded_pending_governance_adjudication"
+}
