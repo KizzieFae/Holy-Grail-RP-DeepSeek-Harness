@@ -27,6 +27,17 @@ import {
 } from './a2-actor-isolation-audit.mjs';
 import { runPostCommitPlotCognitionLifecycle } from './plot-cognition-orchestration.mjs';
 import { runA2IndexedRetrievalStep } from './a2-indexed-retrieval.mjs';
+import { runLh0PostCommitAdapter } from '../../scripts/lib/issue201-lh0-post-commit-adapters.mjs';
+import { LH0_ARMS } from '../../scripts/lib/issue201-lh0-arms.mjs';
+import {
+  prepareLh0RoundTransport,
+  recordLh0TransportAuditStep,
+  buildLh0ConsequenceMarker,
+} from '../../scripts/lib/issue201-lh0-transport.mjs';
+import {
+  buildCharacterConsumerEvidence,
+  extractLh0ObligationIdsFromManifest,
+} from '../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
 
 export const A2_TOPOLOGY_ABSENT = [
   'storyteller_preamble',
@@ -238,6 +249,38 @@ export async function runA2BeatRound({
       hard_access_rejected: indexedRetrieval.hard_access_rejected,
     }));
   }
+  let lh0PrecomputedProjection = options.lh0PrecomputedProjection ?? null;
+  let lh0Transport = null;
+  let lh0DirectorProjectionReceipt = null;
+  const cognitionTurnIndex = Number(round.turn_index ?? 0);
+  let projectionLifecycleForCharacter = options.projectionLifecycleEnabled === true;
+  if (options.lh0Arm && options.lh0SessionsDir) {
+    lh0Transport = prepareLh0RoundTransport({
+      sessionsDir: options.lh0SessionsDir,
+      hgSessionId,
+      hgRoundId,
+      turnIndex: cognitionTurnIndex,
+      characterId,
+      arm: options.lh0Arm,
+      faultInjection: options.lh0FaultInjection ?? null,
+    });
+    lh0DirectorProjectionReceipt = lh0Transport.directorProjection;
+    if (!lh0PrecomputedProjection) {
+      if (options.lh0Arm === LH0_ARMS.LH_B) {
+        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
+        projectionLifecycleForCharacter = lh0Transport.usePlotProjectionLifecycle
+          && !lh0PrecomputedProjection;
+      } else {
+        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
+        projectionLifecycleForCharacter = false;
+      }
+    }
+    const transportAudit = recordLh0TransportAuditStep(lh0Transport, {
+      omitCharacterReceipt: options.lh0FaultInjection === 'omit_receipt',
+    });
+    auditSteps.push(createAuditStep('lh0_projection_transport', transportAudit));
+  }
+
   const characterInferenceId = `inf-a2-character-${crypto.randomUUID()}`;
   const characterStartedAt = Date.now();
   const characterTurn = await phaseExecutors.runCharacter({
@@ -260,8 +303,24 @@ export async function runA2BeatRound({
     prompt: options.livePrompts?.character ?? LIVE_CHARACTER_PROMPT,
     skipCharacterKnowledgeCognition: options.skipCharacterKnowledgeCognition !== false,
     semanticEvaluationEnabled: characterSemanticEvaluationEnabled,
-    projectionLifecycleEnabled: options.projectionLifecycleEnabled === true,
+    projectionLifecycleEnabled: projectionLifecycleForCharacter,
+    precomputedFinalizedProjection: lh0PrecomputedProjection,
+    lh0ExpectedObligationIds: lh0Transport?.characterDue?.map((o) => o.obligation_id) ?? [],
   });
+  if (lh0Transport && characterTurn.consumerManifest) {
+    const charEvidence = buildCharacterConsumerEvidence({
+      manifest: characterTurn.consumerManifest,
+      finalizedProjection: lh0PrecomputedProjection,
+      projectionSupplied: Boolean(lh0PrecomputedProjection),
+      obligationIdsExpected: lh0Transport.characterDue.map((o) => o.obligation_id),
+    });
+    const transportAudit = auditSteps.find((s) => s.step === 'lh0_projection_transport');
+    if (transportAudit) {
+      transportAudit.character_consumer_receipt = charEvidence.consumer_received;
+      transportAudit.received_obligation_ids = charEvidence.received_obligation_ids;
+    }
+    auditSteps.push(createAuditStep('lh0_character_consumer_receipt', charEvidence));
+  }
   decisionValue.record({
     inference_kind: 'character_move',
     experimental_identity: 'a2_character_move',
@@ -399,7 +458,29 @@ export async function runA2BeatRound({
 
   let plotPostCommit = { skipped: true, reason: 'g3a_default_off' };
   let plotPostCommitWallMs = 0;
-  if (!skipPostCommitPlot && options.runPostCommitPlot === true) {
+  let lh0PostCommit = null;
+  if (options.lh0Arm && options.lh0SessionsDir) {
+    const lh0Started = Date.now();
+    lh0PostCommit = await runLh0PostCommitAdapter({
+      arm: options.lh0Arm,
+      domainApi: api,
+      trace,
+      sceneAgent,
+      scope: { hgSessionId, hgSceneId, hgRoundId, sceneSessionId },
+      hgSceneId,
+      hgRoundId,
+      hgSessionId,
+      domainCommitId: characterTurn.domainCommitId,
+      turnIndex: cognitionTurnIndex,
+      presentationText,
+      sessionsDir: options.lh0SessionsDir,
+      runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
+      modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
+      evidenceContextBase: { hgSessionId, hgSceneId, hgRoundId, sceneSessionId },
+    });
+    lh0PostCommit.wall_ms = Date.now() - lh0Started;
+    auditSteps.push(createAuditStep('lh0_post_commit', lh0PostCommit));
+  } else if (!skipPostCommitPlot && options.runPostCommitPlot === true) {
     const plotStartedAt = Date.now();
     plotPostCommit = await runPostCommitPlotCognitionLifecycle({
       domainApi: api,
@@ -496,6 +577,28 @@ export async function runA2BeatRound({
     audit_steps: auditSteps,
     decision_value: decisionValue.toJSON(),
     plot_post_commit: plotPostCommit,
+    lh0_post_commit: lh0PostCommit,
+    lh0_transport: lh0Transport ? {
+      director: {
+        receipt_applicable: lh0Transport.director_receipt_applicable,
+        deterministic_fixture: lh0Transport.director_deterministic_fixture,
+        projected_obligation_ids: lh0Transport.directorDue.map((o) => o.obligation_id),
+        consumer_receipt: false,
+      },
+      character: characterTurn.lh0ConsumerEvidence ?? null,
+      projected_finalized: lh0Transport.projected_finalized,
+      candidate_only: lh0Transport.candidate_only,
+      fault_injection: lh0Transport.fault_injection,
+    } : null,
+    lh0_consequences: (() => {
+      if (!lh0Transport || !characterTurn.committed) return null;
+      const received = extractLh0ObligationIdsFromManifest(characterTurn.consumerManifest);
+      const referenced = characterTurn.lh0ConsumerEvidence?.referenced_obligation_ids ?? [];
+      const linked = referenced.length ? referenced : received;
+      if (!linked.length) return null;
+      return buildLh0ConsequenceMarker(linked, { turnIndex: cognitionTurnIndex, hgRoundId });
+    })(),
+    lh0_director_projection_receipt: lh0DirectorProjectionReceipt,
     efficiency: {
       critical_path_wall_ms: criticalPathWallMs,
       plot_post_commit_wall_ms: plotPostCommitWallMs,

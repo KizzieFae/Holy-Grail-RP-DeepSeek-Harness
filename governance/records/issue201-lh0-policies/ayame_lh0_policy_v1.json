@@ -1,0 +1,46 @@
+{
+  "schema": "issue201_lh0_player_policy_v1",
+  "policy_id": "ayame_lh0_policy_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turn_count": 6,
+  "fixture_id": "lh0_seam_micro_v1",
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Arrive; establish interview; seed LH0-OBL-IMMEDIATE household curfew concern",
+      "realization": "Kizzie knocks and says quietly, \"I'm here for the live-in position. I should mention I cannot be out past ten on weeknights—it's a hard constraint for me.\""
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "fixed",
+      "objective": "Introduce deferred obligations; do not resolve curfew yet",
+      "realization": "Kizzie adds, \"I also need clarity on whether guests are ever permitted overnight. I won't assume that's allowed.\""
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "fixed",
+      "objective": "Immediate-obligation activation window for director consumer",
+      "realization": "Kizzie waits, then asks directly, \"Given my curfew, would you still want me on evening duty in the main house?\""
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "fixed",
+      "objective": "Hold deferred guest-policy thread; premature-control must not fire",
+      "realization": "Kizzie folds her hands. \"I can follow household rules. I just need them stated clearly before I agree to anything.\""
+    },
+    {
+      "turn_index": 5,
+      "branch_mode": "fixed",
+      "objective": "Deferred/later activation window for character consumer",
+      "realization": "Kizzie meets Ayame's eyes. \"About overnight guests—if that's never allowed, I need to hear you say it plainly now, before we discuss start date.\""
+    },
+    {
+      "turn_index": 6,
+      "branch_mode": "fixed",
+      "objective": "Consequence turn; observe downstream use of prior obligations",
+      "realization": "Kizzie nods once. \"Then I'll plan accordingly. Tell me what evening duties you expect if my curfew stays at ten.\""
+    }
+  ]
+}
