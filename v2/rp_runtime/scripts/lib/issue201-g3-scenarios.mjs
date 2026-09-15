@@ -13,7 +13,7 @@ export const G3_SCENARIOS = {
       'Kizzie glanced up, double-checking the house number and then steeled herself before knocking.',
   },
   ayame_archive_interview: {
-    id: 'ayame_archive_interview',
+    id: 'ayame_household_entry_evaluation',
     scenario_key: 'ayame_archive_interview',
     characters: ['ayame', 'kizzie'],
     roleAssignments: { ayame: 'host', kizzie: 'applicant' },
