@@ -1,8 +1,11 @@
 /**
  * Issue #201 LH-0 — consumer receipt / use / influence evidence (harness-only).
  */
-import { LIFECYCLE_STATES } from './issue201-lifecycle-states.mjs';
 import { validateBridgeManifest } from '../../src/lib/manifest-validation.mjs';
+import {
+  evaluateTurnCausalEvidence,
+  isBookkeepingOnlySemanticContent,
+} from './issue201-lh0-semantic-content.mjs';
 
 export const LH0_OBLIGATION_KNOWLEDGE_PREFIX = 'lh0-obligation:';
 
@@ -17,9 +20,6 @@ export function extractLh0ObligationIdsFromManifest(manifest) {
         ids.add(text.slice(LH0_OBLIGATION_KNOWLEDGE_PREFIX.length));
       }
     }
-    const content = String(c?.content ?? '');
-    const match = content.match(/LH0-OBL-[A-Z0-9_-]+/g);
-    for (const m of match ?? []) ids.add(m);
   }
   return [...ids];
 }
@@ -62,6 +62,11 @@ export function buildCharacterConsumerEvidence({
   const projectedIds = extractLh0ObligationIdsFromProjection(finalizedProjection);
   const expected = obligationIdsExpected.filter(Boolean);
   const receivedExpected = expected.filter((id) => receivedIds.includes(id));
+  const semanticPayloadSamples = (manifest?.contributions ?? [])
+    .filter((c) => c?.provenance?.lh0_obligation_id)
+    .map((c) => String(c.content ?? ''));
+  const semanticReceiptAdequate = semanticPayloadSamples.length > 0
+    && semanticPayloadSamples.every((content) => !isBookkeepingOnlySemanticContent(content));
   return {
     projection_supplied: projectionSupplied === true,
     projected_obligation_ids: projectedIds,
@@ -71,26 +76,21 @@ export function buildCharacterConsumerEvidence({
     consumer_received: expected.length === 0
       ? receivedIds.length > 0
       : receivedExpected.length > 0,
+    semantic_payload_samples: semanticPayloadSamples,
+    semantic_receipt_adequate: semanticReceiptAdequate,
     contribution_source_kinds: (manifest?.contributions ?? []).map((c) => c.source_kind).filter(Boolean),
   };
 }
 
-const OBLIGATION_SEMANTIC_MARKERS = {
-  'LH0-OBL-IMMEDIATE': ['curfew', 'weeknight', 'ten', 'evening duty'],
-  'LH0-OBL-DEFERRED': ['curfew', 'weeknight', 'ten', 'evening duty'],
-  'LH0-OBL-LATER': ['guest', 'overnight', 'visitors'],
-};
-
-export function detectObligationUseInText(text, obligationIds) {
-  const haystack = String(text ?? '').toLowerCase();
-  const used = [];
-  for (const id of obligationIds) {
-    const token = String(id).toLowerCase();
-    if (haystack.includes(token)) used.push(id);
-    const markers = OBLIGATION_SEMANTIC_MARKERS[id] ?? [];
-    if (markers.some((m) => haystack.includes(m))) used.push(id);
-  }
-  return [...new Set(used)];
+export function detectObligationUseInText(text, obligationIds, { turnIndex = null, fixture = null } = {}) {
+  const causal = evaluateTurnCausalEvidence({
+    turnIndex,
+    moveText: text,
+    presentationText: text,
+    receivedObligationIds: obligationIds,
+    fixture,
+  });
+  return causal.influenced_obligation_ids;
 }
 
 export function buildTurnConsumerForensics({
@@ -129,14 +129,9 @@ export function buildTurnConsumerForensics({
   };
 }
 
-export function obligationMetDeferredLaterChain(store, obligationId) {
-  const ob = store.obligations.find((o) => o.obligation_id === obligationId);
-  if (!ob) return false;
-  const hadDeferred = store.events.some((e) => (
-    e.obligation_id === obligationId
-    && (e.event_type === 'deferred_valid' || e.lifecycle_state === LIFECYCLE_STATES.DEFERRED_VALID)
-  )) || ob.intro_turn < (ob.activated_turn ?? 999);
-  return hadDeferred
-    && ob.activated_turn != null
-    && ob.lifecycle_state === LIFECYCLE_STATES.ACTIVATED_CONSEQUENTIAL;
+export function projectionSemanticAdequate(projection) {
+  const samples = (projection?.contributions ?? [])
+    .filter((c) => c?.provenance?.lh0_obligation_id)
+    .map((c) => String(c.content ?? ''));
+  return samples.length > 0 && samples.every((content) => !isBookkeepingOnlySemanticContent(content));
 }

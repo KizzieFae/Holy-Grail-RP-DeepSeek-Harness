@@ -306,6 +306,7 @@ export async function runA2BeatRound({
     projectionLifecycleEnabled: projectionLifecycleForCharacter,
     precomputedFinalizedProjection: lh0PrecomputedProjection,
     lh0ExpectedObligationIds: lh0Transport?.characterDue?.map((o) => o.obligation_id) ?? [],
+    lh0FixtureTurnIndex: options.lh0FixtureTurnIndex ?? null,
   });
   if (lh0Transport && characterTurn.consumerManifest) {
     const charEvidence = buildCharacterConsumerEvidence({
@@ -592,11 +593,12 @@ export async function runA2BeatRound({
     } : null,
     lh0_consequences: (() => {
       if (!lh0Transport || !characterTurn.committed) return null;
-      const received = extractLh0ObligationIdsFromManifest(characterTurn.consumerManifest);
-      const referenced = characterTurn.lh0ConsumerEvidence?.referenced_obligation_ids ?? [];
-      const linked = referenced.length ? referenced : received;
-      if (!linked.length) return null;
-      return buildLh0ConsequenceMarker(linked, { turnIndex: cognitionTurnIndex, hgRoundId });
+      const influenced = characterTurn.lh0ConsumerEvidence?.decision_influenced_obligation_ids ?? [];
+      if (!influenced.length) return null;
+      return buildLh0ConsequenceMarker(influenced, {
+        turnIndex: options.lh0FixtureTurnIndex ?? cognitionTurnIndex,
+        hgRoundId,
+      });
     })(),
     lh0_director_projection_receipt: lh0DirectorProjectionReceipt,
     efficiency: {

@@ -12,7 +12,8 @@
       "activation_horizon_turn": 3,
       "activation_predicate": { "type": "turn_gte", "value": 3 },
       "authorized_consumer": "director_turn",
-      "negative_control": false
+      "negative_control": false,
+      "semantic_content": "Household policy: live-in staff have a firm 10pm weeknight curfew. Evening duties in the main house must remain compatible with that curfew unless an exception is explicitly negotiated."
     },
     {
       "obligation_id": "LH0-OBL-DEFERRED",
@@ -21,8 +22,9 @@
       "activation_horizon_turn": 5,
       "activation_predicate": { "type": "turn_gte", "value": 5 },
       "authorized_consumer": "character_move",
-      "deferral_rationale": "predicate not satisfied until turn 5",
-      "negative_control": false
+      "deferral_rationale": "Applicant has not yet reached the guest-policy decision point.",
+      "negative_control": false,
+      "semantic_content": "Household policy pending guest-permission clarification: overnight guests are not permitted for live-in staff. When the applicant asks about guest permissions, state this plainly."
     },
     {
       "obligation_id": "LH0-OBL-LATER",
@@ -31,7 +33,8 @@
       "activation_horizon_turn": 5,
       "activation_predicate": { "type": "turn_gte", "value": 5 },
       "authorized_consumer": "character_move",
-      "negative_control": false
+      "negative_control": false,
+      "semantic_content": "Overnight guests are never permitted for live-in household staff at this residence."
     },
     {
       "obligation_id": "LH0-OBL-PREMATURE",
@@ -41,9 +44,85 @@
       "activation_predicate": { "type": "turn_gte", "value": 5 },
       "authorized_consumer": "character_move",
       "negative_control": true,
-      "expected_failure": "ACTIVATED_PREMATURE"
+      "expected_failure": "ACTIVATED_PREMATURE",
+      "semantic_content": "Negative control obligation — must not activate before turn 5."
     }
   ],
+  "causal_design": {
+    "information_uniqueness_obligations": [
+      "LH0-OBL-DEFERRED",
+      "LH0-OBL-LATER",
+      "LH0-OBL-IMMEDIATE"
+    ],
+    "salience": {
+      "source_kind": "active_constraints",
+      "base_priority": 18
+    },
+    "decision_forks": [
+      {
+        "fork_id": "FORK-GUEST-POLICY",
+        "obligation_ids": ["LH0-OBL-LATER", "LH0-OBL-DEFERRED"],
+        "decision_turn": 5,
+        "decision_summary": "Applicant requests an explicit overnight guest policy before agreeing to start date.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "explicit_no_overnight_guests",
+            "description": "Character states overnight guests are not allowed.",
+            "behavior_markers": [
+              "overnight guests are not",
+              "guests are not permitted",
+              "no overnight visitors",
+              "never permitted",
+              "not allowed"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "evasive_or_noncommittal",
+            "description": "Character deflects without stating guest policy.",
+            "behavior_markers": [
+              "five minutes",
+              "will not repeat",
+              "not negotiate",
+              "deciding"
+            ]
+          }
+        ]
+      },
+      {
+        "fork_id": "FORK-EVENING-DUTY-CURFEW",
+        "obligation_ids": ["LH0-OBL-IMMEDIATE"],
+        "decision_turn": 6,
+        "decision_summary": "Applicant asks what evening duties are expected if the 10pm curfew remains.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "curfew_compatible_duties",
+            "description": "Character addresses evening duties in relation to the 10pm curfew.",
+            "behavior_markers": [
+              "ten",
+              "10pm",
+              "curfew",
+              "evening duty",
+              "evening duties",
+              "compatible"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "ignores_curfew_fork",
+            "description": "Character discusses terms without addressing curfew-compatible evening duties.",
+            "behavior_markers": [
+              "advertisement",
+              "uniform",
+              "furnished room"
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "negative_controls": [
     {
       "control_id": "NC-PERSIST-MISSING",

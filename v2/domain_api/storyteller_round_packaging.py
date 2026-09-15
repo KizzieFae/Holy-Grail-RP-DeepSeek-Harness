@@ -198,6 +198,22 @@ def storyteller_contributions_for_consumer(
         policy=policy,
     ) if overlay_fresh else None
 
+    finalized_character_contributions: tuple[PromptContribution, ...] = ()
+    if (
+        consumer_target == "character"
+        and character_id
+        and isinstance(finalized_projection, dict)
+        and finalized_projection
+    ):
+        finalized_character_contributions = _contributions_from_finalized_projection(
+            finalized_projection,
+            manifest_id=manifest_id,
+            character_id=character_id,
+            hg_round_id=rnd.hg_round_id,
+            turn_index=int(rnd.turn_index),
+        )
+        contributions.extend(finalized_character_contributions)
+
     if view is not None and orch is not None:
         if consumer_target == "director":
             contributions.extend(
@@ -208,16 +224,8 @@ def storyteller_contributions_for_consumer(
                 )
             )
         elif consumer_target == "character" and character_id:
-            if isinstance(finalized_projection, dict) and finalized_projection:
-                contributions.extend(
-                    _contributions_from_finalized_projection(
-                        finalized_projection,
-                        manifest_id=manifest_id,
-                        character_id=character_id,
-                        hg_round_id=rnd.hg_round_id,
-                        turn_index=int(rnd.turn_index),
-                    )
-                )
+            if finalized_character_contributions:
+                pass
             else:
                 all_candidates = orch.collect_character_candidates(
                     fixture,

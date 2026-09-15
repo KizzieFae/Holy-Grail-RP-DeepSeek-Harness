@@ -11,6 +11,7 @@ import {
   upsertLh0Obligation,
 } from './issue201-lh0-persistent-store.mjs';
 import { loadLh0FixtureManifest } from './issue201-lh0-fixtures.mjs';
+import { seedLh0ObligationFromFixture } from './issue201-lh0-semantic-content.mjs';
 
 function buildPersistentPrompt({ arm, fixtureObligations, turnIndex, presentationText }) {
   const armLabel = arm === LH0_ARMS.LH_C ? 'persistent Storyteller-class' : 'consolidated narrative intelligence';
@@ -92,17 +93,10 @@ export async function runLh0PostCommitAdapter({
     });
     const store = readLh0Store(sessionsDir, hgSessionId);
     for (const fo of fixture.obligations) {
-      upsertLh0Obligation(store, {
-        ...fo,
-        intro_turn: fo.intro_turn,
-        activation_predicate: fo.activation_predicate,
-        activation_horizon_turn: fo.activation_horizon_turn,
-        authorized_consumer: fo.authorized_consumer,
-        deferral_rationale: fo.deferral_rationale ?? null,
-        negative_control: fo.negative_control === true,
-        summary: `plot_scribe_tracked:${fo.obligation_id}`,
+      upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
+        mechanism: 'plot_cognition_update',
         source: 'live_plot_scribe',
-      }, { turn: turnIndex, inferenceId, mechanism: 'plot_cognition_update' });
+      }), { turn: turnIndex, inferenceId, mechanism: 'plot_cognition_update' });
     }
     writeLh0Store(sessionsDir, hgSessionId, store);
     return {
@@ -149,12 +143,10 @@ export async function runLh0PostCommitAdapter({
   }
   if (!obligations.length) {
     for (const fo of fixture.obligations) {
-      upsertLh0Obligation(store, {
-        ...fo,
-        summary: `${evidenceMechanism}:${fo.obligation_id}`,
-        obligation_text: fo.class,
+      upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
+        mechanism: evidenceMechanism,
         source: 'fixture_seed',
-      }, { turn: turnIndex, inferenceId, mechanism: evidenceMechanism });
+      }), { turn: turnIndex, inferenceId, mechanism: evidenceMechanism });
     }
   }
   writeLh0Store(sessionsDir, hgSessionId, store);

@@ -738,6 +738,40 @@ class PlotCognitionOrchestrationTests(unittest.TestCase):
             any(record.outcome == "semantic_evaluator_unavailable" for record in result.forensic.records)
         )
 
+    def test_lh0_finalized_projection_merges_without_overlay_view(self) -> None:
+        fixture = _session_with_event(known_by=["Alice"])
+        rnd = _round(fixture)
+        finalized = {
+            "batch_id": "lh0-char-batch",
+            "binding_digest": "digest",
+            "binding": {
+                "batch_id": "lh0-char-batch",
+                "binding_digest": "digest",
+                "hg_round_id": rnd.hg_round_id,
+                "turn_index": int(rnd.turn_index),
+                "character_id": "Alice",
+            },
+            "contributions": [{
+                "contribution_id": "lh0-c1",
+                "source_kind": "active_constraints",
+                "authority_class": "derived",
+                "knowledge_ids": ["lh0-obligation:LH0-OBL-LATER"],
+                "priority": 18,
+                "content": "Overnight guests are never permitted for live-in household staff.",
+                "provenance": {"lh0_obligation_id": "LH0-OBL-LATER", "finalized_projection": True},
+            }],
+        }
+        contributions = storyteller_contributions_for_consumer(
+            fixture,
+            rnd,
+            manifest_id="m-lh0",
+            consumer_target="character",
+            character_id="Alice",
+            overlay_service=None,
+            finalized_projection=finalized,
+        )
+        self.assertTrue(any("Overnight guests" in item.content for item in contributions))
+
 
 class PlotCognitionPostCommitPlanningTests(unittest.TestCase):
     def test_plan_routes_reconciliation_when_authority_missing(self) -> None:

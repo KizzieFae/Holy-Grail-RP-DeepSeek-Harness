@@ -13,17 +13,31 @@ import {
   buildLh0ExecutionProtocol,
   gitSha,
 } from './lib/issue201-lh0-lib.mjs';
-import { executeLh0LiveCampaign, verifyCandidateDrift } from './lib/issue201-lh0-live-lib.mjs';
+import {
+  executeLh0FinalQualificationCampaign,
+  executeLh0LiveCampaign,
+  verifyCandidateDrift,
+} from './lib/issue201-lh0-live-lib.mjs';
 import { runLh0RemediationValidationSuite } from './lib/issue201-lh0-remediation-lib.mjs';
+import { runLh0SemanticValidationSuite } from './lib/issue201-lh0-semantic-validation-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function parseArgs(argv) {
-  const args = { validateApparatus: false, validateRemediation: false, executeLive: false, outputDir: null };
+  const args = {
+    validateApparatus: false,
+    validateRemediation: false,
+    validateSemantic: false,
+    executeLive: false,
+    executeFinalQualification: false,
+    outputDir: null,
+  };
   for (let i = 2; i < argv.length; i += 1) {
     if (argv[i] === '--validate-apparatus') args.validateApparatus = true;
     if (argv[i] === '--validate-remediation') args.validateRemediation = true;
+    if (argv[i] === '--validate-semantic') args.validateSemantic = true;
     if (argv[i] === '--execute-live') args.executeLive = true;
+    if (argv[i] === '--execute-final-qualification') args.executeFinalQualification = true;
     if (argv[i] === '--output-dir' && argv[i + 1]) {
       args.outputDir = argv[i + 1];
       i += 1;
@@ -39,9 +53,16 @@ function defaultOutputDir(prefix = 'issue201-lh0-apparatus') {
 
 async function main() {
   const args = parseArgs(process.argv);
-  if (!args.validateApparatus && !args.validateRemediation && !args.executeLive) {
-    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --execute-live) [--output-dir PATH]');
+  if (!args.validateApparatus && !args.validateRemediation && !args.validateSemantic
+    && !args.executeLive && !args.executeFinalQualification) {
+    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --validate-semantic | --execute-live | --execute-final-qualification) [--output-dir PATH]');
     process.exit(1);
+  }
+
+  if (args.validateSemantic) {
+    const semantic = runLh0SemanticValidationSuite();
+    console.log(JSON.stringify(semantic, null, 2));
+    process.exit(semantic.readiness_for_final_qualification ? 0 : 1);
   }
 
   if (args.validateRemediation) {
@@ -53,6 +74,25 @@ async function main() {
   const outputDir = args.outputDir ?? defaultOutputDir(
     args.executeLive ? 'issue201-lh0-live' : 'issue201-lh0-apparatus',
   );
+
+  if (args.executeFinalQualification) {
+    const semantic = runLh0SemanticValidationSuite();
+    if (!semantic.readiness_for_final_qualification) {
+      console.error(JSON.stringify({ error: 'LH-0 semantic validation failed', semantic }, null, 2));
+      process.exit(3);
+    }
+    const outputDir = args.outputDir ?? defaultOutputDir('issue201-lh0-final-qualification');
+    const report = await executeLh0FinalQualificationCampaign({ outputDir });
+    console.log(JSON.stringify({
+      schema: 'issue201_lh0_final_qualification_run_v1',
+      output_dir: outputDir,
+      candidate_sha: report.candidate_sha,
+      pass_fail_matrix: report.pass_fail_matrix,
+      lh1a_readiness: report.lh1a_readiness,
+      counterfactual_interpretation: report.counterfactual_interpretation,
+    }, null, 2));
+    process.exit(0);
+  }
 
   if (args.executeLive) {
     const drift = verifyCandidateDrift('a96886b');

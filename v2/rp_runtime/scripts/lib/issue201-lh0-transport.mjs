@@ -11,7 +11,10 @@ import {
   classifyLh0ObligationStates,
   writeLh0Store,
 } from './issue201-lh0-persistent-store.mjs';
-import { validateLh0FinalizedProjectionPackage } from './issue201-lh0-consumer-evidence.mjs';
+import {
+  projectionSemanticAdequate,
+  validateLh0FinalizedProjectionPackage,
+} from './issue201-lh0-consumer-evidence.mjs';
 
 export function prepareLh0RoundTransport({
   sessionsDir,
@@ -105,6 +108,7 @@ export function recordLh0TransportAuditStep(transport, { omitCharacterReceipt = 
     character_precomputed_supplied: Boolean(transport.characterPrecomputed) && !omitCharacterReceipt,
     candidate_only: transport.candidate_only === true,
     projected_finalized: transport.projected_finalized === true && !omitCharacterReceipt,
+    semantic_projection_adequate: projectionSemanticAdequate(transport.characterProjection),
     fault_injection: transport.fault_injection,
   };
 }

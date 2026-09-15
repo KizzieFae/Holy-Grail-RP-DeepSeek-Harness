@@ -3,6 +3,10 @@ import path from 'node:path';
 
 import { LIFECYCLE_STATES } from './issue201-lifecycle-states.mjs';
 import { validateDeferredValidContract } from './issue201-obligation-ledger.mjs';
+import {
+  LH0_SEMANTIC_PROJECTION_PRIORITY,
+  resolveLh0ModelFacingContent,
+} from './issue201-lh0-semantic-content.mjs';
 
 export function lh0StorePath(sessionsDir, hgSessionId) {
   const safe = String(hgSessionId).replace(/[/\\]/g, '_');
@@ -55,13 +59,7 @@ export function obligationsForConsumer(store, { turn, consumer }) {
   return store.obligations.filter((o) => {
     if (o.authorized_consumer && o.authorized_consumer !== consumer) return false;
     if (o.negative_control) return false;
-    const active = evaluateActivationPredicate(o.activation_predicate, turn);
-    if (!active && o.lifecycle_state !== LIFECYCLE_STATES.DEFERRED_VALID) {
-      if (turn < (o.activation_horizon_turn ?? 999)) {
-        return false;
-      }
-    }
-    return true;
+    return evaluateActivationPredicate(o.activation_predicate, turn);
   });
 }
 
@@ -90,8 +88,8 @@ export function buildLh0FinalizedProjection(obligations, {
     source_kind: sourceKind,
     authority_class: 'derived',
     knowledge_ids: [`lh0-obligation:${o.obligation_id}`],
-    priority: 18 + index,
-    content: `${o.obligation_id}: ${o.summary ?? o.obligation_text ?? o.class ?? 'lh0_obligation'}`,
+    priority: LH0_SEMANTIC_PROJECTION_PRIORITY + index,
+    content: resolveLh0ModelFacingContent(o),
     provenance: {
       lh0_obligation_id: o.obligation_id,
       lh0_fixture_class: o.class ?? null,

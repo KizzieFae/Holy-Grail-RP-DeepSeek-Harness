@@ -24,8 +24,8 @@ import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mj
 import { roleForCharacter } from './role-utils.mjs';
 import {
   buildCharacterConsumerEvidence,
-  detectObligationUseInText,
 } from '../../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
+import { evaluateTurnCausalEvidence } from '../../../scripts/lib/issue201-lh0-semantic-content.mjs';
 
 const CHAR_INFRA_RETRIES = 1;
 
@@ -138,6 +138,7 @@ export async function runCharacterPhase({
   projectionLifecycleEnabled = true,
   precomputedFinalizedProjection = null,
   lh0ExpectedObligationIds = [],
+  lh0FixtureTurnIndex = null,
   skipCharacterKnowledgeCognition = false,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
@@ -320,14 +321,22 @@ export async function runCharacterPhase({
       obligationIdsExpected: lh0ExpectedObligationIds,
     });
     const moveText = JSON.stringify(characterRun?.parsed ?? characterRun?.raw ?? '');
-    const referenced = detectObligationUseInText(
-      moveText,
-      lh0ConsumerEvidence.received_obligation_ids,
-    );
-    lh0ConsumerEvidence.referenced_obligation_ids = referenced;
-    lh0ConsumerEvidence.consumer_used = referenced.length > 0;
+    const speechText = typeof characterRun?.parsed?.speech === 'string'
+      ? characterRun.parsed.speech
+      : (characterRun?.parsed?.beats ?? []).map((b) => b.speech ?? b.dialogue ?? '').join(' ');
+    const causalEvidence = evaluateTurnCausalEvidence({
+      turnIndex: lh0FixtureTurnIndex ?? cognitionTurnIndex,
+      moveText: `${moveText}\n${speechText}`,
+      presentationText: '',
+      receivedObligationIds: lh0ConsumerEvidence.received_obligation_ids,
+    });
+    lh0ConsumerEvidence.lh0_causal_evidence = causalEvidence;
+    lh0ConsumerEvidence.referenced_obligation_ids = causalEvidence.influenced_obligation_ids;
+    lh0ConsumerEvidence.consumer_used = causalEvidence.consumer_used;
     lh0ConsumerEvidence.decision_influenced_obligation_ids = (
-      characterRun?.committed && referenced.length > 0 ? referenced : []
+      characterRun?.committed && causalEvidence.decision_influenced
+        ? causalEvidence.influenced_obligation_ids
+        : []
     );
     recordGeneratedCandidate(budget);
     characterManifestId = String(manifest.manifest_id);
