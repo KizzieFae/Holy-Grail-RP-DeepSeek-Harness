@@ -21,8 +21,9 @@
 |-------|-------|
 | Issue state | OPEN / `investigating` |
 | Project | In Progress / Investigating / **P1** |
-| D-01-L execution | **Complete** — blind sequence packet prepared |
-| D-01-L semantic decode | **NOT performed** — awaiting Governance blind scoring |
+| D-01-L execution | **Complete** |
+| D-01-L primary blind eval | **Complete, locked, decoded** — see `issue-201-package-d-d01l-primary-decode-synthesis-2026-09-14.md` |
+| Locked primary scores | `governance/records/issue201-d01l-governance-blind-scores-locked.json` |
 | D-10 / EXP-3 | **Deferred** |
 | Production redesign / remediation | **NOT authorized** |
 
