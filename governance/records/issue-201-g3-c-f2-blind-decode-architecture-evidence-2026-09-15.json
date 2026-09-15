@@ -1,0 +1,255 @@
+{
+  "schema": "issue201_g3c_f2_blind_decode_v1",
+  "issue": 201,
+  "experiment": "G3-C F2 Arkham complex-turn A2 vs lean-A4",
+  "execution_record_sha": "1509d74",
+  "blind_lock_sha": "074cad1",
+  "evidence_root": "data/investigation_runs/issue201-g3c-f2-2026-09-15T06-10-06-991Z",
+  "blind_lock_artifact": "governance/records/issue-201-g3-c-f2-blind-score-lock-2026-09-15.json",
+  "answer_key_access": {
+    "accessed_after_lock_commit": true,
+    "lock_commit_sha": "074cad1",
+    "answer_key_path": "data/investigation_runs/issue201-g3c-f2-2026-09-15T06-10-06-991Z/outputs/issue201-g3c-f2-blind-eval-answer-key.json",
+    "accessed_at": "2026-09-15T07:35:00Z"
+  },
+  "decoded_mapping": [
+    {
+      "blind_label": "A",
+      "case_id": "G3C-F2-a4-arkham-r1",
+      "architecture_arm": "lean_a4_ablated",
+      "rep_index": 1,
+      "presentation_actor": "Harley Quinn",
+      "primary_mean": 4.64,
+      "primary_scores": [5, 5, 5, 4, 5, 5, 4, 4, 5, 4, 4],
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "B",
+      "case_id": "G3C-F2-a2-arkham-r2",
+      "architecture_arm": "a2_prototype",
+      "rep_index": 2,
+      "presentation_actor": "Harley Quinn",
+      "primary_mean": 4.73,
+      "primary_scores": [5, 5, 4, 5, 4, 5, 4, 5, 5, 5, 5],
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "C",
+      "case_id": "G3C-F2-a4-arkham-r2",
+      "architecture_arm": "lean_a4_ablated",
+      "rep_index": 2,
+      "presentation_actor": "Poison Ivy",
+      "primary_mean": 4.82,
+      "primary_scores": [5, 5, 4, 5, 5, 5, 5, 5, 5, 4, 5],
+      "environmental_grounding": 5,
+      "overall_rp_usefulness": 5
+    },
+    {
+      "blind_label": "D",
+      "case_id": "G3C-F2-a2-arkham-r1",
+      "architecture_arm": "a2_prototype",
+      "rep_index": 1,
+      "presentation_actor": "Harley Quinn",
+      "primary_mean": 4.45,
+      "primary_scores": [5, 5, 4, 4, 4, 4, 4, 5, 5, 5, 4],
+      "environmental_grounding": 4,
+      "overall_rp_usefulness": 4
+    }
+  ],
+  "primary_semantic_quality": {
+    "a2_prototype": {
+      "mean": 4.59,
+      "runs": [
+        { "case_id": "G3C-F2-a2-arkham-r1", "blind_label": "D", "mean": 4.45 },
+        { "case_id": "G3C-F2-a2-arkham-r2", "blind_label": "B", "mean": 4.73 }
+      ]
+    },
+    "lean_a4_ablated": {
+      "mean": 4.73,
+      "runs": [
+        { "case_id": "G3C-F2-a4-arkham-r1", "blind_label": "A", "mean": 4.64 },
+        { "case_id": "G3C-F2-a4-arkham-r2", "blind_label": "C", "mean": 4.82 }
+      ]
+    },
+    "delta_a2_minus_a4": -0.14
+  },
+  "per_dimension_means": {
+    "dimension_names": [
+      "character_fidelity",
+      "distinctiveness",
+      "initiative",
+      "responsiveness",
+      "dramatic_progression",
+      "coherence",
+      "prose_quality",
+      "repetitiveness",
+      "naturalness_stiffness",
+      "unnecessary_exposition",
+      "emotional_narrative_continuity"
+    ],
+    "a2_prototype": [5.0, 5.0, 4.0, 4.5, 4.0, 4.5, 4.0, 5.0, 5.0, 5.0, 4.5],
+    "lean_a4_ablated": [5.0, 5.0, 4.5, 4.5, 5.0, 5.0, 4.5, 4.5, 5.0, 4.0, 4.5],
+    "delta_a2_minus_a4": [0.0, 0.0, -0.5, 0.0, -1.0, -0.5, -0.5, 0.5, 0.0, 1.0, 0.0]
+  },
+  "adjuncts": {
+    "environmental_grounding": { "a2": 4.5, "lean_a4": 4.5, "delta_a2_minus_a4": 0.0 },
+    "overall_rp_usefulness": { "a2": 4.5, "lean_a4": 5.0, "delta_a2_minus_a4": -0.5 }
+  },
+  "objective_correctness": {
+    "a2_prototype": {
+      "runs": 2,
+      "clean": 2,
+      "blocking_failures": 0,
+      "private_knowledge_leaks": 0,
+      "actor_context_isolation_pass": true,
+      "structured_spatial_surface_present": true,
+      "spatial_validation_pass": true,
+      "narrator_state_mutation": 0,
+      "prohibited_cognition_violations": 0
+    },
+    "lean_a4_ablated": {
+      "runs": 2,
+      "clean": 2,
+      "blocking_failures": 0
+    },
+    "sample_e_regression": "pass",
+    "parity": true
+  },
+  "sample_d_spatial_adjudication": {
+    "case_id": "G3C-F2-a2-arkham-r1",
+    "blind_label": "D",
+    "architecture_arm": "a2_prototype",
+    "structured_claims": [
+      { "entity_id": "harley_quinn", "relation": "located_at", "zone_id": "harley_ivy_table" },
+      { "entity_id": "magpie", "relation": "located_at", "zone_id": "across_room" }
+    ],
+    "authoritative_facts": {
+      "harley_quinn": "harley_ivy_table",
+      "poison_ivy": "harley_ivy_table",
+      "magpie": "across_room"
+    },
+    "validator_result": {
+      "accepted": true,
+      "validation_class": "accepted",
+      "reason": "spatial_claims_consistent_or_unknown"
+    },
+    "questions": {
+      "explicit_magpie_at_harley_table_claim": false,
+      "structured_surface_represents_material_assertions": "partial — zone placements correct; deictic address path in prose not encoded",
+      "validator_correct_to_accept": true,
+      "gap_classification": "prose_ambiguity_plus_incomplete_deictic_claim_extraction"
+    },
+    "governance_note": "Not Sample-E class failure; bounded narrator claim-generation obligation for deictic address vs zone placement."
+  },
+  "director_decision_value": {
+    "a2_runs": [
+      {
+        "case_id": "G3C-F2-a2-arkham-r1",
+        "eligible_actors": ["Harley Quinn", "Poison Ivy"],
+        "director_llm_invoked": true,
+        "selected_actor": "Harley Quinn",
+        "consequential": true
+      },
+      {
+        "case_id": "G3C-F2-a2-arkham-r2",
+        "eligible_actors": ["Harley Quinn", "Poison Ivy"],
+        "director_llm_invoked": true,
+        "selected_actor": "Harley Quinn",
+        "consequential": true
+      }
+    ],
+    "lean_a4_contrast": {
+      "G3C-F2-a4-arkham-r2": "Poison Ivy presentation (blind label C, highest score)"
+    },
+    "finding": "Director decision responsibility justified on ambiguous multi-actor turns; selection materially changes visible actor and beat shape."
+  },
+  "independent_character_agency": {
+    "a2_selected_actor_autonomous": true,
+    "non_selected_actor_harm": "none when Director selects single actor; A4 Ivy beat (C) shows alternate valid autonomous path not sampled in A2 runs",
+    "a4_quality_advantage_observable": "yes — lean A4 r2 Ivy strategic restraint scored highest (4.82); attributable partly to actor-selection outcome not solely cognition fan-out"
+  },
+  "character_semantic_eval_adjudication": {
+    "a2_calls": 0,
+    "lean_a4_calls": 9,
+    "finding": "no_character_move_semantic_defect_in_a2_decoded_samples",
+    "sample_d_weakness": "narrator_prose_spatial_deixis_ambiguity — not character semantic evaluation failure"
+  },
+  "environment_cognition_adjudication": {
+    "a2_calls": 0,
+    "lean_a4_calls": 6,
+    "environmental_grounding_blind": { "a2": 4.5, "lean_a4": 4.5 },
+    "finding": "no_material_loss_from_env_cognition_removal_on_this_beat"
+  },
+  "librarian_mediation_adjudication": {
+    "a2_calls": 0,
+    "lean_a4_calls": 7,
+    "finding": "no_missing_knowledge_visible_in_a2_outputs",
+    "mediation_earned_on_beat": "not_demonstrated"
+  },
+  "extra_cognition_decision_value": {
+    "character_orientation": "no_unique_visible_benefit — A2 B matched/exceeded Harley samples",
+    "character_semantic_evaluation": "no_unique_visible_benefit — A4 r1 (A) not strongest",
+    "environment_cognition": "no_unique_visible_benefit — grounding tied",
+    "librarian_mediation": "no_unique_visible_benefit",
+    "plot_cognition": "not_assessed_longitudinally — F2 out of scope",
+    "multiple_character_moves": "enables alternate actor presentation (Ivy C) — partially actor-selection not evaluation machinery"
+  },
+  "efficiency": {
+    "a2_prototype": {
+      "round_sync_llm_total": 6,
+      "session_inference_records": 50,
+      "wall_ms_total": 185010,
+      "input_tokens": 15331,
+      "output_tokens": 33621,
+      "reasoning_tokens": 28330,
+      "critical_path_ms_per_run": [25277, 32991]
+    },
+    "lean_a4_ablated": {
+      "round_sync_llm_total": 45,
+      "session_inference_records": 134,
+      "wall_ms_total": 570414,
+      "input_tokens": 160156,
+      "output_tokens": 109357,
+      "reasoning_tokens": 70660
+    },
+    "wall_time_causal_caveat": "Ingress player_decomposition dominates session wall time on both arms; topology reduction is primary causal evidence."
+  },
+  "confounds": [
+    "N=2 per arm — tight blind range (0.37) limits semantic separation power",
+    "A2 Director selected Harley in both runs; A4 r2 produced Ivy — confounds actor-selection with architecture",
+    "player_decomposition shared ingress debt on all arms",
+    "provider/model variance on wall time"
+  ],
+  "prospective_f2_classification_evidence": {
+    "strong_a2_support": [
+      "objective parity on all blocking gates",
+      "isolation and spatial protections hold",
+      "major cognition/topology reduction (6 vs 45 round-sync LLM)",
+      "A2 sample B tied second-highest blind score (4.73)"
+    ],
+    "qualified_a2_support": [
+      "blind primary mean A4 4.73 vs A2 4.59 (Δ −0.14) — small quality gap within noise at N=2",
+      "overall RP usefulness A4 5.0 vs A2 4.5",
+      "dramatic progression/coherence dimensions favor A4 slightly",
+      "protections hold despite topology reduction"
+    ],
+    "a2_concern": [
+      "A4 Ivy beat (C) demonstrates independent strategic actor path A2 did not sample in either run",
+      "Sample D prose deixis ambiguity despite correct structured zone claims"
+    ],
+    "a2_falsification": []
+  },
+  "g3d_readiness": {
+    "execute_authorized": false,
+    "f2_viability": "A2 complex-turn path operationally viable with obligation-driven cognition",
+    "director_responsibility": "retain decision responsibility on ambiguous multi-actor turns",
+    "independent_character_cognition": "viable when selected; non-selected eligible actors need not cognize",
+    "spatial_validation": "live surface works; bounded deictic claim extraction gap — does not block G3-D",
+    "support_call_pruning": "orientation, semantic eval, env cognition, librarian not demonstrated necessary on this beat",
+    "blockers": []
+  },
+  "governance_verdict_rendered": false,
+  "status": "decoded_pending_governance_f2_adjudication"
+}
