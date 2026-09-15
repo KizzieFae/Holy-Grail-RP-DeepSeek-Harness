@@ -1,0 +1,74 @@
+{
+  "schema": "issue201_lh0_fixture_manifest_v1",
+  "fixture_id": "lh0_seam_micro_v1",
+  "turns": 6,
+  "scenes": 1,
+  "description": "Controlled LH-0 micro-fixture for mechanical seam verification (not RP quality evidence).",
+  "obligations": [
+    {
+      "obligation_id": "LH0-OBL-IMMEDIATE",
+      "class": "immediate_activation",
+      "intro_turn": 1,
+      "activation_horizon_turn": 3,
+      "activation_predicate": { "type": "turn_gte", "value": 3 },
+      "authorized_consumer": "director_turn",
+      "negative_control": false
+    },
+    {
+      "obligation_id": "LH0-OBL-DEFERRED",
+      "class": "valid_deferral",
+      "intro_turn": 2,
+      "activation_horizon_turn": 5,
+      "activation_predicate": { "type": "turn_gte", "value": 5 },
+      "authorized_consumer": "character_move",
+      "deferral_rationale": "predicate not satisfied until turn 5",
+      "negative_control": false
+    },
+    {
+      "obligation_id": "LH0-OBL-LATER",
+      "class": "later_activation",
+      "intro_turn": 2,
+      "activation_horizon_turn": 5,
+      "activation_predicate": { "type": "turn_gte", "value": 5 },
+      "authorized_consumer": "character_move",
+      "negative_control": false
+    },
+    {
+      "obligation_id": "LH0-OBL-PREMATURE",
+      "class": "premature_activation_negative",
+      "intro_turn": 2,
+      "activation_horizon_turn": 5,
+      "activation_predicate": { "type": "turn_gte", "value": 5 },
+      "authorized_consumer": "character_move",
+      "negative_control": true,
+      "expected_failure": "ACTIVATED_PREMATURE"
+    }
+  ],
+  "negative_controls": [
+    {
+      "control_id": "NC-PERSIST-MISSING",
+      "break_layer": "persistence",
+      "expected_seam": "persistence_failure"
+    },
+    {
+      "control_id": "NC-PROJECTION-MISSING",
+      "break_layer": "projection",
+      "expected_seam": "projection_failure"
+    },
+    {
+      "control_id": "NC-RECEIPT-MISSING",
+      "break_layer": "consumer_receipt",
+      "expected_seam": "consumption_failure"
+    },
+    {
+      "control_id": "NC-CONSUMER-NONUSE",
+      "break_layer": "consumer_use",
+      "expected_seam": "consumption_failure"
+    }
+  ],
+  "k6_probe": {
+    "required_anchor_ids": ["anchor-a", "anchor-b"],
+    "projection_budget": 1,
+    "description": "K6-class detection probe — both anchors eligible but budget may drop one"
+  }
+}

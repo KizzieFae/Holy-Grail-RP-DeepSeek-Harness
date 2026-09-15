@@ -258,9 +258,9 @@ export async function runA2BeatRound({
     semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
     liveMaxAttempts,
     prompt: options.livePrompts?.character ?? LIVE_CHARACTER_PROMPT,
-    skipCharacterKnowledgeCognition: true,
+    skipCharacterKnowledgeCognition: options.skipCharacterKnowledgeCognition !== false,
     semanticEvaluationEnabled: characterSemanticEvaluationEnabled,
-    projectionLifecycleEnabled: false,
+    projectionLifecycleEnabled: options.projectionLifecycleEnabled === true,
   });
   decisionValue.record({
     inference_kind: 'character_move',
@@ -278,8 +278,10 @@ export async function runA2BeatRound({
     character_id: characterId,
     committed: characterTurn.committed === true,
     semantic_evaluation_enabled: characterSemanticEvaluationEnabled,
-    orientation_skipped: true,
-    projection_lifecycle_skipped: true,
+    orientation_skipped: options.skipCharacterKnowledgeCognition !== false,
+    projection_lifecycle_skipped: options.projectionLifecycleEnabled !== true,
+    lh0_consumption_enforcer: options.lh0ConsumptionEnforcer === true,
+    lh0_arm: options.lh0Arm ?? null,
   }));
 
   if (!characterTurn.committed) {
@@ -451,6 +453,19 @@ export async function runA2BeatRound({
     character_semantic_evaluation_enabled: characterSemanticEvaluationEnabled,
     two_call_contract: true,
   };
+
+  if (options.lh0ConsumptionEnforcer === true) {
+    const projectionEnabled = options.projectionLifecycleEnabled === true;
+    const knowledgeCognitionEnabled = options.skipCharacterKnowledgeCognition === false;
+    const enforcerPass = projectionEnabled && knowledgeCognitionEnabled;
+    auditSteps.push(createAuditStep('lh0_consumption_lifecycle_enforcer', {
+      pass: enforcerPass,
+      projection_lifecycle_enabled: projectionEnabled,
+      character_knowledge_cognition_enabled: knowledgeCognitionEnabled,
+      fail_closed: !enforcerPass,
+      g3d_class_gap_prevented: enforcerPass,
+    }));
+  }
 
   const blockingSpatial = (spatialValidation && spatialValidation.accepted === false)
     || (requireStructuredSpatialClaims && !spatialClaims);
