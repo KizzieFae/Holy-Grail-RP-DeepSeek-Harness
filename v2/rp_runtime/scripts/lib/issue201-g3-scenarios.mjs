@@ -25,6 +25,8 @@ export const G3_SCENARIOS = {
     userName: 'Magpie',
     openerPreference: 'mess_hall_magpie',
     playerPost:
-      'Magpie keeps her eyes on the guard\'s gold watch while she pushes food around her tray.',
+      'Magpie keeps her eyes on the guard\'s gold watch while she pushes food around her tray. '
+      + 'When Harley\'s voice carries across the table, she murmurs just loud enough to be heard: '
+      + '"Pretty things never stay pretty in here for long."',
   },
 };

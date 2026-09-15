@@ -8,7 +8,11 @@ import crypto from 'node:crypto';
 
 import { SessionId } from '@deepseek-ai/dsh-session';
 
-import { LIVE_CHARACTER_PROMPT, LIVE_NARRATOR_PROMPT } from './live-inference-prompts.mjs';
+import {
+  LIVE_CHARACTER_PROMPT,
+  LIVE_NARRATOR_PROMPT,
+  LIVE_A2_F2_NARRATOR_SPATIAL_PROMPT,
+} from './live-inference-prompts.mjs';
 import { createDecisionValueLogger } from './a2-decision-value-logger.mjs';
 import { deriveObligationSignals } from './a2-obligation-dispatch.mjs';
 import {
@@ -17,6 +21,10 @@ import {
   eligibilityTrace,
 } from '../plugins/hg-round-orchestrator/round-helpers.mjs';
 import { roleForCharacter } from '../plugins/hg-phase-executors/role-utils.mjs';
+import {
+  captureActorContextPackages,
+  auditPrivateKnowledgeIsolation,
+} from './a2-actor-isolation-audit.mjs';
 
 export const A2_TOPOLOGY_ABSENT = [
   'storyteller_preamble',
@@ -70,6 +78,8 @@ export async function runA2BeatRound({
   const characterSemanticEvaluationEnabled = options.characterSemanticEvaluationEnabled === true;
   const skipPostCommitPlot = options.skipPostCommitPlot !== false;
   const presentationSpatialClaims = options.presentationSpatialClaims ?? null;
+  const requireStructuredSpatialClaims = options.requireStructuredSpatialClaims === true;
+  const resolveSpatialClaimsFromEvidence = options.resolveSpatialClaimsFromEvidence ?? null;
   const mockCharacterResponses = options.mockCharacterTurnResponses?.[0] ?? options.mockCharacterResponses ?? [];
   const mockNarratorResponses = options.mockNarratorTurnResponses?.[0] ?? options.mockNarratorResponses ?? [];
   const mockDirectorResponses = options.mockDirectorResponses ?? [];
@@ -102,6 +112,23 @@ export async function runA2BeatRound({
     retrievalManifestGap: options.retrievalManifestGap === true,
   });
   auditSteps.push(createAuditStep('obligation_dispatch', obligationDispatch));
+
+  let actorContextAudit = null;
+  if (options.captureActorContextPackages === true) {
+    const actorPackages = await captureActorContextPackages({
+      api,
+      hgSceneId,
+      hgRoundId,
+      turnIndex: round.turn_index,
+      eligibleActors,
+      characterRoles: eligibility.character_roles ?? roleAssignments,
+    });
+    actorContextAudit = {
+      packages: actorPackages.map((p) => ({ character_id: p.character_id, summary: p.summary })),
+      isolation: auditPrivateKnowledgeIsolation(actorPackages),
+    };
+    auditSteps.push(createAuditStep('actor_context_isolation', actorContextAudit.isolation));
+  }
 
   const participation = await api.getParticipationDecision({
     hg_scene_id: hgSceneId,
@@ -276,7 +303,8 @@ export async function runA2BeatRound({
     semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
     narratorSemanticQaEnabled: false,
     skipNarratorEnvironmentCognition: true,
-    prompt: options.livePrompts?.narrator ?? LIVE_NARRATOR_PROMPT,
+    prompt: options.livePrompts?.narrator
+      ?? (requireStructuredSpatialClaims ? LIVE_A2_F2_NARRATOR_SPATIAL_PROMPT : LIVE_NARRATOR_PROMPT),
   });
   decisionValue.record({
     inference_kind: 'narrator_presentation',
@@ -307,10 +335,17 @@ export async function runA2BeatRound({
     validation_class: narratorValidation.validation_class ?? null,
   }));
 
-  const spatialClaims = extractSpatialClaimsFromNarratorRaw(
+  let spatialClaims = extractSpatialClaimsFromNarratorRaw(
     narratorResult.narrator_raw_output ?? null,
     presentationSpatialClaims,
   );
+  if (!spatialClaims && resolveSpatialClaimsFromEvidence) {
+    spatialClaims = await resolveSpatialClaimsFromEvidence({
+      hgSessionId,
+      hgRoundId,
+      narratorResult,
+    });
+  }
   let spatialValidation = null;
   if (spatialClaims) {
     spatialValidation = await api.validatePresentationSpatialClaims({
@@ -318,6 +353,17 @@ export async function runA2BeatRound({
       spatial_claims: spatialClaims,
     });
     auditSteps.push(createAuditStep('spatial_claims_validation', spatialValidation));
+  } else if (requireStructuredSpatialClaims) {
+    auditSteps.push(createAuditStep('spatial_claims_validation', {
+      skipped: false,
+      reason: 'required_structured_spatial_claims_missing',
+      accepted: false,
+    }));
+    spatialValidation = {
+      accepted: false,
+      validation_class: 'missing_surface',
+      reason: 'required_structured_spatial_claims_missing',
+    };
   } else {
     auditSteps.push(createAuditStep('spatial_claims_validation', {
       skipped: true,
@@ -356,7 +402,8 @@ export async function runA2BeatRound({
     two_call_contract: true,
   };
 
-  const blockingSpatial = spatialValidation && spatialValidation.accepted === false;
+  const blockingSpatial = (spatialValidation && spatialValidation.accepted === false)
+    || (requireStructuredSpatialClaims && !spatialClaims);
   const committed = characterTurn.committed === true
     && narratorResult.presentation_rendered === true
     && narratorValidation.accepted === true
@@ -375,6 +422,9 @@ export async function runA2BeatRound({
     narrator_result: narratorResult,
     narrator_validation: narratorValidation,
     spatial_validation: spatialValidation,
+    spatial_claims: spatialClaims ?? null,
+    structured_spatial_surface_present: Boolean(spatialClaims),
+    actor_context_audit: actorContextAudit,
     obligation_dispatch: obligationDispatch,
     topology_proof: topologyProof,
     audit_steps: auditSteps,
