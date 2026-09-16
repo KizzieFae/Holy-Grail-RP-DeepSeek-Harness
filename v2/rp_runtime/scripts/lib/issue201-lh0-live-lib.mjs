@@ -40,9 +40,14 @@ import {
   buildCounterfactualInterpretation,
   buildPassFailMatrix,
 } from './issue201-lh0-live-adjudication.mjs';
-import { buildInformationUniquenessReport } from './issue201-lh0-semantic-content.mjs';
+import {
+  adjudicateGuestPolicySemanticUse,
+  buildInformationUniquenessReport,
+} from './issue201-lh0-semantic-content.mjs';
 import { runLh0SemanticValidationSuite } from './issue201-lh0-semantic-validation-lib.mjs';
 import { runLh0TimingValidationSuite } from './issue201-lh0-timing-validation-lib.mjs';
+import { runLh0ConsumerValueValidationSuite } from './issue201-lh0-consumer-value-validation-lib.mjs';
+import { LH0_NEUTRAL_GUEST_POLICY_QUESTION } from './issue201-lh0-consumer-value-contract.mjs';
 import { simulateNegativeControl } from './issue201-lh0-lib.mjs';
 import { gitSha } from './issue201-lh0-lib.mjs';
 
@@ -117,6 +122,20 @@ async function runPlayerPvr(client, userMessage) {
   return { playerDecomposition };
 }
 
+async function runPlayerPvrAndRecord(client, userMessage) {
+  const { playerDecomposition } = await runPlayerPvr(client, userMessage);
+  const api = client._domainApi();
+  await api.recordUserTurn({
+    hg_session_id: client.activeSessionId,
+    content: userMessage,
+    speaker: client.userPersonaId ?? 'Player',
+    player_decomposition: playerDecomposition,
+  });
+  return { playerDecomposition };
+}
+
+export { runPlayerPvrAndRecord };
+
 function extractLh0TurnForensics(roundResult, { sessionsDir, hgSessionId, turnIndex }) {
   const store = readLh0Store(sessionsDir, hgSessionId);
   classifyLh0ObligationStates(store, turnIndex);
@@ -151,7 +170,7 @@ async function runLh0Turn({
   );
   client._beginRoundOperation(`lh0-${sequenceId}-t${turnIndex}`, 'user_turn');
   const started = Date.now();
-  const { playerDecomposition } = await runPlayerPvr(client, playerStimulus);
+  const { playerDecomposition } = await runPlayerPvrAndRecord(client, playerStimulus);
   const api = client._domainApi();
   const runtime = client.supervisor.runtime;
   const inferenceOpts = buildInferenceOptions(client.runtimeSettings, {
@@ -314,6 +333,101 @@ export async function executeLh0LiveArm({
     `${JSON.stringify(sequence, null, 2)}\n`,
   );
   return sequence;
+}
+
+function buildT5SemanticAdjudication(sequences) {
+  return sequences.map((seq) => {
+    const t5 = seq.turns.find((t) => t.turn_index === 5);
+    const receipt = t5?.audit?.character_consumer_receipt;
+    const semantic = adjudicateGuestPolicySemanticUse({
+      moveText: t5?.presentation_text ?? '',
+      presentationText: t5?.presentation_text ?? '',
+    });
+    let category = semantic.category;
+    if (seq.arm !== LH0_ARMS.LH_A && receipt?.consumer_received && semantic.communicates_prohibition) {
+      category = 'S2';
+    }
+    if (seq.arm === LH0_ARMS.LH_A && semantic.communicates_prohibition) {
+      category = 'S1';
+    }
+    const control = sequences.find((s) => s.arm === LH0_ARMS.LH_A);
+    const controlSemantic = adjudicateGuestPolicySemanticUse({
+      moveText: control?.turns.find((t) => t.turn_index === 5)?.presentation_text ?? '',
+      presentationText: control?.turns.find((t) => t.turn_index === 5)?.presentation_text ?? '',
+    });
+    if (seq.arm !== LH0_ARMS.LH_A
+      && semantic.communicates_prohibition
+      && !controlSemantic.communicates_prohibition
+      && receipt?.consumer_received) {
+      category = 'S3';
+    }
+    return {
+      arm: seq.arm,
+      sequence_id: seq.sequence_id ?? null,
+      user_turn_trigger_present: Boolean(receipt?.consumer_received || seq.arm === LH0_ARMS.LH_A),
+      guest_fact_received: (receipt?.received_obligation_ids ?? []).length > 0,
+      semantic_payload_samples: receipt?.semantic_payload_samples ?? [],
+      presentation_excerpt: (t5?.presentation_text ?? '').slice(0, 500),
+      frozen_classifier: t5?.lh0_causal_evidence ?? null,
+      semantic_adjudication: { ...semantic, category },
+    };
+  });
+}
+
+export async function executeLh0ConsumerValueVerificationCampaign({ outputDir }) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  const consumerValue = runLh0ConsumerValueValidationSuite();
+  if (!consumerValue.readiness_for_consumer_value_qualification) {
+    throw new Error('LH-0 consumer-value validation failed before qualification');
+  }
+  const policyBundle = loadLh0Policy('ayame_lh0_policy_v1');
+  const evidenceRoot = outputDir;
+  const arms = [LH0_ARMS.LH_A, LH0_ARMS.LH_B, LH0_ARMS.LH_C, LH0_ARMS.LH_D];
+  const sequences = [];
+  for (const arm of arms) {
+    sequences.push(await executeLh0LiveArm({
+      arm,
+      evidenceRoot,
+      outputDir,
+      policyBundle,
+    }));
+  }
+  const armResults = sequences.map((s) => s.adjudication);
+  const control = sequences.find((s) => s.arm === LH0_ARMS.LH_A);
+  const persistent = sequences.filter((s) => s.arm !== LH0_ARMS.LH_A);
+  const counterfactual = buildCounterfactualInterpretation({
+    controlSequence: control,
+    persistentSequences: persistent,
+    fixture: loadLh0FixtureManifest(),
+  });
+  const t5Semantic = buildT5SemanticAdjudication(sequences);
+  const report = {
+    schema: 'issue201_lh0_consumer_value_verification_v1',
+    campaign: 'lh0_consumer_value_final_verification',
+    prior_anchors: {
+      turn_aligned: 'data/investigation_runs/issue201-lh0-turn-aligned-verification-2026-09-16T00-12-36-622Z',
+      player_stimulus_investigation: 'P1 harness-only defect',
+    },
+    candidate_sha: gitSha(),
+    frozen_contract: consumerValue.frozen_contract,
+    neutral_player_stimulus: LH0_NEUTRAL_GUEST_POLICY_QUESTION,
+    consumer_value_validation: consumerValue,
+    output_dir: outputDir,
+    sequences,
+    t5_semantic_adjudication: t5Semantic,
+    pass_fail_matrix: buildPassFailMatrix(armResults),
+    counterfactual_interpretation: counterfactual,
+    lh1a_readiness: {
+      lh_b: armResults.find((r) => r.arm === LH0_ARMS.LH_B)?.lh1a_ready ?? false,
+      lh_c: armResults.find((r) => r.arm === LH0_ARMS.LH_C)?.lh1a_ready ?? false,
+      lh_d: armResults.find((r) => r.arm === LH0_ARMS.LH_D)?.lh1a_ready ?? false,
+    },
+  };
+  fs.writeFileSync(
+    path.join(outputDir, 'issue201-lh0-consumer-value-verification-report.json'),
+    `${JSON.stringify(report, null, 2)}\n`,
+  );
+  return report;
 }
 
 export async function executeLh0TurnAlignedVerificationCampaign({ outputDir }) {

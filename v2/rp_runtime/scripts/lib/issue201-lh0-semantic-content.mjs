@@ -68,6 +68,52 @@ function matchesAnyMarker(haystack, markers = []) {
   return markers.some((m) => haystack.includes(String(m).toLowerCase()));
 }
 
+const GUEST_PROHIBITION_PROPOSITION_MARKERS = [
+  'overnight guests are not',
+  "overnight guests aren't",
+  'no overnight guests',
+  'no overnight visitors',
+  'guests are not permitted',
+  'never permitted',
+  'do not stay overnight',
+  "don't stay overnight",
+  'no one stays overnight',
+  'guests do not stay',
+  'visitors do not stay',
+  'not allowed to stay overnight',
+];
+
+export function communicatesGuestProhibition(haystack) {
+  const text = normalizeHaystack(haystack);
+  return GUEST_PROHIBITION_PROPOSITION_MARKERS.some((m) => text.includes(m));
+}
+
+export function adjudicateGuestPolicySemanticUse({ moveText = '', presentationText = '' }) {
+  const haystack = `${moveText}\n${presentationText}`;
+  const communicates = communicatesGuestProhibition(haystack);
+  if (communicates) {
+    return {
+      category: 'S2',
+      communicates_prohibition: true,
+      rationale: 'Committed output clearly communicates overnight-guest prohibition.',
+    };
+  }
+  const text = normalizeHaystack(haystack);
+  const incidentalGuest = text.includes('guest') && !text.includes('overnight');
+  if (incidentalGuest || text.length < 40) {
+    return {
+      category: 'S0',
+      communicates_prohibition: false,
+      rationale: 'No clear communication or operationalization of overnight-guest prohibition.',
+    };
+  }
+  return {
+    category: 'S1',
+    communicates_prohibition: false,
+    rationale: 'Response may be compatible with awareness but does not establish prohibition communication.',
+  };
+}
+
 export function classifyBehaviorAgainstFork({ fork, haystack }) {
   const text = normalizeHaystack(haystack);
   const withClass = (fork.with_obligation_choice_classes ?? []).find((c) => (

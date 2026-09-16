@@ -17,11 +17,13 @@ import {
   executeLh0FinalQualificationCampaign,
   executeLh0LiveCampaign,
   executeLh0TurnAlignedVerificationCampaign,
+  executeLh0ConsumerValueVerificationCampaign,
   verifyCandidateDrift,
 } from './lib/issue201-lh0-live-lib.mjs';
 import { runLh0RemediationValidationSuite } from './lib/issue201-lh0-remediation-lib.mjs';
 import { runLh0SemanticValidationSuite } from './lib/issue201-lh0-semantic-validation-lib.mjs';
 import { runLh0TimingValidationSuite } from './lib/issue201-lh0-timing-validation-lib.mjs';
+import { runLh0ConsumerValueValidationSuite } from './lib/issue201-lh0-consumer-value-validation-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,6 +36,8 @@ function parseArgs(argv) {
     executeLive: false,
     executeFinalQualification: false,
     executeTurnAlignedVerification: false,
+    executeConsumerValueVerification: false,
+    validateConsumerValue: false,
     outputDir: null,
   };
   for (let i = 2; i < argv.length; i += 1) {
@@ -41,9 +45,11 @@ function parseArgs(argv) {
     if (argv[i] === '--validate-remediation') args.validateRemediation = true;
     if (argv[i] === '--validate-semantic') args.validateSemantic = true;
     if (argv[i] === '--validate-timing') args.validateTiming = true;
+    if (argv[i] === '--validate-consumer-value') args.validateConsumerValue = true;
     if (argv[i] === '--execute-live') args.executeLive = true;
     if (argv[i] === '--execute-final-qualification') args.executeFinalQualification = true;
     if (argv[i] === '--execute-turn-aligned-verification') args.executeTurnAlignedVerification = true;
+    if (argv[i] === '--execute-consumer-value-verification') args.executeConsumerValueVerification = true;
     if (argv[i] === '--output-dir' && argv[i + 1]) {
       args.outputDir = argv[i + 1];
       i += 1;
@@ -60,10 +66,17 @@ function defaultOutputDir(prefix = 'issue201-lh0-apparatus') {
 async function main() {
   const args = parseArgs(process.argv);
   if (!args.validateApparatus && !args.validateRemediation && !args.validateSemantic
-    && !args.validateTiming && !args.executeLive && !args.executeFinalQualification
-    && !args.executeTurnAlignedVerification) {
-    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --validate-semantic | --validate-timing | --execute-live | --execute-final-qualification | --execute-turn-aligned-verification) [--output-dir PATH]');
+    && !args.validateTiming && !args.validateConsumerValue && !args.executeLive
+    && !args.executeFinalQualification && !args.executeTurnAlignedVerification
+    && !args.executeConsumerValueVerification) {
+    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --validate-semantic | --validate-timing | --validate-consumer-value | --execute-live | --execute-final-qualification | --execute-turn-aligned-verification | --execute-consumer-value-verification) [--output-dir PATH]');
     process.exit(1);
+  }
+
+  if (args.validateConsumerValue) {
+    const consumerValue = runLh0ConsumerValueValidationSuite();
+    console.log(JSON.stringify(consumerValue, null, 2));
+    process.exit(consumerValue.readiness_for_consumer_value_qualification ? 0 : 1);
   }
 
   if (args.validateTiming) {
@@ -87,6 +100,26 @@ async function main() {
   const outputDir = args.outputDir ?? defaultOutputDir(
     args.executeLive ? 'issue201-lh0-live' : 'issue201-lh0-apparatus',
   );
+
+  if (args.executeConsumerValueVerification) {
+    const consumerValue = runLh0ConsumerValueValidationSuite();
+    if (!consumerValue.readiness_for_consumer_value_qualification) {
+      console.error(JSON.stringify({ error: 'LH-0 consumer-value validation failed', consumerValue }, null, 2));
+      process.exit(3);
+    }
+    const outputDir = args.outputDir ?? defaultOutputDir('issue201-lh0-consumer-value-verification');
+    const report = await executeLh0ConsumerValueVerificationCampaign({ outputDir });
+    console.log(JSON.stringify({
+      schema: 'issue201_lh0_consumer_value_verification_run_v1',
+      output_dir: outputDir,
+      candidate_sha: report.candidate_sha,
+      pass_fail_matrix: report.pass_fail_matrix,
+      lh1a_readiness: report.lh1a_readiness,
+      t5_semantic_adjudication: report.t5_semantic_adjudication,
+      counterfactual_interpretation: report.counterfactual_interpretation,
+    }, null, 2));
+    process.exit(0);
+  }
 
   if (args.executeTurnAlignedVerification) {
     const timing = runLh0TimingValidationSuite();

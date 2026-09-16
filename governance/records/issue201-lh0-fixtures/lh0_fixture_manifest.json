@@ -24,7 +24,7 @@
       "authorized_consumer": "character_move",
       "deferral_rationale": "Applicant has not yet reached the guest-policy decision point.",
       "negative_control": false,
-      "semantic_content": "Household policy pending guest-permission clarification: overnight guests are not permitted for live-in staff. When the applicant asks about guest permissions, state this plainly."
+      "semantic_content": "Overnight guests are not permitted for live-in household staff at this residence."
     },
     {
       "obligation_id": "LH0-OBL-LATER",
@@ -63,7 +63,7 @@
         "fork_id": "FORK-GUEST-POLICY",
         "obligation_ids": ["LH0-OBL-LATER", "LH0-OBL-DEFERRED"],
         "decision_turn": 5,
-        "decision_summary": "Applicant requests an explicit overnight guest policy before agreeing to start date.",
+        "decision_summary": "Applicant asks a neutral overnight-guest policy question before agreeing to start date.",
         "with_obligation_choice_classes": [
           {
             "class_id": "explicit_no_overnight_guests",
