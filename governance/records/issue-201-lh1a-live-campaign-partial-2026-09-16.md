@@ -15,7 +15,7 @@ Live LH-1A execution authorized by Governance prompt (2026-09-16). Preflight **3
 | Field | Value |
 |-------|-------|
 | Apparatus candidate | `708ad05f5155cc1acc824cb8e7dc82d823e85dcb` |
-| Live-runner commit | pending at report time (`de24e8a` + live wiring) |
+| Live-runner commit | `818afc9a3c9b3e44ab9460ed8558b4c36cb84411` |
 | Investigation run | `data/investigation_runs/issue201-lh1a-live-campaign-2026-09-16T02-03-03-444Z` |
 | Campaign order | `lh1a_live_execution_order_v1` (SEQ-A..H) |
 
@@ -46,11 +46,17 @@ Unchanged from apparatus validation — all matched.
 
 Partial blind packet exported from committed SEQ-A turns only. Answer key generated. **Decode not performed** for architectural conclusions.
 
+## Original failed attempt (Attempt 1) — preserved
+
+This partial record is the permanent forensic disposition for Attempt 1. Do not overwrite with restart evidence.
+
+## Remediation and restart
+
+See `governance/records/issue-201-lh1a-seq-a-structural-correction-remediation-2026-09-15.md`.
+
 ## Next Governance decision
 
-1. Whether to authorize **infrastructure remediation** (beat-commit reliability at long horizon) without methodology change  
-2. Whether **LH-1B selective replication** or **campaign resume** is appropriate after remediation  
-3. Whether partial SEQ-A evidence is admissible for any blind scoring (likely no — incomplete sequence)
+Await restart outcome and full campaign disposition per remediation authorization.
 
 ## Constraints preserved
 

@@ -14,6 +14,7 @@ import {
   runSemanticEvaluation,
   summarizeCandidateForCorrection,
 } from './character-semantic-evaluation.mjs';
+import { enrichObjectiveValidationCorrectionContext } from '../../lib/character-structural-correction.mjs';
 import { characterDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { runCharacterKnowledgeCognition } from '../../lib/character-cognition-substrate.mjs';
@@ -415,11 +416,10 @@ export async function runCharacterPhase({
         setTerminalDisposition(budget, 'objective_validation_terminal');
         break;
       }
-      correctionContext = {
-        source: 'objective_validation',
-        validation_class: validation.validation_class,
-        reason: validation.reason,
-      };
+      correctionContext = enrichObjectiveValidationCorrectionContext(validation, {
+        attemptIndex: candidateSlotIndex,
+        characterInferenceId,
+      });
       continue;
     }
 
