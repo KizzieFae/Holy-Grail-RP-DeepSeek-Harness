@@ -15,25 +15,36 @@ import {
   projectionSemanticAdequate,
   validateLh0FinalizedProjectionPackage,
 } from './issue201-lh0-consumer-evidence.mjs';
+import { resolveLh0TransportClocks } from './issue201-lh0-clocks.mjs';
 
 export function prepareLh0RoundTransport({
   sessionsDir,
   hgSessionId,
   hgRoundId,
-  turnIndex,
+  turnIndex = null,
+  fixtureTurnIndex = null,
+  bindingTurnIndex = null,
   characterId,
   arm,
   faultInjection = null,
   storeOverride = null,
 }) {
+  const clocks = resolveLh0TransportClocks({
+    fixtureTurnIndex,
+    bindingTurnIndex,
+    turnIndex,
+  });
+  const fixtureClock = clocks.fixture_turn_index;
+  const bindingClock = clocks.runtime_binding_turn_index;
+
   const store = storeOverride ?? readLh0Store(sessionsDir, hgSessionId);
-  classifyLh0ObligationStates(store, turnIndex);
+  classifyLh0ObligationStates(store, fixtureClock);
   if (!storeOverride) {
     writeLh0Store(sessionsDir, hgSessionId, store);
   }
 
-  const directorDue = obligationsForConsumer(store, { turn: turnIndex, consumer: 'director_turn' });
-  const characterDue = obligationsForConsumer(store, { turn: turnIndex, consumer: 'character_move' });
+  const directorDue = obligationsForConsumer(store, { turn: fixtureClock, consumer: 'director_turn' });
+  const characterDue = obligationsForConsumer(store, { turn: fixtureClock, consumer: 'character_move' });
 
   const directorBatchId = `lh0-dir-${hgRoundId}`;
   const characterBatchId = `lh0-char-${hgRoundId}`;
@@ -42,14 +53,14 @@ export function prepareLh0RoundTransport({
     batchId: directorBatchId,
     consumer: 'director_turn',
     hgRoundId,
-    turnIndex,
+    turnIndex: bindingClock,
     characterId,
   });
   let characterProjection = buildLh0FinalizedProjection(characterDue, {
     batchId: characterBatchId,
     consumer: 'character_move',
     hgRoundId,
-    turnIndex,
+    turnIndex: bindingClock,
     characterId,
   });
 
@@ -87,6 +98,9 @@ export function prepareLh0RoundTransport({
     candidate_only: Boolean(characterProjection || directorProjection),
     projected_finalized: Boolean(characterPrecomputed),
     fault_injection: faultInjection ?? null,
+    lh0_clocks: clocks,
+    fixture_turn_index: fixtureClock,
+    runtime_binding_turn_index: bindingClock,
   };
 }
 
@@ -109,6 +123,8 @@ export function recordLh0TransportAuditStep(transport, { omitCharacterReceipt = 
     candidate_only: transport.candidate_only === true,
     projected_finalized: transport.projected_finalized === true && !omitCharacterReceipt,
     semantic_projection_adequate: projectionSemanticAdequate(transport.characterProjection),
+    fixture_turn_index: transport.fixture_turn_index ?? null,
+    runtime_binding_turn_index: transport.runtime_binding_turn_index ?? null,
     fault_injection: transport.fault_injection,
   };
 }

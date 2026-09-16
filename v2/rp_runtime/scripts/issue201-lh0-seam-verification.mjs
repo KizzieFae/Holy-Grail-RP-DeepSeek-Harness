@@ -16,10 +16,12 @@ import {
 import {
   executeLh0FinalQualificationCampaign,
   executeLh0LiveCampaign,
+  executeLh0TurnAlignedVerificationCampaign,
   verifyCandidateDrift,
 } from './lib/issue201-lh0-live-lib.mjs';
 import { runLh0RemediationValidationSuite } from './lib/issue201-lh0-remediation-lib.mjs';
 import { runLh0SemanticValidationSuite } from './lib/issue201-lh0-semantic-validation-lib.mjs';
+import { runLh0TimingValidationSuite } from './lib/issue201-lh0-timing-validation-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,16 +30,20 @@ function parseArgs(argv) {
     validateApparatus: false,
     validateRemediation: false,
     validateSemantic: false,
+    validateTiming: false,
     executeLive: false,
     executeFinalQualification: false,
+    executeTurnAlignedVerification: false,
     outputDir: null,
   };
   for (let i = 2; i < argv.length; i += 1) {
     if (argv[i] === '--validate-apparatus') args.validateApparatus = true;
     if (argv[i] === '--validate-remediation') args.validateRemediation = true;
     if (argv[i] === '--validate-semantic') args.validateSemantic = true;
+    if (argv[i] === '--validate-timing') args.validateTiming = true;
     if (argv[i] === '--execute-live') args.executeLive = true;
     if (argv[i] === '--execute-final-qualification') args.executeFinalQualification = true;
+    if (argv[i] === '--execute-turn-aligned-verification') args.executeTurnAlignedVerification = true;
     if (argv[i] === '--output-dir' && argv[i + 1]) {
       args.outputDir = argv[i + 1];
       i += 1;
@@ -54,9 +60,16 @@ function defaultOutputDir(prefix = 'issue201-lh0-apparatus') {
 async function main() {
   const args = parseArgs(process.argv);
   if (!args.validateApparatus && !args.validateRemediation && !args.validateSemantic
-    && !args.executeLive && !args.executeFinalQualification) {
-    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --validate-semantic | --execute-live | --execute-final-qualification) [--output-dir PATH]');
+    && !args.validateTiming && !args.executeLive && !args.executeFinalQualification
+    && !args.executeTurnAlignedVerification) {
+    console.error('Usage: node issue201-lh0-seam-verification.mjs (--validate-apparatus | --validate-remediation | --validate-semantic | --validate-timing | --execute-live | --execute-final-qualification | --execute-turn-aligned-verification) [--output-dir PATH]');
     process.exit(1);
+  }
+
+  if (args.validateTiming) {
+    const timing = runLh0TimingValidationSuite();
+    console.log(JSON.stringify(timing, null, 2));
+    process.exit(timing.readiness_for_turn_aligned_qualification ? 0 : 1);
   }
 
   if (args.validateSemantic) {
@@ -74,6 +87,25 @@ async function main() {
   const outputDir = args.outputDir ?? defaultOutputDir(
     args.executeLive ? 'issue201-lh0-live' : 'issue201-lh0-apparatus',
   );
+
+  if (args.executeTurnAlignedVerification) {
+    const timing = runLh0TimingValidationSuite();
+    if (!timing.readiness_for_turn_aligned_qualification) {
+      console.error(JSON.stringify({ error: 'LH-0 timing validation failed', timing }, null, 2));
+      process.exit(3);
+    }
+    const outputDir = args.outputDir ?? defaultOutputDir('issue201-lh0-turn-aligned-verification');
+    const report = await executeLh0TurnAlignedVerificationCampaign({ outputDir });
+    console.log(JSON.stringify({
+      schema: 'issue201_lh0_turn_aligned_verification_run_v1',
+      output_dir: outputDir,
+      candidate_sha: report.candidate_sha,
+      pass_fail_matrix: report.pass_fail_matrix,
+      lh1a_readiness: report.lh1a_readiness,
+      counterfactual_interpretation: report.counterfactual_interpretation,
+    }, null, 2));
+    process.exit(0);
+  }
 
   if (args.executeFinalQualification) {
     const semantic = runLh0SemanticValidationSuite();

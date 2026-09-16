@@ -66,6 +66,8 @@ export async function runLh0PostCommitAdapter({
   hgSessionId,
   domainCommitId,
   turnIndex,
+  fixtureTurnIndex = turnIndex,
+  runtimeTurnIndex = null,
   presentationText,
   sessionsDir,
   runEphemeralInference,
@@ -96,7 +98,7 @@ export async function runLh0PostCommitAdapter({
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
         mechanism: 'plot_cognition_update',
         source: 'live_plot_scribe',
-      }), { turn: turnIndex, inferenceId, mechanism: 'plot_cognition_update' });
+      }), { turn: fixtureTurnIndex, inferenceId, mechanism: 'plot_cognition_update' });
     }
     writeLh0Store(sessionsDir, hgSessionId, store);
     return {
@@ -105,13 +107,15 @@ export async function runLh0PostCommitAdapter({
       plot_post_commit: plotResult,
       inference_id: inferenceId,
       live_cognition: true,
+      fixture_turn_index: fixtureTurnIndex,
+      runtime_turn_index: runtimeTurnIndex,
     };
   }
 
   const prompt = buildPersistentPrompt({
     arm,
     fixtureObligations: fixture.obligations,
-    turnIndex,
+    turnIndex: fixtureTurnIndex,
     presentationText,
   });
   const mechanism = arm === LH0_ARMS.LH_C
@@ -139,14 +143,14 @@ export async function runLh0PostCommitAdapter({
   const obligations = parseObligationJson(inference?.raw_output ?? inference?.text ?? inference);
   const store = readLh0Store(sessionsDir, hgSessionId);
   for (const ob of obligations) {
-    upsertLh0Obligation(store, ob, { turn: turnIndex, inferenceId, mechanism });
+    upsertLh0Obligation(store, ob, { turn: fixtureTurnIndex, inferenceId, mechanism });
   }
   if (!obligations.length) {
     for (const fo of fixture.obligations) {
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
         mechanism: evidenceMechanism,
         source: 'fixture_seed',
-      }), { turn: turnIndex, inferenceId, mechanism: evidenceMechanism });
+      }), { turn: fixtureTurnIndex, inferenceId, mechanism: evidenceMechanism });
     }
   }
   writeLh0Store(sessionsDir, hgSessionId, store);
@@ -157,5 +161,7 @@ export async function runLh0PostCommitAdapter({
     obligation_count: store.obligations.length,
     live_cognition: true,
     token_accounting: inference?.token_accounting ?? null,
+    fixture_turn_index: fixtureTurnIndex,
+    runtime_turn_index: runtimeTurnIndex,
   };
 }

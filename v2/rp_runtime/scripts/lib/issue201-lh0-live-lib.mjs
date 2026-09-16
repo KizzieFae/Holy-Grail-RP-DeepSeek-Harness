@@ -42,6 +42,7 @@ import {
 } from './issue201-lh0-live-adjudication.mjs';
 import { buildInformationUniquenessReport } from './issue201-lh0-semantic-content.mjs';
 import { runLh0SemanticValidationSuite } from './issue201-lh0-semantic-validation-lib.mjs';
+import { runLh0TimingValidationSuite } from './issue201-lh0-timing-validation-lib.mjs';
 import { simulateNegativeControl } from './issue201-lh0-lib.mjs';
 import { gitSha } from './issue201-lh0-lib.mjs';
 
@@ -313,6 +314,64 @@ export async function executeLh0LiveArm({
     `${JSON.stringify(sequence, null, 2)}\n`,
   );
   return sequence;
+}
+
+export async function executeLh0TurnAlignedVerificationCampaign({ outputDir }) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  const timing = runLh0TimingValidationSuite();
+  if (!timing.readiness_for_turn_aligned_qualification) {
+    throw new Error('LH-0 timing validation failed before turn-aligned qualification');
+  }
+  const semantic = runLh0SemanticValidationSuite();
+  if (!semantic.readiness_for_final_qualification) {
+    throw new Error('LH-0 semantic validation failed before turn-aligned qualification');
+  }
+  const policyBundle = loadLh0Policy('ayame_lh0_policy_v1');
+  const evidenceRoot = outputDir;
+  const arms = [LH0_ARMS.LH_A, LH0_ARMS.LH_B, LH0_ARMS.LH_C, LH0_ARMS.LH_D];
+  const sequences = [];
+  for (const arm of arms) {
+    sequences.push(await executeLh0LiveArm({
+      arm,
+      evidenceRoot,
+      outputDir,
+      policyBundle,
+    }));
+  }
+  const armResults = sequences.map((s) => s.adjudication);
+  const control = sequences.find((s) => s.arm === LH0_ARMS.LH_A);
+  const persistent = sequences.filter((s) => s.arm !== LH0_ARMS.LH_A);
+  const counterfactual = buildCounterfactualInterpretation({
+    controlSequence: control,
+    persistentSequences: persistent,
+    fixture: loadLh0FixtureManifest(),
+  });
+  const report = {
+    schema: 'issue201_lh0_turn_aligned_verification_v1',
+    campaign: 'lh0_turn_aligned_final_verification',
+    prior_anchors: {
+      semantic_qualification: 'data/investigation_runs/issue201-lh0-final-qualification-2026-09-15T22-17-52-827Z',
+      semantic_remediation_commit: 'b7d5b7c',
+    },
+    candidate_sha: gitSha(),
+    timing_validation: timing,
+    semantic_validation: semantic,
+    information_uniqueness: buildInformationUniquenessReport({ manifestContributions: [] }),
+    output_dir: outputDir,
+    sequences,
+    pass_fail_matrix: buildPassFailMatrix(armResults),
+    counterfactual_interpretation: counterfactual,
+    lh1a_readiness: {
+      lh_b: armResults.find((r) => r.arm === LH0_ARMS.LH_B)?.lh1a_ready ?? false,
+      lh_c: armResults.find((r) => r.arm === LH0_ARMS.LH_C)?.lh1a_ready ?? false,
+      lh_d: armResults.find((r) => r.arm === LH0_ARMS.LH_D)?.lh1a_ready ?? false,
+    },
+  };
+  fs.writeFileSync(
+    path.join(outputDir, 'issue201-lh0-turn-aligned-verification-report.json'),
+    `${JSON.stringify(report, null, 2)}\n`,
+  );
+  return report;
 }
 
 export async function executeLh0FinalQualificationCampaign({ outputDir }) {
