@@ -1,0 +1,182 @@
+{
+  "schema": "issue201_lh1a_blind_integrity_v1",
+  "campaign_dir": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\data\\investigation_runs\\issue201-lh1a-live-campaign-2026-09-16T02-25-55-261Z",
+  "remediation_pre_commit_sha": "818afc9a3c9b3e44ab9460ed8558b4c36cb84411",
+  "remediation_commit_sha": "bc569c6",
+  "integrity": {
+    "sequence_count": 8,
+    "all_22_turns": true,
+    "sequences": [
+      {
+        "blind_label": "SEQ-E",
+        "session": "hg-session-50402afe-d8cc-4a2a-bf32-30563c35ae09",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-A",
+        "session": "hg-session-f6a88ae0-176e-475f-9342-351ce53183d4",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-F",
+        "session": "hg-session-3660aca9-607f-48ff-90cb-d7c5705509af",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-B",
+        "session": "hg-session-d37e42ba-ea5c-4dd7-bf34-55eeb67dfbcd",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-G",
+        "session": "hg-session-f81a7554-100f-4e69-8eaf-f980e88e409c",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-C",
+        "session": "hg-session-2ccc78a0-2abb-4fbd-805a-6d9257dee100",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-H",
+        "session": "hg-session-227959da-16cc-47a9-9aa5-26afa424a611",
+        "turns": 22,
+        "failed": false
+      },
+      {
+        "blind_label": "SEQ-D",
+        "session": "hg-session-a75b0ac7-bf39-494d-bb2c-0a01f907a83f",
+        "turns": 22,
+        "failed": false
+      }
+    ],
+    "placeholder_packet_hash": "a669c6395bf7b3519d21deac2d56143e0e03ced513e17659a9cf5cf6dbc0b0f5",
+    "placeholder_packet_has_presentations": false,
+    "answer_key_hash": "a9bdb2c367774f443d1496d55bc8dcea69e9259169347075eb10a7c32b69539c",
+    "rubric_hash": "f533cc604b276f7798639db863c8e2264254233ab162de03b343841df840bb91",
+    "rubric_hash_expected": "f533cc604b276f7798639db863c8e2264254233ab162de03b343841df840bb91"
+  },
+  "evaluable_packet_path": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\governance\\records\\issue201-lh1a-evaluation\\issue201-lh1a-blind-sequence-packet-evaluable.json",
+  "evaluable_packet_sha256": "3348a4a5d4086210f9fc600c5a25f88e9aef1de9b492301fdc838aa4aa271e82",
+  "blind_integrity": {
+    "pass": true,
+    "leaked_patterns": [],
+    "sequence_count": 8
+  },
+  "checkpoint_slices_path": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\governance\\records\\issue201-lh1a-evaluation\\issue201-lh1a-checkpoint-slices.json",
+  "costs": {
+    "byArm": {
+      "lh_a": {
+        "label": "lh_a",
+        "sequences": 2,
+        "turns": 44,
+        "inference_count": 118,
+        "sync_calls": 118,
+        "input_tokens": 1193856,
+        "output_tokens": 229663,
+        "reasoning_tokens": 141840,
+        "wall_ms": 2811211,
+        "retry_count": 8,
+        "generated_obligations": 0,
+        "consequential_activations": 0,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      },
+      "lh_b": {
+        "label": "lh_b",
+        "sequences": 2,
+        "turns": 44,
+        "inference_count": 253,
+        "sync_calls": 253,
+        "input_tokens": 2567049,
+        "output_tokens": 512484,
+        "reasoning_tokens": 308262,
+        "wall_ms": 4588515,
+        "retry_count": 9,
+        "generated_obligations": 20,
+        "consequential_activations": 20,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      },
+      "lh_c": {
+        "label": "lh_c",
+        "sequences": 2,
+        "turns": 44,
+        "inference_count": 204,
+        "sync_calls": 204,
+        "input_tokens": 2419639,
+        "output_tokens": 487003,
+        "reasoning_tokens": 309105,
+        "wall_ms": 4235424,
+        "retry_count": 5,
+        "generated_obligations": 20,
+        "consequential_activations": 20,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      },
+      "lh_d": {
+        "label": "lh_d",
+        "sequences": 2,
+        "turns": 44,
+        "inference_count": 207,
+        "sync_calls": 207,
+        "input_tokens": 2378980,
+        "output_tokens": 535699,
+        "reasoning_tokens": 349368,
+        "wall_ms": 4390581,
+        "retry_count": 9,
+        "generated_obligations": 20,
+        "consequential_activations": 20,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      }
+    },
+    "byScenario": {
+      "arkham_stress": {
+        "label": "arkham_stress",
+        "sequences": 4,
+        "turns": 88,
+        "inference_count": 442,
+        "sync_calls": 442,
+        "input_tokens": 4635008,
+        "output_tokens": 966459,
+        "reasoning_tokens": 619344,
+        "wall_ms": 8766626,
+        "retry_count": 12,
+        "generated_obligations": 30,
+        "consequential_activations": 30,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      },
+      "ayame_controlled": {
+        "label": "ayame_controlled",
+        "sequences": 4,
+        "turns": 88,
+        "inference_count": 340,
+        "sync_calls": 340,
+        "input_tokens": 3924516,
+        "output_tokens": 798390,
+        "reasoning_tokens": 489231,
+        "wall_ms": 7259105,
+        "retry_count": 19,
+        "generated_obligations": 30,
+        "consequential_activations": 30,
+        "useful_deferred": 0,
+        "premature_activations": 0,
+        "tracked_dead": 0
+      }
+    }
+  },
+  "answer_key_hash": "a9bdb2c367774f443d1496d55bc8dcea69e9259169347075eb10a7c32b69539c"
+}

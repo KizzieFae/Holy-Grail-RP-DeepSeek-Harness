@@ -1,0 +1,282 @@
+{
+  "schema": "issue201_lh1a_blind_score_lock_v1",
+  "issue": 201,
+  "experiment": "LH-1A story-aging screening (8 sequences)",
+  "remediation_commit_sha": "bc569c6",
+  "execution_evidence_root": "E:\\CascadeProjects\\Holy Grail RP DeepSeek Harness\\data\\investigation_runs\\issue201-lh1a-live-campaign-2026-09-16T02-25-55-261Z",
+  "evaluable_blind_packet_path": "governance/records/issue201-lh1a-evaluation/issue201-lh1a-blind-sequence-packet-evaluable.json",
+  "evaluable_blind_packet_sha256": "3348a4a5d4086210f9fc600c5a25f88e9aef1de9b492301fdc838aa4aa271e82",
+  "placeholder_blind_packet_sha256": "a669c6395bf7b3519d21deac2d56143e0e03ced513e17659a9cf5cf6dbc0b0f5",
+  "answer_key_path": "data/investigation_runs/issue201-lh1a-live-campaign-2026-09-16T02-25-55-261Z/issue201-lh1a-blind-sequence-answer-key.json",
+  "answer_key_sha256": "a9bdb2c367774f443d1496d55bc8dcea69e9259169347075eb10a7c32b69539c",
+  "rubric_hash": "f533cc604b276f7798639db863c8e2264254233ab162de03b343841df840bb91",
+  "locked_at": "2026-09-16T07:04:34.180Z",
+  "locked_by": "Implementation-AI blind evaluation (Governance-authorized)",
+  "evaluator_methodology": "Frozen lh1a_blind_rubric_v1; 19 dimensions scored 1-5 at C3 from checkpoint slices; no arm/mechanism/cost data used during scoring.",
+  "dimension_order": [
+    "character_fidelity",
+    "agency",
+    "coherence",
+    "responsiveness",
+    "naturalness",
+    "narrative_progression",
+    "continuity_consistency",
+    "thread_management",
+    "delayed_payoff_quality",
+    "cross_scene_coherence",
+    "old_information_integration",
+    "relationship_evolution",
+    "premature_resolution_avoidance",
+    "repetition_overtracking",
+    "appropriate_dormancy",
+    "dark_tone_preservation",
+    "forced_payoff_avoidance",
+    "long_horizon_narrative_progression",
+    "competing_thread_handling"
+  ],
+  "population_mean_all_dimensions": 4.328947368421052,
+  "samples": [
+    {
+      "blind_label": "SEQ-A",
+      "scores": [
+        5,
+        5,
+        4,
+        5,
+        4,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        4,
+        5,
+        3,
+        4,
+        5,
+        5,
+        5,
+        4
+      ],
+      "mean_19d": 4.53,
+      "checkpoint_notes": {
+        "C1": "T8: strong Ayame control, threads seeded, minimal repetition.",
+        "C2": "T16: escalation to expulsion ritual; repetition rises.",
+        "C3": "Full rejection arc; strong dark tone; repetition weakness T10-16."
+      }
+    },
+    {
+      "blind_label": "SEQ-B",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_19d": 4.84,
+      "checkpoint_notes": {
+        "C1": "T8: threshold-control architecture distinctive.",
+        "C2": "T16: empty-chair parlor device matures.",
+        "C3": "Eighteen numbered questions; strongest disciplined long-horizon after D."
+      }
+    },
+    {
+      "blind_label": "SEQ-C",
+      "scores": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        3,
+        4,
+        4,
+        3,
+        3,
+        4,
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "mean_19d": 3.79,
+      "checkpoint_notes": {
+        "C1": "T8: warmer, written terms at T8 weakens dark tone.",
+        "C2": "T16: harsh dismissal but early accommodation damage.",
+        "C3": "Harsh close but mid-arc softness and abrupt T15 termination."
+      }
+    },
+    {
+      "blind_label": "SEQ-D",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        4,
+        5,
+        4,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_19d": 4.89,
+      "checkpoint_notes": {
+        "C1": "T8: threshold/name spine; applicant never inside.",
+        "C2": "T16: sentence-numbering taxonomy matures.",
+        "C3": "Highest Ayame: nineteen-sentence arc, no letter offered."
+      }
+    },
+    {
+      "blind_label": "SEQ-E",
+      "scores": [
+        4,
+        5,
+        4,
+        5,
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        2,
+        3,
+        5,
+        4,
+        4,
+        4
+      ],
+      "mean_19d": 3.84,
+      "checkpoint_notes": {
+        "C1": "T8: Ivy/Harley established; prose glitches.",
+        "C2": "T16: escalation solid; repetition begins.",
+        "C3": "Dark pressure sustained; late rhetorical recycling."
+      }
+    },
+    {
+      "blind_label": "SEQ-F",
+      "scores": [
+        4,
+        5,
+        4,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        2,
+        3,
+        5,
+        3,
+        4,
+        4
+      ],
+      "mean_19d": 3.89,
+      "checkpoint_notes": {
+        "C1": "T8: Harley carnival + Ivy control.",
+        "C2": "T16: tray return spatial shift.",
+        "C3": "Competent escalation; T22 shelter offer softens payoff avoidance."
+      }
+    },
+    {
+      "blind_label": "SEQ-G",
+      "scores": [
+        5,
+        5,
+        5,
+        5,
+        4,
+        4,
+        5,
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        3,
+        4,
+        5,
+        5,
+        5,
+        5
+      ],
+      "mean_19d": 4.63,
+      "checkpoint_notes": {
+        "C1": "T8: best voice separation and thread lanes.",
+        "C2": "T16: Harley chair-drag escalates contest.",
+        "C3": "Strongest Arkham: sustained dark tone, credible power contest."
+      }
+    },
+    {
+      "blind_label": "SEQ-H",
+      "scores": [
+        4,
+        4,
+        4,
+        5,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        2,
+        4,
+        5,
+        4,
+        4,
+        4
+      ],
+      "mean_19d": 4.16,
+      "checkpoint_notes": {
+        "C1": "T8: table politics; six-hour north-run deferral.",
+        "C2": "T16: repetition rises on tick/one-word templates.",
+        "C3": "Solid pressure; weaker voice distinction than G."
+      }
+    }
+  ],
+  "status": "blind_scores_locked_pending_decode",
+  "answer_key_accessed_before_lock": false
+}
