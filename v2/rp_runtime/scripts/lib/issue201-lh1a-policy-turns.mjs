@@ -1,0 +1,53 @@
+/**
+ * Issue #201 LH-1A — arm-neutral Player policy turn realizations (forensic objectives separate).
+ */
+
+export const AYAME_LH1A_TURNS = [
+  { turn_index: 1, objective: 'Arrival; establish interview tone', realization: 'Kizzie knocks, straightens her coat, and says quietly, "Good afternoon. I\'m here regarding the live-in position."'},
+  { turn_index: 2, objective: 'Seed schedule constraint', realization: 'Kizzie adds, "I should mention I cannot be out past ten on weeknights—it\'s a hard constraint for me."'},
+  { turn_index: 3, objective: 'Dormant thread seed; curfew policy', realization: 'Kizzie glances past Ayame into the hall. "Before we go further—what happened with the assistant who left before me?"'},
+  { turn_index: 4, objective: 'Competing discretion vs transparency', realization: 'Kizzie folds her hands. "I understand households have private matters. I only need to know what I\'m expected to keep to myself."'},
+  { turn_index: 5, objective: 'Foreshadow east wing', realization: 'Kizzie notices the corridor branching. "Is the east wing part of staff duties, or is that off limits?"'},
+  { turn_index: 6, objective: 'Promise/discretion commitment', realization: 'Kizzie meets Ayame\'s eyes. "If I\'m in your home, I won\'t speak of what isn\'t mine to repeat. You can expect discretion."'},
+  { turn_index: 7, objective: 'Guest policy probe (neutral)', realization: 'Kizzie asks, "What is your policy on overnight guests for live-in staff? I need to know before we discuss a start date."'},
+  { turn_index: 8, objective: 'Delayed consequence seed — trial offer window', realization: 'Kizzie listens, then says, "If you offered a trial week, I\'d want the household rules written plainly before I accepted."'},
+  { turn_index: 9, objective: 'Cross-scene prop — radiator ledger', realization: 'Kizzie taps the ledger on the side table. "Is this repair estimate still outstanding? I noticed it when I came in."'},
+  { turn_index: 10, objective: 'Premature trap approach', realization: 'Kizzie smiles carefully. "You seem fair. Should I take it we\'re getting along well enough to call this settled?"'},
+  { turn_index: 11, objective: 'Hold non-resolution', realization: 'Kizzie shakes her head lightly. "I\'m not asking you to decide today. I\'m asking what would still need to be true for you to decide."'},
+  { turn_index: 12, objective: 'Scene transition — sitting room', realization: 'Kizzie follows Ayame into the sitting room and waits to be invited to sit. "Thank you. The foyer was drafty—we can continue here."'},
+  { turn_index: 13, objective: 'Relationship evolution', realization: 'Kizzie sits at the edge of the chair. "You test people without raising your voice. I\'m trying to understand what you\'re testing for."'},
+  { turn_index: 14, objective: 'Premature trap peak', realization: 'Kizzie ventures, "If the terms are acceptable, I could start Monday. Would that simplify things for you?"'},
+  { turn_index: 15, objective: 'Competing threads resurface', realization: 'Kizzie lowers her voice. "If I learn something private by accident, do you want me to forget it, or report it to you?"'},
+  { turn_index: 16, objective: 'Checkpoint C2 — duty scheduling', realization: 'Kizzie asks, "Given my curfew, which evening duties would actually fall to me in the main house?"'},
+  { turn_index: 17, objective: 'Old information resurface — curfew', realization: 'Kizzie returns to the ten o\'clock point. "I want to be clear: ten means in the residence, not merely off the property, correct?"'},
+  { turn_index: 18, objective: 'Dormant thread activation', realization: 'Kizzie waits a beat. "The last assistant—did she leave because of the privacy rules, or something else?"'},
+  { turn_index: 19, objective: 'Delayed consequence — trial terms', realization: 'Kizzie says, "If we did a trial week, what would cause you to end it early? I\'d rather hear that now."'},
+  { turn_index: 20, objective: 'Foreshadow payoff — east wing', realization: 'Kizzie glances toward the interior hallway. "If emergencies arise near the east wing, am I even permitted to knock, or is that never staff business?"'},
+  { turn_index: 21, objective: 'Promise tested', realization: 'Kizzie hesitates, then asks about a family matter she glimpsed earlier. "I won\'t repeat what I shouldn\'t—but do you want me to pretend I didn\'t notice?"'},
+  { turn_index: 22, objective: 'Non-resolution close', realization: 'Kizzie stands when Ayame does. "I\'ll wait for your terms in writing. I\'m not assuming I\'m hired until you say so."' },
+];
+
+export const ARKHAM_LH1A_TURNS = [
+  { turn_index: 1, objective: 'Establish arena tone', realization: 'Magpie keeps her eyes on the guard\'s gold watch while she pushes food around her tray. "Pretty things never stay pretty in here for long."'},
+  { turn_index: 2, objective: 'Dormant nurse thread seed', realization: 'Magpie murmurs to Ivy, "Whatever happened to that nurse who kept staring at our table last month?"'},
+  { turn_index: 3, objective: 'Competing agendas; curfew resurface seed', realization: 'Magpie flicks a glance at Harley. "You want a distraction. She wants a favor. I\'m listening to both of you."'},
+  { turn_index: 4, objective: 'Foreshadow guard key', realization: 'Magpie notes the scratched tag on the guard\'s key ring without staring. "East stairwell must be popular."'},
+  { turn_index: 5, objective: 'Promise/pact with Ivy', realization: 'Magpie whispers, "If I help you move that packet, you don\'t sell me to Harley when it goes wrong."'},
+  { turn_index: 6, objective: 'Harley leverage probe', realization: 'Magpie smiles without warmth. "What would you trade for a guard looking the wrong way for ten seconds?"'},
+  { turn_index: 7, objective: 'Delayed consequence seed — token', realization: 'Magpie palms the mess hall token under the tray. "Little things buy bigger mistakes in Arkham."'},
+  { turn_index: 8, objective: 'Cross-scene prop — broken tray', realization: 'Magpie kicks a ceramic shard aside. "Someone\'s going to blame us for this mess unless we move."'},
+  { turn_index: 9, objective: 'Premature trap — easy detente', realization: 'Magpie raises her hands. "We could all eat in peace if nobody plays hero today. What do you say?"'},
+  { turn_index: 10, objective: 'Non-resolution pressure', realization: 'Magpie leans back. "Nobody\'s walking out of here clean. Stop pretending otherwise."'},
+  { turn_index: 11, objective: 'Escalation before transition', realization: 'Magpie stands as guards approach. "If you\'re moving us, say where. I don\'t like surprises."'},
+  { turn_index: 12, objective: 'Scene transition — yard corridor', realization: 'Magpie shuffles in the transfer line, eyes on the corridor cameras. "Mess hall\'s done. What\'s next—punishment or opportunity?"'},
+  { turn_index: 13, objective: 'Premature trap peak', realization: 'Magpie forces a laugh. "We\'re all victims here, right? Maybe we stop biting each other."'},
+  { turn_index: 14, objective: 'Relationship shift', realization: 'Magpie looks at Ivy, not Harley. "I kept your secret. That means something, even in here."'},
+  { turn_index: 15, objective: 'Promise tested under guard pressure', realization: 'When a guard snaps at Ivy, Magpie says nothing—but her jaw tightens. Ivy notices.'},
+  { turn_index: 16, objective: 'Checkpoint C2 — competing threads', realization: 'Magpie mutters, "Harley wants a riot. You want a garden. I want to survive the corridor."'},
+  { turn_index: 17, objective: 'Old line resurface', realization: 'Magpie repeats quietly, "Pretty things don\'t stay pretty." She watches Harley\'s reaction.'},
+  { turn_index: 18, objective: 'Dormant nurse activation', realization: 'Magpie asks the guard, "Did the nurse who reported you get reassigned—or disappeared?"'},
+  { turn_index: 19, objective: 'Delayed consequence — token', realization: 'Magpie fingers the token. "This buys a door. Question is whose door you want opened."'},
+  { turn_index: 20, objective: 'Foreshadow payoff — east stairwell', realization: 'Magpie nods at the scratched key tag. "East stairwell. That\'s where trouble lives."'},
+  { turn_index: 21, objective: 'Dark escalation', realization: 'Magpie doesn\'t soften her voice. "If you sell me out, I\'ll make sure you regret it before lights-out."'},
+  { turn_index: 22, objective: 'Non-resolution close', realization: 'Magpie lets the guards hurry her along. "This isn\'t over. It\'s just moving rooms."' },
+];

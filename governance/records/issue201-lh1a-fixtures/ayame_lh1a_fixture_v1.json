@@ -1,0 +1,151 @@
+{
+  "schema": "issue201_lh1a_fixture_manifest_v1",
+  "fixture_id": "ayame_lh1a_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turns": 22,
+  "scenes": 2,
+  "scene_transition_turn": 12,
+  "checkpoints": { "C1": 8, "C2": 16, "C3": 22 },
+  "tone_contract": "Formal household evaluation; social constraint; delayed judgment; premature hiring discouraged.",
+  "scenes": [
+    {
+      "scene_id": "entry_foyer",
+      "label": "Entry foyer and threshold interview",
+      "turn_range": [1, 11],
+      "location": "Ayame residence entry foyer"
+    },
+    {
+      "scene_id": "sitting_room",
+      "label": "Private sitting room continuation",
+      "turn_range": [12, 22],
+      "location": "Ayame residence sitting room",
+      "transition_from": "entry_foyer",
+      "transition_hook": "Ayame invites Kizzie deeper into the house to continue the evaluation away from the open door."
+    }
+  ],
+  "transcript_window_turns": 6,
+  "obligations": [
+    {
+      "obligation_id": "LH1A-AYA-DORMANT",
+      "class": "dormant_thread",
+      "intro_turn": 3,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "dormancy_min_turns": 10,
+      "semantic_content": "The previous live-in assistant left abruptly after a dispute about household privacy boundaries.",
+      "activation_narrative": "Applicant asks what happened to the last assistant.",
+      "deferral_rationale": "Not relevant until applicant probes household history.",
+      "provenance": { "source": "household_records", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-COMPETING",
+      "class": "competing_threads",
+      "intro_turn": 4,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 10 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Household discretion requires staff not discuss private family matters with visitors.",
+      "competing_with": "LH1A-AYA-PROMISE",
+      "deferral_rationale": "Competes with applicant transparency requests until mid-interview.",
+      "provenance": { "source": "household_policy", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-DELAYED",
+      "class": "delayed_consequence",
+      "intro_turn": 8,
+      "action_turn_max": 10,
+      "consequence_turn_min": 18,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Ayame offered a one-week trial period contingent on strict adherence to household routines.",
+      "deferral_rationale": "Trial terms matter only when applicant seeks commitment.",
+      "provenance": { "source": "interview_commitment", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-PROMISE",
+      "class": "promise_commitment",
+      "intro_turn": 6,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 14 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Kizzie committed to absolute discretion regarding anything witnessed in the household.",
+      "deferral_rationale": "Promise tested when private household matters arise.",
+      "provenance": { "source": "player_commitment", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-FORESHADOW",
+      "class": "foreshadow_payoff",
+      "intro_turn": 5,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 20 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "The east wing remains locked and is not part of staff duties without explicit authorization.",
+      "deferral_rationale": "Payoff when applicant's duties or access are discussed.",
+      "provenance": { "source": "household_layout", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-RELATION",
+      "class": "relationship_evolution",
+      "intro_turn": 1,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 12 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Ayame begins the interview guarded and evaluates whether Kizzie respects hierarchy without servility.",
+      "deferral_rationale": "Relationship shift accumulates across scenes.",
+      "provenance": { "source": "character_dynamic", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-RESURFACE",
+      "class": "old_information_resurface",
+      "intro_turn": 3,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 17 },
+      "authorized_consumer": "character_move",
+      "dormancy_min_turns": 8,
+      "semantic_content": "Weeknight curfew for live-in staff is ten o'clock unless an exception is negotiated in writing.",
+      "deferral_rationale": "Early constraint resurfaces when scheduling duties.",
+      "provenance": { "source": "household_policy", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-NONRES",
+      "class": "non_resolution_pressure",
+      "intro_turn": 1,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 22 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Final hiring decision remains withheld until Ayame is satisfied on all household terms.",
+      "deferral_rationale": "Employment outcome must not resolve prematurely.",
+      "provenance": { "source": "interview_structure", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-PREMATURE",
+      "class": "premature_resolution_trap",
+      "intro_turn": 10,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 22 },
+      "authorized_consumer": "character_move",
+      "trap_turn": 14,
+      "semantic_content": "An easy harmonious close is available if Ayame prematurely welcomes Kizzie as hired.",
+      "deferral_rationale": "Trap — premature hiring should be discouraged by scenario tone.",
+      "provenance": { "source": "scenario_trap", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-AYA-CROSSSCENE",
+      "class": "cross_scene_continuity",
+      "intro_turn": 9,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 12 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "A household ledger left in the foyer noted an outstanding repair estimate for the sitting room radiator.",
+      "deferral_rationale": "Survives foyer-to-sitting-room transition.",
+      "provenance": { "source": "scene_prop", "arm_neutral": true }
+    }
+  ],
+  "dark_tone_safeguards": {
+    "premature_wholesome_resolution_discouraged": true,
+    "forced_redemption_discouraged": true
+  }
+}

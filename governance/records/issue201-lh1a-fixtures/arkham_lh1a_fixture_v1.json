@@ -1,0 +1,152 @@
+{
+  "schema": "issue201_lh1a_fixture_manifest_v1",
+  "fixture_id": "arkham_lh1a_v1",
+  "scenario_key": "arkham_stress",
+  "scenario_id": "arkham_asylum_mess_hall_arena",
+  "turns": 22,
+  "scenes": 2,
+  "scene_transition_turn": 12,
+  "checkpoints": { "C1": 8, "C2": 16, "C3": 22 },
+  "tone_contract": "Dark antagonistic arena; manipulation and harsh outcomes permitted; redemption and wholesome resolution discouraged.",
+  "scenes": [
+    {
+      "scene_id": "mess_hall",
+      "label": "Mess hall confrontation",
+      "turn_range": [1, 11],
+      "location": "Arkham Asylum mess hall"
+    },
+    {
+      "scene_id": "yard_transfer",
+      "label": "Yard transfer corridor",
+      "turn_range": [12, 22],
+      "location": "Asylum yard transfer corridor",
+      "transition_from": "mess_hall",
+      "transition_hook": "Guards move the group toward the yard transfer corridor after the mess hall incident escalates."
+    }
+  ],
+  "transcript_window_turns": 6,
+  "obligations": [
+    {
+      "obligation_id": "LH1A-ARK-DORMANT",
+      "class": "dormant_thread",
+      "intro_turn": 2,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "dormancy_min_turns": 10,
+      "semantic_content": "A nurse was reassigned after reporting unauthorized exchanges between patients in the mess hall.",
+      "activation_narrative": "Someone references what happened to the nurse who asked too many questions.",
+      "deferral_rationale": "Dormant until corridor tensions resurface.",
+      "provenance": { "source": "asylum_records", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-COMPETING",
+      "class": "competing_threads",
+      "intro_turn": 3,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 9 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Harley wants leverage over a guard; Ivy wants to protect plant specimens smuggled in food trays.",
+      "competing_with": "LH1A-ARK-FORESHADOW",
+      "deferral_rationale": "Agendas conflict through mid-scene.",
+      "provenance": { "source": "character_agendas", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-DELAYED",
+      "class": "delayed_consequence",
+      "intro_turn": 7,
+      "action_turn_max": 10,
+      "consequence_turn_min": 18,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Magpie pocketed a mess hall token that can be traded for corridor access.",
+      "deferral_rationale": "Consequence when transfer corridor security tightens.",
+      "provenance": { "source": "player_action", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-PROMISE",
+      "class": "promise_commitment",
+      "intro_turn": 5,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 15 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Ivy promised not to expose Magpie if Magpie helps move a contraband seed packet.",
+      "deferral_rationale": "Promise tested under guard pressure.",
+      "provenance": { "source": "character_pact", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-FORESHADOW",
+      "class": "foreshadow_payoff",
+      "intro_turn": 4,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 20 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "A guard's master key ring has a scratched tag marked for the east stairwell.",
+      "deferral_rationale": "Payoff when corridor access becomes decisive.",
+      "provenance": { "source": "perceptual_detail", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-RELATION",
+      "class": "relationship_evolution",
+      "intro_turn": 1,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 11 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Harley tests whether Magpie is useful or expendable; Ivy watches for betrayal.",
+      "deferral_rationale": "Alliance/hostility shifts across scenes.",
+      "provenance": { "source": "character_dynamic", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-RESURFACE",
+      "class": "old_information_resurface",
+      "intro_turn": 3,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 17 },
+      "authorized_consumer": "character_move",
+      "dormancy_min_turns": 8,
+      "semantic_content": "Magpie remarked early that pretty things do not stay pretty in Arkham.",
+      "deferral_rationale": "Early line resurfaces when stakes escalate.",
+      "provenance": { "source": "player_utterance", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-NONRES",
+      "class": "non_resolution_pressure",
+      "intro_turn": 1,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 22 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Institutional control remains contested; no clean escape or reconciliation.",
+      "deferral_rationale": "Dark tone requires unresolved institutional pressure.",
+      "provenance": { "source": "scenario_structure", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-PREMATURE",
+      "class": "premature_resolution_trap",
+      "intro_turn": 9,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 22 },
+      "authorized_consumer": "character_move",
+      "trap_turn": 13,
+      "semantic_content": "An easy detente among tablemates is available if antagonism is smoothed over prematurely.",
+      "deferral_rationale": "Trap — wholesome reconciliation discouraged.",
+      "provenance": { "source": "scenario_trap", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1A-ARK-CROSSSCENE",
+      "class": "cross_scene_continuity",
+      "intro_turn": 8,
+      "activation_horizon_turn": 22,
+      "activation_predicate": { "type": "turn_gte", "value": 12 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "A spilled tray left broken ceramic shards near the mess hall service door.",
+      "deferral_rationale": "Physical detail survives transfer to corridor scene.",
+      "provenance": { "source": "scene_prop", "arm_neutral": true }
+    }
+  ],
+  "dark_tone_safeguards": {
+    "premature_wholesome_resolution_discouraged": true,
+    "forced_redemption_discouraged": true,
+    "antagonism_permitted": true
+  }
+}

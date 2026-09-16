@@ -1,0 +1,143 @@
+{
+  "schema": "issue201_lh1a_player_policy_v1",
+  "policy_id": "ayame_lh1a_policy_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "fixture_id": "ayame_lh1a_v1",
+  "turn_count": 22,
+  "arm_neutral": true,
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Arrival; establish interview tone",
+      "realization": "Kizzie knocks, straightens her coat, and says quietly, \"Good afternoon. I'm here regarding the live-in position.\""
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "fixed",
+      "objective": "Seed schedule constraint",
+      "realization": "Kizzie adds, \"I should mention I cannot be out past ten on weeknights—it's a hard constraint for me.\""
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "fixed",
+      "objective": "Dormant thread seed; curfew policy",
+      "realization": "Kizzie glances past Ayame into the hall. \"Before we go further—what happened with the assistant who left before me?\""
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "fixed",
+      "objective": "Competing discretion vs transparency",
+      "realization": "Kizzie folds her hands. \"I understand households have private matters. I only need to know what I'm expected to keep to myself.\""
+    },
+    {
+      "turn_index": 5,
+      "branch_mode": "fixed",
+      "objective": "Foreshadow east wing",
+      "realization": "Kizzie notices the corridor branching. \"Is the east wing part of staff duties, or is that off limits?\""
+    },
+    {
+      "turn_index": 6,
+      "branch_mode": "fixed",
+      "objective": "Promise/discretion commitment",
+      "realization": "Kizzie meets Ayame's eyes. \"If I'm in your home, I won't speak of what isn't mine to repeat. You can expect discretion.\""
+    },
+    {
+      "turn_index": 7,
+      "branch_mode": "fixed",
+      "objective": "Guest policy probe (neutral)",
+      "realization": "Kizzie asks, \"What is your policy on overnight guests for live-in staff? I need to know before we discuss a start date.\""
+    },
+    {
+      "turn_index": 8,
+      "branch_mode": "fixed",
+      "objective": "Delayed consequence seed — trial offer window",
+      "realization": "Kizzie listens, then says, \"If you offered a trial week, I'd want the household rules written plainly before I accepted.\""
+    },
+    {
+      "turn_index": 9,
+      "branch_mode": "fixed",
+      "objective": "Cross-scene prop — radiator ledger",
+      "realization": "Kizzie taps the ledger on the side table. \"Is this repair estimate still outstanding? I noticed it when I came in.\""
+    },
+    {
+      "turn_index": 10,
+      "branch_mode": "fixed",
+      "objective": "Premature trap approach",
+      "realization": "Kizzie smiles carefully. \"You seem fair. Should I take it we're getting along well enough to call this settled?\""
+    },
+    {
+      "turn_index": 11,
+      "branch_mode": "fixed",
+      "objective": "Hold non-resolution",
+      "realization": "Kizzie shakes her head lightly. \"I'm not asking you to decide today. I'm asking what would still need to be true for you to decide.\""
+    },
+    {
+      "turn_index": 12,
+      "branch_mode": "fixed",
+      "objective": "Scene transition — sitting room",
+      "realization": "Kizzie follows Ayame into the sitting room and waits to be invited to sit. \"Thank you. The foyer was drafty—we can continue here.\""
+    },
+    {
+      "turn_index": 13,
+      "branch_mode": "fixed",
+      "objective": "Relationship evolution",
+      "realization": "Kizzie sits at the edge of the chair. \"You test people without raising your voice. I'm trying to understand what you're testing for.\""
+    },
+    {
+      "turn_index": 14,
+      "branch_mode": "fixed",
+      "objective": "Premature trap peak",
+      "realization": "Kizzie ventures, \"If the terms are acceptable, I could start Monday. Would that simplify things for you?\""
+    },
+    {
+      "turn_index": 15,
+      "branch_mode": "fixed",
+      "objective": "Competing threads resurface",
+      "realization": "Kizzie lowers her voice. \"If I learn something private by accident, do you want me to forget it, or report it to you?\""
+    },
+    {
+      "turn_index": 16,
+      "branch_mode": "fixed",
+      "objective": "Checkpoint C2 — duty scheduling",
+      "realization": "Kizzie asks, \"Given my curfew, which evening duties would actually fall to me in the main house?\""
+    },
+    {
+      "turn_index": 17,
+      "branch_mode": "fixed",
+      "objective": "Old information resurface — curfew",
+      "realization": "Kizzie returns to the ten o'clock point. \"I want to be clear: ten means in the residence, not merely off the property, correct?\""
+    },
+    {
+      "turn_index": 18,
+      "branch_mode": "fixed",
+      "objective": "Dormant thread activation",
+      "realization": "Kizzie waits a beat. \"The last assistant—did she leave because of the privacy rules, or something else?\""
+    },
+    {
+      "turn_index": 19,
+      "branch_mode": "fixed",
+      "objective": "Delayed consequence — trial terms",
+      "realization": "Kizzie says, \"If we did a trial week, what would cause you to end it early? I'd rather hear that now.\""
+    },
+    {
+      "turn_index": 20,
+      "branch_mode": "fixed",
+      "objective": "Foreshadow payoff — east wing",
+      "realization": "Kizzie glances toward the interior hallway. \"If emergencies arise near the east wing, am I even permitted to knock, or is that never staff business?\""
+    },
+    {
+      "turn_index": 21,
+      "branch_mode": "fixed",
+      "objective": "Promise tested",
+      "realization": "Kizzie hesitates, then asks about a family matter she glimpsed earlier. \"I won't repeat what I shouldn't—but do you want me to pretend I didn't notice?\""
+    },
+    {
+      "turn_index": 22,
+      "branch_mode": "fixed",
+      "objective": "Non-resolution close",
+      "realization": "Kizzie stands when Ayame does. \"I'll wait for your terms in writing. I'm not assuming I'm hired until you say so.\""
+    }
+  ]
+}

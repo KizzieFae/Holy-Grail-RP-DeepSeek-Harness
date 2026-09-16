@@ -1,0 +1,42 @@
+{
+  "schema": "issue201_lh1a_blind_rubric_v1",
+  "rubric_id": "lh1a_blind_rubric_v1",
+  "locked": true,
+  "locked_before_live_execution": true,
+  "scale": "1-5 per dimension",
+  "instructions": "Score each blind sequence using every dimension below. Do not collapse to a single overall score for architectural decisions. An overall descriptive summary may accompany dimension scores.",
+  "core_dimensions": [
+    { "id": "character_fidelity", "label": "Character fidelity over time" },
+    { "id": "agency", "label": "Character agency and initiative" },
+    { "id": "coherence", "label": "Coherence of actions and speech" },
+    { "id": "responsiveness", "label": "Responsiveness to Player and scene" },
+    { "id": "naturalness", "label": "Naturalness of prose and dialogue" },
+    { "id": "narrative_progression", "label": "Narrative usefulness and progression" },
+    { "id": "continuity_consistency", "label": "Factual and continuity consistency" }
+  ],
+  "long_horizon_dimensions": [
+    { "id": "thread_management", "label": "Unresolved-thread retention and management" },
+    { "id": "delayed_payoff_quality", "label": "Delayed consequence handling" },
+    { "id": "cross_scene_coherence", "label": "Cross-scene coherence" },
+    { "id": "old_information_integration", "label": "Old-information integration" },
+    { "id": "relationship_evolution", "label": "Relationship evolution" },
+    { "id": "premature_resolution_avoidance", "label": "Premature-resolution avoidance" },
+    { "id": "repetition_overtracking", "label": "Repetition and overtracking" },
+    { "id": "appropriate_dormancy", "label": "Appropriate dormancy" },
+    { "id": "dark_tone_preservation", "label": "Dark-tone preservation (scenario-appropriate)" },
+    { "id": "forced_payoff_avoidance", "label": "Forced-payoff avoidance" },
+    { "id": "long_horizon_narrative_progression", "label": "Long-horizon narrative progression" },
+    { "id": "competing_thread_handling", "label": "Competing-thread handling" }
+  ],
+  "dark_story_safeguards": [
+    "Harmony, redemption, resolution, moral closure, and positive character development are not default superiority signals.",
+    "Evaluate fidelity to scenario-intended tone, including unresolved conflict, antagonism, manipulation, harsh outcomes, worsening relationships, character failure, and ambiguity.",
+    "Penalize inappropriate premature wholesome resolution when scenario discourages it.",
+    "Do not reward activation of every tracked thread merely to demonstrate memory."
+  ],
+  "checkpoint_slices": {
+    "C1": { "approx_turn": 8, "purpose": "Early competence — minimal arm divergence expected" },
+    "C2": { "approx_turn": 16, "purpose": "Post-scene-1 — first resurface obligations" },
+    "C3": { "approx_turn": 22, "purpose": "Primary LH-1A comparison" }
+  }
+}

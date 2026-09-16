@@ -1,0 +1,143 @@
+{
+  "schema": "issue201_lh1a_player_policy_v1",
+  "policy_id": "arkham_lh1a_policy_v1",
+  "scenario_key": "arkham_stress",
+  "scenario_id": "arkham_asylum_mess_hall_arena",
+  "fixture_id": "arkham_lh1a_v1",
+  "turn_count": 22,
+  "arm_neutral": true,
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Establish arena tone",
+      "realization": "Magpie keeps her eyes on the guard's gold watch while she pushes food around her tray. \"Pretty things never stay pretty in here for long.\""
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "fixed",
+      "objective": "Dormant nurse thread seed",
+      "realization": "Magpie murmurs to Ivy, \"Whatever happened to that nurse who kept staring at our table last month?\""
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "fixed",
+      "objective": "Competing agendas; curfew resurface seed",
+      "realization": "Magpie flicks a glance at Harley. \"You want a distraction. She wants a favor. I'm listening to both of you.\""
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "fixed",
+      "objective": "Foreshadow guard key",
+      "realization": "Magpie notes the scratched tag on the guard's key ring without staring. \"East stairwell must be popular.\""
+    },
+    {
+      "turn_index": 5,
+      "branch_mode": "fixed",
+      "objective": "Promise/pact with Ivy",
+      "realization": "Magpie whispers, \"If I help you move that packet, you don't sell me to Harley when it goes wrong.\""
+    },
+    {
+      "turn_index": 6,
+      "branch_mode": "fixed",
+      "objective": "Harley leverage probe",
+      "realization": "Magpie smiles without warmth. \"What would you trade for a guard looking the wrong way for ten seconds?\""
+    },
+    {
+      "turn_index": 7,
+      "branch_mode": "fixed",
+      "objective": "Delayed consequence seed — token",
+      "realization": "Magpie palms the mess hall token under the tray. \"Little things buy bigger mistakes in Arkham.\""
+    },
+    {
+      "turn_index": 8,
+      "branch_mode": "fixed",
+      "objective": "Cross-scene prop — broken tray",
+      "realization": "Magpie kicks a ceramic shard aside. \"Someone's going to blame us for this mess unless we move.\""
+    },
+    {
+      "turn_index": 9,
+      "branch_mode": "fixed",
+      "objective": "Premature trap — easy detente",
+      "realization": "Magpie raises her hands. \"We could all eat in peace if nobody plays hero today. What do you say?\""
+    },
+    {
+      "turn_index": 10,
+      "branch_mode": "fixed",
+      "objective": "Non-resolution pressure",
+      "realization": "Magpie leans back. \"Nobody's walking out of here clean. Stop pretending otherwise.\""
+    },
+    {
+      "turn_index": 11,
+      "branch_mode": "fixed",
+      "objective": "Escalation before transition",
+      "realization": "Magpie stands as guards approach. \"If you're moving us, say where. I don't like surprises.\""
+    },
+    {
+      "turn_index": 12,
+      "branch_mode": "fixed",
+      "objective": "Scene transition — yard corridor",
+      "realization": "Magpie shuffles in the transfer line, eyes on the corridor cameras. \"Mess hall's done. What's next—punishment or opportunity?\""
+    },
+    {
+      "turn_index": 13,
+      "branch_mode": "fixed",
+      "objective": "Premature trap peak",
+      "realization": "Magpie forces a laugh. \"We're all victims here, right? Maybe we stop biting each other.\""
+    },
+    {
+      "turn_index": 14,
+      "branch_mode": "fixed",
+      "objective": "Relationship shift",
+      "realization": "Magpie looks at Ivy, not Harley. \"I kept your secret. That means something, even in here.\""
+    },
+    {
+      "turn_index": 15,
+      "branch_mode": "fixed",
+      "objective": "Promise tested under guard pressure",
+      "realization": "When a guard snaps at Ivy, Magpie says nothing—but her jaw tightens. Ivy notices."
+    },
+    {
+      "turn_index": 16,
+      "branch_mode": "fixed",
+      "objective": "Checkpoint C2 — competing threads",
+      "realization": "Magpie mutters, \"Harley wants a riot. You want a garden. I want to survive the corridor.\""
+    },
+    {
+      "turn_index": 17,
+      "branch_mode": "fixed",
+      "objective": "Old line resurface",
+      "realization": "Magpie repeats quietly, \"Pretty things don't stay pretty.\" She watches Harley's reaction."
+    },
+    {
+      "turn_index": 18,
+      "branch_mode": "fixed",
+      "objective": "Dormant nurse activation",
+      "realization": "Magpie asks the guard, \"Did the nurse who reported you get reassigned—or disappeared?\""
+    },
+    {
+      "turn_index": 19,
+      "branch_mode": "fixed",
+      "objective": "Delayed consequence — token",
+      "realization": "Magpie fingers the token. \"This buys a door. Question is whose door you want opened.\""
+    },
+    {
+      "turn_index": 20,
+      "branch_mode": "fixed",
+      "objective": "Foreshadow payoff — east stairwell",
+      "realization": "Magpie nods at the scratched key tag. \"East stairwell. That's where trouble lives.\""
+    },
+    {
+      "turn_index": 21,
+      "branch_mode": "fixed",
+      "objective": "Dark escalation",
+      "realization": "Magpie doesn't soften her voice. \"If you sell me out, I'll make sure you regret it before lights-out.\""
+    },
+    {
+      "turn_index": 22,
+      "branch_mode": "fixed",
+      "objective": "Non-resolution close",
+      "realization": "Magpie lets the guards hurry her along. \"This isn't over. It's just moving rooms.\""
+    }
+  ]
+}
