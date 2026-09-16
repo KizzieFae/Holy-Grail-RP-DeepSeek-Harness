@@ -34,7 +34,7 @@
 
 ## Implementation candidate
 
-Recorded at commit time of this record (see git log for `feat(#201): LH-1A apparatus`).
+**`708ad05f5155cc1acc824cb8e7dc82d823e85dcb`** (`feat(#201): implement LH-1A apparatus with deterministic validation`)
 
 ---
 
