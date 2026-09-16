@@ -481,6 +481,7 @@ export async function runA2BeatRound({
       runEphemeralInference: phaseExecutors.runEphemeralInference.bind(phaseExecutors),
       modelProfile: roleProfiles.storyteller ?? roleProfiles.director,
       evidenceContextBase: { hgSessionId, hgSceneId, hgRoundId, sceneSessionId },
+      fixtureManifest: options.lh0FixtureManifest ?? null,
     });
     lh0PostCommit.wall_ms = Date.now() - lh0Started;
     auditSteps.push(createAuditStep('lh0_post_commit', lh0PostCommit));

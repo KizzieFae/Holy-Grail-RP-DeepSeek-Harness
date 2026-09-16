@@ -23,6 +23,18 @@ import {
 
 const BLIND_LABELS = ['SEQ-A', 'SEQ-B', 'SEQ-C', 'SEQ-D', 'SEQ-E', 'SEQ-F', 'SEQ-G', 'SEQ-H'];
 
+/** Authoritative live execution order (arm blocks per scenario, no quality-based reordering). */
+export const LH1A_LIVE_EXECUTION_ORDER = Object.freeze([
+  { arm: 'lh_a', scenario_key: 'ayame_controlled' },
+  { arm: 'lh_b', scenario_key: 'ayame_controlled' },
+  { arm: 'lh_c', scenario_key: 'ayame_controlled' },
+  { arm: 'lh_d', scenario_key: 'ayame_controlled' },
+  { arm: 'lh_a', scenario_key: 'arkham_stress' },
+  { arm: 'lh_b', scenario_key: 'arkham_stress' },
+  { arm: 'lh_c', scenario_key: 'arkham_stress' },
+  { arm: 'lh_d', scenario_key: 'arkham_stress' },
+]);
+
 export function buildSequencePlan({ arm, scenarioKey, blindLabel = null }) {
   const armConfig = buildLh0ArmConfig(arm);
   const fixture = loadLh1aFixtureManifest(scenarioKey);
@@ -67,6 +79,26 @@ export function buildSequencePlan({ arm, scenarioKey, blindLabel = null }) {
       no_cross_sequence_store: true,
       lh_a_blocks_persistent_projection: arm === 'lh_a',
     },
+  };
+}
+
+export function buildLh1aLiveCampaignPlan({ candidateSha = null } = {}) {
+  const sequences = LH1A_LIVE_EXECUTION_ORDER.map((slot, idx) => buildSequencePlan({
+    arm: slot.arm,
+    scenarioKey: slot.scenario_key,
+    blindLabel: BLIND_LABELS[idx],
+  }));
+  return {
+    schema: LH1A_SCHEMAS.CAMPAIGN_PLAN,
+    campaign: 'lh1a_story_aging_screening_live',
+    candidate_sha: candidateSha ?? gitSha(),
+    apparatus_candidate_sha: '708ad05f5155cc1acc824cb8e7dc82d823e85dcb',
+    sequence_count: sequences.length,
+    turn_count_target: LH1A_TURN_COUNT,
+    execution_order: 'lh1a_live_execution_order_v1',
+    sequences,
+    fail_closed: true,
+    live_execution_authorized: true,
   };
 }
 

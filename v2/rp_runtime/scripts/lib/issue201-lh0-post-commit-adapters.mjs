@@ -55,6 +55,13 @@ function parseObligationJson(raw) {
   }
 }
 
+function obligationsForPostCommitSeed(fixture, fixtureTurnIndex) {
+  if (fixture.schema === 'issue201_lh1a_fixture_manifest_v1') {
+    return fixture.obligations.filter((o) => (o.intro_turn ?? 1) <= fixtureTurnIndex);
+  }
+  return fixture.obligations;
+}
+
 export async function runLh0PostCommitAdapter({
   arm,
   domainApi,
@@ -73,8 +80,9 @@ export async function runLh0PostCommitAdapter({
   runEphemeralInference,
   modelProfile,
   evidenceContextBase,
+  fixtureManifest = null,
 }) {
-  const fixture = loadLh0FixtureManifest();
+  const fixture = fixtureManifest ?? loadLh0FixtureManifest();
   const inferenceId = `lh0-persist-${arm}-${crypto.randomUUID()}`;
 
   if (arm === LH0_ARMS.LH_B) {
@@ -94,7 +102,7 @@ export async function runLh0PostCommitAdapter({
       },
     });
     const store = readLh0Store(sessionsDir, hgSessionId);
-    for (const fo of fixture.obligations) {
+    for (const fo of obligationsForPostCommitSeed(fixture, fixtureTurnIndex)) {
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
         mechanism: 'plot_cognition_update',
         source: 'live_plot_scribe',
@@ -146,7 +154,7 @@ export async function runLh0PostCommitAdapter({
     upsertLh0Obligation(store, ob, { turn: fixtureTurnIndex, inferenceId, mechanism });
   }
   if (!obligations.length) {
-    for (const fo of fixture.obligations) {
+    for (const fo of obligationsForPostCommitSeed(fixture, fixtureTurnIndex)) {
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
         mechanism: evidenceMechanism,
         source: 'fixture_seed',
