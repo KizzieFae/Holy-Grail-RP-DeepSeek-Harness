@@ -187,6 +187,11 @@ class DomainApiHandler(BaseHTTPRequestHandler):
                         if isinstance(data.get("correction_context"), dict)
                         else None
                     ),
+                    plot_cognition_finalized_projection=(
+                        dict(data["plot_cognition_finalized_projection"])
+                        if isinstance(data.get("plot_cognition_finalized_projection"), dict)
+                        else None
+                    ),
                 )
                 self._send_json(200, self.kernel.prepare_director_context(req))
                 return

@@ -129,6 +129,36 @@ export function buildTurnConsumerForensics({
   };
 }
 
+export function buildDirectorConsumerEvidence({
+  manifest,
+  finalizedProjection,
+  projectionSupplied,
+  obligationIdsExpected = [],
+}) {
+  const receivedIds = extractLh0ObligationIdsFromManifest(manifest);
+  const projectedIds = extractLh0ObligationIdsFromProjection(finalizedProjection);
+  const expected = obligationIdsExpected.filter(Boolean);
+  const receivedExpected = expected.filter((id) => receivedIds.includes(id));
+  const semanticPayloadSamples = (manifest?.contributions ?? [])
+    .filter((c) => c?.provenance?.lh0_obligation_id || c?.source_kind === 'scene_pressures')
+    .map((c) => String(c.content ?? ''));
+  const semanticReceiptAdequate = semanticPayloadSamples.length > 0
+    && semanticPayloadSamples.every((content) => !isBookkeepingOnlySemanticContent(content));
+  return {
+    projection_supplied: projectionSupplied === true,
+    projected_obligation_ids: projectedIds,
+    received_obligation_ids: receivedIds,
+    expected_obligation_ids: expected,
+    received_expected_obligation_ids: receivedExpected,
+    consumer_received: expected.length === 0
+      ? receivedIds.length > 0
+      : receivedExpected.length > 0,
+    semantic_payload_samples: semanticPayloadSamples,
+    semantic_receipt_adequate: semanticReceiptAdequate,
+    contribution_source_kinds: (manifest?.contributions ?? []).map((c) => c.source_kind).filter(Boolean),
+  };
+}
+
 export function projectionSemanticAdequate(projection) {
   const samples = (projection?.contributions ?? [])
     .filter((c) => c?.provenance?.lh0_obligation_id)

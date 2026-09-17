@@ -1,0 +1,336 @@
+{
+  "schema": "issue201_lh1b_fixture_manifest_v1",
+  "fixture_id": "ayame_lh1b_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turns": 18,
+  "scenes": 2,
+  "scene_transition_turn": 10,
+  "checkpoints": { "C1": 6, "C2": 12, "C3": 18 },
+  "tone_contract": "Formal household evaluation; social constraint; delayed judgment; premature hiring discouraged.",
+  "transcript_window_turns": 6,
+  "scenes": [
+    {
+      "scene_id": "entry_foyer",
+      "label": "Entry foyer and threshold interview",
+      "turn_range": [1, 9],
+      "location": "Ayame residence entry foyer"
+    },
+    {
+      "scene_id": "sitting_room",
+      "label": "Private sitting room continuation",
+      "turn_range": [10, 18],
+      "location": "Ayame residence sitting room",
+      "transition_from": "entry_foyer",
+      "transition_hook": "Ayame invites Kizzie deeper into the house to continue the evaluation away from the open door."
+    }
+  ],
+  "obligations": [
+    {
+      "obligation_id": "LH1B-AYA-DORMANT-RECORD",
+      "class": "dormant_thread",
+      "intro_turn": 3,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 15 },
+      "authorized_consumer": "character_move",
+      "dormancy_min_turns": 8,
+      "semantic_content": "The previous live-in assistant was dismissed after copying household ledger pages without authorization.",
+      "deferral_rationale": "Dormant until applicant offers to handle household accounts.",
+      "provenance": { "source": "household_records", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-DEFERRED-KEY",
+      "class": "delayed_consequence",
+      "intro_turn": 4,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 17 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Trial staff receive only a pantry submaster key; the household master key is never issued during a trial week.",
+      "deferral_rationale": "Relevant when applicant requests full key access.",
+      "provenance": { "source": "household_security_policy", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-FORESHADOW-ACCESS",
+      "class": "foreshadow_payoff",
+      "intro_turn": 5,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "The east wing has a separate alarm circuit; staff nightly rounds exclude east-wing rooms unless explicitly authorized in writing.",
+      "deferral_rationale": "Payoff when nightly duty boundaries are discussed.",
+      "provenance": { "source": "household_layout", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-PROMISE-GATE",
+      "class": "promise_commitment",
+      "intro_turn": 7,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 16 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Kizzie committed not to enter any restricted area, including the east wing, without written authorization from Ayame.",
+      "deferral_rationale": "Tested when applicant requests access to a restricted area.",
+      "provenance": { "source": "player_commitment", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-DIR-TRAJECTORY",
+      "class": "narrative_trajectory",
+      "intro_turn": 4,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 15 },
+      "authorized_consumer": "director_turn",
+      "semantic_content": "The applicant reached the foyer but has not yet been seated to hear the household terms in full; the threshold exchange about compensation remains unresolved without consequence.",
+      "deferral_rationale": "Trajectory pressure until interview structure advances.",
+      "provenance": { "source": "interview_trajectory", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-CROSSSCENE-PROP",
+      "class": "cross_scene_continuity",
+      "intro_turn": 8,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 10 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "A household ledger in the foyer notes an outstanding repair estimate for the sitting room radiator.",
+      "deferral_rationale": "Survives foyer-to-sitting-room transition.",
+      "provenance": { "source": "scene_prop", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-NEG-CONTROL",
+      "class": "negative_control",
+      "intro_turn": 2,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "character_move",
+      "negative_control": true,
+      "semantic_content": "An easy harmonious close is available if Ayame prematurely welcomes Kizzie as hired.",
+      "deferral_rationale": "Trap — must not activate early.",
+      "provenance": { "source": "scenario_trap", "arm_neutral": true }
+    },
+    {
+      "obligation_id": "LH1B-AYA-DIR-NEG",
+      "class": "negative_control",
+      "intro_turn": 2,
+      "activation_horizon_turn": 18,
+      "activation_predicate": { "type": "turn_gte", "value": 18 },
+      "authorized_consumer": "director_turn",
+      "negative_control": true,
+      "semantic_content": "Premature hiring resolution is available if household tension is collapsed immediately.",
+      "deferral_rationale": "Director negative control — must not project before horizon.",
+      "provenance": { "source": "scenario_trap", "arm_neutral": true }
+    }
+  ],
+  "causal_design": {
+    "information_uniqueness_obligations": [
+      "LH1B-AYA-DORMANT-RECORD",
+      "LH1B-AYA-DEFERRED-KEY",
+      "LH1B-AYA-FORESHADOW-ACCESS",
+      "LH1B-AYA-PROMISE-GATE",
+      "LH1B-AYA-DIR-TRAJECTORY"
+    ],
+    "transcript_window_turns": 6,
+    "salience": {
+      "source_kind": "active_constraints",
+      "director_source_kind": "scene_pressures",
+      "base_priority": 18
+    },
+    "decision_forks": [
+      {
+        "fork_id": "FORK-LH1B-DORMANT-RECORD",
+        "obligation_ids": ["LH1B-AYA-DORMANT-RECORD"],
+        "consumer": "character_move",
+        "establishment_turn": 3,
+        "decision_turn": 15,
+        "decision_summary": "Applicant offers to help with household accounts without asking about the prior assistant.",
+        "semantic_information_expected": "Prior assistant dismissed after copying ledger pages.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "refuse_account_access_citing_incident",
+            "description": "Refuses account help or cites unauthorized ledger-copy incident.",
+            "behavior_markers": [
+              "ledger",
+              "copy",
+              "copied",
+              "unauthorized",
+              "dismissed",
+              "previous assistant",
+              "prior assistant",
+              "household accounts",
+              "account access"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "accepts_account_help_without_incident",
+            "description": "Accepts accounting help without referencing prior assistant incident.",
+            "behavior_markers": [
+              "happy to have help",
+              "show you the accounts",
+              "we can start with the ledger",
+              "that would be useful"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": 17,
+        "consequence_markers": ["ledger", "account", "trust"]
+      },
+      {
+        "fork_id": "FORK-LH1B-DEFERRED-KEY",
+        "obligation_ids": ["LH1B-AYA-DEFERRED-KEY"],
+        "consumer": "character_move",
+        "establishment_turn": 4,
+        "decision_turn": 17,
+        "decision_summary": "Applicant requests the household master key for evening rounds.",
+        "semantic_information_expected": "Trial staff receive only pantry submaster; master key withheld.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "deny_master_key_trial_tier",
+            "description": "Denies master key; cites trial submaster policy.",
+            "behavior_markers": [
+              "pantry submaster",
+              "submaster key",
+              "not issued",
+              "never issued",
+              "trial week",
+              "trial staff",
+              "during a trial",
+              "master key is not"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "grants_master_key_or_equivocates",
+            "description": "Grants master key or fails to distinguish trial key tier.",
+            "behavior_markers": [
+              "take the master key",
+              "here is the master",
+              "master key from the hook",
+              "full access",
+              "master is on the hook"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": 18,
+        "consequence_markers": ["key", "access", "trial"]
+      },
+      {
+        "fork_id": "FORK-LH1B-PROMISE-GATE",
+        "obligation_ids": ["LH1B-AYA-PROMISE-GATE"],
+        "consumer": "character_move",
+        "establishment_turn": 7,
+        "decision_turn": 16,
+        "decision_summary": "Applicant asks to check the east-wing radiator tonight without restating prior commitment.",
+        "semantic_information_expected": "Prior commitment not to enter restricted areas without written authorization.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "refuse_restricted_access_citing_commitment",
+            "description": "Refuses east-wing access; invokes written authorization rule.",
+            "behavior_markers": [
+              "written authorization",
+              "without authorization",
+              "you committed",
+              "restricted",
+              "east wing",
+              "not permitted",
+              "not without"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "permits_restricted_access",
+            "description": "Permits east-wing access without authorization constraint.",
+            "behavior_markers": [
+              "go ahead",
+              "check the radiator",
+              "east wing is fine",
+              "you may enter"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": 18,
+        "consequence_markers": ["authorization", "east wing", "commitment"]
+      },
+      {
+        "fork_id": "FORK-LH1B-FORESHADOW-ACCESS",
+        "obligation_ids": ["LH1B-AYA-FORESHADOW-ACCESS"],
+        "consumer": "character_move",
+        "establishment_turn": 5,
+        "decision_turn": 18,
+        "decision_summary": "Applicant asks which rooms are included in standard nightly rounds.",
+        "semantic_information_expected": "East wing excluded; separate alarm circuit.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "exclude_east_wing_from_rounds",
+            "description": "Excludes east wing or cites alarm/logging policy for staff rounds.",
+            "behavior_markers": [
+              "alarm",
+              "separate circuit",
+              "exclude the east wing",
+              "not part of rounds",
+              "nightly rounds",
+              "east wing is not",
+              "authorized in writing"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "includes_east_wing_in_rounds",
+            "description": "Includes east wing casually in nightly rounds.",
+            "behavior_markers": [
+              "include the east wing",
+              "east wing as well",
+              "all rooms including east"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": 18,
+        "consequence_markers": ["rounds", "east wing", "alarm"]
+      },
+      {
+        "fork_id": "FORK-LH1B-DIR-TRAJECTORY",
+        "obligation_ids": ["LH1B-AYA-DIR-TRAJECTORY"],
+        "consumer": "director_turn",
+        "establishment_turn": 4,
+        "decision_turn": 15,
+        "decision_summary": "Interview structure beat: unresolved threshold compensation exchange remains open.",
+        "semantic_information_expected": "Unresolved threshold compensation without seated terms hearing.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "sustains_threshold_tension",
+            "description": "Director sustains or escalates unresolved threshold tension.",
+            "behavior_markers": [
+              "threshold",
+              "unresolved",
+              "terms in full",
+              "not yet seated",
+              "compensation",
+              "foyer",
+              "escalate"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "collapses_threshold_tension",
+            "description": "Director softens or closes threshold tension prematurely.",
+            "behavior_markers": [
+              "soften",
+              "settled enough",
+              "no need to dwell",
+              "comfortable",
+              "we can skip"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": 16,
+        "consequence_markers": ["threshold", "terms", "compensation"]
+      }
+    ]
+  },
+  "dark_tone_safeguards": {
+    "premature_wholesome_resolution_discouraged": true,
+    "forced_redemption_discouraged": true
+  }
+}

@@ -60,6 +60,29 @@ def prepare_director_context(
             else None,
         )
     )
+    finalized_projection = req.plot_cognition_finalized_projection
+    if isinstance(finalized_projection, dict) and finalized_projection:
+        binding = finalized_projection.get("binding") or {}
+        if str(binding.get("consumer", "")) == "director_turn":
+            for item in finalized_projection.get("contributions") or []:
+                if not isinstance(item, dict):
+                    continue
+                contributions.append(
+                    PromptContribution(
+                        contribution_id=str(
+                            item.get("contribution_id", f"{manifest_id}-lh0-director")
+                        ),
+                        source_kind=str(item.get("source_kind", "scene_pressures")),
+                        authority_class=str(item.get("authority_class", "derived")),
+                        knowledge_ids=tuple(str(x) for x in (item.get("knowledge_ids") or [])),
+                        priority=int(item.get("priority", 19)),
+                        content=str(item.get("content", "")),
+                        provenance={
+                            **dict(item.get("provenance") or {}),
+                            "finalized_projection": True,
+                        },
+                    )
+                )
     contributions.extend(
         (
             PromptContribution(

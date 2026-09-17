@@ -19,15 +19,28 @@ export function buildAssembledRequest({
   profile,
   manifestId,
   contributionIds,
+  preserveProvenance = false,
 }) {
   const contributions = [...(manifest?.contributions ?? [])]
-    .map((entry) => ({
-      contribution_id: String(entry.contribution_id ?? ''),
-      source_kind: String(entry.source_kind ?? ''),
-      authority_class: String(entry.authority_class ?? ''),
-      priority: Number(entry.priority ?? 0),
-      content: String(entry.content ?? ''),
-    }))
+    .map((entry) => {
+      const base = {
+        contribution_id: String(entry.contribution_id ?? ''),
+        source_kind: String(entry.source_kind ?? ''),
+        authority_class: String(entry.authority_class ?? ''),
+        priority: Number(entry.priority ?? 0),
+        content: String(entry.content ?? ''),
+      };
+      if (!preserveProvenance) return base;
+      const provenance = entry?.provenance;
+      const knowledgeIds = entry?.knowledge_ids ?? entry?.knowledgeIds;
+      return {
+        ...base,
+        ...(provenance ? { provenance } : {}),
+        ...(Array.isArray(knowledgeIds) && knowledgeIds.length
+          ? { knowledge_ids: knowledgeIds.map((id) => String(id)) }
+          : {}),
+      };
+    })
     .sort((left, right) => left.priority - right.priority);
 
   return {

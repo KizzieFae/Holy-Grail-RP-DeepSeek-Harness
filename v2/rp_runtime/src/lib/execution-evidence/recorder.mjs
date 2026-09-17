@@ -111,6 +111,7 @@ export class ExecutionEvidenceRecorder {
       profile,
       manifestId: contextRegistration?.manifestId,
       contributionIds: contextRegistration?.contributionIds,
+      preserveProvenance: evidenceContext?.lhProvenanceAudit === true,
     });
     const response = buildModelResponse({ trace, assistantText });
     const attempt = {

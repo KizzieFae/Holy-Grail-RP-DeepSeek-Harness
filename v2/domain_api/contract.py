@@ -102,6 +102,7 @@ class DirectorContextPrepareRequest:
     attempt_index: int
     actors_used_this_round: tuple[str, ...] = ()
     correction_context: dict[str, Any] | None = None
+    plot_cognition_finalized_projection: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

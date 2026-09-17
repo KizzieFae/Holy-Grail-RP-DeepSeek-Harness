@@ -15,6 +15,7 @@ import {
 } from './director-semantic-qa.mjs';
 import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
+import { buildDirectorConsumerEvidence } from '../../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
 import { LIVE_INFERENCE_TRANSPORT_PROMPT } from '../../lib/live-inference-prompts.mjs';
 import { SEMANTIC_EVAL_INFRA_RETRIES } from '../../lib/phase-execution-policy.mjs';
@@ -135,6 +136,9 @@ export async function runDirectorPhase({
   prompt,
   directorSemanticQaEnabled = true,
   storytellerAssessmentEvidenceId = null,
+  precomputedDirectorProjection = null,
+  lh0ExpectedObligationIds = [],
+  lhProvenanceAudit = false,
 }) {
   const budget = createDirectorSelectionBudget(liveMaxAttempts);
   let directorAccepted = false;
@@ -151,6 +155,8 @@ export async function runDirectorPhase({
   let semanticEvalPassIndex = 0;
   let lastDirectorAttempt = directorAttemptSeed;
   let directorEvidenceId = null;
+  let consumerManifest = null;
+  let lh0DirectorConsumerEvidence = null;
   const orchestrationEvidenceIds = [];
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
   const evaluatorProfile = semanticEvaluatorProfile ?? modelProfile;
@@ -169,8 +175,16 @@ export async function runDirectorPhase({
       attempt_index: attemptIndex,
       actors_used_this_round: actorsUsedThisRound,
       correction_context: correctionContext ?? undefined,
+      plot_cognition_finalized_projection: precomputedDirectorProjection ?? undefined,
     });
     directorManifestId = String(manifest.manifest_id);
+    consumerManifest = manifest;
+    lh0DirectorConsumerEvidence = buildDirectorConsumerEvidence({
+      manifest,
+      finalizedProjection: precomputedDirectorProjection,
+      projectionSupplied: Boolean(precomputedDirectorProjection),
+      obligationIdsExpected: lh0ExpectedObligationIds,
+    });
 
     const directorRun = await runEphemeralInference({
       inferenceId: `${directorInferenceId}-${attemptIndex}`,
@@ -187,8 +201,9 @@ export async function runDirectorPhase({
         role: 'director',
         inferenceId: directorInferenceId,
         parentInferenceId: directorInferenceId,
-        inferenceKind: 'director_decision',
+        inferenceKind: 'director_turn',
         niForensics: true,
+        lhProvenanceAudit,
         attemptIndex,
         priorAttemptId: priorEvidenceId,
       },
@@ -624,5 +639,7 @@ export async function runDirectorPhase({
     residualSoftConcerns: budget.residualSoftConcerns,
     directorEvidenceId,
     orchestrationEvidenceIds: [...new Set(orchestrationEvidenceIds.filter(Boolean))],
+    consumerManifest,
+    lh0DirectorConsumerEvidence,
   };
 }

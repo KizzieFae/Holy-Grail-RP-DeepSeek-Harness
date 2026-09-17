@@ -56,7 +56,8 @@ function parseObligationJson(raw) {
 }
 
 function obligationsForPostCommitSeed(fixture, fixtureTurnIndex) {
-  if (fixture.schema === 'issue201_lh1a_fixture_manifest_v1') {
+  if (fixture.schema === 'issue201_lh1a_fixture_manifest_v1'
+    || fixture.schema === 'issue201_lh1b_fixture_manifest_v1') {
     return fixture.obligations.filter((o) => (o.intro_turn ?? 1) <= fixtureTurnIndex);
   }
   return fixture.obligations;

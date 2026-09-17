@@ -153,10 +153,50 @@ export async function runA2BeatRound({
     snapshot: participationTrace(participation),
   }));
 
-  let directorPhase;
-  const deterministicActor = (participation.selection_mode === 'direct' && participation.selected_actor)
+  const cognitionTurnIndex = Number(round.turn_index ?? 0);
+  let lh0PrecomputedProjection = options.lh0PrecomputedProjection ?? null;
+  let lh0Transport = null;
+  let lh0DirectorProjectionReceipt = null;
+  let projectionLifecycleForCharacter = options.projectionLifecycleEnabled === true;
+  const lhProvenanceAudit = options.lhProvenanceAudit === true;
+  const transportCharacterId = (participation.selection_mode === 'direct' && participation.selected_actor)
     ? participation.selected_actor
-    : (eligibleActors.length === 1 ? eligibleActors[0] : null);
+    : (eligibleActors[0] ?? null);
+  if (options.lh0Arm && options.lh0SessionsDir && transportCharacterId) {
+    lh0Transport = prepareLh0RoundTransport({
+      sessionsDir: options.lh0SessionsDir,
+      hgSessionId,
+      hgRoundId,
+      fixtureTurnIndex: options.lh0FixtureTurnIndex ?? cognitionTurnIndex,
+      bindingTurnIndex: cognitionTurnIndex,
+      characterId: transportCharacterId,
+      arm: options.lh0Arm,
+      faultInjection: options.lh0FaultInjection ?? null,
+    });
+    lh0DirectorProjectionReceipt = lh0Transport.directorProjection;
+    if (!lh0PrecomputedProjection) {
+      if (options.lh0Arm === LH0_ARMS.LH_B) {
+        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
+        projectionLifecycleForCharacter = lh0Transport.usePlotProjectionLifecycle
+          && !lh0PrecomputedProjection;
+      } else {
+        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
+        projectionLifecycleForCharacter = false;
+      }
+    }
+    const transportAudit = recordLh0TransportAuditStep(lh0Transport, {
+      omitCharacterReceipt: options.lh0FaultInjection === 'omit_receipt',
+    });
+    auditSteps.push(createAuditStep('lh0_projection_transport', transportAudit));
+  }
+
+  let directorPhase;
+  const forceDirectorInference = options.lh1bForceDirectorInference === true;
+  const deterministicActor = forceDirectorInference
+    ? null
+    : ((participation.selection_mode === 'direct' && participation.selected_actor)
+      ? participation.selected_actor
+      : (eligibleActors.length === 1 ? eligibleActors[0] : null));
   if (deterministicActor) {
     directorPhase = {
       accepted: true,
@@ -200,6 +240,9 @@ export async function runA2BeatRound({
       semanticEvaluatorProfile: roleProfiles.semantic_evaluator,
       liveMaxAttempts,
       directorSemanticQaEnabled: false,
+      precomputedDirectorProjection: lh0DirectorProjectionReceipt,
+      lh0ExpectedObligationIds: lh0Transport?.directorDue?.map((o) => o.obligation_id) ?? [],
+      lhProvenanceAudit,
     });
     decisionValue.record({
       inference_kind: 'director_turn',
@@ -249,12 +292,7 @@ export async function runA2BeatRound({
       hard_access_rejected: indexedRetrieval.hard_access_rejected,
     }));
   }
-  let lh0PrecomputedProjection = options.lh0PrecomputedProjection ?? null;
-  let lh0Transport = null;
-  let lh0DirectorProjectionReceipt = null;
-  const cognitionTurnIndex = Number(round.turn_index ?? 0);
-  let projectionLifecycleForCharacter = options.projectionLifecycleEnabled === true;
-  if (options.lh0Arm && options.lh0SessionsDir) {
+  if (lh0Transport && transportCharacterId !== characterId) {
     lh0Transport = prepareLh0RoundTransport({
       sessionsDir: options.lh0SessionsDir,
       hgSessionId,
@@ -266,20 +304,9 @@ export async function runA2BeatRound({
       faultInjection: options.lh0FaultInjection ?? null,
     });
     lh0DirectorProjectionReceipt = lh0Transport.directorProjection;
-    if (!lh0PrecomputedProjection) {
-      if (options.lh0Arm === LH0_ARMS.LH_B) {
-        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
-        projectionLifecycleForCharacter = lh0Transport.usePlotProjectionLifecycle
-          && !lh0PrecomputedProjection;
-      } else {
-        lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
-        projectionLifecycleForCharacter = false;
-      }
+    if (!options.lh0PrecomputedProjection) {
+      lh0PrecomputedProjection = lh0Transport.characterPrecomputed;
     }
-    const transportAudit = recordLh0TransportAuditStep(lh0Transport, {
-      omitCharacterReceipt: options.lh0FaultInjection === 'omit_receipt',
-    });
-    auditSteps.push(createAuditStep('lh0_projection_transport', transportAudit));
   }
 
   const characterInferenceId = `inf-a2-character-${crypto.randomUUID()}`;
@@ -308,7 +335,18 @@ export async function runA2BeatRound({
     precomputedFinalizedProjection: lh0PrecomputedProjection,
     lh0ExpectedObligationIds: lh0Transport?.characterDue?.map((o) => o.obligation_id) ?? [],
     lh0FixtureTurnIndex: options.lh0FixtureTurnIndex ?? null,
+    lh0FixtureManifest: options.lh0FixtureManifest ?? null,
+    lhProvenanceAudit,
   });
+  if (lh0Transport && directorPhase.lh0DirectorConsumerEvidence) {
+    const dirEvidence = directorPhase.lh0DirectorConsumerEvidence;
+    const transportAudit = auditSteps.find((s) => s.step === 'lh0_projection_transport');
+    if (transportAudit) {
+      transportAudit.director_consumer_receipt = dirEvidence.consumer_received;
+      transportAudit.director_received_obligation_ids = dirEvidence.received_obligation_ids;
+    }
+    auditSteps.push(createAuditStep('lh0_director_consumer_receipt', dirEvidence));
+  }
   if (lh0Transport && characterTurn.consumerManifest) {
     const charEvidence = buildCharacterConsumerEvidence({
       manifest: characterTurn.consumerManifest,

@@ -52,6 +52,7 @@ async function runCharacterInferenceWithInfraRetry({
   librarianKnowledgeAudit = null,
   finalizedProjection = null,
   recorder = null,
+  lhProvenanceAudit = false,
 }) {
   let lastRun = null;
   for (let infraAttempt = 0; infraAttempt <= CHAR_INFRA_RETRIES; infraAttempt += 1) {
@@ -87,6 +88,7 @@ async function runCharacterInferenceWithInfraRetry({
         parentInferenceId: characterInferenceId,
         inferenceKind: 'character_move',
         niForensics: true,
+        lhProvenanceAudit,
         attemptIndex,
         priorAttemptId: priorEvidenceId,
         associations: participationEvidenceId && attemptIndex === 0
@@ -140,6 +142,8 @@ export async function runCharacterPhase({
   precomputedFinalizedProjection = null,
   lh0ExpectedObligationIds = [],
   lh0FixtureTurnIndex = null,
+  lh0FixtureManifest = null,
+  lhProvenanceAudit = false,
   skipCharacterKnowledgeCognition = false,
 }) {
   const role = characterRole ?? roleForCharacter(characterId);
@@ -300,6 +304,7 @@ export async function runCharacterPhase({
       librarianKnowledgeAudit,
       finalizedProjection,
       recorder,
+      lhProvenanceAudit,
     });
 
     if (!inferenceAttempt.ok || !inferenceAttempt.characterRun) {
@@ -330,6 +335,7 @@ export async function runCharacterPhase({
       moveText: `${moveText}\n${speechText}`,
       presentationText: '',
       receivedObligationIds: lh0ConsumerEvidence.received_obligation_ids,
+      fixture: lh0FixtureManifest,
     });
     lh0ConsumerEvidence.lh0_causal_evidence = causalEvidence;
     lh0ConsumerEvidence.referenced_obligation_ids = causalEvidence.influenced_obligation_ids;
