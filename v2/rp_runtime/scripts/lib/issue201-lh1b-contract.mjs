@@ -14,6 +14,24 @@ export const LH1B_SCHEMAS = Object.freeze({
   VALIDATION: 'issue201_lh1b_apparatus_validation_v1',
   CAUSAL_TRACE: 'issue201_lh1b_causal_trace_v1',
   SUBSTRATE_UNIQUENESS: 'issue201_lh1b_substrate_uniqueness_v1',
+  LIVE_SEQUENCE: 'issue201_lh1b_live_sequence_v1',
+  LIVE_CAMPAIGN_REPORT: 'issue201_lh1b_live_campaign_report_v1',
+  LIVE_PREFLIGHT: 'issue201_lh1b_live_preflight_v1',
+  RUNNER_QUALIFICATION: 'issue201_lh1b_runner_qualification_v1',
+  FAILURE_POLICY: 'issue201_lh1b_live_failure_policy_v1',
+  COST_ENVELOPE: 'issue201_lh1b_cost_envelope_v1',
+});
+
+/** Frozen apparatus candidate accepted before live-path wiring. */
+export const LH1B_APPARATUS_CANDIDATE_SHA = 'ec4c82c';
+
+/** Live runner wiring qualified via mock runner qualification (see governance record). */
+export const LH1B_LIVE_RUNNER_BASE_SHA = LH1B_APPARATUS_CANDIDATE_SHA;
+
+export const LH1B_FROZEN_HASHES = Object.freeze({
+  fixture_hash: '96b8ef4fa90ab27f0956b4da8edba1a090b5efd22df28825d4e1a05ea9918a64',
+  policy_hash: '362207fa89fa89b87765c5aa78ca5d554c7ae67264eda99463feb09d36514fa3',
+  causal_design_hash: '78bc5ff240f08d8658df9645e4b862366c0a02d8ff3fa96cf18044d436484c58',
 });
 
 export const LH1B_ARMS = Object.freeze({

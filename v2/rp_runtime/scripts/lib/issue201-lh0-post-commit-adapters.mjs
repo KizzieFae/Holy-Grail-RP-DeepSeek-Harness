@@ -104,6 +104,9 @@ export async function runLh0PostCommitAdapter({
     });
     const store = readLh0Store(sessionsDir, hgSessionId);
     for (const fo of obligationsForPostCommitSeed(fixture, fixtureTurnIndex)) {
+      if (fixture.schema === 'issue201_lh1b_fixture_manifest_v1' && fo.authorized_consumer === 'director_turn') {
+        continue;
+      }
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {
         mechanism: 'plot_cognition_update',
         source: 'live_plot_scribe',

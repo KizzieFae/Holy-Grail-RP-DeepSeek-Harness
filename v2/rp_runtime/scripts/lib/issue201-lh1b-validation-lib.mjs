@@ -3,6 +3,8 @@
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { buildLh0ArmConfig } from './issue201-lh0-arms.mjs';
 import { runLh0ConsumerValueValidationSuite } from './issue201-lh0-consumer-value-validation-lib.mjs';
@@ -107,6 +109,14 @@ export function runLh1bApparatusValidationSuite() {
   checks.push(check('frozen_policy_hash_recorded', Boolean(hashes.policy_hash)));
   checks.push(check('frozen_causal_design_hash_recorded', Boolean(hashes.causal_design_hash)));
   checks.push(check('live_not_authorized_flag', campaignPlan.live_authorized === false));
+
+  const liveLibPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'issue201-lh1b-live-lib.mjs');
+  const liveLibSource = fs.existsSync(liveLibPath) ? fs.readFileSync(liveLibPath, 'utf8') : '';
+  checks.push(check('live_runner_wired', liveLibSource.includes('executeLh1bLiveSequence')));
+  checks.push(check('live_runner_not_stub_only', !liveLibSource.includes('authorized: false,\n    sequences: plan.sequences.map')));
+  checks.push(check('runner_qualification_module', fs.existsSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), 'issue201-lh1b-runner-qualification-lib.mjs'),
+  )));
 
   const passCount = checks.filter((c) => c.pass).length;
   const fail = checks.filter((c) => !c.pass);
