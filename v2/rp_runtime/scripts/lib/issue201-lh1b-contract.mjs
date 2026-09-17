@@ -26,7 +26,7 @@ export const LH1B_SCHEMAS = Object.freeze({
 export const LH1B_APPARATUS_CANDIDATE_SHA = 'ec4c82c';
 
 /** Live runner wiring qualified via mock runner qualification (see governance record). */
-export const LH1B_LIVE_RUNNER_BASE_SHA = LH1B_APPARATUS_CANDIDATE_SHA;
+export const LH1B_QUALIFIED_RUNNER_SHA = 'dd11d10cc3f4a420691fb33f3533bd75dcb39a4f';
 
 export const LH1B_FROZEN_HASHES = Object.freeze({
   fixture_hash: '96b8ef4fa90ab27f0956b4da8edba1a090b5efd22df28825d4e1a05ea9918a64',

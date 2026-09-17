@@ -35,6 +35,7 @@ export function runLh1bLivePreflight({
   apparatusCandidateSha = LH1B_APPARATUS_CANDIDATE_SHA,
   requireRunnerQualification = false,
   runnerQualification = null,
+  liveExecutionAuthorized = false,
 } = {}) {
   const checks = [];
   const campaignPlan = buildLh1bCampaignPlan();
@@ -107,7 +108,7 @@ export function runLh1bLivePreflight({
     cost_envelope: buildLh1bCostEnvelope(),
     checks,
     all_pass: allPass,
-    live_execution_authorized: false,
+    live_execution_authorized: liveExecutionAuthorized && allPass,
     ready_for_governance_live_authorization: allPass
       && (!requireRunnerQualification || runnerQualification?.pass === true),
   };
