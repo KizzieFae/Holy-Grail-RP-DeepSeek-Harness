@@ -1,0 +1,16 @@
+{
+  "schema": "issue201_lh1b_live_campaign_causal_summary_v1",
+  "evidence_root": "data/investigation_runs/issue201-lh1b-live-campaign-2026-09-17",
+  "qualified_runner_sha": "dd11d10cc3f4a420691fb33f3533bd75dcb39a4f",
+  "live_execution_sha": "215a5b6c5bf2682e7386f8a573ae82b7ac90b5f1",
+  "campaign_failed": false,
+  "turns_committed": 108,
+  "inference_events_observed": 349,
+  "wall_ms_observed": 8217263,
+  "r5_any_fork": false,
+  "character_lh_b_r4_replicated": true,
+  "character_lh_b_r5": false,
+  "director_s5_highest": "R2_semantically_received",
+  "director_s5_r4": false,
+  "lh_a_equivalent_semantics_via_stimulus": true
+}
