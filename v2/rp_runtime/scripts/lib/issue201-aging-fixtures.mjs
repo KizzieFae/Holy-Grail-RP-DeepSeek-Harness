@@ -1,0 +1,92 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { AGING_SCHEMAS } from './issue201-aging-contract.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const AGING_FIXTURE_ROOT = path.resolve(__dirname, '../../../..', 'governance/records/issue201-aging-fixtures');
+export const AGING_POLICY_ROOT = path.resolve(__dirname, '../../../..', 'governance/records/issue201-aging-policies');
+
+const FIXTURE_FILE = 'ayame_aging_fixture_v1.json';
+const POLICY_FILE = 'ayame_aging_policy_v1.json';
+
+export function sha256File(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
+export function semanticFingerprint(proposition) {
+  return crypto.createHash('sha256')
+    .update(String(proposition ?? '').toLowerCase().replace(/\s+/g, ' ').trim())
+    .digest('hex');
+}
+
+export function loadAgingFixtureManifest() {
+  const manifestPath = path.join(AGING_FIXTURE_ROOT, FIXTURE_FILE);
+  const raw = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  if (raw.schema !== AGING_SCHEMAS.FIXTURE_MANIFEST) {
+    throw new Error(`unexpected aging fixture schema: ${raw.schema}`);
+  }
+  return raw;
+}
+
+export function loadAgingPolicy() {
+  const filePath = path.join(AGING_POLICY_ROOT, POLICY_FILE);
+  const policy = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  if (policy.schema !== AGING_SCHEMAS.PLAYER_POLICY) {
+    throw new Error(`unexpected aging policy schema: ${policy.schema}`);
+  }
+  return {
+    policy,
+    policy_path: filePath,
+    policy_hash: sha256File(filePath),
+  };
+}
+
+export function buildTrackedItemRegistry(fixture = null) {
+  const fx = fixture ?? loadAgingFixtureManifest();
+  const items = (fx.tracked_items ?? []).map((item) => ({
+    ...item,
+    semantic_fingerprint: semanticFingerprint(item.semantic_proposition),
+    aging_state: null,
+    aging_history: [],
+    last_raw_presence_turn: null,
+    first_lean_other_turn: null,
+    first_aged_out_turn: null,
+    confirmatory_aged_out_turn: null,
+    opportunity_eligible: false,
+    tested_turn: null,
+    persistence_provenance_chain: [],
+  }));
+  return {
+    schema: AGING_SCHEMAS.TRACKED_ITEM_REGISTRY,
+    fixture_id: fx.fixture_id,
+    tracked_items: items,
+  };
+}
+
+export function trackedItemById(fixture, trackedItemId) {
+  return fixture.tracked_items.find((t) => t.tracked_item_id === trackedItemId) ?? null;
+}
+
+export function obligationById(fixture, obligationId) {
+  return fixture.obligations.find((o) => o.obligation_id === obligationId) ?? null;
+}
+
+export function forkShapeForTrackedItem(item, decisionTurn = 40) {
+  return {
+    fork_id: item.fork_id,
+    obligation_ids: [item.obligation_id],
+    consumer: 'character_move',
+    decision_turn: decisionTurn,
+    with_obligation_choice_classes: [{
+      class_id: `${item.tracked_item_id}-with`,
+      behavior_markers: item.behavior_markers ?? [],
+    }],
+    without_obligation_choice_classes: [{
+      class_id: `${item.tracked_item_id}-without`,
+      behavior_markers: [],
+    }],
+  };
+}

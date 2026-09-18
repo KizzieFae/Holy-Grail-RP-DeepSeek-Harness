@@ -1,0 +1,131 @@
+{
+  "schema": "issue201_aging_fixture_manifest_v1",
+  "fixture_id": "ayame_aging_v1",
+  "campaign": "issue201_information_aging_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turns_max_boundary": 80,
+  "tracked_items": [
+    {
+      "tracked_item_id": "TRK-AYA-MEAL-ALCOVE",
+      "class": "house_procedure",
+      "obligation_id": "R5-AYA-TRIAL-MEAL-ALCOVE",
+      "fork_id": "FORK-AGING-MEAL-ALCOVE",
+      "establishment_turn": 6,
+      "semantic_proposition": "Trial staff take meals in the staff pantry alcove, not at the household dining table when the family expects guests at formal meals.",
+      "authorized_consumers": ["character_move"],
+      "behavior_markers": [
+        "pantry alcove",
+        "staff pantry",
+        "meals in the alcove",
+        "not at the household dining table",
+        "trial week",
+        "trial staff",
+        "formal guest",
+        "take meals there"
+      ],
+      "opportunity": {
+        "opportunity_id": "OPP-MEAL-CHAIR",
+        "summary": "Applicant proposes keeping a chair at the household dining table during guest service.",
+        "stimulus": "When you have guests at table this evening, may I keep a chair ready in the dining room so I can step in quickly if you need water or a cleared course?",
+        "qualification_checkpoint_turn": 14
+      },
+      "establishment": {
+        "player_stimulus": "Kizzie follows Ayame toward the kitchen corridor. \"Where should I take meals during the trial week if the household is busy with guests?\"",
+        "character_move_dialogue": "For your trial week, meals for staff are taken in the pantry alcove off this corridor—not at the household dining table when we are expecting guests at formal meal.",
+        "shared_committed_presentation": "Ayame paused by the kitchen corridor and opened the narrow door to the staff pantry alcove. She told Kizzie that for the duration of the trial week, staff meals were to be taken in that alcove rather than at the household dining table when the family expected guests at formal meal."
+      }
+    },
+    {
+      "tracked_item_id": "TRK-AYA-PROMISE-GATE",
+      "class": "promise_commitment",
+      "obligation_id": "AGING-AYA-PROMISE-GATE",
+      "fork_id": "FORK-AGING-PROMISE-GATE",
+      "establishment_turn": 8,
+      "semantic_proposition": "Kizzie committed not to enter any restricted area, including the east wing, without written authorization from Ayame.",
+      "authorized_consumers": ["character_move"],
+      "behavior_markers": [
+        "written authorization",
+        "restricted area",
+        "east wing",
+        "will not enter",
+        "without your permission",
+        "commit not to enter"
+      ],
+      "opportunity": {
+        "opportunity_id": "OPP-EAST-WING-CHECK",
+        "summary": "Applicant requests access to check something in the east wing.",
+        "stimulus": "The east wing corridor was chilly earlier—may I step in tonight to confirm the radiator valve after curfew if you are not using those rooms?"
+      },
+      "establishment": {
+        "player_stimulus": "Kizzie says carefully, \"I will not enter any restricted area, including the east wing, without written authorization from you.\"",
+        "character_move_dialogue": "That is acceptable. I will note your commitment regarding restricted areas and written authorization.",
+        "shared_committed_presentation": "Ayame acknowledged Kizzie's explicit commitment not to enter restricted areas, including the east wing, without written authorization."
+      }
+    },
+    {
+      "tracked_item_id": "TRK-AYA-DORMANT-RECORD",
+      "class": "dormant_personnel_problem",
+      "obligation_id": "AGING-AYA-DORMANT-RECORD",
+      "fork_id": "FORK-AGING-DORMANT-RECORD",
+      "establishment_turn": 5,
+      "semantic_proposition": "The previous live-in assistant was dismissed after copying household ledger pages without authorization.",
+      "authorized_consumers": ["character_move"],
+      "behavior_markers": [
+        "previous assistant",
+        "dismissed",
+        "copied ledger",
+        "ledger pages",
+        "without authorization",
+        "household accounts"
+      ],
+      "opportunity": {
+        "opportunity_id": "OPP-HOUSEHOLD-ACCOUNTS",
+        "summary": "Applicant offers to help with household accounts.",
+        "stimulus": "I have bookkeeping experience—may I help reconcile the household accounts this week if that would lighten your load?"
+      },
+      "establishment": {
+        "player_stimulus": "Kizzie asks, \"Which parts of the house are staff areas versus family-only?\"",
+        "character_move_dialogue": "Staff areas are the kitchen corridor, pantry alcove, and linen closets. Family-only includes the east wing and the study. Also know that the previous live-in assistant was dismissed after copying household ledger pages without authorization.",
+        "shared_committed_presentation": "Ayame outlined staff versus family-only areas and noted that the previous assistant had been dismissed after copying ledger pages without authorization."
+      }
+    }
+  ],
+  "obligations": [
+    {
+      "obligation_id": "R5-AYA-TRIAL-MEAL-ALCOVE",
+      "class": "household_procedure",
+      "intro_turn": 6,
+      "activation_predicate": { "type": "aging_gated", "tracked_item_id": "TRK-AYA-MEAL-ALCOVE" },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Trial staff take meals in the staff pantry alcove, not at the household dining table when the family expects guests at formal meals.",
+      "provenance": { "source": "shared_establishment", "arm_neutral": true },
+      "negative_control": false
+    },
+    {
+      "obligation_id": "AGING-AYA-PROMISE-GATE",
+      "class": "promise_commitment",
+      "intro_turn": 8,
+      "activation_predicate": { "type": "aging_gated", "tracked_item_id": "TRK-AYA-PROMISE-GATE" },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Kizzie committed not to enter any restricted area, including the east wing, without written authorization from Ayame.",
+      "provenance": { "source": "player_commitment", "arm_neutral": true },
+      "negative_control": false
+    },
+    {
+      "obligation_id": "AGING-AYA-DORMANT-RECORD",
+      "class": "dormant_thread",
+      "intro_turn": 5,
+      "activation_predicate": { "type": "aging_gated", "tracked_item_id": "TRK-AYA-DORMANT-RECORD" },
+      "authorized_consumer": "character_move",
+      "semantic_content": "The previous live-in assistant was dismissed after copying household ledger pages without authorization.",
+      "provenance": { "source": "household_records", "arm_neutral": true },
+      "negative_control": false
+    }
+  ],
+  "qualification": {
+    "pantry_regression_tracked_item_id": "TRK-AYA-MEAL-ALCOVE",
+    "pantry_regression_checkpoint_turn": 14,
+    "pantry_establishment_turn": 6
+  }
+}
