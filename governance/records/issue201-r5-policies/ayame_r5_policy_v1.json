@@ -1,0 +1,95 @@
+{
+  "schema": "issue201_r5_player_policy_v1",
+  "policy_id": "ayame_r5_policy_v1",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "fixture_id": "ayame_r5_v1",
+  "turn_count": 14,
+  "arm_neutral": true,
+  "turns": [
+    {
+      "turn_index": 1,
+      "branch_mode": "fixed",
+      "objective": "Arrival",
+      "realization": "Kizzie knocks and says, \"Good afternoon. I'm here regarding the live-in position.\""
+    },
+    {
+      "turn_index": 2,
+      "branch_mode": "fixed",
+      "objective": "Schedule constraint (non-fork)",
+      "realization": "Kizzie adds, \"I cannot be out past ten on weeknights—that is a hard constraint for me.\""
+    },
+    {
+      "turn_index": 3,
+      "branch_mode": "fixed",
+      "objective": "Neutral foyer",
+      "realization": "Kizzie asks, \"May I leave my bag here while we talk?\""
+    },
+    {
+      "turn_index": 4,
+      "branch_mode": "fixed",
+      "objective": "Compensation (non-fork)",
+      "realization": "Kizzie asks, \"What is the weekly compensation for this position?\""
+    },
+    {
+      "turn_index": 5,
+      "branch_mode": "fixed",
+      "objective": "Staff areas (non-fork)",
+      "realization": "Kizzie asks, \"Which parts of the house are staff areas versus family-only?\""
+    },
+    {
+      "turn_index": 6,
+      "branch_mode": "fixed",
+      "objective": "Shared establishment — meal location (arm-neutral Player prompt)",
+      "realization": "Kizzie follows Ayame toward the kitchen corridor. \"Where should I take meals during the trial week if the household is busy with guests?\""
+    },
+    {
+      "turn_index": 7,
+      "branch_mode": "fixed",
+      "objective": "Intervening — discretion",
+      "realization": "Kizzie says, \"I understand households have private matters. I only need to know what I am expected to keep to myself.\""
+    },
+    {
+      "turn_index": 8,
+      "branch_mode": "fixed",
+      "objective": "Intervening — linens",
+      "realization": "Kizzie offers, \"I could sort the household linens this afternoon if that would help.\""
+    },
+    {
+      "turn_index": 9,
+      "branch_mode": "fixed",
+      "objective": "Scene transition hook",
+      "realization": "Kizzie accepts tea in the sitting room. \"Thank you—this room is comfortable for a longer conversation.\""
+    },
+    {
+      "turn_index": 10,
+      "branch_mode": "fixed",
+      "objective": "Intervening — radiator",
+      "realization": "Kizzie mentions, \"The sitting room radiator was ticking earlier—may I check the valve after tea?\""
+    },
+    {
+      "turn_index": 11,
+      "branch_mode": "fixed",
+      "objective": "Intervening — inventory",
+      "realization": "Kizzie asks, \"Should I inventory the linen closet before curfew?\""
+    },
+    {
+      "turn_index": 12,
+      "branch_mode": "fixed",
+      "objective": "Intervening — guest towels",
+      "realization": "Kizzie asks, \"Which guest towels should I set aside for replacement this week?\""
+    },
+    {
+      "turn_index": 13,
+      "branch_mode": "fixed",
+      "objective": "Intervening — tea service",
+      "realization": "Kizzie asks, \"Shall I prepare the tea tray for your visitors?\""
+    },
+    {
+      "turn_index": 14,
+      "branch_mode": "fixed",
+      "objective": "R5 decision — dining chair during guest meal",
+      "realization": "When you have guests at table this evening, may I keep a chair ready in the dining room so I can step in quickly if you need water or a cleared course?"
+    }
+  ]
+}

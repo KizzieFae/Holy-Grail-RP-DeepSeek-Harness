@@ -1,0 +1,151 @@
+{
+  "schema": "issue201_r5_fixture_manifest_v1",
+  "fixture_id": "ayame_r5_v1",
+  "campaign": "lh1b_r5_discrimination",
+  "scenario_key": "ayame_controlled",
+  "scenario_id": "ayame_household_entry_evaluation",
+  "turns": 14,
+  "scenes": 2,
+  "scene_transition_turn": 9,
+  "transcript_window_turns": 6,
+  "scenes": [
+    {
+      "scene_id": "entry_foyer",
+      "label": "Entry and kitchen corridor",
+      "turn_range": [1, 8],
+      "location": "Ayame residence entry and kitchen corridor"
+    },
+    {
+      "scene_id": "sitting_room",
+      "label": "Sitting room and household service",
+      "turn_range": [9, 14],
+      "location": "Ayame residence sitting room",
+      "transition_from": "entry_foyer",
+      "transition_hook": "Ayame continues the evaluation in the sitting room with tea service."
+    }
+  ],
+  "rejected_fork_candidates": [
+    {
+      "fork_id": "FORK-R5-SERVICE-THRESHOLD",
+      "reason": "Establishment dialogue about portico deliveries may remain transcript-sufficient; decision stimulus naming front steps/portico cues the rule; normalized obligation risked richer than shared story."
+    }
+  ],
+  "establishment": {
+    "turn_index": 6,
+    "shared_committed_presentation": "Ayame paused by the kitchen corridor and opened the narrow door to the staff pantry alcove. She told Kizzie that for the duration of the trial week, staff meals were to be taken in that alcove rather than at the household dining table when the family expected guests at formal meal.",
+    "character_move_dialogue": "For your trial week, meals for staff are taken in the pantry alcove off this corridor—not at the household dining table when we are expecting guests at formal meal.",
+    "arm_neutral": true,
+    "plot_scribe_source_excerpt": "Scene: kitchen corridor orientation. Ayame showed the staff pantry alcove and stated trial-week staff meals are taken there, not at the household dining table during formal guest meals."
+  },
+  "obligations": [
+    {
+      "obligation_id": "R5-AYA-TRIAL-MEAL-ALCOVE",
+      "class": "household_procedure",
+      "intro_turn": 6,
+      "activation_horizon_turn": 14,
+      "activation_predicate": { "type": "turn_gte", "value": 14 },
+      "authorized_consumer": "character_move",
+      "semantic_content": "Trial staff take meals in the staff pantry alcove, not at the household dining table when the family expects guests at formal meals.",
+      "deferral_rationale": "Relevant when applicant proposes joining formal household dining during guest entertainment.",
+      "provenance": { "source": "shared_establishment_turn_6", "arm_neutral": true },
+      "negative_control": false
+    }
+  ],
+  "causal_design": {
+    "decision_forks": [
+      {
+        "fork_id": "FORK-R5-TRIAL-MEAL-ALCOVE",
+        "obligation_ids": ["R5-AYA-TRIAL-MEAL-ALCOVE"],
+        "consumer": "character_move",
+        "establishment_turn": 6,
+        "decision_turn": 14,
+        "decision_summary": "Applicant proposes keeping a place at the household dining table during guest entertainment.",
+        "semantic_information_expected": "Trial staff meals belong in the staff pantry alcove during formal guest dining, not at the household table.",
+        "with_obligation_choice_classes": [
+          {
+            "class_id": "redirect_to_pantry_alcove",
+            "description": "Declines household table seating; cites trial staff meal location in pantry alcove.",
+            "behavior_markers": [
+              "pantry alcove",
+              "staff pantry",
+              "meals in the alcove",
+              "not at the household dining table",
+              "trial week",
+              "trial staff",
+              "formal guest",
+              "take meals there"
+            ]
+          }
+        ],
+        "without_obligation_choice_classes": [
+          {
+            "class_id": "permits_household_table",
+            "description": "Agrees applicant may keep place at household dining table during guest meal.",
+            "behavior_markers": [
+              "pull up a chair",
+              "place at the table",
+              "join us at table",
+              "dining room table",
+              "of course you may sit",
+              "stay at the dining table"
+            ]
+          }
+        ],
+        "narrative_consequence_turn": null,
+        "consequence_markers": ["meal", "table", "guest"]
+      }
+    ]
+  },
+  "qualification": {
+    "aging_rationale": "Decision turn 14 uses a six-turn recent transcript slice (turns 9–13) that excludes turn-6 establishment; Continuity, retrieval, and memory snapshots omit the meal rule.",
+    "decision_turn_index": 14,
+    "decision_player_stimulus": "When you have guests at table this evening, may I keep a chair ready in the dining room so I can step in quickly if you need water or a cleared course?",
+    "lh_a_lean_manifest": {
+      "contributions": [
+        {
+          "source_kind": "triggering_user_context",
+          "content": "TRIGGER FOR THIS BEAT:\nWhen you have guests at table this evening, may I keep a chair ready in the dining room so I can step in quickly if you need water or a cleared course?"
+        },
+        {
+          "source_kind": "recent_scene_transcript",
+          "content": "RECENT SCENE TRANSCRIPT:\nAyame: The sitting room radiator has been quiet since you bled the valve.\nKizzie: I can inventory the linen closet before curfew if you wish.\nAyame: Note which guest towels are frayed; we will replace them after this week.\nKizzie: Shall I prepare the tea tray for your visitors?\nAyame: Yes—use the blue service, not the formal silver."
+        },
+        {
+          "source_kind": "scene_context",
+          "content": "SCENE CONTEXT: Sitting room; evening guest entertainment expected; trial-week household evaluation ongoing."
+        },
+        {
+          "source_kind": "character_identity",
+          "content": "You are Ayame, host of the household evaluation."
+        }
+      ]
+    },
+    "lh_b_persistence_contribution": {
+      "source_kind": "active_constraints",
+      "content": "Trial staff take meals in the staff pantry alcove, not at the household dining table when the family expects guests at formal meals.",
+      "provenance": { "lh0_obligation_id": "R5-AYA-TRIAL-MEAL-ALCOVE" },
+      "knowledge_ids": ["lh0-obligation:R5-AYA-TRIAL-MEAL-ALCOVE"]
+    },
+    "continuity_snapshot": {
+      "character_state": "Trial applicant; evaluation cordial; no meal-location policy restated.",
+      "scene_props": "Tea service prepared; guest towels noted.",
+      "authored_premise": "Household hosting modest formal dinner for guests."
+    },
+    "retrieval_contributions": [],
+    "memory_contributions": [],
+    "establishment_entailment_required_phrases": [
+      "staff pantry alcove",
+      "trial",
+      "meals",
+      "household dining table",
+      "guests",
+      "formal"
+    ],
+    "establishment_forbidden_extra_facts": [
+      "master key",
+      "east wing",
+      "portico",
+      "service yard"
+    ]
+  }
+}
