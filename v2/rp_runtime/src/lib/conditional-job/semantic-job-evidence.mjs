@@ -3,6 +3,8 @@
  * Observational only — not continuity authority.
  */
 
+import crypto from 'node:crypto';
+
 import {
   addJobRelationship,
   buildOpenConditionalJobEnvelope,
@@ -11,6 +13,33 @@ import {
   newSemanticJobId,
   registerInferenceAttemptOnEnvelope,
 } from './envelope.mjs';
+
+/** Deterministic semantic_job_id for a stable evaluation pass (QA infra retries). */
+export function semanticJobIdFromEvaluationPass(evaluationPassId) {
+  const digest = crypto.createHash('sha256')
+    .update(`semantic_quality_evaluation\0${evaluationPassId}`)
+    .digest();
+  const bytes = Uint8Array.from(digest.subarray(0, 16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Buffer.from(bytes).toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function readQaJobHandleFromStore(recorder, hgSessionId, semanticJobId) {
+  const index = recorder.readIndex?.(hgSessionId);
+  const entry = index?.semantic_jobs?.by_semantic_job_id?.[semanticJobId];
+  if (!entry?.canonical_job_evidence_id) return null;
+  const attempt = recorder.readAttempt(hgSessionId, entry.canonical_job_evidence_id);
+  const envelope = attempt?.conditional_job;
+  if (!envelope || envelope.semantic_job_id !== semanticJobId) return null;
+  return {
+    semanticJobId,
+    jobKind: 'semantic_quality_evaluation',
+    envelope,
+    canonicalEvidenceId: entry.canonical_job_evidence_id,
+  };
+}
 
 /**
  * @typedef {object} SemanticJobHandle
@@ -171,7 +200,15 @@ export function openQaEvaluationJob(recorder, hgSessionId, {
   evaluationPassId,
   correlation,
   inferenceKind,
+  semanticJobId = null,
 }) {
+  const stableJobId = semanticJobId ?? semanticJobIdFromEvaluationPass(evaluationPassId);
+  const existing = recorder?.isEnabled?.()
+    ? readQaJobHandleFromStore(recorder, hgSessionId, stableJobId)
+    : null;
+  if (existing) {
+    return { handle: existing, inferenceKind };
+  }
   const triggerRecord = createTriggerRecord({
     source: 'semantic_qa_policy',
     owner: 'dsh_orchestration',
@@ -187,6 +224,7 @@ export function openQaEvaluationJob(recorder, hgSessionId, {
     jobKind: 'semantic_quality_evaluation',
     triggerRecord,
     correlation,
+    semanticJobId: stableJobId,
   });
   handle = {
     ...handle,
@@ -198,6 +236,68 @@ export function openQaEvaluationJob(recorder, hgSessionId, {
     }),
   };
   return { handle, inferenceKind };
+}
+
+/**
+ * Record a QA evaluator inference attempt on the stable QA semantic job for this pass.
+ */
+export function recordQaEvaluationInferenceAttempt(recorder, hgSessionId, handle, {
+  evidenceId,
+  canonicalInferenceKind,
+  infrastructureAttempt = 0,
+  attemptLineageRole = 'primary',
+}) {
+  if (!recorder?.isEnabled?.() || !hgSessionId || !evidenceId || !handle) return handle;
+  const lineageRole = infrastructureAttempt > 0
+    ? 'infrastructure_retry'
+    : attemptLineageRole;
+  if (!handle.canonicalEvidenceId) {
+    return establishCanonicalJobEvidence(recorder, hgSessionId, evidenceId, handle, {
+      canonicalInferenceKind,
+      attemptLineageRole: lineageRole,
+    });
+  }
+  if (handle.canonicalEvidenceId === evidenceId) return handle;
+  return attachInferenceAttemptToJob(recorder, hgSessionId, handle, {
+    evidenceId,
+    canonicalInferenceKind,
+    attemptLineageRole: lineageRole,
+  });
+}
+
+export function finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, handle, {
+  disposition,
+  reasonCode = null,
+  validationSummary = null,
+}) {
+  if (!handle?.canonicalEvidenceId || handle.envelope?.job_disposition) return handle;
+  return finalizeSemanticJob(recorder, hgSessionId, handle, {
+    disposition,
+    reasonCode,
+    validationSummary,
+  });
+}
+
+export function finalizeSemanticJobIfOpen(recorder, hgSessionId, handle, finalizeParams) {
+  if (!handle?.canonicalEvidenceId || handle.envelope?.job_disposition) return handle;
+  return finalizeSemanticJob(recorder, hgSessionId, handle, finalizeParams);
+}
+
+export function routingJobDispositionForTerminal({
+  directorAccepted,
+  terminalDisposition,
+}) {
+  if (directorAccepted) {
+    return {
+      disposition: 'succeeded',
+      reasonCode: null,
+    };
+  }
+  const code = String(terminalDisposition ?? 'routing_failed');
+  return {
+    disposition: 'failed',
+    reasonCode: code,
+  };
 }
 
 export function openContextDependencyJobLink(recorder, hgSessionId, handle, {

@@ -20,6 +20,9 @@
 - Associated inference attempts carry `correlation.semantic_job_id` and `correlation.canonical_job_evidence_id` only (no duplicated envelope).
 - Zero-inference jobs use disposition-only attempts (e.g. post-commit skip).
 - Session `index.json` includes `semantic_jobs.by_semantic_job_id` derived index.
+- **Terminal disposition:** when runtime semantic work for a job ends (success, failure, exhaustion, or skip), the canonical envelope must record `job_disposition` (forensic only; does not change routing/eligibility policy).
+- **QA identity:** one `evaluation_pass_id` → one stable `semantic_job_id` for `semantic_quality_evaluation`; infrastructure retries attach as sibling inference attempts on the same canonical QA envelope.
+- **Character move target:** `character_move_generation` (`character_turn`) is the semantic target for character `semantic_quality_evaluation` (`evaluates` relationship).
 
 ## Relationships
 

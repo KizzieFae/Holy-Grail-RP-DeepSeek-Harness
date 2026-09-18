@@ -41,6 +41,11 @@ export const SEMANTIC_JOB_KIND_REGISTRY = Object.freeze({
       'character_semantic_evaluation',
     ]),
   }),
+  character_move_generation: Object.freeze({
+    description: 'Character structured move generation for a turn (target of semantic evaluation).',
+    inference_kinds: Object.freeze(['character_turn']),
+    catalog_call_ids: Object.freeze(['character_turn']),
+  }),
   post_commit_semantic: Object.freeze({
     description: 'Post-commit semantic overlay / issue-pressure (fire or eligibility skip).',
     inference_kinds: Object.freeze([

@@ -271,6 +271,29 @@ export async function runLibrarianProposalGeneration({
       proposal_generation_failure: 'provider_inference_failed',
     });
     patchProposalEvidence(batch, { stage: 'primary' });
+    if (postCommitJob && recorder?.isEnabled?.() && hgSessionId) {
+      const failEvidenceId = primaryRun?.evidenceId ?? finalRun?.evidenceId;
+      if (failEvidenceId && !postCommitJob.canonicalEvidenceId) {
+        postCommitJob = establishCanonicalJobEvidence(
+          recorder,
+          hgSessionId,
+          failEvidenceId,
+          postCommitJob,
+          { canonicalInferenceKind: inferenceKind, attemptLineageRole: 'primary' },
+        );
+      }
+      if (postCommitJob.canonicalEvidenceId) {
+      postCommitJob = finalizeSemanticJob(recorder, hgSessionId, postCommitJob, {
+        disposition: 'failed_inference',
+        reasonCode: primaryRun?.failure ?? 'inference_failed',
+        consequenceSummary: {
+          consumer: 'domain_host_finalize_librarian_proposals',
+          mutation_class: 'derived_state',
+          batch_id: batch?.batch_id ?? null,
+        },
+      });
+      }
+    }
     return {
       ok: false,
       stage: 'inference',

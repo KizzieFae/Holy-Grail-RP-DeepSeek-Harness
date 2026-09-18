@@ -18,9 +18,11 @@ import { createTriggerRecord } from '../../lib/conditional-job/envelope.mjs';
 import {
   attachInferenceAttemptToJob,
   establishCanonicalJobEvidence,
-  finalizeSemanticJob,
+  finalizeQaEvaluationJobIfOpen,
+  finalizeSemanticJobIfOpen,
   mergeEvidenceContextForJob,
   openSemanticJob,
+  routingJobDispositionForTerminal,
 } from '../../lib/conditional-job/semantic-job-evidence.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { buildDirectorConsumerEvidence } from '../../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
@@ -398,6 +400,7 @@ export async function runDirectorPhase({
       const evaluationPassId = `${directorInferenceId}-qa-${semanticEvalPassIndex}`;
       semanticEvalPassIndex += 1;
       let evalOutcome = null;
+      let qaJobHandle = null;
       for (let evalInfra = 0; evalInfra <= SEMANTIC_EVAL_INFRA_RETRIES; evalInfra += 1) {
         evalOutcome = await runDirectorSemanticEvaluation({
           api,
@@ -421,8 +424,21 @@ export async function runDirectorPhase({
           targetSemanticJobId: routingJob?.semanticJobId ?? null,
           targetCanonicalEvidenceId: routingJob?.canonicalEvidenceId ?? directorRun.evidenceId,
           infrastructureAttempt: evalInfra,
+          qaJobHandle,
+          finalizeQaJob: false,
         });
+        qaJobHandle = evalOutcome?.qaJobHandle ?? qaJobHandle;
         if (!evalOutcome.infrastructureFailure) break;
+      }
+      if (qaJobHandle?.canonicalEvidenceId && recorder?.isEnabled?.()) {
+        qaJobHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaJobHandle, {
+          disposition: evalOutcome?.infrastructureFailure ? 'failed_inference' : 'succeeded',
+          reasonCode: evalOutcome?.infrastructureFailure ? 'semantic_evaluator_failed' : null,
+          validationSummary: {
+            overall_result: evalOutcome?.result?.overall_result ?? null,
+            evaluation_pass_id: evaluationPassId,
+          },
+        });
       }
 
       if (evalOutcome?.evidenceId) {
@@ -688,13 +704,22 @@ export async function runDirectorPhase({
     }
   }
 
-  if (directorAccepted && routingJob?.canonicalEvidenceId && recorder?.isEnabled?.()) {
-    routingJob = finalizeSemanticJob(recorder, hgSessionId, routingJob, {
-      disposition: 'succeeded',
-      consequenceSummary: {
+  if (routingJob?.canonicalEvidenceId && recorder?.isEnabled?.()) {
+    const terminal = routingJobDispositionForTerminal({
+      directorAccepted,
+      terminalDisposition: terminalDisposition ?? budget.terminalDisposition,
+    });
+    routingJob = finalizeSemanticJobIfOpen(recorder, hgSessionId, routingJob, {
+      disposition: terminal.disposition,
+      reasonCode: terminal.reasonCode,
+      consequenceSummary: directorAccepted ? {
         consumer: 'round_orchestrator',
         mutation_class: 'derived_state',
         selected_character_id: selectedCharacterId,
+      } : {
+        consumer: 'round_orchestrator',
+        mutation_class: 'none',
+        terminal_disposition: terminalDisposition ?? budget.terminalDisposition,
       },
     });
   }

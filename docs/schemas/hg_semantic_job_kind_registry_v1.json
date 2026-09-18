@@ -7,6 +7,7 @@
     "knowledge_mediation",
     "routing_selection",
     "semantic_quality_evaluation",
+    "character_move_generation",
     "post_commit_semantic"
   ]
 }

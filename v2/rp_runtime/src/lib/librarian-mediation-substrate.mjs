@@ -233,6 +233,29 @@ export async function runLibrarianMediation({
       upstreamEvidenceId,
       upstreamAssociationKey,
     });
+    if (mediationJob && recorder?.isEnabled?.() && hgSessionId) {
+      const failEvidenceId = primaryRun?.evidenceId ?? finalRun?.evidenceId;
+      if (failEvidenceId && !mediationJob.canonicalEvidenceId) {
+        mediationJob = establishCanonicalJobEvidence(
+          recorder,
+          hgSessionId,
+          failEvidenceId,
+          mediationJob,
+          { canonicalInferenceKind: 'librarian_mediation', attemptLineageRole: 'primary' },
+        );
+      }
+      if (mediationJob.canonicalEvidenceId) {
+      mediationJob = finalizeSemanticJob(recorder, hgSessionId, mediationJob, {
+        disposition: 'failed_inference',
+        reasonCode: primaryRun?.failure ?? 'inference_failed',
+        consequenceSummary: {
+          consumer: 'domain_host_finalize_librarian_mediation',
+          mutation_class: 'derived_state',
+          bundle_id: bundle?.bundle_id ?? null,
+        },
+      });
+      }
+    }
     return {
       ok: false,
       stage: 'inference',

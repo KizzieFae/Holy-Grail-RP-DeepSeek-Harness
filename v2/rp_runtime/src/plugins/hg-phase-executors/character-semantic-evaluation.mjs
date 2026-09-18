@@ -4,9 +4,9 @@ import {
   normalizeBridgeContributions,
 } from '../../lib/bridge-manifest.mjs';
 import {
-  establishCanonicalJobEvidence,
-  finalizeSemanticJob,
+  finalizeQaEvaluationJobIfOpen,
   openQaEvaluationJob,
+  recordQaEvaluationInferenceAttempt,
 } from '../../lib/conditional-job/semantic-job-evidence.mjs';
 
 export const SEMANTIC_EVAL_RESULT_SCHEMA = 'hg_semantic_evaluation_result_v1';
@@ -191,6 +191,8 @@ export async function runSemanticEvaluation({
   targetSemanticJobId = null,
   targetCanonicalEvidenceId = null,
   infrastructureAttempt = 0,
+  qaJobHandle = null,
+  finalizeQaJob = false,
 }) {
   const contextResponse = await api.prepareSemanticEvaluationContext({
     hg_scene_id: hgSceneId,
@@ -237,7 +239,26 @@ export async function runSemanticEvaluation({
       evaluationPassId,
     },
   });
+  let qaHandle = qaJobHandle;
   if (evalRun.failed) {
+    if (
+      finalizeQaJob
+      && qaHandle
+      && recorder?.isEnabled?.()
+      && hgSessionId
+      && evalRun.evidenceId
+    ) {
+      qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
+        evidenceId: evalRun.evidenceId,
+        canonicalInferenceKind: 'character_semantic_evaluation',
+        infrastructureAttempt,
+      });
+      qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
+        disposition: 'failed_inference',
+        reasonCode: 'semantic_evaluator_failed',
+        validationSummary: { evaluation_pass_id: evaluationPassId },
+      });
+    }
     return {
       ok: false,
       infrastructureFailure: true,
@@ -246,6 +267,7 @@ export async function runSemanticEvaluation({
       contextResponse,
       raw: null,
       result: null,
+      qaJobHandle: qaHandle,
     };
   }
   const parsed = parseSemanticEvaluationResult(
@@ -253,6 +275,24 @@ export async function runSemanticEvaluation({
     contextResponse.authority_references,
   );
   if (!parsed.ok || !parsed.result) {
+    if (
+      finalizeQaJob
+      && qaHandle
+      && recorder?.isEnabled?.()
+      && hgSessionId
+      && evalRun.evidenceId
+    ) {
+      qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
+        evidenceId: evalRun.evidenceId,
+        canonicalInferenceKind: 'character_semantic_evaluation',
+        infrastructureAttempt,
+      });
+      qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
+        disposition: 'failed_inference',
+        reasonCode: 'malformed_evaluator_output',
+        validationSummary: { evaluation_pass_id: evaluationPassId },
+      });
+    }
     return {
       ok: false,
       infrastructureFailure: true,
@@ -261,6 +301,7 @@ export async function runSemanticEvaluation({
       contextResponse,
       raw: evalRun.raw,
       result: null,
+      qaJobHandle: qaHandle,
     };
   }
   const result = {
@@ -279,31 +320,33 @@ export async function runSemanticEvaluation({
     && resolvedTargetJobId
     && resolvedTargetCanonical
   ) {
-    const { handle } = openQaEvaluationJob(recorder, hgSessionId, {
-      targetSemanticJobId: resolvedTargetJobId,
-      targetCanonicalEvidenceId: resolvedTargetCanonical,
-      evaluationPassId,
-      correlation: {
-        hg_session_id: hgSessionId,
-        hg_scene_id: hgSceneId,
-        hg_round_id: hgRoundId,
-      },
-      inferenceKind: 'character_semantic_evaluation',
+    if (!qaHandle) {
+      ({ handle: qaHandle } = openQaEvaluationJob(recorder, hgSessionId, {
+        targetSemanticJobId: resolvedTargetJobId,
+        targetCanonicalEvidenceId: resolvedTargetCanonical,
+        evaluationPassId,
+        correlation: {
+          hg_session_id: hgSessionId,
+          hg_scene_id: hgSceneId,
+          hg_round_id: hgRoundId,
+        },
+        inferenceKind: 'character_semantic_evaluation',
+      }));
+    }
+    qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
+      evidenceId: evalRun.evidenceId,
+      canonicalInferenceKind: 'character_semantic_evaluation',
+      infrastructureAttempt,
     });
-    const qaJob = establishCanonicalJobEvidence(
-      recorder,
-      hgSessionId,
-      evalRun.evidenceId,
-      handle,
-      { canonicalInferenceKind: 'character_semantic_evaluation', attemptLineageRole: 'primary' },
-    );
-    finalizeSemanticJob(recorder, hgSessionId, qaJob, {
-      disposition: 'succeeded',
-      validationSummary: {
-        overall_result: result.overall_result,
-        evaluation_pass_id: evaluationPassId,
-      },
-    });
+    if (finalizeQaJob) {
+      qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
+        disposition: 'succeeded',
+        validationSummary: {
+          overall_result: result.overall_result,
+          evaluation_pass_id: evaluationPassId,
+        },
+      });
+    }
   }
   return {
     ok: true,
@@ -315,5 +358,6 @@ export async function runSemanticEvaluation({
     result,
     inferenceSessionId: evalRun.inferenceSessionId,
     trace: evalRun.trace,
+    qaJobHandle: qaHandle,
   };
 }
