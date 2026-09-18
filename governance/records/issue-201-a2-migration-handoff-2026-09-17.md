@@ -2,7 +2,8 @@
 
 **Parent:** #201  
 **Decision:** `governance/records/issue-201-final-architecture-decision-2026-09-17.md`  
-**Data-pathway matrix:** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md` (implementation reference for Tracks A–D)
+**Data-pathway matrix:** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md` (detailed current vs target pathways)  
+**Architecture foundation (latest WIP direction):** `governance/records/issue-201-next-generation-rp-architecture-foundation.md` — **#209–#212 paused** pending Governance review of this foundation
 
 ## Child Issues (Tracks A–D)
 

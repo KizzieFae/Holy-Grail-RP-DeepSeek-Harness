@@ -2,7 +2,7 @@
 
 **Parent Issue:** [#201](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/201)  
 **Status:** Canonical pre-migration architecture map (Governance review; #201 closure paused)  
-**Related:** `issue-201-final-architecture-decision-2026-09-17.md`, `issue-201-g2-a2-redesign-specification-2026-09-15.md`, migration children [#209](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/209)–[#212](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/212)
+**Related:** `issue-201-final-architecture-decision-2026-09-17.md`, [`issue-201-next-generation-rp-architecture-foundation.md`](./issue-201-next-generation-rp-architecture-foundation.md) (architectural thesis above this matrix), `issue-201-g2-a2-redesign-specification-2026-09-15.md`, migration children [#209](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/209)–[#212](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/212) (**paused**)
 
 ## Anchor semantics
 

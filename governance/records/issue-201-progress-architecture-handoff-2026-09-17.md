@@ -18,6 +18,12 @@ Governance **accepts** `governance/records/issue-201-whole-system-architectural-
 
 A2 migration decomposed per `governance/records/issue-201-a2-migration-handoff-2026-09-17.md` (Tracks A–D child Issues on GitHub).
 
+## Next-generation architecture foundation (2026-09-17)
+
+- **Artifact:** `governance/records/issue-201-next-generation-rp-architecture-foundation.md`
+- **Role:** Succinct evidence-grounded thesis for next-gen RP; WIP approved direction (not frozen implementation spec)
+- **Governance:** #201 closure and **#209–#212 activation remain paused** until fresh-context review of foundation + matrix
+
 ## Scene data-pathway matrix (2026-09-17)
 
 - **Artifact:** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md`

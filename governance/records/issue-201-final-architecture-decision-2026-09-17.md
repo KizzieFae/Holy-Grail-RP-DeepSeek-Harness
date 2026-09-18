@@ -74,6 +74,8 @@ Implementation decomposed into **child Issues** (Tracks A–D) under A2 migratio
 
 **Scene data-pathway map (current production vs accepted A2 target):** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md` — canonical pre-migration reference for #209–#212; Governance review before #201 closure / #209 activation.
 
+**Next-generation architecture foundation (WIP design thesis):** `governance/records/issue-201-next-generation-rp-architecture-foundation.md` — principal reasoning document for post-#201 design; migration Issues paused pending fresh-context review.
+
 ---
 
 ## 6. #201 lifecycle (canonical)
