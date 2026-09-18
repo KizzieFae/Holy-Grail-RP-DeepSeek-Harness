@@ -74,6 +74,35 @@ export function obligationById(fixture, obligationId) {
   return fixture.obligations.find((o) => o.obligation_id === obligationId) ?? null;
 }
 
+export function expandAgingPolicyTurns(policy, maxTurns) {
+  const turns = [...policy.turns];
+  const existing = new Set(turns.map((t) => t.turn_index));
+  let i = 0;
+  for (let turnIndex = 1; turnIndex <= maxTurns; turnIndex += 1) {
+    if (existing.has(turnIndex)) continue;
+    turns.push({
+      turn_index: turnIndex,
+      branch_mode: 'fixed',
+      objective: 'Intervening — household evaluation',
+      realization: INTERVENING_REALIZATIONS[i % INTERVENING_REALIZATIONS.length],
+    });
+    i += 1;
+  }
+  turns.sort((a, b) => a.turn_index - b.turn_index);
+  return { ...policy, turns };
+}
+
+const INTERVENING_REALIZATIONS = [
+  'Kizzie asks whether the pantry stores should be inventoried before the weekend.',
+  'Kizzie offers to air the guest-room linens while the weather is dry.',
+  'Kizzie mentions the front hall clock needs winding and asks if that is within staff duties.',
+  'Kizzie asks whether visitors usually arrive through the main entrance or the service door.',
+  'Kizzie offers to polish the foyer table before the household receives mail.',
+  'Kizzie asks if there are household pets she should account for during rounds.',
+  'Kizzie asks whether the kitchen range has been serviced recently.',
+  'Kizzie offers to reorganize the coat closet if it would help.',
+];
+
 export function forkShapeForTrackedItem(item, decisionTurn = 40) {
   return {
     fork_id: item.fork_id,
