@@ -127,5 +127,8 @@
     "pantry_regression_tracked_item_id": "TRK-AYA-MEAL-ALCOVE",
     "pantry_regression_checkpoint_turn": 14,
     "pantry_establishment_turn": 6
+  },
+  "causal_design": {
+    "decision_forks": []
   }
 }
