@@ -9,7 +9,7 @@ Project-owned governance for **Holy Grail RP**: workflow authority, issue tracki
 | **A — System/bootstrap** | Repository root (`AGENTS.md`), `bindings/`, `docs/issue-bootstrap-profiles.md`, `.cursor/rules/`, `.github/ISSUE_TEMPLATE/`, `governance/project-sync.toml` | Structurally required adapters, late-bound identity, Implementation bootstrap read profiles, template sync manifest — **not** the Governance upload corpus |
 | **B — Governance-AI source corpus** | `governance/sources/` | **Minimum sufficient standing** project sources Governance AI uploads after the universal instruction set |
 | **C — Implementation execution policies** | `governance/execution/` | Canonical policies primarily governing Implementation-AI / repository execution |
-| **D — Records / supporting** | `governance/records/` | Historical, workshop, program-record, or governance-meta material that is **not** current Governance-AI authority |
+| **D — Records / supporting** | `governance/records/` | Historical, workshop, program-record, or governance-meta material that is **not** current Governance-AI authority (see **active program disposition map** exception below) |
 
 Product operation and Implementation navigation: repository root `README.md`, `AGENTS.md`, `docs/`, and subsystem docs under `v2/`.
 
@@ -56,6 +56,10 @@ Before adding a new governance file, classify it:
 
 Do **not** create authorities under retired paths (`governance/policies/`, `governance/rp-app/`, `governance/github/`).
 
+### Active program disposition map (narrow exception)
+
+An **active program disposition map** accepted at Issue **`consensus_reached`** may remain the **single canonical detailed copy** under `governance/records/` when **explicitly routed** from a standing source in `governance/sources/` (currently: next-gen migration anchors in `architecture-overview.md`) and from scoped rules in `docs/issue-bootstrap-profiles.md`. Such a record is **migration-program authority** for its program; it is **not** part of the six-file Governance-AI upload corpus and does **not** make `governance/records/` generally current authority. Importance alone does **not** qualify other Issue records for this exception.
+
 ## `execution/` — Implementation execution policies
 
 | File | Role |
@@ -85,6 +89,7 @@ Cursor rules `@`-include execution policies and route project behavior to `sourc
 | `operational-retrieval-pilot.md` | Closed retrieval pilot runbook |
 | `issue-112-player-pvr-architectural-assessment.md` | Issue #112 player PVR architectural assessment (SQA-03) |
 | `progression-layer-validation-status-v1.md` | Completed progression v1 checkpoint |
+| `issue-214-child-a-disposition-map-2026-09-18.md` | **Active program disposition map** (#213 ng-rp migration; Child A #214) — single canonical detailed copy; routed via `architecture-overview.md` + bootstrap profiles |
 
 ## Separation rules
 

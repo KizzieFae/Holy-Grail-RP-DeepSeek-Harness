@@ -158,6 +158,20 @@ Meaningful runtime decisions and information-flow seams should be **forensically
 
 Normative standard (consolidated from #14–#28, #37, #45, #46): [docs/forensic-auditability-standard.md](../docs/forensic-auditability-standard.md). Operational artifact contracts: [docs/rp-data-layout.md](../docs/rp-data-layout.md). Investigator procedure: [docs/audit-workflows.md](../docs/audit-workflows.md). **Not** program-audit semantics ([audit-semantics.md](./audit-semantics.md)).
 
+### Next-generation RP migration program (#213; Child A #214)
+
+Standing normative anchors for the active **next-generation RP migration program** (umbrella [#213](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/213); Child A disposition [#214](https://github.com/KizzieFae/Holy-Grail-RP-DeepSeek-Harness/issues/214)). This subsection provides **routing and anchors only** — not the full disposition map.
+
+**Primary agents:** **Character**, **Narrator**, and **Storyteller** (primary **story-driving intelligence**; reorganizes much narrative-driving responsibility historically spread across Director and Scribe/Plot).
+
+**Turn order:** Normal actor progression follows the **scenario-defined default turn order**. **Director** is **not** a primary agent; semantic routing judgment when deterministic policy is insufficient is **`Convert to tool`** (downstream Children **C**, **D**).
+
+**Responsibility taxonomy (Child A):** **`Retain`** | **`Convert to tool`** | **`Delete`** — responsibility-first; many-to-many migration; **no legacy compatibility** requirement (no production user base requiring dual architectures).
+
+**Child obligation:** Every downstream migration child (**B**–**I**) owns **runtime migration**, **forensic/audit migration**, and **documentation migration** together; Child **J** verifies completeness and performs terminal cleanup.
+
+**Canonical detailed disposition map (single copy):** [governance/records/issue-214-child-a-disposition-map-2026-09-18.md](../records/issue-214-child-a-disposition-map-2026-09-18.md) — current **migration-program** authority at Issue **#214** `consensus_reached`. Bootstrap: [docs/issue-bootstrap-profiles.md](../../docs/issue-bootstrap-profiles.md) (scoped to this program). This file is **not** an additional Governance-AI upload source beyond the six files in `governance/sources/`.
+
 ---
 
 ## Current system
