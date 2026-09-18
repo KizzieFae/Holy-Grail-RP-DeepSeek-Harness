@@ -14,6 +14,14 @@ import {
   runDirectorSemanticEvaluation,
 } from './director-semantic-qa.mjs';
 import { directorDecisionPatch } from '../../lib/execution-evidence/phase-decision.mjs';
+import { createTriggerRecord } from '../../lib/conditional-job/envelope.mjs';
+import {
+  attachInferenceAttemptToJob,
+  establishCanonicalJobEvidence,
+  finalizeSemanticJob,
+  mergeEvidenceContextForJob,
+  openSemanticJob,
+} from '../../lib/conditional-job/semantic-job-evidence.mjs';
 import { patchConsumerNiPackaging } from '../../lib/execution-evidence/ni-evidence.mjs';
 import { buildDirectorConsumerEvidence } from '../../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
 import { parseJsonObject } from '../../lib/inference-utils.mjs';
@@ -159,6 +167,37 @@ export async function runDirectorPhase({
   let lh0DirectorConsumerEvidence = null;
   const orchestrationEvidenceIds = [];
   const scope = { hgSessionId, hgSceneId, hgRoundId, sceneSessionId };
+  let routingJob = null;
+  if (recorder?.isEnabled?.()) {
+    routingJob = openSemanticJob({
+      jobKind: 'routing_selection',
+      triggerRecord: createTriggerRecord({
+        source: 'round_topology',
+        owner: 'dsh_orchestration',
+        eligibilityDecision: {
+          outcome: 'director_phase_entered',
+          eligibility_snapshot_id:
+            participationContext?.eligibilitySnapshotId
+            ?? eligibilitySnapshot?.eligibility_snapshot_id
+            ?? null,
+        },
+        inferenceRequired: true,
+        evidenceRefs: [
+          {
+            ref_type: 'eligibility_snapshot_id',
+            value: participationContext?.eligibilitySnapshotId
+              ?? eligibilitySnapshot?.eligibility_snapshot_id
+              ?? null,
+          },
+        ],
+      }),
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+      },
+    });
+  }
   const evaluatorProfile = semanticEvaluatorProfile ?? modelProfile;
   const useMockDirectorResponses = mockDirectorResponses.length > 0;
   const attemptLimit = useMockDirectorResponses
@@ -194,19 +233,23 @@ export async function runDirectorPhase({
         ? [mockDirectorResponses[responseIndex]]
         : [],
       modelProfile,
-      evidenceContext: {
-        hgSessionId,
-        hgSceneId,
-        hgRoundId,
-        role: 'director',
-        inferenceId: directorInferenceId,
-        parentInferenceId: directorInferenceId,
-        inferenceKind: 'director_turn',
-        niForensics: true,
-        lhProvenanceAudit,
-        attemptIndex,
-        priorAttemptId: priorEvidenceId,
-      },
+      evidenceContext: mergeEvidenceContextForJob(
+        routingJob ?? {},
+        {
+          hgSessionId,
+          hgSceneId,
+          hgRoundId,
+          role: 'director',
+          inferenceId: directorInferenceId,
+          parentInferenceId: directorInferenceId,
+          inferenceKind: 'director_turn',
+          niForensics: true,
+          lhProvenanceAudit,
+          attemptIndex,
+          priorAttemptId: priorEvidenceId,
+        },
+        { attemptLineageRole: attemptIndex === directorAttemptSeed ? 'primary' : 'regeneration' },
+      ),
     });
     directorInferenceSessionId = directorRun.inferenceSessionId;
     directorInferenceTrace = directorRun.trace;
@@ -214,6 +257,23 @@ export async function runDirectorPhase({
     if (directorRun.evidenceId) {
       directorEvidenceId = directorRun.evidenceId;
       orchestrationEvidenceIds.push(directorRun.evidenceId);
+      if (routingJob) {
+        if (!routingJob.canonicalEvidenceId) {
+          routingJob = establishCanonicalJobEvidence(
+            recorder,
+            hgSessionId,
+            directorRun.evidenceId,
+            routingJob,
+            { canonicalInferenceKind: 'director_turn', attemptLineageRole: 'primary' },
+          );
+        } else {
+          routingJob = attachInferenceAttemptToJob(recorder, hgSessionId, routingJob, {
+            evidenceId: directorRun.evidenceId,
+            canonicalInferenceKind: 'director_turn',
+            attemptLineageRole: 'regeneration',
+          });
+        }
+      }
     }
 
     if (!directorRun.failed) {
@@ -342,6 +402,7 @@ export async function runDirectorPhase({
         evalOutcome = await runDirectorSemanticEvaluation({
           api,
           runEphemeralInference,
+          recorder,
           directorInferenceId,
           hgSceneId,
           hgRoundId,
@@ -357,6 +418,8 @@ export async function runDirectorPhase({
             ?? mockDirectorSemanticQaResponses[semanticEvalPassIndex - 1]
             ?? null,
           parentDirectorEvidenceId: directorRun.evidenceId,
+          targetSemanticJobId: routingJob?.semanticJobId ?? null,
+          targetCanonicalEvidenceId: routingJob?.canonicalEvidenceId ?? directorRun.evidenceId,
           infrastructureAttempt: evalInfra,
         });
         if (!evalOutcome.infrastructureFailure) break;
@@ -623,6 +686,17 @@ export async function runDirectorPhase({
     } else {
       setTerminalDisposition(budget, 'selection_budget_exhausted');
     }
+  }
+
+  if (directorAccepted && routingJob?.canonicalEvidenceId && recorder?.isEnabled?.()) {
+    routingJob = finalizeSemanticJob(recorder, hgSessionId, routingJob, {
+      disposition: 'succeeded',
+      consequenceSummary: {
+        consumer: 'round_orchestrator',
+        mutation_class: 'derived_state',
+        selected_character_id: selectedCharacterId,
+      },
+    });
   }
 
   return {

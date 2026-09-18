@@ -8,6 +8,15 @@ import {
   parseLibrarianMediationResult,
 } from './librarian-mediation-envelope.mjs';
 import { buildLibrarianMediationDecisionPatch } from './execution-evidence/ni-evidence.mjs';
+import { createTriggerRecord } from './conditional-job/envelope.mjs';
+import {
+  attachInferenceAttemptToJob,
+  establishCanonicalJobEvidence,
+  finalizeSemanticJob,
+  mergeEvidenceContextForJob,
+  openContextDependencyJobLink,
+  openSemanticJob,
+} from './conditional-job/semantic-job-evidence.mjs';
 
 function summarizeContractLineage(lineage) {
   if (!lineage) return null;
@@ -101,6 +110,28 @@ export async function runLibrarianMediation({
     inference_id: inferenceId,
     knowledge_access_request: knowledgeAccessRequest,
   });
+  let mediationJob = null;
+  if (recorder?.isEnabled?.() && hgSessionId) {
+    const triggerRecord = createTriggerRecord({
+      source: 'host_prepare',
+      owner: 'domain_host',
+      eligibilityDecision: { outcome: 'mediation_requested' },
+      inferenceRequired: true,
+      evidenceRefs: [
+        { ref_type: 'request_id', value: prepareResponse.request_id ?? null },
+        { ref_type: 'manifest_id', value: prepareResponse.manifest_id ?? null },
+      ],
+    });
+    mediationJob = openSemanticJob({
+      jobKind: 'knowledge_mediation',
+      triggerRecord,
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: evidenceContextBase?.hgRoundId ?? null,
+      },
+    });
+  }
   const catalogIds = new Set(
     (prepareResponse.mediation_catalog ?? []).map((item) => String(item.source_id)),
   );
@@ -124,14 +155,18 @@ export async function runLibrarianMediation({
     manifest,
     mockResponses: mockList,
     modelProfile,
-    evidenceContextBase: {
-      ...evidenceContextBase,
-      role: 'librarian',
-      parentInferenceId: evidenceContextBase?.parentInferenceId ?? inferenceId,
-      niForensics: true,
-      requestId: prepareResponse.request_id,
-      mediationPhase: 'contextual_semantic',
-    },
+    evidenceContextBase: mergeEvidenceContextForJob(
+      mediationJob ?? { semanticJobId: null, canonicalEvidenceId: null },
+      {
+        ...evidenceContextBase,
+        role: 'librarian',
+        parentInferenceId: evidenceContextBase?.parentInferenceId ?? inferenceId,
+        niForensics: true,
+        requestId: prepareResponse.request_id,
+        mediationPhase: 'contextual_semantic',
+      },
+      { attemptLineageRole: 'primary' },
+    ),
     maxCorrections: 1,
   });
 
@@ -139,6 +174,37 @@ export async function runLibrarianMediation({
   const primaryRun = inferRuns[0] ?? null;
   const finalRun = inference.inferRun ?? primaryRun;
   const contractLineage = summarizeContractLineage(inference.lineage);
+  if (mediationJob && recorder?.isEnabled?.() && hgSessionId) {
+    if (primaryRun?.evidenceId && !mediationJob.canonicalEvidenceId) {
+      mediationJob = establishCanonicalJobEvidence(
+        recorder,
+        hgSessionId,
+        primaryRun.evidenceId,
+        mediationJob,
+        { canonicalInferenceKind: 'librarian_mediation', attemptLineageRole: 'primary' },
+      );
+    }
+    if (contractLineage?.correction_used && finalRun?.evidenceId
+      && finalRun.evidenceId !== primaryRun?.evidenceId) {
+      mediationJob = attachInferenceAttemptToJob(recorder, hgSessionId, mediationJob, {
+        evidenceId: finalRun.evidenceId,
+        canonicalInferenceKind: 'librarian_mediation_contract_correction',
+        attemptLineageRole: 'correction',
+      });
+    }
+    if (upstreamEvidenceId && mediationJob.canonicalEvidenceId) {
+      const upstreamAttempt = recorder.readAttempt(hgSessionId, upstreamEvidenceId);
+      const upstreamJobId = upstreamAttempt?.correlation?.semantic_job_id
+        ?? upstreamAttempt?.conditional_job?.semantic_job_id
+        ?? null;
+      if (upstreamJobId) {
+        mediationJob = openContextDependencyJobLink(recorder, hgSessionId, mediationJob, {
+          upstreamSemanticJobId: upstreamJobId,
+          upstreamCanonicalEvidenceId: upstreamEvidenceId,
+        });
+      }
+    }
+  }
   const structuralError = inference.structuralError
     ?? inference.lineage?.primary?.parse_error
     ?? inference.parsed?.error
@@ -247,6 +313,21 @@ export async function runLibrarianMediation({
   }
 
   const structurallyValid = Boolean(parsed?.ok);
+  if (mediationJob?.canonicalEvidenceId && recorder?.isEnabled?.() && hgSessionId) {
+    mediationJob = finalizeSemanticJob(recorder, hgSessionId, mediationJob, {
+      disposition: structurallyValid && hostValidation.accepted ? 'succeeded' : 'failed_validation',
+      reasonCode: structurallyValid ? null : 'structural_or_host_validation_failed',
+      validationSummary: {
+        host_accepted: Boolean(hostValidation.accepted),
+        host_reason: hostValidation.reason ?? null,
+      },
+      consequenceSummary: {
+        consumer: 'domain_host_finalize_librarian_mediation',
+        mutation_class: 'derived_state',
+        bundle_id: bundle?.bundle_id ?? null,
+      },
+    });
+  }
   return {
     ok: structurallyValid,
     stage: structurallyValid ? 'finalized' : 'parse_or_host_validation',

@@ -3,6 +3,11 @@ import {
   bridgeManifestFromHostPrepare,
   normalizeBridgeContributions,
 } from '../../lib/bridge-manifest.mjs';
+import {
+  establishCanonicalJobEvidence,
+  finalizeSemanticJob,
+  openQaEvaluationJob,
+} from '../../lib/conditional-job/semantic-job-evidence.mjs';
 
 export const SEMANTIC_EVAL_RESULT_SCHEMA = 'hg_semantic_evaluation_result_v1';
 export const SEMANTIC_EVAL_CONFIG_ID = 'semantic_evaluator_v1';
@@ -183,6 +188,8 @@ export async function runSemanticEvaluation({
   semanticEvaluatorProfile,
   mockSemanticResponse,
   parentCharacterEvidenceId,
+  targetSemanticJobId = null,
+  targetCanonicalEvidenceId = null,
   infrastructureAttempt = 0,
 }) {
   const contextResponse = await api.prepareSemanticEvaluationContext({
@@ -260,6 +267,44 @@ export async function runSemanticEvaluation({
     ...parsed.result,
     evaluation_pass_id: evaluationPassId,
   };
+  const resolvedTargetCanonical = targetCanonicalEvidenceId ?? parentCharacterEvidenceId;
+  const resolvedTargetJobId = targetSemanticJobId
+    ?? (resolvedTargetCanonical && recorder?.readAttempt?.(hgSessionId, resolvedTargetCanonical)
+      ?.correlation?.semantic_job_id)
+    ?? null;
+  if (
+    recorder?.isEnabled?.()
+    && hgSessionId
+    && evalRun.evidenceId
+    && resolvedTargetJobId
+    && resolvedTargetCanonical
+  ) {
+    const { handle } = openQaEvaluationJob(recorder, hgSessionId, {
+      targetSemanticJobId: resolvedTargetJobId,
+      targetCanonicalEvidenceId: resolvedTargetCanonical,
+      evaluationPassId,
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+      },
+      inferenceKind: 'character_semantic_evaluation',
+    });
+    const qaJob = establishCanonicalJobEvidence(
+      recorder,
+      hgSessionId,
+      evalRun.evidenceId,
+      handle,
+      { canonicalInferenceKind: 'character_semantic_evaluation', attemptLineageRole: 'primary' },
+    );
+    finalizeSemanticJob(recorder, hgSessionId, qaJob, {
+      disposition: 'succeeded',
+      validationSummary: {
+        overall_result: result.overall_result,
+        evaluation_pass_id: evaluationPassId,
+      },
+    });
+  }
   return {
     ok: true,
     infrastructureFailure: false,

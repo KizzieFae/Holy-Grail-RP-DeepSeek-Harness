@@ -15,6 +15,8 @@
 
 Forensic evidence is **observational**. It explains how execution produced committed or presented state; it is **not** continuity authority.
 
+**Conditional semantic jobs (#215 Child B):** Cross-cutting forensic envelope for conditional tools — canonical `conditional_job` on one execution-evidence attempt per `semantic_job_id`, with attempt-level joins. See [conditional-semantic-job-contract.md](./conditional-semantic-job-contract.md).
+
 ---
 
 ## Historical provenance (consolidated)
