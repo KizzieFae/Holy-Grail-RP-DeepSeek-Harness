@@ -1,7 +1,8 @@
 # Issue #201 — A2 migration handoff (2026-09-17)
 
 **Parent:** #201  
-**Decision:** `governance/records/issue-201-final-architecture-decision-2026-09-17.md`
+**Decision:** `governance/records/issue-201-final-architecture-decision-2026-09-17.md`  
+**Data-pathway matrix:** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md` (implementation reference for Tracks A–D)
 
 ## Child Issues (Tracks A–D)
 

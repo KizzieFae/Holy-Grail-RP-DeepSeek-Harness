@@ -18,14 +18,22 @@ Governance **accepts** `governance/records/issue-201-whole-system-architectural-
 
 A2 migration decomposed per `governance/records/issue-201-a2-migration-handoff-2026-09-17.md` (Tracks A–D child Issues on GitHub).
 
+## Scene data-pathway matrix (2026-09-17)
+
+- **Artifact:** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md`
+- **Purpose:** Per-pathway current production vs accepted A2 target; migration owner (#209–#212); walkthroughs + completeness vs `llm-call-catalog.mjs`
+- **Governance:** **Closure paused** pending matrix review; **#209 activation paused**
+
 ## Remaining #201 closure obligations
 
 - [x] Final architecture decision durably recorded
 - [x] Evidence retained (investigation runs + governance records)
 - [x] Implementation handed to child Issues
-- [ ] Governance review: whether assessment Issue may **`close`** from `consensus_reached` (deliverable complete) without `implemented`/`validated` migration
+- [x] Current-vs-A2 scene data-pathway matrix recorded
+- [ ] Governance **matrix review** and discussion
+- [ ] Governance review: whether assessment Issue may **`close`** from `consensus_reached` after matrix acceptance
 - [ ] Optional: refresh #201 Execution snapshot on Issue body (large edit) — progress also on this record + Issue comment
 
 ## Next step
 
-Governance: approve **#201 closure** candidate **or** keep OPEN as umbrella until Track A reaches milestone; prioritize child Track A on project board.
+Governance: review **data-pathway matrix**; then decide #201 closure and whether to activate **#209** (no implementation until authorized).
