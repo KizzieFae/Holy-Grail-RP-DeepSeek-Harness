@@ -48,7 +48,7 @@ import { attemptsToInferenceEvents, buildLh1bCostRollup } from './issue201-lh1b-
 import { runAgingApparatusQualification } from './issue201-aging-qualification-lib.mjs';
 
 const SCENARIO = G3_SCENARIOS.ayame_controlled;
-export const AGING_APPARATUS_CANDIDATE_SHA = '94cba2d054a058c1e8dfff8621f37a51fae730f2';
+export const AGING_APPARATUS_CANDIDATE_SHA = '5b3b65c1effd1656fa7c67e3d80b0ba4bc3d6e24';
 
 const INTERVENING_REALIZATIONS = [
   'Kizzie asks whether the pantry stores should be inventoried before the weekend.',

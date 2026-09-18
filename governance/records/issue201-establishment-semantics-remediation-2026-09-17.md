@@ -11,8 +11,9 @@ Post–Stop C apparatus remediation: semantic establishment lifecycle (`UNESTABL
 | Field | Value |
 |-------|--------|
 | Pre-remediation SHA | `c01737b` |
-| Apparatus lineage | `94cba2d` + this remediation |
-| Qualification | AG1–AG28 fast suite PASS (`--skip-pantry-regression`); AG16 pantry runner path retained |
+| Remediation candidate SHA | `5b3b65c` |
+| Apparatus lineage | `94cba2d` → establishment-semantics remediation |
+| Qualification | AG1–AG28 PASS; AG16 pantry PASS (`t6_semantic_establishment` + T14 `PRESENT_RAW`, opportunity withheld) |
 
 ## Modules
 
