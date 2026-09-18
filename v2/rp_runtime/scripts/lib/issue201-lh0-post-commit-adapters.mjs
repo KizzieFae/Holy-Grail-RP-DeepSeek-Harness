@@ -57,7 +57,8 @@ function parseObligationJson(raw) {
 
 function obligationsForPostCommitSeed(fixture, fixtureTurnIndex) {
   if (fixture.schema === 'issue201_lh1a_fixture_manifest_v1'
-    || fixture.schema === 'issue201_lh1b_fixture_manifest_v1') {
+    || fixture.schema === 'issue201_lh1b_fixture_manifest_v1'
+    || fixture.schema === 'issue201_r5_fixture_manifest_v1') {
     return fixture.obligations.filter((o) => (o.intro_turn ?? 1) <= fixtureTurnIndex);
   }
   return fixture.obligations;
@@ -104,7 +105,9 @@ export async function runLh0PostCommitAdapter({
     });
     const store = readLh0Store(sessionsDir, hgSessionId);
     for (const fo of obligationsForPostCommitSeed(fixture, fixtureTurnIndex)) {
-      if (fixture.schema === 'issue201_lh1b_fixture_manifest_v1' && fo.authorized_consumer === 'director_turn') {
+      if ((fixture.schema === 'issue201_lh1b_fixture_manifest_v1'
+        || fixture.schema === 'issue201_r5_fixture_manifest_v1')
+        && fo.authorized_consumer === 'director_turn') {
         continue;
       }
       upsertLh0Obligation(store, seedLh0ObligationFromFixture(fo, {

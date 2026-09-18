@@ -326,8 +326,9 @@ export async function runLh1bTurn({
   sessionsDir,
   mockOverrides = {},
   stopOnFailure = true,
+  frozenHashGate = null,
 }) {
-  const hashCheck = verifyLh1bFrozenHashes({
+  const hashCheck = frozenHashGate ?? verifyLh1bFrozenHashes({
     scenario_key: scenario.scenario_key,
     policy_hash: loadLh1bPolicy(scenario.scenario_key).policy_hash,
   });
@@ -426,6 +427,12 @@ export async function runLh1bTurn({
   });
 
   const transportStep = roundResult.audit_steps?.find((s) => s.step === 'lh0_projection_transport');
+  const charAttempt = fullRoundAttempts.find((a) => a.inference_kind === 'character_move');
+  const moveText = extractCharacterConsumerBehaviorText(
+    charAttempt,
+    roundResult.presentation_text ?? '',
+  );
+  const continuitySnapshot = extractContinuityForensics(client.activeSessionId, sessionsDir);
   return {
     turn_index: turnIndex,
     scene_id: sceneId,
@@ -433,6 +440,9 @@ export async function runLh1bTurn({
     hg_round_id: roundResult.hg_round_id,
     domain_commit_id: roundResult.domain_commit_id,
     presentation_text: roundResult.presentation_text ?? '',
+    move_text: moveText,
+    lh0_post_commit: roundResult.lh0_post_commit ?? null,
+    continuity_snapshot: continuitySnapshot,
     operation_wall_ms: operationWallMs,
     committed: roundResult.committed === true,
     player_decomposition_recorded: playerDecomposition != null,

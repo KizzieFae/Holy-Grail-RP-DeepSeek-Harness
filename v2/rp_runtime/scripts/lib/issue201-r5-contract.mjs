@@ -9,6 +9,7 @@ export const R5_SCHEMAS = Object.freeze({
   CAMPAIGN_PLAN: 'issue201_r5_campaign_plan_v1',
   QUALIFICATION: 'issue201_r5_apparatus_qualification_v1',
   ESTABLISHMENT_EQUIVALENCE: 'issue201_r5_establishment_equivalence_v1',
+  RUNNER_QUALIFICATION: 'issue201_r5_runner_qualification_v1',
 });
 
 export const R5_QUALIFIED_LH1B_RUNNER_SHA = 'dd11d10cc3f4a420691fb33f3533bd75dcb39a4f';
