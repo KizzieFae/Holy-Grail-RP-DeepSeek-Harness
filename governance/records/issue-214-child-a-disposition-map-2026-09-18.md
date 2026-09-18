@@ -7,7 +7,7 @@
 **Repository evidence anchor:** `75aa1fc0bd277f7944935a44a66716463fb0c53d` (HEAD at consensus recording)  
 **Supplementary evidence (not sole retirement proof):** `governance/records/issue-201-current-vs-a2-scene-data-pathway-matrix.md` (matrix SHA `968ba2a`), `governance/records/issue-201-final-architecture-decision-2026-09-17.md`, `v2/rp_runtime/src/application/llm-call-catalog.mjs`
 
-**Authority of this record:** Canonical **Child A** responsibility/disposition map at **`consensus_reached`**.  
+**Authority of this record:** The **single canonical detailed copy** of the **#213 next-generation RP migration-program** Child A responsibility/disposition map at Issue **#214** **`consensus_reached`**. Standing normative **anchors and routing** live in [`governance/sources/architecture-overview.md`](../sources/architecture-overview.md) (next-gen migration subsection); scoped bootstrap mandatory read in [`docs/issue-bootstrap-profiles.md`](../../docs/issue-bootstrap-profiles.md). GitHub **#213** / **#214** are coordination and evidence surfaces. This record does **not** reclassify `governance/records/` generally as Governance-AI upload corpus or universal current authority.  
 **This record does NOT authorize:** runtime implementation, production orchestration changes, inference behavior changes, deletion of code, or Child **J** retirement execution.
 
 ---
@@ -159,25 +159,42 @@ Holy Grail has **no production user base** and **no production deployment** requ
 
 ## 10. Forensic migration matrix (obligations)
 
-For each **`Retain`** / **`Convert to tool`** responsibility, downstream children must preserve or improve reconstruction of:
+Child A **inherits and does not weaken** the **#213 forensic non-regression** invariant: migration must preserve or improve forensic reconstructability relative to affected current surfaces; no silent loss of audit meaning.
 
+For each **`Retain`** / **`Convert to tool`** responsibility, downstream children must preserve or improve reconstruction of (as applicable):
+
+- existing affected forensic surfaces and **execution events/spans**;
+- **round/turn reconstruction identifiers** and turn/round boundaries;
+- **inference-attempt** evidence (model, profile, correlation joins);
+- **input context / manifest lineage** and prompt/context assembly provenance;
+- **retained-context lineage** (what persisted context was available at decision time);
+- **structured output / proposal lineage** (typed proposals, patches, intermediates);
+- **validation / repair** steps and outcomes;
+- **authoritative commit / mutation** and **derived-state** relationship to commits;
 - primary-agent activity;
-- tool eligibility consideration;
-- deterministic trigger decision;
-- trigger evidence/state;
-- fired vs skipped;
-- inference lineage;
-- inputs/outputs;
-- retries/repairs/corrections;
-- authoritative commit and derived-state relationships;
-- timing/token accounting where applicable;
-- downstream consumption;
-- failure/degraded paths;
-- causal ordering and joins.
+- tool **eligibility consideration** and **authoritative eligibility/trigger** for conditional tools;
+- deterministic trigger decision and **relevant trigger/state evidence**;
+- **scheduled semantic job** identity and scheduling evidence where applicable;
+- context/input presented to the tool or agent;
+- inference attempt, **typed output**, and retries;
+- **validation** and **accepted/rejected consequence**;
+- **downstream consumer/mutation** and **fired vs skipped** outcome;
+- **player-visible result / rendered-content lineage** and perceptual/PVR filtering relationship where applicable;
+- **replacement surfaces** for retired components;
+- **timing / token / cost attribution** where applicable;
+- **tests proving reconstruction** for migrated seams;
+- **failure/degraded paths**;
+- **causal ordering / joins** across the above.
 
-**Tools with multiple triggers:** forensics must identify which trigger/eligibility path caused execution.  
-**Transcript/state-dependent tools (incl. long-horizon):** eligibility decision must be reconstructable without relying on obsolete A4-only schemas.  
-Preserve **meaning**, not legacy event names for compatibility.
+**Normative causal reconstruction principle (where applicable):**
+
+> context/state → eligibility/trigger → agent/tool decision → inference/output → authoritative or derived state → player-visible result
+
+**Conditional tools:** preserve reconstruction of authoritative eligibility/trigger, relevant trigger/state evidence, scheduled semantic job (if any), context/input, inference attempt, typed output, validation, accepted/rejected consequence, downstream consumer/mutation, and fired/skipped outcome.
+
+**Tools with multiple triggers:** the **triggering path** must be reconstructable (which eligibility/trigger path caused execution).
+
+**Transcript/state-dependent tools (incl. long-horizon):** the **eligibility/state decision** must be reconstructable without requiring obsolete A4 event names or schemas. Preserve **forensic meaning**, not legacy compatibility event vocabulary.
 
 | Area | Current surfaces (examples) | Next-gen owner |
 |------|----------------------------|----------------|

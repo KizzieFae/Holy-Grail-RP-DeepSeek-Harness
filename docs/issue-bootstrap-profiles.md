@@ -33,6 +33,10 @@ Use when weight is **`full`**, or whenever **`workflow-weights.md`** escalation 
 - `docs/audit-workflows.md` (RP session-audit procedure)
 - `docs/rp-data-layout.md`
 
+**When work is under the #213 next-generation RP migration program** (umbrella **#213** or child Issues **#214**–**#223** where applicable)
+
+- `governance/records/issue-214-child-a-disposition-map-2026-09-18.md` (canonical Child A disposition map; routed from `governance/sources/architecture-overview.md`)
+
 ---
 
 ## Standard
@@ -46,6 +50,10 @@ Mid-depth bootstrap when **effective** weight is **`standard`** (routine **assig
 - `governance/execution/github-issues.md`
 
 **Add per task class from `AGENTS.md` → Minimum guidance reads** (architecture, scenario validation, repo map, etc.) without replaying the entire Full list unless escalation triggers apply.
+
+**When work is under the #213 next-generation RP migration program** (umbrella **#213** or child Issues **#214**–**#223** where applicable)
+
+- `governance/records/issue-214-child-a-disposition-map-2026-09-18.md`
 
 ---
 
