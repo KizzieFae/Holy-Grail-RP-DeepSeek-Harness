@@ -57,10 +57,10 @@ const INTERVENING_REALIZATIONS = [
   'Kizzie offers to reorganize the coat closet if it would help.',
 ];
 
-function verifyAgingLiveAnchor() {
+async function verifyAgingLiveAnchor() {
   const fixturePath = path.join(AGING_FIXTURE_ROOT, 'ayame_aging_fixture_v1.json');
   const measured = { fixture_hash: sha256File(fixturePath) };
-  const qual = runAgingApparatusQualification({ skipPantryRegression: true });
+  const qual = await runAgingApparatusQualification({ skipPantryRegression: true });
   return {
     pass: qual.pass,
     execution_sha: gitSha(),
@@ -168,7 +168,7 @@ export async function executeAgingLiveCampaign({
   if (!liveAuthorized) {
     throw new Error('Information-aging live campaign not authorized');
   }
-  const anchor = verifyAgingLiveAnchor();
+  const anchor = await verifyAgingLiveAnchor();
   if (!anchor.pass) {
     throw new Error(`Aging live anchor failed: ${JSON.stringify(anchor)}`);
   }
