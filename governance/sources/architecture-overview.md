@@ -170,7 +170,7 @@ Standing normative anchors for the active **next-generation RP migration program
 
 **Child obligation:** Every downstream migration child (**B**–**I**) owns **runtime migration**, **forensic/audit migration**, and **documentation migration** together; Child **J** verifies completeness and performs terminal cleanup.
 
-**Canonical detailed disposition map (single copy):** [governance/records/issue-214-child-a-disposition-map-2026-09-18.md](../records/issue-214-child-a-disposition-map-2026-09-18.md) — current **migration-program** authority at Issue **#214** `consensus_reached`. Bootstrap: [docs/issue-bootstrap-profiles.md](../docs/issue-bootstrap-profiles.md) (scoped to this program). This file is **not** an additional Governance-AI upload source beyond the six files in `governance/sources/`.
+**Canonical detailed disposition map (single copy):** [governance/records/issue-214-child-a-disposition-map-2026-09-18.md](../records/issue-214-child-a-disposition-map-2026-09-18.md) — current **migration-program** authority at Issue **#214** `consensus_reached`. Bootstrap: [docs/issue-bootstrap-profiles.md](../../docs/issue-bootstrap-profiles.md) (scoped to this program). This file is **not** an additional Governance-AI upload source beyond the six files in `governance/sources/`.
 
 ---
 
