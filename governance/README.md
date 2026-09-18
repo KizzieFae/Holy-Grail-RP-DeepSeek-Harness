@@ -85,6 +85,7 @@ Cursor rules `@`-include execution policies and route project behavior to `sourc
 | `operational-retrieval-pilot.md` | Closed retrieval pilot runbook |
 | `issue-112-player-pvr-architectural-assessment.md` | Issue #112 player PVR architectural assessment (SQA-03) |
 | `progression-layer-validation-status-v1.md` | Completed progression v1 checkpoint |
+| `issue-214-child-a-disposition-map-2026-09-18.md` | Issue #214 Child A accepted migration/legacy disposition map (#213 program) |
 
 ## Separation rules
 
