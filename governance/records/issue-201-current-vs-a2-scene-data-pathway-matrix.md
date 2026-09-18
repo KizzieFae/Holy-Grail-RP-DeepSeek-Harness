@@ -12,7 +12,7 @@
 | **A2 target** | Governance-accepted direction from #201 final decision and G2 spec — **not implemented** in production. |
 | **Experimental** | `#201` investigation harness (`issue201-lh0-*`, `issue201-lh1b-*`, aging campaigns) — **not** default production path unless noted. |
 
-**Inspected production SHA:** recorded at commit that adds this file (see git log).  
+**Inspected production SHA:** `968ba2af20fd3bc1ed4bd7f616e3f098b985463f`.  
 **Prior related artifacts (not equivalent):** Package B node inventory (`issue-201-packages-abc-investigation-2026-09-14.md` §5–6); runtime LLM coverage audit (`issue-201-runtime-llm-call-coverage-audit-2026-09-15.md`) — **call-centric**, not information-flow rows; G2 §18–20 — **target flows only**.
 
 ## Legend
