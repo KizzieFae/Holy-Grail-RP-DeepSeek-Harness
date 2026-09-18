@@ -2,6 +2,8 @@
  * Issue #201 — paired-arm eligibility and comparability (LH-A authoritative).
  */
 import { AGING_STATES } from './issue201-aging-contract.mjs';
+import { trackedItemById } from './issue201-aging-fixtures.mjs';
+import { evaluatePairedSemanticEstablishment } from './issue201-aging-establishment.mjs';
 
 export function lhAAuthoritativeRegistry(registryLhA) {
   return registryLhA.tracked_items;
@@ -29,6 +31,7 @@ export function syncLhBOpportunityEligibility(registryLhB, registryLhA) {
 }
 
 export function assertPairedComparability({
+  fixture,
   turnIndex,
   establishmentRecordsA,
   establishmentRecordsB,
@@ -37,19 +40,39 @@ export function assertPairedComparability({
   const a = establishmentRecordsA?.[trackedItemId];
   const b = establishmentRecordsB?.[trackedItemId];
   if (!a || !b) {
-    return { pass: false, reason: 'missing_establishment_record' };
+    return { pass: false, reason: 'missing_establishment_record', turn_index: turnIndex, tracked_item_id: trackedItemId };
   }
-  const moveMatch = String(a.move_text ?? '').trim() === String(b.move_text ?? '').trim();
-  const stimMatch = String(a.player_stimulus ?? '').trim() === String(b.player_stimulus ?? '').trim();
-  if (!moveMatch || !stimMatch) {
+  const trackedItem = trackedItemById(fixture, trackedItemId);
+  if (!trackedItem) {
+    return { pass: false, reason: 'missing_tracked_item', tracked_item_id: trackedItemId };
+  }
+  const paired = evaluatePairedSemanticEstablishment({
+    trackedItem,
+    recordA: a,
+    recordB: b,
+    turnIndexA: a.turn_index ?? turnIndex,
+    turnIndexB: b.turn_index ?? turnIndex,
+  });
+  if (paired.bilateral_omission) {
     return {
-      pass: false,
-      reason: 'establishment_asymmetry',
+      pass: true,
+      bilateral_omission: true,
+      reason: 'bilateral_omission',
       turn_index: turnIndex,
       tracked_item_id: trackedItemId,
+      paired,
     };
   }
-  return { pass: true };
+  if (paired.stop_c || !paired.pass) {
+    return {
+      pass: false,
+      reason: paired.reason ?? 'establishment_integrity_failure',
+      turn_index: turnIndex,
+      tracked_item_id: trackedItemId,
+      paired,
+    };
+  }
+  return { pass: true, paired, tracked_item_id: trackedItemId };
 }
 
 export function lhBCannotSelfTriggerOpportunity(registryLhB, registryLhA, trackedItemId) {

@@ -27,11 +27,15 @@ import {
 } from './issue201-aging-fixtures.mjs';
 import { AGING_FIXTURE_ROOT } from './issue201-aging-fixtures.mjs';
 import {
-  applyAgingObservation,
-  applyPersistenceObservation,
   buildTranscriptObservationRecord,
   classifyTrackedItemAvailability,
 } from './issue201-aging-monitor.mjs';
+import {
+  advanceRegistryForTurn,
+  evaluateEstablishmentIntegrityStop,
+  markRegistryPairedEstablishment,
+  replayLhAAgingObservations,
+} from './issue201-aging-registry.mjs';
 import {
   resolvePlayerStimulusForTurn,
   stimulusLeakageCheckForOpportunity,
@@ -88,37 +92,6 @@ async function createLiveClient(evidenceRoot, sessionsDir) {
     opening: { mode: 'template', opener_id: openers[0].opener_id },
   });
   return client;
-}
-
-function updateRegistryForTurn({
-  fixture,
-  registry,
-  turnRow,
-  turnIndex,
-  arm,
-}) {
-  const items = registry.tracked_items.map((item) => {
-    if (turnIndex < item.establishment_turn) return item;
-    const obs = classifyTrackedItemAvailability({
-      fixture,
-      trackedItem: item,
-      assembledRequest: turnRow.assembled_request_character,
-      playerStimulus: turnRow.exact_player_stimulus ?? '',
-      continuitySnapshot: turnRow.continuity_snapshot,
-    });
-    let next = applyAgingObservation({
-      registryItem: item,
-      observation: obs,
-      turnIndex,
-      hgRoundId: turnRow.hg_round_id,
-      arm,
-    });
-    if (arm === LH0_ARMS.LH_B) {
-      next = applyPersistenceObservation(next, obs, turnIndex);
-    }
-    return next;
-  });
-  return { ...registry, tracked_items: items };
 }
 
 function evaluateTestedItem({
@@ -186,7 +159,6 @@ export async function executeAgingLiveCampaign({
   const stimuliByTurn = {};
   const turnsA = [];
   const agingTimeline = [];
-  let pendingFireItemId = null;
   let stopReason = null;
   let testedRecord = null;
   let failClosed = null;
@@ -200,27 +172,12 @@ export async function executeAgingLiveCampaign({
 
   try {
     for (let turnIndex = 1; turnIndex <= maxTurns; turnIndex += 1) {
-      let sched;
-      let testingItemId = null;
-      if (pendingFireItemId) {
-        const item = trackedItemById(fixture, pendingFireItemId);
-        sched = {
-          stimulus: item.opportunity.stimulus,
-          fired: true,
-          gated: true,
-          tracked_item_id: pendingFireItemId,
-        };
-        testingItemId = pendingFireItemId;
-        pendingFireItemId = null;
-      } else {
-        sched = resolvePlayerStimulusForTurn({
-          policy,
-          turnIndex,
-          registry: registryA,
-          lhARegistryItems: registryA.tracked_items,
-        });
-        if (sched.fired) testingItemId = sched.tracked_item_id;
-      }
+      const sched = resolvePlayerStimulusForTurn({
+        policy,
+        turnIndex,
+        registry: registryA,
+        lhARegistryItems: registryA.tracked_items,
+      });
       stimuliByTurn[turnIndex] = sched.stimulus;
 
       const turnRow = await runLh1bTurn({
@@ -236,29 +193,29 @@ export async function executeAgingLiveCampaign({
         sessionsDir,
         frozenHashGate,
       });
-      turnsA.push({ ...turnRow, scheduler: sched, testing_item_id: testingItemId });
+      turnsA.push({ ...turnRow, scheduler: sched });
       if (!turnRow.committed) {
         failClosed = { reason: 'terminal_beat_failure', turn_index: turnIndex, arm: 'lh_a' };
         stopReason = AGING_STOP_REASONS.STOP_C_FAIL_CLOSED;
         break;
       }
 
-      const beforePending = registryA.tracked_items.filter((t) => t.opportunity_eligible).map((t) => t.tracked_item_id);
-      registryA = updateRegistryForTurn({
+      registryA = advanceRegistryForTurn({
         fixture,
         registry: registryA,
         turnRow,
         turnIndex,
         arm: LH0_ARMS.LH_A,
       });
-      const afterPending = registryA.tracked_items.filter((t) => t.opportunity_eligible).map((t) => t.tracked_item_id);
-      const newlyPending = afterPending.filter((id) => !beforePending.includes(id));
 
       for (const item of fixture.tracked_items) {
-        if (item.establishment_turn === turnIndex) {
+        if (turnIndex >= item.establishment_turn) {
           establishmentA[item.tracked_item_id] = {
+            ...(establishmentA[item.tracked_item_id] ?? {}),
             player_stimulus: turnRow.exact_player_stimulus,
             move_text: turnRow.move_text,
+            presentation_text: turnRow.presentation_text,
+            turn_index: turnIndex,
           };
         }
       }
@@ -281,34 +238,6 @@ export async function executeAgingLiveCampaign({
       );
       agingTimeline.push(obsRecord);
 
-      if (testingItemId && sched.fired) {
-        const leak = stimulusLeakageCheckForOpportunity(
-          trackedItemById(fixture, testingItemId),
-          sched.stimulus,
-        );
-        testedRecord = {
-          tracked_item_id: testingItemId,
-          turn_index: turnIndex,
-          scheduler: sched,
-          stimulus_leakage: leak,
-          awaiting_arm_b: true,
-        };
-        registryA = {
-          ...registryA,
-          tracked_items: registryA.tracked_items.map((t) => (
-            t.tracked_item_id === testingItemId
-              ? { ...t, aging_state: AGING_STATES.TESTED, tested_turn: turnIndex }
-              : t
-          )),
-        };
-        stopReason = AGING_STOP_REASONS.STOP_A_CLEAN_RESULT;
-        break;
-      }
-
-      if (newlyPending.length && !pendingFireItemId) {
-        pendingFireItemId = newlyPending[0];
-      }
-
       const stopB = evaluateCampaignStop({
         turnIndex,
         maxTurns,
@@ -329,6 +258,7 @@ export async function executeAgingLiveCampaign({
 
   const lastTurnA = turnsA.length;
   const turnsB = [];
+  let registryB = buildTrackedItemRegistry(fixture);
   const clientB = await createLiveClient(evidenceRoot, sessionsDir);
   const hgSessionB = clientB.activeSessionId;
   const armConfigB = buildLh0ArmConfig(LH0_ARMS.LH_B);
@@ -363,13 +293,29 @@ export async function executeAgingLiveCampaign({
         stopReason = AGING_STOP_REASONS.STOP_C_FAIL_CLOSED;
         break;
       }
+      registryB = advanceRegistryForTurn({
+        fixture,
+        registry: registryB,
+        turnRow,
+        turnIndex,
+        arm: LH0_ARMS.LH_B,
+      });
       for (const item of fixture.tracked_items) {
-        if (item.establishment_turn === turnIndex) {
+        if (turnIndex >= item.establishment_turn) {
           establishmentB[item.tracked_item_id] = {
+            ...(establishmentB[item.tracked_item_id] ?? {}),
             player_stimulus: turnRow.exact_player_stimulus,
             move_text: turnRow.move_text,
+            presentation_text: turnRow.presentation_text,
+            turn_index: turnIndex,
           };
         }
+      }
+      const integrity = evaluateEstablishmentIntegrityStop(registryB, fixture, establishmentA, establishmentB);
+      if (integrity.stop) {
+        failClosed = integrity;
+        stopReason = AGING_STOP_REASONS.STOP_C_FAIL_CLOSED;
+        break;
       }
     }
   } finally {
@@ -377,20 +323,26 @@ export async function executeAgingLiveCampaign({
   }
 
   const storeB = readLh0Store(sessionsDir, hgSessionB);
+  registryA = markRegistryPairedEstablishment(registryA, fixture, establishmentA, establishmentB);
+  registryA = replayLhAAgingObservations({ fixture, registry: registryA, turnsA });
+
   let pairedComparability = { pass: true };
   for (const item of fixture.tracked_items) {
+    if (!establishmentA[item.tracked_item_id] || !establishmentB[item.tracked_item_id]) {
+      continue;
+    }
     const cmp = assertPairedComparability({
+      fixture,
       turnIndex: item.establishment_turn,
       establishmentRecordsA: establishmentA,
       establishmentRecordsB: establishmentB,
       trackedItemId: item.tracked_item_id,
     });
-    if (!cmp.pass) pairedComparability = cmp;
-  }
-
-  if (!pairedComparability.pass && stopReason === AGING_STOP_REASONS.STOP_A_CLEAN_RESULT) {
-    stopReason = AGING_STOP_REASONS.STOP_C_FAIL_CLOSED;
-    failClosed = pairedComparability;
+    if (!cmp.pass && !cmp.bilateral_omission) {
+      pairedComparability = cmp;
+      failClosed = cmp;
+      stopReason = AGING_STOP_REASONS.STOP_C_FAIL_CLOSED;
+    }
   }
 
   if (testedRecord?.awaiting_arm_b) {

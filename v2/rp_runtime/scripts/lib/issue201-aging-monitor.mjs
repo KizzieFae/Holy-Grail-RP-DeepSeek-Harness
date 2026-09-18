@@ -3,7 +3,7 @@
  */
 import crypto from 'node:crypto';
 
-import { AGING_SCHEMAS, AGING_STATES } from './issue201-aging-contract.mjs';
+import { AGING_SCHEMAS, AGING_STATES, ESTABLISHMENT_STATES } from './issue201-aging-contract.mjs';
 import { classifyActualSubstrateUniqueness } from './issue201-lh1b-substrate-uniqueness.mjs';
 import {
   contributionsFromAssembledRequest,
@@ -137,6 +137,16 @@ export function applyAgingObservation({
   hgRoundId = null,
   arm = 'lh_a',
 }) {
+  if (registryItem.establishment_state !== ESTABLISHMENT_STATES.ESTABLISHED
+    || registryItem.aging_clock_started !== true
+    || registryItem.causal_item_valid === false
+    || registryItem.contamination) {
+    return {
+      ...registryItem,
+      aging_state: AGING_STATES.UNESTABLISHED,
+      opportunity_eligible: false,
+    };
+  }
   const historyEntry = {
     turn_index: turnIndex,
     hg_round_id: hgRoundId,

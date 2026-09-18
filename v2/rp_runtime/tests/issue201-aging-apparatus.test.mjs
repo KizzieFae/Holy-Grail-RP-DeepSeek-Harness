@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { buildTrackedItemRegistry, loadAgingFixtureManifest, loadAgingPolicy } from '../scripts/lib/issue201-aging-fixtures.mjs';
 import { AGING_STATES } from '../scripts/lib/issue201-aging-contract.mjs';
+import { syntheticEstablishedRegistryItem } from '../scripts/lib/issue201-aging-qualification-establishment.mjs';
 import {
   classifyTrackedItemAvailability,
   applyAgingObservation,
@@ -33,8 +34,9 @@ test('scheduler withholds gated opportunity when PRESENT_RAW', () => {
     },
   });
   assert.equal(obs.availability_state, AGING_STATES.PRESENT_RAW);
-  let regItem = applyAgingObservation({
-    registryItem: { ...item, aging_history: [] },
+  let regItem = syntheticEstablishedRegistryItem(fixture, item.tracked_item_id);
+  regItem = applyAgingObservation({
+    registryItem: { ...regItem, aging_history: [] },
     observation: obs,
     turnIndex: 14,
   });
@@ -47,12 +49,12 @@ test('scheduler withholds gated opportunity when PRESENT_RAW', () => {
   assert.equal(sched.fired, false);
 });
 
-test('aging apparatus qualification AG1–AG15 (synthetic)', async () => {
+test('aging apparatus qualification AG1–AG28 (synthetic)', async () => {
   const report = await runAgingApparatusQualification({ skipPantryRegression: true });
   if (!report.pass) {
     assert.fail(`Aging qualification failed: ${report.failures.join(', ')}`);
   }
-  assert.equal(report.gates.length, 16);
+  assert.equal(report.gates.length, 28);
 });
 
 test('aging pantry T14 regression AG16', { timeout: 2_400_000 }, async () => {

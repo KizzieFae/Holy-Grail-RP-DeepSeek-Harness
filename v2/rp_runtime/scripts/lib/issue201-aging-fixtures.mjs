@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { AGING_SCHEMAS } from './issue201-aging-contract.mjs';
+import { AGING_SCHEMAS, AGING_STATES, ESTABLISHMENT_STATES } from './issue201-aging-contract.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const AGING_FIXTURE_ROOT = path.resolve(__dirname, '../../../..', 'governance/records/issue201-aging-fixtures');
@@ -49,7 +49,21 @@ export function buildTrackedItemRegistry(fixture = null) {
   const items = (fx.tracked_items ?? []).map((item) => ({
     ...item,
     semantic_fingerprint: semanticFingerprint(item.semantic_proposition),
-    aging_state: null,
+    establishment_state: ESTABLISHMENT_STATES.UNESTABLISHED,
+    establishment_attempted: false,
+    establishment_turn_arm_a: null,
+    establishment_turn_arm_b: null,
+    establishment_evidence_arm_a: null,
+    establishment_evidence_arm_b: null,
+    semantic_establishment_arm_a: false,
+    semantic_establishment_arm_b: false,
+    paired_semantic_equivalence: null,
+    aging_clock_started: false,
+    aging_clock_start_turn_a: null,
+    aging_clock_start_turn_b: null,
+    contamination: null,
+    causal_item_valid: true,
+    aging_state: AGING_STATES.UNESTABLISHED,
     aging_history: [],
     last_raw_presence_turn: null,
     first_lean_other_turn: null,

@@ -3,10 +3,15 @@
  */
 import { AGING_STATES } from './issue201-aging-contract.mjs';
 import { trackedItemById } from './issue201-aging-fixtures.mjs';
+import { shouldBlockOpportunity } from './issue201-aging-establishment.mjs';
 
 export function isOpportunityEligible(registryItem) {
-  return registryItem.opportunity_eligible === true
-    || registryItem.aging_state === AGING_STATES.OPPORTUNITY_PENDING;
+  if (shouldBlockOpportunity(registryItem)) return false;
+  const agedReady = registryItem.confirmatory_aged_out_turn != null;
+  return agedReady && (
+    registryItem.opportunity_eligible === true
+    || registryItem.aging_state === AGING_STATES.OPPORTUNITY_PENDING
+  );
 }
 
 export function resolvePlayerStimulusForTurn({

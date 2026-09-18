@@ -36,6 +36,12 @@ import { evaluateCampaignStop, markItemTested } from './issue201-aging-stopping.
 import { executeR5MockSequence } from './issue201-r5-live-lib.mjs';
 import { buildR5CampaignPlan } from './issue201-r5-orchestrator.mjs';
 import { loadR5FixtureManifest } from './issue201-r5-fixtures.mjs';
+import { evaluateSemanticEstablishment } from './issue201-aging-establishment.mjs';
+import {
+  runEstablishmentQualificationGates,
+  syntheticEstablishedRegistryItem,
+} from './issue201-aging-qualification-establishment.mjs';
+import { ESTABLISHMENT_STATES } from './issue201-aging-contract.mjs';
 
 function gate(name, pass, detail = null) {
   return { name, pass, detail };
@@ -119,6 +125,7 @@ export async function runAgingPantryRegression({ evidenceRoot = null } = {}) {
   });
   const t14 = seq.turns?.find((t) => t.turn_index === 14);
   const t6 = seq.turns?.find((t) => t.turn_index === 6);
+  const estT6 = evaluateSemanticEstablishment(item, `${t6?.move_text ?? ''}\n${t6?.presentation_text ?? ''}`);
   const obs = classifyTrackedItemAvailability({
     fixture: agingFixture,
     trackedItem: item,
@@ -127,7 +134,13 @@ export async function runAgingPantryRegression({ evidenceRoot = null } = {}) {
     continuitySnapshot: t14?.continuity_snapshot,
   });
   let registry = buildTrackedItemRegistry(agingFixture);
-  let regItem = registry.tracked_items.find((t) => t.tracked_item_id === item.tracked_item_id);
+  let regItem = syntheticEstablishedRegistryItem(agingFixture, item.tracked_item_id);
+  regItem = {
+    ...regItem,
+    establishment_state: estT6.established ? ESTABLISHMENT_STATES.ESTABLISHED : regItem.establishment_state,
+    aging_clock_started: estT6.established,
+    aging_clock_start_turn_a: estT6.established ? 6 : null,
+  };
   for (const t of seq.turns ?? []) {
     if (t.turn_index < 6) continue;
     const o = classifyTrackedItemAvailability({
@@ -157,7 +170,9 @@ export async function runAgingPantryRegression({ evidenceRoot = null } = {}) {
     t14_observation: obs,
     t14_state: regItem.aging_state,
     scheduler: sched,
-    pass: obs.availability_state === AGING_STATES.PRESENT_RAW
+    t6_semantic_establishment: estT6,
+    pass: estT6.established === true
+      && obs.availability_state === AGING_STATES.PRESENT_RAW
       && sched.fired === false
       && regItem.opportunity_eligible !== true,
   };
@@ -191,7 +206,7 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
   });
   gates.push(gate('AG2_proposition_detectable', pantryObs.availability_state === AGING_STATES.PRESENT_RAW, pantryObs));
 
-  let regA = registry.tracked_items[0];
+  let regA = syntheticEstablishedRegistryItem(fixture, itemA.tracked_item_id);
   const obsRaw = classifyTrackedItemAvailability({
     fixture,
     trackedItem: itemA,
@@ -216,7 +231,7 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
   }));
 
   const regRaw = applyAgingObservation({
-    registryItem: { ...itemA, aging_history: [] },
+    registryItem: { ...regA, aging_history: [] },
     observation: obsRaw,
     turnIndex: 14,
   });
@@ -229,7 +244,7 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
   gates.push(gate('AG4_no_opportunity_present_raw', schedRaw.fired === false, schedRaw));
 
   const regLean = applyAgingObservation({
-    registryItem: { ...itemA, aging_history: [] },
+    registryItem: { ...regA, aging_history: [] },
     observation: obsLean,
     turnIndex: 21,
   });
@@ -251,7 +266,7 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
     trackedItem: itemA,
     assembledRequest: syntheticManifest({ transcript: 'Kizzie: Shall I fold the linens? Ayame: After tea.' }),
   });
-  let regAged = { ...itemA, aging_history: [] };
+  let regAged = { ...regA, aging_history: [] };
   regAged = applyAgingObservation({ registryItem: regAged, observation: obsAged1, turnIndex: 30 });
   regAged = applyAgingObservation({ registryItem: regAged, observation: obsAged2, turnIndex: 31 });
   const schedAged = resolvePlayerStimulusForTurn({
@@ -330,10 +345,9 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
     ok: bSelfTriggerOk,
   }));
 
-  gates.push(gate('AG13_divergence_fail_closed', assertDivergenceFail({
-    a: { move_text: 'x', player_stimulus: 'y' },
-    b: { move_text: 'z', player_stimulus: 'y' },
-  }).pass === false));
+  const estGates = runEstablishmentQualificationGates();
+  gates.push(...estGates.gates);
+  gates.push(gate('AG13_divergence_fail_closed', estGates.run2Regression.no_stop_c_prose_diff === true, estGates.run2Regression));
 
   const stopA = evaluateCampaignStop({
     turnIndex: 50,
@@ -365,6 +379,7 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
   return {
     schema: AGING_SCHEMAS.QUALIFICATION,
     pass: failures.length === 0 && r5App.pass && lh1bApp.pass,
+    establishment_regression: estGates.run2Regression,
     candidate_sha: gitSha(),
     gates,
     failures,
@@ -384,8 +399,3 @@ export async function runAgingApparatusQualification({ evidenceRoot = null, skip
   };
 }
 
-function assertDivergenceFail({ a, b }) {
-  const pass = String(a.move_text) === String(b.move_text)
-    && String(a.player_stimulus) === String(b.player_stimulus);
-  return { pass, reason: pass ? 'ok' : 'establishment_asymmetry' };
-}
