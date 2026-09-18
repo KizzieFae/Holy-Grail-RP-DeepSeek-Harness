@@ -75,6 +75,7 @@ _dry_run_cohort_artifacts/
 _tmp_hier_edit/
 _tmp_prog_issues/
 .tmp_issues/
+.tmp-issue-create/
 .tmp_*
 governance/rp-app/_issue_bodies/
 
