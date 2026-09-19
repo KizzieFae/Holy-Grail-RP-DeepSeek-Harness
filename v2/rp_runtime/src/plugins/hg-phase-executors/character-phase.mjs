@@ -98,7 +98,7 @@ async function runCharacterInferenceWithInfraRetry({
           characterId,
           inferenceId: characterInferenceId,
           parentInferenceId: characterInferenceId,
-          inferenceKind: 'character_turn',
+          inferenceKind: 'character_move',
           niForensics: true,
           lhProvenanceAudit,
           attemptIndex,

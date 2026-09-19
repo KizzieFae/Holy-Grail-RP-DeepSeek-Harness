@@ -22,7 +22,7 @@
 - Session `index.json` includes `semantic_jobs.by_semantic_job_id` derived index.
 - **Terminal disposition:** when runtime semantic work for a job ends (success, failure, exhaustion, or skip), the canonical envelope must record `job_disposition` (forensic only; does not change routing/eligibility policy).
 - **QA identity:** one `evaluation_pass_id` → one stable `semantic_job_id` for `semantic_quality_evaluation`; infrastructure retries attach as sibling inference attempts on the same canonical QA envelope.
-- **Character move target:** `character_move_generation` (`character_turn`) is the semantic target for character `semantic_quality_evaluation` (`evaluates` relationship).
+- **Character move target:** `character_move_generation` (`character_turn` catalog canonical) is the semantic target for character `semantic_quality_evaluation` (`evaluates` relationship). Execution-evidence `correlation.inference_kind` remains the runtime alias **`character_move`**; conditional-job attempt refs use catalog canonical **`character_turn`** — semantic-job IDs must not replace inference-attempt identity.
 
 ## Relationships
 
