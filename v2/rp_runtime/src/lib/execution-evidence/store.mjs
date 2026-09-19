@@ -74,6 +74,13 @@ function emptyRoundActivityIndex() {
   return {};
 }
 
+function emptySemanticJobsIndex() {
+  return {
+    by_semantic_job_id: {},
+    by_round: {},
+  };
+}
+
 function emptyIndex(hgSessionId) {
   return {
     schema: INDEX_SCHEMA,
@@ -82,6 +89,7 @@ function emptyIndex(hgSessionId) {
     rounds: {},
     participation_by_round: {},
     semantic: emptySemanticIndex(),
+    semantic_jobs: emptySemanticJobsIndex(),
     ni: emptyNiIndex(),
     plot_cognition: emptyPlotCognitionIndex(),
     inference_health: emptyInferenceHealthIndex(),
@@ -193,12 +201,43 @@ export class ExecutionEvidenceStore {
       if (this._isPlotCognitionInference(attempt)) {
         this._indexPlotCognition(hgSessionId, evidenceId, attempt, index);
       }
+      this._indexSemanticJob(hgSessionId, evidenceId, attempt, index);
       index.inference_health = this._buildInferenceHealthIndex(
         hgSessionId,
         index.attempt_ids ?? [],
       );
     });
     return evidenceId;
+  }
+
+  /**
+   * Register attempt under semantic job index (#215).
+   */
+  registerSemanticJobAttempt(hgSessionId, {
+    semanticJobId,
+    canonicalEvidenceId,
+    attemptEvidenceId,
+    jobKind = null,
+    canonicalInferenceKind = null,
+  }) {
+    if (!semanticJobId || !canonicalEvidenceId || !attemptEvidenceId) return;
+    this._mutateSessionIndexSync(hgSessionId, (index) => {
+      if (!index.semantic_jobs) index.semantic_jobs = emptySemanticJobsIndex();
+      const key = String(semanticJobId);
+      const current = index.semantic_jobs.by_semantic_job_id[key] ?? {
+        semantic_job_id: semanticJobId,
+        job_kind: jobKind,
+        canonical_evidence_id: canonicalEvidenceId,
+        attempt_evidence_ids: [],
+      };
+      if (jobKind) current.job_kind = jobKind;
+      current.canonical_evidence_id = canonicalEvidenceId;
+      this._pushUnique(current.attempt_evidence_ids, attemptEvidenceId);
+      if (canonicalInferenceKind) {
+        current.last_inference_kind = canonicalInferenceKind;
+      }
+      index.semantic_jobs.by_semantic_job_id[key] = current;
+    });
   }
 
   /**
@@ -222,6 +261,7 @@ export class ExecutionEvidenceStore {
         ...(current.associations ?? {}),
         ...(patch.associations ?? {}),
       },
+      conditional_job: patch.conditional_job ?? current.conditional_job ?? undefined,
       updated_at: new Date().toISOString(),
     };
     delete next.semantic_qa;
@@ -254,6 +294,7 @@ export class ExecutionEvidenceStore {
       if (this._isPlotCognitionInference(next)) {
         this._indexPlotCognition(hgSessionId, evidenceId, next, index);
       }
+      this._indexSemanticJob(hgSessionId, evidenceId, next, index);
       index.inference_health = this._buildInferenceHealthIndex(
         hgSessionId,
         index.attempt_ids ?? [],
@@ -552,6 +593,42 @@ export class ExecutionEvidenceStore {
     if (inferenceId && sem.evaluation_chains[inferenceId]?.length > 2) {
       this._pushUnique(sem.multi_candidate_inferences, inferenceId);
     }
+    };
+    if (indexOverride) {
+      apply(indexOverride);
+      return;
+    }
+    this._mutateSessionIndexSync(hgSessionId, apply);
+  }
+
+  _indexSemanticJob(hgSessionId, evidenceId, attempt, indexOverride = null) {
+    const envelope = attempt?.conditional_job;
+    const correlation = attempt?.correlation ?? {};
+    const semanticJobId = envelope?.semantic_job_id ?? correlation.semantic_job_id;
+    if (!semanticJobId) return;
+    const canonicalId = envelope?.canonical_job_evidence_id
+      ?? correlation.canonical_job_evidence_id
+      ?? (envelope ? evidenceId : null);
+    const apply = (current) => {
+      if (!current.semantic_jobs) current.semantic_jobs = emptySemanticJobsIndex();
+      const key = String(semanticJobId);
+      const entry = current.semantic_jobs.by_semantic_job_id[key] ?? {
+        semantic_job_id: semanticJobId,
+        job_kind: envelope?.job_kind ?? null,
+        canonical_evidence_id: canonicalId,
+        attempt_evidence_ids: [],
+      };
+      if (envelope?.job_kind) entry.job_kind = envelope.job_kind;
+      if (canonicalId) entry.canonical_evidence_id = canonicalId;
+      this._pushUnique(entry.attempt_evidence_ids, evidenceId);
+      current.semantic_jobs.by_semantic_job_id[key] = entry;
+      const roundId = correlation.hg_round_id;
+      if (roundId) {
+        const roundKey = String(roundId);
+        const roundBucket = current.semantic_jobs.by_round[roundKey] ?? [];
+        this._pushUnique(roundBucket, semanticJobId);
+        current.semantic_jobs.by_round[roundKey] = roundBucket;
+      }
     };
     if (indexOverride) {
       apply(indexOverride);

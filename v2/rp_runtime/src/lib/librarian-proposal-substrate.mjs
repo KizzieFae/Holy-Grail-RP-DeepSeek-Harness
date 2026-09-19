@@ -10,6 +10,14 @@ import {
   parseLibrarianProposalResult,
 } from './librarian-proposal-envelope.mjs';
 import { buildPostCommitSemanticDecisionPatch } from './execution-evidence/ni-evidence.mjs';
+import { createTriggerRecord } from './conditional-job/envelope.mjs';
+import {
+  attachInferenceAttemptToJob,
+  establishCanonicalJobEvidence,
+  finalizeSemanticJob,
+  mergeEvidenceContextForJob,
+  openSemanticJob,
+} from './conditional-job/semantic-job-evidence.mjs';
 
 function proposalContentHash(raw) {
   if (!raw) return null;
@@ -126,6 +134,28 @@ export async function runLibrarianProposalGeneration({
 
   const inferenceKind = prepareResponse.inference_kind ?? 'storyteller_post_commit_issue_pressure';
   const correctionKind = `${inferenceKind}_contract_correction`;
+  let postCommitJob = null;
+  if (recorder?.isEnabled?.() && hgSessionId) {
+    postCommitJob = openSemanticJob({
+      jobKind: 'post_commit_semantic',
+      triggerRecord: createTriggerRecord({
+        source: 'host_prepare',
+        owner: 'domain_host',
+        eligibilityDecision: { outcome: 'inference_required' },
+        inferenceRequired: true,
+        evidenceRefs: [
+          { ref_type: 'domain_commit_id', value: proposalContextRequest.domain_commit_id },
+          { ref_type: 'request_id', value: prepareResponse.request_id ?? null },
+        ],
+      }),
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: evidenceContextBase?.hgRoundId ?? proposalContextRequest.hg_round_id,
+        domain_commit_id: proposalContextRequest.domain_commit_id,
+      },
+    });
+  }
 
   const catalogIds = new Set(
     (prepareResponse.evidence_catalog ?? []).map((item) => String(item.anchor_id)),
@@ -159,16 +189,20 @@ export async function runLibrarianProposalGeneration({
     manifest,
     mockResponses: mockList,
     modelProfile: resolvedModelProfile,
-    evidenceContextBase: {
-      ...evidenceContextBase,
-      role: 'storyteller',
-      parentInferenceId: inferenceId,
-      niForensics: true,
-      requestId: prepareResponse.request_id,
-      proposalPhase: 'post_commit_issue_pressure',
-      domainCommitId: proposalContextRequest.domain_commit_id,
-      semanticProducerRole: 'storyteller',
-    },
+    evidenceContextBase: mergeEvidenceContextForJob(
+      postCommitJob ?? {},
+      {
+        ...evidenceContextBase,
+        role: 'storyteller',
+        parentInferenceId: inferenceId,
+        niForensics: true,
+        requestId: prepareResponse.request_id,
+        proposalPhase: 'post_commit_issue_pressure',
+        domainCommitId: proposalContextRequest.domain_commit_id,
+        semanticProducerRole: 'storyteller',
+      },
+      { attemptLineageRole: 'primary' },
+    ),
     maxCorrections: 1,
   });
 
@@ -176,6 +210,25 @@ export async function runLibrarianProposalGeneration({
   const primaryRun = inferRuns[0] ?? null;
   const finalRun = inference.inferRun ?? primaryRun;
   const contractLineage = summarizeContractLineage(inference.lineage);
+  if (postCommitJob && recorder?.isEnabled?.() && hgSessionId) {
+    if (primaryRun?.evidenceId && !postCommitJob.canonicalEvidenceId) {
+      postCommitJob = establishCanonicalJobEvidence(
+        recorder,
+        hgSessionId,
+        primaryRun.evidenceId,
+        postCommitJob,
+        { canonicalInferenceKind: inferenceKind, attemptLineageRole: 'primary' },
+      );
+    }
+    if (contractLineage?.correction_used && finalRun?.evidenceId
+      && finalRun.evidenceId !== primaryRun?.evidenceId) {
+      postCommitJob = attachInferenceAttemptToJob(recorder, hgSessionId, postCommitJob, {
+        evidenceId: finalRun.evidenceId,
+        canonicalInferenceKind: correctionKind,
+        attemptLineageRole: 'correction',
+      });
+    }
+  }
   const structuralError = inference.structuralError
     ?? inference.lineage?.primary?.parse_error
     ?? inference.parsed?.error
@@ -218,6 +271,29 @@ export async function runLibrarianProposalGeneration({
       proposal_generation_failure: 'provider_inference_failed',
     });
     patchProposalEvidence(batch, { stage: 'primary' });
+    if (postCommitJob && recorder?.isEnabled?.() && hgSessionId) {
+      const failEvidenceId = primaryRun?.evidenceId ?? finalRun?.evidenceId;
+      if (failEvidenceId && !postCommitJob.canonicalEvidenceId) {
+        postCommitJob = establishCanonicalJobEvidence(
+          recorder,
+          hgSessionId,
+          failEvidenceId,
+          postCommitJob,
+          { canonicalInferenceKind: inferenceKind, attemptLineageRole: 'primary' },
+        );
+      }
+      if (postCommitJob.canonicalEvidenceId) {
+      postCommitJob = finalizeSemanticJob(recorder, hgSessionId, postCommitJob, {
+        disposition: 'failed_inference',
+        reasonCode: primaryRun?.failure ?? 'inference_failed',
+        consequenceSummary: {
+          consumer: 'domain_host_finalize_librarian_proposals',
+          mutation_class: 'derived_state',
+          batch_id: batch?.batch_id ?? null,
+        },
+      });
+      }
+    }
     return {
       ok: false,
       stage: 'inference',
@@ -265,6 +341,18 @@ export async function runLibrarianProposalGeneration({
     }
   } else {
     patchProposalEvidence(batch, { stage: 'primary' });
+  }
+
+  if (postCommitJob?.canonicalEvidenceId && recorder?.isEnabled?.() && hgSessionId) {
+    postCommitJob = finalizeSemanticJob(recorder, hgSessionId, postCommitJob, {
+      disposition: parsed ? 'succeeded' : 'failed_validation',
+      reasonCode: parsed ? null : 'structural_parse_failed',
+      consequenceSummary: {
+        consumer: 'domain_host_finalize_librarian_proposals',
+        mutation_class: 'derived_state',
+        batch_id: batch?.batch_id ?? null,
+      },
+    });
   }
 
   return {

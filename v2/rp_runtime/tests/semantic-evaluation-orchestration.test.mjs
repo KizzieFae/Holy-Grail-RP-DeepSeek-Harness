@@ -847,6 +847,219 @@ test('character phase: R02b hard path remains independent of R16', async () => {
   );
 });
 
+function findCharacterMoveGenerationJob(store, hgSessionId) {
+  const byId = store.readIndex(hgSessionId)?.semantic_jobs?.by_semantic_job_id ?? {};
+  return Object.values(byId).find((entry) => entry.job_kind === 'character_move_generation') ?? null;
+}
+
+test('F1 character_move_generation: infra fail then success keeps one job and both attempts', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-f1-retry-'));
+  const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
+  const store = new ExecutionEvidenceStore(root);
+  const hgSessionId = 'sess-f1-retry';
+  let characterFailuresRemaining = 1;
+  const { runEphemeralInference } = createRecorderBackedInference(recorder, {
+    characterRaw: JSON.stringify(VALID_MOVE),
+    semanticOutcomes: [{ raw: semanticPass() }],
+  });
+  const wrappedInference = async (params) => {
+    if (params.evidenceContext?.role === 'character' && characterFailuresRemaining > 0) {
+      characterFailuresRemaining -= 1;
+      const evidenceId = recorder.recordInferenceAttempt({
+        evidenceContext: params.evidenceContext,
+        manifest: params.manifest ?? { manifest_id: 'm', contributions: [] },
+        contextRegistration: { manifestId: 'm', contributionIds: [] },
+        prompt: 'test',
+        profile: { kind: 'mock', provider: 'mock', model: 'mock' },
+        trace: { assistant_text: '', failed: true },
+        assistantText: '',
+        inferenceSessionId: 'sess-fail',
+      });
+      return { failed: true, failure: 'provider_timeout', evidenceId, trace: {} };
+    }
+    return runEphemeralInference(params);
+  };
+  const api = createMockApi();
+  const result = await runCharacterPhase({
+    runEphemeralInference: wrappedInference,
+    recorder,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId,
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-f1-retry',
+    mockResponses: [JSON.stringify(VALID_MOVE)],
+    mockSemanticEvaluatorResponses: [semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+    skipCharacterKnowledgeCognition: true,
+  });
+  assert.equal(result.committed, true);
+  const jobEntry = findCharacterMoveGenerationJob(store, hgSessionId);
+  assert.ok(jobEntry);
+  const canonical = store.readAttempt(hgSessionId, jobEntry.canonical_evidence_id);
+  assert.equal(canonical.conditional_job.job_disposition, 'succeeded');
+  assert.equal(canonical.conditional_job.inference_attempt_refs.length, 2);
+  const attemptIds = jobEntry.attempt_evidence_ids;
+  assert.equal(attemptIds.length, 2);
+  for (const attemptId of attemptIds) {
+    const attempt = store.readAttempt(hgSessionId, attemptId);
+    assert.equal(attempt.correlation.inference_kind, 'character_move');
+    assert.equal(attempt.correlation.semantic_job_id, jobEntry.semantic_job_id);
+  }
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('F1 character_move_generation: all infra attempts fail finalizes one failed job', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-f1-all-fail-'));
+  const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
+  const store = new ExecutionEvidenceStore(root);
+  const hgSessionId = 'sess-f1-all-fail';
+  const wrappedInference = async (params) => {
+    if (params.evidenceContext?.role === 'character') {
+      const evidenceId = recorder.recordInferenceAttempt({
+        evidenceContext: params.evidenceContext,
+        manifest: params.manifest ?? { manifest_id: 'm', contributions: [] },
+        contextRegistration: { manifestId: 'm', contributionIds: [] },
+        prompt: 'test',
+        profile: { kind: 'mock', provider: 'mock', model: 'mock' },
+        trace: { assistant_text: '', failed: true },
+        assistantText: '',
+        inferenceSessionId: 'sess-fail',
+      });
+      return { failed: true, failure: 'provider_timeout', evidenceId, trace: {} };
+    }
+    return {
+      failed: false,
+      raw: semanticPass(),
+      evidenceId: recorder.recordInferenceAttempt({
+        evidenceContext: params.evidenceContext,
+        manifest: params.manifest ?? { manifest_id: 'm', contributions: [] },
+        contextRegistration: { manifestId: 'm', contributionIds: [] },
+        prompt: 'test',
+        profile: { kind: 'mock', provider: 'mock', model: 'mock' },
+        trace: { assistant_text: semanticPass(), failed: false },
+        assistantText: semanticPass(),
+        inferenceSessionId: 'sess-qa',
+      }),
+      trace: {},
+    };
+  };
+  const api = createMockApi();
+  const result = await runCharacterPhase({
+    runEphemeralInference: wrappedInference,
+    recorder,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId,
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-f1-all-fail',
+    mockResponses: [JSON.stringify(VALID_MOVE)],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 1,
+    semanticEvaluationEnabled: false,
+    skipCharacterKnowledgeCognition: true,
+  });
+  assert.equal(result.committed, false);
+  const jobEntry = findCharacterMoveGenerationJob(store, hgSessionId);
+  assert.ok(jobEntry);
+  const canonical = store.readAttempt(hgSessionId, jobEntry.canonical_evidence_id);
+  assert.equal(canonical.conditional_job.job_disposition, 'failed');
+  assert.equal(jobEntry.attempt_evidence_ids.length, 2);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('F2 QA: infra fail then success on one evaluation pass', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-f2-qa-retry-'));
+  const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
+  const store = new ExecutionEvidenceStore(root);
+  const hgSessionId = 'sess-f2-qa';
+  const { runEphemeralInference } = createRecorderBackedInference(recorder, {
+    characterRaw: JSON.stringify(VALID_MOVE),
+    semanticOutcomes: [{ fail: true }, { raw: semanticPass() }],
+  });
+  const api = createMockApi();
+  const result = await runCharacterPhase({
+    runEphemeralInference,
+    recorder,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId,
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-f2-qa',
+    mockResponses: [JSON.stringify(VALID_MOVE)],
+    mockSemanticEvaluatorResponses: [semanticPass()],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 3,
+    skipCharacterKnowledgeCognition: true,
+  });
+  assert.equal(result.committed, true);
+  const qaEntry = Object.values(store.readIndex(hgSessionId).semantic_jobs.by_semantic_job_id)
+    .find((entry) => entry.job_kind === 'semantic_quality_evaluation');
+  assert.ok(qaEntry);
+  assert.equal(qaEntry.attempt_evidence_ids.length, 2);
+  const canonical = store.readAttempt(hgSessionId, qaEntry.canonical_evidence_id);
+  assert.equal(canonical.conditional_job.job_disposition, 'succeeded');
+  const moveJob = findCharacterMoveGenerationJob(store, hgSessionId);
+  assert.ok(canonical.conditional_job.job_relationships?.some(
+    (rel) => rel.type === 'evaluates' && rel.target_semantic_job_id === moveJob.semantic_job_id,
+  ));
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('F2 QA: all infra attempts fail finalizes one failed QA job', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-f2-qa-fail-'));
+  const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
+  const store = new ExecutionEvidenceStore(root);
+  const hgSessionId = 'sess-f2-qa-fail';
+  const { runEphemeralInference } = createRecorderBackedInference(recorder, {
+    characterRaw: JSON.stringify(VALID_MOVE),
+    semanticOutcomes: [{ fail: true }, { fail: true }],
+  });
+  const api = createMockApi();
+  const result = await runCharacterPhase({
+    runEphemeralInference,
+    recorder,
+    trace: noopTrace,
+    api,
+    sceneAgent: noopSceneAgent,
+    sceneSessionId: 'scene-1',
+    hgSessionId,
+    hgSceneId: 'scene-1',
+    hgRoundId: 'round-1',
+    characterId: 'Alice',
+    directorDecision: {},
+    characterInferenceId: 'inf-char-f2-qa-fail',
+    mockResponses: [JSON.stringify(VALID_MOVE)],
+    characterTurnIndex: 0,
+    liveMaxAttempts: 1,
+    skipCharacterKnowledgeCognition: true,
+  });
+  assert.equal(result.committed, false);
+  const qaEntry = Object.values(store.readIndex(hgSessionId).semantic_jobs.by_semantic_job_id)
+    .find((entry) => entry.job_kind === 'semantic_quality_evaluation');
+  assert.ok(qaEntry);
+  assert.equal(qaEntry.attempt_evidence_ids.length, 2);
+  const canonical = store.readAttempt(hgSessionId, qaEntry.canonical_evidence_id);
+  assert.equal(canonical.conditional_job.job_disposition, 'failed_inference');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test('execution evidence index: semantic hard finding is discoverable', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-evidence-semantic-'));
   const store = new ExecutionEvidenceStore(root);

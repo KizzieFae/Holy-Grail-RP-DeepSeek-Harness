@@ -27,6 +27,15 @@ import {
   buildCharacterConsumerEvidence,
 } from '../../../scripts/lib/issue201-lh0-consumer-evidence.mjs';
 import { evaluateTurnCausalEvidence } from '../../../scripts/lib/issue201-lh0-semantic-content.mjs';
+import { createTriggerRecord } from '../../lib/conditional-job/envelope.mjs';
+import {
+  attachInferenceAttemptToJob,
+  establishCanonicalJobEvidence,
+  finalizeQaEvaluationJobIfOpen,
+  finalizeSemanticJobIfOpen,
+  mergeEvidenceContextForJob,
+  openSemanticJob,
+} from '../../lib/conditional-job/semantic-job-evidence.mjs';
 
 const CHAR_INFRA_RETRIES = 1;
 
@@ -53,6 +62,7 @@ async function runCharacterInferenceWithInfraRetry({
   finalizedProjection = null,
   recorder = null,
   lhProvenanceAudit = false,
+  characterMoveJob = null,
 }) {
   let lastRun = null;
   for (let infraAttempt = 0; infraAttempt <= CHAR_INFRA_RETRIES; infraAttempt += 1) {
@@ -78,25 +88,48 @@ async function runCharacterInferenceWithInfraRetry({
       manifest,
       mockResponses: mockResponses.length ? [mockResponses[0]] : [],
       modelProfile,
-      evidenceContext: {
-        hgSessionId,
-        hgSceneId,
-        hgRoundId,
-        role: 'character',
-        characterId,
-        inferenceId: characterInferenceId,
-        parentInferenceId: characterInferenceId,
-        inferenceKind: 'character_move',
-        niForensics: true,
-        lhProvenanceAudit,
-        attemptIndex,
-        priorAttemptId: priorEvidenceId,
-        associations: participationEvidenceId && attemptIndex === 0
-          ? { participation_evidence_id: participationEvidenceId }
-          : {},
-      },
+      evidenceContext: mergeEvidenceContextForJob(
+        characterMoveJob ?? {},
+        {
+          hgSessionId,
+          hgSceneId,
+          hgRoundId,
+          role: 'character',
+          characterId,
+          inferenceId: characterInferenceId,
+          parentInferenceId: characterInferenceId,
+          inferenceKind: 'character_move',
+          niForensics: true,
+          lhProvenanceAudit,
+          attemptIndex,
+          priorAttemptId: priorEvidenceId,
+          associations: participationEvidenceId && attemptIndex === 0
+            ? { participation_evidence_id: participationEvidenceId }
+            : {},
+        },
+        {
+          attemptLineageRole: attemptIndex === 0 ? 'primary' : 'regeneration',
+        },
+      ),
     });
     lastRun = { characterRun, manifest, expectedTurnIndex };
+    if (characterMoveJob && recorder?.isEnabled?.() && hgSessionId && characterRun.evidenceId) {
+      if (!characterMoveJob.canonicalEvidenceId) {
+        characterMoveJob = establishCanonicalJobEvidence(
+          recorder,
+          hgSessionId,
+          characterRun.evidenceId,
+          characterMoveJob,
+          { canonicalInferenceKind: 'character_turn', attemptLineageRole: attemptIndex === 0 ? 'primary' : 'regeneration' },
+        );
+      } else if (characterMoveJob.canonicalEvidenceId !== characterRun.evidenceId) {
+        characterMoveJob = attachInferenceAttemptToJob(recorder, hgSessionId, characterMoveJob, {
+          evidenceId: characterRun.evidenceId,
+          canonicalInferenceKind: 'character_turn',
+          attemptLineageRole: attemptIndex === 0 ? 'primary' : 'regeneration',
+        });
+      }
+    }
     if (!characterRun.failed) {
       patchConsumerNiPackaging(recorder, {
         hgSessionId,
@@ -104,10 +137,10 @@ async function runCharacterInferenceWithInfraRetry({
         cognitionAudit: librarianKnowledgeAudit,
         manifest,
       });
-      return { ok: true, ...lastRun, infraAttempt };
+      return { ok: true, ...lastRun, infraAttempt, characterMoveJob };
     }
   }
-  return { ok: false, ...lastRun, infraAttempt: CHAR_INFRA_RETRIES };
+  return { ok: false, ...lastRun, infraAttempt: CHAR_INFRA_RETRIES, characterMoveJob };
 }
 
 export async function runCharacterPhase({
@@ -280,6 +313,27 @@ export async function runCharacterPhase({
     }
   }
 
+  let characterMoveJob = null;
+  if (recorder?.isEnabled?.() && hgSessionId) {
+    characterMoveJob = openSemanticJob({
+      jobKind: 'character_move_generation',
+      triggerRecord: createTriggerRecord({
+        source: 'round_topology',
+        owner: 'dsh_orchestration',
+        eligibilityDecision: { outcome: 'character_phase_entered', character_id: characterId },
+        inferenceRequired: true,
+        evidenceRefs: [
+          { ref_type: 'character_inference_id', value: characterInferenceId },
+        ],
+      }),
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId,
+        hg_round_id: hgRoundId,
+      },
+    });
+  }
+
   while (!committed && canGenerateCandidate(budget)) {
     const candidateSlotIndex = budget.generatedCount;
     const inferenceAttempt = await runCharacterInferenceWithInfraRetry({
@@ -305,7 +359,9 @@ export async function runCharacterPhase({
       finalizedProjection,
       recorder,
       lhProvenanceAudit,
+      characterMoveJob,
     });
+    characterMoveJob = inferenceAttempt.characterMoveJob ?? characterMoveJob;
 
     if (!inferenceAttempt.ok || !inferenceAttempt.characterRun) {
       recorder?.patchDecision(
@@ -436,6 +492,7 @@ export async function runCharacterPhase({
       const evaluationPassId = `${characterInferenceId}-eval-${semanticEvalPassIndex}`;
       semanticEvalPassIndex += 1;
       let evalOutcome = null;
+      let qaJobHandle = null;
       for (let evalInfra = 0; evalInfra <= SEMANTIC_EVAL_INFRA_RETRIES; evalInfra += 1) {
         evalOutcome = await runSemanticEvaluation({
           api,
@@ -457,9 +514,24 @@ export async function runCharacterPhase({
             ?? mockSemanticEvaluatorResponses[semanticEvalPassIndex - 1]
             ?? null,
           parentCharacterEvidenceId: characterRun.evidenceId,
+          targetSemanticJobId: characterMoveJob?.semanticJobId ?? null,
+          targetCanonicalEvidenceId: characterMoveJob?.canonicalEvidenceId ?? characterRun.evidenceId,
           infrastructureAttempt: evalInfra,
+          qaJobHandle,
+          finalizeQaJob: false,
         });
+        qaJobHandle = evalOutcome?.qaJobHandle ?? qaJobHandle;
         if (!evalOutcome.infrastructureFailure) break;
+      }
+      if (qaJobHandle?.canonicalEvidenceId && recorder?.isEnabled?.()) {
+        qaJobHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaJobHandle, {
+          disposition: evalOutcome?.infrastructureFailure ? 'failed_inference' : 'succeeded',
+          reasonCode: evalOutcome?.infrastructureFailure ? 'semantic_evaluator_failed' : null,
+          validationSummary: {
+            overall_result: evalOutcome?.result?.overall_result ?? null,
+            evaluation_pass_id: evaluationPassId,
+          },
+        });
       }
 
       if (evalOutcome?.evidenceId) {
@@ -631,6 +703,23 @@ export async function runCharacterPhase({
 
   if (!committed && !budget.terminalDisposition) {
     setTerminalDisposition(budget, 'candidate_budget_exhausted');
+  }
+
+  if (characterMoveJob?.canonicalEvidenceId && recorder?.isEnabled?.()) {
+    const disposition = committed ? 'succeeded' : 'failed';
+    characterMoveJob = finalizeSemanticJobIfOpen(recorder, hgSessionId, characterMoveJob, {
+      disposition,
+      reasonCode: committed ? null : (budget.terminalDisposition ?? 'character_phase_terminal'),
+      consequenceSummary: committed ? {
+        consumer: 'domain_host_commit_move',
+        mutation_class: 'authoritative_state',
+        domain_commit_id: domainCommitId,
+      } : {
+        consumer: 'round_orchestrator',
+        mutation_class: 'none',
+        terminal_disposition: budget.terminalDisposition,
+      },
+    });
   }
 
   return {

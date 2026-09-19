@@ -176,6 +176,8 @@ data/plot_cognition_forensics/{plot_cognition_scope_id}/
 
 ## Execution evidence (`execution_evidence`)
 
+**Conditional semantic jobs (#215):** Canonical `conditional_job` envelope on one attempt per `semantic_job_id`; associated attempts join via `correlation.semantic_job_id` / `canonical_job_evidence_id`. Session index may include `semantic_jobs`. See [conditional-semantic-job-contract.md](./conditional-semantic-job-contract.md).
+
 **Path:** `data/execution_evidence/<hg_session_id>/` (gitignored generated trees)
 
 **Role:** V2 durable forensic store for inference attempts. Each attempt records the **exact Holy-Grail-assembled model request** (`hg_assembled_request_v1`), final model response (`hg_model_response_v1`), decision/validation outcomes, retry chains, and correlation identifiers.

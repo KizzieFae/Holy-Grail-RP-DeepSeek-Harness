@@ -1,5 +1,10 @@
 import { SEMANTIC_QA_RESULT_SCHEMA } from '../../lib/semantic-qa-envelope.mjs';
 import { runSemanticQaEvaluation } from '../../lib/semantic-qa-substrate.mjs';
+import {
+  finalizeQaEvaluationJobIfOpen,
+  openQaEvaluationJob,
+  recordQaEvaluationInferenceAttempt,
+} from '../../lib/conditional-job/semantic-job-evidence.mjs';
 import { canApplySoftRegeneration } from './director-candidate-budget.mjs';
 
 export const DIRECTOR_QA_CONFIG_ID = 'director_semantic_qa_v1';
@@ -148,6 +153,7 @@ export function applyDirectorSemanticPolicy(evalOutcome, budget) {
 export async function runDirectorSemanticEvaluation({
   api,
   runEphemeralInference,
+  recorder = null,
   directorInferenceId,
   hgSceneId,
   hgRoundId,
@@ -160,9 +166,13 @@ export async function runDirectorSemanticEvaluation({
   semanticEvaluatorProfile,
   mockSemanticResponse,
   parentDirectorEvidenceId,
+  targetSemanticJobId = null,
+  targetCanonicalEvidenceId = null,
   infrastructureAttempt = 0,
+  qaJobHandle = null,
+  finalizeQaJob = false,
 }) {
-  return runSemanticQaEvaluation({
+  const evalOutcome = await runSemanticQaEvaluation({
     runEphemeralInference,
     prepareContext: () => api.prepareDirectorSemanticQaContext({
       hg_scene_id: hgSceneId,
@@ -189,4 +199,42 @@ export async function runDirectorSemanticEvaluation({
     modelProfile: semanticEvaluatorProfile,
     infrastructureAttempt,
   });
+  let qaHandle = qaJobHandle;
+  if (
+    recorder?.isEnabled?.()
+    && hgSessionId
+    && evalOutcome?.evidenceId
+    && targetSemanticJobId
+    && targetCanonicalEvidenceId
+  ) {
+    if (!qaHandle) {
+      ({ handle: qaHandle } = openQaEvaluationJob(recorder, hgSessionId, {
+        targetSemanticJobId,
+        targetCanonicalEvidenceId,
+        evaluationPassId,
+        correlation: {
+          hg_session_id: hgSessionId,
+          hg_scene_id: hgSceneId,
+          hg_round_id: hgRoundId,
+        },
+        inferenceKind: 'director_semantic_qa',
+      }));
+    }
+    qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
+      evidenceId: evalOutcome.evidenceId,
+      canonicalInferenceKind: 'director_semantic_qa',
+      infrastructureAttempt,
+    });
+    if (finalizeQaJob) {
+      qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
+        disposition: evalOutcome.infrastructureFailure ? 'failed_inference' : 'succeeded',
+        reasonCode: evalOutcome.infrastructureFailure ? 'semantic_evaluator_failed' : null,
+        validationSummary: {
+          overall_result: evalOutcome.result?.overall_result ?? null,
+          evaluation_pass_id: evaluationPassId,
+        },
+      });
+    }
+  }
+  return { ...evalOutcome, qaJobHandle: qaHandle };
 }

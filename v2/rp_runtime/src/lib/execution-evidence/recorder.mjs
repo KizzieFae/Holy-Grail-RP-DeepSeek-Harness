@@ -10,6 +10,12 @@ import { buildInferenceHealth } from './inference-health.mjs';
 import { buildModelResponse } from './model-response.mjs';
 import { participationDecisionPatch } from './participation-decision.mjs';
 import { ExecutionEvidenceStore } from './store.mjs';
+import {
+  buildOpenConditionalJobEnvelope,
+  closeJobDisposition,
+  createTriggerRecord,
+  newSemanticJobId,
+} from '../conditional-job/envelope.mjs';
 
 function correlationFromContext(context, manifest, contextRegistration, inferenceSessionId) {
   const correlation = {
@@ -51,6 +57,15 @@ function correlationFromContext(context, manifest, contextRegistration, inferenc
   }
   if (context.effectiveConfigurationEpochId) {
     correlation.effective_configuration_epoch_id = context.effectiveConfigurationEpochId;
+  }
+  if (context.semanticJobId) {
+    correlation.semantic_job_id = context.semanticJobId;
+  }
+  if (context.canonicalJobEvidenceId) {
+    correlation.canonical_job_evidence_id = context.canonicalJobEvidenceId;
+  }
+  if (context.attemptLineageRole) {
+    correlation.attempt_lineage_role = context.attemptLineageRole;
   }
   return correlation;
 }
@@ -161,6 +176,41 @@ export class ExecutionEvidenceRecorder {
   }) {
     if (!this.enabled || !hgSessionId || !domainCommitId) return null;
     const evidenceId = crypto.randomUUID();
+    const semanticJobId = newSemanticJobId();
+    const triggerRecord = createTriggerRecord({
+      source: 'host_prepare',
+      owner: 'domain_host',
+      eligibilityDecision: {
+        outcome: eligibilityOutcome ?? batch?.degradation_mode ?? 'eligibility_skipped',
+      },
+      inferenceRequired: false,
+      evidenceRefs: [
+        { ref_type: 'domain_commit_id', value: domainCommitId },
+        { ref_type: 'post_commit_semantic_inference_id', value: postCommitSemanticInferenceId ?? null },
+      ],
+    });
+    let conditionalJob = buildOpenConditionalJobEnvelope({
+      semanticJobId,
+      jobKind: 'post_commit_semantic',
+      triggerRecord,
+      correlation: {
+        hg_session_id: hgSessionId,
+        hg_scene_id: hgSceneId ?? hgSessionId,
+        hg_round_id: hgRoundId,
+        domain_commit_id: domainCommitId,
+        continuity_turn_index: continuityTurnIndex,
+      },
+    });
+    conditionalJob = closeJobDisposition(conditionalJob, {
+      disposition: 'skipped_ineligible',
+      reasonCode: degradationMode,
+      consequenceSummary: {
+        consumer: 'domain_host_finalize_librarian_proposals',
+        mutation_class: 'derived_state',
+        batch_id: batch?.batch_id ?? batch?.post_commit_semantic_batch_id ?? null,
+      },
+    });
+    conditionalJob.canonical_job_evidence_id = evidenceId;
     const attempt = {
       evidence_id: evidenceId,
       correlation: {
@@ -175,8 +225,11 @@ export class ExecutionEvidenceRecorder {
         continuity_turn_index: continuityTurnIndex,
         post_commit_semantic_inference_id: postCommitSemanticInferenceId ?? null,
         effective_configuration_epoch_id: effectiveConfigurationEpochId,
+        semantic_job_id: semanticJobId,
+        canonical_job_evidence_id: evidenceId,
         attempt_index: 0,
       },
+      conditional_job: conditionalJob,
       request: null,
       response: null,
       decision: {
@@ -444,6 +497,68 @@ export class ExecutionEvidenceRecorder {
   patchDecision(evidenceId, hgSessionId, patch) {
     if (!this.enabled || !evidenceId || !hgSessionId) return;
     this.store.patchAttempt(hgSessionId, evidenceId, patch);
+  }
+
+  /**
+   * Patch canonical conditional semantic job envelope (#215) on one evidence record.
+   */
+  patchConditionalJob(hgSessionId, evidenceId, envelope) {
+    if (!this.enabled || !hgSessionId || !evidenceId || !envelope) return;
+    this.store.patchAttempt(hgSessionId, evidenceId, { conditional_job: envelope });
+  }
+
+  /**
+   * Join an inference/disposition attempt to a semantic job without duplicating the envelope.
+   */
+  linkAttemptToSemanticJob(hgSessionId, evidenceId, {
+    semanticJobId,
+    canonicalJobEvidenceId,
+    attemptLineageRole = null,
+    canonicalInferenceKind = null,
+  }) {
+    if (!this.enabled || !hgSessionId || !evidenceId || !semanticJobId) return;
+    const correlationPatch = {
+      semantic_job_id: semanticJobId,
+      canonical_job_evidence_id: canonicalJobEvidenceId ?? null,
+    };
+    if (attemptLineageRole) correlationPatch.attempt_lineage_role = attemptLineageRole;
+    this.store.patchAttempt(hgSessionId, evidenceId, { correlation: correlationPatch });
+    if (canonicalJobEvidenceId) {
+      this.store.registerSemanticJobAttempt(hgSessionId, {
+        semanticJobId,
+        canonicalEvidenceId: canonicalJobEvidenceId,
+        attemptEvidenceId: evidenceId,
+        jobKind: null,
+        canonicalInferenceKind,
+      });
+    }
+  }
+
+  /**
+   * Write a canonical zero-inference or pre-built job attempt.
+   * @returns {string|null} evidence_id
+   */
+  writeSemanticJobCanonicalAttempt(hgSessionId, attempt) {
+    if (!this.enabled || !hgSessionId || !attempt?.evidence_id) return null;
+    this.store.writeAttempt({
+      ...attempt,
+      correlation: {
+        ...(attempt.correlation ?? {}),
+        hg_session_id: hgSessionId,
+        semantic_job_id: attempt.conditional_job?.semantic_job_id ?? attempt.correlation?.semantic_job_id,
+        canonical_job_evidence_id: attempt.evidence_id,
+      },
+    });
+    if (attempt.conditional_job) {
+      const jobKind = attempt.conditional_job.job_kind;
+      this.store.registerSemanticJobAttempt(hgSessionId, {
+        semanticJobId: attempt.conditional_job.semantic_job_id,
+        canonicalEvidenceId: attempt.evidence_id,
+        attemptEvidenceId: attempt.evidence_id,
+        jobKind,
+      });
+    }
+    return attempt.evidence_id;
   }
 
   /**
