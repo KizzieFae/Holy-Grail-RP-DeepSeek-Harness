@@ -240,19 +240,43 @@ export async function runSemanticEvaluation({
     },
   });
   let qaHandle = qaJobHandle;
+  const resolvedTargetCanonical = targetCanonicalEvidenceId ?? parentCharacterEvidenceId;
+  const resolvedTargetJobId = targetSemanticJobId
+    ?? (resolvedTargetCanonical && recorder?.readAttempt?.(hgSessionId, resolvedTargetCanonical)
+      ?.correlation?.semantic_job_id)
+    ?? null;
+  const canRecordQa = Boolean(
+    recorder?.isEnabled?.()
+    && hgSessionId
+    && evalRun.evidenceId
+    && resolvedTargetJobId
+    && resolvedTargetCanonical,
+  );
+  const recordQaInferenceAttempt = () => {
+    if (!canRecordQa) return qaHandle;
+    if (!qaHandle) {
+      ({ handle: qaHandle } = openQaEvaluationJob(recorder, hgSessionId, {
+        targetSemanticJobId: resolvedTargetJobId,
+        targetCanonicalEvidenceId: resolvedTargetCanonical,
+        evaluationPassId,
+        correlation: {
+          hg_session_id: hgSessionId,
+          hg_scene_id: hgSceneId,
+          hg_round_id: hgRoundId,
+        },
+        inferenceKind: 'character_semantic_evaluation',
+      }));
+    }
+    qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
+      evidenceId: evalRun.evidenceId,
+      canonicalInferenceKind: 'character_semantic_evaluation',
+      infrastructureAttempt,
+    });
+    return qaHandle;
+  };
   if (evalRun.failed) {
-    if (
-      finalizeQaJob
-      && qaHandle
-      && recorder?.isEnabled?.()
-      && hgSessionId
-      && evalRun.evidenceId
-    ) {
-      qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
-        evidenceId: evalRun.evidenceId,
-        canonicalInferenceKind: 'character_semantic_evaluation',
-        infrastructureAttempt,
-      });
+    qaHandle = recordQaInferenceAttempt();
+    if (finalizeQaJob && qaHandle?.canonicalEvidenceId) {
       qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
         disposition: 'failed_inference',
         reasonCode: 'semantic_evaluator_failed',
@@ -275,18 +299,8 @@ export async function runSemanticEvaluation({
     contextResponse.authority_references,
   );
   if (!parsed.ok || !parsed.result) {
-    if (
-      finalizeQaJob
-      && qaHandle
-      && recorder?.isEnabled?.()
-      && hgSessionId
-      && evalRun.evidenceId
-    ) {
-      qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
-        evidenceId: evalRun.evidenceId,
-        canonicalInferenceKind: 'character_semantic_evaluation',
-        infrastructureAttempt,
-      });
+    qaHandle = recordQaInferenceAttempt();
+    if (finalizeQaJob && qaHandle?.canonicalEvidenceId) {
       qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
         disposition: 'failed_inference',
         reasonCode: 'malformed_evaluator_output',
@@ -308,45 +322,15 @@ export async function runSemanticEvaluation({
     ...parsed.result,
     evaluation_pass_id: evaluationPassId,
   };
-  const resolvedTargetCanonical = targetCanonicalEvidenceId ?? parentCharacterEvidenceId;
-  const resolvedTargetJobId = targetSemanticJobId
-    ?? (resolvedTargetCanonical && recorder?.readAttempt?.(hgSessionId, resolvedTargetCanonical)
-      ?.correlation?.semantic_job_id)
-    ?? null;
-  if (
-    recorder?.isEnabled?.()
-    && hgSessionId
-    && evalRun.evidenceId
-    && resolvedTargetJobId
-    && resolvedTargetCanonical
-  ) {
-    if (!qaHandle) {
-      ({ handle: qaHandle } = openQaEvaluationJob(recorder, hgSessionId, {
-        targetSemanticJobId: resolvedTargetJobId,
-        targetCanonicalEvidenceId: resolvedTargetCanonical,
-        evaluationPassId,
-        correlation: {
-          hg_session_id: hgSessionId,
-          hg_scene_id: hgSceneId,
-          hg_round_id: hgRoundId,
-        },
-        inferenceKind: 'character_semantic_evaluation',
-      }));
-    }
-    qaHandle = recordQaEvaluationInferenceAttempt(recorder, hgSessionId, qaHandle, {
-      evidenceId: evalRun.evidenceId,
-      canonicalInferenceKind: 'character_semantic_evaluation',
-      infrastructureAttempt,
+  qaHandle = recordQaInferenceAttempt();
+  if (finalizeQaJob && qaHandle?.canonicalEvidenceId) {
+    qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
+      disposition: 'succeeded',
+      validationSummary: {
+        overall_result: result.overall_result,
+        evaluation_pass_id: evaluationPassId,
+      },
     });
-    if (finalizeQaJob) {
-      qaHandle = finalizeQaEvaluationJobIfOpen(recorder, hgSessionId, qaHandle, {
-        disposition: 'succeeded',
-        validationSummary: {
-          overall_result: result.overall_result,
-          evaluation_pass_id: evaluationPassId,
-        },
-      });
-    }
   }
   return {
     ok: true,

@@ -29,15 +29,16 @@ export function semanticJobIdFromEvaluationPass(evaluationPassId) {
 function readQaJobHandleFromStore(recorder, hgSessionId, semanticJobId) {
   const index = recorder.readIndex?.(hgSessionId);
   const entry = index?.semantic_jobs?.by_semantic_job_id?.[semanticJobId];
-  if (!entry?.canonical_job_evidence_id) return null;
-  const attempt = recorder.readAttempt(hgSessionId, entry.canonical_job_evidence_id);
+  const canonicalEvidenceId = entry?.canonical_evidence_id ?? entry?.canonical_job_evidence_id;
+  if (!canonicalEvidenceId) return null;
+  const attempt = recorder.readAttempt(hgSessionId, canonicalEvidenceId);
   const envelope = attempt?.conditional_job;
   if (!envelope || envelope.semantic_job_id !== semanticJobId) return null;
   return {
     semanticJobId,
     jobKind: 'semantic_quality_evaluation',
     envelope,
-    canonicalEvidenceId: entry.canonical_job_evidence_id,
+    canonicalEvidenceId,
   };
 }
 

@@ -113,8 +113,7 @@ async function runCharacterInferenceWithInfraRetry({
       ),
     });
     lastRun = { characterRun, manifest, expectedTurnIndex };
-    if (!characterRun.failed && characterMoveJob && recorder?.isEnabled?.() && hgSessionId
-      && characterRun.evidenceId) {
+    if (characterMoveJob && recorder?.isEnabled?.() && hgSessionId && characterRun.evidenceId) {
       if (!characterMoveJob.canonicalEvidenceId) {
         characterMoveJob = establishCanonicalJobEvidence(
           recorder,

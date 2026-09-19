@@ -119,6 +119,55 @@ test('finalizeSemanticJobIfOpen is idempotent', () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
+test('F3 persisted QA job recovers via canonical_evidence_id index field', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-cjob-qa-recover-'));
+  const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
+  const hgSessionId = 'sess-qa-recover';
+  const store = new ExecutionEvidenceStore(root);
+  const evaluationPassId = 'inf-char-eval-recover';
+  const targetJobId = 'target-move-job';
+  const targetCanonical = 'ev-char-target';
+  store.writeAttempt({
+    evidence_id: targetCanonical,
+    correlation: { hg_session_id: hgSessionId, semantic_job_id: targetJobId },
+    conditional_job: {
+      schema: 'hg_conditional_semantic_job_v1',
+      semantic_job_id: targetJobId,
+      job_kind: 'character_move_generation',
+      job_disposition: 'succeeded',
+    },
+  });
+  const { handle: first } = openQaEvaluationJob(recorder, hgSessionId, {
+    targetSemanticJobId: targetJobId,
+    targetCanonicalEvidenceId: targetCanonical,
+    evaluationPassId,
+    correlation: { hg_session_id: hgSessionId },
+    inferenceKind: 'character_semantic_evaluation',
+  });
+  store.writeAttempt({
+    evidence_id: 'ev-qa-canonical',
+    correlation: { hg_session_id: hgSessionId, inference_kind: 'character_semantic_evaluation' },
+    request: { schema: 'hg_assembled_request_v1', contributions: [] },
+    response: { schema: 'hg_model_response_v1', assistant_text: '{}' },
+  });
+  const established = establishCanonicalJobEvidence(recorder, hgSessionId, 'ev-qa-canonical', first, {
+    canonicalInferenceKind: 'character_semantic_evaluation',
+  });
+  const indexEntry = store.readIndex(hgSessionId).semantic_jobs.by_semantic_job_id[established.semanticJobId];
+  assert.equal(indexEntry.canonical_evidence_id, 'ev-qa-canonical');
+  assert.equal(indexEntry.canonical_job_evidence_id, undefined);
+  const { handle: recovered } = openQaEvaluationJob(recorder, hgSessionId, {
+    targetSemanticJobId: targetJobId,
+    targetCanonicalEvidenceId: targetCanonical,
+    evaluationPassId,
+    correlation: { hg_session_id: hgSessionId },
+    inferenceKind: 'character_semantic_evaluation',
+  });
+  assert.equal(recovered.semanticJobId, established.semanticJobId);
+  assert.equal(recovered.canonicalEvidenceId, 'ev-qa-canonical');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test('mediation inference failure finalizes knowledge_mediation job', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hg-cjob-med-fail-'));
   const recorder = createExecutionEvidenceRecorder({ enabled: true, root });
